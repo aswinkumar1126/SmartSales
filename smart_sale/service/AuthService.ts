@@ -1,0 +1,66 @@
+import { axiosInstance } from "@/api/axiosInstance";
+
+export interface ApiResponse<T = any> {
+    success: boolean;
+    data?: T;
+    message?: string;
+    status?: number;
+}
+
+export interface LoginPayload {
+    username: string;
+    password: string;
+}
+
+export interface RegisterPayload {
+    name: string;
+    mobile: string;
+    email: string;
+    password: string;
+}
+
+export const authService = {
+    register: async (
+        data: RegisterPayload
+    ): Promise<ApiResponse> => {
+        try {
+            const res = await axiosInstance.post("/auth/register", data);
+            return { success: true, data: res.data };
+        } catch (error: any) {
+            return {
+                success: false,
+                message: error?.response?.data?.message || "Registration failed",
+                status: error?.response?.status,
+            };
+        }
+    },
+
+    login: async (
+        data: LoginPayload
+    ): Promise<ApiResponse> => {
+        try {
+            console.log(data);
+            const res = await axiosInstance.post("/user/login", data);
+            return { success: true, data: res.data.data };
+        } catch (error: any) {
+            return {
+                success: false,
+                message: error?.response?.data?.message || "Login failed",
+                status: error?.response?.status,
+            };
+        }
+    },
+
+    me: async (): Promise<ApiResponse> => {
+        try {
+            const res = await axiosInstance.get("/auth/me");
+            return { success: true, data: res.data };
+        } catch (error: any) {
+            return {
+                success: false,
+                message: error?.response?.data?.message || "Failed to fetch user",
+                status: error?.response?.status,
+            };
+        }
+    },
+};

@@ -48,7 +48,7 @@ export const designTokens: DesignTokens = {
     },
 
     colors: {
-        primary: "#FFFFFF",
+        primary: "#FBFBFB",
         secondary: "#000000",
         primaryText: "#222222",
         secondaryText: "#444444",
