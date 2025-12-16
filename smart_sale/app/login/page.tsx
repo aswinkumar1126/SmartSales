@@ -9,6 +9,7 @@ import {
     Text,
     Grid,
     GridItem,
+    InputGroup,
 } from "@chakra-ui/react";
 
 import { useTheme } from "@/context/theme/themeContext";
@@ -24,17 +25,20 @@ import { authService } from "@/service/AuthService";
 import { useAuth } from "@/hooks/auth/useAuth";
 
 import { Toaster, toaster } from "@/components/ui/toaster";
+import { LuUser } from "react-icons/lu";
+import { RiLockPasswordLine } from 'react-icons/ri'
+
 
 export default function LoginPage() {
     const { theme } = useTheme();
     const { login } = useAuth();
 
     const carouselImages = [
-        "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=1200",
-        "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1200",
-        "https://images.unsplash.com/photo-1540206395-68808572332f?w=1200",
-        "https://images.unsplash.com/photo-1519904981063-b0cf448d479e?w=1200",
-        "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=1200",
+        "https://www.canadianminingjournal.com/wp-content/uploads/2021/09/Polyus_Olympiada_20180915_img_7698.jpg",
+        "https://cdn1.matadornetwork.com/blogs/1/2022/11/alaska-gold-pan-close-up.jpg",
+        "https://www.goldmarket.fr/wp-content/uploads/2025/09/44dd529dthumbnail-1110x550.jpeg.webp",
+        "https://img.freepik.com/premium-photo/molten-gold-being-carefully-poured-into-mold_68708-11243.jpg",
+        "https://media.istockphoto.com/id/617896650/photo/craft-jewelery-making.jpg?s=612x612&w=0&k=20&c=UFruy7o2mUEXsHVEWZ8kxv-eSuX_rxiJ6c4yvOtwWuU="
     ];
 
     // React Hook Form
@@ -52,16 +56,16 @@ export default function LoginPage() {
             username: formData.username,
             password: formData.password,
         });
-
-        if (!res.success) {
+        console.log(res);
+        if (!res.data) {
+            console.log(res ,' login ')
             toaster.create({
                 type: "error",
                 title: res.message || "Login failed",
             });
             return;
         }
-        console.log(res?.data)
-        const token = res.data?.USERID;
+        const token = res.data?.userId;
         if (!token) {
             toaster.create({
                 type: "error",
@@ -128,48 +132,61 @@ export default function LoginPage() {
                                 gap={4}
                             >
                                 {/* Login Name */}
-                                <div className="w-full">
-                                    <label className="text-sm font-medium">
+                                <Box w="full">
+                                    <Text fontSize="sm" fontWeight="500" mb={1}>
                                         Login Name
-                                    </label>
-
+                                    </Text>
+                                    <InputGroup startElement={<LuUser />} >
                                     <Input
                                         placeholder="Enter Your Login Name"
                                         size="lg"
-                                        bg="#fff"
-                                        border="1px solid #eee"
+                                        bg="white"
+                                        border="1px solid"
+                                        borderColor="gray.200"
                                         color="black"
+                                        _focus={{
+                                            borderColor: "purple.400",
+                                            boxShadow: "0 0 0 1px var(--chakra-colors-purple-400)",
+                                        }}
                                         {...register("username")}
                                     />
+                                    </InputGroup>
 
                                     {errors.username && (
-                                        <p className="text-red-500 text-xs mt-1">
+                                        <Text fontSize="xs" color="red.500" mt={1}>
                                             {errors.username.message}
-                                        </p>
+                                        </Text>
                                     )}
-                                </div>
+                                </Box>
 
                                 {/* Password */}
-                                <div className="w-full">
-                                    <label className="text-sm font-medium">
+                                <Box w="full">
+                                    <Text fontSize="sm" fontWeight="500" mb={1}>
                                         Password
-                                    </label>
-
+                                    </Text>
+                                    <InputGroup startElement = {<RiLockPasswordLine />} >
                                     <PasswordInput
                                         placeholder="Enter Your Password"
                                         size="lg"
-                                        bg="#fff"
-                                        border="1px solid #eee"
+                                        bg="white"
+                                        border="1px solid"
+                                        borderColor="gray.200"
                                         color="black"
+                                        _focus={{
+                                            borderColor: "purple.400",
+                                            boxShadow: "0 0 0 1px var(--chakra-colors-purple-400)",
+                                        }}
                                         {...register("password")}
                                     />
+                                    </InputGroup>
 
                                     {errors.password && (
-                                        <p className="text-red-500 text-xs mt-1">
+                                        <Text fontSize="xs" color="red.500" mt={1}>
                                             {errors.password.message}
-                                        </p>
+                                        </Text>
                                     )}
-                                </div>
+                                </Box>
+
 
                                 {/* BUTTON */}
                                 <Button

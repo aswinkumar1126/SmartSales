@@ -16,40 +16,29 @@ export const SidebarProvider = ({ children }: { children: ReactNode }) => {
       Account: [{
         label: "Company",
         route: "/dashboard/Master/Account/Company"
-      }, {
-        label: "Customer",
-        route: "/dashboard/Master/Account/Company"
-      }],
+      }
+    ],
       ItemMaster: [{
         label: "Metal",
         route: "/dashboard/Master/Item/Metal"
-      }, {
-        label: "Customer",
-        route: "dashboard/Master/Account/Company"
-      }],
+      }
+    ],
       UserMaster: [{
         label: "Company",
         route: "/dashboard/Master/Account/Company"
-      }, {
-        label: "Customer",
-        route: "/dashboard/Master/Account/Company"
-      }],
+      }
+    ],
       Role: [{
         label: "UserMaster",
         route: "/dashboard/Master/Role/UserMaster"
-      }, {
-        label: "Customer",
-        route: "/dashboard/Master/Role/UserMaster"
-      }],
+      }
+    ],
     },
     RateEntry: {
       GoldRate: [{
         label: "Company",
         route: "/dashboard/Master/Account/Company"
-      }, {
-        label: "Customer",
-        route: "/dashboard/Master/Account/Company"
-      }],
+      }, ],
       SilverRate: [{
         label: "Company",
         route: "/dashboard/Master/Account/Company"

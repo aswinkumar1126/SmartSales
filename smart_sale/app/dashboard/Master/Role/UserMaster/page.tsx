@@ -31,17 +31,80 @@ import { fontVariables } from "@/context/theme/font";
 import { AiOutlineSave } from "react-icons/ai";
 import { IoIosExit } from "react-icons/io";
 import { LuUser } from "react-icons/lu";
+import { RiLockPasswordLine } from 'react-icons/ri'
+import { useAuth } from "@/hooks/auth/useAuth";
+import { useUsers } from "@/hooks/user/useUsers";
+import { useCreateUser } from "@/hooks/user/useCreateUser";
+import { usePatchUser } from "@/hooks/user/usePatchUser";
+import { UserMaster } from "@/types/user/user";
 
 
-export default function UserMaster() {
+
+
+export default function UserMasters() {
     const { theme } = useTheme();
-
+    const {user} = useAuth();
+    console.log(user ,'user')
     const [showPassword, setShowPassword] = useState(false);
     const [imagePreview, setImagePreview] = useState<string | null>(null);
 
+    
+    const [form, setForm] = useState<UserMaster>({
+        username: "",
+        pwd: "",
+        active: "Y",
+        costId: "H01",
+        billing: false,
+    });
+
+    const [selectedImage, setSelectedImage] = useState<File | undefined>();
+    const [editingUserId, setEditingUserId] = useState<number | null>(null);
+
+    const { data, isLoading } = useUsers();
+    const users = data?.data ?? [];
+    console.log(users, 'users')
+
+    const { mutate: createUser, isPending: creating } = useCreateUser();
+    const { mutate: patchUser, isPending: updating } = usePatchUser();
+
+    const onChange =
+        (key: keyof UserMaster) =>
+            (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+                setForm((prev) => ({ ...prev, [key]: e.target.value }));
+            };
     const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
-        if (file) setImagePreview(URL.createObjectURL(file));
+        if (!file) return;
+
+        setSelectedImage(file);
+        setImagePreview(URL.createObjectURL(file));
+    };
+    const handleSave = () => {
+        if (!form.username) return;
+
+        if (editingUserId) {
+            patchUser({
+                userId: editingUserId,
+                updates: form,
+            });
+        } else {
+            createUser({
+                user: form,
+                image: selectedImage,
+            });
+        }
+
+        // reset form
+        setForm({
+            username: "",
+            pwd: "",
+            active: "Y",
+            costId: "H01",
+            billing: false,
+        });
+        setSelectedImage(undefined);
+        setImagePreview(null);
+        setEditingUserId(null);
     };
 
     // Dummy table data
@@ -81,14 +144,12 @@ export default function UserMaster() {
                         border="1px solid #eef"
                         boxShadow="0 0 30px rgba(212,212,212,0.2)"
                     >
-                        <Text
-                            fontSize="20px"
-                            color="blue.800"
-                            // textShadow="0 0 10px gray"
-                            fontWeight="600"
-                        >
-                            User Master
-                        </Text>
+                       
+                            <Text fontSize="20px" fontWeight="600" color="blue.800">
+                                {editingUserId ? "Edit User" : "User Master"}
+                            </Text>
+
+               
 
                         <Fieldset.Root size="lg" width="100%">
                             <Fieldset.Content>
@@ -98,7 +159,12 @@ export default function UserMaster() {
                                 <Field.Root>
                                     <Field.Label>User Name</Field.Label>
                                             <InputGroup startElement={<LuUser />}> 
-                                                    <Input placeholder="Enter user name" /> 
+                                                <Input
+                                                    placeholder="Enter user name"
+                                                    value={form.username}
+                                                    onChange={onChange("username")}
+                                                />
+
                                             </InputGroup>
                                   
                                 </Field.Root>
@@ -106,7 +172,14 @@ export default function UserMaster() {
                                 {/* PASSWORD */}
                                 <Field.Root>
                                     <Field.Label>Password</Field.Label>
-                                    <PasswordInput placeholder="Enter your password" />
+                                    <InputGroup startElement={<RiLockPasswordLine />}>
+                                                <PasswordInput
+                                                    placeholder="Enter your password"
+                                                    value={form.pwd}
+                                                    onChange={onChange("pwd")}
+                                                />
+
+                                    </InputGroup>
                                 </Field.Root>
 
                                 {/* CONFIRM PASSWORD */}
@@ -147,10 +220,11 @@ export default function UserMaster() {
                                     <Field.Label>Cost Centre</Field.Label>
 
                                     <NativeSelect.Root>
-                                        <NativeSelect.Field>
-                                            <option value="H01">Head Office</option>
-                                            <option value="S01">Showroom 1</option>
-                                            <option value="S02">Showroom 2</option>
+                                            <NativeSelect.Field value={form.costId}
+                                                onChange={onChange("costId")}>
+                                            <option value="SM">Head Office</option>
+                                            <option value="SM2">Showroom 1</option>
+                                            <option value="SM3">Showroom 2</option>
                                         </NativeSelect.Field>
                                         <NativeSelect.Indicator />
                                     </NativeSelect.Root>
@@ -161,7 +235,11 @@ export default function UserMaster() {
                                     <Field.Label>Active</Field.Label>
 
                                     <NativeSelect.Root>
-                                        <NativeSelect.Field>
+                                            <NativeSelect.Field
+                                                value={form.active}
+                                                onChange={onChange("active")}
+                                            >
+
                                             <For each={activeStatus.items}>
                                                 {(item) => (
                                                     <option key={item.value} value={item.value}>
@@ -179,7 +257,16 @@ export default function UserMaster() {
 
                                 {/* ACTION BUTTONS */}
                                 <HStack pt={2} justifyContent="center">
-                                    <Button size="sm" loading={false} loadingText="Saving" spinnerPlacement="end" colorPalette="blue"><AiOutlineSave /> Save</Button>
+                                    <Button
+                                        size="sm"
+                                        loading={creating || updating}
+                                        loadingText="Saving"
+                                        onClick={handleSave}
+                                        colorPalette="blue"
+                                    >
+                                        <AiOutlineSave /> Save
+                                    </Button>
+
                                     {/* <Button size="sm" colorPalette="yellow">Open</Button>
                                     <Button size="sm"  colorPalette="blue" >New</Button> */}
                                     <Button size="sm" colorPalette="blue" >Exit <IoIosExit /> </Button>
@@ -214,16 +301,38 @@ export default function UserMaster() {
                                             <Table.ColumnHeader color='white' textAlign="end">Active</Table.ColumnHeader>
                                             </Table.Row>
                                         </Table.Header>
+                                    <Table.Body>
+                                        {isLoading && (
+                                            <Table.Row>
+                                                <Table.Cell colSpan={3}>Loading...</Table.Cell>
+                                            </Table.Row>
+                                        )}
 
-                                        <Table.Body>
-                                            {dummyUsers.map((item) => (
-                                                <Table.Row key={item.id}>
-                                                    <Table.Cell>{item.name}</Table.Cell>
-                                                    <Table.Cell>{item.centre}</Table.Cell>
-                                                    <Table.Cell textAlign="end">{item.active}</Table.Cell>
-                                                </Table.Row>
-                                            ))}
-                                        </Table.Body>
+                                        {users.map((item) => (
+                                            <Table.Row
+                                                key={item.userId}
+                                                cursor="pointer"
+                                                _hover={{ bg: "gray.50" }}
+                                                onClick={() => {
+                                                    setEditingUserId(item.userId!);
+                                                    setForm({
+                                                        username: item.username,
+                                                        active: item.active,
+                                                        costId: item.costId,
+                                                        billing: item.billing,
+                                                    });
+                                                    setImagePreview(item.userImage ?? null);
+                                                }}
+                                            >
+                                                <Table.Cell>{item.USERNAME}</Table.Cell>
+                                                <Table.Cell>{item.COSTID}</Table.Cell>
+                                                <Table.Cell textAlign="end">
+                                                    {item.ACTIVE === "Y" ? "YES" : "NO"}
+                                                </Table.Cell>
+                                            </Table.Row>
+                                        ))}
+                                    </Table.Body>
+
                                     </Table.Root>
                                     </Table.ScrollArea>
                         </Stack>

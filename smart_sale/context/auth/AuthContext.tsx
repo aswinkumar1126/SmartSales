@@ -1,6 +1,8 @@
 "use client";
 
 import React, { createContext } from "react";
+import { Company } from "@/service/CompanyService";
+import { LoginPayload } from "@/service/AuthService";
 
 export interface AuthUser {
     id: string;
@@ -13,10 +15,11 @@ export interface AuthContextType {
     user: AuthUser | null;
     token: string | null;
     loading: boolean;
-
-    login: (token: string) => Promise<void>;
+    login: (payload: LoginPayload) => Promise<void>;
     logout: () => void;
-    refreshUser: () => Promise<void>;
+    refreshUser: (uid: number) => Promise<void>;
+    company: () => Promise<void>;
+    companiesData: Company[];
 }
 
 export const AuthContext = createContext<AuthContextType | null>(null);

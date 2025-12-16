@@ -1,0 +1,67 @@
+// service/CompanyService.ts
+import { axiosInstance } from "@/api/axiosInstance";
+
+export interface ApiResponse<T = any> {
+    success: boolean;
+    message: string;
+    data?: T;
+}
+
+export interface Company {
+    COMPANYID: string;
+    COMPANYNAME: string;
+    COSTID?: string;
+    ADDRESS1?: string;
+    AREACODE?: string;
+    PHONE?: string;
+    EMAIL?: string;
+    GSTNO?: string;
+    ACTIVE: "Y" | "N";
+    STATEID?: number;
+    LOGO?: string;
+}
+
+export interface CreateCompanyPayload {
+    COMPANYID: string;
+    COMPANYNAME: string;
+    COSTID?: string;
+    ADDRESS1?: string;
+    AREACODE?: string;
+    PHONE?: string;
+    EMAIL?: string;
+    GSTNO?: string;
+    ACTIVE: "Y" | "N";
+    STATEID?: number;
+}
+
+export const CompanyService = {
+    getAll: async (): Promise<ApiResponse<Company[]>> => {
+        const { data } = await axiosInstance.get("/company");
+        return data;
+    },
+
+    getById: async (companyId: string): Promise<ApiResponse<Company>> => {
+        const { data } = await axiosInstance.get(`/company/${companyId}`);
+        return data;
+    },
+
+    create: async (payload: CreateCompanyPayload, logo?: File): Promise<ApiResponse<Company>> => {
+        const formData = new FormData();
+        formData.append("company", new Blob([JSON.stringify(payload)], { type: "application/json" }));
+        if (logo) formData.append("logo", logo);
+        const { data } = await axiosInstance.post("/company", formData, {
+            headers: { "Content-Type": "multipart/form-data" },
+        });
+        return data;
+    },
+
+    updateById: async (companyId: string, payload: CreateCompanyPayload, logo?: File): Promise<ApiResponse<Company>> => {
+        const formData = new FormData();
+        formData.append("company", new Blob([JSON.stringify(payload)], { type: "application/json" }));
+        if (logo) formData.append("logo", logo);
+        const { data } = await axiosInstance.put(`/company/updateAll`, formData, {
+            headers: { "Content-Type": "multipart/form-data" },
+        });
+        return data;
+    },
+};

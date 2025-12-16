@@ -1,11 +1,10 @@
 "use client";
 
 import { Box, HStack, Button, IconButton, Group } from "@chakra-ui/react";
-import { HamburgerIcon } from "@chakra-ui/icons";
+import { FiMenu, FiEye, FiEyeOff } from "react-icons/fi";
 import { useMediaQuery } from "@chakra-ui/react";
 import { useSidebar } from "@/context/layout/SideBarContext";
-
-export const Header = ({ onOpenMenu }: any) => {
+ const Header = ({ onOpenMenu }: any) => {
     const { menuData, setCurrentSection } = useSidebar();
     const [isDesktop] = useMediaQuery(["(min-width: 768px)"]);
 
@@ -16,7 +15,7 @@ export const Header = ({ onOpenMenu }: any) => {
             <HStack >
                 {!isDesktop && (
                     <IconButton aria-label="Open Menu" onClick={onOpenMenu}>
-                        <HamburgerIcon />
+                        <FiMenu />
                     </IconButton>
                 )}
                 <Group attached>
@@ -40,3 +39,4 @@ export const Header = ({ onOpenMenu }: any) => {
         </Box>
     );
 };
+export default Header;

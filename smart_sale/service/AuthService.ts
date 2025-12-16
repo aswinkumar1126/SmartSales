@@ -24,7 +24,7 @@ export const authService = {
         data: RegisterPayload
     ): Promise<ApiResponse> => {
         try {
-            const res = await axiosInstance.post("/auth/register", data);
+            const res = await axiosInstance.post("/user/register", data);
             return { success: true, data: res.data };
         } catch (error: any) {
             return {
@@ -35,31 +35,43 @@ export const authService = {
         }
     },
 
-    login: async (
-        data: LoginPayload
-    ): Promise<ApiResponse> => {
+    login: async (data: LoginPayload): Promise<ApiResponse> => {
         try {
-            console.log(data);
             const res = await axiosInstance.post("/user/login", data);
-            return { success: true, data: res.data.data };
+            console.log("Backend login response 👉", res.data);
+
+            const result = res.data;
+
+            return {
+                success: true,
+                message: result.message,
+                data: {
+                    userId: result.data.USERID,
+                    token: result.data.TOKEN ?? String(result.data.USERID), // fallback if no JWT
+                },
+            };
         } catch (error: any) {
+            console.error("Login error", error);
+
             return {
                 success: false,
-                message: error?.response?.data?.message || "Login failed",
+                message:
+                    error?.response?.data?.message ||
+                    "Login failed",
                 status: error?.response?.status,
             };
         }
     },
 
-    me: async (): Promise<ApiResponse> => {
+
+    me: async (userId: number): Promise<ApiResponse> => {
         try {
-            const res = await axiosInstance.get("/auth/me");
+            const res = await axiosInstance.get(`/user/${userId}`);
             return { success: true, data: res.data };
         } catch (error: any) {
             return {
                 success: false,
-                message: error?.response?.data?.message || "Failed to fetch user",
-                status: error?.response?.status,
+                message: "Failed to fetch user",
             };
         }
     },

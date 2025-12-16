@@ -5,13 +5,11 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start",
     "lint": "eslint"
   },
   "dependencies": {
     "@chakra-ui/anatomy": "^2.3.4",
     "@chakra-ui/form-control": "^2.2.0",
-    "@chakra-ui/icons": "^2.2.4",
     "@chakra-ui/react": "^3.30.0",
     "@chakra-ui/system": "^2.6.2",
     "@chakra-ui/table": "^2.1.0",
@@ -19,6 +17,7 @@
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
     "@hookform/resolvers": "^5.2.2",
+    "@tanstack/react-query": "^5.90.12",
     "axios": "^1.13.2",
     "framer-motion": "^12.23.26",
     "next": "16.0.7",

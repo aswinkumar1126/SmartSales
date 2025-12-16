@@ -9,7 +9,7 @@ import {
     Stack,
     Progress,
 } from "@chakra-ui/react";
-import { ViewIcon, ViewOffIcon } from "@chakra-ui/icons";
+import { FiMenu, FiEye, FiEyeOff } from "react-icons/fi";
 
 export interface PasswordInputProps
     extends React.ComponentProps<typeof Input> { }
@@ -37,7 +37,7 @@ export const PasswordInput = React.forwardRef<HTMLInputElement, PasswordInputPro
                     transform="translateY(-50%)"
                     onClick={() => setShow(!show)}
                 >
-                    {show ? <ViewOffIcon /> : <ViewIcon />}
+                    {show ? <FiEye /> : <FiEyeOff />}
                 </IconButton>
             </Box>
         );
