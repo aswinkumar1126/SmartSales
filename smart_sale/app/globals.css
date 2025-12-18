@@ -24,3 +24,22 @@ body {
   color: var(--foreground);
   font-family: var(--font-sans);
 }
+
+
+@keyframes blink {
+  0% {
+    background-color: #ebf8ff;
+  }
+
+  50% {
+    background-color: #bee3f8;
+  }
+
+  100% {
+    background-color: transparent;
+  }
+}
+
+.blink-row {
+  animation: blink 1s ease-in-out 3;
+}

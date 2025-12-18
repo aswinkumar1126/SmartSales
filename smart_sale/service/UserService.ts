@@ -16,11 +16,11 @@ export const registerUser = async (
     if (image) {
         formData.append("image", image);
     }
-
+console.log(formData , user , image)
     const { data } = await axiosInstance.post("/user/register", formData, {
         headers: { "Content-Type": "multipart/form-data" },
     });
-
+    console.log(data)
     return data;
 };
 

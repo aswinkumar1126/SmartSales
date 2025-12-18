@@ -1,7 +1,7 @@
 // hooks/company/useCompany.ts
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { CompanyService, Company, CreateCompanyPayload, ApiResponse } from "@/service/CompanyService";
-
+import { toastCreated, toastError, toastLoaded, toastUpdated, toastUploaded } from "@/component/toast/toast";
 // Get all companies
 export const useAllCompanies = () => {
     return useQuery<ApiResponse<Company[]>>({
@@ -17,6 +17,7 @@ export const useCompanyById = (companyId: string) => {
         queryFn: () => CompanyService.getById(companyId),
         enabled: !!companyId,
     });
+    
 };
 
 // Create company
@@ -27,7 +28,13 @@ export const useCreateCompany = () => {
             CompanyService.create(payload, logo),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["companies"] });
+            toastCreated("Company");
+
         },
+        onError: (error) => {
+            toastError("Company", error.message);
+        },
+
     });
 };
 
@@ -39,6 +46,11 @@ export const useUpdateCompany = () => {
             CompanyService.updateById(id, payload, logo),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["companies"] });
+            toastUpdated("Company");
+
+        },
+        onError: (error) => {
+            toastError("Company", error.message);
         },
     });
 };

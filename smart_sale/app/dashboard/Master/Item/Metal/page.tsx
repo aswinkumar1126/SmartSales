@@ -29,7 +29,9 @@ import {  useAllMetals, } from "@/hooks/metal/useMetals";
 import { useUpdateMetal } from "@/hooks/metal/useUpdateMetal";
 import { useCreateMetal } from "@/hooks/metal/useCreateMetal";
 import { Metal } from "@/service/metalService";
-
+import scrollToTop from "@/component/scroll/ScrollToTop";
+import { toastError, toastLoaded } from '@/component/toast/toast'
+import { Toaster } from "@/components/ui/toaster";
 function MetalMaster() {
     const { theme } = useTheme();
 
@@ -60,6 +62,22 @@ function MetalMaster() {
     };
 
     const handleSave = () => {
+        if (!form.metalId?.trim()) {
+            toastError("Metal ID is required");
+            return;
+        }
+
+        if (!form.metalName?.trim()) {
+            toastError("Metal name is required");
+            return;
+        }
+
+        // 🔹 Check if metalId already exists when creating new
+        if (!isEdit && metals.some(m => m.metalId === form.metalId)) {
+            toastError(`Metal ID "${form.metalId}" already exists`);
+            return; // prevent save
+        }
+
         if (isEdit && form.metalId) {
             updateMutation.mutate(
                 { id: form.metalId, metal: form as Metal },
@@ -71,22 +89,25 @@ function MetalMaster() {
     };
 
     const handleEdit = (metal: Metal) => {
+        toastLoaded("Metal");
         setForm(metal);
         setIsEdit(true);
+     
     };
 
     const resetForm = () => {
-        setForm({ metalId: "", metalName: "", ttype: "H01", displayOrder: 0, active: "Y" });
+        setForm({ metalId: "", metalName: "", ttype: "", displayOrder: 0, active: "Y" });
         setIsEdit(false);
     };
 
     return (
-        <Box className={fontVariables} fontFamily="var(--font-lustria)" bg="inherit" color={theme.colors.secondary}>
-            <Grid templateColumns={{ base: "1fr", lg: "1fr 1fr" }} gap={2}>
+        <Box className={fontVariables} fontFamily="var(--font-lustria)" bg={theme.colors.primary} >
+            <Toaster />
+            <Grid templateColumns={{ base: "1fr", lg: "1fr 1fr" }} gap={2} >
                 {/* LEFT – Form */}
-                <GridItem display="flex" justifyContent="center">
-                    <VStack w="full" maxW="500px" bg="white" p={4} borderRadius="xl" border="1px solid #eef" boxShadow="0 0 30px rgba(212,212,212,0.2)">
-                        <Text fontSize="20px" color="blue.800" fontWeight="600">Metal Master</Text>
+                <GridItem display="flex" justifyContent="center" >
+                    <VStack w="full" maxW="500px" bg={theme.colors.formColor}  p={4} borderRadius="xl" border="1px solid #eef" boxShadow="0 0 30px rgba(212,212,212,0.2)">
+                        <Text fontSize="20px"  fontWeight="600">Metal Master</Text>
 
                         <Fieldset.Root size="lg" width="100%">
                             <Fieldset.Content>
@@ -117,6 +138,13 @@ function MetalMaster() {
                                         <NativeSelect.Field
                                             value={form.ttype || "M"}
                                             onChange={(e) => handleChange("ttype", e.target.value)}
+                                            css={{
+                                                backgroundColor: '#eee',
+                                                color: "#111827",
+                                                border: "1px solid #e5e7eb",
+                                                borderRadius: "12px",
+                                                height: "42px",
+                                            }}
                                         >
                                             <option value="M">Metal</option>
                                             <option value="S">Stone</option>
@@ -141,6 +169,13 @@ function MetalMaster() {
                                         <NativeSelect.Field
                                             value={form.active || "Y"}
                                             onChange={(e) => handleChange("active", e.target.value)}
+                                            css={{
+                                                backgroundColor: '#eee',
+                                                color: "#111827",
+                                                border: "1px solid #e5e7eb",
+                                                borderRadius: "12px",
+                                                height: "42px",
+                                            }}
                                         >
                                             <For each={activeStatus.items}>
                                                 {(item) => (
@@ -167,8 +202,8 @@ function MetalMaster() {
 
                 {/* RIGHT – Table */}
                 <GridItem>
-                    <Box bg="white" p={4} borderRadius="xl" border="1px solid #eef" boxShadow="0 0 30px rgba(212,212,212,0.2)">
-                        <Text mb={2} fontWeight="bold" fontSize="lg" color="Navy">Metal List</Text>
+                    <Box p={4} bg={theme.colors.formColor} borderRadius="xl" border="1px solid #eef" boxShadow="0 0 30px rgba(212,212,212,0.2)">
+                        <Text mb={2} fontWeight="bold" fontSize="lg">Metal List</Text>
 
                         <Stack gap="10">
                             <Table.ScrollArea maxW="xl" border="1px solid #eee">
@@ -186,14 +221,21 @@ function MetalMaster() {
 
                                     <Table.Body>
                                         {metals.map((metal) => (
-                                            <Table.Row key={metal.metalId}>
+                                            <Table.Row key={metal.metalId} bg={theme.colors.primary} >
                                                 <Table.Cell>{metal.metalId}</Table.Cell>
                                                 <Table.Cell>{metal.metalName}</Table.Cell>
                                                 <Table.Cell>{metal.ttype}</Table.Cell>
                                                 <Table.Cell>{metal.displayOrder}</Table.Cell>
                                                 <Table.Cell textAlign="end">{metal.active}</Table.Cell>
                                                 <Table.Cell justifyItems="center">
-                                                    <FaEdit style={{ cursor: "pointer" }} onClick={() => handleEdit(metal)} />
+                                                    <FaEdit style={{ cursor: "pointer" }} onClick={() => 
+                                                        {
+                                                            handleEdit(metal);
+                                                             scrollToTop();
+                                                          
+                                  
+
+                                                        }} />
                                                 </Table.Cell>
                                             </Table.Row>
                                         ))}

@@ -10,6 +10,8 @@ import {
     Progress,
 } from "@chakra-ui/react";
 import { FiMenu, FiEye, FiEyeOff } from "react-icons/fi";
+import { useTheme } from "@/context/theme/themeContext";
+import { background } from "@chakra-ui/system";
 
 export interface PasswordInputProps
     extends React.ComponentProps<typeof Input> { }
@@ -17,6 +19,8 @@ export interface PasswordInputProps
 export const PasswordInput = React.forwardRef<HTMLInputElement, PasswordInputProps>(
     function PasswordInput(props, ref) {
         const [show, setShow] = React.useState(false);
+        const {theme,mode} =useTheme();
+
 
         return (
             <Box position="relative" w="full">
@@ -36,6 +40,10 @@ export const PasswordInput = React.forwardRef<HTMLInputElement, PasswordInputPro
                     top="50%"
                     transform="translateY(-50%)"
                     onClick={() => setShow(!show)}
+                    color={theme.colors.secondary}
+                      _hover={{
+                          background: mode === "light" ? "#eee" : "#111",
+  }}
                 >
                     {show ? <FiEye /> : <FiEyeOff />}
                 </IconButton>

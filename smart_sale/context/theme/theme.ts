@@ -15,6 +15,9 @@ export type ColorTokens = {
     green: string;
     blue: string;
     yellow: string;
+    accient:string;
+    formColor:string;
+    whiteColor:string;
 };
 
 export type FontSizeTokens = {
@@ -56,6 +59,9 @@ export const designTokens: DesignTokens = {
         green: "#22C55E",
         blue: "#3B82F6",
         yellow: "#EAB308",
+        accient:"#05204bff",
+        formColor:'#FFF',
+        whiteColor: '#FFF',
     },
 
     fontSizes: {
@@ -72,3 +78,32 @@ export const designTokens: DesignTokens = {
         low: "4px",
     },
 };
+export const lightTheme: DesignTokens = {
+    ...designTokens,
+    colors: {
+        ...designTokens.colors,
+        primary: "#EEEEEE",
+        secondary: "#000000",
+        primaryText: "#222",
+        secondaryText: "#444444",
+        accient:"#1868b2",
+        formColor:'#FFF',
+        whiteColor:'#FFF',
+
+    },
+};
+
+export const darkTheme: DesignTokens = {
+    ...designTokens,
+    colors: {
+        ...designTokens.colors,
+        primary: "#000",
+        secondary: "#FFFFFF",
+        primaryText: "#E5E7EB",
+        secondaryText: "#9CA3AF",
+        accient:"#001958ff",
+        formColor: '#222',
+        whiteColor: '#FFF',
+    },
+};
+

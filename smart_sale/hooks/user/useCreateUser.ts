@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { registerUser } from "@/service/UserService";
 import { UserMaster } from "@/types/user/user";
+import { toastCreated } from "@/component/toast/toast";
 
 export const useCreateUser = () => {
     const queryClient = useQueryClient();
@@ -15,6 +16,11 @@ export const useCreateUser = () => {
         }) => registerUser(user, image),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["users"] });
+            toastCreated("User")
         },
+        onError: (error) => {
+            console.error("Error creating user:", error);
+            toastCreated("User")
+        }
     });
 };

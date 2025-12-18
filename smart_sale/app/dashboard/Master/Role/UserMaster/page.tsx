@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState ,useEffect } from "react";
 import {
     Box,
     Button,
@@ -37,32 +37,48 @@ import { useUsers } from "@/hooks/user/useUsers";
 import { useCreateUser } from "@/hooks/user/useCreateUser";
 import { usePatchUser } from "@/hooks/user/usePatchUser";
 import { UserMaster } from "@/types/user/user";
-
-
+import { FiEdit } from "react-icons/fi";
+import { useUserById } from "@/hooks/user/useUserById";
+import { toastLoaded } from "@/component/toast/toast";
+import { Toaster } from "@/components/ui/toaster";
 
 
 export default function UserMasters() {
     const { theme } = useTheme();
     const {user} = useAuth();
-    console.log(user ,'user')
-    const [showPassword, setShowPassword] = useState(false);
+    console.log(user ,'user');
+
+
     const [imagePreview, setImagePreview] = useState<string | null>(null);
+    const [confirmPwd, setConfirmPwd] = useState("");
+    const [error, setError] = useState<string | null>(null);
 
     
     const [form, setForm] = useState<UserMaster>({
         username: "",
         pwd: "",
         active: "Y",
-        costId: "H01",
+        costId: "SM",
         billing: false,
     });
 
     const [selectedImage, setSelectedImage] = useState<File | undefined>();
     const [editingUserId, setEditingUserId] = useState<number | null>(null);
-
     const { data, isLoading } = useUsers();
-    const users = data?.data ?? [];
-    console.log(users, 'users')
+
+    console.log(data?.data ,'user');
+
+    const normalizeUser = (u: any): UserMaster => ({
+        userId: u.USERID,
+        username: u.USERNAME,
+        pwd: "",
+        active: u.ACTIVE,
+        costId: u.USERCOSTID,
+        billing: u.BILLING,
+        userImage: u.USERIMAGE,
+    });
+    const users: UserMaster[] = (data?.data ?? []).map(normalizeUser);
+    const { data: userByIdData, isLoading: loadingUser } = useUserById(editingUserId ?? undefined);
 
     const { mutate: createUser, isPending: creating } = useCreateUser();
     const { mutate: patchUser, isPending: updating } = usePatchUser();
@@ -79,22 +95,70 @@ export default function UserMasters() {
         setSelectedImage(file);
         setImagePreview(URL.createObjectURL(file));
     };
-    const handleSave = () => {
-        if (!form.username) return;
 
-        if (editingUserId) {
-            patchUser({
-                userId: editingUserId,
-                updates: form,
-            });
-        } else {
-            createUser({
-                user: form,
-                image: selectedImage,
-            });
+    useEffect(() => {
+        if (!userByIdData?.data) return;
+
+        const { pwd, ...formData } = normalizeUser(userByIdData.data);
+        console.log(formData)
+        setForm({ ...formData, pwd: "" });
+        setImagePreview(formData.userImage ?? null);
+        setConfirmPwd("");
+    }, [userByIdData]);
+
+
+    const handleSave = () => {
+        setError(null);
+
+        if (!form.username.trim()) {
+            setError("Username is required");
+            return;
         }
 
-        // reset form
+        // CREATE MODE → password mandatory
+        if (!editingUserId) {
+            if (!form.pwd || !confirmPwd) {
+                setError("Password and Confirm Password are required");
+                return;
+            }
+
+            if (form.pwd !== confirmPwd) {
+                setError("Password and Confirm Password do not match");
+                return;
+            }
+        }
+
+        // EDIT MODE → password optional, but must match if entered
+        if (editingUserId && form.pwd) {
+            if (form.pwd !== confirmPwd) {
+                setError("Password and Confirm Password do not match");
+                return;
+            }
+        }
+
+        const payload: any = { ...form };
+
+        // Remove empty password on edit
+        if (editingUserId && !payload.pwd) {
+            delete payload.pwd;
+        }
+
+        if (editingUserId) {
+            patchUser(
+                { userId: editingUserId, updates: payload },
+                { onSuccess: resetForm }
+            );
+        } else {
+            createUser(
+                
+                { user: payload, image: selectedImage },
+                { onSuccess: resetForm }
+            );
+        }
+    };
+
+    const resetForm = () => {
+        setEditingUserId(null);
         setForm({
             username: "",
             pwd: "",
@@ -102,9 +166,28 @@ export default function UserMasters() {
             costId: "H01",
             billing: false,
         });
+        setConfirmPwd("");
         setSelectedImage(undefined);
         setImagePreview(null);
-        setEditingUserId(null);
+        setError(null);
+    };
+
+
+    
+
+    const loadUserIntoForm = (item: UserMaster) => {
+        setEditingUserId(item.userId!);
+
+        setForm({
+            username: item.username,
+            pwd: "", // never preload password
+            active: item.active,
+            costId: item.costId,
+            billing: item.billing ?? false,
+        });
+
+        setImagePreview(item.userImage ?? null);
+        setSelectedImage(undefined);
     };
 
     // Dummy table data
@@ -130,6 +213,7 @@ export default function UserMasters() {
             color={theme.colors.secondary}
          
         >
+            <Toaster />
             <Grid templateColumns={{ base: "1fr", lg: "1fr 1fr" }} gap={2}>
 
                 {/* LEFT SECTION – USER FORM */}
@@ -138,14 +222,14 @@ export default function UserMasters() {
                     <VStack
                         w="full"
                         maxW="500px"
-                        bg="white"
+                        bg={theme.colors.formColor}
                         p={4}
                         borderRadius="xl"
                         border="1px solid #eef"
                         boxShadow="0 0 30px rgba(212,212,212,0.2)"
                     >
                        
-                            <Text fontSize="20px" fontWeight="600" color="blue.800">
+                            <Text fontSize="20px" fontWeight="600" >
                                 {editingUserId ? "Edit User" : "User Master"}
                             </Text>
 
@@ -158,7 +242,7 @@ export default function UserMasters() {
                                 <Box>
                                 <Field.Root>
                                     <Field.Label>User Name</Field.Label>
-                                            <InputGroup startElement={<LuUser />}> 
+                                            <InputGroup startElement={<LuUser color={theme.colors.secondary} />}> 
                                                 <Input
                                                     placeholder="Enter user name"
                                                     value={form.username}
@@ -172,7 +256,7 @@ export default function UserMasters() {
                                 {/* PASSWORD */}
                                 <Field.Root>
                                     <Field.Label>Password</Field.Label>
-                                    <InputGroup startElement={<RiLockPasswordLine />}>
+                                            <InputGroup startElement={<RiLockPasswordLine color={theme.colors.secondary} />}>
                                                 <PasswordInput
                                                     placeholder="Enter your password"
                                                     value={form.pwd}
@@ -185,7 +269,13 @@ export default function UserMasters() {
                                 {/* CONFIRM PASSWORD */}
                                 <Field.Root>
                                     <Field.Label>Confirm Password</Field.Label>
-                                    <Input type="password" placeholder="Re-enter password" />
+                                            <Input
+                                                type="password"
+                                                placeholder="Re-enter password"
+                                                value={confirmPwd}
+                                                onChange={(e) => setConfirmPwd(e.target.value)}
+                                            />
+
                                 </Field.Root>
                                 </Box>
                                     <Box textAlign="center" mt={4}>
@@ -220,8 +310,18 @@ export default function UserMasters() {
                                     <Field.Label>Cost Centre</Field.Label>
 
                                     <NativeSelect.Root>
-                                            <NativeSelect.Field value={form.costId}
-                                                onChange={onChange("costId")}>
+                                            <NativeSelect.Field
+                                                value={form.costId}
+                                                onChange={onChange("costId")}
+                                                css={{
+                                                    backgroundColor: '#eee',
+                                                    color: "#111827",
+                                                    border: "1px solid #e5e7eb",
+                                                    borderRadius: "12px",
+                                                    height: "42px",
+                                                }}
+                                            >
+
                                             <option value="SM">Head Office</option>
                                             <option value="SM2">Showroom 1</option>
                                             <option value="SM3">Showroom 2</option>
@@ -238,6 +338,13 @@ export default function UserMasters() {
                                             <NativeSelect.Field
                                                 value={form.active}
                                                 onChange={onChange("active")}
+                                                css={{
+                                                    backgroundColor: '#eee',
+                                                    color: "#111827",
+                                                    border: "1px solid #e5e7eb",
+                                                    borderRadius: "12px",
+                                                    height: "42px",
+                                                }}
                                             >
 
                                             <For each={activeStatus.items}>
@@ -254,6 +361,11 @@ export default function UserMasters() {
                                 </Box>
                                 {/* IMAGE UPLOAD */}
                                 
+                                {error && (
+                                    <Text color="red.500" fontSize="sm" textAlign="center">
+                                        {error}
+                                    </Text>
+                                )}
 
                                 {/* ACTION BUTTONS */}
                                 <HStack pt={2} justifyContent="center">
@@ -264,12 +376,12 @@ export default function UserMasters() {
                                         onClick={handleSave}
                                         colorPalette="blue"
                                     >
-                                        <AiOutlineSave /> Save
+                                        <AiOutlineSave /> {editingUserId ? "Update" : "Save"}
                                     </Button>
 
                                     {/* <Button size="sm" colorPalette="yellow">Open</Button>
                                     <Button size="sm"  colorPalette="blue" >New</Button> */}
-                                    <Button size="sm" colorPalette="blue" >Exit <IoIosExit /> </Button>
+                                    <Button size="sm" colorPalette="blue" onClick={resetForm} >Clear <IoIosExit /> </Button>
                                 </HStack>
                             </Fieldset.Content>
                         </Fieldset.Root>
@@ -279,13 +391,13 @@ export default function UserMasters() {
                 {/* RIGHT SECTION – TABLE */}
                 <GridItem>
                     <Box
-                        bg="white"
                         p={4}
                         borderRadius="xl"
+                        bg={theme.colors.formColor}
                         border="1px solid #eef"
                         boxShadow="0 0 30px rgba(212,212,212,0.2)"
                     >
-                        <Text mb={2} fontWeight="bold" fontSize="lg" color="Navy">
+                        <Text mb={2} fontWeight="bold" fontSize="lg" >
                             User List
                         </Text>
 
@@ -298,40 +410,36 @@ export default function UserMasters() {
                                         <Table.Row css={{ background:'blue.800' , color:'white' }} color='white' >
                                             <Table.ColumnHeader color='white' >User</Table.ColumnHeader>
                                             <Table.ColumnHeader color='white'>Centre</Table.ColumnHeader>
-                                            <Table.ColumnHeader color='white' textAlign="end">Active</Table.ColumnHeader>
+                                            <Table.ColumnHeader color='white' >Active</Table.ColumnHeader>
+                                            <Table.ColumnHeader color='white' >Action</Table.ColumnHeader>
+                                            
                                             </Table.Row>
                                         </Table.Header>
                                     <Table.Body>
-                                        {isLoading && (
-                                            <Table.Row>
-                                                <Table.Cell colSpan={3}>Loading...</Table.Cell>
-                                            </Table.Row>
-                                        )}
-
                                         {users.map((item) => (
-                                            <Table.Row
-                                                key={item.userId}
-                                                cursor="pointer"
-                                                _hover={{ bg: "gray.50" }}
-                                                onClick={() => {
-                                                    setEditingUserId(item.userId!);
-                                                    setForm({
-                                                        username: item.username,
-                                                        active: item.active,
-                                                        costId: item.costId,
-                                                        billing: item.billing,
-                                                    });
-                                                    setImagePreview(item.userImage ?? null);
-                                                }}
-                                            >
-                                                <Table.Cell>{item.USERNAME}</Table.Cell>
-                                                <Table.Cell>{item.COSTID}</Table.Cell>
-                                                <Table.Cell textAlign="end">
-                                                    {item.ACTIVE === "Y" ? "YES" : "NO"}
+                                            <Table.Row key={item.userId} bg={theme.colors.primary}>
+                                                <Table.Cell>{item.username}</Table.Cell>
+                                                <Table.Cell>{item.costId}</Table.Cell>
+                                                <Table.Cell>
+                                                    {item.active === "Y" ? "YES" : "NO"}
+                                                </Table.Cell>
+
+                                                {/* ACTION COLUMN */}
+                                                <Table.Cell justifyContent="center" textAlign="center">
+                                                      <FiEdit aria-label="Edit user"
+                                                       
+                                                            width={4} 
+                                                            cursor="pointer"
+                                                            height={4}
+                                                            onClick={() => {
+                                                                toastLoaded("User");
+                                                                setEditingUserId(item.userId!)} }/>
+                                                  
                                                 </Table.Cell>
                                             </Table.Row>
                                         ))}
                                     </Table.Body>
+
 
                                     </Table.Root>
                                     </Table.ScrollArea>

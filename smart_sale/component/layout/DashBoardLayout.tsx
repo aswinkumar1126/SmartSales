@@ -6,11 +6,12 @@ import Header from "./header/Header";
 import Sidebar from "./sidebar/SideBar";
 import { useMediaQuery } from "@chakra-ui/react";
 import { usePathname } from "next/navigation";
+import { useTheme } from "@/context/theme/themeContext";
 
 const noLayoutRoutes = ["/login"]
 const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
 
-
+    const {theme} = useTheme();
     const [isOpen, setIsOpen] = useState(false);
     const [isDesktop] = useMediaQuery(["(min-width: 768px)"]);
 
@@ -21,6 +22,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
 
     return (
         <Box >
+
             <Header onOpenMenu={() => setIsOpen(true)} />
 
             <Sidebar isOpen={isOpen} onClose={() => setIsOpen(false)} />
@@ -28,7 +30,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
             <Box
                 ml={isDesktop ? "250px" : "0"}
                 p={4}
-                bg="#FBFBFB"
+                bg={theme.colors.primary}
 
             >
                 {children}

@@ -1,86 +1,158 @@
 "use client";
-import React,{useState} from 'react';
-import { Box, VStack, Text, Collapsible, Drawer, useMediaQuery } from "@chakra-ui/react";
-import { useSidebar } from "@/context/layout/SideBarContext";
-import { useRouter ,usePathname } from "next/navigation";
 
+import React, { useState } from "react";
+import {
+    Box,
+    VStack,
+    Text,
+    Collapsible,
+    Drawer,
+    HStack,
+    Icon,
+    useMediaQuery,
+} from "@chakra-ui/react";
+import { ChevronDown } from "lucide-react";
+import { useSidebar } from "@/context/layout/SideBarContext";
+import { useRouter, usePathname } from "next/navigation";
+import { useTheme } from "@/context/theme/themeContext";
 
 const Sidebar = ({ isOpen, onClose }: any) => {
     const { currentSection, menuData } = useSidebar();
     const router = useRouter();
-    const [isDesktop] = useMediaQuery(["(min-width: 768px)"]);
+    const pathname = usePathname();
+    const { theme ,mode } = useTheme();
     const [expandedNode, setExpandedNode] = useState<string | null>(null);
+    const [isDesktop] = useMediaQuery(["(min-width: 768px)"]);
+
     const sectionData = menuData[currentSection] || {};
-    const pathname =usePathname();
+
     const Content = (
-        <Box w="250px" p={4} bg="#FDFAF6" h="100%" overflowY="auto">
-            <VStack align="start">
-                {Object.keys(sectionData).map((key) => (
-                    <Collapsible.Root
-                        key={key}
-                        open={expandedNode === key}
-                        onOpenChange={() =>
-                            setExpandedNode(prev => (prev === key ? null : key))
-                        }
-                    >
+        <Box
+            w="260px"
+            p={4}
+            bg={theme.colors.accient}   // ✅ FIXED
+            color={theme.colors.whiteColor}
+            h="100%"
+            borderRight="1px solid"
+            borderColor="gray.200"
+        >
+            <VStack align="stretch" gap={2}>
+                {Object.entries(sectionData).map(([group, groupData]: any) => {
+                    const GroupIcon = groupData.icon;
+                    const isGroupActive = (groupItems: any[]) =>
+                    groupItems.some((item) => pathname === item.route);
 
-                        <Collapsible.Trigger asChild>
-                            <Box
-                                px={3}
-                                py={2}
-                                cursor="pointer"
-                                borderRadius="md"
-                                bg={expandedNode === key ? "#F4F1EE" : "transparent"}
-                                _hover={{ bg: "#F4F1EE" }}
-                            >
-                                <Text fontWeight={600} fontSize="sm">
-                                    {key}
-                                </Text>
-                            </Box>
-                        </Collapsible.Trigger>
+                    return (
+                        <Collapsible.Root
+                            key={group}
+                            open={expandedNode === group}
+                            onOpenChange={() =>
+                                setExpandedNode((prev) => (prev === group ? null : group))
+                            }
+                        >
+                            {/* ===== GROUP HEADER (WITH ICON) ===== */}
+                            <Collapsible.Trigger asChild>
+                                <HStack
+                                    px={3}
+                                    py={2}
+                                    cursor="pointer"
+                                    borderRadius="lg"
+                                    justify="space-between"
+                                    bg={
+                                        isGroupActive(groupData.items) || expandedNode === group
+                                            ? "orange.50"
+                                            : "transparent"
+                                    }
+                                    color={
+                                        isGroupActive(groupData.items) || expandedNode === group
+                                            ? "orange.700"
+                                            : mode === "light" ? "grey:600":"gray.100"
+                                    }
+                                    _hover={{
+                                        bg: "gray.200",
+                                        color: "#444",
+                                    }}
+                                    transition="all 0.2s ease"
+                                >
+                                    <HStack gap={2} >
+                                        <Icon
+                                            as={GroupIcon}
+                                            boxSize={4}
+                                            color={
+                                                isGroupActive(groupData.items) || expandedNode === group
+                                                    ? "orange.600"
+                                                    : "white.900"
+                                            }
+                                            
 
-                        {/* 👇 THIS IS REQUIRED */}
-                        <Collapsible.Content>
-                            <Box>
-                                <VStack align="stretch" pl={4} pt={2} >
-                                    {sectionData[key].map((subItem: any) => {
-                                        const isActive = pathname === subItem.route;
+                                        />
+                                        <Text fontWeight="600" fontSize="sm" >
+                                            {group}
+                                        </Text>
+                                    </HStack>
+
+                                    <Icon
+                                        as={ChevronDown}
+                                        boxSize={4}
+                                        transform={
+                                            expandedNode === group ? "rotate(360deg)" : "rotate(270deg)"
+                                        }
+                                        transition="0.2s"
+                                    />
+                                </HStack>
+                            </Collapsible.Trigger>
+
+                            {/* ===== ITEMS ===== */}
+                            <Collapsible.Content>
+                                <VStack align="stretch" pl={4} pt={2} gap={1}>
+                                    {groupData.items.map((item: any) => {
+                                        const isActive = pathname === item.route;
+                                        const ItemIcon = item.icon;
 
                                         return (
-                                            <Box
-                                                key={subItem.label}
-                                                px={2}
-                                                py={1}
-                                                borderRadius="md"
+                                            <HStack
+                                                key={item.route}
+                                                px={3}
+                                                py={2}
+                                                gap={3}
                                                 cursor="pointer"
-                                                bg={isActive ? "#EDE6F7" : "transparent"}
-                                                _hover={{ bg: "#F1ECFA" }}
+                                                borderRadius="20px"
+                                                bg={isActive ? "orange.50" : "transparent"}
+                                                border="1px solid"
+                                                borderColor={isActive ? "red.400" : "transparent"}
+                                                _hover={{ bg: "orange.50", color: "#444" }}
+                                                transition="all 0.2s ease"
                                                 onClick={() => {
-                                                    router.push(subItem.route);
+                                                    router.push(item.route);
                                                     if (!isDesktop) onClose();
                                                 }}
                                             >
+                                                <Icon
+                                                    as={ItemIcon}
+                                                    boxSize={4}
+                                                    color={isActive ? "blue.600" : "white.900"}
+                                                />
                                                 <Text
                                                     fontSize="sm"
                                                     fontWeight={isActive ? 600 : 400}
+                                                    color={isActive ? "#222" : undefined}
                                                 >
-                                                    {subItem.label}
+                                                    {item.label}
                                                 </Text>
-                                            </Box>
+                                            </HStack>
                                         );
                                     })}
                                 </VStack>
-                            </Box>
-                        </Collapsible.Content>
-                    </Collapsible.Root>
-
-                ))}
+                            </Collapsible.Content>
+                        </Collapsible.Root>
+                    );
+                })}
             </VStack>
         </Box>
     );
 
     return isDesktop ? (
-        <Box w="250px" position="fixed" left={0} h="100%" bg="gray.50">
+        <Box position="fixed" left={0} h="100%">
             {Content}
         </Box>
     ) : (
@@ -94,4 +166,5 @@ const Sidebar = ({ isOpen, onClose }: any) => {
         </Drawer.Root>
     );
 };
-export default  Sidebar;
+
+export default Sidebar;

@@ -59,7 +59,7 @@ export const CompanyService = {
         const formData = new FormData();
         formData.append("company", new Blob([JSON.stringify(payload)], { type: "application/json" }));
         if (logo) formData.append("logo", logo);
-        const { data } = await axiosInstance.put(`/company/updateAll`, formData, {
+        const { data } = await axiosInstance.patch(`/company/update`, formData, {
             headers: { "Content-Type": "multipart/form-data" },
         });
         return data;

@@ -34,10 +34,14 @@ import {
 import ScrollToTop from "@/component/scroll/ScrollToTop";
 import { CreateCompanyPayload, Company } from "@/service/CompanyService";
 import { toastCreated, toastError, toastLoaded, toastUpdated, toastUploaded } from "@/component/toast/toast";
+import { useItems } from "@/hooks/item/useItems";
 
-function CompanyMaster() {
+
+function OrnamentMaster() {
+
     const { theme } = useTheme();
-
+  const { data: items, isLoading:itemLoading } = useItems();
+  console.log(items,'items')
     /* -------------------- API HOOKS -------------------- */
     const { data, isLoading } = useAllCompanies();
     const companies = data?.data ?? [];
@@ -163,24 +167,50 @@ function CompanyMaster() {
                 {/* ---------------- FORM ---------------- */}
                 <GridItem>
                     <VStack bg={theme.colors.formColor} p={4} borderRadius="xl" border="1px solid #eef">
+
                         <Text fontSize="lg" fontWeight="600" >
-                            Company Creation
+                            Ornament Opening
                         </Text>
 
                         <Fieldset.Root size="sm" width="100%">
                             <Fieldset.Content>
                                 <Grid templateColumns="repeat(2,1fr)" gap={2}>
                                     <Field.Root>
-                                        <Field.Label>Company Id</Field.Label>
-                                        <Input
-                                            value={form.COMPANYID}
-                                            disabled={!!editId}   // ✅ lock during edit
-                                            onChange={(e) => handleChange("COMPANYID", e.target.value)}
-                                        />
+                                        <Field.Label>Item Name</Field.Label>
+
+                                        <NativeSelect.Root>
+                                            <NativeSelect.Field
+                                                value={form.COMPANYID}
+                                                onChange={(e) => handleChange("COMPANYNAME", e.target.value)}
+                                                css={{
+                                                    height: "44px",
+                                                    paddingInline: "12px",
+                                                    backgroundColor: "white",
+                                                    color: "#111827",
+                                                    border: "1px solid #E5E7EB",
+                                                    borderRadius: "12px",
+                                                    fontSize: "14px",
+                                                    transition: "all 0.15s ease",
+
+                                                 
+                                                }}
+                                            >
+                                                <option value="">Select item</option>
+
+                                                {items?.map((item:any) => (
+                                                    <option key={item.itemId} value={item.itemName}>
+                                                        {item.itemName}
+                                                    </option>
+                                                ))}
+                                            </NativeSelect.Field>
+
+                                            <NativeSelect.Indicator />
+                                        </NativeSelect.Root>
                                     </Field.Root>
 
+
                                     <Field.Root>
-                                        <Field.Label>Company Name</Field.Label>
+                                        <Field.Label>Pieces(Pcs)</Field.Label>
                                         <Input
                                             value={form.COMPANYNAME}
                                             onChange={(e) => handleChange("COMPANYNAME", e.target.value)}
@@ -188,63 +218,52 @@ function CompanyMaster() {
                                     </Field.Root>
 
                                     <Field.Root>
-                                        <Field.Label>Cost Id</Field.Label>
+                                        <Field.Label>Gross Wt</Field.Label>
                                         <Input
                                             value={form.COSTID}
                                             onChange={(e) => handleChange("COSTID", e.target.value)}
                                         />
                                     </Field.Root>
-                                    <Field.Root gridColumn="span 2">
-                                        <Field.Label>Address</Field.Label>
-                                        <Textarea
-                                            value={form.ADDRESS1}
-                                            onChange={(e) => handleChange("ADDRESS1", e.target.value)}
+                                    <Field.Root >
+                                        <Field.Label>Net Wt</Field.Label>
+                                        <Input
+                                            value={form.COSTID}
+                                            onChange={(e) => handleChange("COSTID", e.target.value)}
                                         />
                                     </Field.Root>
 
                                     <Field.Root>
-                                        <Field.Label>State</Field.Label>
-                                        <NativeSelect.Root>
-                                            <NativeSelect.Field
-                                                value={form.ACTIVE}
-                                                onChange={(e) => handleChange("ACTIVE", e.target.value)}
-                                            >
-                                                <For each={stateItems.items}>
-                                                    {(item) => (
-                                                        <option key={item.value} value={item.value}>
-                                                            {item.label}
-                                                        </option>
-                                                    )}
-                                                </For>
-                                            </NativeSelect.Field>
-                                            <NativeSelect.Indicator />
-                                        </NativeSelect.Root>
+                                        <Field.Label>Touch</Field.Label>
+                                        <Input
+                                            value={form.COSTID}
+                                            onChange={(e) => handleChange("COSTID", e.target.value)}
+                                        />
                                     </Field.Root>
                                     
                                     <Field.Root>
 
-                                        <Field.Label>Area Code</Field.Label>
+                                        <Field.Label>Pure</Field.Label>
                                         <Input
                                             value={form.AREACODE}
                                             onChange={(e) => handleChange("AREACODE", e.target.value)}
                                         />
                                     </Field.Root>
                                     <Field.Root>
-                                        <Field.Label>Mobile</Field.Label>
+                                        <Field.Label>Stone Cash</Field.Label>
                                         <Input
                                             value={form.PHONE}
                                             onChange={(e) => handleChange("PHONE", e.target.value)}
                                         />
                                     </Field.Root>
                                     <Field.Root>
-                                        <Field.Label>Email</Field.Label>
+                                        <Field.Label>A.T</Field.Label>
                                         <Input
                                             value={form.EMAIL}
                                             onChange={(e) => handleChange("EMAIL", e.target.value)}
                                         />
                                     </Field.Root>
                                     <Field.Root>
-                                        <Field.Label>GSTIN</Field.Label>
+                                        <Field.Label>Cash</Field.Label>
                                         <Input
                                             value={form.GSTNO}
                                             onChange={(e) => handleChange("GSTNO", e.target.value)}
@@ -252,7 +271,7 @@ function CompanyMaster() {
                                     </Field.Root>
 
                                     
-
+{/* 
                                     <Field.Root>
                                         <Field.Label>Active</Field.Label>
                                         <NativeSelect.Root>
@@ -270,7 +289,7 @@ function CompanyMaster() {
                                             </NativeSelect.Field>
                                             <NativeSelect.Indicator />
                                         </NativeSelect.Root>
-                                    </Field.Root>
+                                    </Field.Root> */}
                                 </Grid>
                             </Fieldset.Content>
                         </Fieldset.Root>
@@ -295,16 +314,17 @@ function CompanyMaster() {
                 <GridItem>
                     <Box bg={theme.colors.formColor} p={4} borderRadius="xl" border="1px solid #eef">
                         <Text fontWeight="bold" mb={2}>
-                            Company Details
+                           Ornament Details
                         </Text>
 
                         <Table.ScrollArea>
                             <Table.Root size="sm">
                                 <Table.Header>
                                     <Table.Row bg="blue.800">
+                                        <Table.ColumnHeader color="white">S.No</Table.ColumnHeader>
                                         <Table.ColumnHeader color="white">ID</Table.ColumnHeader>
-                                        <Table.ColumnHeader color="white">Name</Table.ColumnHeader>
-                                        <Table.ColumnHeader color="white">GST</Table.ColumnHeader>
+                                        <Table.ColumnHeader color="white">Item Name</Table.ColumnHeader>
+                                
                                         <Table.ColumnHeader color="white">Active</Table.ColumnHeader>
                                         <Table.ColumnHeader color="white" >
                                             Action
@@ -312,17 +332,19 @@ function CompanyMaster() {
                                     </Table.Row>
                                 </Table.Header>
 
-                                <Table.Body bg={theme.colors.primary}>
+                                {/* <Table.Body bg={theme.colors.primary}>
                                     {isLoading ? (
                                         <Table.Row>
                                             <Table.Cell colSpan={5}>Loading...</Table.Cell>
                                         </Table.Row>
                                     ) : (
-                                        companies.map((item) => (
+                                        companies.map((item ,index) => (
                                             <Table.Row key={item.COMPANYID} bg={theme.colors.primary}>
+                                         
+                                                <Table.Cell>{index+1}</Table.Cell>
                                                 <Table.Cell>{item.COMPANYID}</Table.Cell>
                                                 <Table.Cell>{item.COMPANYNAME}</Table.Cell>
-                                                <Table.Cell>{item.GSTNO}</Table.Cell>
+                                              
                                                 <Table.Cell>{item.ACTIVE}</Table.Cell>
                                                 <Table.Cell  justifyContent="center" alignItems="center">
                                                     <FaEdit
@@ -334,7 +356,7 @@ function CompanyMaster() {
                                             </Table.Row>
                                         ))
                                     )}
-                                </Table.Body>
+                                </Table.Body> */}
                             </Table.Root>
                         </Table.ScrollArea>
                     </Box>
@@ -344,4 +366,4 @@ function CompanyMaster() {
     );
 }
 
-export default CompanyMaster;
+export default OrnamentMaster;
