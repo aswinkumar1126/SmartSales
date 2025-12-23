@@ -23,10 +23,10 @@ import { FiSun, FiMoon } from "react-icons/fi";
      };
     return (
         <Box bg={theme.colors.accient} borderBottom="1px solid" borderColor="gray.200" color={theme.colors.whiteColor} p={4} position="sticky" top="0" zIndex={2} >
-            <Box display="flex" justifyContent="space-between" alignItems="center" >
+            <Box display="flex"  flexDirection='column' css={{sm:{flexDirection:'row' } }} justifyContent="space-between"  alignItems="center" >
             <HStack >
                 {!isDesktop && (
-                    <IconButton aria-label="Open Menu" onClick={onOpenMenu}>
+                    <IconButton aria-label="Open Menu" bg={theme.colors.whiteColor} color={theme.colors.accient} size="xs" onClick={onOpenMenu}>
                         <FiMenu />
                     </IconButton>
                 )}

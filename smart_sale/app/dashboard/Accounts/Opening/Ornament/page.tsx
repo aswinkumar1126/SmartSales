@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
     Box,
     Button,
@@ -10,148 +10,190 @@ import {
     Grid,
     GridItem,
     HStack,
-    Stack,
     Fieldset,
     Field,
     NativeSelect,
-    Textarea,
-    createListCollection,
-    For,
+    Select,
+    Portal,
+    createListCollection
 } from "@chakra-ui/react";
 import { Table } from "@chakra-ui/react/table";
 import { AiOutlineSave } from "react-icons/ai";
 import { IoIosExit } from "react-icons/io";
 import { FaEdit } from "react-icons/fa";
-import { Toaster, toaster } from "@/components/ui/toaster";
+
+import { Toaster } from "@/components/ui/toaster";
+import ScrollToTop from "@/component/scroll/ScrollToTop";
+import { toastCreated, toastLoaded, toastUpdated } from "@/component/toast/toast";
+
 import { useTheme } from "@/context/theme/themeContext";
 import { fontVariables } from "@/context/theme/font";
-import {
-    useAllCompanies,
-    useCreateCompany,
-    useUpdateCompany,   // ✅ add this
-} from "@/hooks/company/useCompany";
-
-import ScrollToTop from "@/component/scroll/ScrollToTop";
-import { CreateCompanyPayload, Company } from "@/service/CompanyService";
-import { toastCreated, toastError, toastLoaded, toastUpdated, toastUploaded } from "@/component/toast/toast";
+import { ItemMast } from "@/types/item/item";
+import { normalizeItem } from "@/utils/normalize/normalizeItem";
 import { useItems } from "@/hooks/item/useItems";
+import {
+    useOrnamentData,
+    useOrnamentDataById,
+    useCreateOrnament,
+    useUpdateOrnament,
+} from "@/hooks/ornament/useOrnamentData";
+
+import { OrnamentPayload ,OrnamentFormData } from "@/types/ornament/ornament";
+import { formatToFixed } from "@/utils/format/numberFormat";
+import { parseFixedNumber } from "@/utils/format/numberInput";
+import { CustomTable } from "@/component/table/CustomTable";
 
 
 function OrnamentMaster() {
-
     const { theme } = useTheme();
-  const { data: items, isLoading:itemLoading } = useItems();
-  console.log(items,'items')
-    /* -------------------- API HOOKS -------------------- */
-    const { data, isLoading } = useAllCompanies();
-    const companies = data?.data ?? [];
 
+    /* -------------------- DATA -------------------- */
+    const { data: itemsData } = useItems();
 
-    const { mutate: createCompany, isPending } = useCreateCompany();
-    const { mutate: updateCompany, isPending: isUpdating } = useUpdateCompany();
+    const { data: ornamentList, isLoading } = useOrnamentData();
 
+    const ornaments = Array.isArray(ornamentList?.data)
+        ? ornamentList.data
+        : [];
+    const items: ItemMast[] = (itemsData?.items ?? []).map(normalizeItem);
+    console.log(items, 'items')
     /* -------------------- FORM STATE -------------------- */
-    const [form, setForm] = useState<CreateCompanyPayload>({
-        COMPANYID: "",
-        COMPANYNAME: "",
-        COSTID: "",
-        ADDRESS1: "",
-        AREACODE: "",
-        PHONE: "",
-        EMAIL: "",
-        GSTNO: "",
-        ACTIVE: "Y",
-        STATEID: 1,
+    const [form, setForm] = useState<OrnamentFormData>({
+        itemId:  "",   // ✅ NOT null
+        pcs: "",
+        grswt: "",
+        netwt: "",
+        touch: "",
+        pure: "",
+        openCash:"",
+        stoneCash:"",
+    });
+    const [higlightedId, setHiglightedId] =useState<Number>();
+
+
+    const [editId, setEditId] = useState<number | null>(null);
+    console.log(editId ,'editId')
+    /* -------------------- EDIT FETCH -------------------- */
+    const { data: editResponse } = useOrnamentDataById(editId!);
+
+    /* -------------------- MUTATIONS -------------------- */
+    const { mutate: createOrnament, isPending } = useCreateOrnament();
+    const { mutate: updateOrnament, isPending: isUpdating } = useUpdateOrnament();
+
+
+    /* -------------------- EFFECT: LOAD EDIT DATA -------------------- */
+    useEffect(() => {
+        if (!editResponse?.data) return;
+
+        const o = editResponse.data;
+
+        setForm({
+            itemId: String(o.itemId) || "",
+            pcs: String(o.pcs) || "",
+            grswt: String(o.grswt) || "",
+            netwt: String(o.netwt) || "",
+            touch: String(o.touch) || "",
+            pure: String(o.pure) || "",
+            openCash: String(o.openCash) || "",
+            stoneCash: String(o.stoneCash) || "",
+        });
+    }, [editResponse]);
+
+    const itemCollection = createListCollection({
+        items: items.map((item: any) => ({
+            label: item.itemName,       // what user sees
+            value: String(item.itemId), // MUST be string
+        })),
+    });
+    /* -------------------- HELPERS -------------------- */
+    const handleChange =
+        (field: keyof OrnamentFormData) =>
+            (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+                setForm(prev => ({
+                    ...prev,
+                    [field]: e.target.value,
+                }));
+            };
+
+
+    const toPayload = (form: OrnamentFormData): OrnamentPayload => ({
+        itemId: Number(form.itemId),
+        pcs: Number(form.pcs),
+        grswt: Number(form.grswt),
+        netwt: Number(form.netwt),
+        touch: Number(form.touch),
+        pure: Number(form.pure),
+        openCash: Number(form.openCash),
+        stoneCash: Number(form.stoneCash),
     });
 
-    const [logoFile, setLogoFile] = useState<File>();
-    const [imagePreview, setImagePreview] = useState<string | null>(null);
-    const [editId, setEditId] = useState<string | null>(null);
-
-    /* -------------------- SELECT OPTIONS -------------------- */
-    const activeStatus = createListCollection({
-        items: [
-            { label: "YES", value: "Y" },
-            { label: "NO", value: "N" },
-        ],
-    });
-
-    const stateItems = createListCollection({
-        items: [
-            { label: "TAMILNADU" ,value :'TAMILNADU'},
-          
-        ],
-    });
-
-
-    /* -------------------- HANDLERS -------------------- */
-    const handleChange = (field: keyof CreateCompanyPayload, value: any) => {
-        setForm((prev) => ({ ...prev, [field]: value }));
-    };
-
-    const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (file) {
-            setLogoFile(file);
-            setImagePreview(URL.createObjectURL(file));
-        }
-    };
-
-    const handleSave = () => {
-        if (editId) {
-            // 🔄 UPDATE (PUT)
-            updateCompany({
-                id: editId,
-                payload: form,
-                logo: logoFile,
-            });
- 
-
-        } else {
-            // ➕ CREATE (POST)
-            createCompany({
-                payload: form,
-                logo: logoFile,
-            });
-      
-        }
-
-        // reset form after save
+    const resetForm = () => {
         setEditId(null);
-        setLogoFile(undefined);
-        setImagePreview(null);
-
         setForm({
-            COMPANYID: "",
-            COMPANYNAME: "",
-            COSTID: "",
-            ADDRESS1: "",
-            AREACODE: "",
-            PHONE: "",
-            EMAIL: "",
-            GSTNO: "",
-            ACTIVE: "Y",
-            STATEID: 1,
+            itemId: "",
+            pcs: "",
+            grswt:"",
+            netwt: "",
+            touch: "",
+            pure: "",
+            openCash: "",
+            stoneCash: "",
         });
     };
 
-    const handleEdit = (company: Company) => {
-        setEditId(company.COMPANYID);
-        setForm({
-            COMPANYID: company.COMPANYID,
-            COMPANYNAME: company.COMPANYNAME,
-            COSTID: company.COSTID ?? "",
-            ADDRESS1: company.ADDRESS1 ?? "",
-            AREACODE: company.AREACODE ?? "",
-            PHONE: company.PHONE ?? "",
-            EMAIL: company.EMAIL ?? "",
-            GSTNO: company.GSTNO ?? "",
-            ACTIVE: company.ACTIVE,
-            STATEID: company.STATEID ?? 1,
-        });
+    useEffect(() => {
+   if(!higlightedId) {
+    return;
+   }
+    const timer = setTimeout(() => {
+        setHiglightedId(undefined);
+    }, 3000); // Highlight for 3 seconds
+    return () => clearTimeout(timer);
+
+    }, [higlightedId]);
+    
+    /* -------------------- SAVE -------------------- */
+    const handleSave = () => {
+        const payload = toPayload(form);
+
+        if (editId) {
+            updateOrnament(
+                { id: editId, ornamentData: payload },
+                { onSuccess:()=> {
+                    resetForm;
+                    setHiglightedId(Number(editId));
+                }
+                  
+                }
+            );
+        } else {
+            createOrnament(payload, { onSuccess: resetForm });
+        }
+    };
+
+
+    /* -------------------- EDIT -------------------- */
+    const handleEdit = (ornament: any) => {
+       
+
+        setEditId(ornament.sno); // ✅ IMPORTANT: SNO
         ScrollToTop();
-        toastLoaded("Company");
+        toastLoaded("Ornament");
     };
+
+    /*----------Table Columns ---------- */
+
+    const OrnamentTableColumn =[
+        {key:'sno' , label:'S.NO'},
+        {key:'itemId' , label:'Item Id'},
+        {key:'itemName' , label:'Item Name'},
+        {key:'pcs' , label:'Pcs'},
+        {key:'action' , label:'Actions'},
+    ]
+
+
+
+
 
     /* -------------------- UI -------------------- */
     return (
@@ -160,136 +202,127 @@ function OrnamentMaster() {
             fontFamily="var(--font-lustria)"
             bg={theme.colors.primary}
             color={theme.colors.secondary}
-        
         >
             <Toaster />
+
             <Grid templateColumns={{ base: "1fr", lg: "1fr 1fr" }} gap={4}>
                 {/* ---------------- FORM ---------------- */}
                 <GridItem>
-                    <VStack bg={theme.colors.formColor} p={4} borderRadius="xl" border="1px solid #eef">
-
-                        <Text fontSize="lg" fontWeight="600" >
+                    <VStack
+                        bg={theme.colors.formColor}
+                        p={4}
+                        borderRadius="xl"
+                        border="1px solid #eef"
+                    >
+                        <Text fontSize="lg" fontWeight="600">
                             Ornament Opening
                         </Text>
 
                         <Fieldset.Root size="sm" width="100%">
                             <Fieldset.Content>
-                                <Grid templateColumns="repeat(2,1fr)" gap={2}>
+                                <Grid templateColumns="repeat(2,1fr)" gap={3}>
                                     <Field.Root>
                                         <Field.Label>Item Name</Field.Label>
 
-                                        <NativeSelect.Root>
-                                            <NativeSelect.Field
-                                                value={form.COMPANYID}
-                                                onChange={(e) => handleChange("COMPANYNAME", e.target.value)}
-                                                css={{
-                                                    height: "44px",
-                                                    paddingInline: "12px",
-                                                    backgroundColor: "white",
-                                                    color: "#111827",
-                                                    border: "1px solid #E5E7EB",
-                                                    borderRadius: "12px",
-                                                    fontSize: "14px",
-                                                    transition: "all 0.15s ease",
+                                        <Select.Root
+                                            collection={itemCollection}
+                                            size="sm"
+                                            value={form.itemId ? [form.itemId] : []}
+                                            onValueChange={(details) =>
+                                                setForm(prev => ({
+                                                    ...prev,
+                                                    itemId: details.value[0] || ""
+                                                }))
+                                            }
+                                        >
+                                            <Select.HiddenSelect />
 
-                                                 
-                                                }}
-                                            >
-                                                <option value="">Select item</option>
+                                            <Select.Control>
+                                                <Select.Trigger>
+                                                    <Select.ValueText placeholder="Select Item" />
+                                                </Select.Trigger>
+                                                <Select.IndicatorGroup>
+                                                    <Select.Indicator />
+                                                </Select.IndicatorGroup>
+                                            </Select.Control>
 
-                                                {items?.map((item:any) => (
-                                                    <option key={item.itemId} value={item.itemName}>
-                                                        {item.itemName}
-                                                    </option>
-                                                ))}
-                                            </NativeSelect.Field>
-
-                                            <NativeSelect.Indicator />
-                                        </NativeSelect.Root>
+                                            <Portal>
+                                                <Select.Positioner>
+                                                    <Select.Content>
+                                                        {itemCollection.items.map((item:any) => (
+                                                            <Select.Item key={item.value} item={item}>
+                                                                {item.label}
+                                                                <Select.ItemIndicator />
+                                                            </Select.Item>
+                                                        ))}
+                                                    </Select.Content>
+                                                </Select.Positioner>
+                                            </Portal>
+                                        </Select.Root>
                                     </Field.Root>
 
-
                                     <Field.Root>
-                                        <Field.Label>Pieces(Pcs)</Field.Label>
+                                        <Field.Label>Pieces</Field.Label>
                                         <Input
-                                            value={form.COMPANYNAME}
-                                            onChange={(e) => handleChange("COMPANYNAME", e.target.value)}
+                                            value={form.pcs}
+                            
+                                            onChange={handleChange("pcs")}
                                         />
                                     </Field.Root>
 
                                     <Field.Root>
                                         <Field.Label>Gross Wt</Field.Label>
                                         <Input
-                                            value={form.COSTID}
-                                            onChange={(e) => handleChange("COSTID", e.target.value)}
+                                         
+                                            value={form.grswt}
+                                            onChange={handleChange("grswt")}
                                         />
                                     </Field.Root>
-                                    <Field.Root >
+
+                                    <Field.Root>
                                         <Field.Label>Net Wt</Field.Label>
                                         <Input
-                                            value={form.COSTID}
-                                            onChange={(e) => handleChange("COSTID", e.target.value)}
+                                         
+                                            value={form.netwt}
+                                            onChange={handleChange("netwt")}
                                         />
                                     </Field.Root>
 
                                     <Field.Root>
                                         <Field.Label>Touch</Field.Label>
                                         <Input
-                                            value={form.COSTID}
-                                            onChange={(e) => handleChange("COSTID", e.target.value)}
+                                     
+                                            value={form.touch}
+                                            onChange={handleChange("touch")}
                                         />
                                     </Field.Root>
-                                    
-                                    <Field.Root>
 
+                                    <Field.Root>
                                         <Field.Label>Pure</Field.Label>
                                         <Input
-                                            value={form.AREACODE}
-                                            onChange={(e) => handleChange("AREACODE", e.target.value)}
+                                           
+                                            value={form.pure}
+                                            onChange={handleChange("pure")}
                                         />
                                     </Field.Root>
+
                                     <Field.Root>
                                         <Field.Label>Stone Cash</Field.Label>
                                         <Input
-                                            value={form.PHONE}
-                                            onChange={(e) => handleChange("PHONE", e.target.value)}
-                                        />
-                                    </Field.Root>
-                                    <Field.Root>
-                                        <Field.Label>A.T</Field.Label>
-                                        <Input
-                                            value={form.EMAIL}
-                                            onChange={(e) => handleChange("EMAIL", e.target.value)}
-                                        />
-                                    </Field.Root>
-                                    <Field.Root>
-                                        <Field.Label>Cash</Field.Label>
-                                        <Input
-                                            value={form.GSTNO}
-                                            onChange={(e) => handleChange("GSTNO", e.target.value)}
+                                        
+                                            value={form.stoneCash}
+                                            onChange={handleChange("stoneCash")}
                                         />
                                     </Field.Root>
 
-                                    
-{/* 
                                     <Field.Root>
-                                        <Field.Label>Active</Field.Label>
-                                        <NativeSelect.Root>
-                                            <NativeSelect.Field
-                                                value={form.ACTIVE || "Y"}
-                                                onChange={(e) => handleChange("ACTIVE", e.target.value)}
-                                            >
-                                                <For each={activeStatus.items}>
-                                                    {(item) => (
-                                                        <option key={item.value} value={item.value}>
-                                                            {item.label}
-                                                        </option>
-                                                    )}
-                                                </For>
-                                            </NativeSelect.Field>
-                                            <NativeSelect.Indicator />
-                                        </NativeSelect.Root>
-                                    </Field.Root> */}
+                                        <Field.Label>Open Cash</Field.Label>
+                                        <Input
+                                          
+                                            value={form.openCash}
+                                            onChange={handleChange("openCash")}
+                                        />
+                                    </Field.Root>
                                 </Grid>
                             </Fieldset.Content>
                         </Fieldset.Root>
@@ -298,67 +331,104 @@ function OrnamentMaster() {
                             <Button
                                 size="sm"
                                 colorPalette="blue"
-                                loading={isPending}
+                                loading={isPending || isUpdating}
                                 onClick={handleSave}
                             >
-                                <AiOutlineSave /> Save
+                                <AiOutlineSave /> {editId ? "Update" : "Save"}
                             </Button>
-                            <Button size="sm" colorPalette="blue">
-                                <IoIosExit /> Exit
+                            <Button size="sm"  colorPalette="blue" onClick={resetForm}>
+                                <IoIosExit /> Clear
                             </Button>
                         </HStack>
                     </VStack>
                 </GridItem>
 
                 {/* ---------------- TABLE ---------------- */}
-                <GridItem>
-                    <Box bg={theme.colors.formColor} p={4} borderRadius="xl" border="1px solid #eef">
+                <GridItem minW={0}>
+                    <Box
+                        bg={theme.colors.formColor}
+                        p={4}
+                        borderRadius="xl"
+                        border="1px solid #eef"
+                    >
                         <Text fontWeight="bold" mb={2}>
-                           Ornament Details
+                            Ornament Details
                         </Text>
 
-                        <Table.ScrollArea>
+                        {/* <Table.ScrollArea>
                             <Table.Root size="sm">
                                 <Table.Header>
                                     <Table.Row bg="blue.800">
-                                        <Table.ColumnHeader color="white">S.No</Table.ColumnHeader>
-                                        <Table.ColumnHeader color="white">ID</Table.ColumnHeader>
-                                        <Table.ColumnHeader color="white">Item Name</Table.ColumnHeader>
-                                
-                                        <Table.ColumnHeader color="white">Active</Table.ColumnHeader>
-                                        <Table.ColumnHeader color="white" >
+                                        <Table.ColumnHeader color="white">
+                                            S.No
+                                        </Table.ColumnHeader>
+                                        <Table.ColumnHeader color="white">
+                                            Item Id
+                                        </Table.ColumnHeader>
+                                        <Table.ColumnHeader color="white">
+                                            Item Name
+                                        </Table.ColumnHeader>
+                                        <Table.ColumnHeader color="white">
+                                            Pcs
+                                        </Table.ColumnHeader>
+                                        <Table.ColumnHeader color="white">
                                             Action
                                         </Table.ColumnHeader>
                                     </Table.Row>
                                 </Table.Header>
 
-                                {/* <Table.Body bg={theme.colors.primary}>
+                                <Table.Body>
                                     {isLoading ? (
                                         <Table.Row>
-                                            <Table.Cell colSpan={5}>Loading...</Table.Cell>
+                                            <Table.Cell colSpan={5}>
+                                                Loading...
+                                            </Table.Cell>
                                         </Table.Row>
                                     ) : (
-                                        companies.map((item ,index) => (
-                                            <Table.Row key={item.COMPANYID} bg={theme.colors.primary}>
-                                         
-                                                <Table.Cell>{index+1}</Table.Cell>
-                                                <Table.Cell>{item.COMPANYID}</Table.Cell>
-                                                <Table.Cell>{item.COMPANYNAME}</Table.Cell>
-                                              
-                                                <Table.Cell>{item.ACTIVE}</Table.Cell>
-                                                <Table.Cell  justifyContent="center" alignItems="center">
+                                        ornaments.map((item: any, index: number) => (
+                                            <Table.Row key={item.sno}>
+                                                <Table.Cell>{index + 1}</Table.Cell>
+                                                <Table.Cell>{item.itemId}</Table.Cell>
+                                                <Table.Cell>{item.itemName}</Table.Cell>
+                                                <Table.Cell>{item.pcs}</Table.Cell>
+                                                <Table.Cell>
                                                     <FaEdit
                                                         cursor="pointer"
-                                                        onClick={() => { handleEdit(item) }}
-
+                                                        onClick={() => handleEdit(item)}
                                                     />
                                                 </Table.Cell>
                                             </Table.Row>
                                         ))
                                     )}
-                                </Table.Body> */}
+                                </Table.Body>
                             </Table.Root>
-                        </Table.ScrollArea>
+                        </Table.ScrollArea> */}
+                        <CustomTable 
+                            columns={OrnamentTableColumn}
+                            data={ornaments}
+                            size="sm"
+                            headerBg='blue.800'
+                            bodyBg={theme.colors.primary}
+                            headerColor='white'
+                            emptyText="No Ornaments available"
+                            rowIdKey='sno'
+                            highlightRowId={higlightedId ? Number(higlightedId) : null}
+                            renderRow={(ornament: any, index: number)=>(
+                                <>
+                                 <Table.Cell>{index + 1}</Table.Cell>
+                                    <Table.Cell>{ornament.itemId}</Table.Cell>
+                                    <Table.Cell>{ornament.itemName}</Table.Cell>
+                                                <Table.Cell>{ornament.pcs}</Table.Cell>
+                                                <Table.Cell>
+                                                    <FaEdit
+                                                        cursor="pointer"
+                                                        onClick={() => handleEdit(ornament)}
+                                                    />
+                                                </Table.Cell>
+                                </>
+    )}
+                            
+                            />
                     </Box>
                 </GridItem>
             </Grid>

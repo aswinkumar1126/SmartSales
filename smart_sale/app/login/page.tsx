@@ -27,13 +27,14 @@ import { useAuth } from "@/hooks/auth/useAuth";
 import { Toaster, toaster } from "@/components/ui/toaster";
 import { LuUser } from "react-icons/lu";
 import { RiLockPasswordLine } from 'react-icons/ri'
+import { useRouter } from "next/navigation";
 
 
 export default function LoginPage() {
     const { theme } = useTheme();
     const { login } = useAuth();
-
-    const carouselImages = [
+    const router =useRouter();
+      const carouselImages = [
         "https://www.canadianminingjournal.com/wp-content/uploads/2021/09/Polyus_Olympiada_20180915_img_7698.jpg",
         "https://cdn1.matadornetwork.com/blogs/1/2022/11/alaska-gold-pan-close-up.jpg",
         "https://www.goldmarket.fr/wp-content/uploads/2025/09/44dd529dthumbnail-1110x550.jpeg.webp",
@@ -52,37 +53,27 @@ export default function LoginPage() {
 
     // Handle submit
     const onSubmit = async (formData: any) => {
-        const res = await authService.login({
+        const success = await login({
             username: formData.username,
             password: formData.password,
         });
-        console.log(res);
-        if (!res.data) {
-            console.log(res ,' login ')
-            toaster.create({
-                type: "error",
-                title: res.message || "Login failed",
-            });
-            return;
-        }
-        const token = res.data?.userId;
-        if (!token) {
-            toaster.create({
-                type: "error",
-                title: "Token missing in response",
-            });
-            return;
-        }
 
-        await login(token);
+        if (!success) {
+            toaster.create({
+                type: "error",
+                title: "Invalid username or password",
+            });
+            return;
+        }
 
         toaster.create({
             type: "success",
             title: "Login successful",
         });
 
-        window.location.href = "/";
+        router.replace("/");
     };
+
 
     return (
         <>

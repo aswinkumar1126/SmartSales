@@ -9,15 +9,25 @@ const useProtected = () => {
     const router = useRouter();
     const pathname = usePathname();
 
-    const publicRoutes = ["/login"]; // Add more public routes if needed
+    const publicRoutes = ["/login"];
 
     useEffect(() => {
-        // Skip redirect if route is public
      
-       if (!loading && !user && pathname && !publicRoutes.includes(pathname)) {
-            router.push("/login");
-        } 
-    }, [loading, user, pathname]);
+
+        // ⛔ Don't redirect while loading
+        if (loading) return;
+
+        // ✅ Allow public routes
+        if (pathname && publicRoutes.includes(pathname)) {
+            return;
+        }
+
+        // 🔄 Redirect unauthenticated users
+        if (!user) {
+            console.warn("🚫 No user detected — redirecting to /login");
+            router.replace("/login"); // replace prevents back-navigation
+        }
+    }, [loading, user, pathname, router]);
 
     return { user, loading };
 };

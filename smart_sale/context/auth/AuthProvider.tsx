@@ -3,106 +3,97 @@
 import React, { useEffect, useState } from "react";
 import { AuthContext, AuthUser } from "./AuthContext";
 import { authService, LoginPayload } from "@/service/AuthService";
-import { CompanyService , Company } from "@/service/CompanyService";
+import { CompanyService, Company } from "@/service/CompanyService";
 
 export default function AuthProvider({ children }: { children: React.ReactNode }) {
     const [user, setUser] = useState<AuthUser | null>(null);
-    const [token, setToken] = useState<string | null>(null);
+    const [userId, setUserId] = useState<number | null>(null);
     const [loading, setLoading] = useState(true);
     const [companiesData, setCompaniesData] = useState<Company[]>([]);
-    const [useUserId ,setUseUserId]  = useState();
 
-    // Fetch user after token exists
+    // 🔄 fetch user
     const refreshUser = async (uid: number) => {
-        if (!token) return;
-
         setLoading(true);
         const res = await authService.me(uid);
 
         if (res.success) {
             setUser(res.data);
         } else {
-            setUser(null);
-            localStorage.removeItem("token");
+            logout();
         }
-
         setLoading(false);
     };
+
+    // 🏢 company list
     const company = async () => {
-        setLoading(true);
         try {
             const res = await CompanyService.getAll();
             setCompaniesData(res.data || []);
-        } catch (e) {
-            console.error("Company fetch failed", e);
+        } catch {
             setCompaniesData([]);
-        } finally {
-            setLoading(false);
         }
     };
 
-    // ✅ AUTO CALL ON MOUNT
     useEffect(() => {
         company();
     }, []);
-    // When user logs in
-    const login = async (payload: LoginPayload) => {
+
+    // 🔐 LOGIN
+    const login = async (payload: LoginPayload): Promise<boolean> => {
         setLoading(true);
 
         const res = await authService.login(payload);
-        console.log("Login service result 👉", res);
 
-        if (!res.success || !res.data) {
+
+        if (!res.success || !res.data?.userId) {
             setLoading(false);
-            return;
+            return false;
         }
 
-        const { userId, token } = res.data;
+        const uid = res.data.userId;
 
-        // 🔐 Save session
-        localStorage.setItem("token", token);
-        localStorage.setItem("userId", String(userId));
+        // 🔐 secure session
+        sessionStorage.setItem("userId", String(uid));
+        setUserId(uid);
 
-        setToken(token);
-        setUseUserId(userId);
-
-        // 👤 Load user + company
-        await refreshUser(userId);
+        await refreshUser(uid);
 
         setLoading(false);
+        return true; // ✅ IMPORTANT
     };
 
-
+    // 🚪 LOGOUT
     const logout = () => {
         setUser(null);
-        setToken(null);
-        localStorage.removeItem("token");
+        setUserId(null);
+        sessionStorage.removeItem("userId");
         window.location.href = "/login";
     };
 
-    // Load token on mount
+    // ♻ restore session
     useEffect(() => {
-        const storedToken = localStorage.getItem("token");
-        if (storedToken) setToken(storedToken);
-    }, []);
-
-    // Fetch user when token loads
-    useEffect(() => {
-        if (token) {
-            const storedUserId = localStorage.getItem("userId");
-            if (storedUserId) {
-                refreshUser(Number(storedUserId));
-            } else {
-                setLoading(false);
-            }
+        const storedUserId = sessionStorage.getItem("userId");
+        if (storedUserId) {
+            const uid = Number(storedUserId);
+            setUserId(uid);
+            refreshUser(uid);
         } else {
             setLoading(false);
         }
-    }, [token]);
+    }, []);
 
     return (
         <AuthContext.Provider
-            value={{ user, token, loading, login, logout, refreshUser, company, companiesData }}
+            value={{
+                user,
+                userId,
+                loading,
+                login,
+                logout,
+                refreshUser,
+                company,
+                companiesData,
+            }}
         >
             {children}
         </AuthContext.Provider>

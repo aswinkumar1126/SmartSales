@@ -17,31 +17,30 @@ export const MetalService = {
     // GET all metals
     getAllMetals: async (): Promise<Metal[]> => {
         const { data } = await axiosInstance.get("/metal");
-        return data;
+        return data.data;
     },
 
     // GET active metals
     getActiveMetals: async (): Promise<Metal[]> => {
         const { data } = await axiosInstance.get("/metal/active");
-        return data;
+        return data.data;
     },
 
     // GET metal by id
     getMetalById: async (id: string): Promise<Metal> => {
         const { data } = await axiosInstance.get(`/metal/${id}`);
-        return data;
+        return data.data;
     },
 
     // POST create metal
     createMetal: async (metal: Metal): Promise<Metal> => {
-        console.log(metal)
         const { data } = await axiosInstance.post("/metal", metal);
-        return data;
+        return data.data;
     },
 
     // PUT update metal
     updateMetal: async (id: string, metal: Metal): Promise<Metal> => {
         const { data } = await axiosInstance.put(`/metal/${id}`, metal);
-        return data;
+        return data.data;
     },
 };

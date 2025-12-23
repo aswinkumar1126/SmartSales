@@ -10,13 +10,11 @@ import {
     Input,
     Button,
     HStack,
-    Stack,
     Fieldset,
     Field,
+    Table,
     NativeSelect,
-    IconButton,
 } from "@chakra-ui/react";
-import { Table } from "@chakra-ui/react/table";
 import { FiEdit } from "react-icons/fi";
 import { AiOutlineSave } from "react-icons/ai";
 import { IoIosExit } from "react-icons/io";
@@ -28,39 +26,62 @@ import { useItems } from "@/hooks/item/useItems";
 import { useItemById } from "@/hooks/item/useItemById";
 import { useCreateItem } from "@/hooks/item/useCreateItem";
 import { useUpdateItem } from "@/hooks/item/useUpdateItem";
-import { Toaster ,toaster } from "@/components/ui/toaster";
+import { useAllCompanies } from "@/hooks/company/useCompany";
+import { useAllMetals } from "@/hooks/metal/useMetals";
+
+
+import { CustomTable, TableColumn } from "@/component/table/CustomTable";
+import { Toaster } from "@/components/ui/toaster";
 import { fontVariables } from "@/context/theme/font";
 import { useTheme } from "@/context/theme/themeContext";
 import scrollToTop from "@/component/scroll/ScrollToTop";
-
+import { toastLoaded } from "@/component/toast/toast";
 
 export default function ItemMasterPage() {
-
     /* ===================== STATE ===================== */
     const [editingId, setEditingId] = useState<number | null>(null);
     const topRef = React.useRef<HTMLDivElement>(null);
     const [highlightId, setHighlightId] = useState<number | null>(null);
-
-
+    const [errors, setErrors] = useState<{ itemName?: string }>({});
     const [form, setForm] = useState<ItemMast>({
+        itemId: 0,
         itemName: "",
-        metalId: "G",
+        metalId: "",
         metalRate: null,
         pieceRate: null,
         active: "Y",
+        companyId: "",
     } as ItemMast);
-    const {theme} =useTheme();
+
+    const { theme } = useTheme();
 
     /* ===================== HOOKS ===================== */
-    const { data, isLoading } = useItems();
+    const { data: itemsData, isLoading } = useItems();
+    const { data: companyData } = useAllCompanies();
+    const { data: metalData } = useAllMetals();
+    console.log(itemsData,'itemsData')
     const { data: itemById } = useItemById(editingId ?? undefined);
+    console.log(itemById ,'itemById')
     const { mutate: createItem, isPending: creating } = useCreateItem();
     const { mutate: updateItem, isPending: updating } = useUpdateItem();
 
-    /* ===================== NORMALIZE LIST ===================== */
-    const items: ItemMast[] = (data ?? []).map(normalizeItem);
+    /* ===================== NORMALIZE ===================== */
 
-    console.log(data ,'items')
+    
+    const items: ItemMast[] = (itemsData?.items ?? []).map(normalizeItem);
+    const companies = Array.isArray(companyData?.data) ? companyData.data : [];
+    const metals = Array.isArray(metalData) ? metalData : [];
+
+    /* ===================== AUTO ITEM ID ===================== */
+    useEffect(() => {
+        if (!editingId) {
+            setForm((prev) => ({
+                ...prev,
+                itemId: itemsData?.nextId ?? '0',
+                metalId: metals[0]?.metalId ?? "G", // default first metal
+            }));
+        }
+    }, [items.length, metals, editingId]);
 
     /* ===================== LOAD ITEM FOR EDIT ===================== */
     useEffect(() => {
@@ -68,57 +89,76 @@ export default function ItemMasterPage() {
         setForm(normalizeItem(itemById));
     }, [itemById]);
 
-   scrollToTop();
-
-
     /* ===================== HANDLERS ===================== */
     const onChange =
         (key: keyof ItemMast) =>
             (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
                 setForm((prev) => ({ ...prev, [key]: e.target.value }));
+
+                // clear field error softly
+                if (key === "itemName" && errors.itemName) {
+                    setErrors((prev) => ({ ...prev, itemName: undefined }));
+                }
             };
+
 
     const resetForm = () => {
         setEditingId(null);
-        setForm({
+        setForm((prev) => ({
+            ...prev,
+            itemId: Number(items.length + 1),
             itemName: "",
-            metalId: "G",
+            metalId: metals[0]?.metalId ?? "G",
             metalRate: null,
             pieceRate: null,
             active: "Y",
-        } as ItemMast);
+            companyId: "",
+        }));
     };
 
+   useEffect(()=>{
+    if(!highlightId) {
+        return;
+    }
+    const timer = setTimeout(() => {
+        setHighlightId(null);
+    }, 2500);
+    return () => clearTimeout(timer);
+   })
+   
     const handleSave = () => {
-        if (!form.itemName?.trim()) return;
+        const newErrors: typeof errors = {};
 
-        const affectedId = editingId ?? form.itemId ?? null;
+        if (!form.itemName?.trim()) {
+            newErrors.itemName = "Item Name is required";
+        }
+
+        setErrors(newErrors);
+
+        // ⛔ Stop save if errors exist
+        if (Object.keys(newErrors).length > 0) return;
 
         if (editingId) {
             updateItem(form, {
                 onSuccess: () => {
                     resetForm();
-
                     scrollToTop();
-
-
-                    setHighlightId(affectedId);
+                    setHighlightId(editingId);
                     setTimeout(() => setHighlightId(null), 2500);
-
-                   
                 },
             });
         } else {
-            createItem(form, {
+            const payload = { ...form };
+            delete payload.itemId;
+
+            console.log(payload , 'creating item')
+
+            createItem(payload, {
                 onSuccess: (res: any) => {
                     resetForm();
-
                     scrollToTop();
-
-
                     setHighlightId(res?.itemId ?? null);
                     setTimeout(() => setHighlightId(null), 2500);
-
                 },
             });
         }
@@ -131,160 +171,159 @@ export default function ItemMasterPage() {
     ];
 
     const calTypeOptions = [
-        { label: "Weight Based", value: "WT" },
-        { label: "Piece Based", value: "PCS" },
-        { label: "Rate Based", value: "RT" },
+        { label: "Weight Based", value: "W" },
+        { label: "Metal Based", value: "M" },
+        { label: "Rate Based", value: "R" },
     ];
 
     const stockTypeOptions = [
-        { label: "Tagged", value: "N" },
-        { label: "Non Tagged", value: "NT" },
-        
+        { label: "Tagged", value: "T" },
+        { label: "Non Tagged", value: "N" },
     ];
 
-    const itemCounterOptions = [
-        { label: "Counter 1", value: "C1" },
-        { label: "Counter 2", value: "C2" },
+    const tableColumns: TableColumn[] = [
+        { key: "itemName", label: "Item" },
+        { key: "metalId", label: "Metal" },
+        { key: "pieceRate", label: "Rate", align: "end" },
+        { key: "active", label: "Active", align: "center" },
+        { key: "action", label: "Action", align: "center" },
     ];
-
 
     /* ===================== UI ===================== */
     return (
-        <Box p={4} ref={topRef}> 
+        <Box p={4} ref={topRef}>
             <Toaster />
             <Grid
                 templateColumns={{ base: "1fr", lg: "1fr 1.3fr" }}
                 gap={4}
-                className={fontVariables} fontFamily="var(--font-lustria)"
+                className={fontVariables}
+                fontFamily="var(--font-lustria)"
             >
                 {/* ================= LEFT FORM ================= */}
                 <GridItem>
                     <VStack
-                        bg={theme.colors.formColor} 
+                        bg={theme.colors.formColor}
                         p={4}
                         borderRadius="xl"
                         boxShadow="0 0 20px rgba(212,212,212,0.2)"
                         border="1px solid #eee"
                     >
-                        <Text fontSize="lg" fontWeight="600"  alignItems="center" justifyContent="center">
+                        <Text fontSize="lg" fontWeight="600" alignItems="center" justifyContent="center">
                             {editingId ? "Edit Item" : "Item Master"}
                         </Text>
 
                         <Fieldset.Root>
                             <Fieldset.Content gap={3}>
-                                {/* 1. Company */}
                                 <Field.Root>
+                                    {/* Item ID (auto-generated) */}
+                                    <HStack >
+                                    <Field.Root flex={1}>
+                                        <Field.Label>Item ID</Field.Label>
+                                        <Input type="number" value={form.itemId} disabled  width='100px' />
+                                    </Field.Root>
+                                        <Field.Root flex={1} invalid={!!errors.itemName}>
+                                            <Field.Label>Item Name</Field.Label>
+
+                                            <Input
+                                                value={form.itemName ?? ""}
+                                                onChange={onChange("itemName")}
+                                                borderColor={errors.itemName ? "red.300" : undefined}
+                                                _focus={{
+                                                    borderColor: errors.itemName ? "red.400" : "blue.400",
+                                                    boxShadow: errors.itemName
+                                                        ? "0 0 0 1px var(--chakra-colors-red-400)"
+                                                        : undefined,
+                                                }}
+                                                minWidth={{sm:'150px',md:'250px'}}
+
+                                            />
+
+                                            {errors.itemName && (
+                                                <Text fontSize="sm" color="red.500" mt={1}>
+                                                    {errors.itemName}
+                                                </Text>
+                                            )}
+                                        </Field.Root>
+                                </HStack>
+                                   
+                                    {/* Company */}
                                     <Field.Label>Company</Field.Label>
                                     <NativeSelect.Root>
                                         <NativeSelect.Field
-                                            value={form.companyId ?? "SMJ"}
-                                            onChange={(e) => onChange("companyId")(e)}
+                                            value={form.companyId ?? ""}
+                                            onChange={onChange("companyId")}
                                             css={{
-                                                backgroundColor: '#eee',
+                                                backgroundColor: "#eee",
                                                 color: "#111827",
                                                 border: "1px solid #e5e7eb",
                                                 borderRadius: "12px",
                                                 height: "42px",
                                             }}
                                         >
-                                            <option value="SMJ">SMJ</option>
+                                            <option value="" disabled>
+                                                Select Company
+                                            </option>
+
+                                            {companies.map((c) => (
+                                                <option key={c.COMPANYID} value={c.COMPANYID}>
+                                                    {c.COMPANYNAME}
+                                                </option>
+                                            ))}
                                         </NativeSelect.Field>
                                         <NativeSelect.Indicator />
                                     </NativeSelect.Root>
                                 </Field.Root>
 
-                                {/* 2. Metal + 3. Category */}
+                                {/* Metal */}
                                 <HStack gap={3}>
                                     <Field.Root flex={1}>
                                         <Field.Label>Metal</Field.Label>
                                         <NativeSelect.Root>
                                             <NativeSelect.Field
-                                                value={form.metalId ?? "G"}
-                                                onChange={(e) => onChange("metalId")(e)}
+                                                value={form.metalId ?? ""}
+                                                onChange={onChange("metalId")}
                                                 css={{
-                                                    backgroundColor: '#eee',
+                                                    backgroundColor: "#eee",
                                                     color: "#111827",
                                                     border: "1px solid #e5e7eb",
                                                     borderRadius: "12px",
                                                     height: "42px",
                                                 }}
                                             >
-                                                <option value="G">Gold</option>
-                                                <option value="S">Silver</option>
+                                                {metals.map((m:any) => (
+                                                    <option key={m.metalId} value={m.metalId}>
+                                                        {m.metalName}
+                                                    </option>
+                                                ))}
                                             </NativeSelect.Field>
                                             <NativeSelect.Indicator />
                                         </NativeSelect.Root>
                                     </Field.Root>
-{/* 
-                                    <Field.Root flex={1}>
-                                        <Field.Label>Category</Field.Label>
-                                        <NativeSelect.Root>
-                                            <NativeSelect.Field
-                                                value={form.catCode ?? "C01"}
-                                                onChange={(e) => onChange("catCode")(e)}
-                                                css={{
-                                                    backgroundColor: '#eee',
-                                                    color: "#111827",
-                                                    border: "1px solid #e5e7eb",
-                                                    borderRadius: "12px",
-                                                    height: "42px",
-                                                }}
-                                            >
-                                                <option value="C01">Jewellery</option>
-                                                <option value="C02">Other</option>
-                                            </NativeSelect.Field>
-                                            <NativeSelect.Indicator />
-                                        </NativeSelect.Root>
-                                    </Field.Root> */}
                                 </HStack>
 
-                                {/* 4. Item ID + HSN */}
+                                {/* HSN + Item Name + Short Name */}
                                 <HStack gap={3}>
-                                    <Field.Root flex={1}>
-                                        <Field.Label>Item ID</Field.Label>
-                                        <Input
-                                            type="number"
-                                            value={form.itemId ?? ""}
-                                            onChange={onChange("itemId")}
-                                            disabled={!!(editingId ?? "")}
-                                        />
-                                    </Field.Root>
-
                                     <Field.Root flex={1}>
                                         <Field.Label>HSN Code</Field.Label>
                                         <Input value={form.hsn ?? ""} onChange={onChange("hsn")} />
                                     </Field.Root>
+                                    
+                                    <Field.Root flex={1}>
+                                        <Field.Label>Short Name</Field.Label>
+                                        <Input value={form.shortName ?? ""} onChange={onChange("shortName")} />
+                                    </Field.Root>
                                 </HStack>
-                                <HStack gap={3}>
-                                {/* 5. Item Name */}
 
-                                <Field.Root>
-                                    <Field.Label>Item Name</Field.Label>
-                                    <Input
-                                        value={form.itemName ?? ""}
-                                        onChange={onChange("itemName")}
-                                    />
-                                </Field.Root>
-
-                                {/* 6. Short Name */}
-                                <Field.Root>
-                                    <Field.Label>Short Name</Field.Label>
-                                    <Input
-                                        value={form.shortName ?? ""}
-                                        onChange={onChange("shortName")}
-                                    />
-                                </Field.Root>
-                                </HStack>
-                                {/* 7. Stock Type + 9. Cal Type */}
+                                {/* Stock Type + Cal Type */}
                                 <HStack gap={3}>
                                     <Field.Root flex={1}>
                                         <Field.Label>Stock Type</Field.Label>
                                         <NativeSelect.Root>
                                             <NativeSelect.Field
                                                 value={form.stockType ?? "N"}
-                                                onChange={(e) => onChange("stockType")(e)}
+                                                onChange={onChange("stockType")}
                                                 css={{
-                                                    backgroundColor: '#eee',
+                                                    backgroundColor: "#eee",
                                                     color: "#111827",
                                                     border: "1px solid #e5e7eb",
                                                     borderRadius: "12px",
@@ -300,15 +339,14 @@ export default function ItemMasterPage() {
                                             <NativeSelect.Indicator />
                                         </NativeSelect.Root>
                                     </Field.Root>
-
                                     <Field.Root flex={1}>
                                         <Field.Label>Cal Type</Field.Label>
                                         <NativeSelect.Root>
                                             <NativeSelect.Field
-                                                value={form.calType ?? "WT"}
-                                                onChange={(e) => onChange("calType")(e)}
+                                                value={form.calType ?? "W"}
+                                                onChange={onChange("calType")}
                                                 css={{
-                                                    backgroundColor: '#eee',
+                                                    backgroundColor: "#eee",
                                                     color: "#111827",
                                                     border: "1px solid #e5e7eb",
                                                     borderRadius: "12px",
@@ -326,220 +364,16 @@ export default function ItemMasterPage() {
                                     </Field.Root>
                                 </HStack>
 
-                                {/* 8. Sub Item + 10. Style Code */}
-                                {/* <HStack gap={3}>
-                                    {["subItem", "styleCode"].map((k) => (
-                                        <Field.Root key={k} flex={1}>
-                                            <Field.Label>{k === "subItem" ? "Sub Item" : "Style Code"}</Field.Label>
-                                            <NativeSelect.Root>
-                                                <NativeSelect.Field
-                                                    value={(form as any)[k] ?? "N"}
-                                                    onChange={(e) => onChange(k as keyof ItemMast)(e)}
-                                                    css={{
-                                                        backgroundColor: '#eee',
-                                                        color: "#111827",
-                                                        border: "1px solid #e5e7eb",
-                                                        borderRadius: "12px",
-                                                        height: "42px",
-                                                    }}
-                                                >
-                                                    {yesNoOptions.map((o) => (
-                                                        <option key={o.value} value={o.value}>
-                                                            {o.label}
-                                                        </option>
-                                                    ))}
-                                                </NativeSelect.Field>
-                                                <NativeSelect.Indicator />
-                                            </NativeSelect.Root>
-                                        </Field.Root>
-                                    ))}
-                                </HStack> */}
-
-                                {/* 11. Gross Weight */}
-                                <Field.Root>
-                                    <Field.Label>Gross Weight</Field.Label>
-                                    <Input
-                                        type="number"
-                                        value={form.grsWt ?? ""}
-                                        onChange={onChange("grsWt")}
-                                    />
-                                </Field.Root>
-
-                                {/* 12. Extra Wt + 13. Tag Wt + 14. Cover Wt */}
-                                {/* <HStack gap={3}>
-                                    {["ExtraWt", "TagWt", "CoverWt"].map((k) => (
-                                        <Field.Root key={k} flex={1}>
-                                            <Field.Label>{k.replace("Wt", " Wt")}</Field.Label>
-                                            <NativeSelect.Root>
-                                                <NativeSelect.Field
-                                                    value={(form as any) [k] ?? "N"}
-                                                    onChange={(e) => onChange(k as keyof ItemMast)(e)}
-                                                    css={{
-                                                        backgroundColor: '#eee',
-                                                        color: "#111827",
-                                                        border: "1px solid #e5e7eb",
-                                                        borderRadius: "12px",
-                                                        height: "42px",
-                                                    }}
-                                                >
-                                                    {yesNoOptions.map((o) => (
-                                                        <option key={o.value} value={o.value}>
-                                                            {o.label}
-                                                        </option>
-                                                    ))}
-                                                </NativeSelect.Field>
-                                                <NativeSelect.Indicator />
-                                            </NativeSelect.Root>
-                                        </Field.Root>
-                                    ))}
-                                </HStack> */}
-
-                                {/* 15. Value Added Type */}
-                                {/* <Field.Root>
-                                    <Field.Label>Value Added Type</Field.Label>
-                                    <NativeSelect.Root>
-                                        <NativeSelect.Field
-                                            value={form.valueAddedType ?? "F"}
-                                            onChange={(e) => onChange("valueAddedType")(e)}
-                                            css={{
-                                                backgroundColor: '#eee',
-                                                color: "#111827",
-                                                border: "1px solid #e5e7eb",
-                                                borderRadius: "12px",
-                                                height: "42px",
-                                            }}
-                                        >
-                                            <option value="F">Fixed</option>
-                                            <option value="P">Percentage</option>
-                                        </NativeSelect.Field>
-                                        <NativeSelect.Indicator />
-                                    </NativeSelect.Root>
-                                </Field.Root> */}
-
-                                {/* 16. Table Code */}
-                                {/* <Field.Root>
-                                    <Field.Label>Table Code</Field.Label>
-                                    <Input
-                                        value={form.tableCode ?? ""}
-                                        onChange={onChange("tableCode")}
-                                    />
-                                </Field.Root> */}
-
-                                {/* 17. Studded Stone */}
-                                {/* <Field.Root>
-                                    <Field.Label>Studded Stone</Field.Label>
-                                    <NativeSelect.Root>
-                                        <NativeSelect.Field
-                                            value={form.studdedStone ?? "N"}
-                                            onChange={(e) => onChange("studdedStone")(e)}
-                                            css={{
-                                                backgroundColor: '#eee',
-                                                color: "#111827",
-                                                border: "1px solid #e5e7eb",
-                                                borderRadius: "12px",
-                                                height: "42px",
-                                            }}
-                                        >
-                                            {yesNoOptions.map((o) => (
-                                                <option key={o.value} value={o.value}>
-                                                    {o.label}
-                                                </option>
-                                            ))}
-                                        </NativeSelect.Field>
-                                        <NativeSelect.Indicator />
-                                    </NativeSelect.Root>
-                                </Field.Root> */}
-
-                                {/* 18. ItemSize + Service + Touch */}
-                                {/* <HStack gap={3}>
-                                    {(["ItemSize", "Service", "TouchBased"] as const).map((k) => (
-                                        <Field.Root key={k} flex={1}>
-                                            <Field.Label>{k}</Field.Label>
-                                            <NativeSelect.Root>
-                                                <NativeSelect.Field
-                                                    value={(form as any)[k] ?? "N"}
-                                                    onChange={(e) => onChange(k as keyof ItemMast)(e)}
-                                                    css={{
-                                                        backgroundColor: '#eee',
-                                                        color: "#111827",
-                                                        border: "1px solid #e5e7eb",
-                                                        borderRadius: "12px",
-                                                        height: "42px",
-                                                    }}
-                                                >
-                                                    {yesNoOptions.map((o) => (
-                                                        <option key={o.value} value={o.value}>
-                                                            {o.label}
-                                                        </option>
-                                                    ))}
-                                                </NativeSelect.Field>
-                                                <NativeSelect.Indicator />
-                                            </NativeSelect.Root>
-                                        </Field.Root>
-                                    ))}
-                                </HStack> */}
+                                {/* Active */}
                                 <HStack gap={2}>
-                                {/* 19. Item Counter */}
-
-                                <Field.Root>
-                                    <Field.Label>Item Counter</Field.Label>
-                                    <NativeSelect.Root>
-                                        <NativeSelect.Field
-                                            value={form.defaultCounter ?? "C1"}
-                                            onChange={(e) => onChange("defaultCounter")(e)}
-                                            css={{
-                                                backgroundColor: '#eee',
-                                                color: "#111827",
-                                                border: "1px solid #e5e7eb",
-                                                borderRadius: "12px",
-                                                height: "42px",
-                                            }}
-                                        >
-                                            {itemCounterOptions.map((o) => (
-                                                <option key={o.value} value={o.value}>
-                                                    {o.label}
-                                                </option>
-                                            ))}
-                                        </NativeSelect.Field>
-                                        <NativeSelect.Indicator />
-                                    </NativeSelect.Root>
-                                </Field.Root>
-
-                                {/* 20. Active */}
-                                <Field.Root>
-                                    <Field.Label>Active</Field.Label>
-                                    <NativeSelect.Root>
-                                        <NativeSelect.Field
-                                            value={form.active ?? "Y"}
-                                            onChange={(e) => onChange("active")(e)}
-                                            css={{
-                                                backgroundColor: '#eee',
-                                                color: "#111827",
-                                                border: "1px solid #e5e7eb",
-                                                borderRadius: "12px",
-                                                height: "42px",
-                                            }}
-                                        >
-                                            {yesNoOptions.map((o) => (
-                                                <option key={o.value} value={o.value}>
-                                                    {o.label}
-                                                </option>
-                                            ))}
-                                        </NativeSelect.Field>
-                                        <NativeSelect.Indicator />
-                                    </NativeSelect.Root>
-                                </Field.Root>
-                                 </HStack>  
-                                {/* 21. Tag Type + Item Type */}
-                                {/* <HStack gap={3}>
-                                    {/* <Field.Root flex={1}>
-                                        <Field.Label>Tag Type</Field.Label>
+                                    <Field.Root>
+                                        <Field.Label>Active</Field.Label>
                                         <NativeSelect.Root>
                                             <NativeSelect.Field
-                                                value={form.tagType ?? "N"}
-                                                onChange={(e) => onChange("tagType")(e)}
+                                                value={form.active ?? "Y"}
+                                                onChange={onChange("active")}
                                                 css={{
-                                                    backgroundColor: '#eee',
+                                                    backgroundColor: "#eee",
                                                     color: "#111827",
                                                     border: "1px solid #e5e7eb",
                                                     borderRadius: "12px",
@@ -554,16 +388,8 @@ export default function ItemMasterPage() {
                                             </NativeSelect.Field>
                                             <NativeSelect.Indicator />
                                         </NativeSelect.Root>
-                                    </Field.Root> */}
-
-                                    {/* <Field.Root flex={1}>
-                                        <Field.Label>Item Type</Field.Label>
-                                        <Input
-                                            value={form.itemType ?? ""}
-                                            onChange={onChange("itemType")}
-                                        />
-                                    </Field.Root> */}
-                               {/* / </HStack> */}
+                                    </Field.Root>
+                                </HStack>
 
                                 {/* ACTIONS */}
                                 <HStack justify="center" pt={4}>
@@ -572,9 +398,11 @@ export default function ItemMasterPage() {
                                         colorPalette="blue"
                                         onClick={handleSave}
                                         loading={creating || updating}
+                                        disabled={!form.itemName?.trim()}
                                     >
                                         <AiOutlineSave /> Save
                                     </Button>
+
                                     <Button size="sm" onClick={resetForm} colorPalette="blue">
                                         <IoIosExit /> Clear
                                     </Button>
@@ -585,7 +413,7 @@ export default function ItemMasterPage() {
                 </GridItem>
 
                 {/* ================= RIGHT TABLE ================= */}
-                <GridItem>
+                <GridItem minW={0}>
                     <Box
                         bg={theme.colors.formColor}
                         p={4}
@@ -596,53 +424,38 @@ export default function ItemMasterPage() {
                         <Text fontSize="lg" fontWeight="600" mb={2}>
                             Item List
                         </Text>
-
-                        <Table.ScrollArea maxH="70vh">
-                            <Table.Root size="sm" stickyHeader>
-                                <Table.Header>
-                                    <Table.Row bg="blue.800">
-                                        <Table.ColumnHeader color="white">Item</Table.ColumnHeader>
-                                        <Table.ColumnHeader color="white">Metal</Table.ColumnHeader>
-                                        <Table.ColumnHeader color="white">Rate</Table.ColumnHeader>
-                                        <Table.ColumnHeader color="white">Active</Table.ColumnHeader>
-                                        <Table.ColumnHeader color="white" textAlign="center">
-                                            Action
-                                        </Table.ColumnHeader>
-                                    </Table.Row>
-                                </Table.Header>
-
-                                <Table.Body>
-                                    {items.map((item) => (
-                                        <Table.Row key={item.itemId} className={highlightId === item.itemId ? "blink-row" : ""} bg={theme.colors.primary}
-                                            border="1px solid #eee">
-                                            <Table.Cell>{item.itemName}</Table.Cell>
-                                            <Table.Cell>{item.metalId}</Table.Cell>
-                                            <Table.Cell>{item.pieceRate}</Table.Cell>
-                                            <Table.Cell>
-                                                {item.active === "Y" ? "YES" : "NO"}
-                                            </Table.Cell>
-                                            <Table.Cell  justifyItems="center">
-                                              
-                                                    <FiEdit width={4} 
-                                                        height={4}
-                                                    style={{ cursor: "pointer" }}
-                                                        aria-label="Edit"
-                                                        onClick={() => {
-                                                            setEditingId(item.itemId!);
-
-                                                            // Scroll to top
-                                                            scrollToTop();
-
-                                                           
-                                                        }}  />
-                                        
-
-                                            </Table.Cell>
-                                        </Table.Row>
-                                    ))}
-                                </Table.Body>
-                            </Table.Root>
-                        </Table.ScrollArea>
+                        <CustomTable
+                            columns={tableColumns}
+                            data={items}
+                            headerBg="blue.800"
+                            headerColor="white"
+                            bodyBg={theme.colors.primary}
+                            borderColor="#eee"
+                            emptyText="No items available"
+                            size="sm"
+                            rowIdKey="itemId"
+                            highlightRowId={highlightId}
+                            renderRow={(item) => (
+                                <>
+                                    <Table.Cell>{item.itemName}</Table.Cell>
+                                    <Table.Cell>{metals.find((m:any) => m.metalId === item.metalId)?.metalName ?? item.metalId}</Table.Cell>
+                                    <Table.Cell textAlign="end">{item.pieceRate}</Table.Cell>
+                                    <Table.Cell textAlign="center">{item.active === "Y" ? "YES" : "NO"}</Table.Cell>
+                                    <Table.Cell textAlign="center">
+                                        <Box display="flex" justifyContent="center">
+                                            <FiEdit
+                                                onClick={() => {
+                                                    setEditingId(item.itemId!);
+                                                    scrollToTop();
+                                                    toastLoaded("Item")
+                                                }}
+                                                style={{ cursor: "pointer" }}
+                                            />
+                                        </Box>
+                                    </Table.Cell>
+                                </>
+                            )}
+                        />
                     </Box>
                 </GridItem>
             </Grid>

@@ -41,12 +41,13 @@ import { FiEdit } from "react-icons/fi";
 import { useUserById } from "@/hooks/user/useUserById";
 import { toastLoaded } from "@/component/toast/toast";
 import { Toaster } from "@/components/ui/toaster";
+import { CustomTable } from "@/component/table/CustomTable";
 
 
 export default function UserMasters() {
     const { theme } = useTheme();
     const {user} = useAuth();
-    console.log(user ,'user');
+    //console.log(user ,'user');
 
 
     const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -58,26 +59,36 @@ export default function UserMasters() {
         username: "",
         pwd: "",
         active: "Y",
-        costId: "SM",
+        userCostId: "",
         billing: false,
     });
 
     const [selectedImage, setSelectedImage] = useState<File | undefined>();
     const [editingUserId, setEditingUserId] = useState<number | null>(null);
+    const [highlightId ,setHighlightedId] = useState<Number > ();
+
     const { data, isLoading } = useUsers();
 
-    console.log(data?.data ,'user');
+    const costCenters = [
+        { id: 1, value: "SJ", label: "Head Office" },
+        { id: 2, value: "DG", label: "Showroom 1" },
+        { id: 3, value: "SM", label: "Showroom 2" },
+    ];
+    //console.log(data?.data ,'user');
 
     const normalizeUser = (u: any): UserMaster => ({
         userId: u.USERID,
         username: u.USERNAME,
-        pwd: "",
+        pwd: u.PWD,
         active: u.ACTIVE,
-        costId: u.USERCOSTID,
+        costId: u.COSTID,
+        userCostId: u.USERCOSTID,
         billing: u.BILLING,
         userImage: u.USERIMAGE,
     });
     const users: UserMaster[] = (data?.data ?? []).map(normalizeUser);
+
+
     const { data: userByIdData, isLoading: loadingUser } = useUserById(editingUserId ?? undefined);
 
     const { mutate: createUser, isPending: creating } = useCreateUser();
@@ -100,11 +111,21 @@ export default function UserMasters() {
         if (!userByIdData?.data) return;
 
         const { pwd, ...formData } = normalizeUser(userByIdData.data);
-        console.log(formData)
+        //console.log(formData)
         setForm({ ...formData, pwd: "" });
         setImagePreview(formData.userImage ?? null);
         setConfirmPwd("");
     }, [userByIdData]);
+
+    useEffect(()=>{
+        if(!highlightId) {
+            return;
+        }
+        const timer = setTimeout(() => {
+            setHighlightedId(undefined);
+        }, 3000);
+        return () => clearTimeout(timer);
+    })
 
 
     const handleSave = () => {
@@ -146,13 +167,19 @@ export default function UserMasters() {
         if (editingUserId) {
             patchUser(
                 { userId: editingUserId, updates: payload },
-                { onSuccess: resetForm }
+                { onSuccess:()=>{
+                    resetForm;
+                    setHighlightedId(editingUserId);
+                }  }
             );
         } else {
             createUser(
                 
                 { user: payload, image: selectedImage },
-                { onSuccess: resetForm }
+                { onSuccess:()=>{
+                    resetForm;
+                    setEditingUserId(payload.USERID)
+                }  }
             );
         }
     };
@@ -163,7 +190,7 @@ export default function UserMasters() {
             username: "",
             pwd: "",
             active: "Y",
-            costId: "H01",
+            userCostId: "",
             billing: false,
         });
         setConfirmPwd("");
@@ -182,11 +209,11 @@ export default function UserMasters() {
             username: item.username,
             pwd: "", // never preload password
             active: item.active,
-            costId: item.costId,
+            userCostId: item.costId,
             billing: item.billing ?? false,
         });
 
-        setImagePreview(item.userImage ?? null);
+        setImagePreview(item.userImage ?? "");
         setSelectedImage(undefined);
     };
 
@@ -204,6 +231,15 @@ export default function UserMasters() {
             { label: "NO", value: "N" }
         ]
     });
+
+    const UserMasterColumn = [
+        {key: "userId", label: "User Id"},
+        { key: "username", label: "User Name"},
+        {key: "costId", label: "Cost Id"},
+        {key: "active", label: "Active" ,align:'center' as const},
+        {key: "action", label: "Actions" ,align:'center' as const},
+
+    ]
    
     return (
         <Box
@@ -306,29 +342,37 @@ export default function UserMasters() {
 
                                 {/* COST CENTRE */}
                                 <Box css={{display:'flex' ,justifyContent:'space-between' ,gap:2 }}>
-                                <Field.Root>
-                                    <Field.Label>Cost Centre</Field.Label>
 
-                                    <NativeSelect.Root>
+                                    <Field.Root>
+                                        <Field.Label>Cost Center</Field.Label>
+
+                                        <NativeSelect.Root>
                                             <NativeSelect.Field
                                                 value={form.costId}
                                                 onChange={onChange("costId")}
                                                 css={{
-                                                    backgroundColor: '#eee',
+                                                    backgroundColor: "#eee",
                                                     color: "#111827",
                                                     border: "1px solid #e5e7eb",
                                                     borderRadius: "12px",
                                                     height: "42px",
                                                 }}
                                             >
+                                          
 
-                                            <option value="SM">Head Office</option>
-                                            <option value="SM2">Showroom 1</option>
-                                            <option value="SM3">Showroom 2</option>
-                                        </NativeSelect.Field>
-                                        <NativeSelect.Indicator />
-                                    </NativeSelect.Root>
-                                </Field.Root>
+                                                <For each={costCenters}>
+                                                    {(item) => (
+                                                        <option key={item.id} value={item.value}>
+                                                            {item.label}
+                                                        </option>
+                                                    )}
+                                                </For>
+                                            </NativeSelect.Field>
+
+                                            <NativeSelect.Indicator />
+                                        </NativeSelect.Root>
+                                    </Field.Root>
+
 
                                 {/* ACTIVE STATUS — USING CHAKRA SELECT v3 */}
                                 <Field.Root>
@@ -403,46 +447,32 @@ export default function UserMasters() {
 
                         <Stack gap="10">
                             
-                            <Table.ScrollArea maxW="xl" border="1px solid #eee" >
-                                <Table.Root size="sm"stickyHeader> 
-                                    <Table.Header  >
-                                            
-                                        <Table.Row css={{ background:'blue.800' , color:'white' }} color='white' >
-                                            <Table.ColumnHeader color='white' >User</Table.ColumnHeader>
-                                            <Table.ColumnHeader color='white'>Centre</Table.ColumnHeader>
-                                            <Table.ColumnHeader color='white' >Active</Table.ColumnHeader>
-                                            <Table.ColumnHeader color='white' >Action</Table.ColumnHeader>
-                                            
-                                            </Table.Row>
-                                        </Table.Header>
-                                    <Table.Body>
-                                        {users.map((item) => (
-                                            <Table.Row key={item.userId} bg={theme.colors.primary}>
-                                                <Table.Cell>{item.username}</Table.Cell>
-                                                <Table.Cell>{item.costId}</Table.Cell>
-                                                <Table.Cell>
-                                                    {item.active === "Y" ? "YES" : "NO"}
-                                                </Table.Cell>
-
-                                                {/* ACTION COLUMN */}
-                                                <Table.Cell justifyContent="center" textAlign="center">
-                                                      <FiEdit aria-label="Edit user"
-                                                       
-                                                            width={4} 
-                                                            cursor="pointer"
-                                                            height={4}
-                                                            onClick={() => {
-                                                                toastLoaded("User");
-                                                                setEditingUserId(item.userId!)} }/>
-                                                  
-                                                </Table.Cell>
-                                            </Table.Row>
-                                        ))}
-                                    </Table.Body>
-
-
-                                    </Table.Root>
-                                    </Table.ScrollArea>
+                        <CustomTable 
+                            columns={UserMasterColumn}
+                            data={users}
+                            size="sm"
+                                                   headerBg='blue.800'
+                                                   bodyBg = {theme.colors.primary}
+                                                   headerColor='white'
+                                                   emptyText="No parties available"
+                                                   rowIdKey="userId"
+                                                    highlightRowId={highlightId ? Number(highlightId) : null}
+                                                   renderRow={(user, i) => (
+                                                       <>
+                                                           {/* <Table.Cell>{i + 1}</Table.Cell> */}
+                                                           <Table.Cell>{user.userId}</Table.Cell>
+                                                           <Table.Cell>{user.username}</Table.Cell>
+                                                           <Table.Cell >{user.costId}</Table.Cell>
+                                                           <Table.Cell textAlign="center">{user.active}</Table.Cell>
+                                                           <Table.Cell>
+                                                               <Box display="flex" justifyContent="center">
+                                                                   <FiEdit onClick={() => loadUserIntoForm(user)} cursor="pointer" />
+                                                               </Box>
+                                                           </Table.Cell>
+                                                       </>
+                                                   )}
+                        
+                        />
                         </Stack>
                     </Box>
                 </GridItem>

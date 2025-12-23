@@ -9,7 +9,7 @@ export const useItemById = (id?: number) =>
         enabled: !!id,
         queryFn: async () => {
             const res = await ItemService.getById(id!);
-            toastLoaded("Item");
-            return normalizeItem(res.data);
+          
+            return normalizeItem(res.data.data);
         },
     });

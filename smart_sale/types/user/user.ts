@@ -18,7 +18,7 @@ export interface UserMaster {
 }
 
 export interface ApiResponse<T> {
-    status: "success" | "error";
+    status: "success" | "error" | boolean;
     message: string;
     data: T;
 }

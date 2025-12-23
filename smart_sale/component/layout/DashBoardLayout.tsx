@@ -7,11 +7,13 @@ import Sidebar from "./sidebar/SideBar";
 import { useMediaQuery } from "@chakra-ui/react";
 import { usePathname } from "next/navigation";
 import { useTheme } from "@/context/theme/themeContext";
+import { useSidebar } from "@/context/layout/SideBarContext";
 
-const noLayoutRoutes = ["/login"]
+const noLayoutRoutes = ["/login"];
+
 const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
-
-    const {theme} = useTheme();
+    const { theme } = useTheme();
+    const { sidebarConfig, sidebarCollapsed } = useSidebar();
     const [isOpen, setIsOpen] = useState(false);
     const [isDesktop] = useMediaQuery(["(min-width: 768px)"]);
 
@@ -20,22 +22,31 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
 
     if (noLayout) return children;
 
+    // Calculate the margin-left based on sidebar state
+    const getMainContentMargin = () => {
+        if (!isDesktop) return "0";
+        // When sidebar is collapsed, use collapsed width
+        // When sidebar is expanded, use expanded width
+        return sidebarCollapsed ? sidebarConfig.collapsedWidth : sidebarConfig.expandedWidth;
+    };
+
     return (
-        <Box >
-
+        <Box>
             <Header onOpenMenu={() => setIsOpen(true)} />
-
-            <Sidebar isOpen={isOpen} onClose={() => setIsOpen(false)} />
-
+            <Sidebar
+                isOpen={isOpen}
+                onClose={() => setIsOpen(false)}
+            />
             <Box
-                ml={isDesktop ? "250px" : "0"}
+                ml={getMainContentMargin()}
+                transition="margin-left 0.25s ease"
                 p={4}
                 bg={theme.colors.primary}
-
             >
                 {children}
             </Box>
         </Box>
     );
 };
+
 export default DashboardLayout;

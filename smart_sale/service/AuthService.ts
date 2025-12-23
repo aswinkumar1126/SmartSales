@@ -1,3 +1,4 @@
+// src/service/AuthService.ts
 import { axiosInstance } from "@/api/axiosInstance";
 
 export interface ApiResponse<T = any> {
@@ -20,25 +21,28 @@ export interface RegisterPayload {
 }
 
 export const authService = {
-    register: async (
-        data: RegisterPayload
-    ): Promise<ApiResponse> => {
+    // ✅ REGISTER (UNCHANGED)
+    register: async (data: RegisterPayload): Promise<ApiResponse> => {
         try {
             const res = await axiosInstance.post("/user/register", data);
             return { success: true, data: res.data };
         } catch (error: any) {
             return {
                 success: false,
-                message: error?.response?.data?.message || "Registration failed",
+                message:
+                    error?.response?.data?.message || "Registration failed",
                 status: error?.response?.status,
             };
         }
     },
 
+    // 🔐 LOGIN (FIXED)
     login: async (data: LoginPayload): Promise<ApiResponse> => {
         try {
-            const res = await axiosInstance.post("/user/login", data);
-            console.log("Backend login response 👉", res.data);
+            const res = await axiosInstance.post("/user/login", {
+                username: data.username,
+                password: data.password,
+            });
 
             const result = res.data;
 
@@ -46,8 +50,8 @@ export const authService = {
                 success: true,
                 message: result.message,
                 data: {
-                    userId: result.data.USERID,
-                    token: result.data.TOKEN ?? String(result.data.USERID), // fallback if no JWT
+                    userId: result.data.USERID,   // ✅ normalize
+                    active: result.data.ACTIVE,
                 },
             };
         } catch (error: any) {
@@ -56,23 +60,19 @@ export const authService = {
             return {
                 success: false,
                 message:
-                    error?.response?.data?.message ||
-                    "Login failed",
+                    error?.response?.data?.message || "Login failed",
                 status: error?.response?.status,
             };
         }
     },
 
-
+    // 👤 FETCH USER
     me: async (userId: number): Promise<ApiResponse> => {
         try {
             const res = await axiosInstance.get(`/user/${userId}`);
             return { success: true, data: res.data };
-        } catch (error: any) {
-            return {
-                success: false,
-                message: "Failed to fetch user",
-            };
+        } catch {
+            return { success: false, message: "Failed to fetch user" };
         }
     },
 };

@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, ReactNode } from "react";
+import { createContext, useContext, useState, ReactNode, useEffect } from "react";
 import {
   Building2,
   Coins,
@@ -28,12 +28,32 @@ type SidebarMenu = Record<
   Record<string, MenuGroup>
 >;
 
-const SidebarContext = createContext<any>(undefined);
+type SidebarContextType = {
+  currentSection: string;
+  setCurrentSection: (section: string) => void;
+  expandedNodes: Record<string, boolean>;
+  toggleNode: (key: string) => void;
+  menuData: SidebarMenu;
+  sidebarConfig: {
+    collapsedWidth: string;
+    expandedWidth: string;
+  };
+  sidebarCollapsed: boolean;
+  toggleSidebar: () => void;
+  updateSidebarConfig?: (config: Partial<SidebarContextType['sidebarConfig']>) => void;
+};
 
-export const useSidebar = () => useContext(SidebarContext);
+const SidebarContext = createContext<SidebarContextType | undefined>(undefined);
+
+export const useSidebar = () => {
+  const context = useContext(SidebarContext);
+  if (!context) {
+    throw new Error("useSidebar must be used within SidebarProvider");
+  }
+  return context;
+};
 
 export const SidebarProvider = ({ children }: { children: ReactNode }) => {
-
   // 👇 DUMMY DATA (Later replace with API)
   const [menuData] = useState<SidebarMenu>({
     Master: {
@@ -47,7 +67,6 @@ export const SidebarProvider = ({ children }: { children: ReactNode }) => {
           },
         ],
       },
-
       Item: {
         icon: Boxes,
         items: [
@@ -61,20 +80,22 @@ export const SidebarProvider = ({ children }: { children: ReactNode }) => {
             route: "/dashboard/Master/Item/ItemMaster",
             icon: Boxes,
           },
+          {
+            label: "Party Master",
+            route: "/dashboard/Master/Item/party",
+            icon: Users,
+          },
+          {
+            label: "Touch Master",
+            route: "/dashboard/Master/Item/touch",
+            icon: Boxes,
+          },
         ],
       },
-
       Users: {
         icon: Users,
-        items: [
-          // {
-          //   label: "User Master",
-          //   route: "/dashboard/Master/User",
-          //   icon: Users,
-          // },
-        ],
+        items: [],
       },
-
       Role: {
         icon: Shield,
         items: [
@@ -86,7 +107,6 @@ export const SidebarProvider = ({ children }: { children: ReactNode }) => {
         ],
       },
     },
-
     RateEntry: {
       GoldRate: {
         icon: DollarSign,
@@ -99,8 +119,8 @@ export const SidebarProvider = ({ children }: { children: ReactNode }) => {
         ],
       },
     },
-    Accounts:{
-      Opening :{
+    Accounts: {
+      Opening: {
         icon: Layers,
         items: [
           {
@@ -115,10 +135,41 @@ export const SidebarProvider = ({ children }: { children: ReactNode }) => {
 
   const [currentSection, setCurrentSection] = useState("Master");
   const [expandedNodes, setExpandedNodes] = useState<Record<string, boolean>>({});
+  const [sidebarConfig, setSidebarConfig] = useState({
+    collapsedWidth: "64px",
+    expandedWidth: "260px",
+  });
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
+
+  // Initialize collapsed state from localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const savedState = localStorage.getItem("sidebar-collapsed");
+      const initialState = savedState === "true";
+      setSidebarCollapsed(initialState);
+      setIsInitialized(true);
+    }
+  }, []);
 
   const toggleNode = (key: string) => {
     setExpandedNodes(prev => ({ ...prev, [key]: !prev[key] }));
   };
+
+  const toggleSidebar = () => {
+    const newState = !sidebarCollapsed;
+    setSidebarCollapsed(newState);
+    localStorage.setItem("sidebar-collapsed", newState.toString());
+  };
+
+  const updateSidebarConfig = (config: Partial<typeof sidebarConfig>) => {
+    setSidebarConfig(prev => ({ ...prev, ...config }));
+  };
+
+  // Don't render children until initialized to avoid flash of incorrect layout
+  if (!isInitialized) {
+    return null;
+  }
 
   return (
     <SidebarContext.Provider
@@ -127,7 +178,11 @@ export const SidebarProvider = ({ children }: { children: ReactNode }) => {
         setCurrentSection,
         expandedNodes,
         toggleNode,
-        menuData,  // 👈 SHARED HERE
+        menuData,
+        sidebarConfig,
+        sidebarCollapsed,
+        toggleSidebar,
+        updateSidebarConfig,
       }}
     >
       {children}

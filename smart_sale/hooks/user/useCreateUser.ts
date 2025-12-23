@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { registerUser } from "@/service/UserService";
 import { UserMaster } from "@/types/user/user";
-import { toastCreated } from "@/component/toast/toast";
+import { toastCreated ,toastError } from "@/component/toast/toast";
 
 export const useCreateUser = () => {
     const queryClient = useQueryClient();
@@ -20,7 +20,7 @@ export const useCreateUser = () => {
         },
         onError: (error) => {
             console.error("Error creating user:", error);
-            toastCreated("User")
+          toastError("User");
         }
     });
 };

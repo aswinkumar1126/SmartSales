@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState ,useEffect } from "react";
 import {
     Box,
     Button,
@@ -27,6 +27,7 @@ import { useTheme } from "@/context/theme/themeContext";
 import { fontVariables } from "@/context/theme/font";
 import {
     useAllCompanies,
+    useCompanyById,
     useCreateCompany,
     useUpdateCompany,   // ✅ add this
 } from "@/hooks/company/useCompany";
@@ -34,15 +35,18 @@ import {
 import ScrollToTop from "@/component/scroll/ScrollToTop";
 import { CreateCompanyPayload, Company } from "@/service/CompanyService";
 import { toastCreated, toastError, toastLoaded, toastUpdated, toastUploaded } from "@/component/toast/toast";
+import { CustomTable } from "@/component/table/CustomTable";
 
 function CompanyMaster() {
     const { theme } = useTheme();
 
     /* -------------------- API HOOKS -------------------- */
     const { data, isLoading } = useAllCompanies();
+ 
+
     const companies = data?.data ?? [];
 
-
+    
     const { mutate: createCompany, isPending } = useCreateCompany();
     const { mutate: updateCompany, isPending: isUpdating } = useUpdateCompany();
 
@@ -59,6 +63,7 @@ function CompanyMaster() {
         ACTIVE: "Y",
         STATEID: 1,
     });
+    const [highlightedId ,setHighlightedId] = useState<Number>()
 
     const [logoFile, setLogoFile] = useState<File>();
     const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -79,44 +84,61 @@ function CompanyMaster() {
         ],
     });
 
+    const { data: companyById } = useCompanyById(editId ?? '');
+    const company = companyById?.data;
+
+    useEffect(() => {
+        if (!company) return;
+          
+{}
+        setForm({
+            COMPANYID: company.COMPANYID,
+            COMPANYNAME: company.COMPANYNAME,
+            COSTID: company.COSTID ?? "",
+            ADDRESS1: company.ADDRESS1 ?? "",
+            AREACODE: company.AREACODE ?? "",
+            PHONE: company.PHONE ?? "",
+            EMAIL: company.EMAIL ?? "",
+            GSTNO: company.GSTNO ?? "",
+            ACTIVE: company.ACTIVE ?? "Y",
+            STATEID: company.STATEID ?? 1,
+        });
+    }, [company]);
+
+    useEffect(() => {
+        if (!company) return;
+
+        // ✅ AFTER render is fully committed
+        setTimeout(() => {
+            toastLoaded("Company");
+            ScrollToTop();
+        }, 0);
+
+
+    }, [company]);
+
+    useEffect(() => {
+        if (!highlightedId) return;
+
+        // ✅ AFTER render is fully committed
+        const timer = setTimeout(() => {
+            
+            setHighlightedId(undefined);
+        }, 3000);
+
+        return () => clearTimeout(timer);
+
+    }, [highlightedId]);
+
 
     /* -------------------- HANDLERS -------------------- */
     const handleChange = (field: keyof CreateCompanyPayload, value: any) => {
         setForm((prev) => ({ ...prev, [field]: value }));
     };
-
-    const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (file) {
-            setLogoFile(file);
-            setImagePreview(URL.createObjectURL(file));
-        }
-    };
-
-    const handleSave = () => {
-        if (editId) {
-            // 🔄 UPDATE (PUT)
-            updateCompany({
-                id: editId,
-                payload: form,
-                logo: logoFile,
-            });
- 
-
-        } else {
-            // ➕ CREATE (POST)
-            createCompany({
-                payload: form,
-                logo: logoFile,
-            });
-      
-        }
-
-        // reset form after save
+    const resetForm = () => {
         setEditId(null);
         setLogoFile(undefined);
         setImagePreview(null);
-
         setForm({
             COMPANYID: "",
             COMPANYNAME: "",
@@ -131,23 +153,66 @@ function CompanyMaster() {
         });
     };
 
-    const handleEdit = (company: Company) => {
-        setEditId(company.COMPANYID);
-        setForm({
-            COMPANYID: company.COMPANYID,
-            COMPANYNAME: company.COMPANYNAME,
-            COSTID: company.COSTID ?? "",
-            ADDRESS1: company.ADDRESS1 ?? "",
-            AREACODE: company.AREACODE ?? "",
-            PHONE: company.PHONE ?? "",
-            EMAIL: company.EMAIL ?? "",
-            GSTNO: company.GSTNO ?? "",
-            ACTIVE: company.ACTIVE,
-            STATEID: company.STATEID ?? 1,
-        });
-        ScrollToTop();
-        toastLoaded("Company");
+
+    const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            setLogoFile(file);
+            setImagePreview(URL.createObjectURL(file));
+        }
     };
+
+    const handleSave = () => {
+        if (!form.COMPANYID) {
+            toastError("Company ID is required");
+            return;
+        }
+
+        if (!form.COMPANYNAME?.trim()) {
+            toastError("Company Name is required");
+            return;
+        }
+        if(!form.COSTID?.trim()){
+            toastError("Cost Id is required");
+            return;
+        } 
+
+        if (editId) {
+            updateCompany({
+                id: editId,
+                payload: form,
+                logo: logoFile,
+            } ,{
+                onSuccess : () =>{
+                    resetForm;
+                    setHighlightedId(Number(editId));
+                }
+            }) 
+            ;
+          
+        } else {
+            createCompany({
+                payload: form,
+                logo: logoFile,
+            });
+            toastCreated("Company");
+        }
+
+        resetForm();
+    };
+
+
+    const handleEdit = (company: Company) => {
+        setEditId(company.COMPANYID); // 🔥 trigger useCompanyById
+    };
+
+    const CompanyColumn = [
+        {key:'companyId' , label:'Company Id' },
+        {key:'companyName' , label:'Company Name' },
+        {key:'costId' , label:'Cost Id' },
+        {key:'active', label:'Active'},
+        {key:'actions', label:'Actions'},
+    ];
 
     /* -------------------- UI -------------------- */
     return (
@@ -176,6 +241,7 @@ function CompanyMaster() {
                                             value={form.COMPANYID}
                                             disabled={!!editId}   // ✅ lock during edit
                                             onChange={(e) => handleChange("COMPANYID", e.target.value)}
+                                         
                                         />
                                     </Field.Root>
 
@@ -282,9 +348,9 @@ function CompanyMaster() {
                                 loading={isPending}
                                 onClick={handleSave}
                             >
-                                <AiOutlineSave /> Save
+                                <AiOutlineSave /> {editId ? "Update" : "Save"}
                             </Button>
-                            <Button size="sm" colorPalette="blue">
+                            <Button size="sm" colorPalette="blue" onClick={resetForm}>
                                 <IoIosExit /> Exit
                             </Button>
                         </HStack>
@@ -292,51 +358,38 @@ function CompanyMaster() {
                 </GridItem>
 
                 {/* ---------------- TABLE ---------------- */}
-                <GridItem>
+                <GridItem minW={0}>
                     <Box bg={theme.colors.formColor} p={4} borderRadius="xl" border="1px solid #eef">
                         <Text fontWeight="bold" mb={2}>
                             Company Details
                         </Text>
 
-                        <Table.ScrollArea>
-                            <Table.Root size="sm">
-                                <Table.Header>
-                                    <Table.Row bg="blue.800">
-                                        <Table.ColumnHeader color="white">ID</Table.ColumnHeader>
-                                        <Table.ColumnHeader color="white">Name</Table.ColumnHeader>
-                                        <Table.ColumnHeader color="white">GST</Table.ColumnHeader>
-                                        <Table.ColumnHeader color="white">Active</Table.ColumnHeader>
-                                        <Table.ColumnHeader color="white" >
-                                            Action
-                                        </Table.ColumnHeader>
-                                    </Table.Row>
-                                </Table.Header>
+                     <CustomTable 
+                            columns={CompanyColumn}
+                            data={companies}
+                            renderRow={(company) => (
+                                <>
+                                    <Table.Cell>{company.COMPANYID}</Table.Cell>
+                                    <Table.Cell>{company.COMPANYNAME}</Table.Cell>
+                                    <Table.Cell>{company.COSTID}</Table.Cell>
+                                    <Table.Cell textAlign="center">{company.ACTIVE}</Table.Cell>
+                                    <Table.Cell>
+                                        <Box display="flex" justifyContent="center">
+                                            <FaEdit onClick={() => handleEdit(company)} cursor="pointer" />
+                                        </Box>
+                                    </Table.Cell>
+                                </>
+                            )}
+                            headerBg="blue.800"
+                            headerColor="white"
+                            borderColor="white"
+                            bodyBg={theme.colors.primary}
+                            highlightRowId={highlightedId ? Number(highlightedId) : null} 
+                            rowIdKey="COMPANYID"
+                         
+                            emptyText="No companies available"
 
-                                <Table.Body bg={theme.colors.primary}>
-                                    {isLoading ? (
-                                        <Table.Row>
-                                            <Table.Cell colSpan={5}>Loading...</Table.Cell>
-                                        </Table.Row>
-                                    ) : (
-                                        companies.map((item) => (
-                                            <Table.Row key={item.COMPANYID} bg={theme.colors.primary}>
-                                                <Table.Cell>{item.COMPANYID}</Table.Cell>
-                                                <Table.Cell>{item.COMPANYNAME}</Table.Cell>
-                                                <Table.Cell>{item.GSTNO}</Table.Cell>
-                                                <Table.Cell>{item.ACTIVE}</Table.Cell>
-                                                <Table.Cell  justifyContent="center" alignItems="center">
-                                                    <FaEdit
-                                                        cursor="pointer"
-                                                        onClick={() => { handleEdit(item) }}
-
-                                                    />
-                                                </Table.Cell>
-                                            </Table.Row>
-                                        ))
-                                    )}
-                                </Table.Body>
-                            </Table.Root>
-                        </Table.ScrollArea>
+                     />
                     </Box>
                 </GridItem>
             </Grid>

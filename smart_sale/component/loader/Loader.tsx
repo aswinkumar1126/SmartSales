@@ -8,32 +8,49 @@ interface LoaderProps {
 }
 
 const Loader = ({ isLoading, fullscreen = false }: LoaderProps) => {
-    if (!isLoading) return null; // 🔥 Auto-hide when false
+    if (!isLoading) return null;
 
     if (fullscreen) {
-        // 🔥 Fullscreen overlay loader
         return (
             <Flex
                 position="fixed"
-                top={0}
-                left={0}
-                w="100vw"
-                h="100vh"
-                bg="rgba(255,255,255,0.85)"
-                backdropFilter="blur(3px)"
+                inset={0}                 // ✅ covers full screen
+                bg="rgba(255, 255, 255, 1)"
+                backdropFilter="blur(6px)"
+                css={{
+                    WebkitBackdropFilter: "blur(6px)", // ✅ Safari support
+                }}
                 align="center"
                 justify="center"
                 zIndex={9999}
+                pointerEvents="all"       // ✅ block clicks behind
+                transition="all 0.2s ease-in-out"
             >
-                <Image src="/loader.svg" alt="Loading..." boxSize="90px" />
+                <Image
+                    src="/loader.svg"
+                    alt="Loading..."
+                    boxSize="90px"
+                    draggable={false}
+                />
             </Flex>
         );
     }
 
-    // 🔥 Inline loader (inside container)
+    // 🔹 Inline loader
     return (
-        <Flex align="center" justify="center" w="100%" h="100%">
-            <Image src="/loader.svg" alt="Loading..." boxSize="70px" />
+        <Flex
+            align="center"
+            justify="center"
+            w="100%"
+            h="100%"
+            minH="150px"
+        >
+            <Image
+                src="/loader.svg"
+                alt="Loading..."
+                boxSize="70px"
+                draggable={false}
+            />
         </Flex>
     );
 };
