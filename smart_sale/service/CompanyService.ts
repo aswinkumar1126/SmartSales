@@ -8,30 +8,30 @@ export interface ApiResponse<T = any> {
 }
 
 export interface Company {
-    COMPANYID: string;
-    COMPANYNAME: string;
-    COSTID?: string;
-    ADDRESS1?: string;
-    AREACODE?: string;
-    PHONE?: string;
-    EMAIL?: string;
-    GSTNO?: string;
-    ACTIVE: "Y" | "N";
-    STATEID?: number;
-    LOGO?: string;
+    companyid: string;
+    companyname: string;
+    costid?: string;
+    address1?: string;
+    areacode?: string;
+    phone?: string;
+    email?: string;
+    gstno?: string;
+    active: "Y" | "N";
+    stateid?: number;
+    logo?: string;
 }
 
 export interface CreateCompanyPayload {
-    COMPANYID: string;
-    COMPANYNAME: string;
-    COSTID?: string;
-    ADDRESS1?: string;
-    AREACODE?: string;
-    PHONE?: string;
-    EMAIL?: string;
-    GSTNO?: string;
-    ACTIVE: "Y" | "N";
-    STATEID?: number;
+    companyid: string;
+    companyname: string;
+    costid?: string;
+    address1?: string;
+    areacode?: string;
+    phone?: string;
+    email?: string;
+    gstno?: string;
+    active: "Y" | "N";
+    stateid?: number;
 }
 
 export const CompanyService = {

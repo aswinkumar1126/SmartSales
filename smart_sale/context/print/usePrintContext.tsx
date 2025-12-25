@@ -1,0 +1,29 @@
+"use client";
+
+import { createContext, useContext, useState, ReactNode } from "react";
+
+type PrintContextType = {
+    data: any[];
+    columns: { key: string; label: string; align?: "start" | "center" | "end", allowTotal?: boolean, isNumeric?:boolean}[];
+    setData: (data: any[]) => void;
+    setColumns: (columns: PrintContextType["columns"]) => void;
+};
+
+const PrintContext = createContext<PrintContextType | undefined>(undefined);
+
+export const PrintProvider = ({ children }: { children: ReactNode }) => {
+    const [data, setData] = useState<any[]>([]);
+    const [columns, setColumns] = useState<PrintContextType["columns"]>([]);
+
+    return (
+        <PrintContext.Provider value={{ data, columns, setData, setColumns }}>
+            {children}
+        </PrintContext.Provider>
+    );
+};
+
+export const usePrint = () => {
+    const ctx = useContext(PrintContext);
+    if (!ctx) throw new Error("usePrint must be used inside PrintProvider");
+    return ctx;
+};

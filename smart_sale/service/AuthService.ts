@@ -37,31 +37,28 @@ export const authService = {
     },
 
     // 🔐 LOGIN (FIXED)
-    login: async (data: LoginPayload): Promise<ApiResponse> => {
+    login : async (payload: LoginPayload) => {
         try {
-            const res = await axiosInstance.post("/user/login", {
-                username: data.username,
-                password: data.password,
-            });
+            const response = await axiosInstance.post("/user/login", payload);
 
-            const result = res.data;
-
-            return {
-                success: true,
-                message: result.message,
-                data: {
-                    userId: result.data.USERID,   // ✅ normalize
-                    active: result.data.ACTIVE,
-                },
-            };
+            console.log("Login successful:", response);
+            return response.data;
         } catch (error: any) {
-            console.error("Login error", error);
+         
+            if (!error.response) {
+                return {
+                    status: "error",
+                    message: "Server not reachable. Please try again later.",
+                    data: null,
+                };
+            }
 
             return {
-                success: false,
+                status: "error",
                 message:
-                    error?.response?.data?.message || "Login failed",
-                status: error?.response?.status,
+                    error?.response?.data?.message ||
+                    "Login request failed",
+                data: null,
             };
         }
     },

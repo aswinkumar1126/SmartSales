@@ -36,6 +36,7 @@ import { fontVariables } from "@/context/theme/font";
 import { useTheme } from "@/context/theme/themeContext";
 import scrollToTop from "@/component/scroll/ScrollToTop";
 import { toastLoaded } from "@/component/toast/toast";
+import { formatToFixed } from "@/utils/format/numberFormat";
 
 export default function ItemMasterPage() {
     /* ===================== STATE ===================== */
@@ -265,8 +266,8 @@ export default function ItemMasterPage() {
                                             </option>
 
                                             {companies.map((c) => (
-                                                <option key={c.COMPANYID} value={c.COMPANYID}>
-                                                    {c.COMPANYNAME}
+                                                <option key={c.companyid} value={c.companyid}>
+                                                    {c.companyname}
                                                 </option>
                                             ))}
                                         </NativeSelect.Field>
@@ -439,7 +440,7 @@ export default function ItemMasterPage() {
                                 <>
                                     <Table.Cell>{item.itemName}</Table.Cell>
                                     <Table.Cell>{metals.find((m:any) => m.metalId === item.metalId)?.metalName ?? item.metalId}</Table.Cell>
-                                    <Table.Cell textAlign="end">{item.pieceRate}</Table.Cell>
+                                    <Table.Cell textAlign="end">{formatToFixed(item.pieceRate ,2)}</Table.Cell>
                                     <Table.Cell textAlign="center">{item.active === "Y" ? "YES" : "NO"}</Table.Cell>
                                     <Table.Cell textAlign="center">
                                         <Box display="flex" justifyContent="center">

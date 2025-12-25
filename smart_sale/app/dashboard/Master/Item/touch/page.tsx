@@ -30,6 +30,10 @@ import { useTheme } from "@/context/theme/themeContext";
 import { toastLoaded } from "@/component/toast/toast";
 import { Toaster } from "@/components/ui/toaster";
 import scrollToTop from "@/component/scroll/ScrollToTop";
+import { formatToFixed } from "@/utils/format/numberFormat";
+import { FaPrint } from "react-icons/fa";
+import { useRouter } from "next/navigation";
+import { usePrint } from "@/context/print/usePrintContext";
 /* ---------------- Initial State ---------------- */
 
 const initialFormState: TouchMaster = {
@@ -60,10 +64,12 @@ const TouchMasterForm = () => {
     const { data: companiesData } = useAllCompanies();
     const { data: items } = useItems();
     const {theme } = useTheme();
+    const {setData ,setColumns } = usePrint();
 
     const createMutation = useTouchMastCreate();
     const updateMutation = useModifyTouchMasterById();
 
+    const router = useRouter();
     /* ---------------- Collections ---------------- */
 
     const companiesCollection = useMemo(
@@ -71,8 +77,8 @@ const TouchMasterForm = () => {
             createListCollection({
                 items:
                     companiesData?.data?.map((c: any) => ({
-                        value: c.COMPANYID,
-                        label: c.COMPANYNAME,
+                        value: c.companyid,
+                        label: c.companyname,
                     })) ?? [],
             }),
         [companiesData]
@@ -177,6 +183,17 @@ const TouchMasterForm = () => {
             });
         }
     };
+    const handlePrint = () =>{
+        setData(touchData);
+        setColumns([
+            { key: "sno", label: "S.No" },
+            { key: "companyname", label: "Company" },
+            { key: "companyType", label: "Company Type" },
+            { key: "itemName", label: "Item Name" },
+            { key: "touch", label: "Touch", align: 'end' as const, allowTotal: true },
+        ]);
+        router.push("/print");
+    }
 
     /* ---------------- Table Columns ---------------- */
 
@@ -380,8 +397,11 @@ const TouchMasterForm = () => {
             {/* ---------------- TABLE ---------------- */}
             <GridItem minW={0}>
                 <Box p={5} borderRadius="lg" bg={theme.colors.formColor}  boxShadow="sm">
-                    <Heading size="md" mb={4}>
+                    <Heading size="md" mb={4} >
                         Touch Master List
+                        <Button size="sm" colorPalette="blue" onClick={handlePrint} ml={4}>
+                            <FaPrint />
+                        </Button>
                     </Heading>
                     <CustomTable<TouchTableRow>
                         columns={columns}
@@ -389,10 +409,10 @@ const TouchMasterForm = () => {
                         renderRow={(row: any, i: number) => (
                             <>
                                 <Table.Cell>{i + 1}</Table.Cell>
-                                <Table.Cell>{row.COMPANYNAME}</Table.Cell>
+                                <Table.Cell>{row.companyname}</Table.Cell>
                                 <Table.Cell>{row.companyType}</Table.Cell>
                                 <Table.Cell>{row.itemName}</Table.Cell>
-                                <Table.Cell textAlign="right">{row.touch}</Table.Cell>
+                                <Table.Cell textAlign="right">{formatToFixed(row.touch , 2)}</Table.Cell>
                                 <Table.Cell align="center">
                                     <Box display="flex" justifyContent="center" alignItems="center">
                                         <FiEdit

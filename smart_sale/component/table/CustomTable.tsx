@@ -53,7 +53,7 @@ export function CustomTable<T extends Record<string, any>>({
             >
                 {/* HEADER */}
                 <Table.Header>
-                    <Table.Row bg={headerBg}>
+                    <Table.Row bg={headerBg} >
                         {columns.map((col) => (
                             <Table.ColumnHeader
                                 key={col.key}
@@ -71,7 +71,7 @@ export function CustomTable<T extends Record<string, any>>({
                 {/* BODY */}
                 <Table.Body>
                     {data.length === 0 ? (
-                        <Table.Row bg={bodyBg}>
+                        <Table.Row bg={bodyBg} >
                             <Table.Cell
                                 colSpan={columns.length}
                                 textAlign="center"
@@ -88,7 +88,7 @@ export function CustomTable<T extends Record<string, any>>({
 
                             return (
                                 <Table.Row
-                                    key={rowId}
+                                    key={rowId ?? index}   // ✅ fallback prevents warning
                                     bg={isHighlighted ? "blue.100" : bodyBg} // ✅ HERE
                                     animation={
                                         isHighlighted

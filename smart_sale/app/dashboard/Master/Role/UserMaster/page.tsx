@@ -68,6 +68,7 @@ export default function UserMasters() {
     const [highlightId ,setHighlightedId] = useState<Number > ();
 
     const { data, isLoading } = useUsers();
+    console.log(data ,'data')
 
     const costCenters = [
         { id: 1, value: "SJ", label: "Head Office" },
@@ -77,14 +78,14 @@ export default function UserMasters() {
     //console.log(data?.data ,'user');
 
     const normalizeUser = (u: any): UserMaster => ({
-        userId: u.USERID,
-        username: u.USERNAME,
-        pwd: u.PWD,
-        active: u.ACTIVE,
-        costId: u.COSTID,
-        userCostId: u.USERCOSTID,
-        billing: u.BILLING,
-        userImage: u.USERIMAGE,
+        userId: u.userid,
+        username: u.username,
+        pwd: u.pwd,
+        active: u.active,
+        costId: u.costid,
+        userCostId: u.usercostid,
+        billing: u.billing,
+        userImage: u.userimage,
     });
     const users: UserMaster[] = (data?.data ?? []).map(normalizeUser);
 

@@ -21,7 +21,6 @@ import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { loginSchema } from "@/utils/validation/authSchema";
 
-import { authService } from "@/service/AuthService";
 import { useAuth } from "@/hooks/auth/useAuth";
 
 import { Toaster, toaster } from "@/components/ui/toaster";
@@ -57,11 +56,12 @@ export default function LoginPage() {
             username: formData.username,
             password: formData.password,
         });
+        console.log(success,'success');
 
-        if (!success) {
+        if (!success?.success) {
             toaster.create({
                 type: "error",
-                title: "Invalid username or password",
+                title: success.message,
             });
             return;
         }

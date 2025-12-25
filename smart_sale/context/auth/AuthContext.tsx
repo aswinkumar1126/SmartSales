@@ -1,7 +1,7 @@
 "use client";
 
 import React, { createContext } from "react";
-import { Company } from "@/service/CompanyService";
+import { ApiResponse, Company } from "@/service/CompanyService";
 import { LoginPayload } from "@/service/AuthService";
 
 export interface AuthUser {
@@ -15,7 +15,7 @@ export interface AuthContextType {
     user: AuthUser | null;
     loading: boolean;
     userId: number |string | null;
-    login: (payload: LoginPayload) => Promise<boolean>;
+    login: (payload: LoginPayload) => Promise<ApiResponse>;
     logout: () => void;
     refreshUser: (uid: number) => Promise<void>;
     company: () => Promise<void>;

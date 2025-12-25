@@ -36,7 +36,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { FiEdit } from "react-icons/fi";
 import { CustomTable } from "@/component/table/CustomTable";
 import { useAllCompanies } from "@/hooks/company/useCompany";
-
+import { formatToFixed } from "@/utils/format/numberFormat";
 
 const initialFormState: PartyForm = {
     
@@ -91,8 +91,8 @@ function PartyMaster() {
         () =>
             createListCollection({
                 items: companies.map((company) => ({
-                    label: company.COMPANYNAME || company.COMPANYID, // adjust API key
-                    value: company.COMPANYID,                  // MUST be string
+                    label: company.companyname || company.companyid, // adjust API key
+                    value: company.companyid,                  // MUST be string
                 })),
             }),
         [companies]
@@ -327,8 +327,8 @@ function PartyMaster() {
                                 <Table.Cell>{i + 1}</Table.Cell>
                                 <Table.Cell>{party.companyId}</Table.Cell>
                                 <Table.Cell textAlign="end">{party.slipNo}</Table.Cell>
-                                <Table.Cell textAlign="end">{party.openWeight}</Table.Cell>
-                                <Table.Cell textAlign="end">{party.openCash}</Table.Cell>
+                                <Table.Cell textAlign="end">{formatToFixed(party.openWeight,3)}</Table.Cell>
+                                <Table.Cell textAlign="end">{formatToFixed(party.openCash ,2) }</Table.Cell>
                                 <Table.Cell>
                                     <Box display="flex" justifyContent="center">
                                         <FiEdit onClick={() => handleEdit(party)} cursor="pointer" />

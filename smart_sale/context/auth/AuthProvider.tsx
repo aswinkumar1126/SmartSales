@@ -2,8 +2,8 @@
 
 import React, { useEffect, useState } from "react";
 import { AuthContext, AuthUser } from "./AuthContext";
-import { authService, LoginPayload } from "@/service/AuthService";
-import { CompanyService, Company } from "@/service/CompanyService";
+import { authService, LoginPayload, ApiResponse as AuthApiResponse } from "@/service/AuthService";
+import { CompanyService, Company, ApiResponse } from "@/service/CompanyService";
 
 export default function AuthProvider({ children }: { children: React.ReactNode }) {
     const [user, setUser] = useState<AuthUser | null>(null);
@@ -39,28 +39,37 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     }, []);
 
     // 🔐 LOGIN
-    const login = async (payload: LoginPayload): Promise<boolean> => {
+    const login = async (payload: LoginPayload) => {
         setLoading(true);
 
         const res = await authService.login(payload);
+        console.log("Login result", res);
 
-
-        if (!res.success || !res.data?.userId) {
+        // ❌ LOGIN FAILED
+        if (res.status !== "success" || !res.data) {
             setLoading(false);
-            return false;
+            return {
+                success: false,
+                message: res.message,
+            };
         }
 
-        const uid = res.data.userId;
+        // ✅ SAFE ACCESS
+        const userId = res.data.userid;
 
-        // 🔐 secure session
-        sessionStorage.setItem("userId", String(uid));
-        setUserId(uid);
+        sessionStorage.setItem("userId", String(userId));
+        setUserId(userId);
 
-        await refreshUser(uid);
+        await refreshUser(userId);
 
         setLoading(false);
-        return true; // ✅ IMPORTANT
+        return {
+            success: true,
+            message: res.message,
+        };
     };
+
+
 
     // 🚪 LOGOUT
     const logout = () => {

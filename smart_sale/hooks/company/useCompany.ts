@@ -6,7 +6,8 @@ import { toastCreated, toastError, toastLoaded, toastUpdated, toastUploaded } fr
 export const useAllCompanies = () => {
     return useQuery<ApiResponse<Company[]>>({
         queryKey: ["companies"],
-        queryFn: CompanyService.getAll
+        queryFn: CompanyService.getAll,
+      
     });
 };
 
