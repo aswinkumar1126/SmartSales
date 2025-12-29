@@ -19,6 +19,7 @@ export const MetalService = {
         const { data } = await axiosInstance.get("/metal");
         return data.data;
     },
+    
 
     // GET active metals
     getActiveMetals: async (): Promise<Metal[]> => {

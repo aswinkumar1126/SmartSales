@@ -10,6 +10,8 @@ import {
   TrendingUp,
   Layers,
   DollarSign,
+  SlidersHorizontal,
+   Gem
 } from "lucide-react";
 
 type MenuItem = {
@@ -88,8 +90,13 @@ export const SidebarProvider = ({ children }: { children: ReactNode }) => {
           {
             label: "Touch Master",
             route: "/dashboard/Master/Item/touch",
-            icon: Boxes,
+            icon: SlidersHorizontal,
           },
+          {
+            label:'PureGold Master',
+            route:'/dashboard/Master/Item/pureGold',
+            icon:Gem
+          }
         ],
       },
       Users: {

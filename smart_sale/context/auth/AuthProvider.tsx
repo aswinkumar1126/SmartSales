@@ -15,12 +15,14 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     const refreshUser = async (uid: number) => {
         setLoading(true);
         const res = await authService.me(uid);
+        console.log(res, 'fetching user data')
 
         if (res.success) {
             setUser(res.data);
-        } else {
-            logout();
         }
+        //  else {
+        //     logout();
+        // }
         setLoading(false);
     };
 
@@ -41,7 +43,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     // 🔐 LOGIN
     const login = async (payload: LoginPayload) => {
         setLoading(true);
-
+        
         const res = await authService.login(payload);
         console.log("Login result", res);
 
@@ -55,8 +57,8 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
         }
 
         // ✅ SAFE ACCESS
-        const userId = res.data.userid;
-
+        const userId = res.data.USERID;
+        console.log(userId ,'user id ')
         sessionStorage.setItem("userId", String(userId));
         setUserId(userId);
 

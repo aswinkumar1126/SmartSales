@@ -1,20 +1,20 @@
 export interface UserMaster {
-    costId?: string;
-    userId?: number;
-    username: string;
-    pwd?: string;
-    authPwd?: string;
-    active?: "Y" | "N";
-    upUserId?: number;
-    updated?: string;
-    upTime?: string;
-    centLogin?: string;
-    pwdChange?: number;
-    pwdUpdated?: string;
-    userCostId?: string;
-    userImage?: string;
-    userCompanyId?: string;
-    billing?: boolean;
+    COSTID?: string;
+    USERID?: number;
+    USERNAME: string;
+    PWD?: string;
+    AUTHPWD?: string;
+    ACTIVE?: "Y" | "N";
+    UPUSERID?: number;
+    UPDATED?: string;
+    UPTIME?: string;
+    CENTLOGIN?: string;
+    PWDCHANGE?: number;
+    PWDUPDATE?: string;
+    USERCOSTID?: string;
+    USERIMAGE?: string;
+    USERCOMPANYID?: string;
+    BILLING?: boolean;
 }
 
 export interface ApiResponse<T> {

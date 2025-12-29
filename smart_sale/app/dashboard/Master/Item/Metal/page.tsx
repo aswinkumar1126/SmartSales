@@ -55,7 +55,7 @@ function MetalMaster() {
 
 
     const { data: metals = [], refetch } = useAllMetals();
-
+console.log(metals,"metaldata")
 
 
     const { data: metalsByID} = useMetalById(editId) ;
@@ -88,7 +88,7 @@ function MetalMaster() {
     return () => clearTimeout(timer);
    })
 
-    const handleSave = () => {
+    const handleSave = () => { 
         if (!form.metalId) {
             toastError("Metal ID is required");
             return;

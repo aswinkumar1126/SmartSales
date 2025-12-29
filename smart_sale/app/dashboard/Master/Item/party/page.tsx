@@ -91,8 +91,8 @@ function PartyMaster() {
         () =>
             createListCollection({
                 items: companies.map((company) => ({
-                    label: company.companyname || company.companyid, // adjust API key
-                    value: company.companyid,                  // MUST be string
+                    label: company.COMPANYNAME || company.COMPANYID, // adjust API key
+                    value: company.COMPANYID,                  // MUST be string
                 })),
             }),
         [companies]

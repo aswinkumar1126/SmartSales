@@ -91,16 +91,16 @@ function CompanyMaster() {
         if (!company) return;
           
         setForm({
-            companyid: company.companyid,
-            companyname: company.companyname,
-            costid: company.costid ?? "",
-            address1: company.address1 ?? "",
-            areacode: company.areacode ?? "",
-            phone: company.phone ?? "",
-            email: company.email ?? "",
-            gstno: company.gstno ?? "",
-            active: company.active ?? "Y",
-            stateid: company.stateid ?? 1,
+            companyid: company.COMPANYID,
+            companyname: company.COMPANYNAME,
+            costid: company.COSTID ?? "",
+            address1: company.ADDRESS1 ?? "",
+            areacode: company.AREACODE ?? "",
+            phone: company.PHONE ?? "",
+            email: company.EMAIL ?? "",
+            gstno: company.GSTNO ?? "",
+            active: company.ACTIVE ?? "Y",
+            stateid: company.STATEID ?? 1,
         });
     }, [company]);
 
@@ -202,7 +202,7 @@ function CompanyMaster() {
 
 
     const handleEdit = (company: Company) => {
-        setEditId(company.companyid); // 🔥 trigger useCompanyById
+        setEditId(company.COMPANYID); // 🔥 trigger useCompanyById
     };
 
     const CompanyColumn = [
@@ -368,10 +368,10 @@ function CompanyMaster() {
                             data={companies}
                             renderRow={(company) => (
                                 <>
-                                    <Table.Cell>{company.companyid}</Table.Cell>
-                                    <Table.Cell>{company.companyname}</Table.Cell>
-                                    <Table.Cell>{company.costid}</Table.Cell>
-                                    <Table.Cell textAlign="center">{company.active}</Table.Cell>
+                                    <Table.Cell>{company.COMPANYID}</Table.Cell>
+                                    <Table.Cell>{company.COMPANYNAME}</Table.Cell>
+                                    <Table.Cell>{company.COSTID}</Table.Cell>
+                                    <Table.Cell textAlign="center">{company.ACTIVE}</Table.Cell>
                                     <Table.Cell>
                                         <Box display="flex" justifyContent="center">
                                             <FaEdit onClick={() => handleEdit(company)} cursor="pointer" />
@@ -384,7 +384,7 @@ function CompanyMaster() {
                             borderColor="white"
                             bodyBg={theme.colors.primary}
                             highlightRowId={highlightedId ? Number(highlightedId) : null} 
-                            rowIdKey="companyid"
+                            rowIdKey="COMPANYID"
                          
                             emptyText="No companies available"
 

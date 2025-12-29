@@ -244,7 +244,7 @@ const PureGoldMaster = () => {
             </GridItem>
 
             {/* -------- Table Section -------- */}
-            <GridItem>
+            <GridItem minW={0}>
                 <Box p={5} borderRadius="lg" bg={theme.colors.formColor} boxShadow="sm">
                     <Heading size="md" mb={4}>
                         Pure Gold Master List

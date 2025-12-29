@@ -13,7 +13,9 @@ import {
     Button,
     Table,
     Heading,
-    HStack
+    HStack,
+    Text,
+    Flex
 } from "@chakra-ui/react";
 
 import { useAllCompanies } from "@/hooks/company/useCompany";
@@ -34,6 +36,10 @@ import { formatToFixed } from "@/utils/format/numberFormat";
 import { FaPrint } from "react-icons/fa";
 import { useRouter } from "next/navigation";
 import { usePrint } from "@/context/print/usePrintContext";
+import { exportToStyledExcel } from "@/utils/export/exportToExcel";
+import { FaFileExcel } from "react-icons/fa";
+
+
 /* ---------------- Initial State ---------------- */
 
 const initialFormState: TouchMaster = {
@@ -61,6 +67,23 @@ const TouchMasterForm = () => {
     /* ---------------- Hooks ---------------- */
 
     const { data: touchData = [], refetch } = useTouchMastData();
+   
+
+    const printData = useMemo(() => {
+        return (touchData ?? []).map((row: any, index: number) => ({
+            ...row,
+
+            // Ensure serial number (optional override)
+            sno: index + 1,
+
+            // ✅ format touch properly
+            touch: formatToFixed(row.touch, 2),
+
+            // normalize naming (optional but recommended)
+            companyName: row.companyname,
+        }));
+    }, [touchData]);
+
     const { data: companiesData } = useAllCompanies();
     const { data: items } = useItems();
     const {theme } = useTheme();
@@ -77,8 +100,8 @@ const TouchMasterForm = () => {
             createListCollection({
                 items:
                     companiesData?.data?.map((c: any) => ({
-                        value: c.companyid,
-                        label: c.companyname,
+                        value: c.COMPANYID,
+                        label: c.COMPANYNAME,
                     })) ?? [],
             }),
         [companiesData]
@@ -183,7 +206,8 @@ const TouchMasterForm = () => {
             });
         }
     };
-    const handlePrint = () =>{
+
+    const handleExport = (option:string)=> {
         setData(touchData);
         setColumns([
             { key: "sno", label: "S.No" },
@@ -192,8 +216,31 @@ const TouchMasterForm = () => {
             { key: "itemName", label: "Item Name" },
             { key: "touch", label: "Touch", align: 'end' as const, allowTotal: true },
         ]);
-        router.push("/print");
+        router.push(`/print?export=${option}` );
     }
+    // const handlePrint = () =>{
+    //     setData(touchData);
+    //     setColumns([
+    //         { key: "sno", label: "S.No" },
+    //         { key: "companyname", label: "Company" },
+    //         { key: "companyType", label: "Company Type" },
+    //         { key: "itemName", label: "Item Name" },
+    //         { key: "touch", label: "Touch", align: 'end' as const, allowTotal: true },
+    //     ]);
+    //     router.push("/print");
+    // }
+    // const handleExcel = () => {
+    //     setData(touchData);
+    //     setColumns([
+    //         { key: "sno", label: "S.No" },
+    //         { key: "companyname", label: "Company" },
+    //         { key: "companyType", label: "Company Type" },
+    //         { key: "itemName", label: "Item Name" },
+    //         { key: "touch", label: "Touch", align: "end", allowTotal: true, isNumeric: true },
+    //     ]);
+
+    //     router.push("/print?export=excel");
+    // };
 
     /* ---------------- Table Columns ---------------- */
 
@@ -397,11 +444,34 @@ const TouchMasterForm = () => {
             {/* ---------------- TABLE ---------------- */}
             <GridItem minW={0}>
                 <Box p={5} borderRadius="lg" bg={theme.colors.formColor}  boxShadow="sm">
-                    <Heading size="md" mb={4} >
-                        Touch Master List
-                        <Button size="sm" colorPalette="blue" onClick={handlePrint} ml={4}>
-                            <FaPrint />
-                        </Button>
+                    <Heading  display='flex' size="md" mb={4} gap={3} justifyContent='space-between' alignItems='center'>
+                        <Text>Touch Master List</Text>
+
+                        <Flex >
+                          
+                            <Button
+                                variant="ghost"
+                                colorPalette="green"
+                                
+                                onClick={()=>{handleExport('excel')}}
+                                
+                                size='xs'
+                            >
+
+                               <FaFileExcel />
+                            </Button>
+                            <Button 
+                                colorPalette="ghost"  
+                                variant='ghost' 
+                                onClick={() => { handleExport('pdf') }}
+                                size='xs'>
+
+                                    <FaPrint />
+                            </Button>
+                        </Flex>
+
+
+
                     </Heading>
                     <CustomTable<TouchTableRow>
                         columns={columns}
@@ -409,7 +479,7 @@ const TouchMasterForm = () => {
                         renderRow={(row: any, i: number) => (
                             <>
                                 <Table.Cell>{i + 1}</Table.Cell>
-                                <Table.Cell>{row.companyname}</Table.Cell>
+                                <Table.Cell>{row.COMPANYNAME}</Table.Cell>
                                 <Table.Cell>{row.companyType}</Table.Cell>
                                 <Table.Cell>{row.itemName}</Table.Cell>
                                 <Table.Cell textAlign="right">{formatToFixed(row.touch , 2)}</Table.Cell>

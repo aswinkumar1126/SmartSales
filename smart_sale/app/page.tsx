@@ -7,18 +7,18 @@ import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
 export default function Home() {
-  const { user, loading } = useProtected();
-  const router = useRouter();
+  // const { user, loading } = useProtected();
+  // const router = useRouter();
 
-  useEffect(() => {
-    if (!loading && !user) {
-      router.replace("/login");
-    }
-  }, [loading, user, router]);
+  // useEffect(() => {
+  //   if (!loading && !user) {
+  //     router.replace("/login");
+  //   }
+  // }, [loading, user, router]);
 
-  if (loading) return <Loader isLoading={loading} fullscreen={true}/>;
+  // if (loading) return <Loader isLoading={loading} fullscreen={true}/>;
 
-  if (!user) return null; // ⛔ prevents flicker
+  // if (!user) return null; // ⛔ prevents flicker
 
   return (
     <Box

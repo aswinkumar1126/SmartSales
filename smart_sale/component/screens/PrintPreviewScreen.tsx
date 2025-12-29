@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
     Box,
     Flex,
@@ -16,13 +16,24 @@ import {
 } from "@chakra-ui/react";
 import { PrintPreviewTable } from "@/component/printing/PrintPreviewTable";
 import { useTheme } from "@/context/theme/themeContext";
+import { useRouter } from "next/navigation";
+import { exportToStyledExcel } from "@/utils/export/exportToExcel";
+
 
 type PrintPreviewScreenProps = {
     data: any[];
-    columns: { key: string; label: string, allowTotal?: boolean,align?:"end"| "start" | "center" | undefined, isNumeric?:boolean }[];
+    columns: {  key: string; 
+                label: string, 
+                allowTotal?: boolean,
+                align?:"end"| "start" | "center" | undefined, 
+                isNumeric?:boolean }[];
+                exportOption?: string|null;
 };
 
-export function PrintPreviewScreen({ data, columns }: PrintPreviewScreenProps) {
+export function PrintPreviewScreen({ data, columns ,exportOption}: PrintPreviewScreenProps) {
+
+  
+
     const [settings, setSettings] = useState({
         fontSize: "md" as "sm" | "md" | "lg",
         headerBg: "#e5e7eb",
@@ -32,6 +43,14 @@ export function PrintPreviewScreen({ data, columns }: PrintPreviewScreenProps) {
         totalColumns: [] as string[],
         isNumeric:false
     });
+
+    const router = useRouter();
+ 
+
+    useEffect(()=>{
+        const items = Array.isArray(data) ? data : [];
+        (items.length > 0) ? null : router.back();
+    } ,[data])
 
     const fontSizes = createListCollection({
         items: [
@@ -60,6 +79,7 @@ export function PrintPreviewScreen({ data, columns }: PrintPreviewScreenProps) {
     `;
         })
         .join("\n");
+        
 
     const handlePrint = () => {
         const tableContainer = document.getElementById("print-table");
@@ -141,6 +161,8 @@ export function PrintPreviewScreen({ data, columns }: PrintPreviewScreenProps) {
         printWindow.close();
     };
 
+
+
     return (
         <Flex h="100vh" bg="gray.50" color="black.700">
             {/* LEFT PANEL */}
@@ -151,9 +173,9 @@ export function PrintPreviewScreen({ data, columns }: PrintPreviewScreenProps) {
                 borderRight="1px solid"
                 borderColor="gray.200"
                 overflowY="auto"
-            >
-                <Heading size="sm" mb={6} color="gray.800">
-                    Print Settings
+            >   
+                <Heading size="sm" mb={6} color="gray.800" alignItems='center'>
+                    <Text> Print Settings </Text>
                 </Heading>
 
                 <Stack  color="gray.700">
@@ -316,9 +338,31 @@ export function PrintPreviewScreen({ data, columns }: PrintPreviewScreenProps) {
                     justify="flex-end"
                     gap={3}
                 >
-                    <Button variant="outline" onClick={() => window.history.back()}>Cancel</Button>
-                    <Button colorScheme="blue" onClick={handlePrint}>Print</Button>
+                    <Button variant="outline" onClick={() => window.history.back()}>
+                        Cancel
+                    </Button>
+
+                    {exportOption === "excel" ? (
+                        <Button
+                            colorScheme="green"
+                            onClick={() =>
+                                exportToStyledExcel(
+                                    data,
+                                    columns,
+                                    settings,
+                                    settings.title || "Report"
+                                )
+                            }
+                        >
+                            Export Excel
+                        </Button>
+                    ) : (
+                        <Button colorScheme="blue" onClick={handlePrint}>
+                            Print
+                        </Button>
+                    )}
                 </Flex>
+
             </Flex>
         </Flex>
     );

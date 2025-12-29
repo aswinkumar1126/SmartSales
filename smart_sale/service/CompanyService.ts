@@ -8,17 +8,17 @@ export interface ApiResponse<T = any> {
 }
 
 export interface Company {
-    companyid: string;
-    companyname: string;
-    costid?: string;
-    address1?: string;
-    areacode?: string;
-    phone?: string;
-    email?: string;
-    gstno?: string;
-    active: "Y" | "N";
-    stateid?: number;
-    logo?: string;
+    COMPANYID: string;
+    COMPANYNAME: string;
+    COSTID?: string;
+    ADDRESS1?: string;
+    AREACODE?: string;
+    PHONE?: string;
+    EMAIL?: string;
+    GSTNO?: string;
+    ACTIVE: "Y" | "N";
+    STATEID?: number;
+    LOGO?: string;
 }
 
 export interface CreateCompanyPayload {

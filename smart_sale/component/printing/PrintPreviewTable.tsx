@@ -1,7 +1,7 @@
 "use client";
 
 import React, { ReactNode } from "react";
-import { Box, Table } from "@chakra-ui/react";
+import { Box, Table , Text} from "@chakra-ui/react";
 
 
 type PrintColumn<T> = {
@@ -57,7 +57,7 @@ export function PrintPreviewTable<T extends Record<string, any>>({
         <Box w="100%" overflowX="auto">
 
             <Box>
-                <header>{title} </header>
+                <Text color="#222">{title} </Text>
             </Box>
 
             <Table.Root size={fontSize}  border="1px solid " showColumnBorder borderColor="gray.200" >
@@ -80,7 +80,7 @@ export function PrintPreviewTable<T extends Record<string, any>>({
                 {/* BODY */}
                 <Table.Body >
                     {data.map((row, index) => (
-                        <Table.Row key={index}>
+                        <Table.Row key={index} color='#222'>
                             {columns.map((col) => (
                                 <Table.Cell
                                     key={String(col.key)}

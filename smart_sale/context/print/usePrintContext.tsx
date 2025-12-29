@@ -1,10 +1,16 @@
 "use client";
 
-import { createContext, useContext, useState, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 
 type PrintContextType = {
     data: any[];
-    columns: { key: string; label: string; align?: "start" | "center" | "end", allowTotal?: boolean, isNumeric?:boolean}[];
+    columns: {
+        key: string;
+        label: string;
+        align?: "start" | "center" | "end";
+        allowTotal?: boolean;
+        isNumeric?: boolean;
+    }[];
     setData: (data: any[]) => void;
     setColumns: (columns: PrintContextType["columns"]) => void;
 };
@@ -14,6 +20,26 @@ const PrintContext = createContext<PrintContextType | undefined>(undefined);
 export const PrintProvider = ({ children }: { children: ReactNode }) => {
     const [data, setData] = useState<any[]>([]);
     const [columns, setColumns] = useState<PrintContextType["columns"]>([]);
+
+    /* 🔹 Load persisted data on mount */
+    useEffect(() => {
+        const stored = sessionStorage.getItem("print-context");
+        if (stored) {
+            const parsed = JSON.parse(stored);
+            setData(parsed.data || []);
+            setColumns(parsed.columns || []);
+        }
+    }, []);
+
+    /* 🔹 Persist on change */
+    useEffect(() => {
+        if (data.length || columns.length) {
+            sessionStorage.setItem(
+                "print-context",
+                JSON.stringify({ data, columns })
+            );
+        }
+    }, [data, columns]);
 
     return (
         <PrintContext.Provider value={{ data, columns, setData, setColumns }}>

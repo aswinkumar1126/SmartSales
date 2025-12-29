@@ -14,14 +14,14 @@ export const axiosInstance = axios.create({
 });
 
 // 🔐 Attach userId securely
-axiosInstance.interceptors.request.use((config) => {
-  if (typeof window !== "undefined") {
-    const userId = sessionStorage.getItem("userId");
-    console.log(userId ,'userId header')
+// axiosInstance.interceptors.request.use((config) => {
+//   if (typeof window !== "undefined") {
+//     const userId = sessionStorage.getItem("userId");
+//     console.log(userId ,'userId header')
 
-    if (userId) {
-      config.headers["userId"] = userId; // ✅ custom header
-    }
-  }
-  return config;
-});
+//     if (userId) {
+//       config.headers["userId"] = userId; // ✅ custom header
+//     }
+//   }
+//   return config;
+// });

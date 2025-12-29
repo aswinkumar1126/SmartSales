@@ -266,8 +266,8 @@ export default function ItemMasterPage() {
                                             </option>
 
                                             {companies.map((c) => (
-                                                <option key={c.companyid} value={c.companyid}>
-                                                    {c.companyname}
+                                                <option key={c.COMPANYID} value={c.COMPANYID}>
+                                                    {c.COMPANYNAME}
                                                 </option>
                                             ))}
                                         </NativeSelect.Field>

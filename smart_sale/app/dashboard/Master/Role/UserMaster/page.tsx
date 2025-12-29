@@ -78,14 +78,14 @@ export default function UserMasters() {
     //console.log(data?.data ,'user');
 
     const normalizeUser = (u: any): UserMaster => ({
-        userId: u.userid,
-        username: u.username,
-        pwd: u.pwd,
-        active: u.active,
-        costId: u.costid,
-        userCostId: u.usercostid,
-        billing: u.billing,
-        userImage: u.userimage,
+        userId: u.USERID,
+        username: u.USERNAME,
+        pwd: u.PWD,
+        active: u.ACTIVE,
+        costId: u.COSTID,
+        userCostId: u.USERCOSTID,
+        billing: u.BILLING,
+        userImage: u.USERIMAGE,
     });
     const users: UserMaster[] = (data?.data ?? []).map(normalizeUser);
 

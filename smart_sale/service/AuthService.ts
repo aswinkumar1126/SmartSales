@@ -26,6 +26,7 @@ export const authService = {
         try {
             const res = await axiosInstance.post("/user/register", data);
             return { success: true, data: res.data };
+
         } catch (error: any) {
             return {
                 success: false,
@@ -65,8 +66,10 @@ export const authService = {
 
     // 👤 FETCH USER
     me: async (userId: number): Promise<ApiResponse> => {
+        console.log("Fetching user with ID:", userId);
         try {
             const res = await axiosInstance.get(`/user/${userId}`);
+            console.log(res ,'response for fetch data')
             return { success: true, data: res.data };
         } catch {
             return { success: false, message: "Failed to fetch user" };
