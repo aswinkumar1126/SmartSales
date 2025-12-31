@@ -12,6 +12,8 @@ export interface Company {
     COMPANYNAME: string;
     COSTID?: string;
     ADDRESS1?: string;
+    ADDRESS2?: string;
+    ADDRESS3?: string;
     AREACODE?: string;
     PHONE?: string;
     EMAIL?: string;
@@ -22,16 +24,19 @@ export interface Company {
 }
 
 export interface CreateCompanyPayload {
-    companyid: string;
-    companyname: string;
-    costid?: string;
-    address1?: string;
-    areacode?: string;
-    phone?: string;
-    email?: string;
-    gstno?: string;
-    active: "Y" | "N";
-    stateid?: number;
+    COMPANYID: string;
+    COMPANYNAME: string;
+    COSTID?: string;
+    ADDRESS1?: string;
+    ADDRESS2?: string;
+    ADDRESS3?: string;
+    AREACODE?: string;
+    PHONE?: string;
+    EMAIL?: string;
+    GSTNO?: string;
+    ACTIVE: "Y" | "N";
+    STATEID?: number;
+    LOGO?: string;
 }
 
 export const CompanyService = {
@@ -46,19 +51,43 @@ export const CompanyService = {
     },
 
     create: async (payload: CreateCompanyPayload, logo?: File): Promise<ApiResponse<Company>> => {
-        const formData = new FormData();
-        formData.append("company", new Blob([JSON.stringify(payload)], { type: "application/json" }));
-        if (logo) formData.append("logo", logo);
-        const { data } = await axiosInstance.post("/company", formData, {
-            headers: { "Content-Type": "multipart/form-data" },
-        });
-        return data;
+        try{
+            const formData = new FormData();
+
+            console.log(payload, 'payload in service')
+
+            formData.append("company", new Blob([JSON.stringify(payload)], { type: "application/json" }));
+
+            if (logo) formData.append("logo", logo);
+
+            const response = await axiosInstance.post("/company", formData, {
+
+                headers: { "Content-Type": "multipart/form-data" },
+
+            });
+            console.log(response, 'data after compan')
+
+            return response.data;
+            
+        }
+        catch(error){
+           return Promise.reject(error);
+        }
+       
     },
 
     updateById: async (companyId: string, payload: CreateCompanyPayload, logo?: File): Promise<ApiResponse<Company>> => {
         const formData = new FormData();
         formData.append("company", new Blob([JSON.stringify(payload)], { type: "application/json" }));
+
+        // console.log(payload, 'payload in service');
+        // for (const [key, value] of formData.entries()) {
+        //     console.log(key, value);
+        // }
+
         if (logo) formData.append("logo", logo);
+        
+        
         const { data } = await axiosInstance.patch(`/company/update`, formData, {
             headers: { "Content-Type": "multipart/form-data" },
         });

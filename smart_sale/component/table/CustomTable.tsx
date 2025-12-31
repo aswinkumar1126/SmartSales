@@ -26,6 +26,7 @@ type CustomTableProps<T> = {
     borderColor?: string;
     size?: "sm" | "md" | "lg";
     emptyText?: string;
+    showTotal?: boolean;
 };
 
 

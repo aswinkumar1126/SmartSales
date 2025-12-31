@@ -9,19 +9,20 @@ export const usePatchUser = () => {
     return useMutation({
         mutationFn: ({
             userId,
-            updates,
+            formData,
         }: {
             userId: number;
-            updates: Partial<UserMaster>;
-        }) => patchUser(userId, updates),
+            formData: FormData;
+        }) => patchUser(userId, formData),
+
         onSuccess: (_, vars) => {
             queryClient.invalidateQueries({ queryKey: ["users"] });
             queryClient.invalidateQueries({ queryKey: ["users", vars.userId] });
-            toastUpdated("User")
+            toastUpdated("User");
         },
-        onError: (error) => {
-            console.error("Error updating user:", error);
-            toastError("User")
-        }
+
+        onError: () => {
+            toastError("User");
+        },
     });
 };

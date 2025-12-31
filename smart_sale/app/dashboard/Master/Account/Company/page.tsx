@@ -29,20 +29,22 @@ import {
     useAllCompanies,
     useCompanyById,
     useCreateCompany,
-    useUpdateCompany,   // ✅ add this
+    useUpdateCompany,  
 } from "@/hooks/company/useCompany";
 
 import ScrollToTop from "@/component/scroll/ScrollToTop";
 import { CreateCompanyPayload, Company } from "@/service/CompanyService";
 import { toastCreated, toastError, toastLoaded, toastUpdated, toastUploaded } from "@/component/toast/toast";
 import { CustomTable } from "@/component/table/CustomTable";
+import { CapitalizedInput } from "@/component/form/CapitalizedInput";
+
 
 function CompanyMaster() {
     const { theme } = useTheme();
 
     /* -------------------- API HOOKS -------------------- */
     const { data, isLoading } = useAllCompanies();
-    console.log(data,'data')
+ 
 
     const companies = data?.data ?? [];
 
@@ -52,16 +54,18 @@ function CompanyMaster() {
 
     /* -------------------- FORM STATE -------------------- */
     const [form, setForm] = useState<CreateCompanyPayload>({
-        companyid: "",
-        companyname: "",
-        costid: "",
-        address1: "",
-        areacode: "",
-        phone: "",
-        email: "",
-        gstno: "",
-        active: "Y",
-        stateid: 1,
+        COMPANYID: "",
+        COMPANYNAME: "",
+        // costid: "",
+        ADDRESS1: "",
+        ADDRESS2:"",
+        ADDRESS3:"",
+        AREACODE: "",
+        PHONE: "",
+        EMAIL: "",
+        GSTNO: "",
+        ACTIVE: "Y",
+        STATEID: 1,
     });
     const [highlightedId ,setHighlightedId] = useState<Number>()
 
@@ -91,16 +95,18 @@ function CompanyMaster() {
         if (!company) return;
           
         setForm({
-            companyid: company.COMPANYID,
-            companyname: company.COMPANYNAME,
-            costid: company.COSTID ?? "",
-            address1: company.ADDRESS1 ?? "",
-            areacode: company.AREACODE ?? "",
-            phone: company.PHONE ?? "",
-            email: company.EMAIL ?? "",
-            gstno: company.GSTNO ?? "",
-            active: company.ACTIVE ?? "Y",
-            stateid: company.STATEID ?? 1,
+            COMPANYID: company.COMPANYID,
+            COMPANYNAME: company.COMPANYNAME,
+            // costid: company.COSTID ?? "",
+            ADDRESS1: company.ADDRESS1 ?? "",
+            ADDRESS2: company.ADDRESS2?? "",
+            ADDRESS3: company.ADDRESS3 ?? "",
+            AREACODE: company.AREACODE ?? "",
+            PHONE: company.PHONE ?? "",
+            EMAIL: company.EMAIL ?? "",
+            GSTNO: company.GSTNO ?? "",
+            ACTIVE: company.ACTIVE ?? "Y",
+            STATEID: company.STATEID ?? 1,
         });
     }, [company]);
 
@@ -134,21 +140,24 @@ function CompanyMaster() {
     const handleChange = (field: keyof CreateCompanyPayload, value: any) => {
         setForm((prev) => ({ ...prev, [field]: value }));
     };
+    
     const resetForm = () => {
         setEditId(null);
         setLogoFile(undefined);
         setImagePreview(null);
         setForm({
-            companyid: "",
-            companyname: "",
-            costid: "",
-            address1: "",
-            areacode: "",
-            phone: "",
-            email: "",
-            gstno: "",
-            active: "Y",
-            stateid: 1,
+            COMPANYID: "",
+            COMPANYNAME: "",
+            // costid: "",
+            ADDRESS1: "",
+            ADDRESS2: "",
+            ADDRESS3: "",
+            AREACODE: "",
+            PHONE: "",
+            EMAIL: "",
+            GSTNO: "",
+            ACTIVE: "Y",
+            STATEID: 1,
         });
     };
 
@@ -162,20 +171,54 @@ function CompanyMaster() {
     };
 
     const handleSave = () => {
-        if (!form.companyid) {
+        if (!form.COMPANYID) {
             toastError("Company ID is required");
             return;
         }
 
-        if (!form.companyname?.trim()) {
+        if (form.COMPANYID.length > 4) {
+            toastError("Company ID must be at most 3 characters long");
+            return;
+        }
+
+        if (!form.COMPANYNAME?.trim()) {
             toastError("Company Name is required");
             return;
         }
-        if(!form.costid?.trim()){
-            toastError("Cost Id is required");
+        if(!form.ADDRESS1?.trim()){
+            toastError("Address is required");
             return;
-        } 
+        }
+        if(!form.ADDRESS2?.trim()){
+            toastError("Area is required");
+            return;
+        }
+        if(!form.ADDRESS3?.trim()){
+            toastError("City is required");
+            return;
+        }
+        if(!form.AREACODE?.trim()){
+            toastError("Pincode is required");
+            return;
+        }
+       
+        if(form.AREACODE){
+            const pinRegex = /^[0-9]{6}$/;
+            if (!pinRegex.test(form.AREACODE)) {
+                toastError("Pincode must be exactly 6 digits");
+                return;
+            }
+        }
+        if(!form.PHONE?.trim()){
+            toastError("Mobile Number is required");
+            return;
+        }
+        if(!form.EMAIL?.trim()){
+            toastError("Email is required");
+            return;
+        }
 
+       
         if (editId) {
             updateCompany({
                 id: editId,
@@ -194,7 +237,7 @@ function CompanyMaster() {
                 payload: form,
                 logo: logoFile,
             });
-            toastCreated("Company");
+            
         }
 
         resetForm();
@@ -208,7 +251,7 @@ function CompanyMaster() {
     const CompanyColumn = [
         {key:'companyId' , label:'Company Id' },
         {key:'companyName' , label:'Company Name' },
-        {key:'costId' , label:'Cost Id' },
+        // {key:'costId' , label:'Cost Id' },
         {key:'active', label:'Active'},
         {key:'actions', label:'Actions'},
     ];
@@ -236,34 +279,60 @@ function CompanyMaster() {
                                 <Grid templateColumns="repeat(2,1fr)" gap={2}>
                                     <Field.Root>
                                         <Field.Label>Company Id</Field.Label>
-                                        <Input
-                                            value={form.companyid}
+                                        <CapitalizedInput<CreateCompanyPayload>
+                                            field="COMPANYID"
+                                            value={form.COMPANYID}
                                             disabled={!!editId}   // ✅ lock during edit
-                                            onChange={(e) => handleChange("companyid", e.target.value)}
+                                            onChange={handleChange}
+                                            max={3}
                                          
                                         />
                                     </Field.Root>
 
                                     <Field.Root>
                                         <Field.Label>Company Name</Field.Label>
-                                        <Input
-                                            value={form.companyname}
-                                            onChange={(e) => handleChange("companyname", e.target.value)}
+                                        <CapitalizedInput<CreateCompanyPayload>
+                                            field="COMPANYNAME"
+                                            value={form.COMPANYNAME}
+                                            onChange={handleChange}
+                                            isCapitalized
                                         />
                                     </Field.Root>
 
-                                    <Field.Root>
+                                    {/* <Field.Root>
                                         <Field.Label>Cost Id</Field.Label>
                                         <Input
                                             value={form.costid}
                                             onChange={(e) => handleChange("costid", e.target.value)}
                                         />
-                                    </Field.Root>
+                                    </Field.Root> */}
+
+
+
                                     <Field.Root gridColumn="span 2">
                                         <Field.Label>Address</Field.Label>
-                                        <Textarea
-                                            value={form.address1}
-                                            onChange={(e) => handleChange("address1", e.target.value)}
+                                        <CapitalizedInput
+                                            field="ADDRESS1"
+                                            value={form.ADDRESS1}
+                                            onChange={handleChange}
+                                        />
+                                    </Field.Root>
+
+                                    <Field.Root gridColumn="span 2">
+                                        <Field.Label>Area</Field.Label>
+                                        <CapitalizedInput
+                                            field="ADDRESS2"
+                                            value={form.ADDRESS2}
+                                            onChange={handleChange}
+                                        />
+                                    </Field.Root>
+
+                                    <Field.Root gridColumn="span 2">
+                                        <Field.Label>City</Field.Label>
+                                        <CapitalizedInput
+                                            field="ADDRESS3"
+                                            value={form.ADDRESS3}
+                                            onChange={handleChange}
                                         />
                                     </Field.Root>
 
@@ -271,8 +340,8 @@ function CompanyMaster() {
                                         <Field.Label>State</Field.Label>
                                         <NativeSelect.Root>
                                             <NativeSelect.Field
-                                                value={form.active}
-                                                onChange={(e) => handleChange("active", e.target.value)}
+                                                value={form.ACTIVE}
+                                                onChange={(e) => handleChange("ACTIVE", e.target.value)}
                                             >
                                                 <For each={stateItems.items}>
                                                     {(item) => (
@@ -288,31 +357,42 @@ function CompanyMaster() {
                                     
                                     <Field.Root>
 
-                                        <Field.Label>Area Code</Field.Label>
-                                        <Input
-                                            value={form.areacode}
-                                            onChange={(e) => handleChange("areacode", e.target.value)}
+                                        <Field.Label>PinCode</Field.Label>
+                                        <CapitalizedInput
+                                            field="AREACODE"
+                                            value={form.AREACODE}
+                                            onChange={handleChange}
+                                            max={999999}
+                                            type="number"
+                                          
                                         />
                                     </Field.Root>
                                     <Field.Root>
                                         <Field.Label>Mobile</Field.Label>
-                                        <Input
-                                            value={form.phone}
-                                            onChange={(e) => handleChange("phone", e.target.value)}
+                                        <CapitalizedInput
+                                            field="PHONE"
+                                            value={form.PHONE}
+                                            onChange={handleChange}
+                                            max={9999999999}
+                                            type="number"
+                                       
                                         />
                                     </Field.Root>
                                     <Field.Root>
                                         <Field.Label>Email</Field.Label>
                                         <Input
-                                            value={form.email}
-                                            onChange={(e) => handleChange("email", e.target.value)}
+                                            value={form.EMAIL}
+                                            onChange={(e) => handleChange("EMAIL", e.target.value)}
+                                            type="email"
                                         />
                                     </Field.Root>
                                     <Field.Root>
                                         <Field.Label>GSTIN</Field.Label>
-                                        <Input
-                                            value={form.gstno}
-                                            onChange={(e) => handleChange("gstno", e.target.value)}
+                                        <CapitalizedInput
+                                            field="GSTNO"
+                                            value={form.GSTNO}
+                                            onChange={handleChange}
+                                            
                                         />
                                     </Field.Root>
 
@@ -322,8 +402,8 @@ function CompanyMaster() {
                                         <Field.Label>Active</Field.Label>
                                         <NativeSelect.Root>
                                             <NativeSelect.Field
-                                                value={form.active || "Y"}
-                                                onChange={(e) => handleChange("active", e.target.value)}
+                                                value={form.ACTIVE || "Y"}
+                                                onChange={(e) => handleChange("ACTIVE", e.target.value)}
                                             >
                                                 <For each={activeStatus.items}>
                                                     {(item) => (
@@ -370,7 +450,7 @@ function CompanyMaster() {
                                 <>
                                     <Table.Cell>{company.COMPANYID}</Table.Cell>
                                     <Table.Cell>{company.COMPANYNAME}</Table.Cell>
-                                    <Table.Cell>{company.COSTID}</Table.Cell>
+                                    {/* <Table.Cell>{company.COSTID}</Table.Cell> */}
                                     <Table.Cell textAlign="center">{company.ACTIVE}</Table.Cell>
                                     <Table.Cell>
                                         <Box display="flex" justifyContent="center">

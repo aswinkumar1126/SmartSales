@@ -4,6 +4,9 @@ import { useAuth } from "./useAuth";
 import { useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 
+const normalizePath = (path?: string) =>
+    path?.replace(/\/$/, "") || "";
+
 const useProtected = () => {
     const { user, loading } = useAuth();
     const router = useRouter();
@@ -12,20 +15,16 @@ const useProtected = () => {
     const publicRoutes = ["/login"];
 
     useEffect(() => {
-     
-
-        // ⛔ Don't redirect while loading
         if (loading) return;
 
+        const cleanPath = normalizePath(pathname);
+
         // ✅ Allow public routes
-        if (pathname && publicRoutes.includes(pathname)) {
-            return;
-        }
+        if (publicRoutes.includes(cleanPath)) return;
 
         // 🔄 Redirect unauthenticated users
         if (!user) {
-            console.warn("🚫 No user detected — redirecting to /login");
-            router.replace("/login"); // replace prevents back-navigation
+            router.replace("/login/");
         }
     }, [loading, user, pathname, router]);
 
@@ -33,3 +32,6 @@ const useProtected = () => {
 };
 
 export default useProtected;
+
+
+

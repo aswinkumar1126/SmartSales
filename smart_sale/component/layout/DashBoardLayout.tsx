@@ -11,13 +11,18 @@ import { useSidebar } from "@/context/layout/SideBarContext";
 
 const noLayoutRoutes = ["/login"];
 
+
+const normalizePath = (path?: string) =>
+    path?.replace(/\/$/, "") || "";
+
 const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
     const { theme } = useTheme();
     const { sidebarConfig, sidebarCollapsed } = useSidebar();
     const [isOpen, setIsOpen] = useState(false);
     const [isDesktop] = useMediaQuery(["(min-width: 768px)"]);
 
-    const pathname = usePathname();
+    let pathname = usePathname();
+    pathname = normalizePath(pathname);
     const noLayout = pathname ? noLayoutRoutes.includes(pathname) : false;
 
     if (noLayout) return children;

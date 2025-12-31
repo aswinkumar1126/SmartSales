@@ -3,6 +3,7 @@ export interface CreateParty {
 
     companyType:string,
     companyId:string,
+    bookName:string,
     slipNo:number,
     openWeight:number,
     openPure:number,
@@ -15,7 +16,8 @@ export interface GetParty{
    sno:number,
    companyType:string,
    companyId:string,
-   companyName:string,
+   companyName?:string,
+   COMPANYNAME:String;
    bookName:string,
    slipNo:number,
    openWeight:number,

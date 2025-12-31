@@ -34,6 +34,8 @@ import { toastError, toastLoaded } from '@/component/toast/toast'
 import { Toaster } from "@/components/ui/toaster";
 import { useMetalById } from "@/hooks/metal/useMetals";
 import { CustomTable } from "@/component/table/CustomTable";
+import { CapitalizedInput } from "@/component/form/CapitalizedInput";
+
 
 
 function MetalMaster() {
@@ -44,24 +46,31 @@ function MetalMaster() {
         metalId: "",
         metalName: "",
         ttype: "M",
-        displayOrder: 0,
+        displayOrder: 1,
         active: "Y",
     });
 
+    
+
     const [isEdit, setIsEdit] = useState(false);
     const [editId ,setEditId] = useState('');
-    const [ highlightId ,setHighLightedId] =useState<Number>();
+    const [ highlightId ,setHighLightedId] =useState<String>();
 
 
 
     const { data: metals = [], refetch } = useAllMetals();
-console.log(metals,"metaldata")
 
+    useEffect(() => {
+        if (!metals || metals.length === 0) return;
 
+        setForm(prev => ({
+            ...prev,
+            displayOrder: metals.length + 1,
+        }));
+    }, [metals]);
     const { data: metalsByID} = useMetalById(editId) ;
  
 
-    // const metalDataById:any ;
 
     const createMutation = useCreateMetal();
     const updateMutation = useUpdateMetal();
@@ -88,6 +97,9 @@ console.log(metals,"metaldata")
     return () => clearTimeout(timer);
    })
 
+
+
+
     const handleSave = () => { 
         if (!form.metalId) {
             toastError("Metal ID is required");
@@ -110,26 +122,27 @@ console.log(metals,"metaldata")
             updateMutation.mutate(
                 { id: form.metalId, metal: form as Metal },
                 { onSuccess: () => { 
-                    setHighLightedId(Number(form.metalId))
+                    setHighLightedId(String(form.metalId))
                     resetForm();
                      refetch(); } }
             );
         } else {
             createMutation.mutate(form as Metal, { onSuccess: () => { 
                 resetForm(); 
-                setHighLightedId(Number(form.metalId));
+                setHighLightedId(String(form.metalId));
                 refetch(); } });
         }
     };
 
     const handleEdit = (metal: Metal) => {
-        toastLoaded("Metal");
+       
         setIsEdit(true);
         setEditId(metal.metalId);
      
     };
     useEffect(() => {
         if (metalsByID && Object.keys(metalsByID).length > 0) {
+            console.log(metalsByID)
             setForm({
                 ...metalsByID,
                 ttype: metalsByID.ttype || "M", // 👈 normalize
@@ -177,24 +190,28 @@ console.log(metals,"metaldata")
                                           
                         <Text fontSize="20px"  fontWeight="600">Metal Master</Text>
 
-                        <Fieldset.Root size="lg" width="100%">
+                        <Fieldset.Root display='flex' size="lg" width="100%">
                             <Fieldset.Content>
-                                <Field.Root>
+                                <Field.Root width="120px ">
                                     <Field.Label>Metal Id</Field.Label>
-                                    <Input
+                                    <CapitalizedInput
                                         type="text"
+                                        field="metalId"
                                         placeholder="Enter Metal Id"
                                         value={form.metalId || ""}
-                                        onChange={(e) => handleChange("metalId", e.target.value)}
+                                        onChange={handleChange}
                                         disabled={isEdit} // cannot edit ID
+                                        max={1}
                                     />
                                 </Field.Root>
+
                                 <Field.Root>
                                     <Field.Label>Metal Name</Field.Label>
-                                    <Input
+                                    <CapitalizedInput
+                                        field="metalName"
                                         placeholder="Enter Metal Name"
                                         value={form.metalName || ""}
-                                        onChange={(e) => handleChange("metalName", e.target.value)}
+                                        onChange={handleChange}
                                     />
                                 </Field.Root>
 
@@ -214,9 +231,9 @@ console.log(metals,"metaldata")
                                                 height: "42px",
                                             }}
                                         >
-                                            <option value="M">Metal</option>
-                                            <option value="S">Stone</option>
-                                            <option value="A">Alloy</option>
+                                            <option value="M">METAL</option>
+                                            <option value="S">STONE</option>
+                                            <option value="A">ALLOY</option>
                                         </NativeSelect.Field>
 
                                         <NativeSelect.Indicator />

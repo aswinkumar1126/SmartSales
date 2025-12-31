@@ -37,6 +37,7 @@ import { useTheme } from "@/context/theme/themeContext";
 import scrollToTop from "@/component/scroll/ScrollToTop";
 import { toastLoaded } from "@/component/toast/toast";
 import { formatToFixed } from "@/utils/format/numberFormat";
+import { CapitalizedInput } from "@/component/form/CapitalizedInput";
 
 export default function ItemMasterPage() {
     /* ===================== STATE ===================== */
@@ -91,17 +92,10 @@ export default function ItemMasterPage() {
     }, [itemById]);
 
     /* ===================== HANDLERS ===================== */
-    const onChange =
-        (key: keyof ItemMast) =>
-            (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-                setForm((prev) => ({ ...prev, [key]: e.target.value }));
 
-                // clear field error softly
-                if (key === "itemName" && errors.itemName) {
-                    setErrors((prev) => ({ ...prev, itemName: undefined }));
-                }
-            };
-
+    const onChange = (field: keyof ItemMast, value: any)=>{
+        setForm((prev)=>({...prev ,[field]:value}))    
+    }
 
     const resetForm = () => {
         setEditingId(null);
@@ -172,14 +166,14 @@ export default function ItemMasterPage() {
     ];
 
     const calTypeOptions = [
-        { label: "Weight Based", value: "W" },
-        { label: "Metal Based", value: "M" },
-        { label: "Rate Based", value: "R" },
+        { label: "WEIGHT BASED", value: "W" },
+        { label: "METAL BASED", value: "M" },
+        { label: "RATE BASED", value: "R" },
     ];
 
     const stockTypeOptions = [
-        { label: "Tagged", value: "T" },
-        { label: "Non Tagged", value: "N" },
+        { label: "TAGGED", value: "T" },
+        { label: "NON TAGGED", value: "N" },
     ];
 
     const tableColumns: TableColumn[] = [
@@ -217,26 +211,19 @@ export default function ItemMasterPage() {
                             <Fieldset.Content gap={3}>
                                 <Field.Root>
                                     {/* Item ID (auto-generated) */}
-                                    <HStack >
-                                    <Field.Root flex={1}>
+                             
+                                    <Field.Root >
                                         <Field.Label>Item ID</Field.Label>
                                         <Input type="number" value={form.itemId} disabled  width='100px' />
                                     </Field.Root>
-                                        <Field.Root flex={1} invalid={!!errors.itemName}>
+                                        <Field.Root invalid={!!errors.itemName}>
                                             <Field.Label>Item Name</Field.Label>
 
-                                            <Input
+                                            <CapitalizedInput
+                                                field={"itemName"}
                                                 value={form.itemName ?? ""}
-                                                onChange={onChange("itemName")}
-                                                borderColor={errors.itemName ? "red.300" : undefined}
-                                                _focus={{
-                                                    borderColor: errors.itemName ? "red.400" : "blue.400",
-                                                    boxShadow: errors.itemName
-                                                        ? "0 0 0 1px var(--chakra-colors-red-400)"
-                                                        : undefined,
-                                                }}
-                                                minWidth={{sm:'150px',md:'250px'}}
-
+                                                onChange={onChange}
+                                                placeholder="Enter Item Name"
                                             />
 
                                             {errors.itemName && (
@@ -245,14 +232,14 @@ export default function ItemMasterPage() {
                                                 </Text>
                                             )}
                                         </Field.Root>
-                                </HStack>
+                           
                                    
                                     {/* Company */}
                                     <Field.Label>Company</Field.Label>
                                     <NativeSelect.Root>
                                         <NativeSelect.Field
                                             value={form.companyId ?? ""}
-                                            onChange={onChange("companyId")}
+                                            onChange={(e) => onChange("companyId", e.target.value)}
                                             css={{
                                                 backgroundColor: "#eee",
                                                 color: "#111827",
@@ -282,7 +269,7 @@ export default function ItemMasterPage() {
                                         <NativeSelect.Root>
                                             <NativeSelect.Field
                                                 value={form.metalId ?? ""}
-                                                onChange={onChange("metalId")}
+                                                onChange={(e)=>onChange("metalId" ,e.target.value)}
                                                 css={{
                                                     backgroundColor: "#eee",
                                                     color: "#111827",
@@ -306,12 +293,12 @@ export default function ItemMasterPage() {
                                 <HStack gap={3}>
                                     <Field.Root flex={1}>
                                         <Field.Label>HSN Code</Field.Label>
-                                        <Input value={form.hsn ?? ""} onChange={onChange("hsn")} />
+                                        <CapitalizedInput field="hsn" value={form.hsn ?? ""} onChange={onChange} />
                                     </Field.Root>
                                     
                                     <Field.Root flex={1}>
                                         <Field.Label>Short Name</Field.Label>
-                                        <Input value={form.shortName ?? ""} onChange={onChange("shortName")} />
+                                        <CapitalizedInput field="shortName" value={form.shortName ?? ""} onChange={onChange} />
                                     </Field.Root>
                                 </HStack>
 
@@ -322,7 +309,7 @@ export default function ItemMasterPage() {
                                         <NativeSelect.Root>
                                             <NativeSelect.Field
                                                 value={form.stockType ?? "N"}
-                                                onChange={onChange("stockType")}
+                                                onChange={(e)=>onChange("stockType",e.target.value)}
                                                 css={{
                                                     backgroundColor: "#eee",
                                                     color: "#111827",
@@ -344,8 +331,9 @@ export default function ItemMasterPage() {
                                         <Field.Label>Cal Type</Field.Label>
                                         <NativeSelect.Root>
                                             <NativeSelect.Field
+                                            
                                                 value={form.calType ?? "W"}
-                                                onChange={onChange("calType")}
+                                                onChange={(e)=>onChange("calType", e.target.value)}
                                                 css={{
                                                     backgroundColor: "#eee",
                                                     color: "#111827",
@@ -372,7 +360,7 @@ export default function ItemMasterPage() {
                                         <NativeSelect.Root>
                                             <NativeSelect.Field
                                                 value={form.active ?? "Y"}
-                                                onChange={onChange("active")}
+                                                onChange={(e)=>onChange("active",e.target.value)}
                                                 css={{
                                                     backgroundColor: "#eee",
                                                     color: "#111827",

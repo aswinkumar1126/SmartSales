@@ -42,7 +42,8 @@ import { useUserById } from "@/hooks/user/useUserById";
 import { toastLoaded } from "@/component/toast/toast";
 import { Toaster } from "@/components/ui/toaster";
 import { CustomTable } from "@/component/table/CustomTable";
-
+import { getImage } from "@/utils/image/getImage";
+import { CapitalizedInput } from "@/component/form/CapitalizedInput";
 
 export default function UserMasters() {
     const { theme } = useTheme();
@@ -50,7 +51,7 @@ export default function UserMasters() {
     //console.log(user ,'user');
 
 
-    const [imagePreview, setImagePreview] = useState<string | null>(null);
+    const [imagePreview, setImagePreview] = useState<string |undefined | null>(null);
     const [confirmPwd, setConfirmPwd] = useState("");
     const [error, setError] = useState<string | null>(null);
 
@@ -63,7 +64,7 @@ export default function UserMasters() {
         billing: false,
     });
 
-    const [selectedImage, setSelectedImage] = useState<File | undefined>();
+    const [selectedImage, setSelectedImage] = useState<File | undefined  >();
     const [editingUserId, setEditingUserId] = useState<number | null>(null);
     const [highlightId ,setHighlightedId] = useState<Number > ();
 
@@ -95,11 +96,12 @@ export default function UserMasters() {
     const { mutate: createUser, isPending: creating } = useCreateUser();
     const { mutate: patchUser, isPending: updating } = usePatchUser();
 
-    const onChange =
-        (key: keyof UserMaster) =>
-            (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-                setForm((prev) => ({ ...prev, [key]: e.target.value }));
-            };
+    const onChange = (field: keyof UserMaster, value: any) => {
+        setForm(prev => ({
+            ...prev,
+            [field]: value,
+        }));
+    };
     const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
@@ -114,7 +116,7 @@ export default function UserMasters() {
         const { pwd, ...formData } = normalizeUser(userByIdData.data);
         //console.log(formData)
         setForm({ ...formData, pwd: "" });
-        setImagePreview(formData.userImage ?? null);
+        setImagePreview(getImage(formData?.userImage));
         setConfirmPwd("");
     }, [userByIdData]);
 
@@ -139,12 +141,12 @@ export default function UserMasters() {
 
         // CREATE MODE → password mandatory
         if (!editingUserId) {
-            if (!form.pwd || !confirmPwd) {
+            if (!form.pwd?.toLowerCase() || !confirmPwd.toLowerCase()) {
                 setError("Password and Confirm Password are required");
                 return;
             }
 
-            if (form.pwd !== confirmPwd) {
+            if (form.pwd.toLowerCase() !== confirmPwd.toLowerCase()) {
                 setError("Password and Confirm Password do not match");
                 return;
             }
@@ -152,7 +154,7 @@ export default function UserMasters() {
 
         // EDIT MODE → password optional, but must match if entered
         if (editingUserId && form.pwd) {
-            if (form.pwd !== confirmPwd) {
+            if (form.pwd.toLowerCase() !== confirmPwd.toLowerCase()) {
                 setError("Password and Confirm Password do not match");
                 return;
             }
@@ -166,14 +168,30 @@ export default function UserMasters() {
         }
 
         if (editingUserId) {
-            patchUser(
-                { userId: editingUserId, updates: payload },
-                { onSuccess:()=>{
-                    resetForm;
-                    setHighlightedId(editingUserId);
-                }  }
+            const formData = new FormData();
+
+            formData.append(
+                "updatedUser",
+                new Blob([JSON.stringify(payload)], {
+                    type: "application/json",
+                })
             );
-        } else {
+
+            if (selectedImage) {
+                formData.append("image", selectedImage);
+            }
+
+            patchUser(
+                { userId: editingUserId, formData },
+                {
+                    onSuccess: () => {
+                        resetForm();
+                        setHighlightedId(editingUserId);
+                    },
+                }
+            );
+        }
+         else {
             createUser(
                 
                 { user: payload, image: selectedImage },
@@ -210,20 +228,20 @@ export default function UserMasters() {
             username: item.username,
             pwd: "", // never preload password
             active: item.active,
-            userCostId: item.costId,
+            userCostId: item.costId??"",
             billing: item.billing ?? false,
         });
 
-        setImagePreview(item.userImage ?? "");
+        setImagePreview(getImage(item?.userImage));
         setSelectedImage(undefined);
     };
 
     // Dummy table data
-    const dummyUsers = [
-        { id: 1, name: "Admin", centre: "Head Office", active: "YES" },
-        { id: 2, name: "Ravi", centre: "Showroom 1", active: "YES" },
-        { id: 3, name: "Kumar", centre: "Factory", active: "NO" },
-    ];
+    // const dummyUsers = [
+    //     { id: 1, name: "Admin", centre: "Head Office", active: "YES" },
+    //     { id: 2, name: "Ravi", centre: "Showroom 1", active: "YES" },
+    //     { id: 3, name: "Kumar", centre: "Factory", active: "NO" },
+    // ];
 
     // ACTIVE STATUS SELECT LIST
     const activeStatus = createListCollection({
@@ -236,12 +254,12 @@ export default function UserMasters() {
     const UserMasterColumn = [
         {key: "userId", label: "User Id"},
         { key: "username", label: "User Name"},
-        {key: "costId", label: "Cost Id"},
+        // {key: "costId", label: "Cost Id"},
         {key: "active", label: "Active" ,align:'center' as const},
         {key: "action", label: "Actions" ,align:'center' as const},
 
     ]
-   
+   console.log(imagePreview ,'imagePreview')
     return (
         <Box
             className={fontVariables}
@@ -279,11 +297,14 @@ export default function UserMasters() {
                                 <Box>
                                 <Field.Root>
                                     <Field.Label>User Name</Field.Label>
-                                            <InputGroup startElement={<LuUser color={theme.colors.secondary} />}> 
-                                                <Input
+                                            <InputGroup startElement={<LuUser color={theme.colors.secondary} />}>
+                                                <CapitalizedInput
+                                                    field="username"
                                                     placeholder="Enter user name"
                                                     value={form.username}
-                                                    onChange={onChange("username")}
+                                                    onChange={onChange}
+                                                    icon
+                                               
                                                 />
 
                                             </InputGroup>
@@ -296,8 +317,8 @@ export default function UserMasters() {
                                             <InputGroup startElement={<RiLockPasswordLine color={theme.colors.secondary} />}>
                                                 <PasswordInput
                                                     placeholder="Enter your password"
-                                                    value={form.pwd}
-                                                    onChange={onChange("pwd")}
+                                                    value={form.pwd ?? ""}
+                                                    onChange={(e) => onChange("pwd", e.target.value)}
                                                 />
 
                                     </InputGroup>
@@ -342,15 +363,15 @@ export default function UserMasters() {
                                 </Box>
 
                                 {/* COST CENTRE */}
-                                <Box css={{display:'flex' ,justifyContent:'space-between' ,gap:2 }}>
+                                 <Box css={{display:'flex' ,justifyContent:'space-between' ,gap:2 }}>
 
-                                    <Field.Root>
+                                    {/* {/*  <Field.Root>
                                         <Field.Label>Cost Center</Field.Label>
 
                                         <NativeSelect.Root>
                                             <NativeSelect.Field
                                                 value={form.costId}
-                                                onChange={onChange("costId")}
+                                                onChange={(value)=>onChange("costId",value)}
                                                 css={{
                                                     backgroundColor: "#eee",
                                                     color: "#111827",
@@ -359,7 +380,7 @@ export default function UserMasters() {
                                                     height: "42px",
                                                 }}
                                             >
-                                          
+
 
                                                 <For each={costCenters}>
                                                     {(item) => (
@@ -382,7 +403,7 @@ export default function UserMasters() {
                                     <NativeSelect.Root>
                                             <NativeSelect.Field
                                                 value={form.active}
-                                                onChange={onChange("active")}
+                                                onChange={(value)=>onChange("active",value)}
                                                 css={{
                                                     backgroundColor: '#eee',
                                                     color: "#111827",
@@ -463,7 +484,7 @@ export default function UserMasters() {
                                                            {/* <Table.Cell>{i + 1}</Table.Cell> */}
                                                            <Table.Cell>{user.userId}</Table.Cell>
                                                            <Table.Cell>{user.username}</Table.Cell>
-                                                           <Table.Cell >{user.costId}</Table.Cell>
+                                                           {/* <Table.Cell >{user.costId}</Table.Cell> */}
                                                            <Table.Cell textAlign="center">{user.active}</Table.Cell>
                                                            <Table.Cell>
                                                                <Box display="flex" justifyContent="center">

@@ -16,6 +16,7 @@ import { ChevronsLeft, ChevronsRight, ChevronDown } from "lucide-react";
 import { useSidebar } from "@/context/layout/SideBarContext";
 import { useRouter, usePathname } from "next/navigation";
 import { useTheme } from "@/context/theme/themeContext";
+import { normalizePath } from "@/utils/path/normalizePath";
 
 interface SidebarProps {
     isOpen: boolean;
@@ -32,7 +33,8 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
     } = useSidebar();
 
     const router = useRouter();
-    const pathname = usePathname();
+    let pathname = usePathname();
+    pathname = normalizePath(pathname);
     const { theme, mode } = useTheme();
     const [expandedNode, setExpandedNode] = useState<string | null>(null);
     const [isDesktop] = useMediaQuery(["(min-width: 768px)"]);

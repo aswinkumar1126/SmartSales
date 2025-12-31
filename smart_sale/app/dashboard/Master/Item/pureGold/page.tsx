@@ -11,8 +11,9 @@ import {
     Table,
     Heading,
     HStack,
+    Flex
 } from "@chakra-ui/react";
-
+import { FaFileExcel, FaPrint } from "react-icons/fa";
 import { FiEdit } from "react-icons/fi";
 import { IoIosAdd, IoIosExit } from "react-icons/io";
 
@@ -22,12 +23,15 @@ import { Toaster } from "@/components/ui/toaster";
 import { toastLoaded } from "@/component/toast/toast";
 
 import { CustomTable } from "@/component/table/CustomTable";
-
+import { usePrint } from "@/context/print/usePrintContext";
 import { pureGoldMastForm } from "@/types/pureGold/pureGold";
 import { usePureGoldData } from "@/hooks/pureGoldMast/usePureGoldMastData";
 import { useCreatePureGoldMast } from "@/hooks/pureGoldMast/usePureGoldMastCreate";
 import { useUpdatePureGoldMast } from "@/hooks/pureGoldMast/usePureGoldMastUpdate";
 import { AiOutlineSave } from "react-icons/ai";
+import { useRouter } from "next/navigation";
+import { formatToFixed } from "@/utils/format/numberFormat";
+import { CapitalizedInput } from "@/component/form/CapitalizedInput";
 /* ---------------- Initial Form State ---------------- */
 
 const initialFormState: pureGoldMastForm = {
@@ -60,8 +64,9 @@ const PureGoldMaster = () => {
     const [errors, setErrors] = useState<FormErrors>({});
 
     /* ---------------- Hooks ---------------- */
-
+    const router = useRouter();
     const { theme } = useTheme();
+     const {setData ,setColumns } = usePrint();
     const { data: pureGoldData = [], refetch } = usePureGoldData();
 
     const createMutation = useCreatePureGoldMast();
@@ -152,8 +157,8 @@ const PureGoldMaster = () => {
     const columns = [
         { key: "sno", label: "S.No" },
         { key: "pureGoldName", label: "Pure Gold Name" },
-        { key: "weight", label: "Weight" },
-        { key: "actualPure", label: "Actual Pure" },
+        { key: "weight", label: "Weight" ,align : "end" as const },
+        { key: "actualPure", label: "Actual Pure", align: "end" as const },
         { key: "actualTouch", label: "Actual Touch", align: "center" as const },
         { key: "action", label: "Action", align: "center" as const },
     ];
@@ -166,6 +171,20 @@ const PureGoldMaster = () => {
         const timer = setTimeout(() => setHighlightRowId(null), 2500);
         return () => clearTimeout(timer);
     }, [highlightRowId]);
+
+    /* ---------------- Export ---------------- */
+    const handleExport = (option: string) => {
+        setData(pureGoldData);
+        setColumns([
+            { key: "sno", label: "S.No" },
+            { key: "pureGoldName", label: "Pure Gold Name" },
+            { key: "weight", label: "Weight", align: 'end' as const, allowTotal: true },
+            { key: "actualTouch", label: "Actual Touch", align: 'end' as const, },
+            { key: "actualPure", label: "Actual Pure", align: 'end' as const, allowTotal: true },
+        ]);
+        router.push(`/print?export=${option}`);
+    }
+
 
     /* ---------------- UI ---------------- */
 
@@ -183,42 +202,47 @@ const PureGoldMaster = () => {
                     <Box display="grid" gap={4}>
                         <Field.Root invalid={!!errors.pureGoldName}>
                             <Field.Label>Pure Gold Name</Field.Label>
-                            <Input
+                            <CapitalizedInput
+                                field="pureGoldName"
                                 value={form.pureGoldName}
-                                onChange={(e) =>
-                                    handleChange("pureGoldName", e.target.value)
-                                }
+                                onChange={handleChange}
+                                placeholder="enter puregoldname"
                             />
                             <Field.ErrorText>{errors.pureGoldName}</Field.ErrorText>
                         </Field.Root>
 
                         <Field.Root invalid={!!errors.weight}>
                             <Field.Label>Weight</Field.Label>
-                            <Input
+                            <CapitalizedInput
+                                field="weight"
+                                type="number"
                                 value={form.weight}
-                                onChange={(e) => handleChange("weight", e.target.value)}
+                                onChange={handleChange}
+                                placeholder="enter weight"
                             />
                             <Field.ErrorText>{errors.weight}</Field.ErrorText>
                         </Field.Root>
 
                         <Field.Root invalid={!!errors.actualTouch}>
                             <Field.Label>Actual Touch</Field.Label>
-                            <Input
+                            <CapitalizedInput
+                                field ="actualTouch"
+                                type="number"
                                 value={form.actualTouch}
-                                onChange={(e) =>
-                                    handleChange("actualTouch", e.target.value)
-                                }
+                                onChange={handleChange}
+                                placeholder="enter actualtouch"
                             />
                             <Field.ErrorText>{errors.actualTouch}</Field.ErrorText>
                         </Field.Root>
 
                         <Field.Root invalid={!!errors.actualPure}>
                             <Field.Label>Actual Pure</Field.Label>
-                            <Input
+                            <CapitalizedInput
+                                field="actualPure"
+                                type="number"
                                 value={form.actualPure}
-                                onChange={(e) =>
-                                    handleChange("actualPure", e.target.value)
-                                }
+                                onChange={handleChange}
+                                placeholder="enter actualpure"
                             />
                             <Field.ErrorText>{errors.actualPure}</Field.ErrorText>
                         </Field.Root>
@@ -245,11 +269,38 @@ const PureGoldMaster = () => {
 
             {/* -------- Table Section -------- */}
             <GridItem minW={0}>
-                <Box p={5} borderRadius="lg" bg={theme.colors.formColor} boxShadow="sm">
+                <Box  p={3} borderRadius="lg" bg={theme.colors.formColor} boxShadow="sm">
+                    
+                    <Box display="flex"  gap={2} alignItems="center" justifyContent="space-between">
+        
                     <Heading size="md" mb={4}>
                         Pure Gold Master List
                     </Heading>
-
+                     <Flex gap={1}>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="xs"
+                                                    color= {theme.colors.green}
+                                                    _hover={{ color: "black" }}
+                                                    onClick={() => handleExport("excel")}
+                                                    aria-label="Export Excel"
+                                                >
+                                                    <FaFileExcel />
+                                                </Button>
+                    
+                                                <Button
+                                                    variant="ghost"
+                                                    size="xs"
+                                                    color={theme.colors.primaryText}
+                                                    _hover={{ color: "black" }}
+                                                    onClick={() => handleExport("pdf")}
+                                                    aria-label="Export PDF"
+                                                >
+                                                    <FaPrint />
+                                                </Button>
+                                            </Flex>
+                    
+                    </Box>
                     <CustomTable<TouchTableRow>
                         columns={columns}
                         data={pureGoldData as TouchTableRow[]}
@@ -263,16 +314,19 @@ const PureGoldMaster = () => {
                             <>
                                 <Table.Cell>{i + 1}</Table.Cell>
                                 <Table.Cell>{row.pureGoldName}</Table.Cell>
-                                <Table.Cell>{row.weight}</Table.Cell>
-                                <Table.Cell>{row.actualPure}</Table.Cell>
-                                <Table.Cell textAlign="center">
-                                    {row.actualTouch}
+                                <Table.Cell textAlign="end">{formatToFixed(row.weight ,2)} </Table.Cell>
+                                <Table.Cell textAlign="end" >{formatToFixed(row.actualPure , 2) }</Table.Cell>
+                                <Table.Cell textAlign="end">
+                                    {formatToFixed(row.actualTouch,2)}
                                 </Table.Cell>
                                 <Table.Cell align="center">
-                                    <FiEdit
-                                        cursor="pointer"
-                                        onClick={() => handleEdit(row)}
-                                    />
+                                    <Box display="flex" justifyContent="center">
+                                        <FiEdit
+                                            cursor="pointer"
+                                            onClick={() => handleEdit(row)}
+                                        />
+                                    </Box>
+                                  
                                 </Table.Cell>
                             </>
                         )}

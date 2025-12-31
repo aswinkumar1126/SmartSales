@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect  } from "react";
 import {
     Box,
     Field,
@@ -38,6 +38,7 @@ import { useRouter } from "next/navigation";
 import { usePrint } from "@/context/print/usePrintContext";
 import { exportToStyledExcel } from "@/utils/export/exportToExcel";
 import { FaFileExcel } from "react-icons/fa";
+import { CapitalizedInput } from "@/component/form/CapitalizedInput";
 
 
 /* ---------------- Initial State ---------------- */
@@ -58,6 +59,7 @@ export type TouchTableRow = {
 /* ---------------- Component ---------------- */
 
 const TouchMasterForm = () => {
+    
     const [form, setForm] = useState<TouchMaster>(initialFormState);
     const [editId, setEditId] = useState<number | null>(null);
     type FormErrors = Partial<Record<keyof TouchMaster, string>>;
@@ -68,21 +70,21 @@ const TouchMasterForm = () => {
 
     const { data: touchData = [], refetch } = useTouchMastData();
    
+    console.log(touchData,'touchData')
+    // const printData = useMemo(() => {
+    //     return (touchData ?? []).map((row: any, index: number) => ({
+    //         ...row,
 
-    const printData = useMemo(() => {
-        return (touchData ?? []).map((row: any, index: number) => ({
-            ...row,
+    //         // Ensure serial number (optional override)
+    //         sno: index + 1,
 
-            // Ensure serial number (optional override)
-            sno: index + 1,
+    //         // ✅ format touch properly
+    //         touch: formatToFixed(row.touch, 2),
 
-            // ✅ format touch properly
-            touch: formatToFixed(row.touch, 2),
-
-            // normalize naming (optional but recommended)
-            companyName: row.companyname,
-        }));
-    }, [touchData]);
+    //         // normalize naming (optional but recommended)
+    //         companyName: row.companyname,
+    //     }));
+    // }, [touchData]);
 
     const { data: companiesData } = useAllCompanies();
     const { data: items } = useItems();
@@ -94,7 +96,7 @@ const TouchMasterForm = () => {
 
     const router = useRouter();
     /* ---------------- Collections ---------------- */
-
+    console.log(companiesData ,'companyData')
     const companiesCollection = useMemo(
         () =>
             createListCollection({
@@ -111,8 +113,8 @@ const TouchMasterForm = () => {
         () =>
             createListCollection({
                 items: [
-                    { value: "CUS", label: "Customer" },
-                    { value: "SEL", label: "Seller" },
+                    { value: "CUS", label: "CUSTOMER" },
+                    { value: "SEL", label: "SELLER" },
                 ],
             }),
         []
@@ -157,7 +159,7 @@ const TouchMasterForm = () => {
 
     const payload = {
         companyType:form.companyType,
-        companyId : Number(form.companyId),
+        companyId :form.companyId,
         itemId: Number(form.itemId),
         touch: Number(form.touch),
     }
@@ -211,7 +213,7 @@ const TouchMasterForm = () => {
         setData(touchData);
         setColumns([
             { key: "sno", label: "S.No" },
-            { key: "companyname", label: "Company" },
+            { key: "COMPANYNAME", label: "Company Name" },
             { key: "companyType", label: "Company Type" },
             { key: "itemName", label: "Item Name" },
             { key: "touch", label: "Touch", align: 'end' as const, allowTotal: true },
@@ -246,7 +248,7 @@ const TouchMasterForm = () => {
 
     const columns = [
         { key: "sno", label: "S.No" },
-        { key: "companyName", label: "Company" },
+        { key: "COMPANYNAME", label: "Company Name" },
         { key: "companyType", label: "Company Type" },
         { key: "itemName", label: "Item Name" },
         { key: "touch", label: "Touch", align: 'center' as const },
@@ -404,13 +406,11 @@ const TouchMasterForm = () => {
                         <Field.Root invalid={!!errors.touch}>
                             <Field.Label>Touch</Field.Label>
 
-                            <Input
+                            <CapitalizedInput
+                                field="touch"
                                 type="number"
                                 value={form.touch}
-                                onChange={(e) => {
-                                    handleChange("touch", e.target.value);
-                                    setErrors((prev) => ({ ...prev, touch: undefined }));
-                                }}
+                                onChange={handleChange}
                             />
 
                             <Field.ErrorText>{errors.touch}</Field.ErrorText>
@@ -447,28 +447,30 @@ const TouchMasterForm = () => {
                     <Heading  display='flex' size="md" mb={4} gap={3} justifyContent='space-between' alignItems='center'>
                         <Text>Touch Master List</Text>
 
-                        <Flex >
-                          
+                        <Flex gap={1}>
                             <Button
                                 variant="ghost"
-                                colorPalette="green"
-                                
-                                onClick={()=>{handleExport('excel')}}
-                                
-                                size='xs'
+                                size="xs"
+                                color= {theme.colors.green}
+                                _hover={{ color: "black" }}
+                                onClick={() => handleExport("excel")}
+                                aria-label="Export Excel"
                             >
-
-                               <FaFileExcel />
+                                <FaFileExcel />
                             </Button>
-                            <Button 
-                                colorPalette="ghost"  
-                                variant='ghost' 
-                                onClick={() => { handleExport('pdf') }}
-                                size='xs'>
 
-                                    <FaPrint />
+                            <Button
+                                variant="ghost"
+                                size="xs"
+                                color={theme.colors.primaryText}
+                                _hover={{ color: "black" }}
+                                onClick={() => handleExport("pdf")}
+                                aria-label="Export PDF"
+                            >
+                                <FaPrint />
                             </Button>
                         </Flex>
+
 
 
 

@@ -137,7 +137,8 @@ export const SidebarProvider = ({ children }: { children: ReactNode }) => {
           },
         ],
       },
-    }
+    },
+   
   });
 
   const [currentSection, setCurrentSection] = useState("Master");

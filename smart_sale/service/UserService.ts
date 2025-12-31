@@ -85,12 +85,20 @@ export const getUserById = async (
 /* ---------- PATCH ---------- */
 export const patchUser = async (
     userId: number,
-    updates: Partial<UserMaster>
+    formData: FormData
 ): Promise<ApiResponse<UserMaster>> => {
     try {
-        const { data } = await axiosInstance.patch(
+        for (const [key, value] of formData.entries()) {
+            console.log(key, value);
+        }
+        const { data } = await axiosInstance.put(
             `/user/${userId}`,
-            updates
+            formData,
+            {
+                headers: {
+                    "Content-Type": "multipart/form-data",
+                },
+            }
         );
         return data;
     } catch (error: any) {
@@ -99,9 +107,9 @@ export const patchUser = async (
         return {
             status: "error",
             message:
-                error?.response?.data?.message ||
-                "Failed to update user",
+                error?.response?.data?.message || "Failed to update user",
             data: {} as UserMaster,
         };
     }
 };
+

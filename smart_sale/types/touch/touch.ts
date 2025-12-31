@@ -10,7 +10,7 @@ export interface Touch {
 
 export interface TouchForm {
     companyType:string,
-    companyId:number,
+    companyId:string,
     itemId:number,
     touch:number, 
 }

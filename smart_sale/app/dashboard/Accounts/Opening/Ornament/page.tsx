@@ -42,10 +42,17 @@ import { OrnamentPayload ,OrnamentFormData } from "@/types/ornament/ornament";
 import { formatToFixed } from "@/utils/format/numberFormat";
 import { parseFixedNumber } from "@/utils/format/numberInput";
 import { CustomTable } from "@/component/table/CustomTable";
+import { CapitalizedInput } from "@/component/form/CapitalizedInput";
+import { toastError } from "@/component/toast/toast";
+
 
 
 function OrnamentMaster() {
     const { theme } = useTheme();
+
+    type OrnamentErrors = Partial<Record<keyof typeof form, string>>;
+
+    const [errors, setErrors] = React.useState<OrnamentErrors>({});
 
     /* -------------------- DATA -------------------- */
     const { data: itemsData } = useItems();
@@ -65,8 +72,10 @@ function OrnamentMaster() {
         netwt: "",
         touch: "",
         pure: "",
+        stnwt: "",
         openCash:"",
         stoneCash:"",
+        actualtouch:"",
     });
     const [higlightedId, setHiglightedId] =useState<Number>();
 
@@ -86,16 +95,19 @@ function OrnamentMaster() {
         if (!editResponse?.data) return;
 
         const o = editResponse.data;
+        console.log(o , 'ornament')
 
         setForm({
-            itemId: String(o.itemId) || "",
-            pcs: String(o.pcs) || "",
-            grswt: String(o.grswt) || "",
-            netwt: String(o.netwt) || "",
-            touch: String(o.touch) || "",
-            pure: String(o.pure) || "",
-            openCash: String(o.openCash) || "",
-            stoneCash: String(o.stoneCash) || "",
+            itemId:o.itemId ? String(o.itemId) : "",
+            pcs: o.pcs ? String(o.pcs) : "",
+            grswt: o.grswt? String(o.grswt) : "",
+            netwt: o.netwt ? String(o.netwt) : "",
+            touch: o.touch ? String(o.touch) : "",
+            pure: o.pure ? String(o.pure) : "",
+            stnwt: o.stnwt ? String(o.stnwt) : "",
+            openCash: o.openCash ?  String(o.openCash) : "",
+            stoneCash: o.stoneCash ?  String(o.stoneCash) : "",
+            actualtouch: o.actualtouch ? String(o.actualtouch) :"",
         });
     }, [editResponse]);
 
@@ -106,15 +118,9 @@ function OrnamentMaster() {
         })),
     });
     /* -------------------- HELPERS -------------------- */
-    const handleChange =
-        (field: keyof OrnamentFormData) =>
-            (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-                setForm(prev => ({
-                    ...prev,
-                    [field]: e.target.value,
-                }));
-            };
-
+   const handleChange = (field: keyof OrnamentFormData, value: any) => {
+           setForm((prev) => ({ ...prev, [field]: value }));
+       };
 
     const toPayload = (form: OrnamentFormData): OrnamentPayload => ({
         itemId: Number(form.itemId),
@@ -123,8 +129,10 @@ function OrnamentMaster() {
         netwt: Number(form.netwt),
         touch: Number(form.touch),
         pure: Number(form.pure),
+        stnwt: Number(form.stnwt),
         openCash: Number(form.openCash),
         stoneCash: Number(form.stoneCash),
+        actualtouch: Number(form.actualtouch),
     });
 
     const resetForm = () => {
@@ -136,8 +144,10 @@ function OrnamentMaster() {
             netwt: "",
             touch: "",
             pure: "",
+            stnwt: "",
             openCash: "",
             stoneCash: "",
+            actualtouch:"",
         });
     };
 
@@ -151,10 +161,29 @@ function OrnamentMaster() {
     return () => clearTimeout(timer);
 
     }, [higlightedId]);
-    
+
+    /* -------------------- VALIDATION -------------------- */
+    const validateForm = () => {
+        if (!form.itemId) return toastError("Item is required");
+        if (!form.pcs || Number(form.pcs) <= 0) return toastError("Pieces must be greater than 0");
+        if (!form.grswt || Number(form.grswt) <= 0) return toastError("Gross weight must be greater than 0");
+        if (!form.netwt || Number(form.netwt) <= 0) return toastError("Net weight must be greater than 0");
+        if (form.pure !== undefined && Number(form.pure) < 0) return toastError("Pure cannot be negative");
+        if (form.touch !== undefined && Number(form.touch) < 0) return toastError("Touch cannot be negative");
+        if (form.actualtouch !== undefined && Number(form.actualtouch) < 0) return toastError("Actual touch cannot be negative");
+        if (form.stnwt !== undefined && Number(form.stnwt) < 0) return toastError("Stone weight cannot be negative");
+        if (form.stoneCash !== undefined && Number(form.stoneCash) < 0) return toastError("Stone cash cannot be negative");
+        if (form.openCash !== undefined && Number(form.openCash) < 0) return toastError("Open cash cannot be negative");
+
+        return true; // all valid
+    };
     /* -------------------- SAVE -------------------- */
     const handleSave = () => {
+
+        if (!validateForm()) return; // ⛔ stop here
         const payload = toPayload(form);
+
+        console.log(payload ,'payload')
 
         if (editId) {
             updateOrnament(
@@ -263,64 +292,91 @@ function OrnamentMaster() {
 
                                     <Field.Root>
                                         <Field.Label>Pieces</Field.Label>
-                                        <Input
+                                        <CapitalizedInput
+                                            field="pcs"
                                             value={form.pcs}
-                            
-                                            onChange={handleChange("pcs")}
+                                            onChange={handleChange}
+                                            type="number"
                                         />
                                     </Field.Root>
 
                                     <Field.Root>
                                         <Field.Label>Gross Wt</Field.Label>
-                                        <Input
-                                         
+                                        <CapitalizedInput
+                                            field="grswt"
+                                            type="number"
                                             value={form.grswt}
-                                            onChange={handleChange("grswt")}
+                                            onChange={handleChange}
                                         />
                                     </Field.Root>
 
                                     <Field.Root>
                                         <Field.Label>Net Wt</Field.Label>
-                                        <Input
-                                         
+                                        <CapitalizedInput
+                                            field="netwt"
+                                            type="number"
                                             value={form.netwt}
-                                            onChange={handleChange("netwt")}
+                                            onChange={handleChange}
                                         />
                                     </Field.Root>
 
                                     <Field.Root>
-                                        <Field.Label>Touch</Field.Label>
-                                        <Input
-                                     
-                                            value={form.touch}
-                                            onChange={handleChange("touch")}
+                                        <Field.Label>Stone Wt</Field.Label>
+                                        <CapitalizedInput
+                                                field="stnwt"
+                                                value={form.stnwt}
+                                            onChange={handleChange}
+                                            type="number"
                                         />
                                     </Field.Root>
 
                                     <Field.Root>
                                         <Field.Label>Pure</Field.Label>
-                                        <Input
-                                           
+                                        <CapitalizedInput
+                                            field="pure"
                                             value={form.pure}
-                                            onChange={handleChange("pure")}
+                                            onChange={handleChange}
+                                            type="number"
                                         />
                                     </Field.Root>
 
                                     <Field.Root>
                                         <Field.Label>Stone Cash</Field.Label>
-                                        <Input
-                                        
+                                        <CapitalizedInput
+                                            field="stoneCash"
+                                            type="number"
                                             value={form.stoneCash}
-                                            onChange={handleChange("stoneCash")}
+                                            onChange={handleChange}
                                         />
                                     </Field.Root>
 
                                     <Field.Root>
                                         <Field.Label>Open Cash</Field.Label>
-                                        <Input
-                                          
+                                        <CapitalizedInput
+                                            field="openCash"
+                                            type="number"
                                             value={form.openCash}
-                                            onChange={handleChange("openCash")}
+                                            onChange={handleChange}
+                                        />
+                                    </Field.Root>
+
+                                    <Field.Root>
+                                        <Field.Label>Touch</Field.Label>
+                                        <CapitalizedInput
+                                            field="touch"
+                                            type="number"
+                                            value={form.touch}
+                                            onChange={handleChange}
+                                        />
+                                    </Field.Root>
+
+                                    <Field.Root>
+                                        <Field.Label>Actual Touch</Field.Label>
+                                        <CapitalizedInput
+                                        field="actualtouch"
+                                             type="number"       
+                                            value={form.actualtouch}
+                                            onChange={handleChange}
                                         />
                                     </Field.Root>
                                 </Grid>

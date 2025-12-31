@@ -29,7 +29,6 @@ export const useCreateCompany = () => {
             CompanyService.create(payload, logo),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["companies"] });
-            toastCreated("Company");
 
         },
         onError: (error) => {
@@ -45,6 +44,7 @@ export const useUpdateCompany = () => {
     return useMutation({
         mutationFn: ({ id, payload, logo }: { id: string; payload: CreateCompanyPayload; logo?: File }) =>
             CompanyService.updateById(id, payload, logo),
+        
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["companies"] });
             toastUpdated("Company");
