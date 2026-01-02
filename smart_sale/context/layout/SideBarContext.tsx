@@ -138,6 +138,19 @@ export const SidebarProvider = ({ children }: { children: ReactNode }) => {
         ],
       },
     },
+    Transaction :{
+      Opening:{
+        icon: Layers,
+        items:[
+          {
+            label: "Ornament Opening",
+            route: "/dashboard/Transaction/Opening/Opening",
+            icon: Layers,
+          },
+        ]
+      }
+
+    }
    
   });
 

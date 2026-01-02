@@ -19,7 +19,7 @@ const useProtected = () => {
 
         const cleanPath = normalizePath(pathname);
 
-        // ✅ Allow public routes
+        //✅ Allow public routes
         if (publicRoutes.includes(cleanPath)) return;
 
         // 🔄 Redirect unauthenticated users

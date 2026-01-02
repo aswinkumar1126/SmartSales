@@ -139,7 +139,11 @@ export default function LoginPage() {
                                             borderColor: "purple.400",
                                             boxShadow: "0 0 0 1px var(--chakra-colors-purple-400)",
                                         }}
-                                        {...register("username")}
+                                        {...register("username",{
+                                                onChange: (e) => {
+                                                    e.target.value = e.target.value.toUpperCase();
+                                                },
+                                        })}
                                     />
                                     </InputGroup>
 
@@ -156,19 +160,21 @@ export default function LoginPage() {
                                         Password
                                     </Text>
                                     <InputGroup startElement = {<RiLockPasswordLine />} >
-                                    <PasswordInput
-                                        placeholder="Enter Your Password"
-                                        size="lg"
-                                        bg="white"
-                                        border="1px solid"
-                                        borderColor="gray.200"
-                                        color="black"
-                                        _focus={{
-                                            borderColor: "purple.400",
-                                            boxShadow: "0 0 0 1px var(--chakra-colors-purple-400)",
-                                        }}
-                                        {...register("password")}
-                                    />
+                                        <PasswordInput
+                                            placeholder="Enter Your Password"
+                                            size="lg"
+                                            bg="white"
+                                            border="1px solid"
+                                            borderColor="gray.200"
+                                            color="black"
+                                            _focus={{
+                                                borderColor: "purple.400",
+                                                boxShadow: "0 0 0 1px var(--chakra-colors-purple-400)",
+                                            }}
+                                            {...register("password", {
+                                                setValueAs: (value) => value?.toUpperCase(),
+                                            })}
+                                        />
                                     </InputGroup>
 
                                     {errors.password && (

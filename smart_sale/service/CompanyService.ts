@@ -88,7 +88,7 @@ export const CompanyService = {
         if (logo) formData.append("logo", logo);
         
         
-        const { data } = await axiosInstance.patch(`/company/update`, formData, {
+        const { data } = await axiosInstance.put(`/company/update`, formData, {
             headers: { "Content-Type": "multipart/form-data" },
         });
         return data;

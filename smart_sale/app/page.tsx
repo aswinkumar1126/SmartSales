@@ -11,26 +11,16 @@ export default function Home() {
   const router = useRouter();
 
   useEffect(() => {
-    if (!loading && !user) {
-      router.replace("/login");
+    if (loading) return;
+
+    if (!user) {
+      router.replace("/login/");
+    } else {
+      router.replace("/dashboard/Master/Account/Company/");
     }
-    router.replace("/dashboard/Master/Account/Company/");
   }, [loading, user, router]);
 
-  if (loading) return <Loader isLoading={loading} fullscreen={true}/>;
+  if (loading) return <Loader isLoading={loading} fullscreen />;
 
-  if (!user) return null; // ⛔ prevents flicker
-
-
-  return (
-    <Box
-      display="flex"
-      alignItems="center"
-      justifyContent="center"
-    >
-      <Text fontSize="sm" fontWeight="medium">
-        Main Page
-      </Text>
-    </Box>
-  );
+  return null;
 }

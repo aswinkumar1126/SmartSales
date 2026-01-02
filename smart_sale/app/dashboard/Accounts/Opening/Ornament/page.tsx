@@ -183,13 +183,13 @@ function OrnamentMaster() {
         if (!validateForm()) return; // ⛔ stop here
         const payload = toPayload(form);
 
-        console.log(payload ,'payload')
+
 
         if (editId) {
             updateOrnament(
                 { id: editId, ornamentData: payload },
                 { onSuccess:()=> {
-                    resetForm;
+                    resetForm();
                     setHiglightedId(Number(editId));
                 }
                   

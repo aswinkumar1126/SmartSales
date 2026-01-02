@@ -403,7 +403,7 @@ export default function UserMasters() {
                                     <NativeSelect.Root>
                                             <NativeSelect.Field
                                                 value={form.active}
-                                                onChange={(value)=>onChange("active",value)}
+                                                onChange={(e) => onChange("active", e.target.value)}
                                                 css={{
                                                     backgroundColor: '#eee',
                                                     color: "#111827",

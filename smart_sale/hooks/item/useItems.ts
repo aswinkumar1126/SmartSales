@@ -7,8 +7,7 @@ export const useItems = () =>
         queryKey: ["items"],
         queryFn: async () => {
             const res = await ItemService.getAll();
-            console.log(res,'item');
-
+            //console.log(res,'item');
             return res.data.data;
         },
     });
