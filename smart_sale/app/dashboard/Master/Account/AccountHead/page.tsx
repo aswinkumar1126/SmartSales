@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState ,useEffect } from "react";
+import React, { useState ,useEffect ,useMemo} from "react";
 import {
     Box,
     Button,
@@ -18,7 +18,10 @@ import {
     createListCollection,
     For,
     Flex,
-
+    Combobox,
+    Portal,
+    useFilter,
+    useListCollection,
 } from "@chakra-ui/react";
 import { Table } from "@chakra-ui/react/table";
 import { AiOutlineSave } from "react-icons/ai";
@@ -42,10 +45,9 @@ import { CapitalizedInput } from "@/component/form/CapitalizedInput";
 import { usePrint } from "@/context/print/usePrintContext";
 import { useRouter } from "next/navigation";
 import { FaPrint ,FaFileExcel } from "react-icons/fa";
+import { AccountTypeList } from "@/data/AccountType";
 
-
-
-function CompanyMaster() {
+function AccountHead() {
     const { theme } = useTheme();
 
     /* -------------------- API HOOKS -------------------- */
@@ -53,6 +55,7 @@ function CompanyMaster() {
     const router = useRouter();
     const {setData ,setColumns ,setShowSno} =usePrint();
     const companies = data?.data ?? [];
+    const { contains } = useFilter({ sensitivity: "base" })
 
 
     const { mutate: createCompany, isPending } = useCreateCompany();
@@ -79,7 +82,27 @@ function CompanyMaster() {
     const [imagePreview, setImagePreview] = useState<string | null>(null);
     const [editId, setEditId] = useState<string | null>(null);
 
+
+
+
     /* -------------------- SELECT OPTIONS -------------------- */
+
+    const CompaniesList = useMemo(() => {
+        return (
+            companies.map((i: any) => ({
+                label: i.COMPANYNAME,
+                value: String(i.COMPANYID),
+            })) ?? []
+        );
+    }, [companies]);
+
+
+    const { collection: accountTypeCollection , filter:accountTypeFilter } = useListCollection({
+        initialItems: AccountTypeList,
+        filter: contains,
+    })
+
+
     const activeStatus = createListCollection({
         items: [
             { label: "YES", value: "Y" },
@@ -93,6 +116,24 @@ function CompanyMaster() {
           
         ],
     });
+
+
+    const { collection: companyListCollection, filter: companyFilter, set: setItems } = useListCollection({
+        initialItems: CompaniesList,
+        filter: contains,
+        itemToValue: (item) => item.value,
+        itemToString: (item) => item.label,
+    })
+
+
+    useEffect(() => {
+        if (!CompaniesList.length) return;
+
+        setItems(CompaniesList);    // ✅ CORRECT
+        companyFilter("");        // optional reset
+    }, [CompaniesList, setItems, companyFilter]);
+
+
 
     const { data: companyById } = useCompanyById(editId ?? '');
     const company = companyById?.data;
@@ -297,7 +338,7 @@ function CompanyMaster() {
                             <Fieldset.Content>
                                 <Grid templateColumns="repeat(2,1fr)" gap={2}>
                                     <Field.Root>
-                                        <Field.Label>Company Id</Field.Label>
+                                        <Field.Label>Name</Field.Label>
                                         <CapitalizedInput<CreateCompanyPayload>
                                             field="COMPANYID"
                                             value={form.COMPANYID}
@@ -307,16 +348,61 @@ function CompanyMaster() {
                                          
                                         />
                                     </Field.Root>
+                                    <Combobox.Root
+                                        collection={accountTypeCollection}
+                                        onInputValueChange={(e) => accountTypeFilter(e.inputValue)}
+                                
+                                    >
+                                        <Combobox.Label>Account Type</Combobox.Label>
+                                        <Combobox.Control>
+                                            <Combobox.Input placeholder="Type to search" />
+                                            <Combobox.IndicatorGroup>
+                                                <Combobox.ClearTrigger />
+                                                <Combobox.Trigger />
+                                            </Combobox.IndicatorGroup>
+                                        </Combobox.Control>
+                                        <Portal>
+                                            <Combobox.Positioner>
+                                                <Combobox.Content>
+                                                    <Combobox.Empty>No items found</Combobox.Empty>
+                                                    {accountTypeCollection.items.map((item) => (
+                                                        <Combobox.Item item={item} key={item.value}>
+                                                            {item.label}
+                                                            <Combobox.ItemIndicator />
+                                                        </Combobox.Item>
+                                                    ))}
+                                                </Combobox.Content>
+                                            </Combobox.Positioner>
+                                        </Portal>
+                                    </Combobox.Root>
+                                    <Combobox.Root
+                                        collection={companyListCollection}
+                                        onInputValueChange={(e) => companyFilter(e.inputValue)}
+                                        openOnClick
 
-                                    <Field.Root>
-                                        <Field.Label>Company Name</Field.Label>
-                                        <CapitalizedInput<CreateCompanyPayload>
-                                            field="COMPANYNAME"
-                                            value={form.COMPANYNAME}
-                                            onChange={handleChange}
-                                            isCapitalized
-                                        />
-                                    </Field.Root>
+                                    >
+                                        <Combobox.Label>Company</Combobox.Label>
+                                        <Combobox.Control>
+                                            <Combobox.Input placeholder="Type to search" />
+                                            <Combobox.IndicatorGroup>
+                                                <Combobox.ClearTrigger />
+                                                <Combobox.Trigger />
+                                            </Combobox.IndicatorGroup>
+                                        </Combobox.Control>
+                                        <Portal>
+                                            <Combobox.Positioner>
+                                                <Combobox.Content>
+                                                    <Combobox.Empty>No items found</Combobox.Empty>
+                                                    {companyListCollection.items.map((item) => (
+                                                        <Combobox.Item item={item} key={item.value}>
+                                                            {item.label}
+                                                            <Combobox.ItemIndicator />
+                                                        </Combobox.Item>
+                                                    ))}
+                                                </Combobox.Content>
+                                            </Combobox.Positioner>
+                                        </Portal>
+                                    </Combobox.Root>
 
                                     {/* <Field.Root>
                                         <Field.Label>Cost Id</Field.Label>
@@ -337,7 +423,7 @@ function CompanyMaster() {
                                         />
                                     </Field.Root>
 
-                                    <Field.Root gridColumn="span 2">
+                                    <Field.Root gridColumn="span">
                                         <Field.Label>Area</Field.Label>
                                         <CapitalizedInput
                                             field="ADDRESS2"
@@ -346,7 +432,7 @@ function CompanyMaster() {
                                         />
                                     </Field.Root>
 
-                                    <Field.Root gridColumn="span 2">
+                                    <Field.Root gridColumn="span">
                                         <Field.Label>City</Field.Label>
                                         <CapitalizedInput
                                             field="ADDRESS3"
@@ -522,4 +608,4 @@ function CompanyMaster() {
     );
 }
 
-export default CompanyMaster;
+export default AccountHead;

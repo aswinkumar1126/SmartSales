@@ -14,8 +14,10 @@ import {
     Field,
     Table,
     NativeSelect,
+    Flex
 } from "@chakra-ui/react";
 import { FiEdit } from "react-icons/fi";
+import { FaFileExcel ,FaPrint } from "react-icons/fa";
 import { AiOutlineSave } from "react-icons/ai";
 import { IoIosExit } from "react-icons/io";
 
@@ -38,6 +40,8 @@ import scrollToTop from "@/component/scroll/ScrollToTop";
 import { toastLoaded } from "@/component/toast/toast";
 import { formatToFixed } from "@/utils/format/numberFormat";
 import { CapitalizedInput } from "@/component/form/CapitalizedInput";
+import { usePrint } from "@/context/print/usePrintContext";
+import { useRouter } from "next/navigation";
 
 export default function ItemMasterPage() {
     /* ===================== STATE ===================== */
@@ -45,6 +49,11 @@ export default function ItemMasterPage() {
     const topRef = React.useRef<HTMLDivElement>(null);
     const [highlightId, setHighlightId] = useState<number | null>(null);
     const [errors, setErrors] = useState<{ itemName?: string }>({});
+
+
+    const controller = new AbortController();         //Controller to unmound the events in the useEffect
+
+
     const [form, setForm] = useState<ItemMast>({
         itemId: 0,
         itemName: "",
@@ -56,14 +65,16 @@ export default function ItemMasterPage() {
     } as ItemMast);
 
     const { theme } = useTheme();
+    const{ setData ,setColumns ,setShowSno } = usePrint()
 
     /* ===================== HOOKS ===================== */
     const { data: itemsData, isLoading } = useItems();
     const { data: companyData } = useAllCompanies();
     const { data: metalData } = useAllMetals();
-    console.log(itemsData,'itemsData')
+    const router = useRouter();
+
     const { data: itemById } = useItemById(editingId ?? undefined);
-    console.log(itemById ,'itemById')
+
     const { mutate: createItem, isPending: creating } = useCreateItem();
     const { mutate: updateItem, isPending: updating } = useUpdateItem();
 
@@ -76,6 +87,8 @@ export default function ItemMasterPage() {
 
     /* ===================== AUTO ITEM ID ===================== */
     useEffect(() => {
+        
+
         if (!editingId) {
             setForm((prev) => ({
                 ...prev,
@@ -83,12 +96,19 @@ export default function ItemMasterPage() {
                 metalId: metals[0]?.metalId ?? "G", // default first metal
             }));
         }
+        return ()=>{
+            controller.abort();
+        }
     }, [items.length, metals, editingId]);
 
     /* ===================== LOAD ITEM FOR EDIT ===================== */
     useEffect(() => {
+        const controller = new AbortController();
         if (!itemById) return;
         setForm(normalizeItem(itemById));
+        return () => {
+            controller.abort();
+        };
     }, [itemById]);
 
     /* ===================== HANDLERS ===================== */
@@ -118,7 +138,10 @@ export default function ItemMasterPage() {
     const timer = setTimeout(() => {
         setHighlightId(null);
     }, 2500);
-    return () => clearTimeout(timer);
+    return () => {
+        clearTimeout(timer);
+        controller.abort();
+    };
    })
    
     const handleSave = () => {
@@ -177,13 +200,29 @@ export default function ItemMasterPage() {
     ];
 
     const tableColumns: TableColumn[] = [
-        { key: "itemName", label: "Item" },
+        { key: "itemId", label: "ItemId" },
+        { key: "itemName", label: "Item Name" },
         { key: "metalId", label: "Metal" },
-        { key: "pieceRate", label: "Rate", align: "end" },
+        // { key: "pieceRate", label: "Rate", align: "end" },
         { key: "active", label: "Active", align: "center" },
         { key: "action", label: "Action", align: "center" },
     ];
 
+    const handleExport =  (option:string) =>{
+        setData(items);
+        setColumns([
+            { key: "itemId", label: "ItemId" },
+            { key: "itemName", label: "Item" },
+            { key: "metalName", label: "Metal" },
+            { key: "companyName", label: "Company" },
+            // { key: "touch", label: "Touch", align: 'end' as const, allowTotal: true },
+        ]);
+        setShowSno(true)
+        router.push(`/print?export=${option}`);
+    }
+
+
+    console.log(items ,'items')
     /* ===================== UI ===================== */
     return (
         <Box p={4} ref={topRef}>
@@ -409,10 +448,38 @@ export default function ItemMasterPage() {
                         borderRadius="xl"
                         boxShadow="0 0 10px rgba(212,212,212,0.2)"
                         border="1px solid #eee"
-                    >
-                        <Text fontSize="lg" fontWeight="600" mb={2}>
-                            Item List
-                        </Text>
+                    >   
+                        <Box display='flex' mb={4} gap={3} justifyContent='space-between' alignItems='center'>
+                            <Text fontSize="lg" fontWeight="600" mb={2}>
+                                Item List
+                            </Text>
+                            
+                                                    <Flex gap={1}>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="xs"
+                                                            color= {theme.colors.green}
+                                                            _hover={{ color: "black" }}
+                                                            onClick={() => handleExport("excel")}
+                                                            aria-label="Export Excel"
+                                                        >
+                                                            <FaFileExcel />
+                                                        </Button>
+                            
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="xs"
+                                                            color={theme.colors.primaryText}
+                                                            _hover={{ color: "black" }}
+                                                            onClick={() => handleExport("pdf")}
+                                                            aria-label="Export PDF"
+                                                        >
+                                                            <FaPrint />
+                                                        </Button>
+                                                    </Flex>
+                            
+                    </Box>
+                        
                         <CustomTable
                             columns={tableColumns}
                             data={items}
@@ -426,9 +493,10 @@ export default function ItemMasterPage() {
                             highlightRowId={highlightId}
                             renderRow={(item) => (
                                 <>
+                                    <Table.Cell>{item.itemId}</Table.Cell>
                                     <Table.Cell>{item.itemName}</Table.Cell>
-                                    <Table.Cell>{metals.find((m:any) => m.metalId === item.metalId)?.metalName ?? item.metalId}</Table.Cell>
-                                    <Table.Cell textAlign="end">{formatToFixed(item.pieceRate ,2)}</Table.Cell>
+                                    <Table.Cell>{item.metalName}</Table.Cell>
+                                    {/* <Table.Cell textAlign="end">{formatToFixed(item.pieceRate ,2)}</Table.Cell> */}
                                     <Table.Cell textAlign="center">{item.active === "Y" ? "YES" : "NO"}</Table.Cell>
                                     <Table.Cell textAlign="center">
                                         <Box display="flex" justifyContent="center">

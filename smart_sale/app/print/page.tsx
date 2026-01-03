@@ -5,17 +5,17 @@ import { usePrint } from "@/context/print/usePrintContext";
 import { useSearchParams } from "next/navigation";
 
 function Print() {
-    const {data,columns} =usePrint();
+    const {data,columns ,showSno } =usePrint();
     console.log("Print Data:",data);
 
     const searchParams = useSearchParams();
 
-    const exportOption = searchParams?.get('export');
+    const exportOption = searchParams.get('export');
  
     
 
     return(
-        <PrintPreviewScreen data={data} columns={columns} exportOption={exportOption} />
+        <PrintPreviewScreen data={data} columns={columns} exportOption={exportOption} showSno={showSno} />
     )
 };
 

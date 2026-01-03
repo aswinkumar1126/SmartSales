@@ -9,6 +9,7 @@ export const normalizeItem = (i: any): ItemMast => ({
 
     active: i.active ?? "Y",
     metalId: i.metalId ?? null,
+    metalName: i.metalName ?? null,
     metalRate: i.metalRate ?? null,
     pieceRate: i.pieceRate ?? null,
 
@@ -18,6 +19,7 @@ export const normalizeItem = (i: any): ItemMast => ({
 
     companyId: i.companyId ?? null,
     hsn: i.hsn ?? null,
+    companyName:i.COMPANYNAME ?? null,
 
     userId: i.userId ?? null,
     updated: i.updated ?? null,

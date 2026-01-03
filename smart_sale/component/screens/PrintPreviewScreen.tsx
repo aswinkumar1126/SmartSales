@@ -27,10 +27,14 @@ type PrintPreviewScreenProps = {
                 allowTotal?: boolean,
                 align?:"end"| "start" | "center" | undefined, 
                 isNumeric?:boolean }[];
-                exportOption?: string|null;
+
+    exportOption?: string|null;
+    showSno?: boolean;
+
 };
 
-export function PrintPreviewScreen({ data, columns ,exportOption}: PrintPreviewScreenProps) {
+
+export function PrintPreviewScreen({ data, columns ,exportOption,showSno }: PrintPreviewScreenProps) {
 
   
 
@@ -71,14 +75,18 @@ export function PrintPreviewScreen({ data, columns ,exportOption}: PrintPreviewS
                 col.align ??
                 (col.isNumeric ? "right" : "left");
 
+            // 👇 Offset because of S.No column
+            const nthIndex = showSno ? index + 2 : index + 1;
+
             return `
-      th:nth-child(${index + 1}),
-      td:nth-child(${index + 1}) {
+      th:nth-child(${nthIndex}),
+      td:nth-child(${nthIndex}) {
         text-align: ${align};
       }
     `;
         })
         .join("\n");
+
         
 
     const handlePrint = () => {
@@ -326,6 +334,7 @@ export function PrintPreviewScreen({ data, columns ,exportOption}: PrintPreviewS
                         data={data}
                         columns={columns}
                         customization={settings}
+                        showSno={showSno}
                     />
                 </Box>
 

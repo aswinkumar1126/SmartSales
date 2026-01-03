@@ -15,7 +15,8 @@ import {
     Field,
     NativeSelect,
     createListCollection,
-    For
+    For,
+    Flex
 } from "@chakra-ui/react";
 import { Table } from "@chakra-ui/react/table";
 import { AiOutlineSave } from "react-icons/ai";
@@ -35,11 +36,14 @@ import { Toaster } from "@/components/ui/toaster";
 import { useMetalById } from "@/hooks/metal/useMetals";
 import { CustomTable } from "@/component/table/CustomTable";
 import { CapitalizedInput } from "@/component/form/CapitalizedInput";
-
+import { usePrint } from "@/context/print/usePrintContext";
+import { useRouter } from "next/navigation";
+import { FaPrint ,FaFileExcel } from "react-icons/fa";
 
 
 function MetalMaster() {
     const { theme } = useTheme();
+    const router = useRouter();
 
     // Form state
     const [form, setForm] = useState<Partial<Metal>>({
@@ -71,6 +75,7 @@ function MetalMaster() {
     const { data: metalsByID} = useMetalById(editId) ;
  
 
+    const { setData ,setColumns , setShowSno} = usePrint();
 
     const createMutation = useCreateMetal();
     const updateMutation = useUpdateMetal();
@@ -164,6 +169,18 @@ function MetalMaster() {
         { key: "active", label: "Active", align: "end" as const },
         { key: "actions", label: "Action", align: "center" as const },
     ];
+    const handleExport = (option:string) => {
+        setData(metals);
+        setColumns([{key:'metalId',label:'Metal Id'},
+            {key:'metalName',label:'Metal Name'},
+            {key:'ttype',label:'Metal Type'},
+            {key:'displayOrder',label:'Order'},
+           ]);
+        setShowSno(true);
+        router.push(`/print?export=${option}`);
+
+   
+    };
 
 
     return (
@@ -296,7 +313,34 @@ function MetalMaster() {
                                            boxShadow="0 0 30px rgba(212,212,212,0.2)"
                         
                                        >
-                        <Text mb={2} fontWeight="bold" fontSize="lg">Metal List</Text>
+                        <Box display='flex'  mb={4} gap={3} justifyContent='space-between' alignItems='center'>
+                            <Text mb={2} fontWeight="bold" fontSize="lg">Metal List</Text>
+                             <Flex gap={1}>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="xs"
+                                                            color= {theme.colors.green}
+                                                            _hover={{ color: "black" }}
+                                                            onClick={() => handleExport("excel")}
+                                                            aria-label="Export Excel"
+                                                        >
+                                                            <FaFileExcel />
+                                                        </Button>
+                            
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="xs"
+                                                            color={theme.colors.primaryText}
+                                                            _hover={{ color: "black" }}
+                                                            onClick={() => handleExport("pdf")}
+                                                            aria-label="Export PDF"
+                                                        >
+                                                            <FaPrint />
+                                                        </Button>
+                                                    </Flex>
+                            
+                                        </Box>
+                       
 
                         <Stack gap="10">
                            <CustomTable

@@ -67,6 +67,11 @@ export const SidebarProvider = ({ children }: { children: ReactNode }) => {
             route: "/dashboard/Master/Account/Company",
             icon: Building2,
           },
+          {
+            label: "AccountHead",
+            route: "/dashboard/Master/Account/AccountHead",
+            icon: Building2,
+          },
         ],
       },
       Item: {

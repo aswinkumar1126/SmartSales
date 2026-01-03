@@ -9,6 +9,7 @@ export interface ItemMast {
     metalId: string | null;
     metalRate: number | null;
     pieceRate: number | null;
+    metalName:string | null;
 
     catCode: string | null;
     stockType: string | null;
@@ -16,6 +17,7 @@ export interface ItemMast {
 
     companyId: string | null;
     hsn: string | null;
+    companyName:string | null;
 
     userId: number | null;
     updated: string | null;

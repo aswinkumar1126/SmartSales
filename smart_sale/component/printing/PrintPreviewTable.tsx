@@ -29,12 +29,14 @@ type PrintPreviewTableProps<T> = {
     columns: PrintColumn<T>[];
     data: T[];
     customization: PrintCustomization;
+    showSno?: boolean;
 };
 
 export function PrintPreviewTable<T extends Record<string, any>>({
     columns,
     data,
     customization,
+    showSno,
 }: PrintPreviewTableProps<T>) {
     const { fontSize, headerBg, showTotals, totalColumns ,headerColor ,title , isNumeric, } = customization;
 
@@ -64,6 +66,16 @@ export function PrintPreviewTable<T extends Record<string, any>>({
                 {/* HEADER */}
                 <Table.Header>
                     <Table.Row bg={headerBg} color={headerColor}>
+                        {showSno && (
+                            <Table.ColumnHeader
+                                textAlign="center"
+                                whiteSpace="nowrap"
+                                color={headerColor}
+                            >
+                                S.No
+                            </Table.ColumnHeader>
+                        )}
+
                         {columns.map((col) => (
                             <Table.ColumnHeader
                                 key={String(col.key)}
@@ -79,8 +91,15 @@ export function PrintPreviewTable<T extends Record<string, any>>({
 
                 {/* BODY */}
                 <Table.Body >
+                    
                     {data.map((row, index) => (
                         <Table.Row key={index} color='#222'>
+
+                            {showSno && (
+                                <Table.Cell textAlign="center" fontWeight="500">
+                                    {index + 1}
+                                </Table.Cell>
+                            )}
                             {columns.map((col) => (
                                 <Table.Cell
                                     key={String(col.key)}
@@ -102,31 +121,35 @@ export function PrintPreviewTable<T extends Record<string, any>>({
                             borderTop="2px solid"
                             borderColor="gray.300"
                         >
+                            {/* S.No column placeholder */}
+                            {showSno && (
+                                <Table.Cell textAlign="center">
+                                    Total
+                                </Table.Cell>
+                            )}
+
                             {columns.map((col, index) => {
                                 const colKey = col.key as string;
 
-                                // First column → show "Total"
+                                // First DATA column → show "Total"
                                 if (index === 0) {
                                     return (
                                         <Table.Cell key={colKey}>
-                                            Total
+                                        
                                         </Table.Cell>
                                     );
                                 }
 
-                                // Show total only for allowed columns
+                                // Show totals only for configured columns
                                 if (totalColumns.includes(colKey)) {
                                     return (
-                                        <Table.Cell
-                                            key={colKey}
-                                            textAlign="end"
-                                        >
+                                        <Table.Cell key={colKey} textAlign="end">
                                             {totals[colKey]?.toFixed(2)}
                                         </Table.Cell>
                                     );
                                 }
 
-                                // Other columns → empty
+                                // Empty cell
                                 return <Table.Cell key={colKey} />;
                             })}
                         </Table.Row>

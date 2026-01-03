@@ -42,10 +42,18 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
                 isOpen={isOpen}
                 onClose={() => setIsOpen(false)}
             />
+
+            {/* <Box ml={getMainContentMargin()}
+                transition="margin-left 0.25s ease"
+            
+                bg={theme.colors.primary}>
+                summa content
+            </Box> */}
+            {/* Main content area */}
             <Box
                 ml={getMainContentMargin()}
                 transition="margin-left 0.25s ease"
-                p={4}
+                p={2}
                 bg={theme.colors.primary}
             >
                 {children}

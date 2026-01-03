@@ -43,69 +43,73 @@ export function CustomTable<T extends Record<string, any>>({
     highlightRowId = null,
     rowIdKey,
 }: CustomTableProps<T>) {
+
+   const enableScroll = data.length > 10;
+    const rowHeight = 44; // approx for size="sm"
+    const maxBodyHeight = rowHeight * 10;
+
+
+
     return (
         <Box w="100%" overflowX="auto">
-            <Table.Root
-                size={size}
-                minW="max-content"
-                border="1px solid"
-                borderColor={borderColor}
-                showColumnBorder
+            <Box
+                maxH={enableScroll ? `${maxBodyHeight}px` : "auto"}
+                overflowY={enableScroll ? "auto" : "visible"}
             >
-                {/* HEADER */}
-                <Table.Header>
-                    <Table.Row bg={headerBg} >
-                        {columns.map((col) => (
-                            <Table.ColumnHeader
-                                key={col.key}
-                                textAlign={col.align ?? "start"}
-                                color={headerColor}
-                                borderColor={borderColor}
-                                whiteSpace="nowrap"
-                            >
-                                {col.label}
-                            </Table.ColumnHeader>
-                        ))}
-                    </Table.Row>
-                </Table.Header>
-
-                {/* BODY */}
-                <Table.Body>
-                    {data.length === 0 ? (
-                        <Table.Row bg={bodyBg} >
-                            <Table.Cell
-                                colSpan={columns.length}
-                                textAlign="center"
-                            >
-                                {emptyText}
-                            </Table.Cell>
-                        </Table.Row>
-                    ) : (
-                        data.map((row, index) => {
-                            const rowId = rowIdKey ? row[rowIdKey] : null;
-                            const isHighlighted =
-                                highlightRowId != null &&
-                                rowId === highlightRowId;
-
-                            return (
-                                <Table.Row
-                                    key={rowId ?? index}   // ✅ fallback prevents warning
-                                    bg={isHighlighted ? "blue.100" : bodyBg} // ✅ HERE
-                                    animation={
-                                        isHighlighted
-                                            ? "blink 1.2s ease-in-out 2"
-                                            : undefined
-                                    }
-                                    transition="background-color 0.3s ease"
+                <Table.Root
+                    size={size}
+                    minW="max-content"
+                    border="1px solid"
+                    borderColor={borderColor}
+                    showColumnBorder
+                >
+                    {/* HEADER */}
+                    <Table.Header>
+                        <Table.Row bg={headerBg}>
+                            {columns.map((col) => (
+                                <Table.ColumnHeader
+                                    key={col.key}
+                                    textAlign={col.align ?? "start"}
+                                    color={headerColor}
+                                    borderColor={borderColor}
+                                    whiteSpace="nowrap"
                                 >
-                                    {renderRow(row, index)}
-                                </Table.Row>
-                            );
-                        })
-                    )}
-                </Table.Body>
-            </Table.Root>
+                                    {col.label}
+                                </Table.ColumnHeader>
+                            ))}
+                        </Table.Row>
+                    </Table.Header>
+
+                    {/* BODY */}
+                    <Table.Body>
+                        {data.length === 0 ? (
+                            <Table.Row bg={bodyBg}>
+                                <Table.Cell colSpan={columns.length} textAlign="center">
+                                    {emptyText}
+                                </Table.Cell>
+                            </Table.Row>
+                        ) : (
+                            data.map((row, index) => {
+                                const rowId = rowIdKey ? row[rowIdKey] : null;
+                                const isHighlighted =
+                                    highlightRowId != null && rowId === highlightRowId;
+
+                                return (
+                                    <Table.Row
+                                        key={rowId ?? index}
+                                        bg={isHighlighted ? "blue.100" : bodyBg}
+                                        transition="background-color 0.3s ease"
+                                    >
+                                        {renderRow(row, index)}
+                                    </Table.Row>
+                                );
+                            })
+                        )}
+                    </Table.Body>
+                </Table.Root>
+            </Box>
         </Box>
+
     );
 }
 

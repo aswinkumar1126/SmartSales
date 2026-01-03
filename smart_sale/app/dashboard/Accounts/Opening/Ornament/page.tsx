@@ -15,7 +15,9 @@ import {
     NativeSelect,
     Select,
     Portal,
-    createListCollection
+    createListCollection,
+    Flex,
+
 } from "@chakra-ui/react";
 import { Table } from "@chakra-ui/react/table";
 import { AiOutlineSave } from "react-icons/ai";
@@ -37,25 +39,27 @@ import {
     useCreateOrnament,
     useUpdateOrnament,
 } from "@/hooks/ornament/useOrnamentData";
-
+import { usePrint } from "@/context/print/usePrintContext";
 import { OrnamentPayload ,OrnamentFormData } from "@/types/ornament/ornament";
 import { formatToFixed } from "@/utils/format/numberFormat";
 import { parseFixedNumber } from "@/utils/format/numberInput";
 import { CustomTable } from "@/component/table/CustomTable";
 import { CapitalizedInput } from "@/component/form/CapitalizedInput";
 import { toastError } from "@/component/toast/toast";
-
+import { useRouter } from "next/navigation";
+import { FaFileExcel ,FaPrint } from "react-icons/fa";
 
 
 function OrnamentMaster() {
     const { theme } = useTheme();
-
+    const router = useRouter();
     type OrnamentErrors = Partial<Record<keyof typeof form, string>>;
 
     const [errors, setErrors] = React.useState<OrnamentErrors>({});
 
     /* -------------------- DATA -------------------- */
     const { data: itemsData } = useItems();
+    const { setData ,setColumns ,setShowSno } = usePrint();
 
     const { data: ornamentList, isLoading } = useOrnamentData();
 
@@ -63,7 +67,7 @@ function OrnamentMaster() {
         ? ornamentList.data
         : [];
     const items: ItemMast[] = (itemsData?.items ?? []).map(normalizeItem);
-    console.log(items, 'items')
+    console.log(ornaments, 'items')
     /* -------------------- FORM STATE -------------------- */
     const [form, setForm] = useState<OrnamentFormData>({
         itemId:  "",   // ✅ NOT null
@@ -216,11 +220,23 @@ function OrnamentMaster() {
         {key:'sno' , label:'S.NO'},
         {key:'itemId' , label:'Item Id'},
         {key:'itemName' , label:'Item Name'},
-        {key:'pcs' , label:'Pcs'},
-        {key:'action' , label:'Actions'},
+        {key:'pcs' , label:'Pcs' ,align:'end' as const},
+        {key:'action' , label:'Actions' , align: 'center' as const},
     ]
+    
 
-
+    /*----------Print ---------- */
+    const handleExport = (option:string)=>{
+        setData(ornaments);
+        setColumns([
+            {key:'itemName' ,label:'Item Name' },
+            {key:'pcs' ,label:'Pieces' ,align:'end' as const , allowTotal:true},
+            { key: 'grswt', label: 'Gross Weight', align: 'end' as const,allowTotal:true },
+            { key:'netwt' , label:'Net Weight' , align:'end' as const,allowTotal:true },
+            { key: 'stnwt', label: 'Stone Weight', align: 'end' as const ,allowTotal:true},
+        ])
+        router.push(`/print?export=${option}`);
+    }
 
 
 
@@ -407,58 +423,36 @@ function OrnamentMaster() {
                         borderRadius="xl"
                         border="1px solid #eef"
                     >
-                        <Text fontWeight="bold" mb={2}>
-                            Ornament Details
-                        </Text>
+                        <Box display='flex' mb={4} gap={3} justifyContent='space-between' alignItems='center'>
+                            <Text fontWeight="bold" mb={2}>
+                                Ornament Details
+                            </Text>
 
-                        {/* <Table.ScrollArea>
-                            <Table.Root size="sm">
-                                <Table.Header>
-                                    <Table.Row bg="blue.800">
-                                        <Table.ColumnHeader color="white">
-                                            S.No
-                                        </Table.ColumnHeader>
-                                        <Table.ColumnHeader color="white">
-                                            Item Id
-                                        </Table.ColumnHeader>
-                                        <Table.ColumnHeader color="white">
-                                            Item Name
-                                        </Table.ColumnHeader>
-                                        <Table.ColumnHeader color="white">
-                                            Pcs
-                                        </Table.ColumnHeader>
-                                        <Table.ColumnHeader color="white">
-                                            Action
-                                        </Table.ColumnHeader>
-                                    </Table.Row>
-                                </Table.Header>
+                        <Flex gap={1}>
+                            <Button
+                                variant="ghost"
+                                size="xs"
+                                color= {theme.colors.green}
+                                _hover={{ color: "black" }}
+                                onClick={() => handleExport("excel")}
+                                aria-label="Export Excel"
+                            >
+                                <FaFileExcel />
+                            </Button>
 
-                                <Table.Body>
-                                    {isLoading ? (
-                                        <Table.Row>
-                                            <Table.Cell colSpan={5}>
-                                                Loading...
-                                            </Table.Cell>
-                                        </Table.Row>
-                                    ) : (
-                                        ornaments.map((item: any, index: number) => (
-                                            <Table.Row key={item.sno}>
-                                                <Table.Cell>{index + 1}</Table.Cell>
-                                                <Table.Cell>{item.itemId}</Table.Cell>
-                                                <Table.Cell>{item.itemName}</Table.Cell>
-                                                <Table.Cell>{item.pcs}</Table.Cell>
-                                                <Table.Cell>
-                                                    <FaEdit
-                                                        cursor="pointer"
-                                                        onClick={() => handleEdit(item)}
-                                                    />
-                                                </Table.Cell>
-                                            </Table.Row>
-                                        ))
-                                    )}
-                                </Table.Body>
-                            </Table.Root>
-                        </Table.ScrollArea> */}
+                            <Button
+                                variant="ghost"
+                                size="xs"
+                                color={theme.colors.primaryText}
+                                _hover={{ color: "black" }}
+                                onClick={() => handleExport("pdf")}
+                                aria-label="Export PDF"
+                            >
+                                <FaPrint />
+                            </Button>
+                        </Flex>
+                        </Box>
+                       
                         <CustomTable 
                             columns={OrnamentTableColumn}
                             data={ornaments}
@@ -474,12 +468,15 @@ function OrnamentMaster() {
                                  <Table.Cell>{index + 1}</Table.Cell>
                                     <Table.Cell>{ornament.itemId}</Table.Cell>
                                     <Table.Cell>{ornament.itemName}</Table.Cell>
-                                                <Table.Cell>{ornament.pcs}</Table.Cell>
+                                                <Table.Cell textAlign='end'>{ornament.pcs}</Table.Cell>
                                                 <Table.Cell>
-                                                    <FaEdit
-                                                        cursor="pointer"
-                                                        onClick={() => handleEdit(ornament)}
-                                                    />
+                                                    <Box display='flex' justifyContent='center'>
+                                            <FaEdit
+                                                cursor="pointer"
+                                                onClick={() => handleEdit(ornament)}
+                                            />
+                                                    </Box>
+                                                   
                                                 </Table.Cell>
                                 </>
     )}

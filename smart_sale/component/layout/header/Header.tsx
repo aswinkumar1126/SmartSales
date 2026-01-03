@@ -13,7 +13,8 @@ import { FiSun, FiMoon } from "react-icons/fi";
      const { theme, mode, toggleTheme } = useTheme();
     const { menuData, setCurrentSection } = useSidebar();
     const [isDesktop] = useMediaQuery(["(min-width: 768px)"]);
-     const now = new Date();
+    const now = new Date();
+
     const sections = Object.keys(menuData); // 👈 Auto-generate
      const formatDate = (date: Date) => {
          const dd = String(date.getDate()).padStart(2, "0");
@@ -21,6 +22,17 @@ import { FiSun, FiMoon } from "react-icons/fi";
          const yyyy = date.getFullYear();
          return `${dd}-${mm}-${yyyy}`;
      };
+
+     const timeNow = new Date().toLocaleTimeString("en-US", {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true,
+    });
+
+   
+
+
+    
     return (
         <Box bg={theme.colors.accient} borderBottom="1px solid" borderColor="gray.200" color={theme.colors.whiteColor} p={4} position="sticky" top="0" zIndex={2} >
             <Box display="flex"  flexDirection='column' css={{sm:{flexDirection:'row' } }} justifyContent="space-between"  alignItems="center" >
@@ -57,8 +69,9 @@ import { FiSun, FiMoon } from "react-icons/fi";
           
             <HStack justify="space-between">
                 {/* your menu buttons */}
-                    <HStack>
-                        <Text>  DATE : {formatDate(now)} </Text>
+                    <HStack display='flex' flexDirection='column' gap={0.5}>
+                        <Text fontSize='xs' fontWeight='bold' >  DATE : {formatDate(now)} </Text>
+                        <Text fontSize='xs' fontWeight='bold' > TIME : {timeNow} </Text>
                     </HStack>
                 <IconButton
                     aria-label="Toggle theme"
