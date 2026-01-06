@@ -4,12 +4,15 @@
   --background: #ffffff;
   --foreground: #171717;
   --table-border:#555;
+  --primary-text-size:'10px';
+
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans);
+  
 }
 
 
@@ -31,25 +34,32 @@ body {
   animation: blink 1s ease-in-out 3;
 }
 .table-header-10 {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 500;
   padding: 0.5rem;
   
 }
 .table-body-10 {
-  font-size: 12px;
+  font-size: 10px;
   font-weight: 600;
   padding: 0.5rem;
 
 }
 .table-footer-10 {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 500;
   padding: 0.5rem;
 
 }
+.table-footer-text {
+  font-size: 12px;
+  font-weight: 500;
 
+}
 .input-date {
   border: 1px solid #eee;
   height: 31px;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 4px 8px;
 }

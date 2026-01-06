@@ -266,6 +266,7 @@ const EditableCell: React.FC<EditableCellProps> = ({
                         getLabelByValue={getLabelByValue}
                         onSave={onSave}
                         onFilter={onInputValueChange}  // <-- should be the filter function from useListCollection
+                        
                       
                     />
       
@@ -290,6 +291,7 @@ const EditableCell: React.FC<EditableCellProps> = ({
                     onChange={(_, v) => setEditValue(v)}
                     allowNegative
                     confirmNegative
+                    size="xs"
                    
                 />
             </div>

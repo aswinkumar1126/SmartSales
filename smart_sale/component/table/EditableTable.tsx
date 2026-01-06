@@ -6,6 +6,7 @@ import { useTheme } from '@/context/theme/themeContext';
 import EditableCell from './EditableCell';
 import { Button, Box } from '@chakra-ui/react';
 import { Toaster,toaster } from '@/components/ui/toaster';
+
 export interface TableColumn {
     key: string;
     label: string;
@@ -155,7 +156,7 @@ const EditableTable: React.FC<TableProps> = ({
     };
 
     const getPaddingClass = () => isMobile ? "px-2 py-1" : "px-2 py-2";
-    const getTextSizeClass = () => isMobile ? "text-xs" : "text-sm";
+    const getTextSizeClass = () => isMobile ? "text-xs" : "text-xs";
     const getHeadTextSizeClass = () => isMobile ? "text-xs" : "text-xs";
 
     const sortedData = useMemo(() => {
@@ -230,6 +231,7 @@ const EditableTable: React.FC<TableProps> = ({
         if (onSaveRow) {
             onSaveRow(row, isNewRow);
         }
+        // Exit edit mode
         setLocalEditingRowId(null);
         setIsNewRow(false);
     };
@@ -392,10 +394,10 @@ const EditableTable: React.FC<TableProps> = ({
                     <Button
                         onClick={handleAddNew}
                         colorPalette='cyan'
-                        size='xs'
-                        className="flex items-center gap-1"
+                        size="2xs"
+                        className="flex items-center text-[var(--primary-text-size)] gap-1"
                     >
-                        <Plus size={14} />
+                        <Plus size={10} />
                         {addButtonText}
                     </Button>
                 </div>
@@ -491,11 +493,11 @@ const EditableTable: React.FC<TableProps> = ({
                         </table>
 
                         {displayData.length === 0 && !loading && (
-                            <div className={`text-center py-8 ${tableStyles.bodyBg} border-t border-[#555]`}>
-                                <div className={`${tableStyles.bodyText} ${isMobile ? 'text-sm' : 'text-base'} font-medium`}>
+                            <div className={`text-center p-2 ${tableStyles.bodyBg} border-t border-[#555]`}>
+                                <div className={`${tableStyles.bodyText} ${isMobile ? 'text-xs' : 'text-xs'} table-footer-text  font-medium`}>
                                     {emptyMessage}
                                 </div>
-                                <div className="text-gray-500 dark:text-gray-400 text-sm mt-1">
+                                <div className="text-gray-500  dark:text-gray-400 table-footer-text mt-1">
                                     There are no records to display
                                 </div>
                             </div>
