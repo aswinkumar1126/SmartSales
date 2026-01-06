@@ -4,6 +4,7 @@ export type FontTokens = {
     body: string;
     special: string;
     secondary: string;
+    body2:string;
 };
 
 export type ColorTokens = {
@@ -48,6 +49,7 @@ export const designTokens: DesignTokens = {
         body: "Lustria, serif",
         special: "Rancho, cursive",
         secondary: "Sofia, cursive",
+        body2:"Domine, sans-serif",
     },
 
     colors: {

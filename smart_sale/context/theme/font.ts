@@ -4,6 +4,7 @@ import {
     Lustria,
     Rancho,
     Sofia,
+    Domine
 } from "next/font/google";
 
 // Primary font
@@ -40,7 +41,12 @@ export const sofia = Sofia({
     variable: "--font-sofia",
     weight: "400",
 });
+export const domine = Domine({
+    subsets: ["latin"],
+    variable: "--font-domine",
+    weight: "400",
+});
 
 // Export ALL in one class string
 export const fontVariables =
-    `${alice.variable} ${nosifer.variable} ${lustria.variable} ${rancho.variable} ${sofia.variable}`;
+    `${alice.variable} ${nosifer.variable} ${lustria.variable} ${rancho.variable} ${sofia.variable}  ${domine.variable}`;

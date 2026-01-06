@@ -32,9 +32,6 @@ import { useTheme } from "@/context/theme/themeContext";
 import { fontVariables } from "@/context/theme/font";
 import {
     useAllCompanies,
-    useCompanyById,
-    useCreateCompany,
-    useUpdateCompany,  
 } from "@/hooks/company/useCompany";
 
 import ScrollToTop from "@/component/scroll/ScrollToTop";
@@ -46,35 +43,50 @@ import { usePrint } from "@/context/print/usePrintContext";
 import { useRouter } from "next/navigation";
 import { FaPrint ,FaFileExcel } from "react-icons/fa";
 import { AccountTypeList } from "@/data/AccountType";
+import { useAllStates } from "@/hooks/state/useStates";
+import { useAllAccountHead ,useCreateAccountHead ,useUpdateAccountHead ,useAccountHeadById } from "@/hooks/accountHead/useAccountHead";
+import { AccountHead } from "@/types/accountHead/AccountHead";
 
-function AccountHead() {
+function AccountHeadMaster() {
+
     const { theme } = useTheme();
 
     /* -------------------- API HOOKS -------------------- */
+
+
     const { data, isLoading } = useAllCompanies();
     const router = useRouter();
     const {setData ,setColumns ,setShowSno} =usePrint();
     const companies = data?.data ?? [];
-    const { contains } = useFilter({ sensitivity: "base" })
+    const { contains } = useFilter({ sensitivity: "base" });
+    const {data:allStates ,isLoading:stateLoading ,isError:stateError} = useAllStates();
+    console.log(allStates ,'states')
+
+    const {data:allAccountHead ,isLoading:accountHeadLoading ,isError:accountHeadError} = useAllAccountHead();
 
 
-    const { mutate: createCompany, isPending } = useCreateCompany();
-    const { mutate: updateCompany, isPending: isUpdating } = useUpdateCompany();
+
+    const { mutate: createAccountHead, isPending } = useCreateAccountHead();
+    const { mutate: updateAccountHead, isPending: isUpdating } = useUpdateAccountHead();
+
 
     /* -------------------- FORM STATE -------------------- */
-    const [form, setForm] = useState<CreateCompanyPayload>({
+    const [form, setForm] = useState<AccountHead>({
+
+        ACNAME:"",
+        ACTYPE:"",
         COMPANYID: "",
-        COMPANYNAME: "",
-        // costid: "",
         ADDRESS1: "",
         ADDRESS2:"",
-        ADDRESS3:"",
-        AREACODE: "",
-        PHONE: "",
-        EMAIL: "",
+        AREA:"",
+        CITY:"",
+        STATEID: "",
+        PINCODE: "",
+        MOBILE:"",   
+        EMAILID: "",
         GSTNO: "",
         ACTIVE: "Y",
-        STATEID: 1,
+       
     });
     const [highlightedId ,setHighlightedId] = useState<Number>()
 
@@ -87,6 +99,10 @@ function AccountHead() {
 
     /* -------------------- SELECT OPTIONS -------------------- */
 
+    const accountList = Array.isArray(allAccountHead?.data)
+        ? allAccountHead.data
+        : [];
+   
     const CompaniesList = useMemo(() => {
         return (
             companies.map((i: any) => ({
@@ -125,6 +141,14 @@ function AccountHead() {
         itemToString: (item) => item.label,
     })
 
+    const { collection: allStatesList, filter: stateFilter, set: setStateList } = useListCollection({
+        initialItems: allStates,
+        filter: contains,
+        itemToValue: (i:any) => i.stateId,
+        itemToString: (i) => i.stateName,
+    })
+
+
 
     useEffect(() => {
         if (!CompaniesList.length) return;
@@ -132,42 +156,59 @@ function AccountHead() {
         setItems(CompaniesList);    // ✅ CORRECT
         companyFilter("");        // optional reset
     }, [CompaniesList, setItems, companyFilter]);
+    useEffect(() => {
+   
+        if (!allStates?.length) return;
+
+        setStateList(allStates);    // ✅ CORRECT
+        stateFilter("");        // optional reset
+    }, [CompaniesList, setItems, companyFilter]);
 
 
+    const { data: accountHeadData } = useAccountHeadById(Number(editId) ?? '');
 
-    const { data: companyById } = useCompanyById(editId ?? '');
-    const company = companyById?.data;
+
+    const account = accountHeadData?.data;
+
 
     useEffect(() => {
-        if (!company) return;
+        if (!account) return;
           
         setForm({
-            COMPANYID: company.COMPANYID,
-            COMPANYNAME: company.COMPANYNAME,
-            // costid: company.COSTID ?? "",
-            ADDRESS1: company.ADDRESS1 ?? "",
-            ADDRESS2: company.ADDRESS2?? "",
-            ADDRESS3: company.ADDRESS3 ?? "",
-            AREACODE: company.AREACODE ?? "",
-            PHONE: company.PHONE ?? "",
-            EMAIL: company.EMAIL ?? "",
-            GSTNO: company.GSTNO ?? "",
-            ACTIVE: company.ACTIVE ?? "Y",
-            STATEID: company.STATEID ?? 1,
+
+            ACNAME:account.ACNAME ?? "",
+            ACTYPE:account.ACTYPE ?? "",
+            COMPANYID: account.COMPANYID ?? "",
+            ADDRESS1: account.ADDRESS1 ?? "",
+            ADDRESS2: account.ADDRESS2?? "",
+            AREA: account.AREA ?? "",
+            CITY: account.CITY ?? "",
+            MOBILE: account.MOBILE ?? "",
+            EMAILID: account.EMAILID ?? "",
+            PINCODE:account.PINCODE?? "",
+            GSTNO: account.GSTNO ?? "",
+            ACTIVE: account.ACTIVE ?? "Y",
+            STATEID: account.STATEID ?? "" ,
         });
-    }, [company]);
+    }, [account]);
+
+    const getLabelByValue = (collection: any, value: any) =>
+        collection.items.find((item: any) => item.value === value)?.label ?? "";
+
+    const getStateLabelByValue = (collection: any, value: any) =>
+  collection.items.find((item: any) => item.stateId === value)?.stateName ?? "";
 
     useEffect(() => {
-        if (!company) return;
+        if (!account) return;
 
         // ✅ AFTER render is fully committed
         setTimeout(() => {
-            toastLoaded("Company");
+            toastLoaded("Account Head");
             ScrollToTop();
         }, 0);
 
 
-    }, [company]);
+    }, [account]);
 
     useEffect(() => {
         if (!highlightedId) return;
@@ -183,8 +224,11 @@ function AccountHead() {
     }, [highlightedId]);
 
 
+
+
+
     /* -------------------- HANDLERS -------------------- */
-    const handleChange = (field: keyof CreateCompanyPayload, value: any) => {
+    const handleChange = (field: keyof AccountHead, value: any) => {
         setForm((prev) => ({ ...prev, [field]: value }));
     };
     
@@ -198,79 +242,87 @@ function AccountHead() {
             // costid: "",
             ADDRESS1: "",
             ADDRESS2: "",
-            ADDRESS3: "",
-            AREACODE: "",
-            PHONE: "",
-            EMAIL: "",
+            AREA: "",
+            CITY: "",
+            STATEID: "",
+            PINCODE: "",
+            MOBILE: "",
+            EMAILID: "",
             GSTNO: "",
             ACTIVE: "Y",
-            STATEID: 1,
+           
         });
     };
 
 
-    const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (file) {
-            setLogoFile(file);
-            setImagePreview(URL.createObjectURL(file));
-        }
-    };
+    // const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    //     const file = e.target.files?.[0];
+    //     if (file) {
+    //         setLogoFile(file);
+    //         setImagePreview(URL.createObjectURL(file));
+    //     }
+    // };
 
     const handleSave = () => {
-        if (!form.COMPANYID) {
-            toastError("Company ID is required");
+        if (!form.ACNAME) {
+            toastError("Name is required");
             return;
         }
 
-        if (form.COMPANYID.length > 4) {
-            toastError("Company ID must be at most 3 characters long");
+        if (!form.ACTYPE?.trim()) {
+            toastError("Account Type is required");
+            return;
+        }
+        if (!form.COMPANYID?.trim()) {
+            toastError("Account Type is required");
             return;
         }
 
-        if (!form.COMPANYNAME?.trim()) {
-            toastError("Company Name is required");
-            return;
-        }
         if(!form.ADDRESS1?.trim()){
             toastError("Address is required");
             return;
         }
-        if(!form.ADDRESS2?.trim()){
+        if(!form.AREA?.trim()){
             toastError("Area is required");
             return;
         }
-        if(!form.ADDRESS3?.trim()){
+        if(!form.CITY?.trim()){
             toastError("City is required");
             return;
         }
-        if(!form.AREACODE?.trim()){
+        if(!form.PINCODE?.trim()){
             toastError("Pincode is required");
             return;
         }
        
-        if(form.AREACODE){
+        if(form.PINCODE){
             const pinRegex = /^[0-9]{6}$/;
-            if (!pinRegex.test(form.AREACODE)) {
+            if (!pinRegex.test(form.PINCODE)) {
                 toastError("Pincode must be exactly 6 digits");
                 return;
             }
         }
-        if(!form.PHONE?.trim()){
+        if(!form.MOBILE?.trim()){
             toastError("Mobile Number is required");
             return;
         }
-        if(!form.EMAIL?.trim()){
+        if (form.PINCODE) {
+            const mobileRegex = /^[0-9]{10}$/;
+            if (!mobileRegex.test(form.MOBILE)) {
+                toastError("mobile number must be exactly 10 digits");
+                return;
+            }
+        }
+        if(!form.EMAILID?.trim()){
             toastError("Email is required");
             return;
         }
 
        
         if (editId) {
-            updateCompany({
-                id: editId,
-                payload: form,
-                logo: logoFile,
+            updateAccountHead({
+                id: Number(editId),
+                data: form,
             } ,{
                 onSuccess : () =>{
                     resetForm;
@@ -280,10 +332,7 @@ function AccountHead() {
             ;
           
         } else {
-            createCompany({
-                payload: form,
-                logo: logoFile,
-            });
+            createAccountHead(form);
             
         }
 
@@ -291,14 +340,14 @@ function AccountHead() {
     };
 
 
-    const handleEdit = (company: Company) => {
-        setEditId(company.COMPANYID); // 🔥 trigger useCompanyById
+    const handleEdit = (account:AccountHead) => {
+        setEditId(account?.ACCODE ?? ""); // 🔥 trigger useCompanyById
     };
 
-    const CompanyColumn = [
-        {key:'companyId' , label:'Company Id' },
-        {key:'companyName' , label:'Company Name' },
-        // {key:'costId' , label:'Cost Id' },
+    const accountColumn = [
+        {key:'ACNAME' , label:'Name' },
+        { key: 'ACTYPE', label: 'Account Type' },
+        {key:'COMPANYNAME' , label:'Company Name' },
         {key:'active', label:'Active'},
         {key:'actions', label:'Actions'},
     ];
@@ -307,15 +356,15 @@ function AccountHead() {
     const handleExport = (option: string) => {
         setData(companies);
         setColumns([
-            { key: "COMPANYID", label: "Company Id" },
-            { key: "COMPANYNAME", label: "Company Name" },
-            { key: "ADDRESS1", label: "Address" },
-            // { key: "itemName", label: "Item Name" },
-            // { key: "touch", label: "Touch", align: 'end' as const, allowTotal: true },
+            { key: 'ACNAME', label: 'Name' },
+            { key: 'COMPANYNAME', label: 'Company Name' },
+            { key: 'active', label: 'Active' },
         ]);
         setShowSno(true);
         router.push(`/print?export=${option}`);
     }
+
+ 
     /* -------------------- UI -------------------- */
     return (
         <Box
@@ -331,7 +380,7 @@ function AccountHead() {
                 <GridItem>
                     <VStack bg={theme.colors.formColor} p={4} borderRadius="xl" border="1px solid #eef">
                         <Text fontSize="lg" fontWeight="600" >
-                            Company Creation
+                           Account Head
                         </Text>
 
                         <Fieldset.Root size="sm" width="100%">
@@ -339,19 +388,27 @@ function AccountHead() {
                                 <Grid templateColumns="repeat(2,1fr)" gap={2}>
                                     <Field.Root>
                                         <Field.Label>Name</Field.Label>
-                                        <CapitalizedInput<CreateCompanyPayload>
-                                            field="COMPANYID"
-                                            value={form.COMPANYID}
-                                            disabled={!!editId}   // ✅ lock during edit
+                                        <CapitalizedInput<AccountHead>
+                                            field="ACNAME"
+                                            value={form.ACNAME}
                                             onChange={handleChange}
-                                            max={3}
                                          
                                         />
                                     </Field.Root>
                                     <Combobox.Root
                                         collection={accountTypeCollection}
+                                        openOnClick
+                                        value={form.ACTYPE ? [form.ACTYPE] : []}
+                                        inputValue={getLabelByValue(accountTypeCollection, form.ACTYPE)}
+                                        onValueChange={(details) => {
+                                            const selectedValue = details.value[0] ?? ""
+
+                                            setForm((prev) => ({
+                                                ...prev,
+                                                ACTYPE: selectedValue, // ✅ store VALUE directly
+                                            }))
+                                        }}
                                         onInputValueChange={(e) => accountTypeFilter(e.inputValue)}
-                                
                                     >
                                         <Combobox.Label>Account Type</Combobox.Label>
                                         <Combobox.Control>
@@ -365,7 +422,7 @@ function AccountHead() {
                                             <Combobox.Positioner>
                                                 <Combobox.Content>
                                                     <Combobox.Empty>No items found</Combobox.Empty>
-                                                    {accountTypeCollection.items.map((item) => (
+                                                    {accountTypeCollection.items.map((item: any) => (
                                                         <Combobox.Item item={item} key={item.value}>
                                                             {item.label}
                                                             <Combobox.ItemIndicator />
@@ -378,7 +435,19 @@ function AccountHead() {
                                     <Combobox.Root
                                         collection={companyListCollection}
                                         onInputValueChange={(e) => companyFilter(e.inputValue)}
+
                                         openOnClick
+                                        value={form.COMPANYID ? [form.COMPANYID] : []}
+                                        inputValue={getLabelByValue(companyListCollection, form.COMPANYID)}
+                                        onValueChange={(details) => {
+                                            const selectedValue = details.value[0] ?? ""
+
+                                            setForm((prev) => ({
+                                                ...prev,
+                                                COMPANYID: selectedValue, // ✅ store VALUE directly
+                                            }))
+                                        }}
+                                     
 
                                     >
                                         <Combobox.Label>Company</Combobox.Label>
@@ -393,7 +462,7 @@ function AccountHead() {
                                             <Combobox.Positioner>
                                                 <Combobox.Content>
                                                     <Combobox.Empty>No items found</Combobox.Empty>
-                                                    {companyListCollection.items.map((item) => (
+                                                    {companyListCollection.items.map((item: any) => (
                                                         <Combobox.Item item={item} key={item.value}>
                                                             {item.label}
                                                             <Combobox.ItemIndicator />
@@ -426,8 +495,8 @@ function AccountHead() {
                                     <Field.Root gridColumn="span">
                                         <Field.Label>Area</Field.Label>
                                         <CapitalizedInput
-                                            field="ADDRESS2"
-                                            value={form.ADDRESS2}
+                                            field="AREA"
+                                            value={form.AREA}
                                             onChange={handleChange}
                                         />
                                     </Field.Root>
@@ -435,37 +504,57 @@ function AccountHead() {
                                     <Field.Root gridColumn="span">
                                         <Field.Label>City</Field.Label>
                                         <CapitalizedInput
-                                            field="ADDRESS3"
-                                            value={form.ADDRESS3}
+                                            field="CITY"
+                                            value={form.CITY}
                                             onChange={handleChange}
                                         />
                                     </Field.Root>
 
-                                    <Field.Root>
-                                        <Field.Label>State</Field.Label>
-                                        <NativeSelect.Root>
-                                            <NativeSelect.Field
-                                                value={form.ACTIVE}
-                                                onChange={(e) => handleChange("ACTIVE", e.target.value)}
-                                            >
-                                                <For each={stateItems.items}>
-                                                    {(item) => (
-                                                        <option key={item.value} value={item.value}>
-                                                            {item.label}
-                                                        </option>
-                                                    )}
-                                                </For>
-                                            </NativeSelect.Field>
-                                            <NativeSelect.Indicator />
-                                        </NativeSelect.Root>
-                                    </Field.Root>
+                                    <Combobox.Root
+                                        collection={allStatesList}
+                                        onInputValueChange={(e) => stateFilter(e.inputValue)}
+                                        openOnClick
+                                        value={form.STATEID ? [form.STATEID] : []}
+                                        inputValue={getStateLabelByValue(allStatesList, form.STATEID)}
+                                        onValueChange={(details) => {
+                                            const selectedValue = details.value[0] ?? ""
+
+                                            setForm((prev) => ({
+                                                ...prev,
+                                                STATEID: selectedValue, // ✅ store VALUE directly
+                                            }))
+                                        }}
+
+                                    >
+                                        <Combobox.Label>State</Combobox.Label>
+                                        <Combobox.Control>
+                                            <Combobox.Input placeholder="Type to search" />
+                                            <Combobox.IndicatorGroup>
+                                                <Combobox.ClearTrigger />
+                                                <Combobox.Trigger />
+                                            </Combobox.IndicatorGroup>
+                                        </Combobox.Control>
+                                        <Portal>
+                                            <Combobox.Positioner>
+                                                <Combobox.Content>
+                                                    <Combobox.Empty>No items found</Combobox.Empty>
+                                                    {allStatesList.items.map((item:any) => (
+                                                        <Combobox.Item item={item} key={item.stateId}>
+                                                            {item.stateName}
+                                                            <Combobox.ItemIndicator />
+                                                        </Combobox.Item>
+                                                    ))}
+                                                </Combobox.Content>
+                                            </Combobox.Positioner>
+                                        </Portal>
+                                    </Combobox.Root>
                                     
                                     <Field.Root>
 
                                         <Field.Label>PinCode</Field.Label>
                                         <CapitalizedInput
-                                            field="AREACODE"
-                                            value={form.AREACODE}
+                                            field="PINCODE"
+                                            value={form.PINCODE}
                                             onChange={handleChange}
                                             max={999999}
                                             type="number"
@@ -475,8 +564,8 @@ function AccountHead() {
                                     <Field.Root>
                                         <Field.Label>Mobile</Field.Label>
                                         <CapitalizedInput
-                                            field="PHONE"
-                                            value={form.PHONE}
+                                            field="MOBILE"
+                                            value={form.MOBILE}
                                             onChange={handleChange}
                                             max={9999999999}
                                             type="number"
@@ -486,8 +575,8 @@ function AccountHead() {
                                     <Field.Root>
                                         <Field.Label>Email</Field.Label>
                                         <Input
-                                            value={form.EMAIL}
-                                            onChange={(e) => handleChange("EMAIL", e.target.value)}
+                                            value={form.EMAILID}
+                                            onChange={(e) => handleChange("EMAILID", e.target.value)}
                                             type="email"
                                         />
                                     </Field.Root>
@@ -546,7 +635,7 @@ function AccountHead() {
                     <Box bg={theme.colors.formColor} p={4} borderRadius="xl" border="1px solid #eef">
                         <Box display='flex'  mb={4} gap={3} justifyContent='space-between' alignItems='center'>
                             <Text fontWeight="bold" mb={2}>
-                                Company Details
+                                Account Head Details
                             </Text>
 
                             <Flex gap={1}>
@@ -576,17 +665,18 @@ function AccountHead() {
                        
 
                      <CustomTable 
-                            columns={CompanyColumn}
-                            data={companies}
-                            renderRow={(company) => (
+                            columns={accountColumn}
+                            data={accountList}
+                            renderRow={(account) => (
                                 <>
-                                    <Table.Cell>{company.COMPANYID}</Table.Cell>
-                                    <Table.Cell>{company.COMPANYNAME}</Table.Cell>
-                                    {/* <Table.Cell>{company.COSTID}</Table.Cell> */}
-                                    <Table.Cell textAlign="center">{company.ACTIVE}</Table.Cell>
+                                    <Table.Cell>{account.ACNAME}</Table.Cell>
+                            
+                                    <Table.Cell>{account.ACTYPE}</Table.Cell>
+                                    <Table.Cell>{account.COMPANYNAME}</Table.Cell>
+                                    <Table.Cell textAlign="center">{account.ACTIVE}</Table.Cell>
                                     <Table.Cell>
                                         <Box display="flex" justifyContent="center">
-                                            <FaEdit onClick={() => handleEdit(company)} cursor="pointer" />
+                                            <FaEdit onClick={() => handleEdit(account)} cursor="pointer" />
                                         </Box>
                                     </Table.Cell>
                                 </>
@@ -596,7 +686,7 @@ function AccountHead() {
                             borderColor="white"
                             bodyBg={theme.colors.primary}
                             highlightRowId={highlightedId ? Number(highlightedId) : null} 
-                            rowIdKey="COMPANYID"
+                            rowIdKey="ACCODE"
                          
                             emptyText="No companies available"
 
@@ -608,4 +698,4 @@ function AccountHead() {
     );
 }
 
-export default AccountHead;
+export default AccountHeadMaster;

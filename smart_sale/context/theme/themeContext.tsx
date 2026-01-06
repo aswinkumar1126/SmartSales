@@ -33,8 +33,22 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
             return next;
         });
     };
+   
 
     const theme = mode === "light" ? lightTheme : darkTheme;
+
+
+    useEffect(() => {
+        const root = document.documentElement;
+
+        root.style.setProperty("--table-border", theme.colors.accient);
+        root.style.setProperty("--table-header-bg", theme.colors.accient);
+        root.style.setProperty("--table-header-text", theme.colors.whiteColor);
+        root.style.setProperty("--table-body-bg", theme.colors.primary);
+        root.style.setProperty("--table-body-text", theme.colors.primaryText);
+        root.style.setProperty("--table-striped-bg", mode === "dark" ? "#1f2937" : "#f9fafb");
+        root.style.setProperty("--table-hover-bg", mode === "dark" ? "#111827" : "#f3f4f6");
+    }, [theme, mode]);
 
     return (
         <ThemeContext.Provider value={{ theme, mode, toggleTheme }}>

@@ -14,6 +14,12 @@ type CapitalizedInputProps<T> = {
     disabled?: boolean;
     max?: number;
     icon?: boolean;
+    size?: "xs" | "sm" | "md" | "lg";
+
+    /** 🔥 NEW */
+    allowNegative?: boolean;
+    confirmNegative?: boolean;
+    onNegativeConfirm?: () => boolean | Promise<boolean>;
 };
 
 export function CapitalizedInput<T>({
@@ -26,23 +32,56 @@ export function CapitalizedInput<T>({
     disabled = false,
     max,
     icon = false,
+    size,
+
+    allowNegative = false,
+    confirmNegative = false,
+    onNegativeConfirm,
 }: CapitalizedInputProps<T>) {
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         let inputValue = e.target.value;
 
-        // 🔒 Allow only alphanumeric + space
+        /* 🔒 TEXT VALIDATION */
         if (type === "text" && !/^[a-zA-Z0-9\s]*$/.test(inputValue)) {
             return;
         }
 
-        // 🔢 Number max
-        if (type === "number" && max !== undefined) {
+        /* 🔢 NUMBER VALIDATION */
+        if (type === "number") {
+            // Allow just "-" while typing
+            if (inputValue === "-") {
+                if (!allowNegative) return;
+                onChange(field, inputValue);
+                return;
+            }
+
             const num = Number(inputValue);
-            if (!isNaN(num) && num > max) return;
+            if (isNaN(num)) return;
+
+            // ❌ Negative not allowed
+            if (num < 0 && !allowNegative) return;
+
+            // ⚠️ Confirm negative
+            // if (num < 0 && confirmNegative) {
+            //     let confirmed = true;
+
+            //     if (onNegativeConfirm) {
+            //         confirmed = await onNegativeConfirm();
+            //     } else {
+            //         confirmed = window.confirm(
+            //             "You entered a negative value. Do you want to continue?"
+            //         );
+            //     }
+
+            //     if (!confirmed) return;
+            // }
+
+            // 🔢 Max check
+            if (max !== undefined && num > max) return;
         }
 
-        // 🔤 Text max length
+        /* 🔤 TEXT MAX LENGTH */
         if (type === "text" && max !== undefined && inputValue.length > max) {
             return;
         }
@@ -59,13 +98,14 @@ export function CapitalizedInput<T>({
         <Input
             type={type}
             value={value ?? ""}
-            pl={icon ? "2.5rem" : "0.25rem"}   // ✅ correct spacing
+            pl={icon ? "2.5rem" : "0.25rem"}
             textTransform={isCapitalized ? "uppercase" : "none"}
             placeholder={placeholder}
             onChange={handleChange}
             disabled={disabled}
             max={type === "number" ? max : undefined}
             maxLength={type === "text" ? max : undefined}
+            size={size}
         />
     );
 }

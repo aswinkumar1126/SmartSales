@@ -1,0 +1,21 @@
+export interface AccountHead{
+    ACNAME?:string;
+    ACTYPE?:string;
+    COMPANY?:string;
+    DOORNO?:string;
+    COMPANYNAME?:string;
+    COMPANYID?:string;
+    ADDRESS1?:string;
+    ADDRESS2?:String;
+    CITY?:string;
+    AREA?:string;
+    STATEID?:string;
+    PINCODE?:string;
+    PHONENO?:string;
+    EMAILID?:string;
+    MOBILE?:string;
+    WEBSITE?:string;
+    GSTNO?:string;
+    ACTIVE?:string;
+    ACCODE?:string;
+}

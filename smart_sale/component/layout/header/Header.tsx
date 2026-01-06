@@ -52,7 +52,7 @@ import { FiSun, FiMoon } from "react-icons/fi";
                             !isDesktop && onOpenMenu();
                         }}
                         variant="outline"
-                        size="sm"
+                        size="xs"
                         _hover={{
                             color: '#222',
                         }}
