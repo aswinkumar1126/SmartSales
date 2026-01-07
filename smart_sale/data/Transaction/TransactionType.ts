@@ -22,8 +22,8 @@ export const TRANSACTIONTYPES = [
         icon: Wallet,
     },
     {
-        label: "PURCHASE RETURN",
-        value: "PR",
+        label: "SALES RETURN",
+        value: "SR",
         icon: RotateCcw,
     },
 ];

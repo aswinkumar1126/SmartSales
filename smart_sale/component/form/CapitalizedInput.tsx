@@ -20,6 +20,9 @@ type CapitalizedInputProps<T> = {
     allowNegative?: boolean;
     confirmNegative?: boolean;
     onNegativeConfirm?: () => boolean | Promise<boolean>;
+    autoFocus?:any
+    onKeyDown?:any;
+    inputRef?:any;
 };
 
 export function CapitalizedInput<T>({
@@ -33,10 +36,12 @@ export function CapitalizedInput<T>({
     max,
     icon = false,
     size,
-
+    autoFocus = false,
     allowNegative = false,
     confirmNegative = false,
     onNegativeConfirm,
+    onKeyDown ,
+    inputRef
 }: CapitalizedInputProps<T>) {
 
     const handleChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -106,6 +111,9 @@ export function CapitalizedInput<T>({
             max={type === "number" ? max : undefined}
             maxLength={type === "text" ? max : undefined}
             size={size}
+            autoFocus={autoFocus}
+            onKeyDown={onKeyDown}
+            
         />
     );
 }

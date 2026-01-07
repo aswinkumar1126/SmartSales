@@ -253,7 +253,7 @@ export default function IssuePage() {
         setTimeout(() => setEditingRowId(rowId), 0);
       
         setNewRowIds((prev) => new Set(prev).add(rowId));
-        
+
         setPreviewSno((p) => p + 1);
         toaster.create({
             title: "New Row Added",
@@ -347,12 +347,12 @@ export default function IssuePage() {
             if (col.key === "ITEMID") {
                 return {
                     ...col,
-                    type: "combobox",
+                    type: "combobox" as const,
                     collection: comboboxCollection,
                     getLabelByValue: getLabelByValueWithFallback,
                     editable: true,
-                    align: "left",
-                    headalign: "left",
+                    align: "left" as const,
+                    headalign: "left" as const,
                     onInputValueChange: comboboxFilter,  // ✅ THIS IS THE KEY
                 };
             }
@@ -360,26 +360,26 @@ export default function IssuePage() {
             return {
                 ...col,
                 editable: true,
-                type: numeric.includes(col.key) ? "number" : "text",
-                align: numeric.includes(col.key) ? "right" : "center",
-                headalign: numeric.includes(col.key) ? "right" : "center",
+                type: numeric.includes(col.key) ? "number" as const: "text" as const,
+                align: numeric.includes(col.key) ? "right" as const : "center"as const ,
+                headalign: numeric.includes(col.key) ? "right" as const : "center" as const,
                 sum: numeric.includes(col.key),
             };
         });
     }, [comboboxCollection, getLabelByValueWithFallback]);
 
 
-    const totals = useMemo(() => {
-        return columns.reduce((acc: any, col) => {
-            if (col.sum) {
-                acc[col.key] = rows.reduce(
-                    (sum: number, row: any) => sum + Number(row[col.key] || 0),
-                    0
-                );
-            }
-            return acc;
-        }, {});
-    }, [rows, columns]);
+    // const totals = useMemo(() => {
+    //     return columns.reduce((acc: any, col) => {
+    //         if (col.sum) {
+    //             acc[col.key] = rows.reduce(
+    //                 (sum: number, row: any) => sum + Number(row[col.key] || 0),
+    //                 0
+    //             );
+    //         }
+    //         return acc;
+    //     }, {});
+    // }, [rows, columns]);
 
     /* ================================
        Date helpers
@@ -636,7 +636,7 @@ export default function IssuePage() {
                         columns={columns}
                         data={rows}
                         loading={isLoading}
-                        rowKey="__rowId"
+                        // rowKey="__rowId"
                         editingRowId={editingRowId}
                         enableInlineEditing
                         striped
@@ -654,35 +654,35 @@ export default function IssuePage() {
                             }
                         }}
                         fixedHeight="400px"
-                        renderFooter={
-                            rows.length > 0
-                                ? () => (
-                                    <tfoot className="sticky bottom-0 bg-gray-500 dark:bg-gray-800 border-t border-[#555]">
-                                        <tr>
-                                            {columns.map((column, index) => (
-                                                <td
-                                                    key={column.key}
-                                                    className={`
-                                      px-2 py-2 font-semibold
-                                      ${column.align === "right" ? "text-right" : "text-left"}
-                                      border-r border-[#555]
-                                      last:border-r-0
-                                      text-white
-                                      table-footer-10
-                                  `}
-                                                >
-                                                    {index === 0
-                                                        ? "TOTAL"
-                                                        : totals[column.key] != null
-                                                            ? Number(totals[column.key]).toFixed(2)
-                                                            : ""}
-                                                </td>
-                                            ))}
-                                        </tr>
-                                    </tfoot>
-                                )
-                                : undefined
-                        }
+                        // renderFooter={
+                        //     rows.length > 0
+                        //         ? () => (
+                        //             <tfoot className="sticky bottom-0 bg-gray-500 dark:bg-gray-800 border-t border-[#555]">
+                        //                 <tr>
+                        //                     {columns.map((column, index) => (
+                        //                         <td
+                        //                             key={column.key}
+                        //                             className={`
+                        //               px-2 py-2 font-semibold
+                        //               ${column.align === "right" ? "text-right" : "text-left"}
+                        //               border-r border-[#555]
+                        //               last:border-r-0
+                        //               text-white
+                        //               table-footer-10
+                        //           `}
+                        //                         >
+                        //                             {index === 0
+                        //                                 ? "TOTAL"
+                        //                                 : totals[column.key] != null
+                        //                                     ? Number(totals[column.key]).toFixed(2)
+                        //                                     : ""}
+                        //                         </td>
+                        //                     ))}
+                        //                 </tr>
+                        //             </tfoot>
+                        //         )
+                        //         : undefined
+                        // }
 
                     />
 
@@ -693,7 +693,7 @@ export default function IssuePage() {
                                 columns={columns}
                                 data={rows}
                                 loading={isLoading}
-                                rowKey="__rowId"
+                                // rowKey="__rowId"
                                 editingRowId={editingRowId}
                                 enableInlineEditing
                                 striped
@@ -711,35 +711,35 @@ export default function IssuePage() {
                                     }
                                 }}
                                 fixedHeight="400px"
-                                renderFooter={
-                                    rows.length > 0
-                                        ? () => (
-                                            <tfoot className="sticky bottom-0 bg-gray-500 dark:bg-gray-800 border-t border-[#555]">
-                                                <tr>
-                                                    {columns.map((column, index) => (
-                                                        <td
-                                                            key={column.key}
-                                                            className={`
-                                      px-2 py-2 font-semibold
-                                      ${column.align === "right" ? "text-right" : "text-left"}
-                                      border-r border-[#555]
-                                      last:border-r-0
-                                      text-white
-                                      table-footer-10
-                                  `}
-                                                        >
-                                                            {index === 0
-                                                                ? "TOTAL"
-                                                                : totals[column.key] != null
-                                                                    ? Number(totals[column.key]).toFixed(2)
-                                                                    : ""}
-                                                        </td>
-                                                    ))}
-                                                </tr>
-                                            </tfoot>
-                                        )
-                                        : undefined
-                                }
+                                // renderFooter={
+                                //     rows.length > 0
+                                //         ? () => (
+                                //             <tfoot className="sticky bottom-0 bg-gray-500 dark:bg-gray-800 border-t border-[#555]">
+                                //                 <tr>
+                                //                     {columns.map((column, index) => (
+                                //                         <td
+                                //                             key={column.key}
+                                //                             className={`
+                                //       px-2 py-2 font-semibold
+                                //       ${column.align === "right" ? "text-right" : "text-left"}
+                                //       border-r border-[#555]
+                                //       last:border-r-0
+                                //       text-white
+                                //       table-footer-10
+                                //   `}
+                                //                         >
+                                //                             {index === 0
+                                //                                 ? "TOTAL"
+                                //                                 : totals[column.key] != null
+                                //                                     ? Number(totals[column.key]).toFixed(2)
+                                //                                     : ""}
+                                //                         </td>
+                                //                     ))}
+                                //                 </tr>
+                                //             </tfoot>
+                                //         )
+                                //         : undefined
+                                // }
                                 
                             />
                         </Box>

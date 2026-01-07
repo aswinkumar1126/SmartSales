@@ -16,8 +16,9 @@ interface DraftTransactionTableProps {
     onSaveRow: (row: any, isNew: boolean) => void;
     itemsCollection: any;
     totals: any;
-    transactionTitle: string;
+    transactionTitle: string | undefined;
     theme: any;
+    itemsFilter:any;
 }
 
 export default function DraftTransactionTable({
@@ -33,6 +34,7 @@ export default function DraftTransactionTable({
     totals,
     transactionTitle,
     theme,
+    itemsFilter
 }: DraftTransactionTableProps) {
     console.log("DraftTable - rows:", rows.length, "editingRowId:", editingRowId);
 
@@ -94,6 +96,7 @@ export default function DraftTransactionTable({
                     ...col,
                     type: "combobox" as const,
                     collection: itemsCollection,
+                    filter: itemsFilter,
                     align: "left" as const,
                     headalign: "left" as const,
                     getLabelByValue: (collection: any, value: any) => {
@@ -101,6 +104,8 @@ export default function DraftTransactionTable({
                         const item = collection.items.find((i: any) => i.value === value?.toString());
                         return item?.label || value || "";
                     },
+              
+                    
                 };
             }
 
@@ -111,6 +116,7 @@ export default function DraftTransactionTable({
                 align: numeric.includes(col.key) ? "right" as const : "center" as const,
                 headalign: numeric.includes(col.key) ? "right" as const : "center" as const,
                 sum: numeric.includes(col.key),
+             
             };
         });
     }, [itemsCollection]);
@@ -125,7 +131,7 @@ export default function DraftTransactionTable({
             <EditableTable
                 columns={columns}
                 data={rows}
-                rowKey="__rowId"
+            
                 editingRowId={editingRowId}
                 enableInlineEditing
                 striped
@@ -160,7 +166,7 @@ export default function DraftTransactionTable({
                                             {index === 0
                                                 ? "TOTAL"
                                                 : totals[column.key] != null
-                                                    ? Number(totals[column.key]).toFixed(2)
+                                                    ? Number(totals[column.key]).toFixed(3)
                                                     : ""}
                                         </td>
                                     ))}

@@ -5,7 +5,7 @@ import {
 } from "@tanstack/react-query";
 
 import { TransactionService } from "@/service/TransactionService";
-import { TRANSACTION } from "@/types/transcation/Transaction";
+import { CreateTransaction, TRANSACTION } from "@/types/transcation/Transaction";
 import { ApiResponse } from "@/types/api/apiResponse";
 
 /* -------------------- QUERY KEYS -------------------- */
@@ -116,17 +116,18 @@ export const useDeleteTransaction = (TRANTYPE: string) => {
 };
 
 //CREATE
-export const useCreateTransactions = (TRANTYPE: string) => {
+export const useCreateTransactions = () => {
     const queryClient = useQueryClient();
 
-    return useMutation<ApiResponse<TRANSACTION[]>, any, TRANSACTION[]>({
-        mutationFn: (payload: TRANSACTION[]) =>
-            TransactionService.createMany(payload, TRANTYPE),
+    return useMutation({
+        mutationFn: (payload: CreateTransaction) =>
+            TransactionService.createMany(payload),
 
         onSuccess: () => {
             // Refresh transaction list for this TRANTYPE
             queryClient.invalidateQueries({
-                queryKey: transactionKeys.list(TRANTYPE),
+                queryKey: transactionKeys.all,
+                
             });
         },
     });

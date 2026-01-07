@@ -18,6 +18,7 @@ import { useTheme } from "@/context/theme/themeContext";
 import { toaster, Toaster } from "@/components/ui/toaster";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
+import { useOpeningBalance } from "@/hooks/balance/useOpeningBalance";
 
 // Components
 import TransactionHeaderForm from "./TransactionHeaderForm/TransactionHeaderForm";
@@ -39,24 +40,32 @@ import { TRANSACTIONTYPES } from "@/data/Transaction/TransactionType";
 import { Opening } from "@/data/Transaction/Opening";
 import { formatToFixed } from "@/utils/format/numberFormat";
 
+
 /* ================================
    Main Component
 ================================ */
 
 export default function IssuePage() {
+
+    const [accCode ,setAccCode] = useState< number | undefined |null >();
+
     const { theme } = useTheme();
     const { data: itemsData } = useItems();
     const { data: allCustomer } = useAllAccountHead();
+  
+    const { data: openingBalance } = useOpeningBalance(accCode);
+    console.log(openingBalance,'openingBalnace');
 
-    const trantype = 'IS'
+    const openingData = openingBalance?.data ; 
+
 
     const createTransaction = useCreateTransactions();
-    const updateTransaction = useUpdateTransaction();
-    
+    // const updateTransaction = useUpdateTransaction();
+
     const { contains } = useFilter({ sensitivity: "base" });
 
     /* ================================
-       State Management
+     State Management
     ================================ */
 
     // Transaction header state
@@ -71,7 +80,7 @@ export default function IssuePage() {
 
     // Transaction type & draft state
     const [selectedTransactionType, setSelectedTransactionType] = useState<TransactionType | null>(null);
-    const [transactionTitle, setTransactionTitle] = useState("");
+    const [transactionTitle, setTransactionTitle] = useState<string|undefined> ();
 
     // Draft rows (local storage backed)
     const [draftRows, setDraftRows] = useState<any[]>([]);
@@ -135,7 +144,7 @@ export default function IssuePage() {
         [itemsData]
     );
 
-    const { collection: comboboxCollection ,set} = useListCollection({
+    const { collection: itemsCollection ,filter:itemsFilter ,set} = useListCollection({
         initialItems: mappedItems,
         filter: contains,
     });
@@ -151,6 +160,9 @@ export default function IssuePage() {
     useEffect(() => {
         const savedDraft = localStorage.getItem(DRAFT_KEY);
         const savedHeader = localStorage.getItem(HEADER_KEY);
+
+        
+
         const savedType = localStorage.getItem(TYPE_KEY);
 
         console.log("Loading from localStorage:", {
@@ -158,6 +170,13 @@ export default function IssuePage() {
             header: savedHeader,
             type: savedType
         });
+
+        if(savedHeader){
+            console.log(savedHeader, 'savedType');
+            const headerValues =JSON.parse(savedHeader);
+            console.log(headerValues, 'savedType');
+           setAccCode(Number(headerValues?.CUSTOMER))
+        }
 
         if (savedDraft) {
             try {
@@ -174,6 +193,7 @@ export default function IssuePage() {
         if (savedHeader) {
             try {
                 setHeaderForm(JSON.parse(savedHeader));
+               
             } catch (e) {
                 console.error("Failed to parse header:", e);
                 localStorage.removeItem(HEADER_KEY);
@@ -190,6 +210,11 @@ export default function IssuePage() {
                 localStorage.removeItem(TYPE_KEY);
             }
         }
+        return() => {
+            localStorage.removeItem(DRAFT_KEY);
+            localStorage.removeItem(HEADER_KEY);
+            localStorage.removeItem(TYPE_KEY);
+        }
     }, []);
 
 
@@ -197,6 +222,7 @@ export default function IssuePage() {
     useEffect(() => {
         localStorage.setItem(DRAFT_KEY, JSON.stringify(draftRows));
     }, [draftRows]);
+
 
     useEffect(() => {
         localStorage.setItem(HEADER_KEY, JSON.stringify(headerForm));
@@ -225,6 +251,7 @@ export default function IssuePage() {
             CUSTOMER: customerValue,
             CUSTOMER_NAME: customerLabel,
         }));
+        setAccCode(Number(customerValue));
     };
 
     /* ================================
@@ -263,7 +290,6 @@ export default function IssuePage() {
             __rowId: newRowId,
             __isNew: true,
             __previewSno: 1,
-            TRANSACTION_TYPE: type.value,
             ITEMID: "",
             PCS: 0,
             GRSWT: 0,
@@ -319,7 +345,7 @@ export default function IssuePage() {
             WASTAGE: 0,
         };
 
-        setDraftRows(prev => [newRow, ...prev]);
+        setDraftRows(prev => [...prev,newRow]);
         setEditingRowId(rowId);
     };
 
@@ -411,23 +437,67 @@ export default function IssuePage() {
             });
             return;
         }
+     
+
 
         try {
             // Prepare transaction data
             const transactionData = {
-                header: {
-                    ...headerForm,
-                    TRANSACTION_TYPE: selectedTransactionType.value,
-                    TRANSACTION_TITLE: transactionTitle,
+                TRANSACTION_DETAILS: {
+                    ACCODE: Number(headerForm.CUSTOMER),
+                    TRANTYPE: String(selectedTransactionType.value),
+                    TRANDATE: headerForm.DATE,
                 },
-                items: draftRows.map(row => {
-                    const { __rowId, __isNew, __previewSno, ...itemData } = row;
+                TRANSACTION_ITEMS: draftRows.map((row) => {
+                    const { __rowId, __isNew, __previewSno, ITEMID, ...rest } = row;
+
                     return {
-                        ...itemData,
-                        RATE: row.RATE || headerForm.RATEGM || 0,
+                        ...rest,
+                        ITEMID: ITEMID ? Number(ITEMID) : null, 
+                        // RATE: row.RATE || headerForm.RATEGM || 0,
                     };
                 }),
             };
+            const invalidItem = draftRows.find(
+                (r) => r.ITEMID == null || isNaN(Number(r.ITEMID))
+            );
+            console.log(invalidItem,'invalidItem')
+
+        
+ 
+            if (invalidItem) {
+                toaster.create({
+                    title: "Invalid Item",
+                    description: "Please select a valid item before saving.",
+                    type: "warning",
+                });
+                return;
+            }
+            const invalidGrossWt = draftRows.findIndex(
+                (r) => Number(r.GRSWT) <= 0
+            );
+            console.log(invalidGrossWt,'invalidGrossWt')
+            if (invalidGrossWt !== -1) {
+                toaster.create({
+                    title: "Invalid Gross Weight",
+                    description: `Row ${invalidGrossWt + 1}: Gross weight must be greater than 0.`,
+                    type: "warning",
+                });
+                return;
+            }
+            const invalidPurity = draftRows.findIndex(
+                (r) => Number(r.PURITY) <= 0
+            );
+
+            if (invalidPurity !== -1) {
+                toaster.create({
+                    title: "Invalid Gross Weight",
+                    description: `Row ${invalidPurity + 1}: Pure  must be greater than 0.`,
+                    type: "warning",
+                });
+                return;
+            }
+
 
             // Save to backend
             await createTransaction.mutateAsync(transactionData);
@@ -493,6 +563,9 @@ export default function IssuePage() {
             acc.NETWT += Number(row.NETWT || 0);
             acc.PURITY += Number(row.PURITY || 0);
             acc.PUREWT += Number(row.PUREWT || 0);
+            acc.RATE +=Number(row.RATE || 0);
+            acc.MCHARGE += Number(row.MCHARGE || 0);
+            acc.WASTAGE += Number(row.WASTEAGE || 0);
             return acc;
         }, {
             PCS: 0,
@@ -501,6 +574,9 @@ export default function IssuePage() {
             NETWT: 0,
             PURITY: 0,
             PUREWT: 0,
+            RATE:0,
+            MCHARGE:0,
+            WASTAGE:0
         });
     }, [draftRows]);
 
@@ -508,36 +584,36 @@ export default function IssuePage() {
        Opening Items Display
     ================================ */
 
-    const openingItems = useMemo(() => {
-        return Opening
-            .filter(o => o.value !== 0)
-            .map(o => (
-                <Box
-                    key={o.label}
-                    display="flex"
-                    alignItems="center"
-                    bg={theme.colors.formColor}
-                    p={2}
-                    gap={1}
-                    rounded="sm"
-                    justifyContent="space-between"
-                >
-                    <Text fontSize="2xs" fontWeight="bold">
-                        {o.label} :
-                    </Text>
-                    <Text
-                        fontSize="2xs"
-                        bg={theme.colors.accient}
-                        fontWeight="semibold"
-                        p={1}
-                        rounded="sm"
-                        color={theme.colors.whiteColor}
-                    >
-                        {formatToFixed(o.value, 2)}
-                    </Text>
-                </Box>
-            ));
-    }, [theme]);
+    // const openingItems = useMemo(() => {
+    //     return openingBalance
+    //         .filter(o => o.value !== 0)
+    //         .map(o => (
+    //             <Box
+    //                 key={o.label}
+    //                 display="flex"
+    //                 alignItems="center"
+    //                 bg={theme.colors.formColor}
+    //                 p={2}
+    //                 gap={1}
+    //                 rounded="sm"
+    //                 justifyContent="space-between"
+    //             >
+    //                 <Text fontSize="2xs" fontWeight="bold">
+    //                     {o.label} :
+    //                 </Text>
+    //                 <Text
+    //                     fontSize="2xs"
+    //                     bg={theme.colors.accient}
+    //                     fontWeight="semibold"
+    //                     p={1}
+    //                     rounded="sm"
+    //                     color={theme.colors.whiteColor}
+    //                 >
+    //                     {formatToFixed(o.value, 2)}
+    //                 </Text>
+    //             </Box>
+    //         ));
+    // }, [theme]);
 
     /* ================================
        Render
@@ -550,9 +626,9 @@ export default function IssuePage() {
             {/* LEFT – 70% */}
             <Box w="70%">
                 <VStack align="stretch" gap={1}>
-                    <Text fontWeight="semibold" fontSize="sm">
+                    {/* <Text fontWeight="semibold" fontSize="sm">
                         Transaction Master
-                    </Text>
+                    </Text> */}
 
                     {/* 1. Transaction Header Form */}
                     <TransactionHeaderForm
@@ -561,15 +637,15 @@ export default function IssuePage() {
                         onCustomerSelect={handleCustomerSelect}
                         customerCollection={customerCollection}
                         customerFilter={customerFilter}
-                        getLabelByValue={getLabelByValue}
+                        getLabelByValue={getLabelByValue}  
                         theme={theme}
-                        
+                        openingBalance={openingBalance}
+                        openingData={openingData}
                     />
 
-                    {/* Opening Items Display */}
-                    <Flex justifyContent="flex-end" align="center">
-                        {openingItems}
-                    </Flex>
+             
+               
+                 
 
                     {/* 2. Transaction Type Selector */}
                     <TransactionTypeSelector
@@ -608,7 +684,9 @@ export default function IssuePage() {
                                     // If you need to perform any save logic, do it here
                                     console.log("Row saved:", row, "isNew:", isNew);
                                 }}
-                                itemsCollection={comboboxCollection}
+                                itemsCollection={itemsCollection}
+                                itemsFilter={itemsFilter }
+                                
                                 totals={totals}
                                 transactionTitle={transactionTitle}
                                 theme={theme}

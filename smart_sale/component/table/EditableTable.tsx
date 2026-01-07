@@ -21,7 +21,7 @@ export interface TableColumn {
     options?: any[];
     collection?: any;
     getLabelByValue?: (collection: any, value: any) => string;
-    sum?:number
+    sum?:number|boolean
 }
 
 export interface TableProps {
@@ -231,9 +231,9 @@ const EditableTable: React.FC<TableProps> = ({
         if (onSaveRow) {
             onSaveRow(row, isNewRow);
         }
-        // Exit edit mode
         setLocalEditingRowId(null);
         setIsNewRow(false);
+        
     };
 
     const handleCancel = () => {

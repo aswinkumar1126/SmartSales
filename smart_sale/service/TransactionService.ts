@@ -1,22 +1,17 @@
 import { axiosInstance } from "@/api/axiosInstance";
 import { ApiResponse } from "@/types/api/apiResponse";
-import { TRANSACTION } from "@/types/transcation/Transaction";
+import { TRANSACTION, CreateTransaction } from "@/types/transcation/Transaction";
 
 const BASE_PATH = "/transaction";
 
 export const TransactionService = {
     createMany: async (
-        payload: TRANSACTION[],
-        TRANTYPE: string
-    ): Promise<ApiResponse<TRANSACTION[]>> => {
+        payload: CreateTransaction,
+ 
+    ): Promise<ApiResponse<any>> => {
         try {
-            const { data } = await axiosInstance.post(
-                BASE_PATH,
-                payload, // 👈 array of objects
-                {
-                    params: { TRANTYPE },
-                }
-            );
+            console.log(payload ,'payloadfor create')
+            const { data } = await axiosInstance.post(BASE_PATH ,payload);
             return data;
         } catch (error: any) {
             throw error?.response?.data || error;

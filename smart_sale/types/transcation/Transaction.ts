@@ -1,5 +1,4 @@
 export interface TRANSACTION {
-    
     SNO?: string | number;
     ITEM?: string|number;        // ITEMID
     PCS?: number;
@@ -42,7 +41,6 @@ export interface TransactionItem {
     RATE?: number;
     MCHARGE?: number;
     WASTAGE?: number;
-    TRANSACTION_TYPE?: string;
 }
 
 export interface TransactionData {
@@ -54,4 +52,15 @@ export interface DraftRow extends TransactionItem {
     __rowId?: string;
     __isNew?: boolean;
     __previewSno?: number;
+}
+
+export interface TransactionInfo{
+    ACCODE:number,
+    TRANTYPE:string,
+    TRANDATE:string
+}
+
+export interface CreateTransaction{
+    TRANSACTION_DETAILS: TransactionInfo;
+    TRANSACTION_ITEMS : TransactionItem[];
 }
