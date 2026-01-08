@@ -49,6 +49,7 @@ interface EditableCellProps {
     };
     getLabelByValue?: (collection: any, value: any) => string;
     onInputValueChange?: (input: string) => void;
+    onClassUse?: boolean;
 
 }
 
@@ -140,6 +141,7 @@ const EditableCell: React.FC<EditableCellProps> = ({
     collection,
     getLabelByValue,
     onInputValueChange,
+    onClassUse
 }) => {
     const [isEditing, setIsEditing] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
@@ -290,6 +292,7 @@ const EditableCell: React.FC<EditableCellProps> = ({
                     onChange={(_, v) => setEditValue(v)}
                     allowNegative
                     confirmNegative
+                    onClassUse
                    
                 />
             </div>

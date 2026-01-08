@@ -10,6 +10,7 @@
   "dependencies": {
     "@chakra-ui/anatomy": "^2.3.4",
     "@chakra-ui/form-control": "^2.2.0",
+    "@chakra-ui/icons": "^2.2.4",
     "@chakra-ui/react": "^3.30.0",
     "@chakra-ui/system": "^2.6.2",
     "@chakra-ui/table": "^2.1.0",
@@ -19,6 +20,7 @@
     "@hookform/resolvers": "^5.2.2",
     "@mui/material": "^7.3.6",
     "@tanstack/react-query": "^5.90.12",
+    "animate.css": "^4.1.1",
     "axios": "^1.13.2",
     "framer-motion": "^12.23.26",
     "lucide-react": "^0.561.0",

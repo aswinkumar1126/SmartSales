@@ -19,17 +19,28 @@ export const TransactionService = {
     },
 
     // GET ALL
-    getAll: async (trantype: string): Promise<ApiResponse<any>> => {
+    getAll: async (
+        trantype?: string,
+        accode?: number,
+        startdate?: string,
+        enddate?: string
+    ): Promise<ApiResponse<any>> => {
         try {
-            const { data } = await axiosInstance.get(BASE_PATH, {
-                params: {trantype }, // 👈 case fixed
-            });
+            const params: any = {};
+            
+
+            if (trantype) params.trantype = trantype;
+            if (accode) params.accode = accode;
+            if (startdate) params.startdate = startdate;
+            if (enddate) params.enddate = enddate;
+            console.log(params, 'params')
+            const { data } = await axiosInstance.get(BASE_PATH, { params });
+            console.log(data ,'date')
             return data;
         } catch (error: any) {
             throw error?.response?.data || error;
         }
     },
-
     // GET BY TRANSACTION ID
     getByTransId: async (
         transId: string,
@@ -115,3 +126,4 @@ export const TransactionService = {
         }
     },
 };
+

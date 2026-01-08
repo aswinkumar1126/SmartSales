@@ -32,7 +32,7 @@ import RightSideDetailsPanel from "./RightSideDetailsPanel/RightSideDetailsPanel
 import { useTransactions } from "@/hooks/transaction/useTransactions";
 import { useAllAccountHead } from "@/hooks/accountHead/useAccountHead";
 import { useItems } from "@/hooks/item/useItems";
-import { useCreateTransactions ,useUpdateTransaction } from "@/hooks/transaction/useTransactions";
+import { useCreateTransactions, useUpdateTransaction } from "@/hooks/transaction/useTransactions";
 
 // Types & Constants
 import { TransactionType } from "@/types/transcation/Transaction";
@@ -40,33 +40,16 @@ import { TRANSACTIONTYPES } from "@/data/Transaction/TransactionType";
 import { Opening } from "@/data/Transaction/Opening";
 import { formatToFixed } from "@/utils/format/numberFormat";
 
-
 /* ================================
    Main Component
 ================================ */
 
 export default function IssuePage() {
 
-    const [accCode ,setAccCode] = useState< number | undefined |null >();
-
-    const { theme } = useTheme();
-    const { data: itemsData } = useItems();
-    const { data: allCustomer } = useAllAccountHead();
-  
-    const { data: openingBalance } = useOpeningBalance(accCode);
-    console.log(openingBalance,'openingBalnace');
-
-    const openingData = openingBalance?.data ; 
-
-
-    const createTransaction = useCreateTransactions();
-    // const updateTransaction = useUpdateTransaction();
-
-    const { contains } = useFilter({ sensitivity: "base" });
-
+    const [accCode, setAccCode] = useState<number | undefined | null>();
     /* ================================
-     State Management
-    ================================ */
+    State Management
+   ================================ */
 
     // Transaction header state
     const [headerForm, setHeaderForm] = useState({
@@ -80,7 +63,7 @@ export default function IssuePage() {
 
     // Transaction type & draft state
     const [selectedTransactionType, setSelectedTransactionType] = useState<TransactionType | null>(null);
-    const [transactionTitle, setTransactionTitle] = useState<string|undefined> ();
+    const [transactionTitle, setTransactionTitle] = useState<string | undefined>();
 
     // Draft rows (local storage backed)
     const [draftRows, setDraftRows] = useState<any[]>([]);
@@ -90,6 +73,33 @@ export default function IssuePage() {
     const [showHistory, setShowHistory] = useState(false);
     const [selectedHistoryId, setSelectedHistoryId] = useState<string | null>(null);
 
+    // Date range state with localStorage persistence
+    const [startDate, setStartDate] = useState<string | null>(null);
+    const [endDate, setEndDate] = useState<string | null>(null);
+
+    const { theme } = useTheme();
+    const { data: itemsData } = useItems();
+    const { data: allCustomer } = useAllAccountHead();
+
+    const { data: openingBalance } = useOpeningBalance(accCode);
+    console.log(openingBalance, 'openingBalnace');
+
+    const { data: transactionList } = useTransactions(
+        selectedTransactionType?.value,
+        accCode ?? undefined,
+        startDate ?? undefined,
+        endDate ?? undefined,
+    );
+    console.log(transactionList, 'transactionList');
+
+    const openingData = openingBalance?.data;
+
+
+    const createTransaction = useCreateTransactions();
+    // const updateTransaction = useUpdateTransaction();
+
+    const { contains } = useFilter({ sensitivity: "base" });
+
     /* ================================
        Local Storage Keys
     ================================ */
@@ -97,6 +107,7 @@ export default function IssuePage() {
     const DRAFT_KEY = "transaction_draft";
     const HEADER_KEY = "transaction_header";
     const TYPE_KEY = "transaction_type";
+    const DATE_RANGE_KEY = "transaction_date_range"; // New key for date range
 
     /* ================================
        Customer Data
@@ -143,7 +154,7 @@ export default function IssuePage() {
             })) ?? [],
         [itemsData]
     );
-
+   
     const { collection: itemsCollection ,filter:itemsFilter ,set} = useListCollection({
         initialItems: mappedItems,
         filter: contains,
@@ -152,6 +163,30 @@ export default function IssuePage() {
     useEffect(() => {
         set(mappedItems);
     }, [mappedItems, set]);
+
+
+
+    /* ================================
+       Date Range Handlers
+    ================================ */
+
+    const handleStartDateChange = (val?: string) => {
+        setStartDate(val || null);
+        if (val) {
+            // Save to localStorage
+            const dateRange = { startDate: val, endDate };
+            localStorage.setItem(DATE_RANGE_KEY, JSON.stringify(dateRange));
+        }
+    };
+
+    const handleEndDateChange = (val?: string) => {
+        setEndDate(val || null);
+        if (val) {
+            // Save to localStorage
+            const dateRange = { startDate, endDate: val };
+            localStorage.setItem(DATE_RANGE_KEY, JSON.stringify(dateRange));
+        }
+    };
     /* ================================
        Local Storage Persistence
     ================================ */
@@ -235,7 +270,10 @@ export default function IssuePage() {
     }, [selectedTransactionType]);
 
 
-    
+    useEffect(() => {
+        const dateRange = { startDate, endDate };
+        localStorage.setItem(DATE_RANGE_KEY, JSON.stringify(dateRange));
+    }, [startDate, endDate]);
 
     /* ================================
        Header Form Handlers
@@ -253,6 +291,7 @@ export default function IssuePage() {
         }));
         setAccCode(Number(customerValue));
     };
+  
 
     /* ================================
        Transaction Type Handlers
@@ -284,26 +323,26 @@ export default function IssuePage() {
         setTransactionTitle(type.label);
 
         // 4️⃣ Create fresh draft row
-        const newRowId = `draft-${Date.now()}`;
+        // const newRowId = `draft-${Date.now()}`;
 
-        const newRow = {
-            __rowId: newRowId,
-            __isNew: true,
-            __previewSno: 1,
-            ITEMID: "",
-            PCS: 0,
-            GRSWT: 0,
-            LESSWT: 0,
-            NETWT: 0,
-            PURITY: 0,
-            PUREWT: 0,
-            RATE: 0,
-            MCHARGE: 0,
-            WASTAGE: 0,
-        };
+        // const newRow = {
+        //     __rowId: newRowId,
+        //     __isNew: true,
+        //     __previewSno: 1,
+        //     ITEMID: "",
+        //     PCS: "",
+        //     GRSWT: "",
+        //     LESSWT: "",
+        //     NETWT: "",
+        //     PURITY: "",
+        //     PUREWT: "",
+        //     RATE: "",
+        //     MCHARGE: "",
+        //     WASTAGE: "",
+        // };
 
-        setDraftRows([newRow]);
-        setEditingRowId(newRowId);
+        // setDraftRows([newRow]);
+        // setEditingRowId(newRowId);
 
         toaster.create({
             title: `${type.label} Started`,
@@ -317,7 +356,7 @@ export default function IssuePage() {
        Draft Table Handlers
     ================================ */
 
-    const handleAddDraftRow = () => {
+    const handleClearForm = () => {
         if (!selectedTransactionType) {
             toaster.create({
                 title: "Transaction Type Required",
@@ -334,15 +373,15 @@ export default function IssuePage() {
             __previewSno: draftRows.length + 1,
             TRANSACTION_TYPE: selectedTransactionType.value,
             ITEMID: "",
-            PCS: 0,
-            GRSWT: 0,
-            LESSWT: 0,
-            NETWT: 0,
-            PURITY: 0,
-            PUREWT: 0,
-            RATE: headerForm.RATEGM || 0,
-            MCHARGE: 0,
-            WASTAGE: 0,
+            PCS: "",
+            GRSWT: "",
+            LESSWT: "",
+            NETWT: "",
+            PURITY: "",
+            PUREWT: "",
+            RATE: headerForm.RATEGM || "",
+            MCHARGE: "",
+            WASTAGE: "",
         };
 
         setDraftRows(prev => [...prev,newRow]);
@@ -565,7 +604,12 @@ export default function IssuePage() {
             acc.PUREWT += Number(row.PUREWT || 0);
             acc.RATE +=Number(row.RATE || 0);
             acc.MCHARGE += Number(row.MCHARGE || 0);
-            acc.WASTAGE += Number(row.WASTEAGE || 0);
+            acc.WASTAGE += Number(row.WASTAGE || 0);
+            acc.AMOUNT += Number(row.AMOUNT || 0);
+            // acc.GST += Number(row.GST || 0);
+            // acc.CGST += Number(row.CGST || 0);
+            // acc.SGST += Number(row.SGST || 0);
+
             return acc;
         }, {
             PCS: 0,
@@ -576,7 +620,8 @@ export default function IssuePage() {
             PUREWT: 0,
             RATE:0,
             MCHARGE:0,
-            WASTAGE:0
+            WASTAGE:0,
+            AMOUNT:0
         });
     }, [draftRows]);
 
@@ -654,19 +699,43 @@ export default function IssuePage() {
                         onSelectType={handleTransactionTypeSelect}
                         theme={theme}
                     />
+                
 
                     {/* Draft Section (only show if transaction type selected) */}
                     {selectedTransactionType && (
                         <>
-                            {/* 3. Draft Transaction Table */}
+                            {/* Draft Transaction Table with Form */}
                             <DraftTransactionTable
                                 rows={draftRows}
                                 editingRowId={editingRowId}
-                                onAddRow={handleAddDraftRow}
+
+                                onAddRow={(formData) => {
+                                    if (formData && typeof formData === 'object') {
+                                        // Form submission
+                                        const newRow = {
+                                            ...formData,
+                                            __rowId: `row-${Date.now()}`,
+                                            __isNew: true,
+                                            __previewSno: draftRows.length + 1,
+                                        };
+
+                                        // Add to draft rows
+                                        setDraftRows(prev => [...prev, newRow]);
+                                    } else {
+                                        // Original inline add
+                                        const newRow = {
+                                            __rowId: `row-${Date.now()}`,
+                                            __isNew: true,
+                                            __previewSno: draftRows.length + 1,
+                                            // Add other empty fields based on your columns
+                                        };
+                                        setDraftRows(prev => [...prev, newRow]);
+                                    }
+                                }}
                                 onUpdateRow={handleUpdateDraftRow}
+                                handleClearForm={handleClearForm}
                                 onRemoveRow={handleRemoveDraftRow}
                                 onRowClick={(row) => {
-                                    // Only set edit mode if not already editing this row
                                     if (editingRowId !== row.__rowId) {
                                         setEditingRowId(row.__rowId);
                                     }
@@ -678,22 +747,17 @@ export default function IssuePage() {
                                     setEditingRowId(null);
                                 }}
                                 onSaveRow={(row, isNew) => {
-                                    // When row is saved, exit edit mode
                                     setEditingRowId(null);
-
-                                    // If you need to perform any save logic, do it here
                                     console.log("Row saved:", row, "isNew:", isNew);
                                 }}
                                 itemsCollection={itemsCollection}
-                                itemsFilter={itemsFilter }
-                                
+                                itemsFilter={itemsFilter}
                                 totals={totals}
                                 transactionTitle={transactionTitle}
                                 theme={theme}
                             />
-                        
 
-                            {/* 4. Save Transaction Bar */}
+                            {/* Save Transaction Bar */}
                             <SaveTransactionBar
                                 draftCount={draftRows.length}
                                 onSave={handleSaveTransaction}
@@ -732,10 +796,16 @@ export default function IssuePage() {
             <Box w="30%">
                 <RightSideDetailsPanel
                     selectedTransaction={selectedHistoryId}
+                    onSelectTransaction={setSelectedHistoryId}
+                    transactionList={transactionList}
                     draftTotals={totals}
                     headerForm={headerForm}
                     selectedTransactionType={selectedTransactionType}
                     theme={theme}
+                    startDate={startDate || undefined}
+                    endDate={endDate || undefined}
+                    onStartDateChange={handleStartDateChange}
+                    onEndDateChange={handleEndDateChange}
                 />
             </Box>
         </Flex>

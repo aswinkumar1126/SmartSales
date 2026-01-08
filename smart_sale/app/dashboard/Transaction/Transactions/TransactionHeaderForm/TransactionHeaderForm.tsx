@@ -234,7 +234,7 @@ export default function TransactionHeaderForm({
 
              
             </Box>
-          <Box alignItems='center' justifyContent='center'>
+            <Box alignItems='center' justifyContent='center' className="animate__animated animate__bounce animate__delay-2s">
                 {openingBalance && <Flex justifyContent="flex-end" align="center">
 
                     <Box
@@ -257,10 +257,10 @@ export default function TransactionHeaderForm({
                             rounded="sm"
                             color={theme.colors.whiteColor}
                         >
-                            {formatToFixed(openingData?.BALANCE, 2)}
+                            {formatToFixed(openingData?.OPENING_PURE, 2)}
                         </Text>
                     </Box>
-                    <Box
+                    {openingData?.OPENING_CASH && <Box
 
                         display="flex"
                         alignItems="center"
@@ -281,9 +281,10 @@ export default function TransactionHeaderForm({
                             rounded="sm"
                             color={theme.colors.whiteColor}
                         >
-                            {formatToFixed(openingData?.BALANCE, 2)}
+                            {formatToFixed(openingData?.OPENING_CASH, 2)}
                         </Text>
-                    </Box>
+                    </Box>}
+                   
                 </Flex>}
           </Box>
 

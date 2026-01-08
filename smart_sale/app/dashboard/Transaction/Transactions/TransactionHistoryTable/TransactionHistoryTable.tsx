@@ -30,8 +30,8 @@ export default function TransactionHistoryTable({
                 t.TRANSACTION_TYPE === transactionType
             );
         }
-
-        return filtered.slice(0, 10); // Show last 10 transactions
+        console.log(filtered,'filtered')
+        return filtered;// Show last 10 transactions
     }, [transactions, transactionType]);
 
     const historyColumns = [
@@ -49,7 +49,7 @@ export default function TransactionHistoryTable({
                 Recent Transactions
             </Text>
 
-            <EditableTable
+            {/* <EditableTable
                 columns={historyColumns}
                 data={filteredTransactions}
                 loading={isLoading}
@@ -58,7 +58,7 @@ export default function TransactionHistoryTable({
                 onRowClick={onRowClick}
                 showAddButton={false}
                 
-            />
+            /> */}
         </Box>
     );
 }

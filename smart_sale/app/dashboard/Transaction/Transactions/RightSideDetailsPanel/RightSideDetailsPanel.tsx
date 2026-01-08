@@ -1,15 +1,24 @@
 "use client";
 
-import React from "react";
-import { Box, Text, VStack, HStack, Badge } from "@chakra-ui/react";
+import React, { useState, useEffect } from "react";
+import { Box, Text, VStack, HStack, Badge, Input, InputGroup } from "@chakra-ui/react";
 import { formatToFixed } from "@/utils/format/numberFormat";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 
 interface RightSideDetailsPanelProps {
     selectedTransaction: string | null;
+    onSelectTransaction: (id: string) => void;
+    transactionList: any;
     draftTotals: any;
     headerForm: any;
     selectedTransactionType: any;
     theme: any;
+    startDate?: string;
+    endDate?: string;
+    onStartDateChange: (val?: string) => void;
+    onEndDateChange: (val?: string) => void;
+
 }
 
 export default function RightSideDetailsPanel({
@@ -18,20 +27,142 @@ export default function RightSideDetailsPanel({
     headerForm,
     selectedTransactionType,
     theme,
+    startDate,
+    endDate,
+    onStartDateChange,
+    onEndDateChange,
+    transactionList,
+    onSelectTransaction
 }: RightSideDetailsPanelProps) {
+    const [searchTerm, setSearchTerm] = useState("");
+    const [filteredTransactions, setFilteredTransactions] = useState<any>({
+        issues: [],
+        receipts: []
+    });
+
+    // Parse and format date functions
+    const parseISOToDate = (iso?: string) => {
+        if (!iso) return null;
+        const d = new Date(iso);
+        return isNaN(d.getTime()) ? null : d;
+    };
+
+    const formatDateToISO = (date: Date | null) => {
+        if (!date) return "";
+        return date.toISOString().split("T")[0];
+    };
+
+    // Filter transactions based on search term
+    useEffect(() => {
+        if (!transactionList?.data) {
+            setFilteredTransactions({ issues: [], receipts: [] });
+            return;
+        }
+
+        const filterById = (id: string) =>
+            id.toLowerCase().includes(searchTerm.toLowerCase());
+
+        const filteredIssues = transactionList.data.issues?.filter(filterById) || [];
+        const filteredReceipts = transactionList.data.receipts?.filter(filterById) || [];
+
+        setFilteredTransactions({
+            issues: filteredIssues,
+            receipts: filteredReceipts
+        });
+    }, [transactionList, searchTerm]);
+
     return (
         <VStack
             align="stretch"
             bg={theme.colors.formColor}
             p={4}
             rounded="xl"
-          
         >
             <Text fontWeight="bold" fontSize="md">
                 Transaction Details
             </Text>
 
-            {/* Customer Info */}
+            {/* Date Range Filter */}
+            <Box display='flex' gap={2}>
+                <Box flex={1}>
+                    <Text fontSize="xs" mb={1}>Start Date</Text>
+                    <DatePicker
+                        selected={startDate ? parseISOToDate(startDate) : null}
+                        onChange={(date) => {
+                            if (!date) return;
+                            onStartDateChange(formatDateToISO(date));
+                        }}
+                        maxDate={new Date()}
+                        dateFormat="dd-MM-yyyy"
+                        className="date-input"
+                        placeholderText="dd-mm-yyyy"
+                    />
+                </Box>
+
+                <Box flex={1}>
+                    <Text fontSize="xs" mb={1}>End Date</Text>
+                    <DatePicker
+                        selected={endDate ? parseISOToDate(endDate) : null}
+                        onChange={(date) => {
+                            if (!date) return;
+                            onEndDateChange(formatDateToISO(date));
+                        }}
+                        minDate={startDate ? parseISOToDate(startDate) : undefined}
+                        maxDate={new Date()}
+                        dateFormat="dd-MM-yyyy"
+                        className="date-input"
+                        placeholderText="dd-mm-yyyy"
+                    />
+                </Box>
+            </Box>
+
+         
+
+            {/* Transactions List */}
+            <Box mt={2}>
+                <Text fontSize="xs" color="gray.600" mb={2}>
+                    Transactions {searchTerm && `(${filteredTransactions.issues.length + filteredTransactions.receipts.length} found)`}
+                </Text>
+
+                <Box maxH="260px" overflowY="auto">
+                    <VStack align="stretch" >
+                        {filteredTransactions.issues?.map((id: string) => (
+                            <Box
+                                key={id}
+                                p={2}
+                                rounded="md"
+                                cursor="pointer"
+                                bg={selectedTransaction === id ? "blue.100" : "transparent"}
+                                _hover={{ bg: "gray.100" }}
+                                onClick={() => onSelectTransaction(id)}
+                            >
+                                <Text fontSize="xs">{id}</Text>
+                            </Box>
+                        ))}
+
+                        {filteredTransactions.receipts?.map((id: string) => (
+                            <Box
+                                key={id}
+                                p={2}
+                                rounded="md"
+                                cursor="pointer"
+                                bg={selectedTransaction === id ? "green.100" : "transparent"}
+                                _hover={{ bg: "gray.100" }}
+                                onClick={() => onSelectTransaction(id)}
+                            >
+                                <Text fontSize="xs">{id}</Text>
+                            </Box>
+                        ))}
+
+                        {searchTerm && filteredTransactions.issues.length === 0 && filteredTransactions.receipts.length === 0 && (
+                            <Text fontSize="xs" color="gray.500" textAlign="center" py={4}>
+                                No transactions found
+                            </Text>
+                        )}
+                    </VStack>
+                </Box>
+            </Box>
+
             <Box>
                 <Text fontSize="xs" color="gray.600" mb={1}>
                     Customer
@@ -62,93 +193,6 @@ export default function RightSideDetailsPanel({
                 </Box>
             )}
 
-            {/* Draft Summary */}
-            <Box>
-                <Text fontSize="xs" color="gray.600" mb={2}>
-                    Draft Summary
-                </Text>
-                <VStack align="stretch">
-                    <HStack justify="space-between">
-                        <Text fontSize="xs">Total PCS:</Text>
-                        <Text fontSize="xs" fontWeight="bold">
-                            {formatToFixed(draftTotals.PCS, 0)}
-                        </Text>
-                    </HStack>
-                    <HStack justify="space-between">
-                        <Text fontSize="xs">Gross Wt:</Text>
-                        <Text fontSize="xs" fontWeight="bold">
-                            {formatToFixed(draftTotals.GRSWT, 3)}
-                        </Text>
-                    </HStack>
-                    <HStack justify="space-between">
-                        <Text fontSize="xs">Less Wt:</Text>
-                        <Text fontSize="xs" fontWeight="bold">
-                            {formatToFixed(draftTotals.LESSWT, 3)}
-                        </Text>
-                    </HStack>
-                    <HStack justify="space-between">
-                        <Text fontSize="xs">Net Wt:</Text>
-                        <Text fontSize="xs" fontWeight="bold">
-                            {formatToFixed(draftTotals.NETWT, 3)}
-                        </Text>
-                    </HStack>
-                    <HStack justify="space-between">
-                        <Text fontSize="xs">Pure Wt:</Text>
-                        <Text fontSize="xs" fontWeight="bold">
-                            {formatToFixed(draftTotals.PUREWT, 3)}
-                        </Text>
-                    </HStack>
-                </VStack>
-            </Box>
-
-            {/* Rate Info */}
-            <Box>
-                <Text fontSize="xs" color="gray.600" mb={1}>
-                    Current Rate
-                </Text>
-                <Text fontSize="sm" fontWeight="bold">
-                    ₹{headerForm.RATEGM || "0.00"} / gm
-                </Text>
-            </Box>
-
-            {/* Date Info */}
-            <Box>
-                <Text fontSize="xs" color="gray.600" mb={1}>
-                    Transaction Date
-                </Text>
-                <Text fontSize="sm">
-                    {headerForm.DATE || "Not set"}
-                </Text>
-            </Box>
-
-            {/* Selected Transaction Details */}
-            {selectedTransaction && (
-                <Box>
-                    <Text fontSize="xs" color="gray.600" mb={1}>
-                        Selected Transaction
-                    </Text>
-                    <Text fontSize="xs">
-                        ID: {selectedTransaction}
-                    </Text>
-                    {/* Add more details here as needed */}
-                </Box>
-            )}
-
-            {/* Remarks Section */}
-            <Box>
-                <Text fontSize="xs" color="gray.600" mb={1}>
-                    Remarks
-                </Text>
-                <Box
-                    p={2}
-                    bg="gray.50"
-                    rounded="md"
-                    minH="60px"
-                    fontSize="xs"
-                >
-                    Add any remarks or notes here...
-                </Box>
-            </Box>
         </VStack>
     );
 }

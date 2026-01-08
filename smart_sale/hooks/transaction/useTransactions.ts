@@ -21,13 +21,19 @@ export const transactionKeys = {
 /* -------------------- QUERIES -------------------- */
 
 // GET ALL
-export const useTransactions = (trantype: string) => {
+export const useTransactions = (
+    trantype: string,
+    accode?: number,
+    startdate?: string,
+    enddate?: string
+) => {
     return useQuery<ApiResponse<any>>({
         queryKey: transactionKeys.list(trantype),
-        queryFn: () => TransactionService.getAll(trantype),
-        enabled: !!trantype,
+        queryFn: () => TransactionService.getAll(trantype, accode, startdate, enddate),
+     
     });
 };
+
 
 // GET BY TRANSACTION ID
 export const useTransactionByTransId = (

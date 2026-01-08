@@ -34,32 +34,49 @@ body {
   animation: blink 1s ease-in-out 3;
 }
 .table-header-10 {
-  font-size: 11px;
-  font-weight: 500;
-  padding: 0.5rem;
+  font-size: 10px;
+  padding: 0.25rem;
   
 }
 .table-body-10 {
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 600;
-  padding: 0.5rem;
+  padding: 0.25rem;
 
 }
 .table-footer-10 {
-  font-size: 11px;
+  font-size: 9px;
   font-weight: 500;
-  padding: 0.5rem;
+  padding: 0.25rem;
 
 }
 .table-footer-text {
-  font-size: 12px;
+  font-size: 10px;
   font-weight: 500;
-
 }
 .input-date {
   border: 1px solid #eee;
   height: 31px;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 500;
   padding: 4px 8px;
+}
+
+.type-inputs {
+  border: 1px solid #666;
+  height: 25px;
+  font-size: 10px;
+  padding: 2px;
+}
+
+.date-input {
+  width: 100%;
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+  padding-top: 0.25rem;
+  padding-bottom: 0.25rem;
+  font-size: 0.65rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.25rem;
+
 }

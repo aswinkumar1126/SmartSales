@@ -6,6 +6,7 @@ import { useTheme } from '@/context/theme/themeContext';
 import EditableCell from './EditableCell';
 import { Button, Box } from '@chakra-ui/react';
 import { Toaster,toaster } from '@/components/ui/toaster';
+import { formatToFixed } from '@/utils/format/numberFormat';
 
 export interface TableColumn {
     key: string;
@@ -21,7 +22,8 @@ export interface TableColumn {
     options?: any[];
     collection?: any;
     getLabelByValue?: (collection: any, value: any) => string;
-    sum?:number|boolean
+    sum?:number|boolean;
+    onClassUse?: boolean;
 }
 
 export interface TableProps {
@@ -57,6 +59,7 @@ export interface TableProps {
     showAddButton?: boolean;
     addButtonText?: string;
     enableInlineEditing?: boolean;
+ 
 }
 
 const EditableTable: React.FC<TableProps> = ({
@@ -86,9 +89,10 @@ const EditableTable: React.FC<TableProps> = ({
     fixedHeight,
     showRows = 0,
     renderFooter,
-    showAddButton = true,
+    showAddButton = false,
     addButtonText = 'Add New',
     enableInlineEditing = true,
+   
 }) => {
     const [windowWidth, setWindowWidth] = useState(
         typeof window !== "undefined" ? window.innerWidth : 1024
@@ -245,7 +249,10 @@ const EditableTable: React.FC<TableProps> = ({
     };
 
     const getDisplayValue = (column: TableColumn, value: any) => {
-        if (value == null || value === "") return " --";
+      
+        console.log(column.type ,value ,'valuess')
+
+        if (value == null || value === "") return "-";
 
         if (column.type === 'combobox' && column.collection && column.getLabelByValue) {
             return column.getLabelByValue(column.collection, value);
@@ -256,8 +263,12 @@ const EditableTable: React.FC<TableProps> = ({
             return option?.label || value;
         }
 
-        if (column.type === 'numbers') {
-            return new Intl.NumberFormat("en-IN").format(value);
+        if (column.type == 'numbers') {
+            return formatToFixed(value , 3) ;
+        }
+        if (column.type == 'number') {
+            console.log(formatToFixed(value,3) ,'formated')
+            return formatToFixed(value, 3);
         }
 
         if (column.type === 'date') {
@@ -290,6 +301,7 @@ const EditableTable: React.FC<TableProps> = ({
                     <EditableCell
                         value={value}
                         type={column.type || 'text'}
+                        onClassUse={column.onClassUse}
                         onSave={handleSaveCell}
                         options={column.options}
                         collection={column.collection}
@@ -381,7 +393,7 @@ const EditableTable: React.FC<TableProps> = ({
             key: 'actions',
             label: actionsHeader,
             align: 'center' as const,
-            width: '30px',
+            width: '25px',
             headalign: 'center' as const,
             render: (_: any, row: any, index: any) => renderActions(row, index),
         }]
@@ -431,10 +443,10 @@ const EditableTable: React.FC<TableProps> = ({
                                                 ${getHeadAlignmentClass(column.headalign)}
                                                 last:border-r-0
                                             `}
-                                            // style={getResponsiveWidth(column.width) ? {
-                                            //     width: getResponsiveWidth(column.width),
-                                            //     minWidth: getResponsiveWidth(column.width)
-                                            // } : {}}
+                                            style={getResponsiveWidth(column.width) ? {
+                                                width: getResponsiveWidth(column.width),
+                                                minWidth: getResponsiveWidth(column.width)
+                                            } : {}}
                                             scope="col"
                                         >
                                             <div className={getHeadAlignmentClass(column.headalign)}>
@@ -471,10 +483,10 @@ const EditableTable: React.FC<TableProps> = ({
                                                     last:border-r-0
                                                     table-body-10
                                                 `}
-                                                // style={getResponsiveWidth(column.width) ? {
-                                                //     width: getResponsiveWidth(column.width),
-                                                //     minWidth: getResponsiveWidth(column.width)
-                                                // } : {}}
+                                                style={getResponsiveWidth(column.width) ? {
+                                                    width: getResponsiveWidth(column.width),
+                                                    minWidth: getResponsiveWidth(column.width)
+                                                } : {}}
                                                 role="cell"
                                             >
                                                 {column.key === 'actions' ? (

@@ -23,6 +23,7 @@ type CapitalizedInputProps<T> = {
     autoFocus?:any
     onKeyDown?:any;
     inputRef?:any;
+    onClassUse?:boolean;
 };
 
 export function CapitalizedInput<T>({
@@ -41,7 +42,8 @@ export function CapitalizedInput<T>({
     confirmNegative = false,
     onNegativeConfirm,
     onKeyDown ,
-    inputRef
+    inputRef,
+    onClassUse=false
 }: CapitalizedInputProps<T>) {
 
     const handleChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -113,6 +115,7 @@ export function CapitalizedInput<T>({
             size={size}
             autoFocus={autoFocus}
             onKeyDown={onKeyDown}
+            className={onClassUse ? "type-inputs":""}
             
         />
     );

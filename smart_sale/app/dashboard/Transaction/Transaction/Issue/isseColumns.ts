@@ -1,80 +1,126 @@
 export const issueColumns = [
     {
         key: "SNO",
-        label: "S.No",
-        width: "80px",
+        label: "S.N0",
+        width: "15px",
         align: "center" as const,
-        editable: false
+        editable: false,
+
     },
     {
         key: "ITEMID",
-        label: "Item",
-        width: "150px",
+        label: "ITEM",
+        width: "40px",
         align: "left" as const,
-        type: "combobox" as const
+        type: "combobox" as const,
+      
     },
     {
         key: "PCS",
-        label: "Pcs",
-        width: "100px",
+        label: "PCS",
+        width: "20px",
         type: "number" as const,
-        align: "right" as const
+        align: "right" as const,
+   
     },
     {
         key: "GRSWT",
-        label: "Gross Wt",
-        width: "120px",
+        label: "GRS WT",
+        width: "25px",
         type: "number" as const,
-        align: "right" as const
+        align: "right" as const,
+ 
     },
     {
         key: "LESSWT",
-        label: "Less Wt",
-        width: "120px",
+        label: "LESS WT",
+        width: "20px",
         type: "number" as const,
-        align: "right" as const
+        align: "right" as const,
+ 
     },
     {
         key: "NETWT",
-        label: "Net Wt",
-        width: "120px",
+        label: "NET WT",
+        width: "25px",
         type: "number" as const,
-        align: "right" as const
+        align: "right" as const,
+        editable:false
+   
     },
     {
         key: "PURITY",
-        label: "Purity",
-        width: "100px",
+        label: "PURITY",
+        width: "25px",
         type: "number" as const,
-        align: "right" as const
+        align: "right" as const,
+    
     },
     {
         key: "PUREWT",
-        label: "Pure Wt",
-        width: "120px",
+        label: "PURE WT",
+        width: "25px",
         type: "number" as const,
-        align: "right" as const
+        align: "right" as const,
+        editable: false
+ 
     },
     {
         key: "RATE",
-        label: "Rate",
-        width: "100px",
+        label: "RATE",
+        width: "20px",
         type: "number" as const,
-        align: "right" as const
+        align: "right" as const,
+
     },
     {
         key: "MCHARGE",
-        label: "M.Charge",
-        width: "120px",
+        label: "M.C",
+        width: "25px",
         type: "number" as const,
-        align: "right" as const
+        align: "right" as const,
+  
     },
     {
         key: "WASTAGE",
-        label: "Wastage",
-        width: "120px",
+        label: "WASTAGE",
+        width: "25px",
         type: "number" as const,
-        align: "right" as const
+        align: "right" as const,
+
+    },
+    
+    {
+        key: "IGST",
+        label: "IGST",
+        width: "20px",
+        type: "number" as const,
+        align: "right" as const,
+  
+    },
+    {
+        key: "CGST",
+        label: "CGST",
+        width: "20px",
+        type: "number" as const,
+        align: "right" as const,
+  
+    },
+    {
+        key: "SGST",
+        label: "SGST",
+        width: "20px",
+        type: "number" as const,
+        align: "right" as const,
+  
+    },
+    {
+        key: "AMOUNT",
+        label: "AMOUNT",
+        width: "25px",
+        type: "number" as const,
+        align: "right" as const,
+
     },
 ];
 
