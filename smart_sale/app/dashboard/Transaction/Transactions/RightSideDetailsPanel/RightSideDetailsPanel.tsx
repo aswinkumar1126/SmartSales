@@ -1,28 +1,36 @@
 "use client";
-
-import React, { useState, useEffect } from "react";
-import { Box, Text, VStack, HStack, Badge, Input, InputGroup } from "@chakra-ui/react";
-import { formatToFixed } from "@/utils/format/numberFormat";
+import React,{useState ,useEffect} from "react";
+import { Box, Text, VStack, Badge, Spinner, Combobox, Portal } from "@chakra-ui/react";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 
 interface RightSideDetailsPanelProps {
-    selectedTransaction: string | null;
-    onSelectTransaction: (id: string) => void;
+    selectedTransactionId: string | null;
+    onTransactionClick: (id: string) => void;
     transactionList: any;
+    isLoadingTransactions: boolean;
     draftTotals: any;
     headerForm: any;
     selectedTransactionType: any;
     theme: any;
-    startDate?: string;
-    endDate?: string;
+    startDate?: string | null;
+    endDate?: string | null;
     onStartDateChange: (val?: string) => void;
     onEndDateChange: (val?: string) => void;
+    selectedItemCode: number | null;
+    onSelectItem: (id: number | null) => void;
+    itemsCollection :any,
+    itemsFilter:any
+    getLabelByValue :any;  
 
 }
 
+
 export default function RightSideDetailsPanel({
-    selectedTransaction,
+    selectedTransactionId,
+    onTransactionClick,
+    transactionList,
+    isLoadingTransactions,
     draftTotals,
     headerForm,
     selectedTransactionType,
@@ -31,45 +39,57 @@ export default function RightSideDetailsPanel({
     endDate,
     onStartDateChange,
     onEndDateChange,
-    transactionList,
-    onSelectTransaction
+    onSelectItem,
+    selectedItemCode,
+    itemsCollection,
+    itemsFilter,
+    getLabelByValue,
 }: RightSideDetailsPanelProps) {
-    const [searchTerm, setSearchTerm] = useState("");
-    const [filteredTransactions, setFilteredTransactions] = useState<any>({
-        issues: [],
-        receipts: []
-    });
 
-    // Parse and format date functions
-    const parseISOToDate = (iso?: string) => {
-        if (!iso) return null;
-        const d = new Date(iso);
-        return isNaN(d.getTime()) ? null : d;
-    };
 
-    const formatDateToISO = (date: Date | null) => {
-        if (!date) return "";
-        return date.toISOString().split("T")[0];
-    };
+    const [itemInput, setItemInput] = useState("");
+    const [isItemInitialized, setIsItemInitialized] = useState(false);
 
-    // Filter transactions based on search term
     useEffect(() => {
-        if (!transactionList?.data) {
-            setFilteredTransactions({ issues: [], receipts: [] });
-            return;
+        if (!isItemInitialized && itemsCollection?.items?.length) {
+            const label = getLabelByValue(itemsCollection, selectedItemCode);
+            setItemInput(label);
+            setIsItemInitialized(true);
         }
+    }, [selectedItemCode, itemsCollection, isItemInitialized]);
 
-        const filterById = (id: string) =>
-            id.toLowerCase().includes(searchTerm.toLowerCase());
+    useEffect(() => {
+        if (itemsCollection?.items?.length && selectedItemCode) {
+            const label = getLabelByValue(itemsCollection, selectedItemCode);
+            if (label) setItemInput(label);
+        }
+    }, [itemsCollection, selectedItemCode]);
 
-        const filteredIssues = transactionList.data.issues?.filter(filterById) || [];
-        const filteredReceipts = transactionList.data.receipts?.filter(filterById) || [];
 
-        setFilteredTransactions({
-            issues: filteredIssues,
-            receipts: filteredReceipts
-        });
-    }, [transactionList, searchTerm]);
+    const toStoreFormat = (date: Date) => {
+        const y = date.getFullYear();
+        const m = String(date.getMonth() + 1).padStart(2, "0");
+        const d = String(date.getDate()).padStart(2, "0");
+        return `${y}-${m}-${d}`;
+    };
+    const fromStoreFormat = (dateStr?: string) => {
+        if (!dateStr) return null;
+        const [y, m, d] = dateStr.split("-");
+        return new Date(Number(y), Number(m) - 1, Number(d));
+    };
+
+    // Auto-filtered list – reacts instantly to customer/type/date changes
+    const filteredIds = React.useMemo(() => {
+        if (!transactionList) return [];
+        return [
+            ...(transactionList.issues || []),
+            ...(transactionList.receipts || []),
+        ];
+    }, [transactionList]);
+
+    const totalTransactions = filteredIds.length;
+
+    
 
     return (
         <VStack
@@ -77,94 +97,165 @@ export default function RightSideDetailsPanel({
             bg={theme.colors.formColor}
             p={4}
             rounded="xl"
+            borderWidth="1px"
+            borderColor={theme.colors.borderColor || "gray.200"}
+     
+            fontSize="xs"
         >
-            <Text fontWeight="bold" fontSize="md">
-                Transaction Details
+            <Text fontWeight="bold" fontSize="xs">
+                Transaction Filter
             </Text>
 
-            {/* Date Range Filter */}
-            <Box display='flex' gap={2}>
-                <Box flex={1}>
-                    <Text fontSize="xs" mb={1}>Start Date</Text>
-                    <DatePicker
-                        selected={startDate ? parseISOToDate(startDate) : null}
-                        onChange={(date) => {
-                            if (!date) return;
-                            onStartDateChange(formatDateToISO(date));
-                        }}
-                        maxDate={new Date()}
-                        dateFormat="dd-MM-yyyy"
-                        className="date-input"
-                        placeholderText="dd-mm-yyyy"
-                    />
-                </Box>
+   
 
-                <Box flex={1}>
-                    <Text fontSize="xs" mb={1}>End Date</Text>
-                    <DatePicker
-                        selected={endDate ? parseISOToDate(endDate) : null}
-                        onChange={(date) => {
-                            if (!date) return;
-                            onEndDateChange(formatDateToISO(date));
-                        }}
-                        minDate={startDate ? parseISOToDate(startDate) : undefined}
-                        maxDate={new Date()}
-                        dateFormat="dd-MM-yyyy"
-                        className="date-input"
-                        placeholderText="dd-mm-yyyy"
-                    />
+            {/* Date Range */}
+            <Box>
+               
+                <Box display="flex" gap={2}>
+                    <Box flex={1}>
+                        <Text fontSize='2xs' fontWeight='medium'>START DATE</Text>
+                        <DatePicker
+                            selected={fromStoreFormat(startDate)}
+                            onChange={(d: Date | null) =>
+                                onStartDateChange(d ? toStoreFormat(d) : undefined)
+                            }
+                            dateFormat="dd-MM-yyyy"
+                            placeholderText="Start"
+                            maxDate={fromStoreFormat(endDate) || new Date()}
+                            className="date-input"
+                        />
+                    </Box>
+                    <Box flex={1}>
+                        <Text fontSize='2xs' fontWeight='medium'>END DATE</Text>
+                        <DatePicker
+                            selected={fromStoreFormat(endDate)}
+                            onChange={(d: Date | null) =>
+                                onEndDateChange(d ? toStoreFormat(d) : undefined)
+                            }
+                            minDate={fromStoreFormat(startDate)}
+                            maxDate={new Date()}
+                            dateFormat="dd-MM-yyyy"
+                            placeholderText="End"
+                            className="date-input"
+                        />
+                    </Box>
+                    <Box>
+                        <Combobox.Root
+                            collection={itemsCollection}
+                            openOnClick
+                            value={selectedItemCode ? [String(selectedItemCode)] : []}
+                            inputValue={itemInput}
+                            size="xs"
+
+                            onValueChange={(details) => {
+                                const selectedValue = details.value[0] ?? "";
+
+                                if (!selectedValue) {
+                                    setItemInput("");
+                                    onSelectItem(null);
+                                    return;
+                                }
+
+                                const item = itemsCollection.items.find(
+                                    (i: any) => i.value === selectedValue
+                                );
+
+                                if (item) {
+                                    setItemInput(item.label);
+                                    onSelectItem(Number(item.value));
+                                }
+                            }}
+
+                            onInputValueChange={(e) => {
+                                const val = e.inputValue ?? "";
+                                setItemInput(val);
+                                itemsFilter(val);
+
+                                // 🔑 clear selection when typing
+                                if (selectedItemCode) {
+                                    onSelectItem(null);
+                                }
+                            }}
+                        >
+
+
+                            <Combobox.Label fontSize='2xs'>SELECT ITEM</Combobox.Label>
+                     
+                             <Combobox.Control marginTop={-2.5}>
+                                 <Combobox.Input placeholder="Type to search" fontSize='2xs' />
+                                 <Combobox.IndicatorGroup >
+                                                     
+                                     <Combobox.Trigger />
+                                   </Combobox.IndicatorGroup>
+                                 </Combobox.Control>
+                     
+                            <Portal >
+                                <Combobox.Positioner marginTop={-1.5}>
+                                           <Combobox.Content>
+                                             <Combobox.Empty fontSize='2xs'>No customer found</Combobox.Empty>
+                                                {itemsCollection.items.map((item: any) => (
+                                                   <Combobox.Item key={item.value} item={item} fontSize='2xs'>
+                                                          {item.label}
+                                                  <Combobox.ItemIndicator />
+                                      </Combobox.Item>
+                                    ))}
+                                 </Combobox.Content>
+                               </Combobox.Positioner>
+                            </Portal>
+                         </Combobox.Root>
+                    </Box>
                 </Box>
             </Box>
 
-         
 
-            {/* Transactions List */}
-            <Box mt={2}>
-                <Text fontSize="xs" color="gray.600" mb={2}>
-                    Transactions {searchTerm && `(${filteredTransactions.issues.length + filteredTransactions.receipts.length} found)`}
+            {/* Transaction List */}
+            <Box>
+                <Text fontSize="xs" fontWeight="medium" mb={1}>
+                    Recent Transactions ({totalTransactions})
                 </Text>
 
-                <Box maxH="260px" overflowY="auto">
-                    <VStack align="stretch" >
-                        {filteredTransactions.issues?.map((id: string) => (
-                            <Box
-                                key={id}
-                                p={2}
-                                rounded="md"
-                                cursor="pointer"
-                                bg={selectedTransaction === id ? "blue.100" : "transparent"}
-                                _hover={{ bg: "gray.100" }}
-                                onClick={() => onSelectTransaction(id)}
-                            >
-                                <Text fontSize="xs">{id}</Text>
-                            </Box>
-                        ))}
-
-                        {filteredTransactions.receipts?.map((id: string) => (
-                            <Box
-                                key={id}
-                                p={2}
-                                rounded="md"
-                                cursor="pointer"
-                                bg={selectedTransaction === id ? "green.100" : "transparent"}
-                                _hover={{ bg: "gray.100" }}
-                                onClick={() => onSelectTransaction(id)}
-                            >
-                                <Text fontSize="xs">{id}</Text>
-                            </Box>
-                        ))}
-
-                        {searchTerm && filteredTransactions.issues.length === 0 && filteredTransactions.receipts.length === 0 && (
-                            <Text fontSize="xs" color="gray.500" textAlign="center" py={4}>
-                                No transactions found
-                            </Text>
-                        )}
-                    </VStack>
+                <Box maxH="300px" overflowY="auto" pr={1}>
+                    {isLoadingTransactions ? (
+                        <Box textAlign="center" py={4}>
+                            <Spinner size="sm" />
+                        </Box>
+                    ) : filteredIds.length === 0 ? (
+                        <Text fontSize="xs" color="gray.500" textAlign="center" py={4}>
+                            No transactions found
+                        </Text>
+                    ) : (
+                        <VStack align="stretch" >
+                            {filteredIds.map((id: string) => (
+                                <Box
+                                    key={id}
+                                    px={3}
+                                    py={2}
+                                    rounded="md"
+                                    bg={selectedTransactionId === id ? "blue.100" : "transparent"}
+                                    _hover={{ bg: "gray.100" }}
+                                    cursor="pointer"
+                                    transition="background 0.2s"
+                                    onClick={(e) => {
+                                        e.stopPropagation(); // Prevent triggering parent onClick
+                                        onTransactionClick(id);
+                                    }}
+                                   
+                                >
+                                    <Text fontSize="xs" fontWeight="medium">
+                                        {id}
+                                    </Text>
+                                </Box>
+                            ))}
+                        </VStack>
+                    )}
                 </Box>
             </Box>
 
+
+
+            {/* Customer Info */}
             <Box>
-                <Text fontSize="xs" color="gray.600" mb={1}>
+                <Text fontSize="xs" fontWeight="medium" mb={1}>
                     Customer
                 </Text>
                 <Text fontSize="sm" fontWeight="semibold">
@@ -175,24 +266,28 @@ export default function RightSideDetailsPanel({
                 </Text>
             </Box>
 
-            {/* Transaction Type */}
+            {/* Transaction Type Badge */}
             {selectedTransactionType && (
                 <Box>
-                    <Text fontSize="xs" color="gray.600" mb={1}>
-                        Transaction Type
+                    <Text fontSize="xs" fontWeight="medium" mb={1}>
+                        Current Type
                     </Text>
                     <Badge
                         colorScheme={
-                            selectedTransactionType.value === "ISSUE" ? "blue" :
-                                selectedTransactionType.value === "RECEIPT" ? "green" :
-                                    selectedTransactionType.value === "SALES" ? "purple" : "gray"
+                            selectedTransactionType.value === "ISSUE"
+                                ? "blue"
+                                : selectedTransactionType.value === "RECEIPT"
+                                    ? "green"
+                                    : selectedTransactionType.value === "SALES"
+                                        ? "purple"
+                                        : "gray"
                         }
+                        variant="subtle"
                     >
                         {selectedTransactionType.label}
                     </Badge>
                 </Box>
             )}
-
         </VStack>
     );
 }

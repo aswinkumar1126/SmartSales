@@ -59,6 +59,7 @@ export interface TableProps {
     showAddButton?: boolean;
     addButtonText?: string;
     enableInlineEditing?: boolean;
+    isEditing?:boolean
  
 }
 
@@ -92,6 +93,7 @@ const EditableTable: React.FC<TableProps> = ({
     showAddButton = false,
     addButtonText = 'Add New',
     enableInlineEditing = true,
+    isEditing = false
    
 }) => {
     const [windowWidth, setWindowWidth] = useState(
@@ -284,13 +286,13 @@ const EditableTable: React.FC<TableProps> = ({
         }
 
         const value = row[column.key];
-        const isEditing = isRowEditing(row);
+        const issEditing = isRowEditing(row);
 
         if (column.render) {
             return column.render(value, row, rowIndex);
         }
 
-        if (isEditing && column.editable !== false && column.key !== 'actions') {
+        if (issEditing && column.editable !== false && column.key !== 'actions') {
             const handleSaveCell = async (newValue: any) => {
                 const updatedRow = { ...row, [column.key]: newValue };
                 onUpdateRow?.(rowIndex, updatedRow);
@@ -328,9 +330,9 @@ const EditableTable: React.FC<TableProps> = ({
     const renderActions = (row: any, rowIndex: number) => {
         if (isEmptyRow(row, rowIndex)) return null;
 
-        const isEditing = isRowEditing(row);
+        const issEditing = isRowEditing(row);
 
-        if (isEditing) {
+        if (issEditing) {
             return (
                 <div className="flex items-center justify-center gap-2">
                     <button
@@ -340,13 +342,14 @@ const EditableTable: React.FC<TableProps> = ({
                     >
                         <Save size={16} className='p-1 text-green-600 hover:bg-green-50 rounded transition-colors' />
                     </button>
-                    <button
+                    {!isEditing && <button
                         onClick={handleCancel}
                         className="p-1 text-red-600 hover:bg-red-50 rounded transition-colors"
                         title="Cancel"
                     >
                         <X size={16} className="p-1 text-red-600 hover:bg-red-50 rounded transition-colors" />
-                    </button>
+                    </button> }
+                   
                 </div>
             );
         }
@@ -360,7 +363,8 @@ const EditableTable: React.FC<TableProps> = ({
                 >
                     <Edit2 size={16} className="p-1 text-blue-600 hover:bg-blue-50 rounded transition-colors" />
                 </button>
-                {onDelete && (
+                
+                {onDelete && !isEditing && (
                     <button
                         onClick={() => onDelete(row)}
                         className="p-1 text-red-600 hover:bg-red-50 rounded transition-colors"

@@ -67,10 +67,10 @@ export const designTokens: DesignTokens = {
     },
 
     fontSizes: {
-        heading: "14px",
-        headingSm: "12px",
-        body: "12px",
-        bodySm: "12px",
+        heading: "12px",
+        headingSm: "10px",
+        body: "10px",
+        bodySm: "10px",
     },
 
     spacing: {

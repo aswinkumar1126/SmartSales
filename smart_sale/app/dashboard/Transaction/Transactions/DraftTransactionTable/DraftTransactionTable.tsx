@@ -1,4 +1,3 @@
-// @/component/transaction/DraftTransactionTable.tsx
 "use client";
 
 import React, { useMemo, useCallback, useState } from "react";
@@ -32,6 +31,7 @@ interface DraftTransactionTableProps {
     theme: any;
     itemsFilter: any;
     handleClearForm?: any;
+    isEditing: boolean;
 }
 
 export default function DraftTransactionTable({
@@ -48,11 +48,22 @@ export default function DraftTransactionTable({
     transactionTitle,
     theme,
     itemsFilter,
-    handleClearForm
+    handleClearForm,
+    isEditing
 }: DraftTransactionTableProps) {
-    console.log("DraftTable - rows:", rows.length, "editingRowId:", editingRowId);
+    console.log("DraftTable - rows:", rows.length, "editingRowId:", editingRowId, "isEditing:", isEditing);
 
     const [showForm, setShowForm] = useState(false);
+    const [hasChanges, setHasChanges] = useState(false);
+
+    // Function to check if a field should be editable based on edit mode
+    const isFieldEditable = (field: string) => {
+        if (!isEditing) return true;
+
+        // Fields that CANNOT be edited during transaction edit
+        const nonEditableFields = ['ITEMID', 'ITEMCODE', 'TRANSACTION_TYPE'];
+        return !nonEditableFields.includes(field);
+    };
 
     // Create adapter function for updating rows
     const handleUpdateRowAdapter = useCallback(
@@ -62,6 +73,22 @@ export default function DraftTransactionTable({
             const currentRow = rows[rowIndex];
             if (!currentRow) return;
 
+            // Check if any non-editable fields are being changed during edit mode
+            if (isEditing) {
+                const nonEditableFields = ['ITEMID', 'ITEMCODE', 'TRANSACTION_TYPE'];
+                const changedNonEditable = nonEditableFields.filter(field =>
+                    updatedRow[field] !== undefined &&
+                    updatedRow[field] !== currentRow[field]
+                );
+
+                if (changedNonEditable.length > 0) {
+                    console.warn("Attempted to change non-editable fields during edit:", changedNonEditable);
+                    // Don't allow changes to non-editable fields during edit
+                    return;
+                }
+            }
+
+            let hasChanges = false;
             Object.keys(updatedRow).forEach((field) => {
                 if (field.startsWith("__")) return;
 
@@ -73,26 +100,45 @@ export default function DraftTransactionTable({
                         `Field ${field} changed from ${currentValue} to ${newValue}`
                     );
                     onUpdateRow(rowIndex, field, newValue);
+                    hasChanges = true;
                 }
             });
+
+            // Track if there are any changes (for warning purposes)
+            if (hasChanges && isEditing) {
+                setHasChanges(true);
+            }
         },
-        [rows, onUpdateRow]
+        [rows, onUpdateRow, isEditing]
     );
 
     // Handle delete row
     const handleDeleteRow = useCallback(
         (row: any) => {
+            if (isEditing) {
+                // Show warning when trying to delete during edit
+                const canDelete = window.confirm(
+                    "Are you sure you want to delete this item? You must save the transaction first."
+                );
+                if (!canDelete) return;
+            }
+
             const rowId = row.__rowId;
             console.log("Deleting row:", rowId);
 
             if (rowId) {
-                const canDelete = window.confirm(
+                const confirmDelete = window.confirm(
                     "Are you sure you want to delete this row?"
                 );
-                canDelete ? onRemoveRow(rowId) : null;
+                if (confirmDelete) {
+                    onRemoveRow(rowId);
+                    if (isEditing) {
+                        setHasChanges(true);
+                    }
+                }
             }
         },
-        [onRemoveRow]
+        [onRemoveRow, isEditing]
     );
 
     // Handle row click
@@ -107,6 +153,16 @@ export default function DraftTransactionTable({
     // Handle add via form submission
     const handleAddViaForm = useCallback(
         (formData: any) => {
+            if (isEditing) {
+                // Show warning when trying to add new rows during edit
+                const confirmAdd = window.confirm(
+                    "You are editing an existing transaction. Adding new items will modify the transaction. Continue?"
+                );
+                if (!confirmAdd) return;
+
+                setHasChanges(true);
+            }
+
             // NETWT and PUREWT are already calculated in the form
             const newRow: any = {
                 ...formData,
@@ -119,13 +175,22 @@ export default function DraftTransactionTable({
             // Close form after successful submission
             // setShowForm(false);
         },
-        [rows, onAddRow]
+        [rows, onAddRow, isEditing]
     );
 
     // Handle inline add
     const handleAddInline = useCallback(() => {
+        if (isEditing) {
+            // Show warning when trying to add new rows during edit
+            const confirmAdd = window.confirm(
+                "You are editing an existing transaction. Adding new items will modify the transaction. Continue?"
+            );
+            if (!confirmAdd) return;
+
+            setHasChanges(true);
+        }
         onAddRow();
-    }, [onAddRow]);
+    }, [onAddRow, isEditing]);
 
     // Define fields that should be hidden from form (calculated fields)
     const hiddenFields = ["NETWT", "PUREWT"];
@@ -174,6 +239,7 @@ export default function DraftTransactionTable({
                         type: "combobox",
                         collection: itemsCollection,
                         isRequired: true,
+                        disabled: isEditing, // Disable ITEMID during edit
                     };
                 } else if (col.key === "PURITY") {
                     return {
@@ -196,6 +262,7 @@ export default function DraftTransactionTable({
                     return {
                         ...baseField,
                         type: "capitalized",
+                        disabled: isEditing, // Disable ITEMCODE during edit
                     };
                 } else if (col.key === "RATE" || col.key === "AMOUNT") {
                     return {
@@ -206,7 +273,7 @@ export default function DraftTransactionTable({
 
                 return baseField;
             });
-    }, [itemsCollection]);
+    }, [itemsCollection, isEditing]);
 
     // Memoize columns for table
     const columns = useMemo(() => {
@@ -254,11 +321,21 @@ export default function DraftTransactionTable({
                         );
                         return item?.label || value || "";
                     },
+                    editable: !isEditing, // Make ITEMID non-editable during edit
+                    disabled: isEditing, // Visual disable during edit
+                };
+            }
+
+            if (col.key === "ITEMCODE") {
+                return {
+                    ...col,
+                    editable: !isEditing, // Make ITEMCODE non-editable during edit
+                    disabled: isEditing, // Visual disable during edit
                 };
             }
 
             return {
-                editable: true,
+                editable: isEditing ? isFieldEditable(col.key) : true, // Control editability based on mode
                 ...col,
                 type: numeric.includes(col.key) ? ("number" as const) : ("text" as const),
                 align: numeric.includes(col.key) ? ("right" as const) : ("center" as const),
@@ -267,7 +344,26 @@ export default function DraftTransactionTable({
                 onClassUse: true,
             };
         });
-    }, [itemsCollection, itemsFilter]);
+    }, [itemsCollection, itemsFilter, isEditing, isFieldEditable]);
+
+    // Handle cancel edit
+    const handleCancelEdit = useCallback((rowId?: string) => {
+        if (isEditing && hasChanges) {
+            const confirmCancel = window.confirm(
+                "You have unsaved changes. Are you sure you want to cancel editing? All changes will be lost."
+            );
+            if (!confirmCancel) return;
+        }
+        onCancelEdit(rowId);
+    }, [onCancelEdit, isEditing, hasChanges]);
+
+    // Handle save row
+    const handleSaveRow = useCallback((row: any, isNew: boolean) => {
+        if (isEditing) {
+            setHasChanges(true);
+        }
+        onSaveRow(row, isNew);
+    }, [onSaveRow, isEditing]);
 
     return (
         <Box>
@@ -275,7 +371,6 @@ export default function DraftTransactionTable({
             <Flex
                 justifyContent="space-between"
                 alignItems="center"
-             
                 px={2}
                 py={1}
                 bg={theme.colors.formColor}
@@ -290,6 +385,7 @@ export default function DraftTransactionTable({
                         color={theme.colors.primaryText}
                     >
                         {transactionTitle || "Transaction"} Items
+                        {isEditing && " (Editing Mode)"}
                     </Text>
                     <Badge
                         colorScheme={rows.length > 0 ? "green" : "gray"}
@@ -300,60 +396,146 @@ export default function DraftTransactionTable({
                     >
                         {rows.length} item{rows.length !== 1 ? "s" : ""}
                     </Badge>
+
+                    {/* Warning badge if changes made during edit */}
+                    {isEditing && hasChanges && (
+                        <Badge
+                            colorScheme="orange"
+                            variant="solid"
+                            fontSize="2xs"
+                            px={2}
+                            py={0.5}
+                        >
+                            Unsaved Changes
+                        </Badge>
+                    )}
                 </Flex>
 
-                <HStack >
-                    {!showForm ? (
-                        <Button
-                            size="xs"
-                            variant="solid"
-                            colorPalette="cyan"
-                            onClick={() => setShowForm(true)}
-                            fontSize="2xs"
-                            height="24px"
-                        
-                        >
-                          Add via Form
-                        </Button>
-                    ) : (
-                        <Button
-                            size="xs"
-                            variant="outline"
-                            colorPalette="red"
-                            onClick={() => setShowForm(false)}
-                            fontSize="2xs"
-                            height="24px"
-                        >
-                                <Icon as={LuX} boxSize={2} /> Close Form
-                        </Button>
+                <HStack>
+                    {/* Only show Add buttons when NOT in edit mode OR show with warning */}
+                    {!isEditing && (
+                        <>
+                            {!showForm ? (
+                                <Button
+                                    size="xs"
+                                    variant="solid"
+                                    colorPalette="cyan"
+                                    onClick={() => setShowForm(true)}
+                                    fontSize="2xs"
+                                    height="24px"
+                                >
+                                    Add via Form
+                                </Button>
+                            ) : (
+                                <Button
+                                    size="xs"
+                                    variant="outline"
+                                    colorPalette="red"
+                                    onClick={() => setShowForm(false)}
+                                    fontSize="2xs"
+                                    height="24px"
+                                >
+                                    <Icon as={LuX} boxSize={2} /> Close Form
+                                </Button>
+                            )}
+
+                            <Button
+                                size="xs"
+                                variant="outline"
+                                colorPalette="green"
+                                onClick={handleAddInline}
+                                fontSize="2xs"
+                                height="24px"
+                            >
+                                Add Inline
+                            </Button>
+                        </>
                     )}
 
-                    <Button
-                        size="xs"
-                        variant="outline"
-                        colorPalette="green"
-                        onClick={handleAddInline}
-                        fontSize="2xs"
-                        height="24px"
-                   
-                    >
-                        Add Inline
-                    </Button>
+                    {/* Show Add buttons with warning during edit */}
+                    {/* {!isEditing && (
+                        <>
+                            {!showForm ? (
+                                <Button
+                                    size="xs"
+                                    variant="solid"
+                                    colorPalette="cyan"
+                                    onClick={() => {
+                                        const confirm = window.confirm(
+                                            "You are editing an existing transaction. Adding new items will modify the transaction. Continue?"
+                                        );
+                                        if (confirm) {
+                                            setShowForm(true);
+                                            setHasChanges(true);
+                                        }
+                                    }}
+                                    fontSize="2xs"
+                                    height="24px"
+                                >
+                                    Add via Form
+                                </Button>
+                            ) : (
+                                <Button
+                                    size="xs"
+                                    variant="outline"
+                                    colorPalette="red"
+                                    onClick={() => setShowForm(false)}
+                                    fontSize="2xs"
+                                    height="24px"
+                                >
+                                    <Icon as={LuX} boxSize={2} /> Close Form
+                                </Button>
+                            )}
+
+                            <Button
+                                size="xs"
+                                variant="outline"
+                                colorPalette="green"
+                                onClick={() => {
+                                    const confirm = window.confirm(
+                                        "You are editing an existing transaction. Adding new items will modify the transaction. Continue?"
+                                    );
+                                    if (confirm) {
+                                        handleAddInline();
+                                    }
+                                }}
+                                fontSize="2xs"
+                                height="24px"
+                            >
+                                Add Inline
+                            </Button>
+                        </>
+                    )} */}
                 </HStack>
             </Flex>
+
+            {/* Warning message when editing */}
+            {isEditing && (
+                <Box
+                    bg="yellow.50"
+                    borderWidth="1px"
+                    borderColor="yellow.200"
+                    borderRadius="md"
+                    p={2}
+                    mb={2}
+                >
+                    <Text fontSize="xs" color="yellow.800" fontWeight="medium">
+                        ⚠️ Editing Mode: You can only modify weights, purity, rates, and charges.
+                        Item ID and Item Code cannot be changed. Save your changes before leaving.
+                    </Text>
+                </Box>
+            )}
 
             {/* Form Section - Only shown when showForm is true */}
             {showForm && (
                 <Box mb={1}>
-
-                        <AddTransactionItemForm
-                            fields={formFields}
-                            onSubmit={handleAddViaForm}
-                            onCancel={() => setShowForm(false)}
-                            compact={true}
-                         
-                        />
-                
+                    <AddTransactionItemForm
+                        fields={formFields}
+                        onSubmit={handleAddViaForm}
+                        onCancel={() => setShowForm(false)}
+                        compact={true}
+                        isEditing={isEditing}
+                    />
                 </Box>
             )}
 
@@ -367,18 +549,16 @@ export default function DraftTransactionTable({
             >
                 <EditableTable
                     columns={columns}
+                    isEditing={isEditing}
                     data={rows}
                     editingRowId={editingRowId}
                     enableInlineEditing
                     striped
                     hoverable
-                    // showAddButton
                     showActions="responsive"
-                    // addButtonText={`Add ${transactionTitle} Item`}
-                    // onAddNew={handleAddInline}
                     onUpdateRow={handleUpdateRowAdapter}
-                    onSaveRow={onSaveRow}
-                    onCancelEdit={onCancelEdit}
+                    onSaveRow={handleSaveRow}
+                    onCancelEdit={handleCancelEdit}
                     onDelete={handleDeleteRow}
                     onRowClick={handleRowClick}
                     fixedHeight="300px"
@@ -413,33 +593,6 @@ export default function DraftTransactionTable({
                     }
                 />
             </Box>
-
-            {/* Table Footer Summary */}
-            {/* {rows.length > 0 && (
-                <Flex
-                    justifyContent="space-between"
-                    alignItems="center"
-                    mt={3}
-                    px={3}
-                    py={2}
-                    bg="gray.50"
-                    borderRadius="md"
-                    borderWidth="1px"
-                    borderColor="gray.200"
-                >
-                    <Text fontSize="xs" color="gray.600">
-                        Items will be added to the table above
-                    </Text>
-                    <HStack spacing={3}>
-                        <Text fontSize="xs" fontWeight="medium" color="gray.700">
-                            Net Total:
-                        </Text>
-                        <Text fontSize="sm" fontWeight="bold" color="green.600">
-                            ₹{Number(totals.AMOUNT || 0).toFixed(2)}
-                        </Text>
-                    </HStack>
-                </Flex>
-            )} */}
         </Box>
     );
 }

@@ -14,37 +14,45 @@ export const transactionKeys = {
     list: (TRANTYPE: string) => [...transactionKeys.all, TRANTYPE] as const,
     byId: (sno: number, TRANTYPE: string) =>
         [...transactionKeys.all, "one", sno, TRANTYPE] as const,
-    byTransId: (transId: string, TRANTYPE: string) =>
-        [...transactionKeys.all, "transId", transId, TRANTYPE] as const,
+    byTransId: (transId: string) =>
+        [...transactionKeys.all, "transId", transId] as const,
 };
 
 /* -------------------- QUERIES -------------------- */
 
 // GET ALL
 export const useTransactions = (
-    trantype: string,
-    accode?: number,
-    startdate?: string,
-    enddate?: string
+    trantype?: string | null,
+    accode?: number | null,
+    startdate?: string | null,
+    enddate?: string | null,
+    itemid?:number | null,
+    
 ) => {
     return useQuery<ApiResponse<any>>({
-        queryKey: transactionKeys.list(trantype),
-        queryFn: () => TransactionService.getAll(trantype, accode, startdate, enddate),
-     
+        queryKey: [
+            "transactions",
+            "list",
+            trantype ?? "all",
+            accode ?? "all",
+            startdate ?? "all",
+            enddate ?? "all",
+            itemid ?? "all",
+        ],
+        queryFn: () => TransactionService.getAll(trantype, accode, startdate, enddate , itemid),
+      
     });
 };
-
 
 // GET BY TRANSACTION ID
 export const useTransactionByTransId = (
     transId: string,
-    TRANTYPE: string
 ) => {
     return useQuery<ApiResponse<any>>({
-        queryKey: transactionKeys.byTransId(transId, TRANTYPE),
+        queryKey: transactionKeys.byTransId(transId),
         queryFn: () =>
-            TransactionService.getByTransId(transId, TRANTYPE),
-        enabled: !!transId && !!TRANTYPE,
+            TransactionService.getByTransId(transId),
+        enabled: !!transId ,
     });
 };
 
@@ -64,7 +72,7 @@ export const useTransaction = (
 
 
 // UPDATE (PUT)
-export const useUpdateTransaction = (TRANTYPE: string) => {
+export const useUpdateTransaction = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
@@ -72,13 +80,13 @@ export const useUpdateTransaction = (TRANTYPE: string) => {
             sno,
             payload,
         }: {
-            sno: number;
+            sno: string;
             payload: TRANSACTION;
-        }) => TransactionService.update(sno, payload, TRANTYPE),
+        }) => TransactionService.update(sno, payload),
 
         onSuccess: () => {
             queryClient.invalidateQueries({
-                queryKey: transactionKeys.list(TRANTYPE),
+                queryKey: transactionKeys.all,
             });
         },
     });

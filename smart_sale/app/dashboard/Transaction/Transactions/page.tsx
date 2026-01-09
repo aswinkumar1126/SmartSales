@@ -6,18 +6,12 @@ import {
     Box,
     Button,
     Flex,
-    Combobox,
-    Portal,
-    Input,
-    useListCollection,
-    useFilter,
     VStack,
     HStack,
 } from "@chakra-ui/react";
 import { useTheme } from "@/context/theme/themeContext";
 import { toaster, Toaster } from "@/components/ui/toaster";
-import DatePicker from "react-datepicker";
-import "react-datepicker/dist/react-datepicker.css";
+import { useListCollection, useFilter } from "@chakra-ui/react";
 import { useOpeningBalance } from "@/hooks/balance/useOpeningBalance";
 
 // Components
@@ -32,24 +26,31 @@ import RightSideDetailsPanel from "./RightSideDetailsPanel/RightSideDetailsPanel
 import { useTransactions } from "@/hooks/transaction/useTransactions";
 import { useAllAccountHead } from "@/hooks/accountHead/useAccountHead";
 import { useItems } from "@/hooks/item/useItems";
-import { useCreateTransactions, useUpdateTransaction } from "@/hooks/transaction/useTransactions";
+import { useCreateTransactions, useUpdateTransaction, useTransactionByTransId } from "@/hooks/transaction/useTransactions";
 
 // Types & Constants
 import { TransactionType } from "@/types/transcation/Transaction";
 import { TRANSACTIONTYPES } from "@/data/Transaction/TransactionType";
-import { Opening } from "@/data/Transaction/Opening";
-import { formatToFixed } from "@/utils/format/numberFormat";
+import Loader from "@/component/loader/Loader";
 
 /* ================================
    Main Component
 ================================ */
 
 export default function IssuePage() {
-
     const [accCode, setAccCode] = useState<number | undefined | null>();
+    const [showFilter, setShowFilter] = useState<boolean>(false);
+    const [loading, setLoading] = useState<boolean>(true);
+
     /* ================================
-    State Management
-   ================================ */
+       State Management
+    ================================ */
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setLoading(false);
+        }, 1000);
+        return () => clearTimeout(timer);
+    }, []);
 
     // Transaction header state
     const [headerForm, setHeaderForm] = useState({
@@ -60,7 +61,10 @@ export default function IssuePage() {
         CUSTOMER: "",
         CUSTOMER_NAME: "",
     });
-
+    
+    const [isEditing, setIsEditing] = useState(false);
+    const [editingSno, setEditingSno] = useState<string | null>(null);
+    
     // Transaction type & draft state
     const [selectedTransactionType, setSelectedTransactionType] = useState<TransactionType | null>(null);
     const [transactionTitle, setTransactionTitle] = useState<string | undefined>();
@@ -72,47 +76,52 @@ export default function IssuePage() {
     // History state
     const [showHistory, setShowHistory] = useState(false);
     const [selectedHistoryId, setSelectedHistoryId] = useState<string | null>(null);
+    const [selectedTransactionId, setSelectedTransactionId] = useState<string | null>(null);
 
     // Date range state with localStorage persistence
     const [startDate, setStartDate] = useState<string | null>(null);
     const [endDate, setEndDate] = useState<string | null>(null);
-
-    const { theme } = useTheme();
-    const { data: itemsData } = useItems();
-    const { data: allCustomer } = useAllAccountHead();
-
-    const { data: openingBalance } = useOpeningBalance(accCode);
-    console.log(openingBalance, 'openingBalnace');
-
-    const { data: transactionList } = useTransactions(
-        selectedTransactionType?.value,
-        accCode ?? undefined,
-        startDate ?? undefined,
-        endDate ?? undefined,
-    );
-    console.log(transactionList, 'transactionList');
-
-    const openingData = openingBalance?.data;
-
-
-    const createTransaction = useCreateTransactions();
-    // const updateTransaction = useUpdateTransaction();
-
-    const { contains } = useFilter({ sensitivity: "base" });
+    const [itemCode, setItemCode] = useState<number | null>(null);
 
     /* ================================
        Local Storage Keys
     ================================ */
-
     const DRAFT_KEY = "transaction_draft";
     const HEADER_KEY = "transaction_header";
     const TYPE_KEY = "transaction_type";
-    const DATE_RANGE_KEY = "transaction_date_range"; // New key for date range
+    const DATE_RANGE_KEY = "transaction_date_range";
+    const ITEMID = "transaction_itemid";
+    const FILTER = "show_filter";
+
+    const { theme } = useTheme();
+    const { data: itemsData } = useItems();
+    const { data: allCustomer } = useAllAccountHead();
+    const { data: transactionsById, isLoading: getbySnoLoading } = useTransactionByTransId(selectedTransactionId);
+
+    const updateTransaction = useUpdateTransaction();
+
+    const { data: openingBalance } = useOpeningBalance(accCode);
+    const { data: transactionList, isLoading } = useTransactions(
+        selectedTransactionType?.value,
+        accCode,
+        startDate,
+        endDate,
+        itemCode
+    );
+
+    const openingData = openingBalance?.data;
+    const createTransaction = useCreateTransactions();
+    const { contains } = useFilter({ sensitivity: "base" });
+
+    // Log transaction data for debugging
+    useEffect(() => {
+        console.log("transactionsById data:", transactionsById);
+        console.log("selectedTransactionId:", selectedTransactionId);
+    }, [transactionsById, selectedTransactionId]);
 
     /* ================================
        Customer Data
     ================================ */
-
     const customerList = Array.isArray(allCustomer?.data) ? allCustomer.data : [];
     const CustomerList = useMemo(() => {
         return customerList.map((c: any) => ({
@@ -145,7 +154,6 @@ export default function IssuePage() {
     /* ================================
        Items Data
     ================================ */
-
     const mappedItems = useMemo(
         () =>
             itemsData?.items?.map((item: any) => ({
@@ -154,8 +162,8 @@ export default function IssuePage() {
             })) ?? [],
         [itemsData]
     );
-   
-    const { collection: itemsCollection ,filter:itemsFilter ,set} = useListCollection({
+
+    const { collection: itemsCollection, filter: itemsFilter, set } = useListCollection({
         initialItems: mappedItems,
         filter: contains,
     });
@@ -164,63 +172,60 @@ export default function IssuePage() {
         set(mappedItems);
     }, [mappedItems, set]);
 
-
-
-    /* ================================
-       Date Range Handlers
-    ================================ */
-
-    const handleStartDateChange = (val?: string) => {
-        setStartDate(val || null);
-        if (val) {
-            // Save to localStorage
-            const dateRange = { startDate: val, endDate };
-            localStorage.setItem(DATE_RANGE_KEY, JSON.stringify(dateRange));
-        }
-    };
-
-    const handleEndDateChange = (val?: string) => {
-        setEndDate(val || null);
-        if (val) {
-            // Save to localStorage
-            const dateRange = { startDate, endDate: val };
-            localStorage.setItem(DATE_RANGE_KEY, JSON.stringify(dateRange));
-        }
-    };
     /* ================================
        Local Storage Persistence
     ================================ */
+    useEffect(() => {
+        const saved = localStorage.getItem(DATE_RANGE_KEY);
+        if (!saved) return;
+        try {
+            const parsed = JSON.parse(saved);
+            setStartDate(parsed.startDate ?? null);
+            setEndDate(parsed.endDate ?? null);
+        } catch {
+            localStorage.removeItem(DATE_RANGE_KEY);
+        }
+    }, []);
+
+    useEffect(() => {
+        const savedItemCode = localStorage.getItem(ITEMID);
+        if (!savedItemCode) return;
+        try {
+            const parsed = JSON.parse(savedItemCode);
+            setItemCode(Number(parsed));
+        } catch {
+            localStorage.removeItem(ITEMID);
+        }
+    }, []);
+
+    useEffect(() => {
+        const filter = localStorage.getItem(FILTER);
+        if (!filter) return;
+        try {
+            const parsed = JSON.parse(filter);
+            setShowFilter(parsed);
+        } catch {
+            localStorage.removeItem(FILTER);
+        }
+    }, []);
 
     // Load from localStorage on mount
     useEffect(() => {
         const savedDraft = localStorage.getItem(DRAFT_KEY);
         const savedHeader = localStorage.getItem(HEADER_KEY);
-
-        
-
         const savedType = localStorage.getItem(TYPE_KEY);
 
-        console.log("Loading from localStorage:", {
-            draft: savedDraft?.substring(0, 100),
-            header: savedHeader,
-            type: savedType
-        });
-
-        if(savedHeader){
-            console.log(savedHeader, 'savedType');
-            const headerValues =JSON.parse(savedHeader);
-            console.log(headerValues, 'savedType');
-           setAccCode(Number(headerValues?.CUSTOMER))
+        if (savedHeader) {
+            const headerValues = JSON.parse(savedHeader);
+            setAccCode(Number(headerValues?.CUSTOMER));
         }
 
         if (savedDraft) {
             try {
                 const parsed = JSON.parse(savedDraft);
-                console.log("Parsed draft rows:", parsed.length, "items");
                 setDraftRows(parsed);
             } catch (e) {
                 console.error("Failed to parse draft:", e);
-                // Clear corrupted data
                 localStorage.removeItem(DRAFT_KEY);
             }
         }
@@ -228,7 +233,6 @@ export default function IssuePage() {
         if (savedHeader) {
             try {
                 setHeaderForm(JSON.parse(savedHeader));
-               
             } catch (e) {
                 console.error("Failed to parse header:", e);
                 localStorage.removeItem(HEADER_KEY);
@@ -245,19 +249,25 @@ export default function IssuePage() {
                 localStorage.removeItem(TYPE_KEY);
             }
         }
-        return() => {
+
+        return () => {
             localStorage.removeItem(DRAFT_KEY);
             localStorage.removeItem(HEADER_KEY);
             localStorage.removeItem(TYPE_KEY);
-        }
+            localStorage.removeItem(DATE_RANGE_KEY);
+            localStorage.removeItem(ITEMID);
+            localStorage.removeItem(FILTER);
+        };
     }, []);
-
 
     // Save to localStorage on changes
     useEffect(() => {
         localStorage.setItem(DRAFT_KEY, JSON.stringify(draftRows));
     }, [draftRows]);
 
+    useEffect(() => {
+        localStorage.setItem(FILTER, JSON.stringify(showFilter));
+    }, [showFilter]);
 
     useEffect(() => {
         localStorage.setItem(HEADER_KEY, JSON.stringify(headerForm));
@@ -269,21 +279,170 @@ export default function IssuePage() {
         }
     }, [selectedTransactionType]);
 
+    useEffect(() => {
+        if (itemCode !== null) {
+            localStorage.setItem(ITEMID, JSON.stringify(itemCode));
+        }
+    }, [itemCode]);
 
     useEffect(() => {
-        const dateRange = { startDate, endDate };
-        localStorage.setItem(DATE_RANGE_KEY, JSON.stringify(dateRange));
+        if (startDate || endDate) {
+            localStorage.setItem(
+                DATE_RANGE_KEY,
+                JSON.stringify({ startDate, endDate })
+            );
+        } else {
+            localStorage.removeItem(DATE_RANGE_KEY);
+        }
     }, [startDate, endDate]);
+
+    /* ================================
+       Load Transaction Data When Selected
+    ================================ */
+    
+    // This useEffect loads transaction data when transactionsById changes
+    useEffect(() => {
+        if (transactionsById?.data && selectedTransactionId) {
+            console.log("Loading transaction data:", transactionsById.data);
+            handleEditTransaction(transactionsById.data, selectedTransactionId);
+        }
+    }, [transactionsById, selectedTransactionId]);
+
+    const handleEditTransaction = useCallback((transactionData: any, sno: string) => {
+        console.log("handleEditTransaction called with:", transactionData);
+        
+        if (!transactionData) {
+            console.log("No transaction data provided");
+            return;
+        }
+
+        // Set editing mode and SNO
+        setIsEditing(true);
+        setEditingSno(sno);
+        setSelectedTransactionId(sno);
+
+        // Debug: Log the data structure
+        console.log("Full transaction data structure:", JSON.stringify(transactionData, null, 2));
+        
+        // Try different possible data structures
+        const transactionDetails = transactionData.data?.TRANSACTION_DETAILS || transactionData.TRANSACTION_DETAILS;
+        const transactionItems = transactionData.data?.TRANSACTION_ITEM || transactionData.TRANSACTION_ITEM || transactionData.data?.TRANSACTION_ITEMS || transactionData.TRANSACTION_ITEMS;
+        
+        console.log("Extracted details:", transactionDetails);
+        console.log("Extracted items:", transactionItems);
+
+        // 1. Load transaction details into header form
+        if (transactionDetails) {
+            console.log("Setting header form with details:", transactionDetails);
+            
+            // Get customer name from customerCollection
+            const customerName = getLabelByValue(customerCollection, transactionDetails.ACCODE?.toString());
+
+            // Set customer and date (readonly during edit)
+            setHeaderForm(prev => ({
+                ...prev,
+                CUSTOMER: transactionDetails.ACCODE ? String(transactionDetails.ACCODE) : "",
+                CUSTOMER_NAME: customerName,
+                DATE: transactionDetails.TRANDATE || new Date().toISOString().split("T")[0],
+                BILLNO: transactionDetails.TRANNO || ""
+            }));
+
+            // Set account code
+            setAccCode(transactionDetails.ACCODE);
+
+            // Find and set transaction type (readonly)
+            const foundType = TRANSACTIONTYPES.find(t => t.value === transactionDetails.TRANTYPE);
+            console.log("Found transaction type:", foundType, "for value:", transactionDetails.TRANTYPE);
+            
+            if (foundType) {
+                setSelectedTransactionType(foundType);
+                setTransactionTitle(foundType.label);
+            } else {
+                console.warn("Transaction type not found:", transactionDetails.TRANTYPE);
+            }
+        } else {
+            console.warn("No transaction details found in data");
+        }
+
+        // 2. Load transaction items into draft rows
+        if (transactionItems && Array.isArray(transactionItems)) {
+            console.log("Loading", transactionItems.length, "items into draft rows");
+            
+            const newDraftRows = transactionItems.map((item: any, index: number) => {
+                console.log(`Processing item ${index}:`, item);
+                
+                const rowData = {
+                    __rowId: `edit-${Date.now()}-${index}`,
+                    __isNew: false,
+                    __isEditing: true, // Flag for edit mode
+                    __previewSno: index + 1,
+                    __originalItemId: item.ITEMID,
+                    __originalSno: item.SNO,
+
+                    // Fixed fields (cannot be changed during edit)
+                    TRANSACTION_TYPE: transactionDetails?.TRANTYPE,
+                    ITEMID: item.ITEMID ? String(item.ITEMID) : "",
+
+                    // Editable fields - convert null/undefined to empty string for inputs
+                    PCS: item.PCS || item.pcs || "",
+                    GRSWT: item.GRSWT || item.grswt || "",
+                    LESSWT: item.LESSWT || item.lesswt || "",
+                    NETWT: item.NETWT || item.netwt || "",
+                    PURITY: item.PURITY || item.purity || "",
+                    PUREWT: item.PUREWT || item.purewt || "",
+                    RATE: item.RATE || item.rate || "",
+                    MCHARGE: item.MCHARGE || item.mcharge || "",
+                    WASTAGE: item.WASTAGE || item.wastage || "",
+                    AMOUNT: item.AMOUNT || item.amount || "",
+                };
+                
+                console.log(`Created row ${index}:`, rowData);
+                return rowData;
+            });
+
+            setDraftRows(newDraftRows);
+            console.log("Set draft rows:", newDraftRows);
+
+            // Optionally set the first row as editing
+            if (newDraftRows.length > 0) {
+                setEditingRowId(newDraftRows[0].__rowId);
+            }
+        } else {
+            console.warn("No transaction items found or items is not an array");
+            setDraftRows([]);
+        }
+
+        setTimeout(() => {
+            toaster.create({
+                title: "Transaction Loaded",
+                description: "Transaction loaded for editing. Only weights and values can be modified.",
+                type: "success",
+            });
+        }, 100);
+
+    }, [customerCollection, getLabelByValue]);
 
     /* ================================
        Header Form Handlers
     ================================ */
-
     const handleHeaderChange = (field: string, value: any) => {
         setHeaderForm(prev => ({ ...prev, [field]: value }));
     };
 
+    const handleShowFilter = () => {
+        setShowFilter((prev) => !prev);
+    };
+
     const handleCustomerSelect = (customerValue: string, customerLabel: string) => {
+        if (isEditing) {
+            toaster.create({
+                title: "Cannot Change Customer",
+                description: "Customer cannot be changed when editing a transaction.",
+                type: "warning",
+            });
+            return;
+        }
+        
         setHeaderForm(prev => ({
             ...prev,
             CUSTOMER: customerValue,
@@ -291,71 +450,50 @@ export default function IssuePage() {
         }));
         setAccCode(Number(customerValue));
     };
-  
+
+    /* ================================
+       Date Range Handlers
+    ================================ */
+    const handleStartDateChange = (val?: string) => {
+        setStartDate(val || null);
+        localStorage.setItem(DATE_RANGE_KEY, JSON.stringify({ startDate: val || null, endDate }));
+    };
+
+    const handleEndDateChange = (val?: string) => {
+        setEndDate(val || null);
+        localStorage.setItem(DATE_RANGE_KEY, JSON.stringify({ startDate, endDate: val || null }));
+    };
 
     /* ================================
        Transaction Type Handlers
     ================================ */
-
     const handleTransactionTypeSelect = (type: TransactionType) => {
-        // 1️⃣ Customer validation
+        if (isEditing) {
+            toaster.create({
+                title: "Cannot Change Transaction Type",
+                description: "Transaction type cannot be changed when editing a transaction.",
+                type: "warning",
+            });
+            return;
+        }
+        
         if (!headerForm.CUSTOMER) {
-            toaster.create({
-                title: "Customer Required",
-                description: "Please select a customer before choosing transaction type.",
-                type: "warning",
-            });
+            toaster.create({ title: "Customer Required", description: "Select customer first.", type: "warning" });
             return;
         }
-
-        // 2️⃣ Draft validation (must be EMPTY)
         if (draftRows.length > 0) {
-            toaster.create({
-                title: "Unsaved Draft Exists",
-                description: "Please save or delete the current draft before changing the transaction type.",
-                type: "warning",
-            });
+            toaster.create({ title: "Unsaved Draft", description: "Save or clear draft before changing type.", type: "warning" });
             return;
         }
 
-        // 3️⃣ Set transaction type
         setSelectedTransactionType(type);
         setTransactionTitle(type.label);
-
-        // 4️⃣ Create fresh draft row
-        // const newRowId = `draft-${Date.now()}`;
-
-        // const newRow = {
-        //     __rowId: newRowId,
-        //     __isNew: true,
-        //     __previewSno: 1,
-        //     ITEMID: "",
-        //     PCS: "",
-        //     GRSWT: "",
-        //     LESSWT: "",
-        //     NETWT: "",
-        //     PURITY: "",
-        //     PUREWT: "",
-        //     RATE: "",
-        //     MCHARGE: "",
-        //     WASTAGE: "",
-        // };
-
-        // setDraftRows([newRow]);
-        // setEditingRowId(newRowId);
-
-        toaster.create({
-            title: `${type.label} Started`,
-            description: "You can now add items to the transaction.",
-            type: "info",
-        });
+        setSelectedTransactionId(null);
     };
-
 
     /* ================================
        Draft Table Handlers
     ================================ */
-
     const handleClearForm = () => {
         if (!selectedTransactionType) {
             toaster.create({
@@ -384,14 +522,11 @@ export default function IssuePage() {
             WASTAGE: "",
         };
 
-        setDraftRows(prev => [...prev,newRow]);
+        setDraftRows(prev => [...prev, newRow]);
         setEditingRowId(rowId);
     };
 
-    // In IssuePage component
     const handleUpdateDraftRow = useCallback((rowIndex: number, field: string, value: any) => {
-        console.log(`Updating row ${rowIndex}, field ${field} to:`, value);
-
         setDraftRows(prev => {
             const newRows = [...prev];
             const row = { ...newRows[rowIndex], [field]: value };
@@ -418,8 +553,6 @@ export default function IssuePage() {
             return newRows;
         });
     }, []);
-   
-
 
     const handleRemoveDraftRow = (rowId: string) => {
         setDraftRows(prev => prev.filter(row => row.__rowId !== rowId));
@@ -428,14 +561,12 @@ export default function IssuePage() {
         }
     };
 
-    
     /* ================================
        Save Transaction Handler
     ================================ */
-
     const handleSaveTransaction = async () => {
         setEditingRowId(null);
-        // Validation
+        
         if (!selectedTransactionType) {
             toaster.create({
                 title: "Transaction Type Required",
@@ -476,8 +607,6 @@ export default function IssuePage() {
             });
             return;
         }
-     
-
 
         try {
             // Prepare transaction data
@@ -489,21 +618,17 @@ export default function IssuePage() {
                 },
                 TRANSACTION_ITEMS: draftRows.map((row) => {
                     const { __rowId, __isNew, __previewSno, ITEMID, ...rest } = row;
-
                     return {
                         ...rest,
-                        ITEMID: ITEMID ? Number(ITEMID) : null, 
-                        // RATE: row.RATE || headerForm.RATEGM || 0,
+                        ITEMID: ITEMID ? Number(ITEMID) : null,
                     };
                 }),
             };
+            
             const invalidItem = draftRows.find(
                 (r) => r.ITEMID == null || isNaN(Number(r.ITEMID))
             );
-            console.log(invalidItem,'invalidItem')
-
-        
- 
+            
             if (invalidItem) {
                 toaster.create({
                     title: "Invalid Item",
@@ -512,10 +637,11 @@ export default function IssuePage() {
                 });
                 return;
             }
+            
             const invalidGrossWt = draftRows.findIndex(
                 (r) => Number(r.GRSWT) <= 0
             );
-            console.log(invalidGrossWt,'invalidGrossWt')
+            
             if (invalidGrossWt !== -1) {
                 toaster.create({
                     title: "Invalid Gross Weight",
@@ -524,19 +650,19 @@ export default function IssuePage() {
                 });
                 return;
             }
+            
             const invalidPurity = draftRows.findIndex(
                 (r) => Number(r.PURITY) <= 0
             );
 
             if (invalidPurity !== -1) {
                 toaster.create({
-                    title: "Invalid Gross Weight",
-                    description: `Row ${invalidPurity + 1}: Pure  must be greater than 0.`,
+                    title: "Invalid Purity",
+                    description: `Row ${invalidPurity + 1}: Purity must be greater than 0.`,
                     type: "warning",
                 });
                 return;
             }
-
 
             // Save to backend
             await createTransaction.mutateAsync(transactionData);
@@ -566,34 +692,170 @@ export default function IssuePage() {
         }
     };
 
+    const handleUpdateTransaction = async () => {
+        setEditingRowId(null);
+
+        if (!editingSno) {
+            toaster.create({
+                title: "Transaction ID Missing",
+                description: "Cannot update without transaction SNO.",
+                type: "error",
+            });
+            return;
+        }
+
+        // Validation for editable fields
+        const invalidGrossWt = draftRows.findIndex(
+            (r) => Number(r.GRSWT) <= 0
+        );
+
+        if (invalidGrossWt !== -1) {
+            toaster.create({
+                title: "Invalid Gross Weight",
+                description: `Row ${invalidGrossWt + 1}: Gross weight must be greater than 0.`,
+                type: "warning",
+            });
+            return;
+        }
+
+        const invalidPurity = draftRows.findIndex(
+            (r) => Number(r.PURITY) <= 0
+        );
+
+        if (invalidPurity !== -1) {
+            toaster.create({
+                title: "Invalid Purity",
+                description: `Row ${invalidPurity + 1}: Purity must be greater than 0.`,
+                type: "warning",
+            });
+            return;
+        };
+
+        const row = draftRows[0];
+
+        try {
+            // Prepare update data - only TRANSACTION_ITEMS can be modified
+            const updateData = {
+                TRANSACTION_DETAILS: {
+                    // Keep original values
+                    ACCODE: Number(headerForm.CUSTOMER),
+                    TRANTYPE: String(selectedTransactionType?.value),
+                    TRANDATE: headerForm.DATE,
+                    
+                },
+                TRANSACTION_ITEM: row
+                    ? {
+                        PCS: row.PCS || 0,
+                        GRSWT: row.GRSWT || 0,
+                        LESSWT: row.LESSWT || 0,
+                        NETWT: row.NETWT || 0,
+                        PURITY: row.PURITY || 0,
+                        PUREWT: row.PUREWT || 0,
+                        RATE: row.RATE || 0,
+                        MCHARGE: row.MCHARGE || 0,
+                        WASTAGE: row.WASTAGE || 0,
+                        AMOUNT: row.AMOUNT || 0,
+                        ITEMID:
+                            row.__originalItemId || row.ITEMID
+                                ? Number(row.ITEMID)
+                                : null,
+                    }
+                    : null,
+            };
+            console.log("Updating transaction with SNO:", editingSno);
+            console.log("Update data:", updateData);
+
+            // Call update API
+            await updateTransaction.mutateAsync({
+                sno: editingSno,
+                payload: updateData,
+            });
+
+            // Reset edit mode
+            setIsEditing(false);
+            setEditingSno(null);
+            setSelectedTransactionId(null);
+            setDraftRows([]);
+            setEditingRowId(null);
+
+            // Clear localStorage
+            localStorage.removeItem(DRAFT_KEY);
+
+            toaster.create({
+                title: "Transaction Updated",
+                description: "Transaction items have been updated successfully.",
+                type: "success",
+            });
+
+            // Refresh the transaction list
+            setShowHistory(true);
+
+        } catch (error: any) {
+            console.error("Update error:", error);
+            toaster.create({
+                title: "Update Failed",
+                description: error.message || "Failed to update transaction.",
+                type: "error",
+            });
+        }
+    };
+
     const handleResetDraft = () => {
         setDraftRows([]);
         setEditingRowId(null);
-        setSelectedTransactionType(null);
-        setTransactionTitle("");
-        localStorage.removeItem(DRAFT_KEY);
-        localStorage.removeItem(TYPE_KEY);
 
-        toaster.create({
-            title: "Draft Cleared",
-            description: "All draft items have been removed.",
-            type: "info",
-        });
+        if (isEditing) {
+            setHeaderForm(prev => ({
+                ...prev,
+                CUSTOMER: "",
+                CUSTOMER_NAME: "",
+                BILLNO: "",
+                DATE: new Date().toISOString().split("T")[0],
+                RATEGM:""
+            }));
+            // If editing, exit edit mode
+            
+            setIsEditing(false);
+            setEditingSno(null);
+            setSelectedTransactionId(null);
+
+            toaster.create({
+                title: "Edit Cancelled",
+                description: "Transaction edit has been cancelled.",
+                type: "info",
+            });
+        } else {
+            // If creating new, clear everything
+            setSelectedTransactionType(null);
+            setTransactionTitle("");
+            localStorage.removeItem(TYPE_KEY);
+        }
+
+        localStorage.removeItem(DRAFT_KEY);
     };
 
     /* ================================
        History Handlers
     ================================ */
-
     const handleHistoryRowClick = (transaction: any) => {
         setSelectedHistoryId(transaction.id);
-        // You can load transaction details into a modal or side panel
     };
+
+    const handleTransactionClick = useCallback((transactionId: string) => {
+        console.log("Transaction clicked:", transactionId);
+        setSelectedTransactionId(transactionId);
+        // Clear any existing draft first
+        setDraftRows([]);
+        setIsEditing(false);
+    }, []);
+
+    const handleSelectItemCode = useCallback((id: number | null) => {
+        setItemCode(id);
+    }, []);
 
     /* ================================
        Calculate Totals
     ================================ */
-
     const totals = useMemo(() => {
         return draftRows.reduce((acc, row) => {
             acc.PCS += Number(row.PCS || 0);
@@ -602,14 +864,10 @@ export default function IssuePage() {
             acc.NETWT += Number(row.NETWT || 0);
             acc.PURITY += Number(row.PURITY || 0);
             acc.PUREWT += Number(row.PUREWT || 0);
-            acc.RATE +=Number(row.RATE || 0);
+            acc.RATE += Number(row.RATE || 0);
             acc.MCHARGE += Number(row.MCHARGE || 0);
             acc.WASTAGE += Number(row.WASTAGE || 0);
             acc.AMOUNT += Number(row.AMOUNT || 0);
-            // acc.GST += Number(row.GST || 0);
-            // acc.CGST += Number(row.CGST || 0);
-            // acc.SGST += Number(row.SGST || 0);
-
             return acc;
         }, {
             PCS: 0,
@@ -618,63 +876,45 @@ export default function IssuePage() {
             NETWT: 0,
             PURITY: 0,
             PUREWT: 0,
-            RATE:0,
-            MCHARGE:0,
-            WASTAGE:0,
-            AMOUNT:0
+            RATE: 0,
+            MCHARGE: 0,
+            WASTAGE: 0,
+            AMOUNT: 0
         });
     }, [draftRows]);
 
     /* ================================
-       Opening Items Display
-    ================================ */
-
-    // const openingItems = useMemo(() => {
-    //     return openingBalance
-    //         .filter(o => o.value !== 0)
-    //         .map(o => (
-    //             <Box
-    //                 key={o.label}
-    //                 display="flex"
-    //                 alignItems="center"
-    //                 bg={theme.colors.formColor}
-    //                 p={2}
-    //                 gap={1}
-    //                 rounded="sm"
-    //                 justifyContent="space-between"
-    //             >
-    //                 <Text fontSize="2xs" fontWeight="bold">
-    //                     {o.label} :
-    //                 </Text>
-    //                 <Text
-    //                     fontSize="2xs"
-    //                     bg={theme.colors.accient}
-    //                     fontWeight="semibold"
-    //                     p={1}
-    //                     rounded="sm"
-    //                     color={theme.colors.whiteColor}
-    //                 >
-    //                     {formatToFixed(o.value, 2)}
-    //                 </Text>
-    //             </Box>
-    //         ));
-    // }, [theme]);
-
-    /* ================================
        Render
     ================================ */
+    const pageLoading = isLoading || getbySnoLoading || createTransaction.isPending;
 
     return (
-        <Flex  align="stretch" gap={2} fontFamily={theme.fonts.body2}>
+        <Flex align="stretch" gap={2} fontFamily={theme.fonts.body2}>
             <Toaster />
-
+            {loading && <Loader isLoading={true} fullscreen={true} />}
+            
+            {/* Loading indicator for transaction data */}
+            {getbySnoLoading && (
+                <Box position="fixed" top="50%" left="50%" transform="translate(-50%, -50%)" zIndex={1000}>
+                    <Loader isLoading={true} />
+                </Box>
+            )}
+            
+            {/* Debug info - show current state */}
+            {process.env.NODE_ENV === 'development' && (
+                <Box position="fixed" bottom="10px" right="10px" bg="gray.800" color="white" p={2} borderRadius="md" fontSize="xs" zIndex={1000}>
+                    <Text>Editing: {isEditing ? 'Yes' : 'No'}</Text>
+                    <Text>SNO: {editingSno || 'None'}</Text>
+                    <Text>Selected ID: {selectedTransactionId || 'None'}</Text>
+                    <Text>Draft Rows: {draftRows.length}</Text>
+                    <Text>Customer: {headerForm.CUSTOMER}</Text>
+                    <Text>Type: {selectedTransactionType?.label || 'None'}</Text>
+                </Box>
+            )}
+            
             {/* LEFT – 70% */}
-            <Box w="70%">
+            <Box w={showFilter ? "70%" : "100%"}>
                 <VStack align="stretch" gap={1}>
-                    {/* <Text fontWeight="semibold" fontSize="sm">
-                        Transaction Master
-                    </Text> */}
-
                     {/* 1. Transaction Header Form */}
                     <TransactionHeaderForm
                         form={headerForm}
@@ -682,52 +922,59 @@ export default function IssuePage() {
                         onCustomerSelect={handleCustomerSelect}
                         customerCollection={customerCollection}
                         customerFilter={customerFilter}
-                        getLabelByValue={getLabelByValue}  
+                        getLabelByValue={getLabelByValue}
                         theme={theme}
                         openingBalance={openingBalance}
                         openingData={openingData}
+                        showFilter={showFilter}
+                        handleShowFilter={handleShowFilter}
+                        isEditing={isEditing}
                     />
-
-             
-               
-                 
 
                     {/* 2. Transaction Type Selector */}
-                    <TransactionTypeSelector
-                        transactionTypes={TRANSACTIONTYPES}
-                        selectedType={selectedTransactionType}
-                        onSelectType={handleTransactionTypeSelect}
-                        theme={theme}
-                    />
-                
+                    {!isEditing && (
+                        <TransactionTypeSelector
+                            transactionTypes={TRANSACTIONTYPES}
+                            selectedType={selectedTransactionType}
+                            onSelectType={handleTransactionTypeSelect}
+                            theme={theme}
+                            isEditing={isEditing}
+                        />
+                    )}
 
-                    {/* Draft Section (only show if transaction type selected) */}
-                    {selectedTransactionType && (
+                    {/* Show transaction info when editing */}
+                    {isEditing && selectedTransactionType && (
+                        <Box p={2} bg={theme.colors.formColor} borderRadius="md" display='flex' gap={2}>
+                            <Text  fontSize='xs' color={theme.colors.primaryText}>
+                              {selectedTransactionType.label} - {editingSno}
+                            </Text>
+                            <Text fontSize="xs"> <strong>Customer: </strong>{headerForm.CUSTOMER_NAME}</Text>
+                            <Text fontSize="xs"> <strong>Date:</strong> {headerForm.DATE}</Text>
+                        </Box>
+                    )}
+
+                    {/* Draft Section - show if transaction type selected OR if editing */}
+                    {(selectedTransactionType || isEditing) && (
                         <>
                             {/* Draft Transaction Table with Form */}
                             <DraftTransactionTable
                                 rows={draftRows}
                                 editingRowId={editingRowId}
-
+                                isEditing={isEditing}
                                 onAddRow={(formData) => {
                                     if (formData && typeof formData === 'object') {
-                                        // Form submission
                                         const newRow = {
                                             ...formData,
                                             __rowId: `row-${Date.now()}`,
                                             __isNew: true,
                                             __previewSno: draftRows.length + 1,
                                         };
-
-                                        // Add to draft rows
                                         setDraftRows(prev => [...prev, newRow]);
                                     } else {
-                                        // Original inline add
                                         const newRow = {
                                             __rowId: `row-${Date.now()}`,
                                             __isNew: true,
                                             __previewSno: draftRows.length + 1,
-                                            // Add other empty fields based on your columns
                                         };
                                         setDraftRows(prev => [...prev, newRow]);
                                     }
@@ -748,21 +995,22 @@ export default function IssuePage() {
                                 }}
                                 onSaveRow={(row, isNew) => {
                                     setEditingRowId(null);
-                                    console.log("Row saved:", row, "isNew:", isNew);
                                 }}
                                 itemsCollection={itemsCollection}
                                 itemsFilter={itemsFilter}
                                 totals={totals}
                                 transactionTitle={transactionTitle}
                                 theme={theme}
+                               
                             />
 
                             {/* Save Transaction Bar */}
                             <SaveTransactionBar
                                 draftCount={draftRows.length}
-                                onSave={handleSaveTransaction}
+                                onSave={isEditing ? handleUpdateTransaction : handleSaveTransaction}
                                 onReset={handleResetDraft}
-                                isSaving={createTransaction.isPending}
+                                isSaving={createTransaction.isPending || updateTransaction.isPending}
+                                isEditing={isEditing}
                                 theme={theme}
                             />
                         </>
@@ -785,7 +1033,6 @@ export default function IssuePage() {
                                 transactionType={selectedTransactionType?.value}
                                 onRowClick={handleHistoryRowClick}
                                 theme={theme}
-                                
                             />
                         )}
                     </Box>
@@ -793,21 +1040,30 @@ export default function IssuePage() {
             </Box>
 
             {/* RIGHT – 30% */}
-            <Box w="30%">
-                <RightSideDetailsPanel
-                    selectedTransaction={selectedHistoryId}
-                    onSelectTransaction={setSelectedHistoryId}
-                    transactionList={transactionList}
-                    draftTotals={totals}
-                    headerForm={headerForm}
-                    selectedTransactionType={selectedTransactionType}
-                    theme={theme}
-                    startDate={startDate || undefined}
-                    endDate={endDate || undefined}
-                    onStartDateChange={handleStartDateChange}
-                    onEndDateChange={handleEndDateChange}
-                />
-            </Box>
+            {showFilter && (
+                <Box width='30%'>
+                    <RightSideDetailsPanel
+                        selectedTransactionId={selectedTransactionId}
+                        onTransactionClick={handleTransactionClick}
+                        transactionList={transactionList?.data}
+                        isLoadingTransactions={isLoading}
+                        draftTotals={totals}
+                        headerForm={headerForm}
+                        selectedTransactionType={selectedTransactionType}
+                        theme={theme}
+                        startDate={startDate}
+                        endDate={endDate}
+                        onStartDateChange={handleStartDateChange}
+                        onEndDateChange={handleEndDateChange}
+                        onSelectItem={handleSelectItemCode}
+                        selectedItemCode={itemCode}
+                        itemsCollection={itemsCollection}
+                        itemsFilter={itemsFilter}
+                        getLabelByValue={getLabelByValue}
+                        isEditing={isEditing}
+                    />
+                </Box>
+            )}
         </Flex>
     );
 }

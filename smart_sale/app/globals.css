@@ -71,12 +71,8 @@ body {
 
 .date-input {
   width: 100%;
-  padding-left: 0.5rem;
-  padding-right: 0.5rem;
-  padding-top: 0.25rem;
-  padding-bottom: 0.25rem;
+  padding: 0.45rem;
   font-size: 0.65rem;
   border: 1px solid #d1d5db;
   border-radius: 0.25rem;
-
 }

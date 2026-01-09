@@ -20,10 +20,11 @@ export const TransactionService = {
 
     // GET ALL
     getAll: async (
-        trantype?: string,
-        accode?: number,
-        startdate?: string,
-        enddate?: string
+        trantype: string,
+        accode: number,
+        startdate: string,
+        enddate: string,
+        itemid:number,
     ): Promise<ApiResponse<any>> => {
         try {
             const params: any = {};
@@ -33,9 +34,10 @@ export const TransactionService = {
             if (accode) params.accode = accode;
             if (startdate) params.startdate = startdate;
             if (enddate) params.enddate = enddate;
+            if(itemid) params.itemid=itemid;
             console.log(params, 'params')
             const { data } = await axiosInstance.get(BASE_PATH, { params });
-            console.log(data ,'date')
+           
             return data;
         } catch (error: any) {
             throw error?.response?.data || error;
@@ -44,12 +46,10 @@ export const TransactionService = {
     // GET BY TRANSACTION ID
     getByTransId: async (
         transId: string,
-        TRANTYPE: string
     ): Promise<ApiResponse<any>> => {
         try {
-            const { data } = await axiosInstance.get(BASE_PATH, {
-                params: { transId, TRANTYPE },
-            });
+            const { data } = await axiosInstance.get(`${BASE_PATH}/${transId}`);
+            console.log(data ,'transactionss')
             return data;
         } catch (error: any) {
             throw error?.response?.data || error;
@@ -73,19 +73,17 @@ export const TransactionService = {
 
     // UPDATE (PUT)
     update: async (
-        sno: number,
+        sno: string,
         payload: TRANSACTION,
-        TRANTYPE: string
     ): Promise<ApiResponse<TRANSACTION>> => {
         try {
             const { data } = await axiosInstance.put(
                 `${BASE_PATH}/${sno}`,
                 payload,
-                {
-                    params: { TRANTYPE },
-                }
             );
+            console.log(data, 'resultData')
             return data;
+           
         } catch (error: any) {
             throw error?.response?.data || error;
         }

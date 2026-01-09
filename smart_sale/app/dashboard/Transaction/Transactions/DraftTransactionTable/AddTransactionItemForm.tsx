@@ -129,11 +129,15 @@ export function CustomCombobox({
             size="xs"
             fontSize="2xs"
             width="100%"
+          
         >
-            <Combobox.Control>
+            <Combobox.Control >
                 <Combobox.Input
                     placeholder={placeholder}
                     borderColor={isInvalid ? "red.400" : undefined}
+                    fontSize="2xs"
+                    p={1}
+                   
                 />
                 <Combobox.IndicatorGroup>
                     <Combobox.ClearTrigger onClick={() => onChange("")} />
@@ -142,7 +146,7 @@ export function CustomCombobox({
             </Combobox.Control>
 
             <Portal>
-                <Combobox.Positioner>
+                <Combobox.Positioner marginTop={-1.5}>
                     <Combobox.Content maxH="200px" overflowY="auto">
                         <Combobox.Empty fontSize="2xs">No items found</Combobox.Empty>
                         {filteredCollection.items.map((item) => (
@@ -164,6 +168,7 @@ interface AddTransactionItemFormProps {
     onCancel: () => void;
     compact?: boolean;
     handleClearForm?:any;
+    isEditing:boolean;
 }
 
 export default function AddTransactionItemForm({
@@ -171,7 +176,8 @@ export default function AddTransactionItemForm({
     onSubmit,
     onCancel,
     compact = false,
-    handleClearForm
+    handleClearForm,
+    isEditing
 }: AddTransactionItemFormProps) {
     const [formData, setFormData] = useState<Record<string, any>>({});
     const [errors, setErrors] = useState<Record<string, string>>({});
@@ -435,6 +441,7 @@ export default function AddTransactionItemForm({
     /* ---------------- UI ---------------- */
 
     return (
+        
         <Box
             p={compact ? 3 : 4}
             borderWidth="1px"
@@ -468,7 +475,7 @@ export default function AddTransactionItemForm({
                 </Grid>
 
                
-
+        
                 <Box display="flex" justifyContent="space-between" alignItems="center" mt={1}>
 
                     {/* Show calculated values */}
@@ -495,7 +502,7 @@ export default function AddTransactionItemForm({
                             variant='ghost'
                             color={theme.colors.whiteColor}
                         >
-                         <Image src={downLoadIcon} alt="download" width={30} />
+                         <Image src={downLoadIcon} alt="download" width={35} />
                         </Button>
                       
 

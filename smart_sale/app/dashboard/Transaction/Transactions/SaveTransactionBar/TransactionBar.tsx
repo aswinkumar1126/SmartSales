@@ -5,7 +5,7 @@ import { Flex, Button, Text } from "@chakra-ui/react";
 import { Save, RefreshCw } from "lucide-react";
 import Image from "next/image";
 import saveIcon from '@/asserts/icons/save.png';
-import clearIcon from '@/asserts/icons/clear.png';
+import clearIcon from '@/asserts/icons/clear.jpeg';
 
 interface SaveTransactionBarProps {
     draftCount: number;
@@ -44,8 +44,9 @@ export default function SaveTransactionBar({
                     disabled={draftCount === 0}
                     variant='ghost'
                     bg={theme.colors.formColor}
+                    p={0}
                 >
-                    <Image src={clearIcon} width={45} alt="save" />
+                    <Image src={clearIcon} width={58} alt="save" />
                 </Button>
 
                 <Button
@@ -56,9 +57,10 @@ export default function SaveTransactionBar({
                     loadingText="Saving..."
                     disabled={draftCount === 0}
                     variant='ghost'
+                    p={0}
                  
                 >
-                   <Image src={saveIcon} width={45} alt="save" />
+                   <Image src={saveIcon} width={60} alt="save" />
                 </Button>
             </Flex>
         </Flex>

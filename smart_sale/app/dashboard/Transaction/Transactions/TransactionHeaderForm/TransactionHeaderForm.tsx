@@ -1,10 +1,12 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Box, Text, Flex, Combobox, Portal } from "@chakra-ui/react";
+import { Box, Text, Flex, Combobox, Portal ,Switch} from "@chakra-ui/react";
 import DatePicker from "react-datepicker";
 import { CapitalizedInput } from "@/component/form/CapitalizedInput";
 import { formatToFixed } from "@/utils/format/numberFormat";
+import { HiCheck, HiX } from "react-icons/hi"
+
 
 interface TransactionHeaderFormProps {
     form: any;
@@ -16,6 +18,8 @@ interface TransactionHeaderFormProps {
     theme: any;
     openingBalance:any;
     openingData:any;
+    showFilter:boolean;
+    handleShowFilter:(checked: boolean)=>void;
 }
 
 export default function TransactionHeaderForm({
@@ -27,7 +31,9 @@ export default function TransactionHeaderForm({
     getLabelByValue,
     theme,
     openingBalance,
-    openingData
+    openingData,
+    showFilter,
+    handleShowFilter
 }: TransactionHeaderFormProps) {
     const [customerInput, setCustomerInput] = useState("");
     const [isInitialized, setIsInitialized] = useState(false);
@@ -111,7 +117,7 @@ export default function TransactionHeaderForm({
         <Flex justifyContent='space-between'  bg={theme.colors.formColor} p={3} rounded="xl" alignItems='center' >
             <Box gap={2} display='flex' flexDirection='row'  >
                   {/* ENTRY NO */}
-            <Box w="100px">
+            <Box w="60px">
                 <Text fontSize="xs" mb={1}>Entry No</Text>
                 <CapitalizedInput
                     value={form.ENTRYNO}
@@ -123,7 +129,7 @@ export default function TransactionHeaderForm({
             </Box>
 
             {/* BILL NO */}
-            <Box w="70px">
+            <Box w="50px">
                 <Text fontSize="xs" mb={1}>Bill No</Text>
                 <CapitalizedInput
                     value={form.BILLNO}
@@ -135,7 +141,7 @@ export default function TransactionHeaderForm({
             </Box>
 
             {/* DATE */}
-            <Box w="120px">
+            <Box w="100px">
                 <Text fontSize="xs" mb={1}>Date</Text>
                 <DatePicker
                     selected={parseISOToDate(form.DATE)}
@@ -163,7 +169,7 @@ export default function TransactionHeaderForm({
             </Box>
 
             {/* CUSTOMER */}
-                <Box w="200px">
+                <Box w="150px">
                     <Combobox.Root
                         collection={customerCollection}
                         openOnClick
@@ -204,24 +210,24 @@ export default function TransactionHeaderForm({
                         <Combobox.Label fontSize='xs'>Customer</Combobox.Label>
 
                         <Combobox.Control marginTop={-1}>
-                            <Combobox.Input placeholder="Type to search" />
+                            <Combobox.Input placeholder="Type to search" fontSize='2xs' />
                             <Combobox.IndicatorGroup>
-                                <Combobox.ClearTrigger
+                                {/* <Combobox.ClearTrigger
                                     onClick={() => {
                                         setCustomerInput("");
                                         onCustomerSelect("", "");
                                     }}
                                 />
-                                <Combobox.Trigger />
+                                <Combobox.Trigger /> */}
                             </Combobox.IndicatorGroup>
                         </Combobox.Control>
 
                         <Portal>
-                            <Combobox.Positioner>
+                            <Combobox.Positioner marginTop={-1.5}>
                                 <Combobox.Content>
-                                    <Combobox.Empty>No customer found</Combobox.Empty>
+                                    <Combobox.Empty fontSize='2xs'>No customer found</Combobox.Empty>
                                     {customerCollection.items.map((item: any) => (
-                                        <Combobox.Item key={item.value} item={item}>
+                                        <Combobox.Item key={item.value} item={item} fontSize='2xs'>
                                             {item.label}
                                             <Combobox.ItemIndicator />
                                         </Combobox.Item>
@@ -234,9 +240,13 @@ export default function TransactionHeaderForm({
 
              
             </Box>
-            <Box alignItems='center' justifyContent='center' className="animate__animated animate__bounce animate__delay-2s">
-                {openingBalance && <Flex justifyContent="flex-end" align="center">
 
+
+ 
+                <Box display='flex'  alignItems='center' justifyContent='center' className="animate__animated animate__bounce animate__delay-2s">
+            {openingBalance && 
+                
+                <Flex justifyContent="flex-end" align="center">
                     <Box
                         display="flex"
                         alignItems="center"
@@ -246,13 +256,13 @@ export default function TransactionHeaderForm({
                         rounded="sm"
                         justifyContent="space-between"
                     >
-                        <Text fontSize="2xs" fontWeight="bold">
+                        <Text fontSize="2xs" fontWeight='semibold'>
                             OPENING PURE :
                         </Text>
                         <Text
                             fontSize="2xs"
                             bg={theme.colors.accient}
-                            fontWeight="semibold"
+                            fontWeight='semibold'
                             p={1}
                             rounded="sm"
                             color={theme.colors.whiteColor}
@@ -260,8 +270,8 @@ export default function TransactionHeaderForm({
                             {formatToFixed(openingData?.OPENING_PURE, 2)}
                         </Text>
                     </Box>
-                    {openingData?.OPENING_CASH && <Box
-
+                    {openingBalance.OPENING_CASH && 
+                    <Box
                         display="flex"
                         alignItems="center"
                         bg={theme.colors.formColor}
@@ -270,26 +280,44 @@ export default function TransactionHeaderForm({
                         rounded="sm"
                         justifyContent="space-between"
                     >
-                        <Text fontSize="2xs" fontWeight="bold">
+                        <Text fontSize="2xs" fontWeight='semibold'>
                             OPENING CASH :
                         </Text>
                         <Text
                             fontSize="2xs"
                             bg={theme.colors.accient}
-                            fontWeight="semibold"
+
                             p={1}
                             rounded="sm"
                             color={theme.colors.whiteColor}
                         >
                             {formatToFixed(openingData?.OPENING_CASH, 2)}
                         </Text>
-                    </Box>}
+                    </Box>
+                    }
+                 
                    
-                </Flex>}
-          </Box>
-
-            
-
+                </Flex>
+            }
+            <Box>
+                    <Switch.Root size="sm"
+                        checked={showFilter}
+                        onCheckedChange={(e) => handleShowFilter(e.checked)}
+                        colorPalette='blue' >
+                        <Switch.Label fontSize='2xs'>SHOW FILTER</Switch.Label>
+                        <Switch.HiddenInput />
+                        <Switch.Control >
+                            <Switch.Thumb>
+                                <Switch.ThumbIndicator fallback={<HiX color="blue" />}>
+                                    <HiCheck />
+                                </Switch.ThumbIndicator>
+                            </Switch.Thumb>
+                        </Switch.Control>
+                    </Switch.Root>
+            </Box>
+         </Box>
+                
+         
         </Flex>
     );
 }
