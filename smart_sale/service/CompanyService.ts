@@ -19,7 +19,7 @@ export interface Company {
     EMAIL?: string;
     GSTNO?: string;
     ACTIVE: "Y" | "N";
-    STATEID?: number;
+    STATEID?: string;
     LOGO?: string;
 }
 
@@ -35,7 +35,7 @@ export interface CreateCompanyPayload {
     EMAIL?: string;
     GSTNO?: string;
     ACTIVE: "Y" | "N";
-    STATEID?: number;
+    STATEID?: string;
     LOGO?: string;
 }
 

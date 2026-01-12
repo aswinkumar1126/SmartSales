@@ -40,6 +40,7 @@ export interface FormField {
     allowNegative?: boolean;
     confirmNegative?: boolean;
     size?: "2xs" | "xs" | "sm" | "md" | "lg";
+    disabled?:boolean
 }
 
 /* ---------------- SELECT ---------------- */
@@ -441,7 +442,7 @@ export default function AddTransactionItemForm({
     /* ---------------- UI ---------------- */
 
     return (
-        
+
         <Box
             p={compact ? 3 : 4}
             borderWidth="1px"

@@ -49,7 +49,7 @@ export default function ItemMasterPage() {
     const topRef = React.useRef<HTMLDivElement>(null);
     const [highlightId, setHighlightId] = useState<number | null>(null);
     const [errors, setErrors] = useState<{ itemName?: string }>({});
-
+    const [autoItemId, setAutoItemId] = useState<number | undefined>(undefined);
 
     const controller = new AbortController();         //Controller to unmound the events in the useEffect
 
@@ -87,7 +87,6 @@ export default function ItemMasterPage() {
 
     /* ===================== AUTO ITEM ID ===================== */
     useEffect(() => {
-        
 
         if (!editingId) {
             setForm((prev) => ({
@@ -95,8 +94,9 @@ export default function ItemMasterPage() {
                 itemId: itemsData?.nextId ?? '0',
                 metalId: metals[0]?.metalId ?? "G", // default first metal
             }));
+            setAutoItemId(itemsData?.nextId ?? '0');
         }
-        return ()=>{
+        return () => {
             controller.abort();
         }
     }, [items.length, metals, editingId]);
@@ -121,7 +121,7 @@ export default function ItemMasterPage() {
         setEditingId(null);
         setForm((prev) => ({
             ...prev,
-            itemId: Number(items.length + 1),
+            itemId: autoItemId,
             itemName: "",
             metalId: metals[0]?.metalId ?? "G",
             metalRate: null,
@@ -230,8 +230,8 @@ export default function ItemMasterPage() {
             <Grid
                 templateColumns={{ base: "1fr", lg: "1fr 1.3fr" }}
                 gap={4}
-                className={fontVariables}
-                fontFamily="var(--font-lustria)"
+                fontWeight='semibold'
+           
             >
                 {/* ================= LEFT FORM ================= */}
                 <GridItem>
@@ -242,203 +242,277 @@ export default function ItemMasterPage() {
                         boxShadow="0 0 20px rgba(212,212,212,0.2)"
                         border="1px solid #eee"
                     >
-                        <Text fontSize="lg" fontWeight="600" alignItems="center" justifyContent="center">
+                        <Text fontSize="sm" fontWeight="600" textAlign="center">
                             {editingId ? "Edit Item" : "Item Master"}
                         </Text>
 
-                        <Fieldset.Root>
-                            <Fieldset.Content gap={3}>
+                        <Fieldset.Root width="100%">
+                            <Grid templateColumns="repeat(2, 1fr)" gap={4}>
+                                {/* ================= FIRST ROW ================= */}
                                 <Field.Root>
-                                    {/* Item ID (auto-generated) */}
-                             
-                                    <Field.Root >
-                                        <Field.Label>Item ID</Field.Label>
-                                        <Input type="number" value={form.itemId} disabled  width='100px' />
-                                    </Field.Root>
-                                        <Field.Root invalid={!!errors.itemName}>
-                                            <Field.Label>Item Name</Field.Label>
+                                    <HStack>
+                                        <Box minW="100px">
+                                            <Field.Label fontSize="2xs">ITEM ID :</Field.Label>
+                                        </Box>
+                                        <Box flex={1}>
+                                            <Input
+                                                size="xs"
+                                                type="number"
+                                                value={form.itemId}
+                                                disabled
+                                                width="80px"
+                                                fontSize="2xs"
+                                            />
+                                        </Box>
+                                    </HStack>
+                                </Field.Root>
 
+                                <Field.Root invalid={!!errors.itemName}>
+                                    <HStack>
+                                        <Box minW="100px">
+                                            <Field.Label fontSize="2xs">ITEM NAME :</Field.Label>
+                                        </Box>
+                                        <Box flex={1}>
                                             <CapitalizedInput
-                                                field={"itemName"}
+                                                size="xs"
+                                                field="itemName"
                                                 value={form.itemName ?? ""}
                                                 onChange={onChange}
                                                 placeholder="Enter Item Name"
                                             />
-
                                             {errors.itemName && (
-                                                <Text fontSize="sm" color="red.500" mt={1}>
+                                                <Text fontSize="2xs" color="red.500" mt={1}>
                                                     {errors.itemName}
                                                 </Text>
                                             )}
-                                        </Field.Root>
-                           
-                                   
-                                    {/* Company */}
-                                    <Field.Label>Company</Field.Label>
-                                    <NativeSelect.Root>
-                                        <NativeSelect.Field
-                                            value={form.companyId ?? ""}
-                                            onChange={(e) => onChange("companyId", e.target.value)}
-                                            css={{
-                                                backgroundColor: "#eee",
-                                                color: "#111827",
-                                                border: "1px solid #e5e7eb",
-                                                borderRadius: "12px",
-                                                height: "42px",
-                                            }}
-                                        >
-                                            <option value="" disabled>
-                                                Select Company
-                                            </option>
-
-                                            {companies.map((c) => (
-                                                <option key={c.COMPANYID} value={c.COMPANYID}>
-                                                    {c.COMPANYNAME}
-                                                </option>
-                                            ))}
-                                        </NativeSelect.Field>
-                                        <NativeSelect.Indicator />
-                                    </NativeSelect.Root>
+                                        </Box>
+                                    </HStack>
                                 </Field.Root>
 
-                                {/* Metal */}
-                                <HStack gap={3}>
-                                    <Field.Root flex={1}>
-                                        <Field.Label>Metal</Field.Label>
-                                        <NativeSelect.Root>
-                                            <NativeSelect.Field
-                                                value={form.metalId ?? ""}
-                                                onChange={(e)=>onChange("metalId" ,e.target.value)}
-                                                css={{
-                                                    backgroundColor: "#eee",
-                                                    color: "#111827",
-                                                    border: "1px solid #e5e7eb",
-                                                    borderRadius: "12px",
-                                                    height: "42px",
-                                                }}
-                                            >
-                                                {metals.map((m:any) => (
-                                                    <option key={m.metalId} value={m.metalId}>
-                                                        {m.metalName}
+                                {/* ================= SECOND ROW ================= */}
+                                <Field.Root>
+                                    <HStack>
+                                        <Box minW="100px">
+                                            <Field.Label fontSize="2xs">COMPANY :</Field.Label>
+                                        </Box>
+                                        <Box flex={1}>
+                                            <NativeSelect.Root>
+                                                <NativeSelect.Field
+                                                    fontSize="2xs"
+                                                    value={form.companyId ?? ""}
+                                                    onChange={(e) => onChange("companyId", e.target.value)}
+                                                    css={{
+                                                        backgroundColor: "#eee",
+                                                        color: "#111827",
+                                                        border: "1px solid #e5e7eb",
+                                                        borderRadius: "20px",
+                                                        height: "30px",
+                                                        fontSize: "10px",
+                                                    }}
+                                                >
+                                                    <option value="" disabled>
+                                                        SELECT COMPANY
                                                     </option>
-                                                ))}
-                                            </NativeSelect.Field>
-                                            <NativeSelect.Indicator />
-                                        </NativeSelect.Root>
-                                    </Field.Root>
-                                </HStack>
+                                                    {companies.map((c) => (
+                                                        <option key={c.COMPANYID} value={c.COMPANYID}>
+                                                            {c.COMPANYNAME}
+                                                        </option>
+                                                    ))}
+                                                </NativeSelect.Field>
+                                                <NativeSelect.Indicator />
+                                            </NativeSelect.Root>
+                                        </Box>
+                                    </HStack>
+                                </Field.Root>
 
-                                {/* HSN + Item Name + Short Name */}
-                                <HStack gap={3}>
-                                    <Field.Root flex={1}>
-                                        <Field.Label>HSN Code</Field.Label>
-                                        <CapitalizedInput field="hsn" value={form.hsn ?? ""} onChange={onChange} />
-                                    </Field.Root>
-                                    
-                                    <Field.Root flex={1}>
-                                        <Field.Label>Short Name</Field.Label>
-                                        <CapitalizedInput field="shortName" value={form.shortName ?? ""} onChange={onChange} />
-                                    </Field.Root>
-                                </HStack>
+                                <Field.Root>
+                                    <HStack>
+                                        <Box minW="100px">
+                                            <Field.Label fontSize="2xs">METAL :</Field.Label>
+                                        </Box>
+                                        <Box flex={1}>
+                                            <NativeSelect.Root>
+                                                <NativeSelect.Field
+                                                    fontSize="2xs"
+                                                    value={form.metalId ?? ""}
+                                                    onChange={(e) => onChange("metalId", e.target.value)}
+                                                    css={{
+                                                        backgroundColor: "#eee",
+                                                        color: "#111827",
+                                                        border: "1px solid #e5e7eb",
+                                                        borderRadius: "20px",
+                                                        height: "30px",
+                                                        fontSize: "10px",
+                                                    }}
+                                                >
+                                                    {metals.map((m: any) => (
+                                                        <option key={m.metalId} value={m.metalId}>
+                                                            {m.metalName}
+                                                        </option>
+                                                    ))}
+                                                </NativeSelect.Field>
+                                                <NativeSelect.Indicator />
+                                            </NativeSelect.Root>
+                                        </Box>
+                                    </HStack>
+                                </Field.Root>
 
-                                {/* Stock Type + Cal Type */}
-                                <HStack gap={3}>
-                                    <Field.Root flex={1}>
-                                        <Field.Label>Stock Type</Field.Label>
-                                        <NativeSelect.Root>
-                                            <NativeSelect.Field
-                                                value={form.stockType ?? "N"}
-                                                onChange={(e)=>onChange("stockType",e.target.value)}
-                                                css={{
-                                                    backgroundColor: "#eee",
-                                                    color: "#111827",
-                                                    border: "1px solid #e5e7eb",
-                                                    borderRadius: "12px",
-                                                    height: "42px",
-                                                }}
-                                            >
-                                                {stockTypeOptions.map((o) => (
-                                                    <option key={o.value} value={o.value}>
-                                                        {o.label}
-                                                    </option>
-                                                ))}
-                                            </NativeSelect.Field>
-                                            <NativeSelect.Indicator />
-                                        </NativeSelect.Root>
-                                    </Field.Root>
-                                    <Field.Root flex={1}>
-                                        <Field.Label>Cal Type</Field.Label>
-                                        <NativeSelect.Root>
-                                            <NativeSelect.Field
-                                            
-                                                value={form.calType ?? "W"}
-                                                onChange={(e)=>onChange("calType", e.target.value)}
-                                                css={{
-                                                    backgroundColor: "#eee",
-                                                    color: "#111827",
-                                                    border: "1px solid #e5e7eb",
-                                                    borderRadius: "12px",
-                                                    height: "42px",
-                                                }}
-                                            >
-                                                {calTypeOptions.map((o) => (
-                                                    <option key={o.value} value={o.value}>
-                                                        {o.label}
-                                                    </option>
-                                                ))}
-                                            </NativeSelect.Field>
-                                            <NativeSelect.Indicator />
-                                        </NativeSelect.Root>
-                                    </Field.Root>
-                                </HStack>
+                                {/* ================= THIRD ROW ================= */}
+                                <Field.Root>
+                                    <HStack>
+                                        <Box minW="100px">
+                                            <Field.Label fontSize="2xs">HSN CODE :</Field.Label>
+                                        </Box>
+                                        <Box flex={1}>
+                                            <CapitalizedInput
+                                                size="xs"
+                                                field="hsn"
+                                                value={form.hsn ?? ""}
+                                                onChange={onChange}
+                                            />
+                                        </Box>
+                                    </HStack>
+                                </Field.Root>
 
-                                {/* Active */}
-                                <HStack gap={2}>
-                                    <Field.Root>
-                                        <Field.Label>Active</Field.Label>
-                                        <NativeSelect.Root>
-                                            <NativeSelect.Field
-                                                value={form.active ?? "Y"}
-                                                onChange={(e)=>onChange("active",e.target.value)}
-                                                css={{
-                                                    backgroundColor: "#eee",
-                                                    color: "#111827",
-                                                    border: "1px solid #e5e7eb",
-                                                    borderRadius: "12px",
-                                                    height: "42px",
-                                                }}
-                                            >
-                                                {yesNoOptions.map((o) => (
-                                                    <option key={o.value} value={o.value}>
-                                                        {o.label}
-                                                    </option>
-                                                ))}
-                                            </NativeSelect.Field>
-                                            <NativeSelect.Indicator />
-                                        </NativeSelect.Root>
-                                    </Field.Root>
-                                </HStack>
+                                <Field.Root>
+                                    <HStack>
+                                        <Box minW="100px">
+                                            <Field.Label fontSize="2xs">SHORT NAME :</Field.Label>
+                                        </Box>
+                                        <Box flex={1}>
+                                            <CapitalizedInput
+                                                size="xs"
+                                                field="shortName"
+                                                value={form.shortName ?? ""}
+                                                onChange={onChange}
+                                                placeholder="Enter Short Name"
+                                            />
+                                        </Box>
+                                    </HStack>
+                                </Field.Root>
 
-                                {/* ACTIONS */}
-                                <HStack justify="center" pt={4}>
-                                    <Button
-                                        size="sm"
-                                        colorPalette="blue"
-                                        onClick={handleSave}
-                                        loading={creating || updating}
-                                        disabled={!form.itemName?.trim()}
-                                    >
-                                        <AiOutlineSave /> Save
-                                    </Button>
+                                {/* ================= FOURTH ROW ================= */}
+                                <Field.Root>
+                                    <HStack>
+                                        <Box minW="100px">
+                                            <Field.Label fontSize="2xs">STOCK TYPE :</Field.Label>
+                                        </Box>
+                                        <Box flex={1}>
+                                            <NativeSelect.Root>
+                                                <NativeSelect.Field
+                                                    fontSize="2xs"
+                                                    value={form.stockType ?? "N"}
+                                                    onChange={(e) => onChange("stockType", e.target.value)}
+                                                    css={{
+                                                        backgroundColor: "#eee",
+                                                        color: "#111827",
+                                                        border: "1px solid #e5e7eb",
+                                                        borderRadius: "20px",
+                                                        height: "30px",
+                                                        fontSize: "10px",
+                                                    }}
+                                                >
+                                                    {stockTypeOptions.map((o) => (
+                                                        <option key={o.value} value={o.value}>
+                                                            {o.label}
+                                                        </option>
+                                                    ))}
+                                                </NativeSelect.Field>
+                                                <NativeSelect.Indicator />
+                                            </NativeSelect.Root>
+                                        </Box>
+                                    </HStack>
+                                </Field.Root>
 
-                                    <Button size="sm" onClick={resetForm} colorPalette="blue">
-                                        <IoIosExit /> Clear
-                                    </Button>
-                                </HStack>
-                            </Fieldset.Content>
+                                <Field.Root>
+                                    <HStack>
+                                        <Box minW="100px">
+                                            <Field.Label fontSize="2xs">CAL TYPE :</Field.Label>
+                                        </Box>
+                                        <Box flex={1}>
+                                            <NativeSelect.Root>
+                                                <NativeSelect.Field
+                                                    fontSize="2xs"
+                                                    value={form.calType ?? "W"}
+                                                    onChange={(e) => onChange("calType", e.target.value)}
+                                                    css={{
+                                                        backgroundColor: "#eee",
+                                                        color: "#111827",
+                                                        border: "1px solid #e5e7eb",
+                                                        borderRadius: "20px",
+                                                        height: "30px",
+                                                        fontSize: "10px",
+                                                    }}
+                                                >
+                                                    {calTypeOptions.map((o) => (
+                                                        <option key={o.value} value={o.value}>
+                                                            {o.label}
+                                                        </option>
+                                                    ))}
+                                                </NativeSelect.Field>
+                                                <NativeSelect.Indicator />
+                                            </NativeSelect.Root>
+                                        </Box>
+                                    </HStack>
+                                </Field.Root>
+
+                                {/* ================= FIFTH ROW ================= */}
+                                <Field.Root>
+                                    <HStack>
+                                        <Box minW="100px">
+                                            <Field.Label fontSize="2xs">ACTIVE :</Field.Label>
+                                        </Box>
+                                        <Box flex={1}>
+                                            <NativeSelect.Root>
+                                                <NativeSelect.Field
+                                                    fontSize="2xs"
+                                                    value={form.active ?? "Y"}
+                                                    onChange={(e) => onChange("active", e.target.value)}
+                                                    css={{
+                                                        backgroundColor: "#eee",
+                                                        color: "#111827",
+                                                        border: "1px solid #e5e7eb",
+                                                        borderRadius: "20px",
+                                                        height: "30px",
+                                                        fontSize: "10px",
+                                                    }}
+                                                >
+                                                    {yesNoOptions.map((o) => (
+                                                        <option key={o.value} value={o.value}>
+                                                            {o.label}
+                                                        </option>
+                                                    ))}
+                                                </NativeSelect.Field>
+                                                <NativeSelect.Indicator />
+                                            </NativeSelect.Root>
+                                        </Box>
+                                    </HStack>
+                                </Field.Root>
+                            </Grid>
+
+
+                            {/* ================= ACTION BUTTONS ================= */}
+                            <HStack justify="center" pt={4}>
+                                <Button
+                                    size="xs"
+                                    colorPalette="blue"
+                                    onClick={handleSave}
+                                    loading={creating || updating}
+                                    disabled={!form.itemName?.trim()}
+                                >
+                                    <AiOutlineSave /> Save
+                                </Button>
+
+                                <Button size="xs" onClick={resetForm} colorPalette="blue">
+                                    <IoIosExit /> Clear
+                                </Button>
+                            </HStack>
+
                         </Fieldset.Root>
                     </VStack>
                 </GridItem>
+
+
 
                 {/* ================= RIGHT TABLE ================= */}
                 <GridItem minW={0}>

@@ -32,13 +32,14 @@ import { AiOutlineSave } from "react-icons/ai";
 import { useRouter } from "next/navigation";
 import { formatToFixed } from "@/utils/format/numberFormat";
 import { CapitalizedInput } from "@/component/form/CapitalizedInput";
+
 /* ---------------- Initial Form State ---------------- */
 
 const initialFormState: pureGoldMastForm = {
     pureGoldName: "",
-    weight: "",
-    actualTouch: "",
-    actualPure: "",
+    // weight: "",
+    // actualTouch: "",
+    // actualPure: "",
 };
 
 /* ---------------- Table Row Type ---------------- */
@@ -46,9 +47,9 @@ const initialFormState: pureGoldMastForm = {
 export type TouchTableRow = {
     sno: number;
     pureGoldName: string;
-    weight: number;
-    actualTouch: number;
-    actualPure: number;
+    // weight: number;
+    // actualTouch: number;
+    // actualPure: number;
 };
 
 /* ---------------- Component ---------------- */
@@ -92,9 +93,9 @@ const PureGoldMaster = () => {
 
         setForm({
             pureGoldName: row.pureGoldName,
-            weight: String(row.weight),
-            actualPure: String(row.actualPure),
-            actualTouch: String(row.actualTouch),
+            // weight: String(row.weight),
+            // actualPure: String(row.actualPure),
+            // actualTouch: String(row.actualTouch),
         });
 
         toastLoaded("Pure Gold Master");
@@ -106,9 +107,9 @@ const PureGoldMaster = () => {
         const errors: FormErrors = {};
 
         if (!form.pureGoldName) errors.pureGoldName = "Pure Gold Name is required";
-        if (!form.weight) errors.weight = "Weight is required";
-        if (!form.actualPure) errors.actualPure = "Actual Pure is required";
-        if (!form.actualTouch) errors.actualTouch = "Actual Touch is required";
+        // if (!form.weight) errors.weight = "Weight is required";
+        // if (!form.actualPure) errors.actualPure = "Actual Pure is required";
+        // if (!form.actualTouch) errors.actualTouch = "Actual Touch is required";
 
         return errors;
     };
@@ -125,9 +126,9 @@ const PureGoldMaster = () => {
 
         const payload = {
             pureGoldName: form.pureGoldName,
-            weight: Number(form.weight),
-            actualTouch: Number(form.actualTouch),
-            actualPure: Number(form.actualPure),
+            // weight: Number(form.weight),
+            // actualTouch: Number(form.actualTouch),
+            // actualPure: Number(form.actualPure),
         };
 
         if (editId) {
@@ -157,9 +158,9 @@ const PureGoldMaster = () => {
     const columns = [
         { key: "sno", label: "S.No" },
         { key: "pureGoldName", label: "Pure Gold Name" },
-        { key: "weight", label: "Weight" ,align : "end" as const },
-        { key: "actualPure", label: "Actual Pure", align: "end" as const },
-        { key: "actualTouch", label: "Actual Touch", align: "center" as const },
+        // { key: "weight", label: "Weight" ,align : "end" as const },
+        // { key: "actualPure", label: "Actual Pure", align: "end" as const },
+        // { key: "actualTouch", label: "Actual Touch", align: "center" as const },
         { key: "action", label: "Action", align: "center" as const },
     ];
 
@@ -178,9 +179,9 @@ const PureGoldMaster = () => {
         setColumns([
             { key: "sno", label: "S.No" },
             { key: "pureGoldName", label: "Pure Gold Name" },
-            { key: "weight", label: "Weight", align: 'end' as const, allowTotal: true },
-            { key: "actualTouch", label: "Actual Touch", align: 'end' as const, },
-            { key: "actualPure", label: "Actual Pure", align: 'end' as const, allowTotal: true },
+            // { key: "weight", label: "Weight", align: 'end' as const, allowTotal: true },
+            // { key: "actualTouch", label: "Actual Touch", align: 'end' as const, },
+            // { key: "actualPure", label: "Actual Pure", align: 'end' as const, allowTotal: true },
         ]);
         router.push(`/print?export=${option}`);
     }
@@ -189,80 +190,110 @@ const PureGoldMaster = () => {
     /* ---------------- UI ---------------- */
 
     return (
-        <Grid templateColumns={{ base: "1fr", lg: "1fr 2fr" }} gap={6}>
+        <Grid templateColumns={{ base: "1fr", lg: "1fr 2fr" }} gap={6} fontWeight='semibold'>
             <Toaster />
 
             {/* -------- Form Section -------- */}
             <GridItem>
                 <Box p={5} borderRadius="lg" bg={theme.colors.formColor} boxShadow="sm">
-                    <Heading size="md" textAlign="center" mb={4}>
+                    <Heading size="sm" textAlign="center" mb={4}>
                         Pure Gold Master
                     </Heading>
-
-                    <Box display="grid" gap={4}>
+                    <Box display="grid" gridTemplateColumns="repeat(1, 1fr)" gap={4}>
+                        {/* PURE GOLD NAME */}
                         <Field.Root invalid={!!errors.pureGoldName}>
-                            <Field.Label>Pure Gold Name</Field.Label>
-                            <CapitalizedInput
-                                field="pureGoldName"
-                                value={form.pureGoldName}
-                                onChange={handleChange}
-                                placeholder="enter puregoldname"
-                            />
-                            <Field.ErrorText>{errors.pureGoldName}</Field.ErrorText>
+                            <HStack>
+                                <Box minW="100px">
+                                    <Field.Label fontSize="2xs">PURE GOLD NAME :</Field.Label>
+                                </Box>
+                                <Box flex={1}>
+                                    <CapitalizedInput
+                                        field="pureGoldName"
+                                        value={form.pureGoldName}
+                                        onChange={handleChange}
+                                        placeholder="Enter pure gold name"
+                                        size="2xs"
+                                        
+                                    />
+                                    <Field.ErrorText>{errors.pureGoldName}</Field.ErrorText>
+                                </Box>
+                            </HStack>
                         </Field.Root>
 
-                        <Field.Root invalid={!!errors.weight}>
-                            <Field.Label>Weight</Field.Label>
-                            <CapitalizedInput
-                                field="weight"
-                                type="number"
-                                value={form.weight}
-                                onChange={handleChange}
-                                placeholder="enter weight"
-                            />
-                            <Field.ErrorText>{errors.weight}</Field.ErrorText>
-                        </Field.Root>
+                        {/* WEIGHT */}
+                        {/* <Field.Root invalid={!!errors.weight}>
+                            <HStack>
+                                <Box minW="120px">
+                                    <Field.Label fontSize="2xs">WEIGHT</Field.Label>
+                                </Box>
+                                <Box flex={1}>
+                                    <CapitalizedInput
+                                        field="weight"
+                                        type="number"
+                                        value={form.weight}
+                                        onChange={handleChange}
+                                        placeholder="Enter weight"
+                                    />
+                                    <Field.ErrorText>{errors.weight}</Field.ErrorText>
+                                </Box>
+                            </HStack>
+                        </Field.Root> */}
 
-                        <Field.Root invalid={!!errors.actualTouch}>
-                            <Field.Label>Actual Touch</Field.Label>
-                            <CapitalizedInput
-                                field ="actualTouch"
-                                type="number"
-                                value={form.actualTouch}
-                                onChange={handleChange}
-                                placeholder="enter actualtouch"
-                            />
-                            <Field.ErrorText>{errors.actualTouch}</Field.ErrorText>
-                        </Field.Root>
+                        {/* ACTUAL TOUCH */}
+                        {/* <Field.Root invalid={!!errors.actualTouch}>
+                            <HStack>
+                                <Box minW="120px">
+                                    <Field.Label fontSize="2xs">ACTUAL TOUCH</Field.Label>
+                                </Box>
+                                <Box flex={1}>
+                                    <CapitalizedInput
+                                        field="actualTouch"
+                                        type="number"
+                                        value={form.actualTouch}
+                                        onChange={handleChange}
+                                        placeholder="Enter actual touch"
+                                    />
+                                    <Field.ErrorText>{errors.actualTouch}</Field.ErrorText>
+                                </Box>
+                            </HStack>
+                        </Field.Root> */}
 
-                        <Field.Root invalid={!!errors.actualPure}>
-                            <Field.Label>Actual Pure</Field.Label>
-                            <CapitalizedInput
-                                field="actualPure"
-                                type="number"
-                                value={form.actualPure}
-                                onChange={handleChange}
-                                placeholder="enter actualpure"
-                            />
-                            <Field.ErrorText>{errors.actualPure}</Field.ErrorText>
-                        </Field.Root>
+                        {/* ACTUAL PURE */}
+                        {/* <Field.Root invalid={!!errors.actualPure}>
+                            <HStack>
+                                <Box minW="120px">
+                                    <Field.Label fontSize="2xs">ACTUAL PURE</Field.Label>
+                                </Box>
+                                <Box flex={1}>
+                                    <CapitalizedInput
+                                        field="actualPure"
+                                        type="number"
+                                        value={form.actualPure}
+                                        onChange={handleChange}
+                                        placeholder="Enter actual pure"
+                                    />
+                                    <Field.ErrorText>{errors.actualPure}</Field.ErrorText>
+                                </Box>
+                            </HStack>
+                        </Field.Root> */}
 
-                        <HStack pt={2} justifyContent="center">
-                            <Button
-                                colorPalette="blue"
-                                onClick={handleSubmit}
-                                size="sm"
-                                loading={
-                                    createMutation.isPending || updateMutation.isPending
-                                }
-                            >
-                                <AiOutlineSave />  {editId ? "Update" : "Save"}
-                            </Button>
+                        {/* ================= ACTION BUTTONS ================= */}
+                        <Box gridColumn="span 2">
+                            <HStack pt={2} justifyContent="center" gap={2}>
+                                <Button
+                                    colorPalette="blue"
+                                    onClick={handleSubmit}
+                                    size="xs"
+                                    loading={createMutation.isPending || updateMutation.isPending}
+                                >
+                                    <AiOutlineSave /> {editId ? "Update" : "Save"}
+                                </Button>
 
-                            <Button size="sm" colorPalette='blue' onClick={resetForm}>
-                                Clear <IoIosExit />
-                            </Button>
-                        </HStack>
+                                <Button size="xs" colorPalette="blue" onClick={resetForm}>
+                                    Clear <IoIosExit />
+                                </Button>
+                            </HStack>
+                        </Box>
                     </Box>
                 </Box>
             </GridItem>
@@ -314,11 +345,11 @@ const PureGoldMaster = () => {
                             <>
                                 <Table.Cell>{i + 1}</Table.Cell>
                                 <Table.Cell>{row.pureGoldName}</Table.Cell>
-                                <Table.Cell textAlign="end">{formatToFixed(row.weight ,2)} </Table.Cell>
+                                {/* <Table.Cell textAlign="end">{formatToFixed(row.weight ,2)} </Table.Cell>
                                 <Table.Cell textAlign="end" >{formatToFixed(row.actualPure , 2) }</Table.Cell>
                                 <Table.Cell textAlign="end">
                                     {formatToFixed(row.actualTouch,2)}
-                                </Table.Cell>
+                                </Table.Cell> */}
                                 <Table.Cell align="center">
                                     <Box display="flex" justifyContent="center">
                                         <FiEdit

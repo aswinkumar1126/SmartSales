@@ -3,7 +3,7 @@
 import React from "react";
 import { Input } from "@chakra-ui/react";
 import { capitalizeText } from "@/utils/capitalize/capitalizeText";
-
+import { useTheme } from "@/context/theme/themeContext";
 type CapitalizedInputProps<T> = {
     value: string | undefined;
     field: keyof T;
@@ -14,7 +14,7 @@ type CapitalizedInputProps<T> = {
     disabled?: boolean;
     max?: number;
     icon?: boolean;
-    size?: "xs" | "sm" | "md" | "lg";
+    size?:"2xs"| "xs" | "sm" | "md" | "lg";
 
     /** 🔥 NEW */
     allowNegative?: boolean;
@@ -24,6 +24,10 @@ type CapitalizedInputProps<T> = {
     onKeyDown?:any;
     inputRef?:any;
     onClassUse?:boolean;
+    maxWidth?:string;
+    allowDecimal?: boolean;
+    allowSpecial?: boolean; // NEW
+    decimalScale?: number; // how many digits after decimal
 };
 
 export function CapitalizedInput<T>({
@@ -43,50 +47,55 @@ export function CapitalizedInput<T>({
     onNegativeConfirm,
     onKeyDown ,
     inputRef,
-    onClassUse=false
+    onClassUse=false,
+    maxWidth,
+    allowDecimal = true,
+    allowSpecial=false,
+    decimalScale = 3,
 }: CapitalizedInputProps<T>) {
+    const { theme } = useTheme();
 
     const handleChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         let inputValue = e.target.value;
 
         /* 🔒 TEXT VALIDATION */
-        if (type === "text" && !/^[a-zA-Z0-9\s]*$/.test(inputValue)) {
-            return;
+        if (type === "text") {
+            let regex = /^[a-zA-Z0-9\s]*$/; // default
+
+            if (allowDecimal) {
+                regex = /^[a-zA-Z0-9\s.]*$/; // allow dot
+            }
+
+            if (allowSpecial) {
+                regex = /^[^]*$/; // allow everything
+            }
+
+            if (!regex.test(inputValue)) return;
         }
 
         /* 🔢 NUMBER VALIDATION */
         if (type === "number") {
-            // Allow just "-" while typing
             if (inputValue === "-") {
                 if (!allowNegative) return;
                 onChange(field, inputValue);
                 return;
             }
 
+            if (!allowDecimal && inputValue.includes(".")) return;
+
+            // ⛔ Limit decimal places
+            if (allowDecimal && inputValue.includes(".")) {
+                const [_, decimals] = inputValue.split(".");
+                if (decimals && decimals.length > decimalScale) return;
+            }
+
             const num = Number(inputValue);
             if (isNaN(num)) return;
 
-            // ❌ Negative not allowed
             if (num < 0 && !allowNegative) return;
-
-            // ⚠️ Confirm negative
-            // if (num < 0 && confirmNegative) {
-            //     let confirmed = true;
-
-            //     if (onNegativeConfirm) {
-            //         confirmed = await onNegativeConfirm();
-            //     } else {
-            //         confirmed = window.confirm(
-            //             "You entered a negative value. Do you want to continue?"
-            //         );
-            //     }
-
-            //     if (!confirmed) return;
-            // }
-
-            // 🔢 Max check
             if (max !== undefined && num > max) return;
         }
+
 
         /* 🔤 TEXT MAX LENGTH */
         if (type === "text" && max !== undefined && inputValue.length > max) {
@@ -114,8 +123,28 @@ export function CapitalizedInput<T>({
             maxLength={type === "text" ? max : undefined}
             size={size}
             autoFocus={autoFocus}
-            onKeyDown={onKeyDown}
+            onKeyDown={(e) => {
+                const val = (e.target as HTMLInputElement).value;
+
+                if (type === "number" && !allowDecimal && e.key === ".") {
+                    e.preventDefault();
+                }
+
+                if (type === "number" && !allowNegative && e.key === "-") {
+                    e.preventDefault();
+                }
+
+                if (allowDecimal && e.key === "." && val.includes(".")) {
+                    e.preventDefault(); // only one dot
+                }
+
+                onKeyDown?.(e);
+            }}
+
             className={onClassUse ? "type-inputs":""}
+            maxWidth={maxWidth}
+            bg={theme.colors.greyColor}
+            fontSize='2xs'
             
         />
     );

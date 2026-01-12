@@ -16,6 +16,7 @@ import EditableTable from "@/component/table/EditableTable";
 import AddTransactionItemForm, { FormField } from "./AddTransactionItemForm";
 import { issueColumns } from "../../Transaction/Issue/isseColumns";
 
+
 interface DraftTransactionTableProps {
     rows: any[];
     editingRowId: string | number | null;
@@ -527,7 +528,7 @@ export default function DraftTransactionTable({
             )}
 
             {/* Form Section - Only shown when showForm is true */}
-            {showForm && (
+            {showForm && !isEditing && (
                 <Box mb={1}>
                     <AddTransactionItemForm
                         fields={formFields}

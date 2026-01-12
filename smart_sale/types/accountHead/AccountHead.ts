@@ -1,4 +1,6 @@
 export interface AccountHead{
+
+    ACCODE?: string;
     ACNAME?:string;
     ACTYPE?:string;
     COMPANY?:string;
@@ -9,7 +11,7 @@ export interface AccountHead{
     ADDRESS2?:String;
     CITY?:string;
     AREA?:string;
-    STATEID?:string;
+    STATEID?:string |undefined;
     PINCODE?:string;
     PHONENO?:string;
     EMAILID?:string;
@@ -17,5 +19,15 @@ export interface AccountHead{
     WEBSITE?:string;
     GSTNO?:string;
     ACTIVE?:string;
-    ACCODE?:string;
+    OPENING_CASH?:string;
+    OPENING_WEIGHT?:string;
+    OPENING_PURE?:string;
+    PAN?:string;
+    AADHARNO?:string;
+
+}
+
+export interface AccountHeadCollection {
+    acheads?:AccountHead;
+    nextAccode?:string;
 }

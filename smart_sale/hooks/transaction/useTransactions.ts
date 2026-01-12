@@ -5,7 +5,7 @@ import {
 } from "@tanstack/react-query";
 
 import { TransactionService } from "@/service/TransactionService";
-import { CreateTransaction, TRANSACTION } from "@/types/transcation/Transaction";
+import { CreateTransaction, TRANSACTION, UpdateTransactionPayload } from "@/types/transcation/Transaction";
 import { ApiResponse } from "@/types/api/apiResponse";
 
 /* -------------------- QUERY KEYS -------------------- */
@@ -14,7 +14,7 @@ export const transactionKeys = {
     list: (TRANTYPE: string) => [...transactionKeys.all, TRANTYPE] as const,
     byId: (sno: number, TRANTYPE: string) =>
         [...transactionKeys.all, "one", sno, TRANTYPE] as const,
-    byTransId: (transId: string) =>
+    byTransId: (transId: string|null) =>
         [...transactionKeys.all, "transId", transId] as const,
 };
 
@@ -22,7 +22,7 @@ export const transactionKeys = {
 
 // GET ALL
 export const useTransactions = (
-    trantype?: string | null,
+    trantype?: undefined | null | string,
     accode?: number | null,
     startdate?: string | null,
     enddate?: string | null,
@@ -46,7 +46,7 @@ export const useTransactions = (
 
 // GET BY TRANSACTION ID
 export const useTransactionByTransId = (
-    transId: string,
+    transId: string | null,
 ) => {
     return useQuery<ApiResponse<any>>({
         queryKey: transactionKeys.byTransId(transId),
@@ -81,7 +81,7 @@ export const useUpdateTransaction = () => {
             payload,
         }: {
             sno: string;
-            payload: TRANSACTION;
+            payload: UpdateTransactionPayload;
         }) => TransactionService.update(sno, payload),
 
         onSuccess: () => {

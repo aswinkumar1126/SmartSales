@@ -20,19 +20,19 @@ export default function TransactionHistoryTable({
 }: TransactionHistoryTableProps) {
     const { data: transactions, isLoading } = useTransactions(customerCode);
 
-    const filteredTransactions = React.useMemo(() => {
-        if (!transactions?.data) return [];
+    // const filteredTransactions = React.useMemo(() => {
+    //     if (!transactions?.data) return [];
 
-        let filtered = transactions.data;
-
-        if (transactionType) {
-            filtered = filtered.filter((t: any) =>
-                t.TRANSACTION_TYPE === transactionType
-            );
-        }
-        console.log(filtered,'filtered')
-        return filtered;// Show last 10 transactions
-    }, [transactions, transactionType]);
+    //     let filtered = transactions.data;
+   
+    //     if (transactionType) {
+    //         filtered = filtered.filter((t: any) =>
+    //             t.TRANSACTION_TYPE === transactionType
+    //         );
+    //     }
+    //     console.log(filtered,'filtered')
+    //     return filtered;// Show last 10 transactions
+    // }, [transactions, transactionType]);
 
     const historyColumns = [
         { key: "SNO", label: "SNO", width: "80px" },

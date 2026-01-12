@@ -64,3 +64,24 @@ export interface CreateTransaction{
     TRANSACTION_DETAILS: TransactionInfo;
     TRANSACTION_ITEMS : TransactionItem[];
 }
+
+export type UpdateTransactionPayload = {
+    TRANSACTION_DETAILS: {
+        ACCODE: number;
+        TRANTYPE: string;
+        TRANDATE: string;
+    };
+    TRANSACTION_ITEM: {
+        PCS: number;
+        GRSWT: number;
+        LESSWT: number;
+        NETWT: number;
+        PURITY: number;
+        PUREWT: number;
+        RATE: number;
+        MCHARGE: number;
+        WASTAGE: number;
+        AMOUNT: number;
+        ITEMID: number | null;
+    } | null;
+};

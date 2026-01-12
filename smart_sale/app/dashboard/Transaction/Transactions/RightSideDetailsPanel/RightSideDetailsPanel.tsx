@@ -13,8 +13,8 @@ interface RightSideDetailsPanelProps {
     headerForm: any;
     selectedTransactionType: any;
     theme: any;
-    startDate?: string | null;
-    endDate?: string | null;
+    startDate?: string | null | undefined;
+    endDate?: string | null | undefined;
     onStartDateChange: (val?: string) => void;
     onEndDateChange: (val?: string) => void;
     selectedItemCode: number | null;
@@ -72,7 +72,7 @@ export default function RightSideDetailsPanel({
         const d = String(date.getDate()).padStart(2, "0");
         return `${y}-${m}-${d}`;
     };
-    const fromStoreFormat = (dateStr?: string) => {
+    const fromStoreFormat = (dateStr?: string|null|undefined) => {
         if (!dateStr) return null;
         const [y, m, d] = dateStr.split("-");
         return new Date(Number(y), Number(m) - 1, Number(d));
@@ -115,7 +115,7 @@ export default function RightSideDetailsPanel({
                     <Box flex={1}>
                         <Text fontSize='2xs' fontWeight='medium'>START DATE</Text>
                         <DatePicker
-                            selected={fromStoreFormat(startDate)}
+                            selected={fromStoreFormat(startDate) || undefined}
                             onChange={(d: Date | null) =>
                                 onStartDateChange(d ? toStoreFormat(d) : undefined)
                             }
@@ -128,11 +128,11 @@ export default function RightSideDetailsPanel({
                     <Box flex={1}>
                         <Text fontSize='2xs' fontWeight='medium'>END DATE</Text>
                         <DatePicker
-                            selected={fromStoreFormat(endDate)}
+                            selected={fromStoreFormat(endDate) || undefined}
                             onChange={(d: Date | null) =>
                                 onEndDateChange(d ? toStoreFormat(d) : undefined)
                             }
-                            minDate={fromStoreFormat(startDate)}
+                            minDate={fromStoreFormat(startDate) ||undefined}
                             maxDate={new Date()}
                             dateFormat="dd-MM-yyyy"
                             placeholderText="End"

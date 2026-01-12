@@ -26,19 +26,22 @@ import { IoIosExit } from "react-icons/io";
 import { fontVariables } from "@/context/theme/font";
 import { useTheme } from "@/context/theme/themeContext";
 
-import {  useAllMetals, } from "@/hooks/metal/useMetals";
+import { useAllMetals, useMetalBySno } from "@/hooks/metal/useMetals";
 import { useUpdateMetal } from "@/hooks/metal/useUpdateMetal";
 import { useCreateMetal } from "@/hooks/metal/useCreateMetal";
-import { Metal } from "@/service/metalService";
+import { Metal, MetalData } from "@/service/metalService";
 import scrollToTop from "@/component/scroll/ScrollToTop";
 import { toastError, toastLoaded } from '@/component/toast/toast'
 import { Toaster } from "@/components/ui/toaster";
-import { useMetalById } from "@/hooks/metal/useMetals";
+
 import { CustomTable } from "@/component/table/CustomTable";
 import { CapitalizedInput } from "@/component/form/CapitalizedInput";
 import { usePrint } from "@/context/print/usePrintContext";
 import { useRouter } from "next/navigation";
 import { FaPrint ,FaFileExcel } from "react-icons/fa";
+import { usePureGoldData } from "@/hooks/pureGoldMast/usePureGoldMastData";
+import { SelectCombobox } from "@/components/ui/selectComboBox";
+import { safeValue } from "@/utils/comboBox/safeValue";
 
 
 function MetalMaster() {
@@ -49,20 +52,38 @@ function MetalMaster() {
     const [form, setForm] = useState<Partial<Metal>>({
         metalId: "",
         metalName: "",
-        ttype: "M",
+        metalType: "M",
         displayOrder: 1,
         active: "Y",
+        weight:"",
+        touch:"",
+        pure:""
     });
 
     
 
     const [isEdit, setIsEdit] = useState(false);
-    const [editId ,setEditId] = useState('');
+    const [editId, setEditId] = useState<number |undefined| null>(null);
     const [ highlightId ,setHighLightedId] =useState<String>();
-
-
+    const [pureGoldCollection, setPureGoldCollection] = useState<any[]>([]);
 
     const { data: metals = [], refetch } = useAllMetals();
+    const { data: pureGold } = usePureGoldData();
+
+    console.log(pureGold,'pureGold');
+
+   
+
+    useEffect(() => {
+            if (!pureGold?.length) return;
+    
+            const mapped = pureGold.map((p: any) => ({
+                label: p.pureGoldName,
+                value: String(p.sno),
+            }));
+    
+            setPureGoldCollection(mapped);
+    }, [pureGold]);
 
     useEffect(() => {
         if (!metals || metals.length === 0) return;
@@ -72,7 +93,8 @@ function MetalMaster() {
             displayOrder: metals.length + 1,
         }));
     }, [metals]);
-    const { data: metalsByID} = useMetalById(editId) ;
+
+    const { data: metalBySno, refetch: refetchMetalBySno } = useMetalBySno(editId ?? 0);
  
 
     const { setData ,setColumns , setShowSno} = usePrint();
@@ -92,15 +114,16 @@ function MetalMaster() {
         setForm((prev) => ({ ...prev, [field]: value }));
     };
     
-   useEffect(()=>{
-    if(!highlightId) {
-        return;
-    }
-    const timer = setTimeout(() => {
-        setHighLightedId(undefined);
-    }, 3000);
-    return () => clearTimeout(timer);
-   })
+    useEffect(() => {
+        if (!highlightId) return;
+
+        const timer = setTimeout(() => {
+            setHighLightedId(undefined);
+        }, 3000);
+
+        return () => clearTimeout(timer);
+    }, [highlightId]);
+
 
 
 
@@ -125,46 +148,57 @@ function MetalMaster() {
         if (isEdit && form.metalId ) {
             
             updateMutation.mutate(
-                { id: form.metalId, metal: form as Metal },
+                { sno: Number(form.sno), metal: form as Metal },
                 { onSuccess: () => { 
-                    setHighLightedId(String(form.metalId))
+                    setHighLightedId(String(form.sno))
                     resetForm();
-                     refetch(); } }
+                   } }
             );
         } else {
             createMutation.mutate(form as Metal, { onSuccess: () => { 
                 resetForm(); 
                 setHighLightedId(String(form.metalId));
-                refetch(); } });
+              } });
         }
     };
 
-    const handleEdit = (metal: Metal) => {
+    const handleEdit = (metal:Metal) => {
        
         setIsEdit(true);
-        setEditId(metal.metalId);
+        setEditId(metal.sno);
+        refetchMetalBySno();
      
     };
+
     useEffect(() => {
-        if (metalsByID && Object.keys(metalsByID).length > 0) {
-            console.log(metalsByID)
+        if (metalBySno?.data && Object.keys(metalBySno?.data).length > 0) {
+        
             setForm({
-                ...metalsByID,
-                ttype: metalsByID.ttype || "M", // 👈 normalize
+                ...metalBySno?.data,
+                metalType: metalBySno?.data?.metalType || "", // 👈 normalize
             });
         }
-    }, [metalsByID]);
+    }, [metalBySno]);
 
 
     const resetForm = () => {
-        setForm({ metalId: "", metalName: "", ttype: "M", displayOrder: 0, active: "Y" });
+        setForm({   
+            metalId: "", 
+            metalName: "", 
+            metalType: "M", 
+            displayOrder: Number(metals.length + 1), 
+            active: "Y",
+            weight:"",
+            touch:"",
+            pure:""
+         });
         setIsEdit(false);
     };
 
     const metalColumns = [
         { key: "metalId", label: "Metal Id" },
         { key: "metalName", label: "Metal Name" },
-        { key: "ttype", label: "Metal Type", align: "end" as const },
+        { key: "metalType", label: "Metal Type", align: "end" as const },
         { key: "displayOrder", label: "Order", align: "end" as const },
         { key: "active", label: "Active", align: "end" as const },
         { key: "actions", label: "Action", align: "center" as const },
@@ -173,7 +207,7 @@ function MetalMaster() {
         setData(metals);
         setColumns([{key:'metalId',label:'Metal Id'},
             {key:'metalName',label:'Metal Name'},
-            {key:'ttype',label:'Metal Type'},
+            {key:'metalType',label:'Metal Type'},
             {key:'displayOrder',label:'Order'},
            ]);
         setShowSno(true);
@@ -186,122 +220,176 @@ function MetalMaster() {
     return (
         <Box
                    className={fontVariables}
-                   fontFamily="var(--font-lustria)"
                    bg={theme.colors.primary}
                    color={theme.colors.secondary}
+                   fontWeight='semibold'
+                   
                 
                >
                    <Toaster />
                    <Grid templateColumns={{ base: "1fr", lg: "1fr 1fr" }} gap={2}>
                 {/* LEFT – Form */}
-                <GridItem display="flex" justifyContent="center" >
-                     <VStack
-                                           w="full"
-                                           maxW="500px"
-                                           bg={theme.colors.formColor}
-                                           p={4}
-                                           borderRadius="xl"
-                                           border="1px solid #eef"
-                                           boxShadow="0 0 30px rgba(212,212,212,0.2)"
-                                       >
-                                          
-                        <Text fontSize="20px"  fontWeight="600">Metal Master</Text>
+                <GridItem display="flex" justifyContent="center">
+                    <VStack
+                        w="full"
+                        bg={theme.colors.formColor}
+                        p={4}
+                        borderRadius="xl"
+                        border="1px solid #eef"
+                        boxShadow="0 0 30px rgba(212,212,212,0.2)"
+                    >
+                        <Text fontSize="20px" fontWeight="600">Metal Master</Text>
 
-                        <Fieldset.Root display='flex' size="lg" width="100%">
+                        <Fieldset.Root size="sm" width="100%">
                             <Fieldset.Content>
-                                <Field.Root width="120px ">
-                                    <Field.Label>Metal Id</Field.Label>
-                                    <CapitalizedInput
-                                        type="text"
-                                        field="metalId"
-                                        placeholder="Enter Metal Id"
-                                        value={form.metalId || ""}
-                                        onChange={handleChange}
-                                        disabled={isEdit} // cannot edit ID
-                                        max={1}
-                                    />
-                                </Field.Root>
+                                <Grid templateColumns="repeat(2, 1fr)" gap={3}>
 
-                                <Field.Root>
-                                    <Field.Label>Metal Name</Field.Label>
-                                    <CapitalizedInput
-                                        field="metalName"
-                                        placeholder="Enter Metal Name"
-                                        value={form.metalName || ""}
-                                        onChange={handleChange}
-                                    />
-                                </Field.Root>
+                                    {/* METAL ID */}
+                                    <Box display="flex" alignItems="center" gap={2}>
+                                        <Box minW="100px" fontSize="2xs">METAL ID :</Box>
+                                        <CapitalizedInput
+                                            type="text"
+                                            field="metalId"
+                                            placeholder="Enter Id"
+                                            value={form.metalId || ""}
+                                            onChange={handleChange}
+                                            disabled={isEdit}
+                                            max={1}
+                                            size="2xs"
+                                            maxWidth="60px"
+                                        />
+                                    </Box>
 
-                              
+                                    {/* METAL NAME */}
+                                    <Box display="flex" alignItems="center" gap={2}>
+                                        <Box minW="100px" fontSize="2xs">METAL NAME :</Box>
+                                        <CapitalizedInput
+                                            field="metalName"
+                                            placeholder="Enter Metal Name"
+                                            value={form.metalName || ""}
+                                            onChange={handleChange}
+                                            size="2xs"
+                                        />
+                                    </Box>
 
-                                <Field.Root>
-                                    <Field.Label>Metal Type</Field.Label>
-                                    <NativeSelect.Root>
-                                        <NativeSelect.Field
-                                            value={form.ttype}
-                                            onChange={(e) => handleChange("ttype", e.target.value)}
-                                            css={{
-                                                backgroundColor: "#eee",
-                                                color: "#111827",
-                                                border: "1px solid #e5e7eb",
-                                                borderRadius: "12px",
-                                                height: "42px",
-                                            }}
-                                        >
-                                            <option value="M">METAL</option>
-                                            <option value="S">STONE</option>
-                                            <option value="A">ALLOY</option>
-                                        </NativeSelect.Field>
+                                    {/* METAL TYPE */}
+                                    <Box display="flex" alignItems="center" gap={2}>
+                                        <Box minW="100px" fontSize="2xs">METAL TYPE :</Box>
+                                        <SelectCombobox
+                                            value={safeValue(form.metalType, pureGoldCollection) || ""}
+                                            onChange={(val) => handleChange("metalType", val || "")}
+                                            editId={Number(editId)}
+                                            items={pureGoldCollection}
+                                            placeholder="Select Type"
+                                        />
+                                    </Box>
 
-                                        <NativeSelect.Indicator />
-                                    </NativeSelect.Root>
-                                </Field.Root>
+                                    {/* DISPLAY ORDER */}
+                                    <Box display="flex" alignItems="center" gap={2}>
+                                        <Box minW="100px" fontSize="2xs">DISPLAY ORDER :</Box>
+                                        <CapitalizedInput
+                                            field="displayOrder"
+                                            size="2xs"
+                                            value={String(form.displayOrder)||"0"}
+                                            onChange={(val) =>
+                                                handleChange("displayOrder", parseInt(val || "0"))
+                                            }
+                                            type="number"
 
-                                <Field.Root>
-                                    <Field.Label>Display Order</Field.Label>
-                                    <Input
-                                       
-                                        value={form.displayOrder || 0}
-                                        onChange={(e) => handleChange("displayOrder", parseInt(e.target.value))}
-                                    />
-                                </Field.Root>
 
-                                <Field.Root>
-                                    <Field.Label>Active</Field.Label>
-                                    <NativeSelect.Root>
-                                        <NativeSelect.Field
-                                            value={form.active || "Y"}
-                                            onChange={(e) => handleChange("active", e.target.value)}
-                                            css={{
-                                                backgroundColor: '#eee',
-                                                color: "#111827",
-                                                border: "1px solid #e5e7eb",
-                                                borderRadius: "12px",
-                                                height: "42px",
-                                            }}
-                                        >
-                                            <For each={activeStatus.items}>
-                                                {(item) => (
-                                                    <option key={item.value} value={item.value}>{item.label}</option>
-                                                )}
-                                            </For>
-                                        </NativeSelect.Field>
-                                        <NativeSelect.Indicator />
-                                    </NativeSelect.Root>
-                                </Field.Root>
+                                        />
+                                    </Box>
 
-                                <HStack pt={2} justifyContent="center">
-                                    <Button size="sm" colorPalette="blue" onClick={handleSave}>
+                                    {/* WEIGHT */}
+                                    <Box display="flex" alignItems="center" gap={2}>
+                                        <Box minW="100px" fontSize="2xs">WEIGHT :</Box>
+                                        <CapitalizedInput
+                                            field="weight"
+                                            placeholder="Enter Weight"
+                                            value={form.weight || ""}
+                                            onChange={handleChange}
+                                            size="2xs"
+                                            type="number"
+                                            max={999}
+
+                                        />
+                                    </Box>
+
+                                    {/* TOUCH */}
+                                    <Box display="flex" alignItems="center" gap={2}>
+                                        <Box minW="100px" fontSize="2xs">TOUCH :</Box>
+                                        <CapitalizedInput
+                                            field="touch"
+                                            placeholder="Enter Touch"
+                                            value={form.touch || ""}
+                                            onChange={handleChange}
+                                            size="2xs"
+                                            type="number"
+                                            max={999}
+                                            decimalScale={2}
+                                        />
+                                    </Box>
+
+                                    {/* PURE */}
+                                    <Box display="flex" alignItems="center" gap={2}>
+                                        <Box minW="100px" fontSize="2xs">PURE :</Box>
+                                        <CapitalizedInput
+                                            field="pure"
+                                            placeholder="Enter Pure"
+                                            value={form.pure || ""}
+                                            onChange={handleChange}
+                                            size="2xs"
+                                            type="number"
+                                            max={999}
+                                        />
+                                    </Box>
+
+                                    {/* ACTIVE */}
+                                    <Box display="flex" alignItems="center" gap={2}>
+                                        <Box minW="100px" fontSize="2xs">ACTIVE :</Box>
+                                        <NativeSelect.Root size="xs" minW="50px" maxW="80px" fontSize="2xs" >
+                                            <NativeSelect.Field
+                                                value={form.active || "Y"}
+                                                onChange={(e) => handleChange("active", e.target.value)}
+                                                css={{
+                                                    backgroundColor: "#eee",
+                                                    color: "#111827",
+                                                    border: "1px solid #e5e7eb",
+                                                    borderRadius: "20px",
+                                                    height: "30px",
+                                                    fontSize: "10px",
+                                                }}
+                                            >
+                                                <For each={activeStatus.items}>
+                                                    {(item) => (
+                                                        <option key={item.value} value={item.value}>
+                                                            {item.label}
+                                                        </option>
+                                                    )}
+                                                </For>
+                                            </NativeSelect.Field>
+                                            <NativeSelect.Indicator />
+                                        </NativeSelect.Root>
+                                    </Box>
+
+                                </Grid>
+
+                                {/* BUTTONS */}
+                                <HStack pt={4} justifyContent="center">
+                                    <Button size="xs" colorPalette="blue" onClick={handleSave}>
                                         <AiOutlineSave /> {isEdit ? "Update" : "Save"}
                                     </Button>
-                                    <Button size="sm" colorPalette="blue" onClick={resetForm}>
+                                    <Button size="xs" colorPalette="blue" onClick={resetForm}>
                                         Exit <IoIosExit />
                                     </Button>
                                 </HStack>
+
                             </Fieldset.Content>
                         </Fieldset.Root>
+
                     </VStack>
                 </GridItem>
+
 
                 {/* RIGHT – Table */}
                 <GridItem minW={0}>
@@ -350,14 +438,14 @@ function MetalMaster() {
                                                   headerBg='blue.800'
                                                   bodyBg = {theme.colors.primary}
                                                   headerColor='white'
-                                                  rowIdKey="metalId"
+                                                  rowIdKey="sno"
                                                   highlightRowId={highlightId ? Number(highlightId) : null}
                                                   emptyText="No parties available"
                                                   renderRow={(metal, i) => (
                                                       <>
-                                                          <Table.Cell>{metal.metalId}</Table.Cell>
+                                                          <Table.Cell>{metal.sno}</Table.Cell>
                                                           <Table.Cell>{metal.metalName}</Table.Cell>
-                                                          <Table.Cell textAlign="center">{metal.ttype}</Table.Cell>
+                                                          <Table.Cell textAlign="center">{metal.metalType}</Table.Cell>
                                                           <Table.Cell textAlign="center">{metal.displayOrder}</Table.Cell>
                                                           <Table.Cell textAlign="center">{metal.active}</Table.Cell>
                                                           <Table.Cell>

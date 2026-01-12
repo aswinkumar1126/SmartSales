@@ -99,6 +99,8 @@ export function CustomTable<T extends Record<string, any>>({
                                         key={rowId ?? index}
                                         bg={isHighlighted ? "blue.100" : bodyBg}
                                         transition="background-color 0.3s ease"
+                                        fontSize='xs'
+                                        fontWeight='400'
                                     >
                                         {renderRow(row, index)}
                                     </Table.Row>

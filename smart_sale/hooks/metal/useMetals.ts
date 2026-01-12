@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
-import { MetalService, Metal } from '@/service/metalService'
+import { MetalService, Metal, getMetalBySno, MetalData } from '@/service/metalService'
+
 
 export const useAllMetals = () => {
     return useQuery<Metal[], Error>({
@@ -20,5 +21,12 @@ export const useMetalById = (id: string) => {
         queryKey: ["metal", id],
         queryFn: () => MetalService.getMetalById(id),
         enabled: !!id, // only fetch if id is defined
+    });
+};
+export const useMetalBySno = (sno: number | null) => {
+    return useQuery<MetalData, Error>({
+        queryKey: ["metal", "sno", sno],
+        queryFn: () => getMetalBySno(sno!),
+        enabled: !!sno,
     });
 };

@@ -18,6 +18,10 @@ import {
     createListCollection,
     For,
     Flex,
+    useListCollection,
+    useFilter,
+    Combobox,
+    Portal
 
 } from "@chakra-ui/react";
 import { Table } from "@chakra-ui/react/table";
@@ -33,7 +37,7 @@ import {
     useCreateCompany,
     useUpdateCompany,  
 } from "@/hooks/company/useCompany";
-
+import { useAllStates } from "@/hooks/state/useStates";
 import ScrollToTop from "@/component/scroll/ScrollToTop";
 import { CreateCompanyPayload, Company } from "@/service/CompanyService";
 import { toastCreated, toastError, toastLoaded, toastUpdated, toastUploaded } from "@/component/toast/toast";
@@ -47,17 +51,42 @@ import { FaPrint ,FaFileExcel } from "react-icons/fa";
 
 function CompanyMaster() {
     const { theme } = useTheme();
-
     /* -------------------- API HOOKS -------------------- */
     const { data, isLoading } = useAllCompanies();
     const router = useRouter();
     const {setData ,setColumns ,setShowSno} =usePrint();
     const companies = data?.data ?? [];
+    const [inputValue, setInputValue] = useState("")
+    const {data:allStates ,isLoading:stateLoading ,isError:stateError} = useAllStates();
 
 
     const { mutate: createCompany, isPending } = useCreateCompany();
     const { mutate: updateCompany, isPending: isUpdating } = useUpdateCompany();
 
+    const stateOptions = (allStates || []).map((s: any) => ({
+        label: s.stateName,
+        value: String(s.stateId), // ALWAYS string
+    }))
+
+   
+    const { contains } = useFilter({ sensitivity: "base" })
+
+
+    const { collection: stateCollection, set } = useListCollection<any>({
+        initialItems: [],
+        itemToString: (item) => item.stateName,
+        itemToValue: (item) => String(item.stateId),
+    })
+
+    useEffect(() => {
+        if (!allStates?.length) return
+
+        const filtered = allStates.filter((s: any) =>
+            s.stateName.toLowerCase().includes(inputValue.toLowerCase())
+        )
+
+        set(filtered)
+    }, [inputValue, allStates, set])
     /* -------------------- FORM STATE -------------------- */
     const [form, setForm] = useState<CreateCompanyPayload>({
         COMPANYID: "",
@@ -71,7 +100,7 @@ function CompanyMaster() {
         EMAIL: "",
         GSTNO: "",
         ACTIVE: "Y",
-        STATEID: 1,
+        STATEID: "",
     });
     const [highlightedId ,setHighlightedId] = useState<Number>()
 
@@ -87,15 +116,10 @@ function CompanyMaster() {
         ],
     });
 
-    const stateItems = createListCollection({
-        items: [
-            { label: "TAMILNADU" ,value :'TAMILNADU'},
-          
-        ],
-    });
-
     const { data: companyById } = useCompanyById(editId ?? '');
     const company = companyById?.data;
+
+    console.log(company , 'company data by id');
 
     useEffect(() => {
         if (!company) return;
@@ -112,7 +136,7 @@ function CompanyMaster() {
             EMAIL: company.EMAIL ?? "",
             GSTNO: company.GSTNO ?? "",
             ACTIVE: company.ACTIVE ?? "Y",
-            STATEID: company.STATEID ?? 1,
+            STATEID: String(company.STATEID)?? "",
         });
     }, [company]);
 
@@ -127,6 +151,7 @@ function CompanyMaster() {
 
 
     }, [company]);
+
 
     useEffect(() => {
         if (!highlightedId) return;
@@ -163,7 +188,7 @@ function CompanyMaster() {
             EMAIL: "",
             GSTNO: "",
             ACTIVE: "Y",
-            STATEID: 1,
+            STATEID: "",
         });
     };
 
@@ -201,6 +226,10 @@ function CompanyMaster() {
         }
         if(!form.ADDRESS3?.trim()){
             toastError("City is required");
+            return;
+        }
+        if (!form.STATEID) {
+            toastError("State is required");
             return;
         }
         if(!form.AREACODE?.trim()){
@@ -354,25 +383,43 @@ function CompanyMaster() {
                                             onChange={handleChange}
                                         />
                                     </Field.Root>
+<Combobox.Root
+  collection={stateCollection}
+  value={form.STATEID ? [form.STATEID] : []}
+  onValueChange={(details) => {
+    const selected = details.value[0] ?? ""
+    setForm((prev) => ({
+      ...prev,
+      STATEID: selected,
+    }))
+  }}
+  onInputValueChange={(e) => setInputValue(e.inputValue)}
+  openOnClick
+>
+  <Combobox.Label>Select State</Combobox.Label>
 
-                                    <Field.Root>
-                                        <Field.Label>State</Field.Label>
-                                        <NativeSelect.Root>
-                                            <NativeSelect.Field
-                                                value={form.ACTIVE}
-                                                onChange={(e) => handleChange("ACTIVE", e.target.value)}
-                                            >
-                                                <For each={stateItems.items}>
-                                                    {(item) => (
-                                                        <option key={item.value} value={item.value}>
-                                                            {item.label}
-                                                        </option>
-                                                    )}
-                                                </For>
-                                            </NativeSelect.Field>
-                                            <NativeSelect.Indicator />
-                                        </NativeSelect.Root>
-                                    </Field.Root>
+  <Combobox.Control>
+    <Combobox.Input placeholder="Type to search" />
+    <Combobox.IndicatorGroup>
+      <Combobox.ClearTrigger />
+      <Combobox.Trigger />
+    </Combobox.IndicatorGroup>
+  </Combobox.Control>
+
+  <Portal>
+    <Combobox.Positioner>
+      <Combobox.Content>
+        {stateCollection.items.map((item: any) => (
+          <Combobox.Item key={item.stateId} item={item}>
+            {item.stateName}
+            <Combobox.ItemIndicator />
+          </Combobox.Item>
+        ))}
+      </Combobox.Content>
+    </Combobox.Positioner>
+  </Portal>
+</Combobox.Root>
+
                                     
                                     <Field.Root>
 

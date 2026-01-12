@@ -71,7 +71,7 @@ function AccountMaster() {
         EMAIL: "",
         GSTNO: "",
         ACTIVE: "Y",
-        STATEID: 1,
+        STATEID:"",
     });
     const [highlightedId ,setHighlightedId] = useState<Number>()
 
@@ -112,7 +112,7 @@ function AccountMaster() {
             EMAIL: company.EMAIL ?? "",
             GSTNO: company.GSTNO ?? "",
             ACTIVE: company.ACTIVE ?? "Y",
-            STATEID: company.STATEID ?? 1,
+            STATEID: company.STATEID ?? "",
         });
     }, [company]);
 
@@ -163,7 +163,7 @@ function AccountMaster() {
             EMAIL: "",
             GSTNO: "",
             ACTIVE: "Y",
-            STATEID: 1,
+            STATEID: "",
         });
     };
 

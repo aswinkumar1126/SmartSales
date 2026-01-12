@@ -19,6 +19,7 @@ export type ColorTokens = {
     accient:string;
     formColor:string;
     whiteColor:string;
+    greyColor:string;   
 };
 
 export type FontSizeTokens = {
@@ -64,6 +65,7 @@ export const designTokens: DesignTokens = {
         accient:"#05204bff",
         formColor:'#FFF',
         whiteColor: '#FFF',
+        greyColor:'#F5F5F5',
     },
 
     fontSizes: {
@@ -91,6 +93,7 @@ export const lightTheme: DesignTokens = {
         accient:"#1868b2",
         formColor:'#FFF',
         whiteColor:'#FFF',
+        greyColor:'#F5F5F5',
 
     },
 };
@@ -106,6 +109,8 @@ export const darkTheme: DesignTokens = {
         accient:"#001958ff",
         formColor: '#222',
         whiteColor: '#FFF',
+        greyColor:'#222',
+
     },
 };
 

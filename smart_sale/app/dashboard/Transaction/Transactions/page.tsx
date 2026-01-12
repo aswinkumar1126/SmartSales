@@ -29,7 +29,7 @@ import { useItems } from "@/hooks/item/useItems";
 import { useCreateTransactions, useUpdateTransaction, useTransactionByTransId } from "@/hooks/transaction/useTransactions";
 
 // Types & Constants
-import { TransactionType } from "@/types/transcation/Transaction";
+import { TransactionType, UpdateTransactionPayload } from "@/types/transcation/Transaction";
 import { TRANSACTIONTYPES } from "@/data/Transaction/TransactionType";
 import Loader from "@/component/loader/Loader";
 
@@ -92,6 +92,8 @@ export default function IssuePage() {
     const DATE_RANGE_KEY = "transaction_date_range";
     const ITEMID = "transaction_itemid";
     const FILTER = "show_filter";
+    const EDITING = "isEditing";
+    const EDITING_SNO = "editing_sno";
 
     const { theme } = useTheme();
     const { data: itemsData } = useItems();
@@ -187,6 +189,8 @@ export default function IssuePage() {
         }
     }, []);
 
+
+
     useEffect(() => {
         const savedItemCode = localStorage.getItem(ITEMID);
         if (!savedItemCode) return;
@@ -208,6 +212,25 @@ export default function IssuePage() {
             localStorage.removeItem(FILTER);
         }
     }, []);
+    useEffect(()=>{
+        const editing = localStorage.getItem(EDITING);
+        const sno = localStorage.getItem(EDITING_SNO);
+        if(!editing) return;
+        try{
+            const parsedEditing = JSON.parse(editing);
+            setIsEditing(parsedEditing);
+
+            if (sno) {
+                const parsedSno = JSON.parse(sno);
+                setEditingSno(parsedSno);
+            }
+
+        }
+        catch{
+            localStorage.removeItem(EDITING);
+            localStorage.removeItem(EDITING_SNO);
+        }
+    },[])
 
     // Load from localStorage on mount
     useEffect(() => {
@@ -257,6 +280,8 @@ export default function IssuePage() {
             localStorage.removeItem(DATE_RANGE_KEY);
             localStorage.removeItem(ITEMID);
             localStorage.removeItem(FILTER);
+            localStorage.removeItem(EDITING);
+            localStorage.removeItem(EDITING_SNO);
         };
     }, []);
 
@@ -295,6 +320,19 @@ export default function IssuePage() {
             localStorage.removeItem(DATE_RANGE_KEY);
         }
     }, [startDate, endDate]);
+
+    useEffect(()=>{
+        if(isEditing){
+            localStorage.setItem(EDITING , JSON.stringify(isEditing));
+            if (editingSno) {
+                localStorage.setItem(EDITING_SNO,  JSON.stringify(editingSno));
+            }
+        }
+        else{
+            localStorage.removeItem(EDITING);
+            localStorage.removeItem(EDITING_SNO);
+        }
+    }, [isEditing, editingSno])
 
     /* ================================
        Load Transaction Data When Selected
@@ -777,9 +815,28 @@ export default function IssuePage() {
             setSelectedTransactionId(null);
             setDraftRows([]);
             setEditingRowId(null);
+            setSelectedTransactionType(null);
+            setTransactionTitle("");
+
+            setHeaderForm(prev => ({
+                ...prev,
+                CUSTOMER: "",
+                CUSTOMER_NAME: "",
+                BILLNO: "",
+                DATE: new Date().toISOString().split("T")[0],
+                RATEGM: ""
+            }));
+            
 
             // Clear localStorage
             localStorage.removeItem(DRAFT_KEY);
+            localStorage.removeItem(HEADER_KEY);
+            localStorage.removeItem(TYPE_KEY);
+            localStorage.removeItem(DATE_RANGE_KEY);
+            localStorage.removeItem(ITEMID);
+            localStorage.removeItem(FILTER);
+            localStorage.removeItem(EDITING);
+            localStorage.removeItem(EDITING_SNO);
 
             toaster.create({
                 title: "Transaction Updated",
@@ -928,7 +985,7 @@ export default function IssuePage() {
                         openingData={openingData}
                         showFilter={showFilter}
                         handleShowFilter={handleShowFilter}
-                        isEditing={isEditing}
+                        // isEditing={isEditing}
                     />
 
                     {/* 2. Transaction Type Selector */}
@@ -1060,7 +1117,7 @@ export default function IssuePage() {
                         itemsCollection={itemsCollection}
                         itemsFilter={itemsFilter}
                         getLabelByValue={getLabelByValue}
-                        isEditing={isEditing}
+                        // isEditing={isEditing}
                     />
                 </Box>
             )}

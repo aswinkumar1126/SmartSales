@@ -1,16 +1,21 @@
 import { axiosInstance } from "@/api/axiosInstance";
-
+import { createResourceApi } from "@/api/resourceApi";
+import { callApi } from "@/api/apiClient";
 // Type for Metal
 export interface Metal {
+    sno?:number;
     metalId: string;
     metalName: string;
     userId?: number;
     updated?: string;
     uptime?: string;
     autoGenerator?: string;
-    ttype?: string;
+    metalType?: string;
     active?: string;
     displayOrder?: number;
+    weight?:string;
+    touch?:string;
+    pure?:string
 }
 
 export const MetalService = {
@@ -40,8 +45,22 @@ export const MetalService = {
     },
 
     // PUT update metal
-    updateMetal: async (id: string, metal: Metal): Promise<Metal> => {
-        const { data } = await axiosInstance.put(`/metal/${id}`, metal);
+    updateMetal: async (sno: number, metal: Metal): Promise<Metal> => {
+        const { data } = await axiosInstance.put(`/metal/${sno}`, metal);
         return data.data;
     },
 };
+
+export interface MetalData {
+    status: string;
+    message:string;
+    data: Metal;
+}
+
+
+
+export const getMetalBySno = (sno: number) =>
+    callApi<null, MetalData>({
+        method: "get",
+        url: `/metal/sno/${sno}`,
+    });

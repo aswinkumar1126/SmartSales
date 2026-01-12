@@ -34,7 +34,7 @@ import { FiSun, FiMoon } from "react-icons/fi";
 
     
     return (
-        <Box bg={theme.colors.accient} borderBottom="1px solid" borderColor="gray.200" color={theme.colors.whiteColor} p={4} position="sticky" top="0" zIndex={2} >
+        <Box bg={theme.colors.accient} borderBottom="1px solid" borderColor="gray.200" color={theme.colors.whiteColor} p={1} position="sticky" top="0" zIndex={2} >
             <Box display="flex"  flexDirection='column' css={{sm:{flexDirection:'row' } }} justifyContent="space-between"  alignItems="center" >
             <HStack >
                 {!isDesktop && (
@@ -69,7 +69,7 @@ import { FiSun, FiMoon } from "react-icons/fi";
           
             <HStack justify="space-between">
                 {/* your menu buttons */}
-                    <HStack display='flex' flexDirection='column' gap={0.5}>
+                    <HStack display='flex' flexDirection='row' gap={2}>
                         <Text fontSize='xs' fontWeight='bold' >  DATE : {formatDate(now)} </Text>
                         <Text fontSize='xs' fontWeight='bold' > TIME : {timeNow} </Text>
                     </HStack>
@@ -82,7 +82,7 @@ import { FiSun, FiMoon } from "react-icons/fi";
                         color: '#222',
                     }}
                 >
-                    {mode === "light" ? <FiMoon /> : <FiSun />}
+                        {mode === "light" ? <FiMoon size={10} /> : <FiSun size={10} />}
                 </IconButton>
             </HStack>
             </Box>

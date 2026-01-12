@@ -6,10 +6,11 @@ export const useUpdateMetal = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: ({ id, metal }: { id: string; metal: Metal }) =>
-            MetalService.updateMetal(id, metal),
-        onSuccess: () => {
+        mutationFn: ({ sno, metal }: { sno: number; metal: Metal }) =>
+            MetalService.updateMetal(sno, metal),
+        onSuccess: (_, variables) => {
             queryClient.invalidateQueries({ queryKey: ["metals"] });
+
             queryClient.invalidateQueries({ queryKey: ["metals", "active"] });
             toastUpdated("Metal");
         },

@@ -70,7 +70,7 @@ export const SidebarProvider = ({ children }: { children: ReactNode }) => {
           {
             label: "AccountHead",
             route: "/dashboard/Master/Account/AccountHead",
-            icon: Building2,
+            icon: Users,
           },
         ],
       },
@@ -87,11 +87,11 @@ export const SidebarProvider = ({ children }: { children: ReactNode }) => {
             route: "/dashboard/Master/Item/ItemMaster",
             icon: Boxes,
           },
-          {
-            label: "Party Master",
-            route: "/dashboard/Master/Item/party",
-            icon: Users,
-          },
+          // {
+          //   label: "Party Master",
+          //   route: "/dashboard/Master/Item/party",
+          //   icon: Users,
+          // },
           {
             label: "Touch Master",
             route: "/dashboard/Master/Item/touch",
@@ -140,6 +140,11 @@ export const SidebarProvider = ({ children }: { children: ReactNode }) => {
             route: "/dashboard/Accounts/Opening/Ornament",
             icon: Layers,
           },
+          {
+            label: "Bank Account Master",
+            route: "/dashboard/Master/Item/bankAccount",
+            icon: Layers,
+          },
         ],
       },
     },
@@ -148,8 +153,8 @@ export const SidebarProvider = ({ children }: { children: ReactNode }) => {
         icon: Layers,
         items:[
           {
-            label: "Issue",
-            route: "/dashboard/Transaction/Transaction/Issue",
+            label: "Transaction",
+            route: "/dashboard/Transaction/Transactions",
             icon: Layers,
           },
         ]

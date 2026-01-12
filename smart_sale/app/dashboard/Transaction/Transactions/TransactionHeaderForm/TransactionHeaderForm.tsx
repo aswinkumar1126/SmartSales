@@ -117,7 +117,7 @@ export default function TransactionHeaderForm({
         <Flex justifyContent='space-between'  bg={theme.colors.formColor} p={3} rounded="xl" alignItems='center' >
             <Box gap={2} display='flex' flexDirection='row'  >
                   {/* ENTRY NO */}
-            <Box w="60px">
+            {/* <Box w="60px">
                 <Text fontSize="xs" mb={1}>Entry No</Text>
                 <CapitalizedInput
                     value={form.ENTRYNO}
@@ -126,7 +126,7 @@ export default function TransactionHeaderForm({
                     disabled
                     size="xs"
                 />
-            </Box>
+            </Box> */}
 
             {/* BILL NO */}
             <Box w="50px">
@@ -308,7 +308,7 @@ export default function TransactionHeaderForm({
                         <Switch.HiddenInput />
                         <Switch.Control >
                             <Switch.Thumb>
-                                <Switch.ThumbIndicator fallback={<HiX color="blue" />}>
+                                <Switch.ThumbIndicator fallback={<HiX color="black" />}>
                                     <HiCheck />
                                 </Switch.ThumbIndicator>
                             </Switch.Thumb>

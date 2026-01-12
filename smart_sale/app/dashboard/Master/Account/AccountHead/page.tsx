@@ -46,78 +46,92 @@ import { AccountTypeList } from "@/data/AccountType";
 import { useAllStates } from "@/hooks/state/useStates";
 import { useAllAccountHead ,useCreateAccountHead ,useUpdateAccountHead ,useAccountHeadById } from "@/hooks/accountHead/useAccountHead";
 import { AccountHead } from "@/types/accountHead/AccountHead";
+import { SelectCombobox } from "@/components/ui/selectComboBox";
+import { all } from "axios";
 
 function AccountHeadMaster() {
-
     const { theme } = useTheme();
 
+    /* -------------------- UI PROPS -------------------- */
+    const labelProps = { fontSize: "2xs" };
+    const inputProps = { size: "2xs" };
+
     /* -------------------- API HOOKS -------------------- */
-
-
     const { data, isLoading } = useAllCompanies();
     const router = useRouter();
-    const {setData ,setColumns ,setShowSno} =usePrint();
+    const { setData, setColumns, setShowSno } = usePrint();
     const companies = data?.data ?? [];
-    const { contains } = useFilter({ sensitivity: "base" });
-    const {data:allStates ,isLoading:stateLoading ,isError:stateError} = useAllStates();
-    console.log(allStates ,'states')
 
-    const {data:allAccountHead ,isLoading:accountHeadLoading ,isError:accountHeadError} = useAllAccountHead();
+    const { contains } = useFilter({ sensitivity: "base" });
+
+    const {
+        data: allStates,
+        isLoading: stateLoading,
+        isError: stateError,
+    } = useAllStates();
+
+    const {
+        data: allAccountHead,
+        isLoading: accountHeadLoading,
+        isError: accountHeadError,
+        refetch,
+    } = useAllAccountHead();
 
 
 
     const { mutate: createAccountHead, isPending } = useCreateAccountHead();
     const { mutate: updateAccountHead, isPending: isUpdating } = useUpdateAccountHead();
 
+    const controller = new AbortController();
+    const [accountId ,setAccountId]=useState<string|undefined>("");
 
     /* -------------------- FORM STATE -------------------- */
     const [form, setForm] = useState<AccountHead>({
-
-        ACNAME:"",
-        ACTYPE:"",
-        COMPANYID: "",
+        ACCODE: "",
+        ACNAME: "",
+        ACTYPE: "",
         ADDRESS1: "",
-        ADDRESS2:"",
-        AREA:"",
-        CITY:"",
+        ADDRESS2: "",
+        AREA: "",
+        CITY: "",
         STATEID: "",
         PINCODE: "",
-        MOBILE:"",   
+        MOBILE: "",
         EMAILID: "",
         GSTNO: "",
+        PAN: "",
+        WEBSITE: "",
+        AADHARNO: "",
+        OPENING_CASH: "",
+        OPENING_PURE: "",
+        OPENING_WEIGHT: "",
         ACTIVE: "Y",
-       
     });
-    const [highlightedId ,setHighlightedId] = useState<Number>()
 
-    const [logoFile, setLogoFile] = useState<File>();
-    const [imagePreview, setImagePreview] = useState<string | null>(null);
+    /* -------------------- UI STATE -------------------- */
+    const [highlightedId, setHighlightedId] = useState<number | undefined>();
     const [editId, setEditId] = useState<string | null>(null);
+    const [inputValue, setInputValue] = useState("");
 
+    /* -------------------- FILE STATE -------------------- */
+    const [logoFile, setLogoFile] = useState<File | undefined>();
+    const [imagePreview, setImagePreview] = useState<string | null>(null);
 
+    /* -------------------- SELECT COLLECTIONS -------------------- */
+    const [stateCollection, setStateCollection] = useState<any[]>([]);
+    const [companyCollection, setCompanyCollection] = useState<any[]>([]);
 
-
-    /* -------------------- SELECT OPTIONS -------------------- */
-
-    const accountList = Array.isArray(allAccountHead?.data)
-        ? allAccountHead.data
+    /* -------------------- SAFE DATA -------------------- */
+    const accountList = Array.isArray(allAccountHead?.data?.acheads)
+        ? allAccountHead.data.acheads
         : [];
-   
-    const CompaniesList = useMemo(() => {
-        return (
-            companies.map((i: any) => ({
-                label: i.COMPANYNAME,
-                value: String(i.COMPANYID),
-            })) ?? []
-        );
-    }, [companies]);
 
-
-    const { collection: accountTypeCollection , filter:accountTypeFilter } = useListCollection({
-        initialItems: AccountTypeList,
-        filter: contains,
-    })
-
+    const safeValue = (
+        value: string|undefined,
+        collection: { label: string; value: string }[]
+    ): string|undefined => {
+        return collection.some(item => item.value === value) ? value : "";
+    };
 
     const activeStatus = createListCollection({
         items: [
@@ -126,120 +140,134 @@ function AccountHeadMaster() {
         ],
     });
 
-    const stateItems = createListCollection({
-        items: [
-            { label: "TAMILNADU" ,value :'TAMILNADU'},
-          
-        ],
-    });
+    /* -------------------- EFFECTS -------------------- */
 
-
-    const { collection: companyListCollection, filter: companyFilter, set: setItems } = useListCollection({
-        initialItems: CompaniesList,
-        filter: contains,
-        itemToValue: (item) => item.value,
-        itemToString: (item) => item.label,
-    })
-
-    const { collection: allStatesList, filter: stateFilter, set: setStateList } = useListCollection({
-        initialItems: allStates,
-        filter: contains,
-        itemToValue: (i:any) => i.stateId,
-        itemToString: (i) => i.stateName,
-    })
-
-
-
+    // Auto code generate
     useEffect(() => {
-        if (!CompaniesList.length) return;
+        setAccountId(allAccountHead?.data?.nextAccode)
+        if (!editId) {
+            setForm((prev) => ({
+                ...prev,
+                ACCODE: String(accountId ?? ""),
+                ACNAME: "",
+                ACTYPE: "",
+                ADDRESS1: "",
+                ADDRESS2: "",
+                AREA: "",
+                CITY: "",
+                STATEID: "",
+                PINCODE: "",
+                MOBILE: "",
+                EMAILID: "",
+                GSTNO: "",
+                ACTIVE: "Y",
+                OPENING_CASH: "",
+                OPENING_PURE: "",
+                OPENING_WEIGHT: "",
+                PAN: "",
+                WEBSITE: "",
+                AADHARNO: "",
+            }));
+        }
+      
+        return () => {
+            controller.abort();
+        };
+    }, [editId, allAccountHead ,accountId]);
 
-        setItems(CompaniesList);    // ✅ CORRECT
-        companyFilter("");        // optional reset
-    }, [CompaniesList, setItems, companyFilter]);
+    // Company dropdown
     useEffect(() => {
-   
+        if (!companies?.length) return;
+
+        const mapped = companies.map((c: any) => ({
+            label: c.COMPANYNAME,
+            value: String(c.COMPANYID),
+        }));
+
+        setCompanyCollection(mapped);
+    }, [companies]);
+
+    // State dropdown
+    useEffect(() => {
         if (!allStates?.length) return;
 
-        setStateList(allStates);    // ✅ CORRECT
-        stateFilter("");        // optional reset
-    }, [CompaniesList, setItems, companyFilter]);
+        const mapped = allStates.map((s: any) => ({
+            label: s.stateName,
+            value: String(s.stateId),
+        }));
 
+        setStateCollection(mapped);
+    }, [allStates]);
 
-    const { data: accountHeadData } = useAccountHeadById(Number(editId) ?? '');
-
-
+    const { data: accountHeadData } = useAccountHeadById(Number(editId) ?? 0);
     const account = accountHeadData?.data;
 
-
+    // Edit load
     useEffect(() => {
         if (!account) return;
-          
-        setForm({
 
-            ACNAME:account.ACNAME ?? "",
-            ACTYPE:account.ACTYPE ?? "",
-            COMPANYID: account.COMPANYID ?? "",
+        setForm({
+            ACCODE: String(account.ACCODE) ?? "",
+            ACNAME: account.ACNAME ?? "",
+            ACTYPE: account.ACTYPE ?? "",
             ADDRESS1: account.ADDRESS1 ?? "",
-            ADDRESS2: account.ADDRESS2?? "",
+            ADDRESS2: account.ADDRESS2 ?? "",
             AREA: account.AREA ?? "",
             CITY: account.CITY ?? "",
             MOBILE: account.MOBILE ?? "",
             EMAILID: account.EMAILID ?? "",
-            PINCODE:account.PINCODE?? "",
+            PINCODE: account.PINCODE ?? "",
             GSTNO: account.GSTNO ?? "",
             ACTIVE: account.ACTIVE ?? "Y",
-            STATEID: account.STATEID ?? "" ,
+            STATEID: String(account.STATEID) ?? "",
+            OPENING_CASH: account.OPENING_CASH ?? "",
+            OPENING_PURE: account.OPENING_PURE ?? "",
+            OPENING_WEIGHT: account.OPENING_WEIGHT ?? "",
+            PAN: account.PAN ?? "",
+            WEBSITE: account.WEBSITE ?? "",
+            AADHARNO: account.AADHARNO ?? "",
         });
     }, [account]);
 
-    const getLabelByValue = (collection: any, value: any) =>
-        collection.items.find((item: any) => item.value === value)?.label ?? "";
-
-    const getStateLabelByValue = (collection: any, value: any) =>
-  collection.items.find((item: any) => item.stateId === value)?.stateName ?? "";
-
+    // Scroll + toast after edit load
     useEffect(() => {
         if (!account) return;
 
-        // ✅ AFTER render is fully committed
         setTimeout(() => {
             toastLoaded("Account Head");
             ScrollToTop();
         }, 0);
-
-
     }, [account]);
 
+    // Highlight reset
     useEffect(() => {
         if (!highlightedId) return;
 
-        // ✅ AFTER render is fully committed
         const timer = setTimeout(() => {
-            
             setHighlightedId(undefined);
         }, 3000);
 
         return () => clearTimeout(timer);
-
     }, [highlightedId]);
 
-
-
-
-
     /* -------------------- HANDLERS -------------------- */
+
     const handleChange = (field: keyof AccountHead, value: any) => {
-        setForm((prev) => ({ ...prev, [field]: value }));
+        setForm((prev) => ({
+            ...prev,
+            [field]: value,
+        }));
     };
-    
+
     const resetForm = () => {
         setEditId(null);
         setLogoFile(undefined);
         setImagePreview(null);
+
         setForm({
-            COMPANYID: "",
-            COMPANYNAME: "",
-            // costid: "",
+            ACCODE: String(accountId ?? ""),
+            ACNAME: "",
+            ACTYPE: "",
             ADDRESS1: "",
             ADDRESS2: "",
             AREA: "",
@@ -249,22 +277,19 @@ function AccountHeadMaster() {
             MOBILE: "",
             EMAILID: "",
             GSTNO: "",
+            PAN: "",
+            WEBSITE: "",
+            AADHARNO: "",
+            OPENING_CASH: "",
+            OPENING_PURE: "",
+            OPENING_WEIGHT: "",
             ACTIVE: "Y",
-           
         });
     };
 
-
-    // const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    //     const file = e.target.files?.[0];
-    //     if (file) {
-    //         setLogoFile(file);
-    //         setImagePreview(URL.createObjectURL(file));
-    //     }
-    // };
-
+    /* -------------------- SAVE -------------------- */
     const handleSave = () => {
-        if (!form.ACNAME) {
+        if (!form.ACNAME?.trim()) {
             toastError("Name is required");
             return;
         }
@@ -273,103 +298,133 @@ function AccountHeadMaster() {
             toastError("Account Type is required");
             return;
         }
-        if (!form.COMPANYID?.trim()) {
-            toastError("Account Type is required");
-            return;
-        }
 
-        if(!form.ADDRESS1?.trim()){
+        if (!form.ADDRESS1?.trim()) {
             toastError("Address is required");
             return;
         }
-        if(!form.AREA?.trim()){
+
+        if (!form.AREA?.trim()) {
             toastError("Area is required");
             return;
         }
-        if(!form.CITY?.trim()){
+
+        if (!form.CITY?.trim()) {
             toastError("City is required");
             return;
         }
-        if(!form.PINCODE?.trim()){
+
+        if (!form.PINCODE?.trim()) {
             toastError("Pincode is required");
             return;
         }
-       
-        if(form.PINCODE){
+
+        if (form.PINCODE) {
             const pinRegex = /^[0-9]{6}$/;
             if (!pinRegex.test(form.PINCODE)) {
                 toastError("Pincode must be exactly 6 digits");
                 return;
             }
         }
-        if(!form.MOBILE?.trim()){
+
+        if (!form.MOBILE?.trim()) {
             toastError("Mobile Number is required");
             return;
         }
-        if (form.PINCODE) {
+
+        if (form.MOBILE) {
             const mobileRegex = /^[0-9]{10}$/;
             if (!mobileRegex.test(form.MOBILE)) {
-                toastError("mobile number must be exactly 10 digits");
+                toastError("Mobile number must be exactly 10 digits");
                 return;
             }
         }
-        if(!form.EMAILID?.trim()){
+
+        if (!form.EMAILID?.trim()) {
             toastError("Email is required");
             return;
         }
+        if(form.GSTNO){
+            const regexp = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
 
-       
-        if (editId) {
-            updateAccountHead({
-                id: Number(editId),
-                data: form,
-            } ,{
-                onSuccess : () =>{
-                    resetForm;
-                    setHighlightedId(Number(editId));
-                }
-            }) 
-            ;
-          
-        } else {
-            createAccountHead(form);
-            
+               if(!regexp.test(form.GSTNO)){
+                toastError("Invalid GST Number");
+                return;
+            }
+        }
+           
+        if (form.AADHARNO) {
+            const aadharRegex = /^[0-9]{12}$/;
+            if (!aadharRegex.test(form.AADHARNO)) {
+                toastError("Aadhar must be exactly 12 digits");
+                return;
+            }
         }
 
-        resetForm();
+        if (form.PAN) {
+            const panRegex = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/;
+            if (!panRegex.test(form.PAN)) {
+                toastError("PAN must be in format: ABCDE1234F");
+                return;
+            }
+        }
+console.log(form ,'updating ')
+        if (editId) {
+            updateAccountHead(
+                {
+                    id: Number(editId),
+                    data: form,
+                },
+                {
+                    onSuccess: () => {
+                        toastUpdated("Updated successfully");
+                        refetch();
+                        setHighlightedId(Number(editId));
+                        resetForm();
+                    },
+                }
+            );
+        } else {
+            createAccountHead(form, {
+                onSuccess: () => {
+                    toastCreated("Created successfully");
+                    refetch();
+                    resetForm();
+                },
+            });
+        }
     };
 
-
-    const handleEdit = (account:AccountHead) => {
-        setEditId(account?.ACCODE ?? ""); // 🔥 trigger useCompanyById
+    /* -------------------- EDIT -------------------- */
+    const handleEdit = (account: AccountHead) => {
+        setEditId(String(account?.ACCODE));
     };
 
+    /* -------------------- TABLE COLUMNS -------------------- */
     const accountColumn = [
-        {key:'ACNAME' , label:'Name' },
-        { key: 'ACTYPE', label: 'Account Type' },
-        {key:'COMPANYNAME' , label:'Company Name' },
-        {key:'active', label:'Active'},
-        {key:'actions', label:'Actions'},
+        { key: "ACNAME", label: "Name" },
+        { key: "ACTYPE", label: "Account Type" },
+        { key: "ACTIVE", label: "Active" },
+        { key: "actions", label: "Actions" },
     ];
- 
-    /* -------------------- Export -------------------- */
+
+    /* -------------------- EXPORT -------------------- */
     const handleExport = (option: string) => {
-        setData(companies);
+        setData(accountList);
         setColumns([
-            { key: 'ACNAME', label: 'Name' },
-            { key: 'COMPANYNAME', label: 'Company Name' },
-            { key: 'active', label: 'Active' },
+            { key: "ACNAME", label: "Name" },
+            { key: "ACTYPE", label: "Account Type" },
+            { key: "ACTIVE", label: "Active" },
         ]);
         setShowSno(true);
         router.push(`/print?export=${option}`);
-    }
+    };
 
- 
+    
     /* -------------------- UI -------------------- */
     return (
         <Box
-            className={fontVariables}
-            fontFamily="var(--font-lustria)"
+            fontWeight='500'
             bg={theme.colors.primary}
             color={theme.colors.secondary}
         
@@ -385,223 +440,236 @@ function AccountHeadMaster() {
 
                         <Fieldset.Root size="sm" width="100%">
                             <Fieldset.Content>
-                                <Grid templateColumns="repeat(2,1fr)" gap={2}>
-                                    <Field.Root>
-                                        <Field.Label>Name</Field.Label>
-                                        <CapitalizedInput<AccountHead>
+                                <Grid templateColumns="repeat(2,1fr)" gap={3}>
+
+                                    {/* ENTRY ID */}
+                                    <Box display="flex" alignItems="center" gap={2}>
+                                        <Box minW="110px" fontSize="2xs">ACCOUNT ID :</Box>
+                                        <CapitalizedInput
+                                            field="ACCODE"
+                                            value={form.ACCODE}
+                                            onChange={handleChange}
+                                            size="2xs"
+                                            maxWidth="100px"
+                                            disabled
+                                        />
+                                    </Box>
+
+                                    {/* CUSTOMER NAME */}
+                                    <Box display="flex" alignItems="center" gap={2}>
+                                        <Box minW="110px" fontSize="2xs">CUSTOMER NAME :</Box>
+                                        <CapitalizedInput
                                             field="ACNAME"
                                             value={form.ACNAME}
                                             onChange={handleChange}
-                                         
+                                            size="2xs"
                                         />
-                                    </Field.Root>
-                                    <Combobox.Root
-                                        collection={accountTypeCollection}
-                                        openOnClick
-                                        value={form.ACTYPE ? [form.ACTYPE] : []}
-                                        inputValue={getLabelByValue(accountTypeCollection, form.ACTYPE)}
-                                        onValueChange={(details) => {
-                                            const selectedValue = details.value[0] ?? ""
+                                    </Box>
 
-                                            setForm((prev) => ({
-                                                ...prev,
-                                                ACTYPE: selectedValue, // ✅ store VALUE directly
-                                            }))
-                                        }}
-                                        onInputValueChange={(e) => accountTypeFilter(e.inputValue)}
-                                    >
-                                        <Combobox.Label>Account Type</Combobox.Label>
-                                        <Combobox.Control>
-                                            <Combobox.Input placeholder="Type to search" />
-                                            <Combobox.IndicatorGroup>
-                                                <Combobox.ClearTrigger />
-                                                <Combobox.Trigger />
-                                            </Combobox.IndicatorGroup>
-                                        </Combobox.Control>
-                                        <Portal>
-                                            <Combobox.Positioner>
-                                                <Combobox.Content>
-                                                    <Combobox.Empty>No items found</Combobox.Empty>
-                                                    {accountTypeCollection.items.map((item: any) => (
-                                                        <Combobox.Item item={item} key={item.value}>
-                                                            {item.label}
-                                                            <Combobox.ItemIndicator />
-                                                        </Combobox.Item>
-                                                    ))}
-                                                </Combobox.Content>
-                                            </Combobox.Positioner>
-                                        </Portal>
-                                    </Combobox.Root>
-                                    <Combobox.Root
-                                        collection={companyListCollection}
-                                        onInputValueChange={(e) => companyFilter(e.inputValue)}
-
-                                        openOnClick
-                                        value={form.COMPANYID ? [form.COMPANYID] : []}
-                                        inputValue={getLabelByValue(companyListCollection, form.COMPANYID)}
-                                        onValueChange={(details) => {
-                                            const selectedValue = details.value[0] ?? ""
-
-                                            setForm((prev) => ({
-                                                ...prev,
-                                                COMPANYID: selectedValue, // ✅ store VALUE directly
-                                            }))
-                                        }}
-                                     
-
-                                    >
-                                        <Combobox.Label>Company</Combobox.Label>
-                                        <Combobox.Control>
-                                            <Combobox.Input placeholder="Type to search" />
-                                            <Combobox.IndicatorGroup>
-                                                <Combobox.ClearTrigger />
-                                                <Combobox.Trigger />
-                                            </Combobox.IndicatorGroup>
-                                        </Combobox.Control>
-                                        <Portal>
-                                            <Combobox.Positioner>
-                                                <Combobox.Content>
-                                                    <Combobox.Empty>No items found</Combobox.Empty>
-                                                    {companyListCollection.items.map((item: any) => (
-                                                        <Combobox.Item item={item} key={item.value}>
-                                                            {item.label}
-                                                            <Combobox.ItemIndicator />
-                                                        </Combobox.Item>
-                                                    ))}
-                                                </Combobox.Content>
-                                            </Combobox.Positioner>
-                                        </Portal>
-                                    </Combobox.Root>
-
-                                    {/* <Field.Root>
-                                        <Field.Label>Cost Id</Field.Label>
-                                        <Input
-                                            value={form.costid}
-                                            onChange={(e) => handleChange("costid", e.target.value)}
+                                    {/* CUSTOMER TYPE */}
+                                    <Box display="flex" alignItems="center" gap={2}>
+                                        <Box minW="110px" fontSize="2xs">CUSTOMER TYPE :</Box>
+                                        <SelectCombobox
+                                            // label="ACTYPE"
+                                            value={safeValue(form.ACTYPE, AccountTypeList)}
+                                            onChange={(val) => handleChange("ACTYPE", val)}
+                                            editId={Number(editId)}
+                                            items={AccountTypeList}
+                                            placeholder="Select Type"
                                         />
-                                    </Field.Root> */}
+                                    </Box>
 
-
-
-                                    <Field.Root gridColumn="span 2">
-                                        <Field.Label>Address</Field.Label>
+                                    {/* ADDRESS (span 2) */}
+                                    <Box display="flex" alignItems="center" gap={2} >
+                                        <Box minW="110px" fontSize="2xs">ADDRESS :</Box>
                                         <CapitalizedInput
                                             field="ADDRESS1"
                                             value={form.ADDRESS1}
                                             onChange={handleChange}
+                                            size="2xs"
+                                            allowSpecial
                                         />
-                                    </Field.Root>
+                                    </Box>
 
-                                    <Field.Root gridColumn="span">
-                                        <Field.Label>Area</Field.Label>
+                                    {/* AREA */}
+                                    <Box display="flex" alignItems="center" gap={2}>
+                                        <Box minW="110px" fontSize="2xs">AREA :</Box>
                                         <CapitalizedInput
                                             field="AREA"
                                             value={form.AREA}
                                             onChange={handleChange}
+                                            size="2xs"
                                         />
-                                    </Field.Root>
+                                    </Box>
 
-                                    <Field.Root gridColumn="span">
-                                        <Field.Label>City</Field.Label>
+                                    {/* CITY */}
+                                    <Box display="flex" alignItems="center" gap={2}>
+                                        <Box minW="110px" fontSize="2xs">CITY :</Box>
                                         <CapitalizedInput
                                             field="CITY"
                                             value={form.CITY}
                                             onChange={handleChange}
+                                            size="2xs"
                                         />
-                                    </Field.Root>
+                                    </Box>
 
-                                    <Combobox.Root
-                                        collection={allStatesList}
-                                        onInputValueChange={(e) => stateFilter(e.inputValue)}
-                                        openOnClick
-                                        value={form.STATEID ? [form.STATEID] : []}
-                                        inputValue={getStateLabelByValue(allStatesList, form.STATEID)}
-                                        onValueChange={(details) => {
-                                            const selectedValue = details.value[0] ?? ""
+                                    {/* STATE */}
+                                    <Box display="flex" alignItems="center" gap={2}>
+                                        <Box minW="110px" fontSize="2xs">STATE :</Box>
+                                        <SelectCombobox
+                                            // label="STATEID"
+                                            value={safeValue(form.STATEID, stateCollection)}
+                                            onChange={(val) => handleChange("STATEID", val)}
+                                            editId={Number(editId)}
+                                            items={stateCollection}
+                                            placeholder="Select State"
+                                        />
+                                    </Box>
 
-                                            setForm((prev) => ({
-                                                ...prev,
-                                                STATEID: selectedValue, // ✅ store VALUE directly
-                                            }))
-                                        }}
-
-                                    >
-                                        <Combobox.Label>State</Combobox.Label>
-                                        <Combobox.Control>
-                                            <Combobox.Input placeholder="Type to search" />
-                                            <Combobox.IndicatorGroup>
-                                                <Combobox.ClearTrigger />
-                                                <Combobox.Trigger />
-                                            </Combobox.IndicatorGroup>
-                                        </Combobox.Control>
-                                        <Portal>
-                                            <Combobox.Positioner>
-                                                <Combobox.Content>
-                                                    <Combobox.Empty>No items found</Combobox.Empty>
-                                                    {allStatesList.items.map((item:any) => (
-                                                        <Combobox.Item item={item} key={item.stateId}>
-                                                            {item.stateName}
-                                                            <Combobox.ItemIndicator />
-                                                        </Combobox.Item>
-                                                    ))}
-                                                </Combobox.Content>
-                                            </Combobox.Positioner>
-                                        </Portal>
-                                    </Combobox.Root>
-                                    
-                                    <Field.Root>
-
-                                        <Field.Label>PinCode</Field.Label>
+                                    {/* PINCODE */}
+                                    <Box display="flex" alignItems="center" gap={2}>
+                                        <Box minW="110px" fontSize="2xs">PINCODE :</Box>
                                         <CapitalizedInput
                                             field="PINCODE"
                                             value={form.PINCODE}
                                             onChange={handleChange}
-                                            max={999999}
+                                            size="2xs"
                                             type="number"
-                                          
+                                            max={999999}
                                         />
-                                    </Field.Root>
-                                    <Field.Root>
-                                        <Field.Label>Mobile</Field.Label>
+                                    </Box>
+
+                                    {/* MOBILE */}
+                                    <Box display="flex" alignItems="center" gap={2}>
+                                        <Box minW="110px" fontSize="2xs">MOBILE :</Box>
                                         <CapitalizedInput
                                             field="MOBILE"
                                             value={form.MOBILE}
                                             onChange={handleChange}
-                                            max={9999999999}
+                                            size="2xs"
                                             type="number"
-                                       
+                                            max={9999999999}
+                                            allowDecimal={false}
                                         />
-                                    </Field.Root>
-                                    <Field.Root>
-                                        <Field.Label>Email</Field.Label>
+                                    </Box>
+
+                                    {/* EMAIL */}
+                                    <Box display="flex" alignItems="center" gap={2}>
+                                        <Box minW="110px" fontSize="2xs">EMAIL :</Box>
                                         <Input
+                                            size="2xs"
                                             value={form.EMAILID}
                                             onChange={(e) => handleChange("EMAILID", e.target.value)}
                                             type="email"
+                                            bg={theme.colors.greyColor}
                                         />
-                                    </Field.Root>
-                                    <Field.Root>
-                                        <Field.Label>GSTIN</Field.Label>
+                                    </Box>
+
+                                    {/* GSTIN */}
+                                    <Box display="flex" alignItems="center" gap={2}>
+                                        <Box minW="110px" fontSize="2xs">GSTIN :</Box>
                                         <CapitalizedInput
                                             field="GSTNO"
                                             value={form.GSTNO}
                                             onChange={handleChange}
-                                            
+                                            size="2xs"
                                         />
-                                    </Field.Root>
+                                    </Box>
 
-                                    
+                                    {/* OPENING WEIGHT */}
+                                    <Box display="flex" alignItems="center" gap={2}>
+                                        <Box minW="110px" fontSize="2xs">OPENING WEIGHT :</Box>
+                                        <CapitalizedInput
+                                            field="OPENING_WEIGHT"
+                                            value={form.OPENING_WEIGHT}
+                                            onChange={handleChange}
+                                            size="2xs"
+                                            type="number"
+                                        />
+                                    </Box>
 
-                                    <Field.Root>
-                                        <Field.Label>Active</Field.Label>
-                                        <NativeSelect.Root>
+                                    {/* OPENING PURE */}
+                                    <Box display="flex" alignItems="center" gap={2}>
+                                        <Box minW="110px" fontSize="2xs">OPENING PURE :</Box>
+                                        <CapitalizedInput
+                                            field="OPENING_PURE"
+                                            value={form.OPENING_PURE}
+                                            onChange={handleChange}
+                                            size="2xs"
+                                            type="number"
+                                        />
+                                    </Box>
+
+                                    {/* OPENING CASH */}
+                                    <Box display="flex" alignItems="center" gap={2}>
+                                        <Box minW="110px" fontSize="2xs">OPENING CASH :</Box>
+                                        <CapitalizedInput
+                                            field="OPENING_CASH"
+                                            value={form.OPENING_CASH}
+                                            onChange={handleChange}
+                                            size="2xs"
+                                            type="number"
+                                        />
+                                    </Box>
+
+                                    {/* AADHAR NO*/}
+                                    <Box display="flex" alignItems="center" gap={2}>
+                                        <Box minW="110px" fontSize="2xs">AADHAR NO :</Box>
+                                        <CapitalizedInput
+                                            field="AADHARNO"
+                                            value={form.AADHARNO}
+                                            onChange={handleChange}
+                                            size="2xs"
+                                            type="number"
+                                            max={999999999999}
+                                            allowDecimal={false}   // 🚫 no dot
+                                        />
+                                    </Box>
+
+                                    {/* PAN NO */}
+                                    <Box display="flex" alignItems="center" gap={2}>
+                                        <Box minW="110px" fontSize="2xs">PAN NO :</Box>
+                                        <CapitalizedInput
+                                            field="PAN"
+                                            value={form.PAN}
+                                            onChange={handleChange}
+                                            size="2xs"
+                                            max={10}
+                                            allowDecimal={false}
+                                        />
+                                    </Box>
+
+                                    {/* WEBSITE*/}
+                                    <Box display="flex" alignItems="center" gap={2}>
+                                        <Box minW="110px" fontSize="2xs">WEBSITE :</Box>
+                                        <CapitalizedInput
+                                            field="WEBSITE"
+                                            value={form.WEBSITE}
+                                            onChange={handleChange}
+                                            size="2xs"
+                                           allowDecimal={true}
+                                        />
+                                    </Box>
+
+                                    {/* ACTIVE */}
+                                    <Box display="flex" alignItems="center" gap={2}>
+                                        <Box minW="110px" fontSize="2xs">ACTIVE :</Box>
+                                        <NativeSelect.Root size="xs" maxW="80px" fontSize='2xs' >
                                             <NativeSelect.Field
                                                 value={form.ACTIVE || "Y"}
                                                 onChange={(e) => handleChange("ACTIVE", e.target.value)}
+                                                css={{
+                                                    backgroundColor: "#eee",
+                                                    color: "#111827",
+                                                    border: "1px solid #e5e7eb",
+                                                    borderRadius: "20px",
+                                                    height: "30px",
+                                                    fontSize: "10px",
+                                                }}
                                             >
-                                                <For each={activeStatus.items}>
+                                                <For each={activeStatus.items} >
                                                     {(item) => (
-                                                        <option key={item.value} value={item.value}>
+                                                        <option key={item.value} value={item.value} className="text-xs ">
                                                             {item.label}
                                                         </option>
                                                     )}
@@ -609,10 +677,12 @@ function AccountHeadMaster() {
                                             </NativeSelect.Field>
                                             <NativeSelect.Indicator />
                                         </NativeSelect.Root>
-                                    </Field.Root>
+                                    </Box>
+
                                 </Grid>
                             </Fieldset.Content>
                         </Fieldset.Root>
+
 
                         <HStack pt={3}>
                             <Button
@@ -641,7 +711,7 @@ function AccountHeadMaster() {
                             <Flex gap={1}>
                                 <Button
                                     variant="ghost"
-                                    size="xs"
+                                    size="2xs"
                                     color={theme.colors.green}
                                     _hover={{ color: "black" }}
                                     onClick={() => handleExport("excel")}
@@ -652,7 +722,7 @@ function AccountHeadMaster() {
 
                                 <Button
                                     variant="ghost"
-                                    size="xs"
+                                    size="2xs"
                                     color={theme.colors.primaryText}
                                     _hover={{ color: "black" }}
                                     onClick={() => handleExport("pdf")}
@@ -670,9 +740,8 @@ function AccountHeadMaster() {
                             renderRow={(account) => (
                                 <>
                                     <Table.Cell>{account.ACNAME}</Table.Cell>
-                            
                                     <Table.Cell>{account.ACTYPE}</Table.Cell>
-                                    <Table.Cell>{account.COMPANYNAME}</Table.Cell>
+                                    {/* <Table.Cell>{account.COMPANYNAME}</Table.Cell> */}
                                     <Table.Cell textAlign="center">{account.ACTIVE}</Table.Cell>
                                     <Table.Cell>
                                         <Box display="flex" justifyContent="center">
@@ -687,7 +756,7 @@ function AccountHeadMaster() {
                             bodyBg={theme.colors.primary}
                             highlightRowId={highlightedId ? Number(highlightedId) : null} 
                             rowIdKey="ACCODE"
-                         
+                       
                             emptyText="No companies available"
 
                      />

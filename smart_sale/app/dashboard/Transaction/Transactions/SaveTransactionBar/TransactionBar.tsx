@@ -6,6 +6,7 @@ import { Save, RefreshCw } from "lucide-react";
 import Image from "next/image";
 import saveIcon from '@/asserts/icons/save.png';
 import clearIcon from '@/asserts/icons/clear.jpeg';
+import updateIcon from '@/asserts/icons/update.png';
 
 interface SaveTransactionBarProps {
     draftCount: number;
@@ -13,6 +14,7 @@ interface SaveTransactionBarProps {
     onReset: () => void;
     isSaving: boolean;
     theme: any;
+    isEditing:boolean;
 }
 
 export default function SaveTransactionBar({
@@ -21,6 +23,7 @@ export default function SaveTransactionBar({
     onReset,
     isSaving,
     theme,
+    isEditing
 }: SaveTransactionBarProps) {
     return (
         <Flex
@@ -60,7 +63,7 @@ export default function SaveTransactionBar({
                     p={0}
                  
                 >
-                   <Image src={saveIcon} width={60} alt="save" />
+                    <Image src={isEditing ? updateIcon : saveIcon} width={60} alt="save" />
                 </Button>
             </Flex>
         </Flex>

@@ -1,8 +1,8 @@
 import { axiosInstance } from "@/api/axiosInstance";
 import { ApiResponse } from "@/types/api/apiResponse";
-import { AccountHead } from "@/types/accountHead/AccountHead";
+import { AccountHead, AccountHeadCollection } from "@/types/accountHead/AccountHead";
 
-export const getAllAccountHead = async():Promise<ApiResponse<AccountHead[]>> => {
+export const getAllAccountHead = async (): Promise<ApiResponse<AccountHeadCollection>> => {
     try{
         const respose = await axiosInstance.get('/achead');
         return respose.data;

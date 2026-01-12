@@ -1,6 +1,6 @@
 import { axiosInstance } from "@/api/axiosInstance";
 import { ApiResponse } from "@/types/api/apiResponse";
-import { TRANSACTION, CreateTransaction } from "@/types/transcation/Transaction";
+import { TRANSACTION, CreateTransaction, TransactionItem, UpdateTransactionPayload } from "@/types/transcation/Transaction";
 
 const BASE_PATH = "/transaction";
 
@@ -20,11 +20,11 @@ export const TransactionService = {
 
     // GET ALL
     getAll: async (
-        trantype: string,
-        accode: number,
-        startdate: string,
-        enddate: string,
-        itemid:number,
+        trantype?: undefined | null | string,
+        accode?: number | null,
+        startdate?: string | null,
+        enddate?: string | null,
+        itemid?: number | null,
     ): Promise<ApiResponse<any>> => {
         try {
             const params: any = {};
@@ -45,7 +45,7 @@ export const TransactionService = {
     },
     // GET BY TRANSACTION ID
     getByTransId: async (
-        transId: string,
+        transId: string | null,
     ): Promise<ApiResponse<any>> => {
         try {
             const { data } = await axiosInstance.get(`${BASE_PATH}/${transId}`);
@@ -74,8 +74,10 @@ export const TransactionService = {
     // UPDATE (PUT)
     update: async (
         sno: string,
-        payload: TRANSACTION,
-    ): Promise<ApiResponse<TRANSACTION>> => {
+        payload: UpdateTransactionPayload,
+    ): Promise<ApiResponse<TransactionItem>> => {
+
+        console.log(sno,'updating sno')
         try {
             const { data } = await axiosInstance.put(
                 `${BASE_PATH}/${sno}`,
