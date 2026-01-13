@@ -10,6 +10,7 @@ import {
     Grid,
     GridItem,
     InputGroup,
+    HStack
 } from "@chakra-ui/react";
 
 import { useTheme } from "@/context/theme/themeContext";
@@ -78,164 +79,108 @@ export default function LoginPage() {
     return (
         <>
             <Toaster />
-
             <Box
-                className={fontVariables}
-                fontFamily="var(--font-lustria)"
-                bg={theme.colors.primary}
-                color={theme.colors.secondary}
                 minH="100vh"
-                overflow="hidden"
+                bgImage="url('https://www.goldmarket.fr/wp-content/uploads/2025/09/44dd529dthumbnail-1110x550.jpeg.webp')"
+                bgSize="cover"
+                backgroundPosition='center'
+                bgRepeat="no-repeat"
+                display="flex"
+                alignItems="center"
+              
             >
-                <Grid templateColumns={{ base: "1fr", lg: "1fr 1fr" }} h="100vh">
-                    {/* LEFT — LOGIN FORM */}
-                    <GridItem
-                        display="flex"
-                        alignItems="center"
-                        flexDirection="column"
-                        justifyContent="center"
-                        p={{ base: 4, md: 8 }}
-                        gap={2}
+                {/* Optional Dark Overlay */}
+                <Box
+                    position="absolute"
+                
+                   
+                />
+
+                {/* Carousel */}
+               
+
+                {/* Login Card */}
+                <VStack
+                    zIndex={1}
+                    w="full"
+                    maxW="420px"
+                    
+                    bg="whiteAlpha.900"
+                    p={8}
+                    borderRadius="xl"
+                    boxShadow="0 0 40px rgba(255, 15, 255, 0.3)"
+                    gap={4}
+                    css={{ xs: { marginLeft: '0px' }, sm:{marginLeft:'80px'}}}
+                >
+                    {/* Title */}
+                    <HStack>
+                        <Box color="purple.500" bg='purple.200' p={2} rounded='full'>
+                            <RiLockPasswordLine size={20} />
+                        </Box>
+                        <Text
+                            fontSize="xl"
+                            fontWeight="bold"
+                            color="purple.600"
+                        >
+                            Secured Login
+                        </Text>
+                    </HStack>
+
+                    {/* FORM */}
+                    <VStack
+                        as="form"
+                        w="full"
+                        onSubmit={handleSubmit(onSubmit)}
+                        gap={4}
                     >
-                        <VStack
+                        {/* Username */}
+                        <Box w="full">
+                            <Text fontSize="sm" mb={1}>Username</Text>
+                            <InputGroup startElement={<LuUser />}>
+                                <Input
+                                    placeholder="ENTER USERNAME"
+                                    size="lg"
+                                    bg="white"
+                                    {...register("username", {
+                                        onChange: (e) => {
+                                            e.target.value = e.target.value.toUpperCase();
+                                        },
+                                    })}
+                                />
+                            </InputGroup>
+                        </Box>
+
+                        {/* Password */}
+                        <Box w="full">
+                            <Text fontSize="sm" mb={1}>Password</Text>
+                            <InputGroup startElement={<RiLockPasswordLine />}>
+                                <PasswordInput
+                                    placeholder="ENTER PASSWORD"
+                                    size="lg"
+                                    bg="white"
+                                    {...register("password", {
+                                        setValueAs: (value) => value?.toUpperCase(),
+                                    })}
+                                />
+                            </InputGroup>
+                        </Box>
+
+                        {/* Button */}
+                        <Button
+                            type="submit"
                             w="full"
-                            maxW="500px"
-                            bg="whiteAlpha.900"
-                            p={{ base: 6, md: 10 }}
-                            borderRadius="xl"
-                            border="1px solid #eef"
-                            boxShadow="0 0 30px rgba(212, 212, 212, 0.2)"
+                            bg="purple.600"
+                            color="white"
+                            h="40px"
+                            borderRadius="lg"
+                            loading={isSubmitting}
                         >
-                            <Text
-                                fontFamily="var(--font-nosifer)"
-                                fontSize={{ base: "20px", md: "24px" }}
-                                color="rgba(154, 12, 170, 1)"
-                                textShadow="0 0 15px rgba(154, 12, 170, 1)"
-                                textAlign="center"
-                            >
-                                Welcome Back
-                            </Text>
-
-                            <VStack
-                                as="form"
-                                width="full"
-                                onSubmit={handleSubmit(onSubmit)}
-                                gap={4}
-                            >
-                                {/* Login Name */}
-                                <Box w="full">
-                                    <Text fontSize="sm" fontWeight="500" mb={1}>
-                                        Login Name
-                                    </Text>
-                                    <InputGroup startElement={<LuUser />} >
-                                    <Input
-                                        placeholder="Enter Your Login Name"
-                                        size="lg"
-                                        bg="white"
-                                        border="1px solid"
-                                        borderColor="gray.200"
-                                        color="black"
-                                        _focus={{
-                                            borderColor: "purple.400",
-                                            boxShadow: "0 0 0 1px var(--chakra-colors-purple-400)",
-                                        }}
-                                        {...register("username",{
-                                                onChange: (e) => {
-                                                    e.target.value = e.target.value.toUpperCase();
-                                                },
-                                        })}
-                                    />
-                                    </InputGroup>
-
-                                    {errors.username && (
-                                        <Text fontSize="xs" color="red.500" mt={1}>
-                                            {errors.username.message}
-                                        </Text>
-                                    )}
-                                </Box>
-
-                                {/* Password */}
-                                <Box w="full">
-                                    <Text fontSize="sm" fontWeight="500" mb={1}>
-                                        Password
-                                    </Text>
-                                    <InputGroup startElement = {<RiLockPasswordLine />} >
-                                        <PasswordInput
-                                            placeholder="Enter Your Password"
-                                            size="lg"
-                                            bg="white"
-                                            border="1px solid"
-                                            borderColor="gray.200"
-                                            color="black"
-                                            _focus={{
-                                                borderColor: "purple.400",
-                                                boxShadow: "0 0 0 1px var(--chakra-colors-purple-400)",
-                                            }}
-                                            {...register("password", {
-                                                setValueAs: (value) => value?.toUpperCase(),
-                                            })}
-                                        />
-                                    </InputGroup>
-
-                                    {errors.password && (
-                                        <Text fontSize="xs" color="red.500" mt={1}>
-                                            {errors.password.message}
-                                        </Text>
-                                    )}
-                                </Box>
-
-
-                                {/* BUTTON */}
-                                <Button
-                                    type="submit"
-                                    w="full"
-                                    bg="rgba(154, 12, 170, 1)"
-                                    color="white"
-                                    fontFamily="var(--font-sofia)"
-                                    fontSize="16px"
-                                    h="40px"
-                                    borderRadius="lg"
-                                    loading={isSubmitting}
-                                >
-                                    Sign In
-                                </Button>
-                            </VStack>
-                        </VStack>
-                    </GridItem>
-
-                    {/* RIGHT — IMAGE */}
-                    <GridItem display="flex" alignItems="center" justifyContent="center">
-                        <Carousel.Root
-                            autoplay={{ delay: 3000 }}
-                            slideCount={carouselImages.length}
-                            mx="auto"
-                            maxW="full"
-                            p={4}
-                            loop
-                        >
-                            <Carousel.ItemGroup>
-                                {carouselImages.map((img, index) => (
-                                    <Carousel.Item key={index} index={index}>
-                                        <Box
-                                            w="100%"
-                                            h={{ base: "200px", md: "400px" }}
-                                            overflow="hidden"
-                                        >
-                                            <img
-                                                src={img}
-                                                width="100%"
-                                                height="100%"
-                                                draggable={false}
-                                                style={{ objectFit: "cover" }}
-                                            />
-                                        </Box>
-                                    </Carousel.Item>
-                                ))}
-                            </Carousel.ItemGroup>
-                        </Carousel.Root>
-                    </GridItem>
-                </Grid>
+                            Proceed
+                        </Button>
+                    </VStack>
+                </VStack>
             </Box>
+
         </>
     );
 }

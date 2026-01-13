@@ -242,12 +242,12 @@ export default function ItemMasterPage() {
                         boxShadow="0 0 20px rgba(212,212,212,0.2)"
                         border="1px solid #eee"
                     >
-                        <Text fontSize="sm" fontWeight="600" textAlign="center">
-                            {editingId ? "Edit Item" : "Item Master"}
+                        <Text fontSize="medium" fontWeight="600" textAlign="center">
+                            {editingId ? "EDIT ITEM" : "ITEM MASTER"}
                         </Text>
 
                         <Fieldset.Root width="100%">
-                            <Grid templateColumns="repeat(2, 1fr)" gap={4}>
+                            <Grid css={{ sm: { gridTemplateColumns: "repeat(1, 1fr)" }, md: { gridTemplateColumns: "repeat(2, 1fr)" } }} gap={4}>
                                 {/* ================= FIRST ROW ================= */}
                                 <Field.Root>
                                     <HStack>
@@ -346,7 +346,7 @@ export default function ItemMasterPage() {
                                                     }}
                                                 >
                                                     {metals.map((m: any) => (
-                                                        <option key={m.metalId} value={m.metalId}>
+                                                        <option key={m.sno} value={m.sno}>
                                                             {m.metalName}
                                                         </option>
                                                     ))}

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState ,useEffect ,useMemo} from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
     Box,
     Button,
@@ -35,26 +35,22 @@ import {
 } from "@/hooks/company/useCompany";
 
 import ScrollToTop from "@/component/scroll/ScrollToTop";
-import { CreateCompanyPayload, Company } from "@/service/CompanyService";
 import { toastCreated, toastError, toastLoaded, toastUpdated, toastUploaded } from "@/component/toast/toast";
 import { CustomTable } from "@/component/table/CustomTable";
 import { CapitalizedInput } from "@/component/form/CapitalizedInput";
 import { usePrint } from "@/context/print/usePrintContext";
 import { useRouter } from "next/navigation";
-import { FaPrint ,FaFileExcel } from "react-icons/fa";
-import { AccountTypeList } from "@/data/AccountType";
+import { FaPrint, FaFileExcel } from "react-icons/fa";
+import { AccountTypeList } from "@/data/ACCOUNTtYPE/AccountType";
 import { useAllStates } from "@/hooks/state/useStates";
-import { useAllAccountHead ,useCreateAccountHead ,useUpdateAccountHead ,useAccountHeadById } from "@/hooks/accountHead/useAccountHead";
+import { useAllAccountHead, useCreateAccountHead, useUpdateAccountHead, useAccountHeadById } from "@/hooks/accountHead/useAccountHead";
 import { AccountHead } from "@/types/accountHead/AccountHead";
 import { SelectCombobox } from "@/components/ui/selectComboBox";
-import { all } from "axios";
 
 function AccountHeadMaster() {
     const { theme } = useTheme();
 
-    /* -------------------- UI PROPS -------------------- */
-    const labelProps = { fontSize: "2xs" };
-    const inputProps = { size: "2xs" };
+
 
     /* -------------------- API HOOKS -------------------- */
     const { data, isLoading } = useAllCompanies();
@@ -62,7 +58,7 @@ function AccountHeadMaster() {
     const { setData, setColumns, setShowSno } = usePrint();
     const companies = data?.data ?? [];
 
-    const { contains } = useFilter({ sensitivity: "base" });
+
 
     const {
         data: allStates,
@@ -83,7 +79,7 @@ function AccountHeadMaster() {
     const { mutate: updateAccountHead, isPending: isUpdating } = useUpdateAccountHead();
 
     const controller = new AbortController();
-    const [accountId ,setAccountId]=useState<string|undefined>("");
+    const [accountId, setAccountId] = useState<string | undefined>("");
 
     /* -------------------- FORM STATE -------------------- */
     const [form, setForm] = useState<AccountHead>({
@@ -111,7 +107,6 @@ function AccountHeadMaster() {
     /* -------------------- UI STATE -------------------- */
     const [highlightedId, setHighlightedId] = useState<number | undefined>();
     const [editId, setEditId] = useState<string | null>(null);
-    const [inputValue, setInputValue] = useState("");
 
     /* -------------------- FILE STATE -------------------- */
     const [logoFile, setLogoFile] = useState<File | undefined>();
@@ -127,9 +122,9 @@ function AccountHeadMaster() {
         : [];
 
     const safeValue = (
-        value: string|undefined,
+        value: string | undefined,
         collection: { label: string; value: string }[]
-    ): string|undefined => {
+    ): string | undefined => {
         return collection.some(item => item.value === value) ? value : "";
     };
 
@@ -169,11 +164,11 @@ function AccountHeadMaster() {
                 AADHARNO: "",
             }));
         }
-      
+
         return () => {
             controller.abort();
         };
-    }, [editId, allAccountHead ,accountId]);
+    }, [editId, allAccountHead, accountId]);
 
     // Company dropdown
     useEffect(() => {
@@ -344,31 +339,31 @@ function AccountHeadMaster() {
             toastError("Email is required");
             return;
         }
-        if(form.GSTNO){
+        if (form.GSTNO) {
             const regexp = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
 
-               if(!regexp.test(form.GSTNO)){
+            if (!regexp.test(form.GSTNO)) {
                 toastError("Invalid GST Number");
                 return;
             }
         }
-           
-        if (form.AADHARNO) {
+
+        if (form.AADHARNO?.trim()) {
             const aadharRegex = /^[0-9]{12}$/;
-            if (!aadharRegex.test(form.AADHARNO)) {
+            if (!aadharRegex.test(form.AADHARNO.trim())) {
                 toastError("Aadhar must be exactly 12 digits");
                 return;
             }
         }
 
-        if (form.PAN) {
+        if (form.PAN?.trim()) {
             const panRegex = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/;
-            if (!panRegex.test(form.PAN)) {
+            if (!panRegex.test(form.PAN.trim().toUpperCase())) {
                 toastError("PAN must be in format: ABCDE1234F");
                 return;
             }
         }
-console.log(form ,'updating ')
+        console.log(form, 'updating ')
         if (editId) {
             updateAccountHead(
                 {
@@ -385,6 +380,9 @@ console.log(form ,'updating ')
                 }
             );
         } else {
+
+
+
             createAccountHead(form, {
                 onSuccess: () => {
                     toastCreated("Created successfully");
@@ -420,27 +418,27 @@ console.log(form ,'updating ')
         router.push(`/print?export=${option}`);
     };
 
-    
+
     /* -------------------- UI -------------------- */
     return (
         <Box
             fontWeight='500'
             bg={theme.colors.primary}
             color={theme.colors.secondary}
-        
+
         >
             <Toaster />
             <Grid templateColumns={{ base: "1fr", lg: "1fr 1fr" }} gap={4}>
                 {/* ---------------- FORM ---------------- */}
                 <GridItem>
                     <VStack bg={theme.colors.formColor} p={4} borderRadius="xl" border="1px solid #eef">
-                        <Text fontSize="lg" fontWeight="600" >
-                           Account Head
+                        <Text fontSize="medium" fontWeight="600" >
+                            ACCOUNT HEAD
                         </Text>
 
                         <Fieldset.Root size="sm" width="100%">
                             <Fieldset.Content>
-                                <Grid templateColumns="repeat(2,1fr)" gap={3}>
+                                <Grid css={{ sm: { gridTemplateColumns: "repeat(1, 1fr)" }, md: { gridTemplateColumns: "repeat(2, 1fr)" } }} gap={3}>
 
                                     {/* ENTRY ID */}
                                     <Box display="flex" alignItems="center" gap={2}>
@@ -535,7 +533,7 @@ console.log(form ,'updating ')
                                             onChange={handleChange}
                                             size="2xs"
                                             type="number"
-                                            max={999999}
+                                            inputModeType="pincode"
                                         />
                                     </Box>
 
@@ -548,7 +546,7 @@ console.log(form ,'updating ')
                                             onChange={handleChange}
                                             size="2xs"
                                             type="number"
-                                            max={9999999999}
+                                            inputModeType="mobile"
                                             allowDecimal={false}
                                         />
                                     </Box>
@@ -556,12 +554,12 @@ console.log(form ,'updating ')
                                     {/* EMAIL */}
                                     <Box display="flex" alignItems="center" gap={2}>
                                         <Box minW="110px" fontSize="2xs">EMAIL :</Box>
-                                        <Input
+                                        <CapitalizedInput
+                                            field="EMAILID"
                                             size="2xs"
                                             value={form.EMAILID}
-                                            onChange={(e) => handleChange("EMAILID", e.target.value)}
-                                            type="email"
-                                            bg={theme.colors.greyColor}
+                                            onChange={handleChange}
+                                            inputModeType="email"
                                         />
                                     </Box>
 
@@ -573,6 +571,7 @@ console.log(form ,'updating ')
                                             value={form.GSTNO}
                                             onChange={handleChange}
                                             size="2xs"
+                                            inputModeType="gst"
                                         />
                                     </Box>
 
@@ -585,6 +584,8 @@ console.log(form ,'updating ')
                                             onChange={handleChange}
                                             size="2xs"
                                             type="number"
+                                            max={999}
+                                            allowDecimal
                                         />
                                     </Box>
 
@@ -597,6 +598,8 @@ console.log(form ,'updating ')
                                             onChange={handleChange}
                                             size="2xs"
                                             type="number"
+                                            max={999}
+                                            allowDecimal
                                         />
                                     </Box>
 
@@ -609,6 +612,9 @@ console.log(form ,'updating ')
                                             onChange={handleChange}
                                             size="2xs"
                                             type="number"
+                                            allowDecimal={true}
+                                            decimalScale={2}
+
                                         />
                                     </Box>
 
@@ -621,7 +627,7 @@ console.log(form ,'updating ')
                                             onChange={handleChange}
                                             size="2xs"
                                             type="number"
-                                            max={999999999999}
+                                            inputModeType="aadhaar"
                                             allowDecimal={false}   // 🚫 no dot
                                         />
                                     </Box>
@@ -636,6 +642,7 @@ console.log(form ,'updating ')
                                             size="2xs"
                                             max={10}
                                             allowDecimal={false}
+                                            inputModeType="pan"
                                         />
                                     </Box>
 
@@ -647,7 +654,7 @@ console.log(form ,'updating ')
                                             value={form.WEBSITE}
                                             onChange={handleChange}
                                             size="2xs"
-                                           allowDecimal={true}
+                                            allowDecimal={true}
                                         />
                                     </Box>
 
@@ -703,7 +710,7 @@ console.log(form ,'updating ')
                 {/* ---------------- TABLE ---------------- */}
                 <GridItem minW={0}>
                     <Box bg={theme.colors.formColor} p={4} borderRadius="xl" border="1px solid #eef">
-                        <Box display='flex'  mb={4} gap={3} justifyContent='space-between' alignItems='center'>
+                        <Box display='flex' mb={4} gap={3} justifyContent='space-between' alignItems='center'>
                             <Text fontWeight="bold" mb={2}>
                                 Account Head Details
                             </Text>
@@ -732,9 +739,9 @@ console.log(form ,'updating ')
                                 </Button>
                             </Flex>
                         </Box>
-                       
 
-                     <CustomTable 
+
+                        <CustomTable
                             columns={accountColumn}
                             data={accountList}
                             renderRow={(account) => (
@@ -754,12 +761,12 @@ console.log(form ,'updating ')
                             headerColor="white"
                             borderColor="white"
                             bodyBg={theme.colors.primary}
-                            highlightRowId={highlightedId ? Number(highlightedId) : null} 
+                            highlightRowId={highlightedId ? Number(highlightedId) : null}
                             rowIdKey="ACCODE"
-                       
+
                             emptyText="No companies available"
 
-                     />
+                        />
                     </Box>
                 </GridItem>
             </Grid>

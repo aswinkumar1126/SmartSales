@@ -2,9 +2,15 @@ import { axiosInstance } from "@/api/axiosInstance";
 import { ApiResponse } from "@/types/api/apiResponse";
 import { AccountHead, AccountHeadCollection } from "@/types/accountHead/AccountHead";
 
-export const getAllAccountHead = async (): Promise<ApiResponse<AccountHeadCollection>> => {
+export const getAllAccountHead = async (accountFilter:any): Promise<ApiResponse<AccountHeadCollection>> => {
+
+console.log(accountFilter ,'account')
     try{
-        const respose = await axiosInstance.get('/achead');
+        const respose = await axiosInstance.get('/achead',{
+            params:{
+                ...accountFilter
+            }
+        });
         return respose.data;
     }
     catch(error){

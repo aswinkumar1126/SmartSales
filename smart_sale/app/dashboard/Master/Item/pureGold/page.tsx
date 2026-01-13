@@ -11,7 +11,8 @@ import {
     Table,
     Heading,
     HStack,
-    Flex
+    Flex,
+    Text
 } from "@chakra-ui/react";
 import { FaFileExcel, FaPrint } from "react-icons/fa";
 import { FiEdit } from "react-icons/fi";
@@ -196,10 +197,13 @@ const PureGoldMaster = () => {
             {/* -------- Form Section -------- */}
             <GridItem>
                 <Box p={5} borderRadius="lg" bg={theme.colors.formColor} boxShadow="sm">
-                    <Heading size="sm" textAlign="center" mb={4}>
-                        Pure Gold Master
+                    <Heading display='flex' mx='auto' alignItems='center'justifyContent='center' mb={4}>
+                    <Text fontSize="medium" fontWeight="600" >
+                       PURE GOLD MASTER
+                    
+                    </Text>
                     </Heading>
-                    <Box display="grid" gridTemplateColumns="repeat(1, 1fr)" gap={4}>
+                    <Box display="grid" gridTemplateColumns="repeat(1, 1fr)" gap={2}>
                         {/* PURE GOLD NAME */}
                         <Field.Root invalid={!!errors.pureGoldName}>
                             <HStack>

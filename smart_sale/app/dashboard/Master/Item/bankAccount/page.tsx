@@ -195,12 +195,12 @@ function BankAccountMaster() {
                   
                     >
                         <Text fontSize="sm" mb={2}>
-                            Bank Account Master {isEditing ? `(Editing: ${editId})` : "(New)"}
+                            BANK ACCOUNT MASTER 
                         </Text>
 
                         <Fieldset.Root size="sm" width="100%">
                             <Fieldset.Content>
-                                <Grid templateColumns="repeat(2, 1fr)" gap={3}>
+                                <Grid css={{ sm: { gridTemplateColumns: "repeat(1, 1fr)" }, md: { gridTemplateColumns: "repeat(2, 1fr)" } }} gap={3}>
 
                                     {/* BANK A/C */}
                                     <Box display="flex" alignItems="center" gap={2}>
@@ -329,8 +329,8 @@ function BankAccountMaster() {
                 <GridItem minW={0}>
                     <Box bg={theme.colors.formColor} p={5} borderRadius="xl" border="1px solid #eef">
                         <Flex mb={4} justify="space-between" align="center" wrap="wrap" gap={3}>
-                            <Text fontWeight="bold" fontSize="lg">
-                                Bank Account List (Count: {bankAccountList.length})
+                            <Text fontWeight="semibold" fontSize="medium">
+                               BANK ACCOUNT LIST
                             </Text>
 
                             <HStack >

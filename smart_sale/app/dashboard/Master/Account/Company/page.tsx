@@ -46,6 +46,7 @@ import { CapitalizedInput } from "@/component/form/CapitalizedInput";
 import { usePrint } from "@/context/print/usePrintContext";
 import { useRouter } from "next/navigation";
 import { FaPrint ,FaFileExcel } from "react-icons/fa";
+import { SelectCombobox } from "@/components/ui/selectComboBox";
 
 
 
@@ -307,8 +308,7 @@ function CompanyMaster() {
     /* -------------------- UI -------------------- */
     return (
         <Box
-            className={fontVariables}
-            fontFamily="var(--font-lustria)"
+            fontWeight="semibold"
             bg={theme.colors.primary}
             color={theme.colors.secondary}
         
@@ -318,158 +318,153 @@ function CompanyMaster() {
                 {/* ---------------- FORM ---------------- */}
                 <GridItem>
                     <VStack bg={theme.colors.formColor} p={4} borderRadius="xl" border="1px solid #eef">
-                        <Text fontSize="lg" fontWeight="600" >
-                            Company Creation
+                        <Text fontSize="medium" fontWeight="600" >
+                                COMPANY CREATION
                         </Text>
 
                         <Fieldset.Root size="sm" width="100%">
                             <Fieldset.Content>
-                                <Grid templateColumns="repeat(2,1fr)" gap={2}>
-                                    <Field.Root>
-                                        <Field.Label>Company Id</Field.Label>
-                                        <CapitalizedInput<CreateCompanyPayload>
+                                <Grid templateColumns={{ base: "1fr", lg: "1fr 1fr" }} gap={2}>
+
+                                    {/* COMPANY ID */}
+                                    <Box display="flex" alignItems="center" gap={2}>
+                                        <Box minW="110px" fontSize="2xs">COMPANY ID :</Box>
+                                        <CapitalizedInput
                                             field="COMPANYID"
                                             value={form.COMPANYID}
-                                            disabled={!!editId}   // ✅ lock during edit
+                                            disabled={!!editId}
                                             onChange={handleChange}
                                             max={3}
-                                         
+                                            size="2xs"
+                                            maxWidth="80px"
+                                            rounded="full"
                                         />
-                                    </Field.Root>
+                                    </Box>
 
-                                    <Field.Root>
-                                        <Field.Label>Company Name</Field.Label>
-                                        <CapitalizedInput<CreateCompanyPayload>
+                                    {/* COMPANY NAME */}
+                                    <Box display="flex" alignItems="center" gap={2}>
+                                        <Box minW='110px' fontSize="2xs">COMPANY NAME :</Box>
+                                        <CapitalizedInput
                                             field="COMPANYNAME"
                                             value={form.COMPANYNAME}
                                             onChange={handleChange}
                                             isCapitalized
+                                            size="2xs"
                                         />
-                                    </Field.Root>
+                                    </Box>
 
-                                    {/* <Field.Root>
-                                        <Field.Label>Cost Id</Field.Label>
-                                        <Input
-                                            value={form.costid}
-                                            onChange={(e) => handleChange("costid", e.target.value)}
-                                        />
-                                    </Field.Root> */}
-
-
-
-                                    <Field.Root gridColumn="span 2">
-                                        <Field.Label>Address</Field.Label>
+                                    {/* ADDRESS */}
+                                    <Box display="flex" alignItems="center" gap={2} >
+                                        <Box minW='110px' fontSize="2xs">ADDRESS :</Box>
                                         <CapitalizedInput
                                             field="ADDRESS1"
                                             value={form.ADDRESS1}
                                             onChange={handleChange}
+                                            size="2xs"
+                                            allowSpecial
                                         />
-                                    </Field.Root>
+                                    </Box>
 
-                                    <Field.Root gridColumn="span 2">
-                                        <Field.Label>Area</Field.Label>
+                                    {/* AREA */}
+                                    <Box display="flex" alignItems="center" gap={2} >
+                                        <Box minW="110px" fontSize="2xs">AREA :</Box>
                                         <CapitalizedInput
                                             field="ADDRESS2"
                                             value={form.ADDRESS2}
                                             onChange={handleChange}
+                                            size="2xs"
                                         />
-                                    </Field.Root>
+                                    </Box>
 
-                                    <Field.Root gridColumn="span 2">
-                                        <Field.Label>City</Field.Label>
+                                    {/* CITY */}
+                                    <Box display="flex" alignItems="center" gap={2} >
+                                        <Box minW="110px" fontSize="2xs">CITY :</Box>
                                         <CapitalizedInput
                                             field="ADDRESS3"
                                             value={form.ADDRESS3}
                                             onChange={handleChange}
+                                            size="2xs"
                                         />
-                                    </Field.Root>
-<Combobox.Root
-  collection={stateCollection}
-  value={form.STATEID ? [form.STATEID] : []}
-  onValueChange={(details) => {
-    const selected = details.value[0] ?? ""
-    setForm((prev) => ({
-      ...prev,
-      STATEID: selected,
-    }))
-  }}
-  onInputValueChange={(e) => setInputValue(e.inputValue)}
-  openOnClick
->
-  <Combobox.Label>Select State</Combobox.Label>
+                                    </Box>
 
-  <Combobox.Control>
-    <Combobox.Input placeholder="Type to search" />
-    <Combobox.IndicatorGroup>
-      <Combobox.ClearTrigger />
-      <Combobox.Trigger />
-    </Combobox.IndicatorGroup>
-  </Combobox.Control>
+                                    {/* STATE */}
+                                    <Box display="flex" alignItems="center" gap={2}>
+                                        <Box minW="110px" fontSize="2xs">STATE :</Box>
+                                        <SelectCombobox
+                                            items={stateOptions}
+                                            value={form.STATEID}
+                                            onChange={(val) => handleChange("STATEID", val)}
+                                            placeholder="Select State"
+                                        />
+                                    </Box>
 
-  <Portal>
-    <Combobox.Positioner>
-      <Combobox.Content>
-        {stateCollection.items.map((item: any) => (
-          <Combobox.Item key={item.stateId} item={item}>
-            {item.stateName}
-            <Combobox.ItemIndicator />
-          </Combobox.Item>
-        ))}
-      </Combobox.Content>
-    </Combobox.Positioner>
-  </Portal>
-</Combobox.Root>
-
-                                    
-                                    <Field.Root>
-
-                                        <Field.Label>PinCode</Field.Label>
+                                    {/* PINCODE */}
+                                    <Box display="flex" alignItems="center" gap={2}>
+                                        <Box minW="110px" fontSize="2xs">PINCODE :</Box>
                                         <CapitalizedInput
                                             field="AREACODE"
                                             value={form.AREACODE}
                                             onChange={handleChange}
                                             max={999999}
                                             type="number"
-                                          
+                                            size="2xs"
                                         />
-                                    </Field.Root>
-                                    <Field.Root>
-                                        <Field.Label>Mobile</Field.Label>
+                                    </Box>
+
+                                    {/* MOBILE */}
+                                    <Box display="flex" alignItems="center" gap={2}>
+                                        <Box minW="110px" fontSize="2xs">MOBILE :</Box>
                                         <CapitalizedInput
                                             field="PHONE"
                                             value={form.PHONE}
                                             onChange={handleChange}
                                             max={9999999999}
                                             type="number"
-                                       
+                                            size="2xs"
                                         />
-                                    </Field.Root>
-                                    <Field.Root>
-                                        <Field.Label>Email</Field.Label>
-                                        <Input
+                                    </Box>
+
+                                    {/* EMAIL */}
+                                    <Box display="flex" alignItems="center" gap={2}>
+                                        <Box minW="110px" fontSize="2xs">EMAIL :</Box>
+                                        <CapitalizedInput
+                                            field="EMAIL"           
+                                            size="2xs"
                                             value={form.EMAIL}
-                                            onChange={(e) => handleChange("EMAIL", e.target.value)}
-                                            type="email"
+                                            onChange={handleChange}
+                                            inputModeType="email"
                                         />
-                                    </Field.Root>
-                                    <Field.Root>
-                                        <Field.Label>GSTIN</Field.Label>
+                                    </Box>
+
+                                    {/* GSTIN */}
+                                    <Box display="flex" alignItems="center" gap={2}>
+                                        <Box minW="110px" fontSize="2xs">GSTIN :</Box>
                                         <CapitalizedInput
                                             field="GSTNO"
                                             value={form.GSTNO}
                                             onChange={handleChange}
-                                            
+                                            size="2xs"
+                                            type="text"
+                                            inputModeType="gst"
+                                           
                                         />
-                                    </Field.Root>
+                                    </Box>
 
-                                    
-
-                                    <Field.Root>
-                                        <Field.Label>Active</Field.Label>
-                                        <NativeSelect.Root>
+                                    {/* ACTIVE */}
+                                    <Box display="flex" alignItems="center" gap={2}>
+                                        <Box minW="110px" fontSize="2xs">ACTIVE :</Box>
+                                        <NativeSelect.Root size="xs" maxW="80px" fontSize="2xs">
                                             <NativeSelect.Field
                                                 value={form.ACTIVE || "Y"}
                                                 onChange={(e) => handleChange("ACTIVE", e.target.value)}
+                                                css={{
+                                                    backgroundColor: "#eee",
+                                                    color: "#111827",
+                                                    border: "1px solid #e5e7eb",
+                                                    borderRadius: "20px",
+                                                    height: "30px",
+                                                    fontSize: "10px",
+                                                }}
                                             >
                                                 <For each={activeStatus.items}>
                                                     {(item) => (
@@ -481,21 +476,23 @@ function CompanyMaster() {
                                             </NativeSelect.Field>
                                             <NativeSelect.Indicator />
                                         </NativeSelect.Root>
-                                    </Field.Root>
+                                    </Box>
+
                                 </Grid>
                             </Fieldset.Content>
                         </Fieldset.Root>
 
+
                         <HStack pt={3}>
                             <Button
-                                size="sm"
+                                size="xs"
                                 colorPalette="blue"
                                 loading={isPending}
                                 onClick={handleSave}
                             >
                                 <AiOutlineSave /> {editId ? "Update" : "Save"}
                             </Button>
-                            <Button size="sm" colorPalette="blue" onClick={resetForm}>
+                            <Button size="xs" colorPalette="blue" onClick={resetForm}>
                                 <IoIosExit /> Exit
                             </Button>
                         </HStack>

@@ -295,7 +295,7 @@ function AccountMaster() {
 
                         <Fieldset.Root size="sm" width="100%">
                             <Fieldset.Content>
-                                <Grid templateColumns="repeat(2,1fr)" gap={2}>
+                                <Grid css={{ sm: { gridTemplateColumns: "repeat(1, 1fr)" }, md: { gridTemplateColumns: "repeat(2, 1fr)" }}} gap={2}>
                                     <Field.Root>
                                         <Field.Label>Company Id</Field.Label>
                                         <CapitalizedInput<CreateCompanyPayload>

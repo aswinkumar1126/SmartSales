@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState ,useMemo} from "react";
 import {
     Box,
     Button,
@@ -48,6 +48,7 @@ import { CapitalizedInput } from "@/component/form/CapitalizedInput";
 import { toastError } from "@/component/toast/toast";
 import { useRouter } from "next/navigation";
 import { FaFileExcel ,FaPrint } from "react-icons/fa";
+import { SelectCombobox } from "@/components/ui/selectComboBox";
 
 
 function OrnamentMaster() {
@@ -66,8 +67,10 @@ function OrnamentMaster() {
     const ornaments = Array.isArray(ornamentList?.data)
         ? ornamentList.data
         : [];
-    const items: ItemMast[] = (itemsData?.items ?? []).map(normalizeItem);
-    console.log(ornaments, 'items')
+    const items: ItemMast[] = useMemo(() => {
+        return (itemsData?.items ?? []).map(normalizeItem);
+    }, [itemsData?.items]);
+    
     /* -------------------- FORM STATE -------------------- */
     const [form, setForm] = useState<OrnamentFormData>({
         itemId:  "",   // ✅ NOT null
@@ -82,10 +85,11 @@ function OrnamentMaster() {
         actualtouch:"",
     });
     const [higlightedId, setHiglightedId] =useState<Number>();
+    const [itemCollection ,setItemCollection] = useState<{label:string , value:string}[]>([])
 
 
     const [editId, setEditId] = useState<number | null>(null);
-    console.log(editId ,'editId')
+
     /* -------------------- EDIT FETCH -------------------- */
     const { data: editResponse } = useOrnamentDataById(editId!);
 
@@ -115,12 +119,18 @@ function OrnamentMaster() {
         });
     }, [editResponse]);
 
-    const itemCollection = createListCollection({
-        items: items.map((item: any) => ({
-            label: item.itemName,       // what user sees
-            value: String(item.itemId), // MUST be string
-        })),
-    });
+    useEffect(() => {
+        if (!Array.isArray(items)) return;
+
+        const collection = items.map((item: any) => ({
+            label: item.itemName,
+            value: String(item.itemId),
+        }));
+
+        setItemCollection(collection);
+    }, [items]);
+
+
     /* -------------------- HELPERS -------------------- */
    const handleChange = (field: keyof OrnamentFormData, value: any) => {
            setForm((prev) => ({ ...prev, [field]: value }));
@@ -243,8 +253,7 @@ function OrnamentMaster() {
     /* -------------------- UI -------------------- */
     return (
         <Box
-            className={fontVariables}
-            fontFamily="var(--font-lustria)"
+           fontWeight='semibold'
             bg={theme.colors.primary}
             color={theme.colors.secondary}
         >
@@ -259,159 +268,156 @@ function OrnamentMaster() {
                         borderRadius="xl"
                         border="1px solid #eef"
                     >
-                        <Text fontSize="lg" fontWeight="600">
-                            Ornament Opening
+                        <Text fontSize="sm" fontWeight="600" mb={2}>
+                            ORNAMENT OPENING
                         </Text>
 
                         <Fieldset.Root size="sm" width="100%">
                             <Fieldset.Content>
-                                <Grid templateColumns="repeat(2,1fr)" gap={3}>
-                                    <Field.Root>
-                                        <Field.Label>Item Name</Field.Label>
+                                <Grid css={{ sm: { gridTemplateColumns: "repeat(1, 1fr)" }, md: { gridTemplateColumns: "repeat(2, 1fr)" } }} gap={3}>
 
-                                        <Select.Root
-                                            collection={itemCollection}
-                                            size="sm"
-                                            value={form.itemId ? [form.itemId] : []}
-                                            onValueChange={(details) =>
-                                                setForm(prev => ({
-                                                    ...prev,
-                                                    itemId: details.value[0] || ""
-                                                }))
-                                            }
-                                        >
-                                            <Select.HiddenSelect />
+                                    {/* ITEM NAME */}
+                                    <Box display="flex" alignItems="center" gap={2}>
+                                        <Box minW="110px" fontSize="2xs">ITEM NAME :</Box>
+                                        <SelectCombobox 
+                                             items={itemCollection}
+                                             value={form.itemId}
+                                             onChange={(value) => handleChange("itemId", value)}
+                                             placeholder="select item"               
 
-                                            <Select.Control>
-                                                <Select.Trigger>
-                                                    <Select.ValueText placeholder="Select Item" />
-                                                </Select.Trigger>
-                                                <Select.IndicatorGroup>
-                                                    <Select.Indicator />
-                                                </Select.IndicatorGroup>
-                                            </Select.Control>
+                                        />
+                                    </Box>
 
-                                            <Portal>
-                                                <Select.Positioner>
-                                                    <Select.Content>
-                                                        {itemCollection.items.map((item:any) => (
-                                                            <Select.Item key={item.value} item={item}>
-                                                                {item.label}
-                                                                <Select.ItemIndicator />
-                                                            </Select.Item>
-                                                        ))}
-                                                    </Select.Content>
-                                                </Select.Positioner>
-                                            </Portal>
-                                        </Select.Root>
-                                    </Field.Root>
-
-                                    <Field.Root>
-                                        <Field.Label>Pieces</Field.Label>
+                                    {/* PIECES */}
+                                    <Box display="flex" alignItems="center" gap={2}>
+                                        <Box minW="110px" fontSize="2xs">PIECES :</Box>
                                         <CapitalizedInput
                                             field="pcs"
                                             value={form.pcs}
                                             onChange={handleChange}
                                             type="number"
+                                            size="2xs"
                                         />
-                                    </Field.Root>
+                                    </Box>
 
-                                    <Field.Root>
-                                        <Field.Label>Gross Wt</Field.Label>
+                                    {/* GROSS WT */}
+                                    <Box display="flex" alignItems="center" gap={2}>
+                                        <Box minW="110px" fontSize="2xs">GROSS WT :</Box>
                                         <CapitalizedInput
                                             field="grswt"
-                                            type="number"
                                             value={form.grswt}
                                             onChange={handleChange}
+                                            type="number"
+                                            size="2xs"
                                         />
-                                    </Field.Root>
+                                    </Box>
 
-                                    <Field.Root>
-                                        <Field.Label>Net Wt</Field.Label>
+                                    {/* NET WT */}
+                                    <Box display="flex" alignItems="center" gap={2}>
+                                        <Box minW="110px" fontSize="2xs">NET WT :</Box>
                                         <CapitalizedInput
                                             field="netwt"
-                                            type="number"
                                             value={form.netwt}
                                             onChange={handleChange}
+                                            type="number"
+                                            size="2xs"
                                         />
-                                    </Field.Root>
+                                    </Box>
 
-                                    <Field.Root>
-                                        <Field.Label>Stone Wt</Field.Label>
+                                    {/* STONE WT */}
+                                    <Box display="flex" alignItems="center" gap={2}>
+                                        <Box minW="110px" fontSize="2xs">STONE WT :</Box>
                                         <CapitalizedInput
-                                                field="stnwt"
-                                                value={form.stnwt}
+                                            field="stnwt"
+                                            value={form.stnwt}
                                             onChange={handleChange}
                                             type="number"
+                                            size="2xs"
                                         />
-                                    </Field.Root>
+                                    </Box>
 
-                                    <Field.Root>
-                                        <Field.Label>Pure</Field.Label>
+                                    {/* PURE */}
+                                    <Box display="flex" alignItems="center" gap={2}>
+                                        <Box minW="110px" fontSize="2xs">PURE :</Box>
                                         <CapitalizedInput
                                             field="pure"
                                             value={form.pure}
                                             onChange={handleChange}
                                             type="number"
+                                            size="2xs"
                                         />
-                                    </Field.Root>
+                                    </Box>
 
-                                    <Field.Root>
-                                        <Field.Label>Stone Cash</Field.Label>
+                                    {/* STONE CASH */}
+                                    <Box display="flex" alignItems="center" gap={2}>
+                                        <Box minW="110px" fontSize="2xs">STONE CASH :</Box>
                                         <CapitalizedInput
                                             field="stoneCash"
-                                            type="number"
                                             value={form.stoneCash}
                                             onChange={handleChange}
+                                            type="number"
+                                            size="2xs"
                                         />
-                                    </Field.Root>
+                                    </Box>
 
-                                    <Field.Root>
-                                        <Field.Label>Open Cash</Field.Label>
+                                    {/* OPEN CASH */}
+                                    <Box display="flex" alignItems="center" gap={2}>
+                                        <Box minW="110px" fontSize="2xs">OPEN CASH :</Box>
                                         <CapitalizedInput
                                             field="openCash"
-                                            type="number"
                                             value={form.openCash}
                                             onChange={handleChange}
+                                            type="number"
+                                            size="2xs"
                                         />
-                                    </Field.Root>
+                                    </Box>
 
-                                    <Field.Root>
-                                        <Field.Label>Touch</Field.Label>
+                                    {/* TOUCH */}
+                                    <Box display="flex" alignItems="center" gap={2}>
+                                        <Box minW="110px" fontSize="2xs">TOUCH :</Box>
                                         <CapitalizedInput
                                             field="touch"
-                                            type="number"
                                             value={form.touch}
                                             onChange={handleChange}
+                                            type="number"
+                                            size="2xs"
                                         />
-                                    </Field.Root>
+                                    </Box>
 
-                                    <Field.Root>
-                                        <Field.Label>Actual Touch</Field.Label>
+                                    {/* ACTUAL TOUCH */}
+                                    <Box display="flex" alignItems="center" gap={2}>
+                                        <Box minW="110px" fontSize="2xs">ACTUAL TOUCH :</Box>
                                         <CapitalizedInput
-                                        field="actualtouch"
-                                             type="number"       
+                                            field="actualtouch"
                                             value={form.actualtouch}
                                             onChange={handleChange}
+                                            type="number"
+                                            size="2xs"
                                         />
-                                    </Field.Root>
+                                    </Box>
+
                                 </Grid>
+
+                                {/* ACTION BUTTONS */}
+
+                                <HStack pt={3} alignItems='center' justifyContent='center'>
+                                    <Button
+                                        size="xs"
+                                        colorPalette="blue"
+                                        loading={isPending || isUpdating}
+                                        onClick={handleSave}
+                                    >
+                                        <AiOutlineSave /> {editId ? "UPDATE" : "SAVE"}
+                                    </Button>
+                                    <Button size="xs" colorPalette="blue" onClick={resetForm}>
+                                        <IoIosExit /> CLEAR
+                                    </Button>
+                                </HStack>
                             </Fieldset.Content>
                         </Fieldset.Root>
 
-                        <HStack pt={3}>
-                            <Button
-                                size="sm"
-                                colorPalette="blue"
-                                loading={isPending || isUpdating}
-                                onClick={handleSave}
-                            >
-                                <AiOutlineSave /> {editId ? "Update" : "Save"}
-                            </Button>
-                            <Button size="sm"  colorPalette="blue" onClick={resetForm}>
-                                <IoIosExit /> Clear
-                            </Button>
-                        </HStack>
+
+                        
                     </VStack>
                 </GridItem>
 
@@ -425,7 +431,7 @@ function OrnamentMaster() {
                     >
                         <Box display='flex' mb={4} gap={3} justifyContent='space-between' alignItems='center'>
                             <Text fontWeight="bold" mb={2}>
-                                Ornament Details
+                                ORMNAMENT DETAILS
                             </Text>
 
                         <Flex gap={1}>

@@ -238,11 +238,11 @@ function MetalMaster() {
                         border="1px solid #eef"
                         boxShadow="0 0 30px rgba(212,212,212,0.2)"
                     >
-                        <Text fontSize="20px" fontWeight="600">Metal Master</Text>
+                        <Text fontSize="medium" fontWeight="600">METAL MASTER</Text>
 
                         <Fieldset.Root size="sm" width="100%">
                             <Fieldset.Content>
-                                <Grid templateColumns="repeat(2, 1fr)" gap={3}>
+                                <Grid css={{ sm:{gridTemplateColumns: "repeat(1, 1fr)"}, md: {gridTemplateColumns: "repeat(2, 1fr)"}}} gap={3}>
 
                                     {/* METAL ID */}
                                     <Box display="flex" alignItems="center" gap={2}>
@@ -256,7 +256,7 @@ function MetalMaster() {
                                             disabled={isEdit}
                                             max={1}
                                             size="2xs"
-                                            maxWidth="60px"
+                                            maxWidth="80px"
                                         />
                                     </Box>
 

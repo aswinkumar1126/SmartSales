@@ -153,7 +153,7 @@ export const SidebarProvider = ({ children }: { children: ReactNode }) => {
         icon: Layers,
         items:[
           {
-            label: "Transaction",
+            label: "Purchase",
             route: "/dashboard/Transaction/Transactions",
             icon: Layers,
           },

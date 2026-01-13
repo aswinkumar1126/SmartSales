@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState ,useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import {
     Box,
     Button,
@@ -15,7 +15,7 @@ import {
     HStack,
     Portal,
     createListCollection,
-    For, 
+    For,
     Stack,
     Fieldset,
     Field,
@@ -47,15 +47,15 @@ import { CapitalizedInput } from "@/component/form/CapitalizedInput";
 
 export default function UserMasters() {
     const { theme } = useTheme();
-    const {user} = useAuth();
+    const { user } = useAuth();
     //console.log(user ,'user');
 
 
-    const [imagePreview, setImagePreview] = useState<string |undefined | null>(null);
+    const [imagePreview, setImagePreview] = useState<string | undefined | null>(null);
     const [confirmPwd, setConfirmPwd] = useState("");
     const [error, setError] = useState<string | null>(null);
 
-    
+
     const [form, setForm] = useState<UserMaster>({
         username: "",
         pwd: "",
@@ -64,12 +64,12 @@ export default function UserMasters() {
         billing: false,
     });
 
-    const [selectedImage, setSelectedImage] = useState<File | undefined  >();
+    const [selectedImage, setSelectedImage] = useState<File | undefined>();
     const [editingUserId, setEditingUserId] = useState<number | null>(null);
-    const [highlightId ,setHighlightedId] = useState<Number > ();
+    const [highlightId, setHighlightedId] = useState<Number>();
 
     const { data, isLoading } = useUsers();
-    console.log(data ,'data')
+    console.log(data, 'data')
 
     const costCenters = [
         { id: 1, value: "SJ", label: "Head Office" },
@@ -120,8 +120,8 @@ export default function UserMasters() {
         setConfirmPwd("");
     }, [userByIdData]);
 
-    useEffect(()=>{
-        if(!highlightId) {
+    useEffect(() => {
+        if (!highlightId) {
             return;
         }
         const timer = setTimeout(() => {
@@ -191,14 +191,16 @@ export default function UserMasters() {
                 }
             );
         }
-         else {
+        else {
             createUser(
-                
+
                 { user: payload, image: selectedImage },
-                { onSuccess:()=>{
-                    resetForm;
-                    setEditingUserId(payload.USERID)
-                }  }
+                {
+                    onSuccess: () => {
+                        resetForm;
+                        setEditingUserId(payload.USERID)
+                    }
+                }
             );
         }
     };
@@ -219,7 +221,7 @@ export default function UserMasters() {
     };
 
 
-    
+
 
     const loadUserIntoForm = (item: UserMaster) => {
         setEditingUserId(item.userId!);
@@ -228,7 +230,7 @@ export default function UserMasters() {
             username: item.username,
             pwd: "", // never preload password
             active: item.active,
-            userCostId: item.costId??"",
+            userCostId: item.costId ?? "",
             billing: item.billing ?? false,
         });
 
@@ -252,27 +254,27 @@ export default function UserMasters() {
     });
 
     const UserMasterColumn = [
-        {key: "userId", label: "User Id"},
-        { key: "username", label: "User Name"},
+        { key: "userId", label: "User Id" },
+        { key: "username", label: "User Name" },
         // {key: "costId", label: "Cost Id"},
-        {key: "active", label: "Active" ,align:'center' as const},
-        {key: "action", label: "Actions" ,align:'center' as const},
+        { key: "active", label: "Active", align: 'center' as const },
+        { key: "action", label: "Actions", align: 'center' as const },
 
     ]
-   console.log(imagePreview ,'imagePreview')
+    console.log(imagePreview, 'imagePreview');
+
     return (
         <Box
-            className={fontVariables}
-            fontFamily="var(--font-lustria)"
+            fontWeight='semibold'
             bg={theme.colors.primary}
             color={theme.colors.secondary}
-         
+
         >
             <Toaster />
             <Grid templateColumns={{ base: "1fr", lg: "1fr 1fr" }} gap={2}>
 
                 {/* LEFT SECTION – USER FORM */}
-                
+
                 <GridItem display="flex" justifyContent="center">
                     <VStack
                         w="full"
@@ -283,158 +285,132 @@ export default function UserMasters() {
                         border="1px solid #eef"
                         boxShadow="0 0 30px rgba(212,212,212,0.2)"
                     >
-                       
-                            <Text fontSize="20px" fontWeight="600" >
-                                {editingUserId ? "Edit User" : "User Master"}
-                            </Text>
 
-               
+                        <Text fontSize="medium" fontWeight="600" >
+                            {editingUserId ? "EDIT USER" : "USER MASTER"}
+                        </Text>
 
+
+
+                        {/* -------------------- USER SECTION -------------------- */}
                         <Fieldset.Root size="lg" width="100%">
                             <Fieldset.Content>
-                                {/* USER NAME */}
-                                <Box display="flex" gap={2} justifyContent="space-between">
-                                <Box>
-                                <Field.Root>
-                                    <Field.Label>User Name</Field.Label>
-                                            <InputGroup startElement={<LuUser color={theme.colors.secondary} />}>
+                                <Box display='flex' flexDirection='column'  gap={2}>
+                                    
+                                        <Box display="flex" gap={2} justifyContent="space-between">
+                                            <Box minW="120px" fontSize="2xs">USER NAME :</Box>
+                                            <InputGroup startElement={<LuUser color="#4A90E2" />}>
                                                 <CapitalizedInput
                                                     field="username"
                                                     placeholder="Enter user name"
                                                     value={form.username}
                                                     onChange={onChange}
                                                     icon
-                                               
+                                                    size="2xs"
+                                                    inputModeType="text"
                                                 />
-
                                             </InputGroup>
-                                  
-                                </Field.Root>
-
-                                {/* PASSWORD */}
-                                <Field.Root>
-                                    <Field.Label>Password</Field.Label>
-                                            <InputGroup startElement={<RiLockPasswordLine color={theme.colors.secondary} />}>
-                                                <PasswordInput
+                                        </Box>
+                                        <Box display="flex" alignItems="center" gap={2}>
+                                        <Box minW="120px" fontSize="2xs">PASSWORD :</Box>
+                                            <InputGroup startElement={<RiLockPasswordLine color="#4A90E2" />}>
+                                                <CapitalizedInput
+                                                    field="pwd"
                                                     placeholder="Enter your password"
                                                     value={form.pwd ?? ""}
-                                                    onChange={(e) => onChange("pwd", e.target.value)}
+                                                    onChange={onChange}
+                                                    type="password"
+                                                    icon
+                                                    size="2xs"
+                                                   
                                                 />
-
-                                    </InputGroup>
-                                </Field.Root>
-
-                                {/* CONFIRM PASSWORD */}
-                                <Field.Root>
-                                    <Field.Label>Confirm Password</Field.Label>
-                                            <Input
-                                                type="password"
+                                            </InputGroup>
+                                        </Box>
+                                        <Box display="flex" alignItems="center" gap={2}>
+                                            <Box minW="120px" fontSize="2xs">CONFIRM PASSWORD :</Box>
+                                            <InputGroup startElement={<RiLockPasswordLine color="#4A90E2" />}>
+                                            <CapitalizedInput
+                                                field="confirmPwd"
                                                 placeholder="Re-enter password"
                                                 value={confirmPwd}
-                                                onChange={(e) => setConfirmPwd(e.target.value)}
+                                                onChange={(f, v) => setConfirmPwd(v)}
+                                                type="password"
+                                                icon
+                                                    size="2xs"
                                             />
-
-                                </Field.Root>
-                                </Box>
-                                    <Box textAlign="center" mt={4}>
-                                        <Box
-                                            w="120px"
-                                            h="120px"
-                                            border="1px solid #ddd"
-                                            mx="auto"
-                                            mb={3}
-                                            borderRadius="md"
-                                            overflow="hidden"
-                                        >
-                                            <Image
-                                                src={imagePreview || "/favicon.ico"}
-                                                width={120}
-                                                height={120}
-                                                alt="User"
-                                                style={{ objectFit: "cover" }}
-                                            />
+                                            </InputGroup>
                                         </Box>
 
-                                        <Button size="sm" as="label" cursor="pointer">
-                                            Select Image
-                                            <input type="file" hidden accept="image/*" onChange={handleImageSelect} />
-                                        </Button>
+                                    <Box display='flex' gap={5} justifyContent='space-between'>
+                                        {/* COST CENTER + ACTIVE */}
+                                        <Box display="flex" alignItems="center" gap={2}>
+                                            {/* Active */}
+                                            <Box minW="120px" fontSize="2xs">ACTIVE :</Box>
+                                            <NativeSelect.Root minW='80px' maxW='100px' fontSize='2xs'>
+                                                <NativeSelect.Field
+                                                    value={form.active || "Y"}
+                                                    onChange={(e) => onChange("active", e.target.value)}
+                                                    fontSize='2xs'
+                                                    css={{
+                                                        backgroundColor: "#eee",
+                                                        color: "#222",
+                                                        border: "1px solid #e5e7eb",
+                                                        borderRadius: "full",
+                                                        height: "30px",
+
+                                                    }}
+
+                                                >
+                                                    <For each={activeStatus.items} >
+                                                        {(item) => (
+                                                            <option key={item.value} value={item.value}>
+                                                                {item.label}
+                                                            </option>
+                                                        )}
+                                                    </For>
+                                                </NativeSelect.Field>
+                                                <NativeSelect.Indicator />
+                                            </NativeSelect.Root>
+                                        </Box>
+                                        <Box textAlign="center" mt={4}>
+                                            <Box
+                                                w="80px"
+                                                h="80px"
+                                                border="1px solid #ddd"
+                                                mx="auto"
+                                                mb={3}
+                                                borderRadius="md"
+                                                overflow="hidden"
+                                            >
+                                                <Image
+                                                    src={imagePreview || "/favicon.ico"}
+                                                    width={80}
+                                                    height={80}
+                                                    alt="User"
+                                                    style={{ objectFit: "cover" }}
+                                                />
+                                            </Box>
+
+                                            <Button size="2xs" as="label" cursor="pointer">
+                                                <Text fontSize='2xs'>SELECT IMAGE</Text>
+                                                <input type="file" hidden accept="image/*" onChange={handleImageSelect} />
+                                            </Button>
+                                        </Box>
+                                        
+
                                     </Box>
+                                   
                                 </Box>
 
-                                {/* COST CENTRE */}
-                                 <Box css={{display:'flex' ,justifyContent:'space-between' ,gap:2 }}>
+                              
 
-                                    {/* {/*  <Field.Root>
-                                        <Field.Label>Cost Center</Field.Label>
-
-                                        <NativeSelect.Root>
-                                            <NativeSelect.Field
-                                                value={form.costId}
-                                                onChange={(value)=>onChange("costId",value)}
-                                                css={{
-                                                    backgroundColor: "#eee",
-                                                    color: "#111827",
-                                                    border: "1px solid #e5e7eb",
-                                                    borderRadius: "12px",
-                                                    height: "42px",
-                                                }}
-                                            >
-
-
-                                                <For each={costCenters}>
-                                                    {(item) => (
-                                                        <option key={item.id} value={item.value}>
-                                                            {item.label}
-                                                        </option>
-                                                    )}
-                                                </For>
-                                            </NativeSelect.Field>
-
-                                            <NativeSelect.Indicator />
-                                        </NativeSelect.Root>
-                                    </Field.Root>
-
-
-                                {/* ACTIVE STATUS — USING CHAKRA SELECT v3 */}
-                                <Field.Root>
-                                    <Field.Label>Active</Field.Label>
-
-                                    <NativeSelect.Root>
-                                            <NativeSelect.Field
-                                                value={form.active}
-                                                onChange={(e) => onChange("active", e.target.value)}
-                                                css={{
-                                                    backgroundColor: '#eee',
-                                                    color: "#111827",
-                                                    border: "1px solid #e5e7eb",
-                                                    borderRadius: "12px",
-                                                    height: "42px",
-                                                }}
-                                            >
-
-                                            <For each={activeStatus.items}>
-                                                {(item) => (
-                                                    <option key={item.value} value={item.value}>
-                                                        {item.label}
-                                                    </option>
-                                                )}
-                                            </For>
-                                        </NativeSelect.Field>
-                                        <NativeSelect.Indicator />
-                                    </NativeSelect.Root>
-                                </Field.Root>
-                                </Box>
-                                {/* IMAGE UPLOAD */}
-                                
                                 {error && (
                                     <Text color="red.500" fontSize="sm" textAlign="center">
                                         {error}
                                     </Text>
                                 )}
 
-                                {/* ACTION BUTTONS */}
-                                <HStack pt={2} justifyContent="center">
+                                <HStack pt={2} justifyContent="center" gap={2}>
                                     <Button
                                         size="sm"
                                         loading={creating || updating}
@@ -445,9 +421,9 @@ export default function UserMasters() {
                                         <AiOutlineSave /> {editingUserId ? "Update" : "Save"}
                                     </Button>
 
-                                    {/* <Button size="sm" colorPalette="yellow">Open</Button>
-                                    <Button size="sm"  colorPalette="blue" >New</Button> */}
-                                    <Button size="sm" colorPalette="blue" onClick={resetForm} >Clear <IoIosExit /> </Button>
+                                    <Button size="sm" colorPalette="blue" onClick={resetForm}>
+                                        Clear <IoIosExit />
+                                    </Button>
                                 </HStack>
                             </Fieldset.Content>
                         </Fieldset.Root>
@@ -468,33 +444,33 @@ export default function UserMasters() {
                         </Text>
 
                         <Stack gap="10">
-                            
-                        <CustomTable 
-                            columns={UserMasterColumn}
-                            data={users}
-                            size="sm"
-                                                   headerBg='blue.800'
-                                                   bodyBg = {theme.colors.primary}
-                                                   headerColor='white'
-                                                   emptyText="No parties available"
-                                                   rowIdKey="userId"
-                                                    highlightRowId={highlightId ? Number(highlightId) : null}
-                                                   renderRow={(user, i) => (
-                                                       <>
-                                                           {/* <Table.Cell>{i + 1}</Table.Cell> */}
-                                                           <Table.Cell>{user.userId}</Table.Cell>
-                                                           <Table.Cell>{user.username}</Table.Cell>
-                                                           {/* <Table.Cell >{user.costId}</Table.Cell> */}
-                                                           <Table.Cell textAlign="center">{user.active}</Table.Cell>
-                                                           <Table.Cell>
-                                                               <Box display="flex" justifyContent="center">
-                                                                   <FiEdit onClick={() => loadUserIntoForm(user)} cursor="pointer" />
-                                                               </Box>
-                                                           </Table.Cell>
-                                                       </>
-                                                   )}
-                        
-                        />
+
+                            <CustomTable
+                                columns={UserMasterColumn}
+                                data={users}
+                                size="sm"
+                                headerBg='blue.800'
+                                bodyBg={theme.colors.primary}
+                                headerColor='white'
+                                emptyText="No parties available"
+                                rowIdKey="userId"
+                                highlightRowId={highlightId ? Number(highlightId) : null}
+                                renderRow={(user, i) => (
+                                    <>
+                                        {/* <Table.Cell>{i + 1}</Table.Cell> */}
+                                        <Table.Cell>{user.userId}</Table.Cell>
+                                        <Table.Cell>{user.username}</Table.Cell>
+                                        {/* <Table.Cell >{user.costId}</Table.Cell> */}
+                                        <Table.Cell textAlign="center">{user.active}</Table.Cell>
+                                        <Table.Cell>
+                                            <Box display="flex" justifyContent="center">
+                                                <FiEdit onClick={() => loadUserIntoForm(user)} cursor="pointer" />
+                                            </Box>
+                                        </Table.Cell>
+                                    </>
+                                )}
+
+                            />
                         </Stack>
                     </Box>
                 </GridItem>

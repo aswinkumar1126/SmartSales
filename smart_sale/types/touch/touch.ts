@@ -20,5 +20,6 @@ export interface TouchMaster {
     companyId:string,
     itemId:string,
     touch:string,
+    calculationMode?:string
 }
 

@@ -4,6 +4,17 @@ import React from "react";
 import { Input } from "@chakra-ui/react";
 import { capitalizeText } from "@/utils/capitalize/capitalizeText";
 import { useTheme } from "@/context/theme/themeContext";
+
+type InputModeType =
+    | "text"
+    | "number"
+    | "gst"
+    | "mobile"
+    | "aadhaar"
+    | "pan"
+    | "email"
+    | "pincode";
+
 type CapitalizedInputProps<T> = {
     value: string | undefined;
     field: keyof T;
@@ -28,6 +39,8 @@ type CapitalizedInputProps<T> = {
     allowDecimal?: boolean;
     allowSpecial?: boolean; // NEW
     decimalScale?: number; // how many digits after decimal
+    inputModeType?: InputModeType; // 🔥 new
+    rounded?:string;
 };
 
 export function CapitalizedInput<T>({
@@ -52,28 +65,88 @@ export function CapitalizedInput<T>({
     allowDecimal = true,
     allowSpecial=false,
     decimalScale = 3,
+    inputModeType,
+    rounded="full"
+    
 }: CapitalizedInputProps<T>) {
     const { theme } = useTheme();
+
+    const PAN_PATTERN = /^[A-Z]{0,5}[0-9]{0,4}[A-Z]{0,1}$/;
+
 
     const handleChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         let inputValue = e.target.value;
 
-        /* 🔒 TEXT VALIDATION */
-        if (type === "text") {
-            let regex = /^[a-zA-Z0-9\s]*$/; // default
+        const mode = inputModeType || type;
 
-            if (allowDecimal) {
-                regex = /^[a-zA-Z0-9\s.]*$/; // allow dot
-            }
+        /* ================== MODE VALIDATIONS ================== */
 
-            if (allowSpecial) {
-                regex = /^[^]*$/; // allow everything
-            }
-
-            if (!regex.test(inputValue)) return;
+        if (mode === "mobile") {
+            if (!/^[0-9]*$/.test(inputValue)) return;
+            if (inputValue.length > 10) return;
         }
 
-        /* 🔢 NUMBER VALIDATION */
+        if (mode === "aadhaar") {
+            if (!/^[0-9]*$/.test(inputValue)) return;
+            if (inputValue.length > 12) return;
+        }
+
+        if (mode === "pincode") {
+            if (!/^[0-9]*$/.test(inputValue)) return;
+            if (inputValue.length > 6) return;
+        }
+
+        if (mode === "pan") {
+            inputValue = inputValue.toUpperCase();
+            const len = inputValue.length;
+
+            if (len <= 5 && !/^[A-Z]*$/.test(inputValue)) return;
+            if (len > 5 && len <= 9 && !/^[A-Z]{5}[0-9]*$/.test(inputValue)) return;
+            if (len === 10 && !/^[A-Z]{5}[0-9]{4}[A-Z]$/.test(inputValue)) return;
+            if (len > 10) return;
+        }
+        if (mode === "gst") {
+            inputValue = inputValue.toUpperCase();
+            const len = inputValue.length;
+
+            if (len <= 2 && !/^[0-9]*$/.test(inputValue)) return;
+            if (len > 2 && len <= 7 && !/^[0-9]{2}[A-Z]*$/.test(inputValue)) return;
+            if (len > 7 && len <= 11 && !/^[0-9]{2}[A-Z]{5}[0-9]*$/.test(inputValue)) return;
+            if (len === 12 && !/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]$/.test(inputValue)) return;
+            if (len === 13 && !/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9]$/.test(inputValue)) return;
+            if (len === 14 && !/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9]Z$/.test(inputValue)) return;
+            if (len === 15 && !/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9]Z[A-Z0-9]$/.test(inputValue)) return;
+            if (len > 15) return;
+        }
+
+
+        if (mode === "email") {
+            inputValue = inputValue.toLowerCase();
+
+            // Only allow valid email characters
+            if (!/^[a-z0-9@._-]*$/.test(inputValue)) return;
+
+            // If user typed "@", validate domain
+            if (inputValue.includes("@")) {
+                const [localPart, domain] = inputValue.split("@");
+
+                // Prevent multiple @
+                if (inputValue.split("@").length > 2) return;
+
+                // Allow typing domain gradually
+                if (domain && !"gmail.com".startsWith(domain)) {
+                    return; // ❌ block wrong domain
+                }
+
+                // If full domain typed and it's not gmail.com
+                if (domain.length >= 9 && domain !== "gmail.com") {
+                    return;
+                }
+            }
+        }
+
+        /* ================== EXISTING LOGIC ================== */
+
         if (type === "number") {
             if (inputValue === "-") {
                 if (!allowNegative) return;
@@ -83,7 +156,6 @@ export function CapitalizedInput<T>({
 
             if (!allowDecimal && inputValue.includes(".")) return;
 
-            // ⛔ Limit decimal places
             if (allowDecimal && inputValue.includes(".")) {
                 const [_, decimals] = inputValue.split(".");
                 if (decimals && decimals.length > decimalScale) return;
@@ -96,8 +168,6 @@ export function CapitalizedInput<T>({
             if (max !== undefined && num > max) return;
         }
 
-
-        /* 🔤 TEXT MAX LENGTH */
         if (type === "text" && max !== undefined && inputValue.length > max) {
             return;
         }
@@ -114,7 +184,7 @@ export function CapitalizedInput<T>({
         <Input
             type={type}
             value={value ?? ""}
-            pl={icon ? "2.5rem" : "0.25rem"}
+            pl={icon ? "2.5rem" : "1rem"}
             textTransform={isCapitalized ? "uppercase" : "none"}
             placeholder={placeholder}
             onChange={handleChange}
@@ -144,8 +214,8 @@ export function CapitalizedInput<T>({
             className={onClassUse ? "type-inputs":""}
             maxWidth={maxWidth}
             bg={theme.colors.greyColor}
-            fontSize='2xs'
-            
+            fontSize='2xs'  
+            rounded={rounded}     
         />
     );
 }

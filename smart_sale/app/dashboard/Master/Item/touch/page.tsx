@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useEffect  } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
     Box,
     Field,
@@ -27,7 +27,7 @@ import { useTouchMastData } from "@/hooks/touch/useTouchMastData";
 import { TouchMaster } from "@/types/touch/touch";
 import { CustomTable } from "@/component/table/CustomTable";
 import { FiEdit } from "react-icons/fi";
-import { IoIosExit } from "react-icons/io";
+import { IoIosExit, IoIosSave } from "react-icons/io";
 import { useTheme } from "@/context/theme/themeContext";
 import { toastLoaded } from "@/component/toast/toast";
 import { Toaster } from "@/components/ui/toaster";
@@ -36,10 +36,12 @@ import { formatToFixed } from "@/utils/format/numberFormat";
 import { FaPrint } from "react-icons/fa";
 import { useRouter } from "next/navigation";
 import { usePrint } from "@/context/print/usePrintContext";
-import { exportToStyledExcel } from "@/utils/export/exportToExcel";
 import { FaFileExcel } from "react-icons/fa";
 import { CapitalizedInput } from "@/component/form/CapitalizedInput";
-
+import { AccountTypeList } from "@/data/ACCOUNTtYPE/AccountType";
+import { SelectCombobox } from "@/components/ui/selectComboBox";
+import { useAllAccountHead } from "@/hooks/accountHead/useAccountHead";
+import { CalTypeCollection } from "@/data/CalType/CalType";
 
 /* ---------------- Initial State ---------------- */
 
@@ -48,6 +50,7 @@ const initialFormState: TouchMaster = {
     companyId: "",
     itemId: "",
     touch: "",
+    calculationMode:"",
 };
 export type TouchTableRow = {
     sno: number;
@@ -59,79 +62,66 @@ export type TouchTableRow = {
 /* ---------------- Component ---------------- */
 
 const TouchMasterForm = () => {
-    
+
     const [form, setForm] = useState<TouchMaster>(initialFormState);
     const [editId, setEditId] = useState<number | null>(null);
     type FormErrors = Partial<Record<keyof TouchMaster, string>>;
     const [highlightRowId, setHighlightRowId] = useState<number | null>(null);
     const [errors, setErrors] = useState<FormErrors>({});
+    const [allAccountsList, setAllAccountsList] = useState<{ label: string; value: string }[]>([]);
+    const [allItemsList, setAllItemsList] = useState<{ label: string; value: string }[]>([]);
 
+    const filters = {
+        accountType: form.companyType?.trim().toUpperCase()
+    }
+console.log(form.companyType ,'companyType')
     /* ---------------- Hooks ---------------- */
 
     const { data: touchData = [], refetch } = useTouchMastData();
-   
-    console.log(touchData,'touchData')
-    // const printData = useMemo(() => {
-    //     return (touchData ?? []).map((row: any, index: number) => ({
-    //         ...row,
 
-    //         // Ensure serial number (optional override)
-    //         sno: index + 1,
+    const { data: allAccounts ,refetch:accountRefetch } = useAllAccountHead(filters);
 
-    //         // ✅ format touch properly
-    //         touch: formatToFixed(row.touch, 2),
-
-    //         // normalize naming (optional but recommended)
-    //         companyName: row.companyname,
-    //     }));
-    // }, [touchData]);
-
-    const { data: companiesData } = useAllCompanies();
     const { data: items } = useItems();
-    const {theme } = useTheme();
-    const {setData ,setColumns } = usePrint();
+    const { theme } = useTheme();
+    const { setData, setColumns } = usePrint();
 
     const createMutation = useTouchMastCreate();
     const updateMutation = useModifyTouchMasterById();
 
     const router = useRouter();
     /* ---------------- Collections ---------------- */
-    console.log(companiesData ,'companyData')
-    const companiesCollection = useMemo(
-        () =>
-            createListCollection({
-                items:
-                    companiesData?.data?.map((c: any) => ({
-                        value: c.COMPANYID,
-                        label: c.COMPANYNAME,
-                    })) ?? [],
-            }),
-        [companiesData]
-    );
 
-    const companyTypeCollection = useMemo(
-        () =>
-            createListCollection({
-                items: [
-                    { value: "CUS", label: "CUSTOMER" },
-                    { value: "SEL", label: "SELLER" },
-                ],
-            }),
-        []
-    );
 
-    const itemsCollection = useMemo(
-        () =>
-            createListCollection({
-                items:
-                    items?.items?.map((i: any) => ({
-                        value: i.itemId,
-                        label: i.itemName,
-                    })) ?? [],
-            }),
-        [items]
-    );
     
+
+    const accounts = Array.isArray(allAccounts?.data?.acheads) ? allAccounts?.data?.acheads : [];
+
+    useEffect(() => {
+        if (!accounts) return;
+
+        const formattedAccounts = accounts.map((acc: any) => ({
+            label: acc.ACNAME,
+            value: String(acc.ACCODE),
+        }));
+
+        setAllAccountsList(formattedAccounts);
+    }, [accounts]);
+
+    useEffect(() => {
+        if (!items?.items) return;
+
+        const formattedItems = items.items.map((item: any) => ({
+            label: item.itemName,
+            value: String(item.itemId),
+        }));
+
+        setAllItemsList(formattedItems);
+
+    }, [items])
+
+
+
+    console.log(touchData, 'touchData')
 
     /* ---------------- Handlers ---------------- */
 
@@ -147,9 +137,16 @@ const TouchMasterForm = () => {
             companyType: row.companyType,
             itemId: row.itemId,
             touch: String(row.touch),
+            calculationMode: row.calculationMode,
         });
         toastLoaded("Touch Master");
     };
+    useEffect(() => {
+        setForm(prev => ({
+            ...prev,
+            companyId: ""
+        }));
+    }, [form.companyType]);
 
     const resetForm = () => {
         setForm(initialFormState);
@@ -158,10 +155,11 @@ const TouchMasterForm = () => {
     };
 
     const payload = {
-        companyType:form.companyType,
-        companyId :form.companyId,
+        companyType: form.companyType,
+        companyId: form.companyId,
         itemId: Number(form.itemId),
         touch: Number(form.touch),
+        calculationMode:form.calculationMode
     }
     const validateForm = (form: TouchMaster): FormErrors => {
         const errors: FormErrors = {};
@@ -169,6 +167,7 @@ const TouchMasterForm = () => {
         if (!form.companyId) errors.companyId = "Company is required";
         if (!form.companyType) errors.companyType = "Company type is required";
         if (!form.itemId) errors.itemId = "Item is required";
+        if (!form.calculationMode) errors.calculationMode = "Calculation Mode is required";
         if (!form.touch) {
             errors.touch = "Touch is required";
         } else if (Number(form.touch) <= 0) {
@@ -192,24 +191,27 @@ const TouchMasterForm = () => {
         if (editId) {
             updateMutation.mutate(
                 { id: editId, formData: payload },
-                { onSuccess: () => { 
-                    setHighlightRowId(editId);   // 👈 highlight updated row
-                    resetForm();
-                    refetch(); } }
+                {
+                    onSuccess: () => {
+                        setHighlightRowId(editId);   // 👈 highlight updated row
+                        resetForm();
+                        refetch();
+                    }
+                }
             );
         } else {
             createMutation.mutate(payload, {
-                onSuccess: (res:any) => { 
+                onSuccess: (res: any) => {
                     const createdId = res?.data?.id; // adjust to your API response
                     setHighlightRowId(createdId);
-                    resetForm(); 
+                    resetForm();
                     refetch();
-                 },
+                },
             });
         }
     };
 
-    const handleExport = (option:string)=> {
+    const handleExport = (option: string) => {
         setData(touchData);
         setColumns([
             { key: "sno", label: "S.No" },
@@ -218,31 +220,8 @@ const TouchMasterForm = () => {
             { key: "itemName", label: "Item Name" },
             { key: "touch", label: "Touch", align: 'end' as const, allowTotal: true },
         ]);
-        router.push(`/print?export=${option}` );
+        router.push(`/print?export=${option}`);
     }
-    // const handlePrint = () =>{
-    //     setData(touchData);
-    //     setColumns([
-    //         { key: "sno", label: "S.No" },
-    //         { key: "companyname", label: "Company" },
-    //         { key: "companyType", label: "Company Type" },
-    //         { key: "itemName", label: "Item Name" },
-    //         { key: "touch", label: "Touch", align: 'end' as const, allowTotal: true },
-    //     ]);
-    //     router.push("/print");
-    // }
-    // const handleExcel = () => {
-    //     setData(touchData);
-    //     setColumns([
-    //         { key: "sno", label: "S.No" },
-    //         { key: "companyname", label: "Company" },
-    //         { key: "companyType", label: "Company Type" },
-    //         { key: "itemName", label: "Item Name" },
-    //         { key: "touch", label: "Touch", align: "end", allowTotal: true, isNumeric: true },
-    //     ]);
-
-    //     router.push("/print?export=excel");
-    // };
 
     /* ---------------- Table Columns ---------------- */
 
@@ -271,156 +250,116 @@ const TouchMasterForm = () => {
     return (
         <Grid
             templateColumns={{ base: "1fr", lg: "1fr 2fr" }}
-            gap={6}
-            alignItems="start"
-        >   
-        <Toaster />
+            gap={2}
+
+
+        >
+            <Toaster />
             {/* ---------------- FORM ---------------- */}
             <GridItem>
-                <Box p={5} borderRadius="lg" bg={theme.colors.formColor} boxShadow="sm">
-                    <Heading size="md" textAlign='center' mb={4}>
-                        Touch Master
+                <Box p={2} fontWeight='semibold' borderRadius="lg" bg={theme.colors.formColor} boxShadow="sm" minW='xl'>
+                    <Heading fontSize="medium" textAlign='center' mb={4}>
+                        TOUCH MASTER
                     </Heading>
 
-                    <Box display="grid" gap={4}>
-
-                        {/* Company */}
-                        <Field.Root invalid={!!errors.companyId}>
-                            <Field.Label>Company</Field.Label>
-
-                            <Select.Root
-                                collection={companiesCollection}
-                                value={[form.companyId]}
-                                onValueChange={(e) => {
-                                    handleChange("companyId", e.value[0]);
-                                    setErrors((prev) => ({ ...prev, companyId: undefined }));
-                                }}
-                            >
-                                <Select.HiddenSelect />
-                                <Select.Control>
-                                    <Select.Trigger>
-                                        <Select.ValueText placeholder="Select Company" />
-                                    </Select.Trigger>
-                                    <Select.IndicatorGroup>
-                                        <Select.Indicator />
-
-                                    </Select.IndicatorGroup>
-                                </Select.Control>
-                                <Portal>
-                                    <Select.Positioner>
-                                        <Select.Content>
-                                            {companiesCollection.items.map((item) => (
-                                                <Select.Item key={item.value} item={item}>
-                                                    <Select.ItemText>{item.label}</Select.ItemText>
-                                                    <Select.ItemIndicator />
-                                                </Select.Item>
-                                            ))}
-                                        </Select.Content>
-                                    </Select.Positioner>
-                                </Portal>
-                            </Select.Root>
-
-                            <Field.ErrorText>{errors.companyId}</Field.ErrorText>
-                        </Field.Root>
-
-
-                        {/* Company Type */}
-                        <Field.Root invalid={!!errors.companyType}>
-                            <Field.Label>Company Type</Field.Label>
-                            <Select.Root
-                                collection={companyTypeCollection}
-                                value={[form.companyType]}
-                                onValueChange={(e) =>
-                                    handleChange("companyType", e.value[0])
-                                }
-                            >
-                                <Select.HiddenSelect />
-                              
-                                <Select.Control>
-                                    <Select.Trigger>
-                                        <Select.ValueText placeholder="Select Type" />
-                                    </Select.Trigger>
-                                    <Select.IndicatorGroup>
-                                        <Select.Indicator />
-                                    
-                                    </Select.IndicatorGroup>
-                                </Select.Control>
-                             
-                                <Portal>
-                                    <Select.Positioner>
-                                        <Select.Content>
-                                            {companyTypeCollection.items.map((item) => (
-                                                <Select.Item key={item.value} item={item}>
-                                                    <Select.ItemText>
-                                                        {item.label}
-                                                    </Select.ItemText>
-                                                    <Select.ItemIndicator />
-                                                </Select.Item>
-                                            ))}
-                                        </Select.Content>
-                                    </Select.Positioner>
-                                </Portal>
-                            </Select.Root>
-                            <Field.ErrorText>{errors.companyType}</Field.ErrorText>
-                        </Field.Root>
-
-                        {/* Item */}
-                        <Field.Root invalid={!!errors.itemId}>
-                            <Field.Label>Item</Field.Label>
-                            <Select.Root
-                                collection={itemsCollection}
-                                value={[form.itemId]}
-                                onValueChange={(e) =>
-                                    handleChange("itemId", e.value[0])
-                                }
-                            >
-                                <Select.HiddenSelect />
-                                <Select.Control>
-                                    <Select.Trigger>
-                                        <Select.ValueText placeholder="Select Item" />
-                                    </Select.Trigger>
-                                    <Select.IndicatorGroup>
-                                        <Select.Indicator />
-
-                                    </Select.IndicatorGroup>
-                                </Select.Control>
-                                <Portal>
-                                    <Select.Positioner>
-                                        <Select.Content>
-                                            {itemsCollection.items.map((item:any) => (
-                                                <Select.Item key={item.value} item={item}>
-                                                    <Select.ItemText>
-                                                        {item.label}
-                                                    </Select.ItemText>
-                                                    <Select.ItemIndicator />
-                                                </Select.Item>
-                                            ))}
-                                        </Select.Content>
-                                    </Select.Positioner>
-                                </Portal>
-                            </Select.Root>
-                            <Field.ErrorText>{errors.itemId}</Field.ErrorText>
-                        </Field.Root>
-
-                        {/* Touch */}
-                        <Field.Root invalid={!!errors.touch}>
-                            <Field.Label>Touch</Field.Label>
-
-                            <CapitalizedInput
-                                field="touch"
-                                type="number"
-                                value={form.touch}
-                                onChange={handleChange}
-                            />
-
-                            <Field.ErrorText>{errors.touch}</Field.ErrorText>
-                        </Field.Root>
-
                     <Box>
+                        <Grid css={{ sm: { gridTemplateColumns: "repeat(1, 1fr)" }, md: { gridTemplateColumns: "repeat(2, 1fr)" } }} gap={4}>
 
-                </Box>
-                       
-                        <HStack pt={2} justifyContent="center">
+                            {/* Company Type */}
+                            <Box>
+                                <Field.Root invalid={!!errors.companyType}>
+                                    <Box display="flex" alignItems="center" gap={2}>
+                                        <Box minW="100px" fontSize="2xs">COMPANY TYPE :</Box>
+                                        <SelectCombobox
+                                            value={form.companyType}
+                                            onChange={(val) => handleChange("companyType", val)}
+                                            editId={Number(editId)}
+                                            items={AccountTypeList}
+                                            rounded="full"
+                                        />
+                                    </Box>
+                                    <Field.ErrorText>{errors.companyType}</Field.ErrorText>
+                                </Field.Root>
+                            </Box>
+
+                            {/* Company */}
+                            <Box>
+                                <Field.Root invalid={!!errors.companyId}>
+                                    <Box display="flex" alignItems="center" gap={2}>
+                                        <Box minW="100px" fontSize="2xs">COMPANY NAME :</Box>
+                                        <SelectCombobox
+                                            value={form.companyId}
+                                            onChange={(val) => handleChange("companyId", val)}
+                                            items={allAccountsList}
+                                            editId={Number(editId)}
+                                            rounded="full"
+                                        />
+                                    </Box>
+                                    <Field.ErrorText>{errors.companyId}</Field.ErrorText>
+                                </Field.Root>
+                            </Box>
+
+                            {/* Item */}
+                            <Box>
+                                <Field.Root invalid={!!errors.itemId}>
+                                    <Box display="flex" alignItems="center" gap={2}>
+                                        <Box minW="100px" fontSize="2xs">ITEM :</Box>
+                                        <SelectCombobox
+                                            value={form.itemId}
+                                            onChange={(val) => handleChange("itemId", val)}
+                                            editId={Number(editId)}
+                                            items={allItemsList}
+                                            rounded="full"
+                                        />
+                                    </Box>
+                                    <Field.ErrorText>{errors.itemId}</Field.ErrorText>
+                                </Field.Root>
+                            </Box>
+
+                            {/* Touch */}
+                            <Box>
+                                <Field.Root invalid={!!errors.touch}>
+                                    <Box display="flex" alignItems="center" gap={2}>
+                                        <Box minW="100px" fontSize="2xs">TOUCH :</Box>
+                                        <CapitalizedInput
+                                            field="touch"
+                                            type="number"
+                                            value={form.touch}
+                                            onChange={handleChange}
+                                            size="2xs"
+                                            max={999}
+                                            decimalScale={2}
+                                            maxWidth="80px"
+                                            rounded="full"
+
+                                        />
+                                    </Box>
+                                    <Field.ErrorText>{errors.touch}</Field.ErrorText>
+                                </Field.Root>
+                            </Box>
+
+                            <Box>
+                                <Field.Root invalid={!!errors.itemId}>
+                                    <Box display="flex" alignItems="center" gap={2}>
+                                        <Box minW="100px" fontSize="2xs">CAL MODE :</Box>
+                                        <SelectCombobox
+                                            value={form.calculationMode}
+                                            onChange={(val) => handleChange("calculationMode", val)}
+                                            editId={Number(editId)}
+                                            items={CalTypeCollection}
+                                            rounded="full"
+
+                                        />
+                                    </Box>
+                                    <Field.ErrorText>{errors.calculationMode}</Field.ErrorText>
+                                </Field.Root>
+                            </Box>
+
+
+                        </Grid>
+
+                        {/* Buttons */}
+                        <HStack pt={4} justifyContent="center">
                             <Button
                                 colorPalette="blue"
                                 onClick={handleSubmit}
@@ -428,30 +367,36 @@ const TouchMasterForm = () => {
                                     createMutation.isPending ||
                                     updateMutation.isPending
                                 }
+                                size="xs"
                             >
-                                {editId ? "Update" : "Save"}
+                              <IoIosSave />{editId ? "UPDATE" : "SAVE"}
                             </Button>
-                        
-                              {/* <Button size="sm" colorPalette="yellow">Open</Button>
-                                 <Button size="sm"  colorPalette="blue" >New</Button> */}
-                             <Button size="sm" colorPalette="blue" onClick={resetForm} >Clear <IoIosExit /> </Button>
-                     </HStack>
-                        </Box>
-                   
+
+                            <Button
+                                size="xs"
+                                colorPalette="blue"
+                                onClick={resetForm}
+                            >
+                                CLEAR <IoIosExit />
+                            </Button>
+                        </HStack>
+                    </Box>
+
+
                 </Box>
             </GridItem>
 
             {/* ---------------- TABLE ---------------- */}
             <GridItem minW={0}>
-                <Box p={5} borderRadius="lg" bg={theme.colors.formColor}  boxShadow="sm">
-                    <Heading  display='flex' size="md" mb={4} gap={3} justifyContent='space-between' alignItems='center'>
+                <Box p={5} borderRadius="lg" bg={theme.colors.formColor} boxShadow="sm">
+                    <Heading display='flex' size="md" mb={4} gap={3} justifyContent='space-between' alignItems='center'>
                         <Text>Touch Master List</Text>
 
                         <Flex gap={1}>
                             <Button
                                 variant="ghost"
                                 size="xs"
-                                color= {theme.colors.green}
+                                color={theme.colors.green}
                                 _hover={{ color: "black" }}
                                 onClick={() => handleExport("excel")}
                                 aria-label="Export Excel"
@@ -484,17 +429,17 @@ const TouchMasterForm = () => {
                                 <Table.Cell>{row.COMPANYNAME}</Table.Cell>
                                 <Table.Cell>{row.companyType}</Table.Cell>
                                 <Table.Cell>{row.itemName}</Table.Cell>
-                                <Table.Cell textAlign="right">{formatToFixed(row.touch , 2)}</Table.Cell>
+                                <Table.Cell textAlign="right">{formatToFixed(row.touch, 2)}</Table.Cell>
                                 <Table.Cell align="center">
                                     <Box display="flex" justifyContent="center" alignItems="center">
                                         <FiEdit
                                             cursor="pointer"
-                                            onClick={() =>{
-                                                 handleEdit(row)
-                                            } }
+                                            onClick={() => {
+                                                handleEdit(row)
+                                            }}
                                         />
                                     </Box>
-                                  
+
                                 </Table.Cell>
                             </>
                         )}
@@ -505,7 +450,7 @@ const TouchMasterForm = () => {
                         headerColor="white"
                         rowIdKey='sno'
                         highlightRowId={highlightRowId}
-                        
+
                     />
                 </Box>
             </GridItem>

@@ -11,10 +11,10 @@ import { toastUpdated , toastCreated ,toastDeleted } from "@/component/toast/toa
 
 /* -------------------- Queries -------------------- */
 
-export const useAllAccountHead = () => {
+export const useAllAccountHead = (filters: any = {}) => {
     return useQuery({
-        queryKey: ["accountHead"],
-        queryFn: getAllAccountHead,
+        queryKey: ["accountHead", filters], // cache per filter set
+        queryFn: () => getAllAccountHead(filters),
     });
 };
 
