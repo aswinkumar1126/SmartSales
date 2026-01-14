@@ -371,8 +371,7 @@ function AccountHeadMaster() {
                     data: form,
                 },
                 {
-                    onSuccess: () => {
-                        toastUpdated("Updated successfully");
+                    onSuccess: () => {              
                         refetch();
                         setHighlightedId(Number(editId));
                         resetForm();
@@ -442,7 +441,7 @@ function AccountHeadMaster() {
 
                                     {/* ENTRY ID */}
                                     <Box display="flex" alignItems="center" gap={2}>
-                                        <Box minW="110px" fontSize="2xs">ACCOUNT ID :</Box>
+                                        <Box minW="100px" fontSize="2xs">ACCOUNT ID :</Box>
                                         <CapitalizedInput
                                             field="ACCODE"
                                             value={form.ACCODE}
@@ -455,7 +454,7 @@ function AccountHeadMaster() {
 
                                     {/* CUSTOMER NAME */}
                                     <Box display="flex" alignItems="center" gap={2}>
-                                        <Box minW="110px" fontSize="2xs">CUSTOMER NAME :</Box>
+                                        <Box minW="100px" fontSize="2xs">CUSTOMER NAME :</Box>
                                         <CapitalizedInput
                                             field="ACNAME"
                                             value={form.ACNAME}
@@ -466,7 +465,7 @@ function AccountHeadMaster() {
 
                                     {/* CUSTOMER TYPE */}
                                     <Box display="flex" alignItems="center" gap={2}>
-                                        <Box minW="110px" fontSize="2xs">CUSTOMER TYPE :</Box>
+                                        <Box minW="100px" fontSize="2xs">CUSTOMER TYPE :</Box>
                                         <SelectCombobox
                                             // label="ACTYPE"
                                             value={safeValue(form.ACTYPE, AccountTypeList)}
@@ -479,7 +478,7 @@ function AccountHeadMaster() {
 
                                     {/* ADDRESS (span 2) */}
                                     <Box display="flex" alignItems="center" gap={2} >
-                                        <Box minW="110px" fontSize="2xs">ADDRESS :</Box>
+                                        <Box minW="100px" fontSize="2xs">ADDRESS :</Box>
                                         <CapitalizedInput
                                             field="ADDRESS1"
                                             value={form.ADDRESS1}
@@ -491,7 +490,7 @@ function AccountHeadMaster() {
 
                                     {/* AREA */}
                                     <Box display="flex" alignItems="center" gap={2}>
-                                        <Box minW="110px" fontSize="2xs">AREA :</Box>
+                                        <Box minW="100px" fontSize="2xs">AREA :</Box>
                                         <CapitalizedInput
                                             field="AREA"
                                             value={form.AREA}
@@ -502,7 +501,7 @@ function AccountHeadMaster() {
 
                                     {/* CITY */}
                                     <Box display="flex" alignItems="center" gap={2}>
-                                        <Box minW="110px" fontSize="2xs">CITY :</Box>
+                                        <Box minW="100px" fontSize="2xs">CITY :</Box>
                                         <CapitalizedInput
                                             field="CITY"
                                             value={form.CITY}
@@ -513,7 +512,7 @@ function AccountHeadMaster() {
 
                                     {/* STATE */}
                                     <Box display="flex" alignItems="center" gap={2}>
-                                        <Box minW="110px" fontSize="2xs">STATE :</Box>
+                                        <Box minW="100px" fontSize="2xs">STATE :</Box>
                                         <SelectCombobox
                                             // label="STATEID"
                                             value={safeValue(form.STATEID, stateCollection)}
@@ -526,7 +525,7 @@ function AccountHeadMaster() {
 
                                     {/* PINCODE */}
                                     <Box display="flex" alignItems="center" gap={2}>
-                                        <Box minW="110px" fontSize="2xs">PINCODE :</Box>
+                                        <Box minW="100px" fontSize="2xs">PINCODE :</Box>
                                         <CapitalizedInput
                                             field="PINCODE"
                                             value={form.PINCODE}
@@ -539,7 +538,7 @@ function AccountHeadMaster() {
 
                                     {/* MOBILE */}
                                     <Box display="flex" alignItems="center" gap={2}>
-                                        <Box minW="110px" fontSize="2xs">MOBILE :</Box>
+                                        <Box minW="100px" fontSize="2xs">MOBILE :</Box>
                                         <CapitalizedInput
                                             field="MOBILE"
                                             value={form.MOBILE}
@@ -553,7 +552,7 @@ function AccountHeadMaster() {
 
                                     {/* EMAIL */}
                                     <Box display="flex" alignItems="center" gap={2}>
-                                        <Box minW="110px" fontSize="2xs">EMAIL :</Box>
+                                        <Box minW="100px" fontSize="2xs">EMAIL :</Box>
                                         <CapitalizedInput
                                             field="EMAILID"
                                             size="2xs"
@@ -565,7 +564,7 @@ function AccountHeadMaster() {
 
                                     {/* GSTIN */}
                                     <Box display="flex" alignItems="center" gap={2}>
-                                        <Box minW="110px" fontSize="2xs">GSTIN :</Box>
+                                        <Box minW="100px" fontSize="2xs">GSTIN :</Box>
                                         <CapitalizedInput
                                             field="GSTNO"
                                             value={form.GSTNO}
@@ -577,7 +576,7 @@ function AccountHeadMaster() {
 
                                     {/* OPENING WEIGHT */}
                                     <Box display="flex" alignItems="center" gap={2}>
-                                        <Box minW="110px" fontSize="2xs">OPENING WEIGHT :</Box>
+                                        <Box minW="100px" fontSize="2xs">OPENING WEIGHT :</Box>
                                         <CapitalizedInput
                                             field="OPENING_WEIGHT"
                                             value={form.OPENING_WEIGHT}
@@ -591,7 +590,7 @@ function AccountHeadMaster() {
 
                                     {/* OPENING PURE */}
                                     <Box display="flex" alignItems="center" gap={2}>
-                                        <Box minW="110px" fontSize="2xs">OPENING PURE :</Box>
+                                        <Box minW="100px" fontSize="2xs">OPENING PURE :</Box>
                                         <CapitalizedInput
                                             field="OPENING_PURE"
                                             value={form.OPENING_PURE}
@@ -605,7 +604,7 @@ function AccountHeadMaster() {
 
                                     {/* OPENING CASH */}
                                     <Box display="flex" alignItems="center" gap={2}>
-                                        <Box minW="110px" fontSize="2xs">OPENING CASH :</Box>
+                                        <Box minW="100px" fontSize="2xs">OPENING CASH :</Box>
                                         <CapitalizedInput
                                             field="OPENING_CASH"
                                             value={form.OPENING_CASH}
@@ -620,7 +619,7 @@ function AccountHeadMaster() {
 
                                     {/* AADHAR NO*/}
                                     <Box display="flex" alignItems="center" gap={2}>
-                                        <Box minW="110px" fontSize="2xs">AADHAR NO :</Box>
+                                        <Box minW="100px" fontSize="2xs">AADHAR NO :</Box>
                                         <CapitalizedInput
                                             field="AADHARNO"
                                             value={form.AADHARNO}
@@ -634,7 +633,7 @@ function AccountHeadMaster() {
 
                                     {/* PAN NO */}
                                     <Box display="flex" alignItems="center" gap={2}>
-                                        <Box minW="110px" fontSize="2xs">PAN NO :</Box>
+                                        <Box minW="100px" fontSize="2xs">PAN NO :</Box>
                                         <CapitalizedInput
                                             field="PAN"
                                             value={form.PAN}
@@ -648,7 +647,7 @@ function AccountHeadMaster() {
 
                                     {/* WEBSITE*/}
                                     <Box display="flex" alignItems="center" gap={2}>
-                                        <Box minW="110px" fontSize="2xs">WEBSITE :</Box>
+                                        <Box minW="100px" fontSize="2xs">WEBSITE :</Box>
                                         <CapitalizedInput
                                             field="WEBSITE"
                                             value={form.WEBSITE}
@@ -660,7 +659,7 @@ function AccountHeadMaster() {
 
                                     {/* ACTIVE */}
                                     <Box display="flex" alignItems="center" gap={2}>
-                                        <Box minW="110px" fontSize="2xs">ACTIVE :</Box>
+                                        <Box minW="100px" fontSize="2xs">ACTIVE :</Box>
                                         <NativeSelect.Root size="xs" maxW="80px" fontSize='2xs' >
                                             <NativeSelect.Field
                                                 value={form.ACTIVE || "Y"}
@@ -693,14 +692,14 @@ function AccountHeadMaster() {
 
                         <HStack pt={3}>
                             <Button
-                                size="sm"
+                                size="xs"
                                 colorPalette="blue"
                                 loading={isPending}
                                 onClick={handleSave}
                             >
                                 <AiOutlineSave /> {editId ? "Update" : "Save"}
                             </Button>
-                            <Button size="sm" colorPalette="blue" onClick={resetForm}>
+                            <Button size="xs" colorPalette="blue" onClick={resetForm}>
                                 <IoIosExit /> Exit
                             </Button>
                         </HStack>

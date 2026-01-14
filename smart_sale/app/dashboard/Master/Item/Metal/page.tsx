@@ -63,7 +63,7 @@ function MetalMaster() {
     
 
     const [isEdit, setIsEdit] = useState(false);
-    const [editId, setEditId] = useState<number |undefined| null>(null);
+    const [editId, setEditId] = useState<number | null>(null);
     const [ highlightId ,setHighLightedId] =useState<String>();
     const [pureGoldCollection, setPureGoldCollection] = useState<any[]>([]);
 
@@ -94,7 +94,7 @@ function MetalMaster() {
         }));
     }, [metals]);
 
-    const { data: metalBySno, refetch: refetchMetalBySno } = useMetalBySno(editId ?? 0);
+    const { data: metalBySno, refetch: refetchMetalBySno } = useMetalBySno(editId);
  
 
     const { setData ,setColumns , setShowSno} = usePrint();
@@ -165,7 +165,7 @@ function MetalMaster() {
     const handleEdit = (metal:Metal) => {
        
         setIsEdit(true);
-        setEditId(metal.sno);
+        setEditId( metal.sno || null );
         refetchMetalBySno();
      
     };
@@ -182,6 +182,7 @@ function MetalMaster() {
 
 
     const resetForm = () => {
+        setIsEdit(false);
         setForm({   
             metalId: "", 
             metalName: "", 
@@ -192,7 +193,7 @@ function MetalMaster() {
             touch:"",
             pure:""
          });
-        setIsEdit(false);
+        setEditId(null);
     };
 
     const metalColumns = [
@@ -246,7 +247,7 @@ function MetalMaster() {
 
                                     {/* METAL ID */}
                                     <Box display="flex" alignItems="center" gap={2}>
-                                        <Box minW="100px" fontSize="2xs">METAL ID :</Box>
+                                        <Box minW="80px" fontSize="2xs">METAL ID :</Box>
                                         <CapitalizedInput
                                             type="text"
                                             field="metalId"
@@ -262,7 +263,7 @@ function MetalMaster() {
 
                                     {/* METAL NAME */}
                                     <Box display="flex" alignItems="center" gap={2}>
-                                        <Box minW="100px" fontSize="2xs">METAL NAME :</Box>
+                                        <Box minW="80px" fontSize="2xs">METAL NAME :</Box>
                                         <CapitalizedInput
                                             field="metalName"
                                             placeholder="Enter Metal Name"
@@ -274,7 +275,7 @@ function MetalMaster() {
 
                                     {/* METAL TYPE */}
                                     <Box display="flex" alignItems="center" gap={2}>
-                                        <Box minW="100px" fontSize="2xs">METAL TYPE :</Box>
+                                        <Box minW="80px" fontSize="2xs">METAL TYPE :</Box>
                                         <SelectCombobox
                                             value={safeValue(form.metalType, pureGoldCollection) || ""}
                                             onChange={(val) => handleChange("metalType", val || "")}
@@ -286,15 +287,15 @@ function MetalMaster() {
 
                                     {/* DISPLAY ORDER */}
                                     <Box display="flex" alignItems="center" gap={2}>
-                                        <Box minW="100px" fontSize="2xs">DISPLAY ORDER :</Box>
+                                        <Box minW="80px" fontSize="2xs">DISPLAY ORDER :</Box>
                                         <CapitalizedInput
                                             field="displayOrder"
+                                            placeholder="Enter displayOrder"
+                                            value={String(form.displayOrder || "")}
+                                            onChange={handleChange}
                                             size="2xs"
-                                            value={String(form.displayOrder)||"0"}
-                                            onChange={(val) =>
-                                                handleChange("displayOrder", parseInt(val || "0"))
-                                            }
                                             type="number"
+                                       
 
 
                                         />
@@ -302,7 +303,7 @@ function MetalMaster() {
 
                                     {/* WEIGHT */}
                                     <Box display="flex" alignItems="center" gap={2}>
-                                        <Box minW="100px" fontSize="2xs">WEIGHT :</Box>
+                                        <Box minW="80px" fontSize="2xs">WEIGHT :</Box>
                                         <CapitalizedInput
                                             field="weight"
                                             placeholder="Enter Weight"
@@ -317,7 +318,7 @@ function MetalMaster() {
 
                                     {/* TOUCH */}
                                     <Box display="flex" alignItems="center" gap={2}>
-                                        <Box minW="100px" fontSize="2xs">TOUCH :</Box>
+                                        <Box minW="80px" fontSize="2xs">TOUCH :</Box>
                                         <CapitalizedInput
                                             field="touch"
                                             placeholder="Enter Touch"
@@ -332,7 +333,7 @@ function MetalMaster() {
 
                                     {/* PURE */}
                                     <Box display="flex" alignItems="center" gap={2}>
-                                        <Box minW="100px" fontSize="2xs">PURE :</Box>
+                                        <Box minW="80px" fontSize="2xs">PURE :</Box>
                                         <CapitalizedInput
                                             field="pure"
                                             placeholder="Enter Pure"
@@ -346,7 +347,7 @@ function MetalMaster() {
 
                                     {/* ACTIVE */}
                                     <Box display="flex" alignItems="center" gap={2}>
-                                        <Box minW="100px" fontSize="2xs">ACTIVE :</Box>
+                                        <Box minW="80px" fontSize="2xs">ACTIVE :</Box>
                                         <NativeSelect.Root size="xs" minW="50px" maxW="80px" fontSize="2xs" >
                                             <NativeSelect.Field
                                                 value={form.active || "Y"}

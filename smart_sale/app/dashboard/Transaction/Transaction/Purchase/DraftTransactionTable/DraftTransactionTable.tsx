@@ -14,7 +14,7 @@ import {
 import { LuPlus, LuX } from "react-icons/lu";
 import EditableTable from "@/component/table/EditableTable";
 import AddTransactionItemForm, { FormField } from "./AddTransactionItemForm";
-import { issueColumns } from "../../Transaction/Issue/isseColumns";
+import { issueColumns } from "../../Issue/isseColumns";
 
 
 interface DraftTransactionTableProps {

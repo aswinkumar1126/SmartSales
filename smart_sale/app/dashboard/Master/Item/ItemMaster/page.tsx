@@ -251,7 +251,7 @@ export default function ItemMasterPage() {
                                 {/* ================= FIRST ROW ================= */}
                                 <Field.Root>
                                     <HStack>
-                                        <Box minW="100px">
+                                        <Box minW="80px">
                                             <Field.Label fontSize="2xs">ITEM ID :</Field.Label>
                                         </Box>
                                         <Box flex={1}>
@@ -269,7 +269,7 @@ export default function ItemMasterPage() {
 
                                 <Field.Root invalid={!!errors.itemName}>
                                     <HStack>
-                                        <Box minW="100px">
+                                        <Box minW="80px">
                                             <Field.Label fontSize="2xs">ITEM NAME :</Field.Label>
                                         </Box>
                                         <Box flex={1}>
@@ -292,7 +292,7 @@ export default function ItemMasterPage() {
                                 {/* ================= SECOND ROW ================= */}
                                 <Field.Root>
                                     <HStack>
-                                        <Box minW="100px">
+                                        <Box minW="80px">
                                             <Field.Label fontSize="2xs">COMPANY :</Field.Label>
                                         </Box>
                                         <Box flex={1}>
@@ -327,7 +327,7 @@ export default function ItemMasterPage() {
 
                                 <Field.Root>
                                     <HStack>
-                                        <Box minW="100px">
+                                        <Box minW="80px">
                                             <Field.Label fontSize="2xs">METAL :</Field.Label>
                                         </Box>
                                         <Box flex={1}>
@@ -360,7 +360,7 @@ export default function ItemMasterPage() {
                                 {/* ================= THIRD ROW ================= */}
                                 <Field.Root>
                                     <HStack>
-                                        <Box minW="100px">
+                                        <Box minW="80px">
                                             <Field.Label fontSize="2xs">HSN CODE :</Field.Label>
                                         </Box>
                                         <Box flex={1}>
@@ -376,7 +376,7 @@ export default function ItemMasterPage() {
 
                                 <Field.Root>
                                     <HStack>
-                                        <Box minW="100px">
+                                        <Box minW="80px">
                                             <Field.Label fontSize="2xs">SHORT NAME :</Field.Label>
                                         </Box>
                                         <Box flex={1}>
@@ -394,7 +394,7 @@ export default function ItemMasterPage() {
                                 {/* ================= FOURTH ROW ================= */}
                                 <Field.Root>
                                     <HStack>
-                                        <Box minW="100px">
+                                        <Box minW="80px">
                                             <Field.Label fontSize="2xs">STOCK TYPE :</Field.Label>
                                         </Box>
                                         <Box flex={1}>
@@ -426,7 +426,7 @@ export default function ItemMasterPage() {
 
                                 <Field.Root>
                                     <HStack>
-                                        <Box minW="100px">
+                                        <Box minW="80px">
                                             <Field.Label fontSize="2xs">CAL TYPE :</Field.Label>
                                         </Box>
                                         <Box flex={1}>
@@ -459,7 +459,7 @@ export default function ItemMasterPage() {
                                 {/* ================= FIFTH ROW ================= */}
                                 <Field.Root>
                                     <HStack>
-                                        <Box minW="100px">
+                                        <Box minW="80px">
                                             <Field.Label fontSize="2xs">ACTIVE :</Field.Label>
                                         </Box>
                                         <Box flex={1}>

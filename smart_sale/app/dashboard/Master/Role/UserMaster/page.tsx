@@ -412,7 +412,7 @@ export default function UserMasters() {
 
                                 <HStack pt={2} justifyContent="center" gap={2}>
                                     <Button
-                                        size="sm"
+                                        size="xs"
                                         loading={creating || updating}
                                         loadingText="Saving"
                                         onClick={handleSave}
@@ -421,7 +421,7 @@ export default function UserMasters() {
                                         <AiOutlineSave /> {editingUserId ? "Update" : "Save"}
                                     </Button>
 
-                                    <Button size="sm" colorPalette="blue" onClick={resetForm}>
+                                    <Button size="xs" colorPalette="blue" onClick={resetForm}>
                                         Clear <IoIosExit />
                                     </Button>
                                 </HStack>

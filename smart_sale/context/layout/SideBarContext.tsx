@@ -154,9 +154,15 @@ export const SidebarProvider = ({ children }: { children: ReactNode }) => {
         items:[
           {
             label: "Purchase",
-            route: "/dashboard/Transaction/Transactions",
+            route: "/dashboard/Transaction/Transaction/Purchase",
             icon: Layers,
           },
+          {
+            label: "Sales",
+            route: "/dashboard/Transaction/Transaction/Sales",
+            icon: Layers,
+          },
+         
         ]
       }
 

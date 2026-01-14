@@ -4,10 +4,6 @@ import React, { useState, useMemo, useEffect } from "react";
 import {
     Box,
     Field,
-    Input,
-    Select,
-    createListCollection,
-    Portal,
     Grid,
     GridItem,
     Button,
@@ -18,7 +14,6 @@ import {
     Flex
 } from "@chakra-ui/react";
 
-import { useAllCompanies } from "@/hooks/company/useCompany";
 import { useItems } from "@/hooks/item/useItems";
 import useTouchMastCreate from "@/hooks/touch/useTouchMastCreate";
 import { useModifyTouchMasterById } from "@/hooks/touch/useTouchMastModify";
@@ -42,44 +37,58 @@ import { AccountTypeList } from "@/data/ACCOUNTtYPE/AccountType";
 import { SelectCombobox } from "@/components/ui/selectComboBox";
 import { useAllAccountHead } from "@/hooks/accountHead/useAccountHead";
 import { CalTypeCollection } from "@/data/CalType/CalType";
-
+import { useTouchMasterDataById } from "@/hooks/touch/useTouchMastById";
+import { AiOutlineSave } from "react-icons/ai";
 /* ---------------- Initial State ---------------- */
 
 const initialFormState: TouchMaster = {
     companyType: "",
-    companyId: "",
+    accode: "",
     itemId: "",
     touch: "",
     calculationMode:"",
 };
 export type TouchTableRow = {
     sno: number;
-    COMPANYNAME: string;
+    acname: string;
     companyType: string;
     itemName: string;
     touch: number;
 };
+
 /* ---------------- Component ---------------- */
 
 const TouchMasterForm = () => {
 
     const [form, setForm] = useState<TouchMaster>(initialFormState);
+
     const [editId, setEditId] = useState<number | null>(null);
+    
     type FormErrors = Partial<Record<keyof TouchMaster, string>>;
+
     const [highlightRowId, setHighlightRowId] = useState<number | null>(null);
+
     const [errors, setErrors] = useState<FormErrors>({});
+
     const [allAccountsList, setAllAccountsList] = useState<{ label: string; value: string }[]>([]);
+
     const [allItemsList, setAllItemsList] = useState<{ label: string; value: string }[]>([]);
 
-    const filters = {
+    const filters = useMemo(() => ({
         accountType: form.companyType?.trim().toUpperCase()
-    }
-console.log(form.companyType ,'companyType')
+    }), [form.companyType]);
+
+
     /* ---------------- Hooks ---------------- */
 
     const { data: touchData = [], refetch } = useTouchMastData();
 
+   
+
+    const { data: touchDatabyId, refetch:touchDataRefetch } = useTouchMasterDataById(editId);
+    console.log(touchDatabyId, 'touchDatabyId')
     const { data: allAccounts ,refetch:accountRefetch } = useAllAccountHead(filters);
+
 
     const { data: items } = useItems();
     const { theme } = useTheme();
@@ -89,6 +98,8 @@ console.log(form.companyType ,'companyType')
     const updateMutation = useModifyTouchMasterById();
 
     const router = useRouter();
+
+
     /* ---------------- Collections ---------------- */
 
 
@@ -132,31 +143,37 @@ console.log(form.companyType ,'companyType')
     const handleEdit = (row: any) => {
         setEditId(row.sno);
         scrollToTop();
-        setForm({
-            companyId: row.companyId,
-            companyType: row.companyType,
-            itemId: row.itemId,
-            touch: String(row.touch),
-            calculationMode: row.calculationMode,
-        });
         toastLoaded("Touch Master");
+        setTimeout(() => touchDataRefetch(), 0); // 🔥 force reload
     };
     useEffect(() => {
-        setForm(prev => ({
-            ...prev,
-            companyId: ""
-        }));
-    }, [form.companyType]);
+        if (!touchDatabyId) return;
+
+        setForm({
+            accode: touchDatabyId.accode ?? "",
+            companyType: touchDatabyId.companyType ?? "",
+            itemId: touchDatabyId.itemId ?? "" ,
+            touch: String(touchDatabyId.touch),
+            calculationMode: touchDatabyId.calculationMode,
+        });
+    }, [touchDatabyId]);
+
+  
 
     const resetForm = () => {
         setForm(initialFormState);
         setEditId(null);
         setErrors({});
     };
+    useEffect(() => {
+        if (!editId) {
+            setForm(initialFormState);
+        }
+    }, [editId]);
 
     const payload = {
         companyType: form.companyType,
-        companyId: form.companyId,
+        accode: form.accode,
         itemId: Number(form.itemId),
         touch: Number(form.touch),
         calculationMode:form.calculationMode
@@ -164,7 +181,7 @@ console.log(form.companyType ,'companyType')
     const validateForm = (form: TouchMaster): FormErrors => {
         const errors: FormErrors = {};
 
-        if (!form.companyId) errors.companyId = "Company is required";
+        if (!form.accode) errors.accode = "Company is required";
         if (!form.companyType) errors.companyType = "Company type is required";
         if (!form.itemId) errors.itemId = "Item is required";
         if (!form.calculationMode) errors.calculationMode = "Calculation Mode is required";
@@ -215,7 +232,7 @@ console.log(form.companyType ,'companyType')
         setData(touchData);
         setColumns([
             { key: "sno", label: "S.No" },
-            { key: "COMPANYNAME", label: "Company Name" },
+            { key: "acname", label: "Company Name" },
             { key: "companyType", label: "Company Type" },
             { key: "itemName", label: "Item Name" },
             { key: "touch", label: "Touch", align: 'end' as const, allowTotal: true },
@@ -227,7 +244,7 @@ console.log(form.companyType ,'companyType')
 
     const columns = [
         { key: "sno", label: "S.No" },
-        { key: "COMPANYNAME", label: "Company Name" },
+        { key: "acname", label: "Company Name" },
         { key: "companyType", label: "Company Type" },
         { key: "itemName", label: "Item Name" },
         { key: "touch", label: "Touch", align: 'center' as const },
@@ -256,8 +273,8 @@ console.log(form.companyType ,'companyType')
         >
             <Toaster />
             {/* ---------------- FORM ---------------- */}
-            <GridItem>
-                <Box p={2} fontWeight='semibold' borderRadius="lg" bg={theme.colors.formColor} boxShadow="sm" minW='xl'>
+            <GridItem >
+                <Box p={2} fontWeight='semibold' borderRadius="lg" bg={theme.colors.formColor} boxShadow="sm" >
                     <Heading fontSize="medium" textAlign='center' mb={4}>
                         TOUCH MASTER
                     </Heading>
@@ -284,18 +301,19 @@ console.log(form.companyType ,'companyType')
 
                             {/* Company */}
                             <Box>
-                                <Field.Root invalid={!!errors.companyId}>
+                                <Field.Root invalid={!!errors.accode}>
                                     <Box display="flex" alignItems="center" gap={2}>
                                         <Box minW="100px" fontSize="2xs">COMPANY NAME :</Box>
                                         <SelectCombobox
-                                            value={form.companyId}
-                                            onChange={(val) => handleChange("companyId", val)}
+                                            value={String(form.accode)}
+                                            onChange={(val) => handleChange("accode", val)}
                                             items={allAccountsList}
                                             editId={Number(editId)}
                                             rounded="full"
+                                            disable={!form.companyType}
                                         />
                                     </Box>
-                                    <Field.ErrorText>{errors.companyId}</Field.ErrorText>
+                                    <Field.ErrorText>{errors.accode}</Field.ErrorText>
                                 </Field.Root>
                             </Box>
 
@@ -305,7 +323,7 @@ console.log(form.companyType ,'companyType')
                                     <Box display="flex" alignItems="center" gap={2}>
                                         <Box minW="100px" fontSize="2xs">ITEM :</Box>
                                         <SelectCombobox
-                                            value={form.itemId}
+                                            value={String(form.itemId)}
                                             onChange={(val) => handleChange("itemId", val)}
                                             editId={Number(editId)}
                                             items={allItemsList}
@@ -369,7 +387,7 @@ console.log(form.companyType ,'companyType')
                                 }
                                 size="xs"
                             >
-                              <IoIosSave />{editId ? "UPDATE" : "SAVE"}
+                             <AiOutlineSave /> {editId ? "Update" : "Save"}
                             </Button>
 
                             <Button
@@ -377,7 +395,7 @@ console.log(form.companyType ,'companyType')
                                 colorPalette="blue"
                                 onClick={resetForm}
                             >
-                                CLEAR <IoIosExit />
+                                Clear <IoIosExit />
                             </Button>
                         </HStack>
                     </Box>
@@ -426,7 +444,7 @@ console.log(form.companyType ,'companyType')
                         renderRow={(row: any, i: number) => (
                             <>
                                 <Table.Cell>{i + 1}</Table.Cell>
-                                <Table.Cell>{row.COMPANYNAME}</Table.Cell>
+                                <Table.Cell>{row.acname}</Table.Cell>
                                 <Table.Cell>{row.companyType}</Table.Cell>
                                 <Table.Cell>{row.itemName}</Table.Cell>
                                 <Table.Cell textAlign="right">{formatToFixed(row.touch, 2)}</Table.Cell>

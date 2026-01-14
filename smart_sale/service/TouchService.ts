@@ -15,6 +15,17 @@ export const TouchMastService = () => ({
             }
             
         },
+    getTouchMastDataById: async (id:number|null): Promise<ApiResponse<Touch>> => {
+        try {
+            const response = await axiosInstance.get(`/touch/${id}`);
+            return response.data;
+        }
+        catch (error) {
+            console.log(error);
+            throw error;
+        }
+
+    },
         createTouchMast: async (data: TouchForm) => {
             try{
                 const response = await axiosInstance.post("/touch", data);

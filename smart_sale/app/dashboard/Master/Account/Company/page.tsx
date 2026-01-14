@@ -328,7 +328,7 @@ function CompanyMaster() {
 
                                     {/* COMPANY ID */}
                                     <Box display="flex" alignItems="center" gap={2}>
-                                        <Box minW="110px" fontSize="2xs">COMPANY ID :</Box>
+                                        <Box minW="90px" fontSize="2xs">COMPANY ID :</Box>
                                         <CapitalizedInput
                                             field="COMPANYID"
                                             value={form.COMPANYID}
@@ -336,14 +336,14 @@ function CompanyMaster() {
                                             onChange={handleChange}
                                             max={3}
                                             size="2xs"
-                                            maxWidth="80px"
+                                            maxWidth="90px"
                                             rounded="full"
                                         />
                                     </Box>
 
                                     {/* COMPANY NAME */}
                                     <Box display="flex" alignItems="center" gap={2}>
-                                        <Box minW='110px' fontSize="2xs">COMPANY NAME :</Box>
+                                        <Box minW='90px' fontSize="2xs">COMPANY NAME :</Box>
                                         <CapitalizedInput
                                             field="COMPANYNAME"
                                             value={form.COMPANYNAME}
@@ -355,7 +355,7 @@ function CompanyMaster() {
 
                                     {/* ADDRESS */}
                                     <Box display="flex" alignItems="center" gap={2} >
-                                        <Box minW='110px' fontSize="2xs">ADDRESS :</Box>
+                                        <Box minW='90px' fontSize="2xs">ADDRESS :</Box>
                                         <CapitalizedInput
                                             field="ADDRESS1"
                                             value={form.ADDRESS1}
@@ -367,7 +367,7 @@ function CompanyMaster() {
 
                                     {/* AREA */}
                                     <Box display="flex" alignItems="center" gap={2} >
-                                        <Box minW="110px" fontSize="2xs">AREA :</Box>
+                                        <Box minW="90px" fontSize="2xs">AREA :</Box>
                                         <CapitalizedInput
                                             field="ADDRESS2"
                                             value={form.ADDRESS2}
@@ -378,7 +378,7 @@ function CompanyMaster() {
 
                                     {/* CITY */}
                                     <Box display="flex" alignItems="center" gap={2} >
-                                        <Box minW="110px" fontSize="2xs">CITY :</Box>
+                                        <Box minW="90px" fontSize="2xs">CITY :</Box>
                                         <CapitalizedInput
                                             field="ADDRESS3"
                                             value={form.ADDRESS3}
@@ -389,7 +389,7 @@ function CompanyMaster() {
 
                                     {/* STATE */}
                                     <Box display="flex" alignItems="center" gap={2}>
-                                        <Box minW="110px" fontSize="2xs">STATE :</Box>
+                                        <Box minW="90px" fontSize="2xs">STATE :</Box>
                                         <SelectCombobox
                                             items={stateOptions}
                                             value={form.STATEID}
@@ -400,7 +400,7 @@ function CompanyMaster() {
 
                                     {/* PINCODE */}
                                     <Box display="flex" alignItems="center" gap={2}>
-                                        <Box minW="110px" fontSize="2xs">PINCODE :</Box>
+                                        <Box minW="90px" fontSize="2xs">PINCODE :</Box>
                                         <CapitalizedInput
                                             field="AREACODE"
                                             value={form.AREACODE}
@@ -413,7 +413,7 @@ function CompanyMaster() {
 
                                     {/* MOBILE */}
                                     <Box display="flex" alignItems="center" gap={2}>
-                                        <Box minW="110px" fontSize="2xs">MOBILE :</Box>
+                                        <Box minW="90px" fontSize="2xs">MOBILE :</Box>
                                         <CapitalizedInput
                                             field="PHONE"
                                             value={form.PHONE}
@@ -426,7 +426,7 @@ function CompanyMaster() {
 
                                     {/* EMAIL */}
                                     <Box display="flex" alignItems="center" gap={2}>
-                                        <Box minW="110px" fontSize="2xs">EMAIL :</Box>
+                                        <Box minW="90px" fontSize="2xs">EMAIL :</Box>
                                         <CapitalizedInput
                                             field="EMAIL"           
                                             size="2xs"
@@ -438,7 +438,7 @@ function CompanyMaster() {
 
                                     {/* GSTIN */}
                                     <Box display="flex" alignItems="center" gap={2}>
-                                        <Box minW="110px" fontSize="2xs">GSTIN :</Box>
+                                        <Box minW="90px" fontSize="2xs">GSTIN :</Box>
                                         <CapitalizedInput
                                             field="GSTNO"
                                             value={form.GSTNO}
@@ -452,8 +452,8 @@ function CompanyMaster() {
 
                                     {/* ACTIVE */}
                                     <Box display="flex" alignItems="center" gap={2}>
-                                        <Box minW="110px" fontSize="2xs">ACTIVE :</Box>
-                                        <NativeSelect.Root size="xs" maxW="80px" fontSize="2xs">
+                                        <Box minW="90px" fontSize="2xs">ACTIVE :</Box>
+                                        <NativeSelect.Root size="xs" maxW="90px" fontSize="2xs">
                                             <NativeSelect.Field
                                                 value={form.ACTIVE || "Y"}
                                                 onChange={(e) => handleChange("ACTIVE", e.target.value)}

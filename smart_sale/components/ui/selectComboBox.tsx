@@ -16,6 +16,7 @@ type SelectComboboxProps = {
     items: SelectItem[];
     placeholder?: string;
     rounded?: string;
+    disable?: boolean;
 };
 
 export const SelectCombobox: React.FC<SelectComboboxProps> = ({
@@ -25,7 +26,8 @@ export const SelectCombobox: React.FC<SelectComboboxProps> = ({
     editId,
     items,
     placeholder = "Select an option",
-    rounded = "full"
+    rounded = "full",
+    disable
 }) => {
     const { contains } = useFilter({ sensitivity: "base" });
 
@@ -44,6 +46,11 @@ export const SelectCombobox: React.FC<SelectComboboxProps> = ({
     useEffect(() => {
         applyFilter("");
     }, [editId, applyFilter]);
+    useEffect(() => {
+        if (disable) {
+            onChange("");
+        }
+    }, [disable]);
 
     return (
         <Field.Root>
@@ -54,6 +61,11 @@ export const SelectCombobox: React.FC<SelectComboboxProps> = ({
                 collection={collection}
                 value={value ? [value] : []}
                 onValueChange={(e) => {
+                    if (e.value.length === 0) {
+                        onChange("");
+                        return;
+                    }
+                    if(disable) return;
                     const val = e.value[0] || "";
                     onChange(val.toUpperCase()); // 🔥 force uppercase
                 }}
@@ -62,43 +74,46 @@ export const SelectCombobox: React.FC<SelectComboboxProps> = ({
                     applyFilter(upper);
                 }}
                 size="xs"
-                openOnClick
+                openOnClick={!disable}
                 
             >
-                <Combobox.Control rounded='full'>
+                <Combobox.Control rounded='full' >
                     <Combobox.Input
                         placeholder={placeholder}
                         fontSize="2xs"
                         textTransform="uppercase" // 🔥 visual uppercase
-                       rounded={rounded}
+                        rounded={rounded}
+                        disabled={disable}
                     />
                     <Combobox.IndicatorGroup>
                         <Combobox.ClearTrigger />
                         <Combobox.Trigger />
                     </Combobox.IndicatorGroup>
                 </Combobox.Control>
+                {!disable &&
+                    <Portal >
+                        <Combobox.Positioner mt={-1.5} >
+                            <Combobox.Content>
+                                <Combobox.Empty fontSize="2xs">
+                                    No items found
+                                </Combobox.Empty>
 
-                <Portal >
-                    <Combobox.Positioner mt={-1.5} >
-                        <Combobox.Content>
-                            <Combobox.Empty fontSize="2xs">
-                                No items found
-                            </Combobox.Empty>
-
-                            {collection.items.map((item) => (
-                                <Combobox.Item
-                                    key={item.value}
-                                    item={item}
-                                    fontSize="2xs"
-                                    textTransform="uppercase" // 🔥 list also uppercase
-                                >
-                                    {item.label.toUpperCase()}
-                                    <Combobox.ItemIndicator />
-                                </Combobox.Item>
-                            ))}
-                        </Combobox.Content>
-                    </Combobox.Positioner>
-                </Portal>
+                                {collection.items.map((item) => (
+                                    <Combobox.Item
+                                        key={item.value}
+                                        item={item}
+                                        fontSize="2xs"
+                                        textTransform="uppercase" // 🔥 list also uppercase
+                                    >
+                                        {item.label.toUpperCase()}
+                                        <Combobox.ItemIndicator />
+                                    </Combobox.Item>
+                                ))}
+                            </Combobox.Content>
+                        </Combobox.Positioner>
+                    </Portal>
+                 }
+               
             </Combobox.Root>
         </Field.Root>
     );

@@ -60,6 +60,8 @@ export interface MetalData {
 
 
 export const getMetalBySno = (sno: number) =>
+
+   
     callApi<null, MetalData>({
         method: "get",
         url: `/metal/sno/${sno}`,

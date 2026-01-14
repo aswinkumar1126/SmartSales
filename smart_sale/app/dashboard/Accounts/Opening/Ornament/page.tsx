@@ -278,7 +278,7 @@ function OrnamentMaster() {
 
                                     {/* ITEM NAME */}
                                     <Box display="flex" alignItems="center" gap={2}>
-                                        <Box minW="110px" fontSize="2xs">ITEM NAME :</Box>
+                                        <Box minW="80px" fontSize="2xs">ITEM NAME :</Box>
                                         <SelectCombobox 
                                              items={itemCollection}
                                              value={form.itemId}
@@ -290,7 +290,7 @@ function OrnamentMaster() {
 
                                     {/* PIECES */}
                                     <Box display="flex" alignItems="center" gap={2}>
-                                        <Box minW="110px" fontSize="2xs">PIECES :</Box>
+                                        <Box minW="80px" fontSize="2xs">PIECES :</Box>
                                         <CapitalizedInput
                                             field="pcs"
                                             value={form.pcs}
@@ -302,7 +302,7 @@ function OrnamentMaster() {
 
                                     {/* GROSS WT */}
                                     <Box display="flex" alignItems="center" gap={2}>
-                                        <Box minW="110px" fontSize="2xs">GROSS WT :</Box>
+                                        <Box minW="80px" fontSize="2xs">GROSS WT :</Box>
                                         <CapitalizedInput
                                             field="grswt"
                                             value={form.grswt}
@@ -314,7 +314,7 @@ function OrnamentMaster() {
 
                                     {/* NET WT */}
                                     <Box display="flex" alignItems="center" gap={2}>
-                                        <Box minW="110px" fontSize="2xs">NET WT :</Box>
+                                        <Box minW="80px" fontSize="2xs">NET WT :</Box>
                                         <CapitalizedInput
                                             field="netwt"
                                             value={form.netwt}
@@ -326,7 +326,7 @@ function OrnamentMaster() {
 
                                     {/* STONE WT */}
                                     <Box display="flex" alignItems="center" gap={2}>
-                                        <Box minW="110px" fontSize="2xs">STONE WT :</Box>
+                                        <Box minW="80px" fontSize="2xs">STONE WT :</Box>
                                         <CapitalizedInput
                                             field="stnwt"
                                             value={form.stnwt}
@@ -338,7 +338,7 @@ function OrnamentMaster() {
 
                                     {/* PURE */}
                                     <Box display="flex" alignItems="center" gap={2}>
-                                        <Box minW="110px" fontSize="2xs">PURE :</Box>
+                                        <Box minW="80px" fontSize="2xs">PURE :</Box>
                                         <CapitalizedInput
                                             field="pure"
                                             value={form.pure}
@@ -350,7 +350,7 @@ function OrnamentMaster() {
 
                                     {/* STONE CASH */}
                                     <Box display="flex" alignItems="center" gap={2}>
-                                        <Box minW="110px" fontSize="2xs">STONE CASH :</Box>
+                                        <Box minW="80px" fontSize="2xs">STONE CASH :</Box>
                                         <CapitalizedInput
                                             field="stoneCash"
                                             value={form.stoneCash}
@@ -362,7 +362,7 @@ function OrnamentMaster() {
 
                                     {/* OPEN CASH */}
                                     <Box display="flex" alignItems="center" gap={2}>
-                                        <Box minW="110px" fontSize="2xs">OPEN CASH :</Box>
+                                        <Box minW="80px" fontSize="2xs">OPEN CASH :</Box>
                                         <CapitalizedInput
                                             field="openCash"
                                             value={form.openCash}
@@ -374,7 +374,7 @@ function OrnamentMaster() {
 
                                     {/* TOUCH */}
                                     <Box display="flex" alignItems="center" gap={2}>
-                                        <Box minW="110px" fontSize="2xs">TOUCH :</Box>
+                                        <Box minW="80px" fontSize="2xs">TOUCH :</Box>
                                         <CapitalizedInput
                                             field="touch"
                                             value={form.touch}
@@ -386,7 +386,7 @@ function OrnamentMaster() {
 
                                     {/* ACTUAL TOUCH */}
                                     <Box display="flex" alignItems="center" gap={2}>
-                                        <Box minW="110px" fontSize="2xs">ACTUAL TOUCH :</Box>
+                                        <Box minW="80px" fontSize="2xs">ACTUAL TOUCH :</Box>
                                         <CapitalizedInput
                                             field="actualtouch"
                                             value={form.actualtouch}
@@ -407,10 +407,10 @@ function OrnamentMaster() {
                                         loading={isPending || isUpdating}
                                         onClick={handleSave}
                                     >
-                                        <AiOutlineSave /> {editId ? "UPDATE" : "SAVE"}
+                                        <AiOutlineSave /> {editId ? "Update" : "Save"}
                                     </Button>
                                     <Button size="xs" colorPalette="blue" onClick={resetForm}>
-                                        <IoIosExit /> CLEAR
+                                        <IoIosExit /> Clear
                                     </Button>
                                 </HStack>
                             </Fieldset.Content>

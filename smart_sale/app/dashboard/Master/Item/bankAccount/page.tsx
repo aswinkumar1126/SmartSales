@@ -69,9 +69,6 @@ function BankAccountMaster() {
 
     const isEditing = !!editId;
 
-    
-
-
     // Clear form when editId becomes null
     useEffect(() => {
         if (!editId) {
@@ -135,6 +132,7 @@ function BankAccountMaster() {
                         setHighlightedId(editId);
                         setEditId(null); // reset form after success
                         refetch();
+                        setForm(EMPTY_FORM);
                     },
                     onError: () => toastError("Failed to update bank account"),
                 }
@@ -146,6 +144,7 @@ function BankAccountMaster() {
                     if (res?.data?.ENTRYNO) setHighlightedId(res.data.ENTRYNO);
                     setEditId(null); // reset form
                     refetch();
+                    setForm(EMPTY_FORM);
                 },
                 onError: () => toastError("Failed to create bank account"),
             });
@@ -221,6 +220,9 @@ function BankAccountMaster() {
                                             value={form.ACCOUNTNO}
                                             onChange={handleChange}
                                             size="2xs"
+                                            type="number"
+                                            max={99999999999999999999}
+
                                         />
                                     </Box>
 
@@ -274,8 +276,9 @@ function BankAccountMaster() {
                                         <Box minW="110px" fontSize="2xs">ADDRESS :</Box>
                                         <Textarea
                                             value={form.ADDRESS}
-                                            onChange={(e) => handleChange("ADDRESS", e.target.value)}
+                                            onChange={(e) => handleChange("ADDRESS", e.target.value.toUpperCase())}
                                             fontSize="2xs"
+                                            textTransform="uppercase" // optional: visual only
                                         />
                                     </Box>
 
@@ -318,7 +321,9 @@ function BankAccountMaster() {
                                 <AiOutlineSave /> {isEditing ? "Update" : "Save"}
                             </Button>
 
-                            <Button size="xs" colorPalette="gray" onClick={() => setEditId(null)}>
+                            <Button size="xs" colorPalette="blue" onClick={() => {setEditId(null)
+                                setForm(EMPTY_FORM);
+                            }}>
                                 <IoIosExit /> Exit
                             </Button>
                         </HStack>
