@@ -9,13 +9,19 @@ import {
     VStack,
     HStack,
     ActionBar,
-    Portal
+    Portal,
+    CloseButton, 
+    Drawer,
+    Input,
+    Select
+
 } from "@chakra-ui/react";
 import { useTheme } from "@/context/theme/themeContext";
 import { toaster, Toaster } from "@/components/ui/toaster";
 import { useListCollection, useFilter } from "@chakra-ui/react";
 import { useOpeningBalance } from "@/hooks/balance/useOpeningBalance";
 import Fab from '@mui/material/Fab';
+import {GiGoldBar} from "react-icons/gi";
 
 // Components
 import TransactionHeaderForm from "./TransactionHeaderForm/TransactionHeaderForm";
@@ -25,12 +31,14 @@ import SaveTransactionBar from "./SaveTransactionBar/TransactionBar";
 import TransactionHistoryTable from "./TransactionHistoryTable/TransactionHistoryTable";
 import RightSideDetailsPanel from "./RightSideDetailsPanel/RightSideDetailsPanel";
 import { FloatingActionButton } from "@/components/ui/FloatingActionButton";
+import StockDrawer from "./DrawerTable/StockTable";
+import { useAllMetals } from "@/hooks/metal/useMetals";
 // Hooks
 import { useTransactions } from "@/hooks/transaction/useTransactions";
 import { useAllAccountHead } from "@/hooks/accountHead/useAccountHead";
 import { useItems } from "@/hooks/item/useItems";
 import { useCreateTransactions, useUpdateTransaction, useTransactionByTransId } from "@/hooks/transaction/useTransactions";
-
+import { usePureGoldData, usePureGoldNames } from "@/hooks/pureGoldMast/usePureGoldMastData";
 // Types & Constants
 import { TransactionType, UpdateTransactionPayload } from "@/types/transcation/Transaction";
 import { TRANSACTIONTYPES } from "@/data/Transaction/TransactionType";
@@ -50,6 +58,17 @@ export default function IssuePage() {
     const [loading, setLoading] = useState<boolean>(true);
     const [purchaserList ,setPurchaserList] = useState<{label:string,value:string}[]>([]);
     const [showTypeSelector, setShowTypeSelector] = useState(false);
+    const [isStockDrawerOpen, setIsStockDrawerOpen] = useState(false);
+
+    const [pureGoldList ,setPureGoldList] = useState<{label:string ,value:string}[]>([]);
+    const [metalList ,setMetalList] = useState<{label:string ,value:string}[]>([]);
+
+    const [metalId, setMetalId] = useState<string | undefined>();
+   
+    const [pureGoldName, setPureGoldName] = useState<string | undefined>();
+
+
+
     /* ================================
        State Management
     ================================ */
@@ -112,11 +131,25 @@ export default function IssuePage() {
 
     const { data: allCustomer } = useAllAccountHead(filters);
 
-    console.log(allCustomer,'allCustomer')
+    console.log(allCustomer,'allCustomer');
+    const pureGoldDatafilters = {
+        metalId,
+        pureGoldName,
+    };
+
+    // Remove empty values
+    const cleanedFilters = Object.fromEntries(
+        Object.entries(pureGoldDatafilters).filter(
+            ([_, value]) => value !== undefined && value !== ""
+        )
+    );
+    const { data: stockList = [], refetch } = usePureGoldData(cleanedFilters);
+    const {data:allPureGoldNames } = usePureGoldNames();
 
     const { data: transactionsById, isLoading: getbySnoLoading } = useTransactionByTransId(selectedTransactionId);
 
     const updateTransaction = useUpdateTransaction();
+        const { data: metalsData } = useAllMetals();
 
     const { data: openingBalance } = useOpeningBalance(accCode);
     const { data: transactionList, isLoading } = useTransactions(
@@ -155,9 +188,31 @@ export default function IssuePage() {
 
     }, [customerList])
 
+     useEffect(() => {
+           if (!Array.isArray(allPureGoldNames)) return;
+           if (!allPureGoldNames.length) return;
+   
+           const fetchedData = allPureGoldNames.map((p: any) => ({
+               label: p.pureGoldName,
+               value: String(p.pureId),
+           }));
+   
+           setPureGoldList(fetchedData);
+       }, [allPureGoldNames]);
+   
 
+   useEffect(() => {
+          if (!Array.isArray(metalsData)) return;
+          if (!metalsData.length) return;
   
-
+          const fetchedData = metalsData.map((m: any) => ({
+              label: m.metalName,
+              value: m.metalId,
+          }));
+  
+        setMetalList(fetchedData);
+      }, [metalsData]);
+    
 
     const getLabelByValue = useCallback((collection: any, value: any) => {
         if (!collection?.items?.length) return value ?? "";
@@ -1135,15 +1190,27 @@ export default function IssuePage() {
             )}
             <Box>
                 <FloatingActionButton
-                    icon={<LuShare />}
+                    icon={<GiGoldBar />}
                     ariaLabel="Share"
-                    tooltip="Share this"
-                    onClick={() => console.log("Clicked")}
+                    tooltip="ALL STOCK"
+                    onClick={() => setIsStockDrawerOpen(true)}
                     position="bottom-right"
-                    colorScheme="blue"
+                    colorScheme="yellow"
                     size="lg"
                 />
             </Box>
+            <StockDrawer
+                open={isStockDrawerOpen}
+                onClose={() => setIsStockDrawerOpen(false)}
+                stockData={stockList}
+                metalId={metalId}
+                setMetalId={setMetalId}
+                metalCollection = {metalList}
+                pureGoldName={pureGoldName}
+                setPureGoldName={setPureGoldName}
+                pureGoldCollection={pureGoldList}
+                onIssue={(row) => console.log("Issue", row)}
+            />
         </Flex>
     );
 }

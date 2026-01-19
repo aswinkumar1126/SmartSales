@@ -27,11 +27,14 @@ export const createAccountHead = async(data:AccountHead):Promise<ApiResponse<Acc
     catch(error){
         console.error(error);
         throw error;
+     
     }
 }
 export const updateAccountHead = async(id:number,data:AccountHead):Promise<ApiResponse<AccountHead>> => {
     try{
-        const response = await axiosInstance.patch(`/achead/${id}`,data);
+        
+        const response = await axiosInstance.put(`/achead/${id}`,data);
+      
         return response.data;
     }
     catch(error){

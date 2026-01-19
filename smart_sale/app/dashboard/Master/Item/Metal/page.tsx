@@ -70,7 +70,7 @@ function MetalMaster() {
     const { data: metals = [], refetch } = useAllMetals();
     const { data: pureGold } = usePureGoldData();
 
-    console.log(pureGold,'pureGold');
+   
 
    
 
@@ -140,10 +140,10 @@ function MetalMaster() {
         }
 
         // 🔹 Check if metalId already exists when creating new
-        if (!isEdit && metals.some(m => m.metalId === form.metalId)) {
-            toastError(`Metal ID "${form.metalId}" already exists`);
-            return; // prevent save
-        }
+        // if (!isEdit && metals.some(m => m.metalId === form.metalId)) {
+        //     toastError(`Metal ID "${form.metalId}" already exists`);
+        //     return; // prevent save
+        // }
 
         if (isEdit && form.metalId ) {
             
@@ -274,7 +274,7 @@ function MetalMaster() {
                                     </Box>
 
                                     {/* METAL TYPE */}
-                                    <Box display="flex" alignItems="center" gap={2}>
+                                    {/* <Box display="flex" alignItems="center" gap={2}>
                                         <Box minW="80px" fontSize="2xs">METAL TYPE :</Box>
                                         <SelectCombobox
                                             value={safeValue(form.metalType, pureGoldCollection) || ""}
@@ -283,7 +283,7 @@ function MetalMaster() {
                                             items={pureGoldCollection}
                                             placeholder="Select Type"
                                         />
-                                    </Box>
+                                    </Box> */}
 
                                     {/* DISPLAY ORDER */}
                                     <Box display="flex" alignItems="center" gap={2}>
@@ -302,7 +302,7 @@ function MetalMaster() {
                                     </Box>
 
                                     {/* WEIGHT */}
-                                    <Box display="flex" alignItems="center" gap={2}>
+                                    {/* <Box display="flex" alignItems="center" gap={2}>
                                         <Box minW="80px" fontSize="2xs">WEIGHT :</Box>
                                         <CapitalizedInput
                                             field="weight"
@@ -314,10 +314,10 @@ function MetalMaster() {
                                             max={999}
 
                                         />
-                                    </Box>
+                                    </Box> */}
 
                                     {/* TOUCH */}
-                                    <Box display="flex" alignItems="center" gap={2}>
+                                    {/* <Box display="flex" alignItems="center" gap={2}>
                                         <Box minW="80px" fontSize="2xs">TOUCH :</Box>
                                         <CapitalizedInput
                                             field="touch"
@@ -329,10 +329,10 @@ function MetalMaster() {
                                             max={999}
                                             decimalScale={2}
                                         />
-                                    </Box>
+                                    </Box> */}
 
                                     {/* PURE */}
-                                    <Box display="flex" alignItems="center" gap={2}>
+                                    {/* <Box display="flex" alignItems="center" gap={2}>
                                         <Box minW="80px" fontSize="2xs">PURE :</Box>
                                         <CapitalizedInput
                                             field="pure"
@@ -343,7 +343,7 @@ function MetalMaster() {
                                             type="number"
                                             max={999}
                                         />
-                                    </Box>
+                                    </Box> */}
 
                                     {/* ACTIVE */}
                                     <Box display="flex" alignItems="center" gap={2}>
@@ -402,9 +402,9 @@ function MetalMaster() {
                                            boxShadow="0 0 30px rgba(212,212,212,0.2)"
                         
                                        >
-                        <Box display='flex'  mb={4} gap={3} justifyContent='space-between' alignItems='center'>
-                            <Text mb={2} fontWeight="bold" fontSize="lg">Metal List</Text>
-                             <Flex gap={1}>
+                                    <Box display='flex'  mb={4} gap={3} justifyContent='space-between' alignItems='center'>
+                                        <Text mb={2} fontWeight="bold" fontSize="lg">Metal List</Text>
+                                        <Flex gap={1}>
                                                         <Button
                                                             variant="ghost"
                                                             size="xs"

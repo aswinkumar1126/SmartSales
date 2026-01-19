@@ -13,7 +13,9 @@ import {
   SlidersHorizontal,
    Gem
 } from "lucide-react";
-
+import { HiArrowDownCircle, HiArrowUpCircle } from "react-icons/hi2";
+import { AiOutlineShoppingCart } from "react-icons/ai";
+import { AiOutlineDollar } from "react-icons/ai";
 type MenuItem = {
   label: string;
   route: string;
@@ -98,10 +100,11 @@ export const SidebarProvider = ({ children }: { children: ReactNode }) => {
             icon: SlidersHorizontal,
           },
           {
-            label:'PureGold Master',
-            route:'/dashboard/Master/Item/pureGold',
-            icon:Gem
+            label: 'PureGold Master',
+            route: '/dashboard/Master/Item/pureGold',
+            icon: Gem
           }
+         
         ],
       },
       Users: {
@@ -145,6 +148,11 @@ export const SidebarProvider = ({ children }: { children: ReactNode }) => {
             route: "/dashboard/Master/Item/bankAccount",
             icon: Layers,
           },
+          {
+            label: 'PureGold Opening',
+            route: '/dashboard/Accounts/Opening/pureGoldOpening',
+            icon: Gem
+          }
         ],
       },
     },
@@ -155,12 +163,12 @@ export const SidebarProvider = ({ children }: { children: ReactNode }) => {
           {
             label: "Purchase",
             route: "/dashboard/Transaction/Transaction/Purchase",
-            icon: Layers,
+            icon: AiOutlineShoppingCart,
           },
           {
             label: "Sales",
             route: "/dashboard/Transaction/Transaction/Sales",
-            icon: Layers,
+            icon: AiOutlineDollar,
           },
          
         ]

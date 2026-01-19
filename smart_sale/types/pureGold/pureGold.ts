@@ -5,6 +5,13 @@ export interface pureGoldForm{
     actualPure?: number;
     actualTouch?: number;
 }
+export interface pureGoldOpenForm {
+    pureId?: number;
+    weight?: number;
+    actualPure?: number;
+    actualTouch?: number;
+    metalId?:string;
+}
 
 export interface pureGoldData{
     sno:number;
@@ -12,6 +19,7 @@ export interface pureGoldData{
     weight?:number;
     actualPure?:number;
     actualTouch?:number;
+    metal?:string
 }
 
 export interface pureGoldMastForm{
@@ -20,4 +28,14 @@ export interface pureGoldMastForm{
     weight?:string;
     actualPure?:string;
     actualTouch?:string;
+    metalId?:string
+}
+
+export interface pureGoldMastOpenForm {
+
+    pureId?: string;
+    weight?: string;
+    actualPure?: string;
+    actualTouch?: string;
+    metalId?: string
 }

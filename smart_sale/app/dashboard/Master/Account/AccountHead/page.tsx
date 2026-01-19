@@ -289,6 +289,7 @@ function AccountHeadMaster() {
             return;
         }
 
+
         if (!form.ACTYPE?.trim()) {
             toastError("Account Type is required");
             return;
@@ -363,6 +364,7 @@ function AccountHeadMaster() {
                 return;
             }
         }
+       
         console.log(form, 'updating ')
         if (editId) {
             updateAccountHead(
@@ -380,7 +382,14 @@ function AccountHeadMaster() {
             );
         } else {
 
+            const isDuplicate = accountList.some(
+                (acc) => acc.ACNAME?.toLowerCase() === form.ACNAME?.toLowerCase()
+            );
 
+            if (isDuplicate) {
+                toastError("Account name already exists");
+                return;
+            }
 
             createAccountHead(form, {
                 onSuccess: () => {

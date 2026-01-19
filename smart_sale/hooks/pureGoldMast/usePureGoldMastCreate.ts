@@ -12,3 +12,16 @@ export const useCreatePureGoldMast = () => {
         },
     });
 };
+
+/* ----------------------Pure Gold Name ------------------*/
+
+export const useCreatePureGoldNmae = () => {
+    const queryClient = new QueryClient();
+    return useMutation({
+        mutationFn: pureGoldMastService().createPureGoldName,
+        onSuccess: () => {
+            toastCreated("Pure Gold Name")
+            queryClient.invalidateQueries({ queryKey: ["pureGoldName"] });
+        },
+    });
+};

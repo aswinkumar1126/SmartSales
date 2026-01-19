@@ -29,10 +29,10 @@ export const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({
     onClick,
     position = "bottom-right",
     size = "sm",
-    colorScheme = "teal",
+    colorScheme = "yellow",
     isDisabled = false,
     tooltip,
-    zIndex = 1000,
+    zIndex = 10,
     className
 }) => {
     const positionStyles: Record<FabPosition, any> = {
@@ -71,7 +71,7 @@ export const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({
                 </Tooltip.Trigger>
 
                 <Tooltip.Positioner >
-                    <Tooltip.Content fontSize="xs">
+                    <Tooltip.Content fontSize="2xs">
                         {tooltip}
                     </Tooltip.Content>
                 </Tooltip.Positioner>

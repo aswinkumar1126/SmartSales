@@ -183,7 +183,10 @@ function BankAccountMaster() {
         <Box bg={theme.colors.primary}>
             <Toaster />
 
-            <Grid templateColumns={{ base: "1fr", lg: "1fr 1fr" }} gap={5} p={2} fontWeight='600'>
+            <Grid
+                templateColumns={{ base: "repeat(1, 1fr)", md: "repeat(2, 1fr)" }}
+                gap={3}
+            >
                 {/* FORM */}
                 <GridItem>
                     <VStack
@@ -199,7 +202,7 @@ function BankAccountMaster() {
 
                         <Fieldset.Root size="sm" width="100%">
                             <Fieldset.Content>
-                                <Grid css={{ sm: { gridTemplateColumns: "repeat(1, 1fr)" }, md: { gridTemplateColumns: "repeat(2, 1fr)" } }} gap={3}>
+                                <Grid gridTemplateColumns={{ sm:'repeat(1,1fr)' , md:'repeat(2,1fr)'}} gap={3}>
 
                                     {/* BANK A/C */}
                                     <Box display="flex" alignItems="center" gap={2}>
@@ -272,7 +275,7 @@ function BankAccountMaster() {
                                     </Box>
 
                                     {/* ADDRESS - span 2 */}
-                                    <Box display="flex" alignItems="center" gap={2} gridColumn="span 2">
+                                    <Box display="flex" alignItems="center" gap={2} >
                                         <Box minW="110px" fontSize="2xs">ADDRESS :</Box>
                                         <Textarea
                                             value={form.ADDRESS}

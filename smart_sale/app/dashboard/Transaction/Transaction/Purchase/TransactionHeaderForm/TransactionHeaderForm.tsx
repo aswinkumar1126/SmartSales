@@ -249,7 +249,7 @@ export default function TransactionHeaderForm({
                         size="xs"
                         colorScheme={showFilter ? "red" : "blue"}
                         tooltip={showFilter ? "Hide Filter" : "Show Filter"}
-                        zIndex={1500}
+                        zIndex={10}
                         className="animate__animated animate__fadeInUp"
                     />
             </Box>
