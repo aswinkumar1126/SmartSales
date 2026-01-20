@@ -162,7 +162,7 @@ export default function TransactionHeaderForm({
                     onChange={(field, value) => onFormChange(field, value)}
                     type="number"
                     size="xs"
-                        rounded="md"
+                    rounded="sm"
                 />
             </Box>
 

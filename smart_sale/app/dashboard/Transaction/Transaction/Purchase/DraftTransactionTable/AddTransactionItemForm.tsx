@@ -20,7 +20,7 @@ import { useTheme } from "@/context/theme/themeContext";
 import { CapitalizedInput } from "@/component/form/CapitalizedInput";
 import downLoadIcon from '@/asserts/icons/download.png';
 import Image from "next/image";
-
+import { useCalculatePure } from "@/hooks/pure/useCalculatePure";
 /* ---------------- TYPES ---------------- */
 
 export interface FormField {
@@ -40,7 +40,8 @@ export interface FormField {
     allowNegative?: boolean;
     confirmNegative?: boolean;
     size?: "2xs" | "xs" | "sm" | "md" | "lg";
-    disabled?:boolean
+    disabled?:boolean;
+    decimalScale?:number;
 }
 
 /* ---------------- SELECT ---------------- */
@@ -130,6 +131,7 @@ export function CustomCombobox({
             size="xs"
             fontSize="2xs"
             width="100%"
+            openOnClick
           
         >
             <Combobox.Control >
@@ -187,10 +189,20 @@ export default function AddTransactionItemForm({
 
     const { theme } = useTheme();
 
+
+    const mirrorMap: Record<string, string> = {
+        WT: "AWT",
+        PURE: "APURE",
+        TOUCH:"ATOUCH"
+    };
+
     // Filter out NETWT and PUREWT from the form fields (they will be calculated)
     const visibleFields = fields.filter(
-        (field) => field.key !== "NETWT" && field.key !== "PUREWT"
+        (field) => field.key !== "NETWT" && field.key !== "PUREWT" && field.key !== "PURE" && field.key !== "APURE" 
     );
+
+    const pureValue = useCalculatePure(formData.WT, formData.TOUCH);
+    const alternativePureValue = useCalculatePure(formData.AWT, formData.ATOUCH);
 
     /* ---------------- INIT ---------------- */
 
@@ -233,18 +245,40 @@ export default function AddTransactionItemForm({
         }
     }, [formData.GRSWT, formData.LESSWT, formData.PURITY, calculatePureWeight]);
 
+    useEffect(() => {
+        if (pureValue) {
+            setFormData(prev => ({
+                ...prev,
+                PURE: pureValue,     // or PUREWT
+            }));
+        }
+        if(alternativePureValue){
+        setFormData(prev => ({
+                ...prev,
+                APURE: alternativePureValue
+            }));
+        }
+    }, [pureValue , alternativePureValue]);
+
+
+
     /* ---------------- CHANGE ---------------- */
 
     const handleChange = useCallback((key: string, value: any) => {
         const newFormData = { ...formData, [key]: value };
+        
+        
+        // ✅ One-way mirror (main → alternative)
+        if (mirrorMap[key]) {
+            newFormData[mirrorMap[key]] = value;
+        }
 
-        // Recalculate when GRSWT, LESSWT, or PURITY changes
+        // Existing logic
         if (key === "GRSWT" || key === "LESSWT") {
             const grswt = parseFloat(key === "GRSWT" ? value : formData.GRSWT) || 0;
             const lesswt = parseFloat(key === "LESSWT" ? value : formData.LESSWT) || 0;
             newFormData.NETWT = (grswt - lesswt).toFixed(3);
 
-            // Also recalculate PUREWT if PURITY exists
             if (formData.PURITY) {
                 const purity = parseFloat(formData.PURITY) || 0;
                 newFormData.PUREWT = ((grswt - lesswt) * purity / 100).toFixed(3);
@@ -261,6 +295,19 @@ export default function AddTransactionItemForm({
         setTouched((prev) => ({ ...prev, [key]: true }));
         setErrors((prev) => ({ ...prev, [key]: "" }));
     }, [formData, calculateNetWeight]);
+
+    console.log(formData,'formData')
+
+    useEffect(() => {
+        if (pureValue) {
+            setFormData(prev => ({
+                ...prev,
+                PURE: pureValue,
+                APURE: prev.PURE || pureValue, // don’t override if user changed
+            }));
+        }
+    }, [pureValue]);
+
 
     /* ---------------- VALIDATION ---------------- */
 
@@ -336,6 +383,8 @@ export default function AddTransactionItemForm({
         const size = "xs";
         const isInvalid = !!errors[field.key] && touched[field.key];
 
+        console.log(field ,'formFields')
+
         switch (field.type) {
             case "capitalized":
                 return (
@@ -346,6 +395,8 @@ export default function AddTransactionItemForm({
                         type="text"
                         isCapitalized
                         size={size}
+                        max={field.max}
+                        decimalScale={field.decimalScale}
                     />
                 );
 
@@ -361,6 +412,9 @@ export default function AddTransactionItemForm({
                         confirmNegative={field.confirmNegative}
                         size={size}
                         onClassUse={true}
+                        rounded="md"
+                        max={field.max}
+                        decimalScale={field.decimalScale}
                     />
                 );
 
@@ -399,6 +453,8 @@ export default function AddTransactionItemForm({
                         isCapitalized={false}
                         size={size}
                         onClassUse={true}
+                        max={field.max}
+                        decimalScale={field.decimalScale}
                     />
                 );
         }
@@ -409,9 +465,12 @@ export default function AddTransactionItemForm({
     const getGridColumns = () => {
         if (compact) {
             return {
-                base: "repeat(13, 1fr)", // 12-column grid for flexibility
-                sm: "repeat(13, 1fr)",
-                md: "repeat(13, 1fr)",
+
+                md: "repeat(4, 1fr)",
+                lg: "repeat(6, 1fr)",
+                xl: "repeat(13, 1fr)",
+                base: "repeat(2, 1fr)", // 12-column grid for flexibility
+               
             };
         }
 
@@ -425,6 +484,7 @@ export default function AddTransactionItemForm({
     const getGridColumnSpan = (field: FormField): string => {
         // Define how many columns each field should span
         const spanMap: Record<string, string> = {
+            "PUREID":"span 2",
             "ITEMID": "span 2",
             "DESCRIPTION": "span 2", 
             "ITEMCODE": "span 1", 
@@ -452,7 +512,7 @@ export default function AddTransactionItemForm({
         >
             <form onSubmit={handleSubmit}>
                 <Grid templateColumns={getGridColumns()} gap={compact ? 3 : 4}>
-                    {fields.map((field) => (
+                    {visibleFields.map((field) => (
                         <GridItem
                             key={field.key}
                             gridColumn={getGridColumnSpan(field)}
@@ -492,6 +552,16 @@ export default function AddTransactionItemForm({
                                     <strong>PURE WT :</strong> {formData.PUREWT}
                                 </Text>
                             )}
+                        {formData.PURE && (
+                            <Text fontSize="2xs">
+                                <strong>PURE  :</strong> {formData.PURE}
+                            </Text>
+                        )}
+                        {formData.APURE && (
+                            <Text fontSize="2xs">
+                                <strong>A.PURE :</strong> {formData.APURE}
+                            </Text>
+                        )}
                         </Flex>
              
                     <Box display='flex' gap={1}>

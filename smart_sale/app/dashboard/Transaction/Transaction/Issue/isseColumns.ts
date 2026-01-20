@@ -123,6 +123,94 @@ export const issueColumns = [
 
     },
 ];
+export const issueDataColumns = [
+    {
+        key: "SNO",
+        label: "S.N0",
+        width: "15px",
+        align: "center" as const,
+        editable: false,
+
+    },
+    {
+        key: "PUREID",
+        label: "PURE GOLD NAME",
+        width: "50px",
+        align: "left" as const,
+        type: "combobox" as const,
+
+    },
+    
+    
+    {
+        key: "WT",
+        label: "WT",
+        width: "20px",
+        type: "number" as const,
+        align: "right" as const,
+        max:999,
+        decimalScale:3
+
+    },
+    {
+        key: "AWT",
+        label: "A.WT",
+        width: "25px",
+        type: "number" as const,
+        align: "right" as const,
+        max: 999,
+        decimalScale: 3
+       
+
+    },
+    {
+        key: "TOUCH",
+        label: "TOUCH",
+        width: "25px",
+        type: "number" as const,
+        align: "right" as const,
+        max: 999,
+        decimalScale: 3
+
+    },
+    {
+        key: "ATOUCH",
+        label: "A.TOUCH",
+        width: "25px",
+        type: "number" as const,
+        align: "right" as const,
+        max: 999,
+        decimalScale: 3
+
+    },
+    {
+        key: "PURE",
+        label: "PURE",
+        width: "25px",
+        type: "number" as const,
+        align: "right" as const,
+        editable: false,
+        disabled: true,
+        max: 999,
+        decimalScale: 3
+
+    },
+    {
+        key: "APURE",
+        label: "A.PURE",
+        width: "25px",
+        type: "number" as const,
+        align: "right" as const,
+        editable: false,
+        disabled:true,
+        max: 999,
+        decimalScale: 3
+
+
+    },
+    
+];
+
 
 export const itemCollection = {
 

@@ -117,7 +117,18 @@ const PureGoldOpening = () => {
     }, [allPureGoldNames]);
 
     /* ---------------- Helpers ---------------- */
+    useEffect(() => {
+        const weight = Number(form.weight);
+        const touch = Number(form.actualTouch);
 
+        if (!isNaN(weight) && !isNaN(touch)) {
+            const pure = (weight * touch) / 100;
+            setForm((prev) => ({
+                ...prev,
+                actualPure: pure ? pure.toFixed(3) : "",
+            }));
+        }
+    }, [form.weight, form.actualTouch]);
 
 
     const handleChange = (key: keyof pureGoldMastOpenForm, value: string) => {
@@ -363,10 +374,11 @@ const PureGoldOpening = () => {
                                         type="number"
                                         value={form.actualPure}
                                         onChange={handleChange}
-                                        placeholder="Enter actual pure"
+                                        placeholder="see actual pure"
                                         size="2xs"
                                         max={999}
                                         decimalScale={3}
+                                        disabled
                                     />
                                     <Field.ErrorText>{errors.actualPure}</Field.ErrorText>
                                 </Box>

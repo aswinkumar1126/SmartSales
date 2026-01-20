@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useCallback, useState } from "react";
+import React, { useMemo, useCallback, useState ,useEffect } from "react";
 import {
     Box,
     Text,
@@ -14,8 +14,8 @@ import {
 import { LuPlus, LuX } from "react-icons/lu";
 import EditableTable from "@/component/table/EditableTable";
 import AddTransactionItemForm, { FormField } from "./AddTransactionItemForm";
-import { issueColumns } from "../../Issue/isseColumns";
-
+import { issueColumns, issueDataColumns } from "../../Issue/isseColumns";
+import { applyWeightTouchLogic } from "@/hooks/pure/applyWeightTouchLogic";
 
 interface DraftTransactionTableProps {
     rows: any[];
@@ -33,6 +33,7 @@ interface DraftTransactionTableProps {
     itemsFilter: any;
     handleClearForm?: any;
     isEditing: boolean;
+    isIssue?:boolean;
 }
 
 export default function DraftTransactionTable({
@@ -50,9 +51,10 @@ export default function DraftTransactionTable({
     theme,
     itemsFilter,
     handleClearForm,
-    isEditing
+    isEditing,
+    isIssue
 }: DraftTransactionTableProps) {
-    console.log("DraftTable - rows:", rows.length, "editingRowId:", editingRowId, "isEditing:", isEditing);
+    console.log("DraftTable - rows:", rows, "editingRowId:", editingRowId, "isEditing:", isEditing);
 
     const [showForm, setShowForm] = useState(false);
     const [hasChanges, setHasChanges] = useState(false);
@@ -69,49 +71,29 @@ export default function DraftTransactionTable({
     // Create adapter function for updating rows
     const handleUpdateRowAdapter = useCallback(
         (rowIndex: number, updatedRow: any) => {
-            console.log("Updating row", rowIndex, "with:", updatedRow);
-
             const currentRow = rows[rowIndex];
             if (!currentRow) return;
 
-            // Check if any non-editable fields are being changed during edit mode
-            if (isEditing) {
-                const nonEditableFields = ['ITEMID', 'ITEMCODE', 'TRANSACTION_TYPE'];
-                const changedNonEditable = nonEditableFields.filter(field =>
-                    updatedRow[field] !== undefined &&
-                    updatedRow[field] !== currentRow[field]
-                );
+            // Merge all changes at once
+            const mergedRow = { ...currentRow, ...updatedRow };
 
-                if (changedNonEditable.length > 0) {
-                    console.warn("Attempted to change non-editable fields during edit:", changedNonEditable);
-                    // Don't allow changes to non-editable fields during edit
-                    return;
-                }
-            }
+            // Compute weights / mirrors
+            const computedRow = Object.keys(mergedRow).reduce((acc, key) => {
+                return applyWeightTouchLogic(acc, key, mergedRow[key]);
+            }, currentRow);
 
-            let hasChanges = false;
-            Object.keys(updatedRow).forEach((field) => {
-                if (field.startsWith("__")) return;
-
-                const currentValue = currentRow[field];
-                const newValue = updatedRow[field];
-
-                if (currentValue !== newValue) {
-                    console.log(
-                        `Field ${field} changed from ${currentValue} to ${newValue}`
-                    );
-                    onUpdateRow(rowIndex, field, newValue);
-                    hasChanges = true;
+            // Apply changes
+            Object.keys(computedRow).forEach((k) => {
+                if (computedRow[k] !== currentRow[k]) {
+                    onUpdateRow(rowIndex, k, computedRow[k]);
                 }
             });
-
-            // Track if there are any changes (for warning purposes)
-            if (hasChanges && isEditing) {
-                setHasChanges(true);
-            }
         },
-        [rows, onUpdateRow, isEditing]
+        [rows, onUpdateRow]
     );
+
+
+
 
     // Handle delete row
     const handleDeleteRow = useCallback(
@@ -199,20 +181,14 @@ export default function DraftTransactionTable({
     // Prepare form fields from columns with proper grid column spans
     const formFields = useMemo(() => {
         const numericFields = [
-            "PCS",
-            "GRSWT",
-            "LESSWT",
-            "PURITY",
-            "RATE",
-            "MCHARGE",
-            "WASTAGE",
-            "AMOUNT",
-            "IGST",
-            "CGST",
-            "SGST",
+            "PCS", "GRSWT", "LESSWT", "PURITY", "RATE",
+            "MCHARGE", "WASTAGE", "AMOUNT", "IGST", "CGST", "SGST",
+            "WT" , "AWT" , "TOUCH" ,"ATOUCH" , "PURE" ,"APURE"
         ];
 
-        return issueColumns
+        const baseColumns = isIssue ? issueDataColumns : issueColumns;
+
+        return baseColumns
             .filter(
                 (col) =>
                     col.key !== "SNO" &&
@@ -221,8 +197,10 @@ export default function DraftTransactionTable({
             )
             .map((col): FormField => {
                 const isNumeric = numericFields.includes(col.key);
-                const isRequired =
-                    col.key === "ITEMID" || col.key === "PURITY" || col.key === "GRSWT";
+
+                const isRequired = isIssue
+                    ? ["PUREID", "TOUCH", "WT" ,"PURE"].includes(col.key)
+                    : ["ITEMID", "PURITY", "GRSWT"].includes(col.key);
 
                 const baseField: FormField = {
                     key: col.key,
@@ -231,18 +209,30 @@ export default function DraftTransactionTable({
                     type: isNumeric ? "number" : "capitalized",
                     isRequired,
                     size: "xs",
+                    ...(isNumeric && 'max' in col && typeof col.max === 'number' ? { max: col.max } : {}),
+                    ...(isNumeric && 'decimalScale' in col && typeof col.decimalScale === 'number' ? { decimalScale: col.decimalScale } : {}),
                 };
 
-                // Special handling for specific fields with custom grid columns
                 if (col.key === "ITEMID") {
                     return {
                         ...baseField,
                         type: "combobox",
                         collection: itemsCollection,
                         isRequired: true,
-                        disabled: isEditing, // Disable ITEMID during edit
+                        disabled: isEditing,
                     };
-                } else if (col.key === "PURITY") {
+                }
+
+                if (col.key === "PUREID") {
+                    return {
+                        ...baseField,
+                        type: "combobox",
+                        collection: itemsCollection,
+                        isRequired: true,
+                        disabled: isEditing,
+                    };
+                }
+                if (col.key === "PURITY") {
                     return {
                         ...baseField,
                         type: "number",
@@ -252,20 +242,26 @@ export default function DraftTransactionTable({
                         precision: 3,
                         isRequired: true,
                     };
-                } else if (col.key === "LESSWT" || col.key === "WASTAGE") {
+                }
+
+                if (col.key === "LESSWT" || col.key === "WASTAGE") {
                     return {
                         ...baseField,
                         type: "number",
                         allowNegative: true,
                         confirmNegative: false,
                     };
-                } else if (col.key === "ITEMCODE" || col.key === "HSNCODE") {
+                }
+
+                if (col.key === "ITEMCODE" || col.key === "HSNCODE") {
                     return {
                         ...baseField,
                         type: "capitalized",
-                        disabled: isEditing, // Disable ITEMCODE during edit
+                        disabled: isEditing,
                     };
-                } else if (col.key === "RATE" || col.key === "AMOUNT") {
+                }
+
+                if (col.key === "RATE" || col.key === "AMOUNT") {
                     return {
                         ...baseField,
                         type: "number",
@@ -274,27 +270,22 @@ export default function DraftTransactionTable({
 
                 return baseField;
             });
-    }, [itemsCollection, isEditing]);
+    }, [itemsCollection, isEditing, isIssue]);
+
 
     // Memoize columns for table
+    const activeColumns = isIssue ? issueDataColumns : issueColumns;
+
     const columns = useMemo(() => {
         const numeric = [
-            "PCS",
-            "GRSWT",
-            "LESSWT",
-            "NETWT",
-            "PURITY",
-            "PUREWT",
-            "RATE",
-            "MCHARGE",
-            "WASTAGE",
-            "AMOUNT",
-            "IGST",
-            "CGST",
-            "SGST",
+            "PCS", "GRSWT", "LESSWT", "NETWT",
+            "PURITY", "PUREWT", "RATE",
+            "MCHARGE", "WASTAGE", "AMOUNT",
+            "IGST", "CGST", "SGST",
+            "WT" , "AWT" , "TOUCH" ,"ATOUCH" , "PURE" ,"APURE"
         ];
 
-        return issueColumns.map((col) => {
+        return activeColumns.map((col) => {
             if (col.key === "SNO") {
                 return {
                     ...col,
@@ -308,6 +299,25 @@ export default function DraftTransactionTable({
             }
 
             if (col.key === "ITEMID") {
+                return {
+                    ...col,
+                    type: "combobox" as const,
+                    collection: itemsCollection,
+                    filter: itemsFilter,
+                    align: "left" as const,
+                    headalign: "left" as const,
+                    getLabelByValue: (collection: any, value: any) => {
+                        if (!collection?.items) return value || "";
+                        const item = collection.items.find(
+                            (i: any) => i.value === value?.toString()
+                        );
+                        return item?.label || value || "";
+                    },
+                    editable: !isEditing, // Make ITEMID non-editable during edit
+                    disabled: isEditing, // Visual disable during edit
+                };
+            }
+            if (col.key === "PUREID") {
                 return {
                     ...col,
                     type: "combobox" as const,
@@ -345,7 +355,7 @@ export default function DraftTransactionTable({
                 onClassUse: true,
             };
         });
-    }, [itemsCollection, itemsFilter, isEditing, isFieldEditable]);
+    }, [activeColumns, itemsCollection, itemsFilter, isEditing, isFieldEditable]);
 
     // Handle cancel edit
     const handleCancelEdit = useCallback((rowId?: string) => {
@@ -453,60 +463,7 @@ export default function DraftTransactionTable({
                         </>
                     )}
 
-                    {/* Show Add buttons with warning during edit */}
-                    {/* {!isEditing && (
-                        <>
-                            {!showForm ? (
-                                <Button
-                                    size="xs"
-                                    variant="solid"
-                                    colorPalette="cyan"
-                                    onClick={() => {
-                                        const confirm = window.confirm(
-                                            "You are editing an existing transaction. Adding new items will modify the transaction. Continue?"
-                                        );
-                                        if (confirm) {
-                                            setShowForm(true);
-                                            setHasChanges(true);
-                                        }
-                                    }}
-                                    fontSize="2xs"
-                                    height="24px"
-                                >
-                                    Add via Form
-                                </Button>
-                            ) : (
-                                <Button
-                                    size="xs"
-                                    variant="outline"
-                                    colorPalette="red"
-                                    onClick={() => setShowForm(false)}
-                                    fontSize="2xs"
-                                    height="24px"
-                                >
-                                    <Icon as={LuX} boxSize={2} /> Close Form
-                                </Button>
-                            )}
-
-                            <Button
-                                size="xs"
-                                variant="outline"
-                                colorPalette="green"
-                                onClick={() => {
-                                    const confirm = window.confirm(
-                                        "You are editing an existing transaction. Adding new items will modify the transaction. Continue?"
-                                    );
-                                    if (confirm) {
-                                        handleAddInline();
-                                    }
-                                }}
-                                fontSize="2xs"
-                                height="24px"
-                            >
-                                Add Inline
-                            </Button>
-                        </>
-                    )} */}
+                   
                 </HStack>
             </Flex>
 

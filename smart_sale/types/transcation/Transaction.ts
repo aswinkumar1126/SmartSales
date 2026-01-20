@@ -41,7 +41,11 @@ export interface TransactionItem {
     RATE?: number;
     MCHARGE?: number;
     WASTAGE?: number;
+    PUREID?: number | null,
+    TOUCH?: number,
+   
 }
+
 
 export interface TransactionData {
     header?: TransactionHeader;
@@ -83,5 +87,10 @@ export type UpdateTransactionPayload = {
         WASTAGE: number;
         AMOUNT: number;
         ITEMID: number | null;
-    } | null;
+    } | {
+        PUREID:number|null,
+        GRSWT: number,
+TOUCH: number,
+    PUREWT: number, 
+} | null;
 };

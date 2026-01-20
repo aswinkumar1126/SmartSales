@@ -28,9 +28,9 @@ type TableColumn = {
 const columns: TableColumn[] = [
     { key: "pureGoldName", label: "Pure Gold" },
     { key: "metalName", label: "Metal" },
-    { key: "actualPure", label: "Pure", align: "end" },
-    { key: "actualTouch", label: "Touch", align: "end" },
     { key: "weight", label: "Weight", align: "end" },
+    { key: "actualTouch", label: "Touch", align: "end" },
+    { key: "actualPure", label: "Pure", align: "end" },
     { key: "action", label: "Action", align: "center" },
 ];
 
@@ -109,11 +109,12 @@ const {theme} = useTheme()
                                     <>
                                         <Box as="td">{row.pureGoldName}</Box>
                                         <Box as="td">{row.metalName}</Box>
-                                        <Box as="td" textAlign="end" >{row.actualPure}</Box>
-                                        <Box as="td" textAlign="end">{row.actualTouch}</Box>
                                         <Box as="td" textAlign="end">
                                             {row.weight}
                                         </Box>
+                                        <Box as="td" textAlign="end">{row.actualTouch}</Box>
+                                        <Box as="td" textAlign="end" >{row.actualPure}</Box>
+                                       
                                         <Box as="td" textAlign="center">
                                             <IconButton
                                                 aria-label="Issue"

@@ -68,7 +68,8 @@ function MetalMaster() {
     const [pureGoldCollection, setPureGoldCollection] = useState<any[]>([]);
 
     const { data: metals = [], refetch } = useAllMetals();
-    const { data: pureGold } = usePureGoldData();
+    const filters={}
+    const { data: pureGold } = usePureGoldData(filters);
 
    
 
