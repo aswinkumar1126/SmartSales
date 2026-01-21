@@ -68,7 +68,7 @@ export default function PurchasePage() {
    
     const [pureGoldName, setPureGoldName] = useState<string | undefined>();
 
- 
+
 
 
     /* ================================
@@ -149,9 +149,10 @@ export default function PurchasePage() {
             ([_, value]) => value !== undefined && value !== ""
         )
     );
+
     const { data: stockList = [], refetch } = usePureGoldData(cleanedFilters);
 
-
+    console.log(stockList,'stockList');
     const {data:allPureGoldNames } = usePureGoldNames();
 
     const { data: transactionsById, isLoading: getbySnoLoading } = useTransactionByTransId(selectedTransactionId);
@@ -160,6 +161,7 @@ export default function PurchasePage() {
         const { data: metalsData } = useAllMetals();
 
     const { data: openingBalance } = useOpeningBalance(accCode);
+
     const { data: transactionList, isLoading } = useTransactions(
         selectedTransactionType?.value,
         accCode,
@@ -192,7 +194,7 @@ export default function PurchasePage() {
                     value:item.ACCODE.toString()
                 }
             })
-            setPurchaserList(purchaser)
+            setPurchaserList(purchaser);
 
     }, [customerList])
 
@@ -255,6 +257,20 @@ export default function PurchasePage() {
     /* ================================
       Pure Gold Name Data
    ================================ */
+
+    const getAvailableWeight = useCallback(
+        (pureId: string | number | null) => {
+         
+
+            if (!pureId) return null;
+            const stock = stockList.find(
+                (s: any) => String(s.pureId) === String(pureId)
+            );
+
+            return stock ? Number(stock.weight || 0) : null;
+        },
+        [stockList]
+    );
 
    
     const mappedPureGoldName = useMemo(
@@ -439,6 +455,25 @@ export default function PurchasePage() {
         }
     }, [isEditing, editingSno])
 
+
+    /* ================================
+      Condition For Adding New Item or Pure Gold 
+   ================================ */
+
+    // const hasDuplicateId = (
+    //     rows: any[],
+    //     field: "PUREID" | "ITEMID",
+    //     value: any,
+    //     currentIndex: number
+    // ) => {
+    //     return rows.some((r, i) => {
+    //         if (i === currentIndex) return false; // ignore self
+    //         return String(r[field]) === String(value);
+    //     });
+    // };
+
+
+
     /* ================================
        Load Transaction Data When Selected
     ================================ */
@@ -484,7 +519,7 @@ export default function PurchasePage() {
             setHeaderForm(prev => ({
                 ...prev,
                 CUSTOMER: transactionDetails.ACCODE ? String(transactionDetails.ACCODE) : "",
-                CUSTOMER_NAME: "ash",
+                CUSTOMER_NAME: transactionDetails.ACNAME,
                 DATE: transactionDetails.TRANDATE || new Date().toISOString().split("T")[0],
                 BILLNO: transactionDetails.TRANNO || ""
             }));
@@ -528,12 +563,12 @@ export default function PurchasePage() {
                         TRANSACTION_TYPE: transactionDetails?.TRANTYPE,
                         PUREID: item.PUREID || "",
 
-                        WT: item.GRSWT || item.WT || "",
-                        AWT: item.AWT || item.GRSWT || item.WT || "",
+                        WT: item.WT || item.WT || "",
+                        A_WT: item.A_WT|| item.WT || "",
                         TOUCH: item.TOUCH || "",
-                        ATOUCH: item.ATOUCH || item.TOUCH ||"",
+                        A_TOUCH: item.A_TOUCH || item.TOUCH ||"",
                         PURE: item.PUREWT || "",
-                        APURE: item.APUREWT || item.PUREWT || "",
+                        A_PURE: item.A_PUREWT || item.PUREWT || "",
                     }
                     : {
                         __rowId: `edit-${Date.now()}-${index}`,
@@ -654,6 +689,76 @@ export default function PurchasePage() {
     };
 
     /* ================================
+         Handle Stock Table Values
+      ================================ */
+    const handleLoadFromStock = (stockRow: any) => {
+        // if (isIssue) {
+        //     const exists = draftRows.some(r => String(r.pureId) === String(stockRow.PUREID));
+        //     if (exists) {
+        //         toaster.create({
+        //             title: "Duplicate Pure ID",
+        //             description: "This Pure ID already exists in the table.",
+        //             type: "error",
+        //         });
+        //         return;
+        //     }
+        // } else {
+        //     const exists = draftRows.some(r => String(r.ITEMID) === String(stockRow.ITEMID));
+        //     if (exists) {
+        //         toaster.create({
+        //             title: "Duplicate Item",
+        //             description: "This Item already exists in the table.",
+        //             type: "error",
+        //         });
+        //         return;
+        //     }
+        // }
+        if (!selectedTransactionType) {
+            toaster.create({
+                title: "Transaction Type Required",
+                description: "Please select a transaction type first.",
+                type: "warning",
+            });
+            return;
+        }
+
+        const rowId = `draft-${Date.now()}`;
+
+        const newRow = {
+            __rowId: rowId,
+            __isNew: true,
+            __previewSno: draftRows.length + 1,
+            TRANSACTION_TYPE: selectedTransactionType.value,
+
+            // Map stock row → transaction row
+            PUREID: stockRow.PUREID || stockRow.pureId ||"",
+            WT: stockRow.WT || stockRow.weight ||"",
+            TOUCH: stockRow.TOUCH || stockRow.actualTouch||"",
+            PURE: stockRow.PURE || stockRow.actualPure|| "",
+
+            A_WT: stockRow.AWT || stockRow.weight || "",
+            A_TOUCH: stockRow.ATOUCH || stockRow.actualTouch || "",
+            A_PURE: stockRow.APURE || stockRow.actualPure || "",
+
+            ITEMID: stockRow.ITEMID || "",
+            PCS: stockRow.PCS || "",
+            GRSWT: stockRow.GRSWT || "",
+            LESSWT: stockRow.LESSWT || "",
+            NETWT: stockRow.NETWT || "",
+            PURITY: stockRow.PURITY || "",
+            PUREWT: stockRow.PUREWT || "",
+            RATE: stockRow.RATE || headerForm.RATEGM || "",
+            MCHARGE: stockRow.MCHARGE || "",
+            WASTAGE: stockRow.WASTAGE || "",
+        };
+
+        setDraftRows(prev => [...prev, newRow]);
+        setEditingRowId(rowId);
+    };
+
+
+
+    /* ================================
        Draft Table Handlers
     ================================ */
     const handleClearForm = () => {
@@ -688,34 +793,113 @@ export default function PurchasePage() {
         setEditingRowId(rowId);
     };
 
-    const handleUpdateDraftRow = useCallback((rowIndex: number, field: string, value: any) => {
-        setDraftRows(prev => {
-            const newRows = [...prev];
-            const row = applyWeightTouchLogic(newRows[rowIndex], field, value);
+    const handleUpdateDraftRow = useCallback(
+        (rowIndex: number, field: string, value: any) => {
+            setDraftRows(prev => {
+                const newRows = [...prev];
+                let row = { ...newRows[rowIndex], [field]: value };
 
+                // ===============================
+                // 🚫 DUPLICATE PREVENTION
+                // ===============================
+                // if (isIssue && field === "PUREID") {
+                //     const exists = hasDuplicateId(prev, "PUREID", value, rowIndex);
+                //     if (exists) {
+                //         toaster.create({
+                //             title: "Duplicate Pure ID",
+                //             description: "This Pure ID is already added.",
+                //             type: "error",
+                //         });
+                //         return prev; // ⛔ reject change
+                //     }
+                // }
 
-            // Auto-calculate dependent fields
-            if (field === "GRSWT" || field === "LESSWT") {
-                const grswt = row.GRSWT || 0;
-                const lesswt = row.LESSWT || 0;
-                row.NETWT = Math.max(0, grswt - lesswt);
-            }
+                // if (!isIssue && field === "ITEMID") {
+                //     const exists = hasDuplicateId(prev, "ITEMID", value, rowIndex);
+                //     if (exists) {
+                //         toaster.create({
+                //             title: "Duplicate Item",
+                //             description: "This Item is already added.",
+                //             type: "error",
+                //         });
+                //         return prev; // ⛔ reject change
+                //     }
+                // }
 
-            if (field === "NETWT" || field === "PURITY") {
-                const netwt = row.NETWT || 0;
-                const purity = row.PURITY || 0;
-                row.PUREWT = (netwt * purity) / 100;
-            }
+                // -------------------------------
+                // Manual override tracking
+                // -------------------------------
+                if (field === "A_WT") row.__manual_A_WT = true;
+                if (field === "A_TOUCH") row.__manual_A_TOUCH = true;
+                if (field === "A_PURE") row.__manual_A_PURE = true;
 
-            // Recalculate the preview serial numbers
-            if (field !== "__previewSno") {
+                if (field === "WT") row.__manual_A_WT = false;
+                if (field === "TOUCH") row.__manual_A_TOUCH = false;
+
+                // -------------------------------
+                // Mirror logic
+                // -------------------------------
+                if (field === "WT" && !row.__manual_A_WT) row.A_WT = value;
+                if (field === "TOUCH" && !row.__manual_A_TOUCH) row.A_TOUCH = value;
+
+                // -------------------------------
+                // 🔒 Stock limit
+                // -------------------------------
+                if (isIssue && (field === "WT" || field === "A_WT")) {
+                    const available = getAvailableWeight(row.PUREID);
+                    if (available != null && Number(row.WT) > available) {
+                        toaster.create({
+                            title: "Stock Limit Exceeded",
+                            description: `Available weight is ${available}`,
+                            type: "error",
+                        });
+
+                        row.WT = available;
+                        row.A_WT = row.__manual_A_WT ? row.A_WT : available;
+                    }
+                }
+
+                // -------------------------------
+                // Calculations
+                // -------------------------------
+                if (field === "GRSWT" || field === "LESSWT") {
+                    const grswt = Number(row.GRSWT) || 0;
+                    const lesswt = Number(row.LESSWT) || 0;
+                    row.NETWT = Math.max(0, grswt - lesswt);
+                }
+
+                if (field === "NETWT" || field === "PURITY") {
+                    const netwt = Number(row.NETWT) || 0;
+                    const purity = Number(row.PURITY) || 0;
+                    row.PUREWT = (netwt * purity) / 100;
+                }
+
+                if (isIssue && (field === "WT" || field === "TOUCH")) {
+                    const wt = Number(row.WT) || 0;
+                    const touch = Number(row.TOUCH) || 0;
+                    row.PURE = (wt * touch) / 100;
+                }
+
+                if (isIssue && (field === "A_WT" || field === "A_TOUCH")) {
+                    const wt = Number(row.A_WT) || 0;
+                    const touch = Number(row.A_TOUCH) || 0;
+                    if (!row.__manual_A_PURE) {
+                        row.A_PURE = (wt * touch) / 100;
+                    }
+                }
+
                 row.__previewSno = rowIndex + 1;
-            }
 
-            newRows[rowIndex] = row;
-            return newRows;
-        });
-    }, []);
+                newRows[rowIndex] = row;
+                return newRows;
+            });
+        },
+        [isIssue, getAvailableWeight, toaster]
+    );
+
+
+
+
 
     const handleRemoveDraftRow = (rowId: string) => {
         setDraftRows(prev => prev.filter(row => row.__rowId !== rowId));
@@ -723,26 +907,30 @@ export default function PurchasePage() {
             setEditingRowId(null);
         }
     };
+
+    /* ================================
+        Normalize Handler
+     ================================ */
     const normalizeRowForApi = (row: any, isIssue: boolean) => {
         const {
             __rowId,
             __isNew,
             __previewSno,
-            __manual_AWT,
-            __manual_ATOUCH,
-            __manual_APURE,
+            __manual_A_WT,
+            __manual_A_TOUCH,
+            __manual_A_PURE,
             ...rest
         } = row;
 
         if (isIssue) {
             return {
-                PUREID: rest.PUREID ? Number(rest.PUREID) : null,
-                GRSWT: Number(rest.WT || 0),
+                PUREID: rest.PUREID ? Number(rest.PUREID) : undefined,
+                WT: Number(rest.WT || 0),
                 TOUCH: Number(rest.TOUCH || 0),
                 PUREWT: Number(rest.PURE || 0),
-                // AWT: Number(rest.AWT || 0),
-                // ATOUCH: Number(rest.ATOUCH || 0),
-                // APURE: Number(rest.APURE || 0),
+                A_WT: Number(rest.A_WT || 0),
+                A_TOUCH: Number(rest.A_TOUCH || 0),
+                A_PUREWT: Number(rest.A_PURE || 0),
             };
         }
 
@@ -760,13 +948,131 @@ export default function PurchasePage() {
             ITEMID: rest.ITEMID ? String(rest.ITEMID) : undefined,
         };
     };
+    /* ================================
+         Validation Handler
+      ================================ */
+    const validateDraftRows = () => {
+        if (draftRows.length === 0) {
+            toaster.create({
+                title: "No Items",
+                description: "Please add at least one item.",
+                type: "error",
+            });
+            return false;
+        }
+        // if (isIssue) {
+        //     const ids = draftRows.map(r => r.PUREID);
+        //     const hasDuplicate = new Set(ids).size !== ids.length;
+        //     if (hasDuplicate) {
+        //         toaster.create({
+        //             title: "Duplicate Pure IDs",
+        //             description: "Remove duplicate Pure IDs before saving.",
+        //             type: "error",
+        //         });
+        //         return false;
+        //     }
+        // } else {
+        //     const ids = draftRows.map(r => r.ITEMID);
+        //     const hasDuplicate = new Set(ids).size !== ids.length;
+        //     if (hasDuplicate) {
+        //         toaster.create({
+        //             title: "Duplicate Items",
+        //             description: "Remove duplicate Items before saving.",
+        //             type: "error",
+        //         });
+        //         return false;
+        //     }
+        // }
 
+        if (isIssue) {
+            const exceededRow = draftRows.find((r) => {
+                const available = getAvailableWeight(r.PUREID);
+                return available != null && Number(r.WT) > available;
+            });
+
+            if (exceededRow) {
+                toaster.create({
+                    title: "Stock Exceeded",
+                    description: "One or more rows exceed available stock.",
+                    type: "error",
+                });
+                return false;
+            }
+
+            const missingFieldsRow = draftRows.find(
+                (r) =>
+                    !r.PUREID ||
+                    r.WT == null ||
+                    r.TOUCH == null ||
+                    r.PURE == null
+            );
+
+            if (missingFieldsRow) {
+                toaster.create({
+                    title: "Incomplete Items",
+                    description: "Please fill PUREID, Weight, Touch, and Pure for all rows.",
+                    type: "error",
+                });
+                return false;
+            }
+        } else {
+            const invalidRows = draftRows.filter(row => !row.ITEMID);
+            if (invalidRows.length > 0) {
+                toaster.create({
+                    title: "Incomplete Items",
+                    description: "Please select an item for all rows.",
+                    type: "error",
+                });
+                return false;
+            }
+
+            const invalidGrossWt = draftRows.findIndex(
+                (r) => Number(r.GRSWT) <= 0
+            );
+            if (invalidGrossWt !== -1) {
+                toaster.create({
+                    title: "Invalid Gross Weight",
+                    description: `Row ${invalidGrossWt + 1}: Gross weight must be greater than 0.`,
+                    type: "warning",
+                });
+                return false;
+            }
+
+            const invalidPurity = draftRows.findIndex(
+                (r) => Number(r.PURITY) <= 0
+            );
+            if (invalidPurity !== -1) {
+                toaster.create({
+                    title: "Invalid Purity",
+                    description: `Row ${invalidPurity + 1}: Purity must be greater than 0.`,
+                    type: "warning",
+                });
+                return false;
+            }
+        }
+
+        return true;
+    };
 
     /* ================================
        Save Transaction Handler
     ================================ */
     const handleSaveTransaction = async () => {
         setEditingRowId(null);
+        // if (isIssue) {
+           
+        // } else {
+        //     const ids = draftRows.map(r => Number(r.ITEMID));
+        //     const hasDuplicate = new Set(ids).size !== ids.length;
+        //     if (hasDuplicate) {
+        //         toaster.create({
+        //             title: "Duplicate Items",
+        //             description: "Remove duplicate Items before saving.",
+        //             type: "error",
+        //         });
+        //         return false;
+        //     }
+        // }
 
         if (!selectedTransactionType) {
             toaster.create({
@@ -796,58 +1102,84 @@ export default function PurchasePage() {
         }
 
         // ================= VALIDATION =================
-        if (isIssue) {
-            const missingFieldsRow = draftRows.find(
-                (r) =>
-                    !r.PUREID ||
-                    r.WT == null ||
-                    r.TOUCH == null ||
-                    r.PURE == null
-            );
+        // if (isIssue) {
+        //     const exceededRow = draftRows.find((r) => {
+        //         const available = getAvailableWeight(r.PUREID);
+        //         return available != null && Number(r.WT) > available;
+        //     });
 
-            if (missingFieldsRow) {
-                toaster.create({
-                    title: "Incomplete Items",
-                    description: "Please fill PUREID, Weight, Touch, and Pure for all rows.",
-                    type: "error",
-                });
-                return;
-            }
-        } else {
-            const invalidRows = draftRows.filter(row => !row.ITEMID);
-            if (invalidRows.length > 0) {
-                toaster.create({
-                    title: "Incomplete Items",
-                    description: "Please select an item for all rows.",
-                    type: "error",
-                });
-                return;
-            }
+        //     console.log(draftRows, 'draftRows')
+        //     const ids = draftRows.map(r => Number(r.PUREID));
+        //     console.log(ids,'draftRows')
+        //     const hasDuplicate = new Set(ids).size !== ids.length;
+        //     if (hasDuplicate) {
+        //         toaster.create({
+        //             title: "Duplicate Pure IDs",
+        //             description: "Remove duplicate Pure IDs before saving.",
+        //             type: "error",
+        //         });
+        //         return false;
+        //     }
 
-            const invalidGrossWt = draftRows.findIndex(
-                (r) => Number(r.GRSWT) <= 0
-            );
-            if (invalidGrossWt !== -1) {
-                toaster.create({
-                    title: "Invalid Gross Weight",
-                    description: `Row ${invalidGrossWt + 1}: Gross weight must be greater than 0.`,
-                    type: "warning",
-                });
-                return;
-            }
+        //     if (exceededRow) {
+        //         toaster.create({
+        //             title: "Stock Exceeded",
+        //             description: "One or more rows exceed available stock weight.",
+        //             type: "error",
+        //         });
+        //         return;
+        //     }
+        //     const missingFieldsRow = draftRows.find(
+        //         (r) =>
+        //             !r.PUREID ||
+        //             r.WT == null ||
+        //             r.TOUCH == null ||
+        //             r.PURE == null
+        //     );
 
-            const invalidPurity = draftRows.findIndex(
-                (r) => Number(r.PURITY) <= 0
-            );
-            if (invalidPurity !== -1) {
-                toaster.create({
-                    title: "Invalid Purity",
-                    description: `Row ${invalidPurity + 1}: Purity must be greater than 0.`,
-                    type: "warning",
-                });
-                return;
-            }
-        }
+        //     if (missingFieldsRow) {
+        //         toaster.create({
+        //             title: "Incomplete Items",
+        //             description: "Please fill PUREID, Weight, Touch, and Pure for all rows.",
+        //             type: "error",
+        //         });
+        //         return;
+        //     }
+        // } else {
+        //     const invalidRows = draftRows.filter(row => !row.ITEMID);
+        //     if (invalidRows.length > 0) {
+        //         toaster.create({
+        //             title: "Incomplete Items",
+        //             description: "Please select an item for all rows.",
+        //             type: "error",
+        //         });
+        //         return;
+        //     }
+
+        //     const invalidGrossWt = draftRows.findIndex(
+        //         (r) => Number(r.GRSWT) <= 0
+        //     );
+        //     if (invalidGrossWt !== -1) {
+        //         toaster.create({
+        //             title: "Invalid Gross Weight",
+        //             description: `Row ${invalidGrossWt + 1}: Gross weight must be greater than 0.`,
+        //             type: "warning",
+        //         });
+        //         return;
+        //     }
+
+        //     const invalidPurity = draftRows.findIndex(
+        //         (r) => Number(r.PURITY) <= 0
+        //     );
+        //     if (invalidPurity !== -1) {
+        //         toaster.create({
+        //             title: "Invalid Purity",
+        //             description: `Row ${invalidPurity + 1}: Purity must be greater than 0.`,
+        //             type: "warning",
+        //         });
+        //         return;
+        //     }
+        // }
 
         try {
             const transactionData = {
@@ -898,67 +1230,20 @@ export default function PurchasePage() {
             return;
         }
 
-        // Validation for editable fields
-        const invalidGrossWt = draftRows.findIndex(
-            (r) => Number(r.GRSWT) <= 0
-        );
-
-        if (invalidGrossWt !== -1) {
-            toaster.create({
-                title: "Invalid Gross Weight",
-                description: `Row ${invalidGrossWt + 1}: Gross weight must be greater than 0.`,
-                type: "warning",
-            });
-            return;
-        }
-
-        const invalidPurity = draftRows.findIndex(
-            (r) => Number(r.PURITY) <= 0
-        );
-
-        if (invalidPurity !== -1) {
-            toaster.create({
-                title: "Invalid Purity",
-                description: `Row ${invalidPurity + 1}: Purity must be greater than 0.`,
-                type: "warning",
-            });
-            return;
-        };
-
-        const row = draftRows[0];
+        if (!validateDraftRows()) return;
 
         try {
-            // Prepare update data - only TRANSACTION_ITEMS can be modified
             const updateData = {
                 TRANSACTION_DETAILS: {
-                    // Keep original values
                     ACCODE: Number(headerForm.CUSTOMER),
                     TRANTYPE: String(selectedTransactionType?.value),
-                    TRANDATE: headerForm.DATE,   
+                    TRANDATE: headerForm.DATE,
                 },
-                TRANSACTION_ITEM: row
-                    ? {
-                        PCS: row.PCS || 0,
-                        GRSWT: row.GRSWT || 0,
-                        LESSWT: row.LESSWT || 0,
-                        NETWT: row.NETWT || 0,
-                        PURITY: row.PURITY || 0,
-                        PUREWT: row.PUREWT || 0,
-                        RATE: row.RATE || 0,
-                        MCHARGE: row.MCHARGE || 0,
-                        WASTAGE: row.WASTAGE || 0,
-                        AMOUNT: row.AMOUNT || 0,
-                        ITEMID:
-                            row.__originalItemId || row.ITEMID
-                                ? Number(row.ITEMID)
-                                : null,
-                    }
-                    : null,
+                TRANSACTION_ITEM: draftRows.length > 0 ? normalizeRowForApi(draftRows[0], isIssue) : null,
             };
-            console.log("Updating transaction with SNO:", editingSno);
-            console.log("Update data:", updateData);
 
-            // Call update API
+            console.log("UPDATE PAYLOAD:", updateData);
+
             await updateTransaction.mutateAsync({
                 sno: editingSno,
                 payload: updateData,
@@ -981,9 +1266,8 @@ export default function PurchasePage() {
                 DATE: new Date().toISOString().split("T")[0],
                 RATEGM: ""
             }));
-            
 
-            // Clear localStorage
+            // Clear storage
             localStorage.removeItem(DRAFT_KEY);
             localStorage.removeItem(HEADER_KEY);
             localStorage.removeItem(TYPE_KEY);
@@ -995,11 +1279,10 @@ export default function PurchasePage() {
 
             toaster.create({
                 title: "Transaction Updated",
-                description: "Transaction items have been updated successfully.",
+                description: "Transaction updated successfully.",
                 type: "success",
             });
 
-            // Refresh the transaction list
             setShowHistory(true);
 
         } catch (error: any) {
@@ -1213,6 +1496,7 @@ export default function PurchasePage() {
                                 transactionTitle={transactionTitle}
                                 theme={theme}
                                 isIssue={isIssue}
+                                getAvailableWeight={getAvailableWeight}
                                
                             />
 
@@ -1298,8 +1582,8 @@ export default function PurchasePage() {
                 pureGoldName={pureGoldName}
                 setPureGoldName={setPureGoldName}
                 pureGoldCollection={pureGoldList}
-                onIssue={(row) => console.log("Issue", row)}
-                
+                onIssue={(row) => handleLoadFromStock(row)}
+
             />
         </Flex>
     );

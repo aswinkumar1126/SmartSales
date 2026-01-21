@@ -148,12 +148,12 @@ export const issueDataColumns = [
         width: "20px",
         type: "number" as const,
         align: "right" as const,
-        max:999,
+        max:9999999999,
         decimalScale:3
 
     },
     {
-        key: "AWT",
+        key: "A_WT",
         label: "A.WT",
         width: "25px",
         type: "number" as const,
@@ -174,7 +174,7 @@ export const issueDataColumns = [
 
     },
     {
-        key: "ATOUCH",
+        key: "A_TOUCH",
         label: "A.TOUCH",
         width: "25px",
         type: "number" as const,
@@ -191,19 +191,19 @@ export const issueDataColumns = [
         align: "right" as const,
         editable: false,
         disabled: true,
-        max: 999,
+        max: 9999999999,
         decimalScale: 3
 
     },
     {
-        key: "APURE",
+        key: "A_PURE",
         label: "A.PURE",
         width: "25px",
         type: "number" as const,
         align: "right" as const,
         editable: false,
         disabled:true,
-        max: 999,
+        max: 9999999999,
         decimalScale: 3
 
 

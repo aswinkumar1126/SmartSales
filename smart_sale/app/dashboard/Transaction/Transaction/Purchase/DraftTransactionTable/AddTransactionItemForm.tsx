@@ -21,6 +21,7 @@ import { CapitalizedInput } from "@/component/form/CapitalizedInput";
 import downLoadIcon from '@/asserts/icons/download.png';
 import Image from "next/image";
 import { useCalculatePure } from "@/hooks/pure/useCalculatePure";
+import { toaster } from "@/components/ui/toaster";
 /* ---------------- TYPES ---------------- */
 
 export interface FormField {
@@ -172,6 +173,7 @@ interface AddTransactionItemFormProps {
     compact?: boolean;
     handleClearForm?:any;
     isEditing:boolean;
+    getAvailableWeight?: (pureId: string) => number | null;
 }
 
 export default function AddTransactionItemForm({
@@ -180,7 +182,8 @@ export default function AddTransactionItemForm({
     onCancel,
     compact = false,
     handleClearForm,
-    isEditing
+    isEditing,
+    getAvailableWeight
 }: AddTransactionItemFormProps) {
     const [formData, setFormData] = useState<Record<string, any>>({});
     const [errors, setErrors] = useState<Record<string, string>>({});
@@ -191,18 +194,18 @@ export default function AddTransactionItemForm({
 
 
     const mirrorMap: Record<string, string> = {
-        WT: "AWT",
-        PURE: "APURE",
-        TOUCH:"ATOUCH"
+        WT: "A_WT",
+        PURE: "A_PURE",
+        TOUCH:"A_TOUCH"
     };
 
     // Filter out NETWT and PUREWT from the form fields (they will be calculated)
     const visibleFields = fields.filter(
-        (field) => field.key !== "NETWT" && field.key !== "PUREWT" && field.key !== "PURE" && field.key !== "APURE" 
+        (field) => field.key !== "NETWT" && field.key !== "PUREWT" && field.key !== "PURE" && field.key !== "A_PURE" 
     );
 
     const pureValue = useCalculatePure(formData.WT, formData.TOUCH);
-    const alternativePureValue = useCalculatePure(formData.AWT, formData.ATOUCH);
+    const alternativePureValue = useCalculatePure(formData.A_WT, formData.A_TOUCH);
 
     /* ---------------- INIT ---------------- */
 
@@ -255,7 +258,7 @@ export default function AddTransactionItemForm({
         if(alternativePureValue){
         setFormData(prev => ({
                 ...prev,
-                APURE: alternativePureValue
+                A_PURE: alternativePureValue
             }));
         }
     }, [pureValue , alternativePureValue]);
@@ -271,6 +274,19 @@ export default function AddTransactionItemForm({
         // ✅ One-way mirror (main → alternative)
         if (mirrorMap[key]) {
             newFormData[mirrorMap[key]] = value;
+        }
+        if ((key === "WT" || key === "A_WT") && formData.PUREID && getAvailableWeight) {
+            const available = getAvailableWeight(formData.PUREID);
+
+            if (available != null && Number(value) > available) {
+                toaster.create({
+                    title: "Stock Limit Exceeded",
+                    description: `Available weight is ${available}`,
+                    type: "error",
+                });
+
+                newFormData[key] = available;
+            }
         }
 
         // Existing logic
@@ -303,7 +319,7 @@ export default function AddTransactionItemForm({
             setFormData(prev => ({
                 ...prev,
                 PURE: pureValue,
-                APURE: prev.PURE || pureValue, // don’t override if user changed
+                A_PURE: prev.PURE || pureValue, // don’t override if user changed
             }));
         }
     }, [pureValue]);
@@ -401,7 +417,15 @@ export default function AddTransactionItemForm({
                 );
 
             case "number":
+                const shouldDisable =
+                    (field.key === "WT" ||
+                        field.key === "TOUCH" ||
+                        field.key === "A_WT" ||
+                        field.key === "A_TOUCH") &&
+                    !formData.PUREID; // 🔥 disable until PUREID selected
+
                 return (
+                    
                     <CapitalizedInput
                         field={field.key as string}
                         value={formData[field.key] || ""}
@@ -415,6 +439,7 @@ export default function AddTransactionItemForm({
                         rounded="md"
                         max={field.max}
                         decimalScale={field.decimalScale}
+                        disabled={shouldDisable}
                     />
                 );
 
@@ -557,9 +582,9 @@ export default function AddTransactionItemForm({
                                 <strong>PURE  :</strong> {formData.PURE}
                             </Text>
                         )}
-                        {formData.APURE && (
+                        {formData.A_PURE && (
                             <Text fontSize="2xs">
-                                <strong>A.PURE :</strong> {formData.APURE}
+                                <strong>A.PURE :</strong> {formData.A_PURE}
                             </Text>
                         )}
                         </Flex>

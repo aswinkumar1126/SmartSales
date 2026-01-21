@@ -31,18 +31,26 @@ export interface TransactionHeader {
 }
 
 export interface TransactionItem {
+  
     ITEMID?: string;
     PCS?: number;
     GRSWT?: number;
     LESSWT?: number;
     NETWT?: number;
     PURITY?: number;
-    PUREWT?: number;
     RATE?: number;
     MCHARGE?: number;
     WASTAGE?: number;
     PUREID?: number | null,
+    
+
+    WT?: number;
     TOUCH?: number,
+    PUREWT?: number;
+
+    AWT?:number;
+    ATOUCH?: number;
+    APUREWT?: number;
    
 }
 
@@ -88,9 +96,13 @@ export type UpdateTransactionPayload = {
         AMOUNT: number;
         ITEMID: number | null;
     } | {
-        PUREID:number|null,
-        GRSWT: number,
-TOUCH: number,
-    PUREWT: number, 
+        PUREID?:number;
+        WT?: number;
+        TOUCH?: number,
+        PUREWT?: number;
+
+        A_WT?: number;
+        A_TOUCH?: number;
+        A_PUREWT?: number;
 } | null;
 };

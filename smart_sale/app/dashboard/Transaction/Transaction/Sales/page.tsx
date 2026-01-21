@@ -12,7 +12,7 @@ import {
 import { useTheme } from "@/context/theme/themeContext";
 import { toaster, Toaster } from "@/components/ui/toaster";
 import { useListCollection, useFilter } from "@chakra-ui/react";
-import { useOpeningBalance } from "@/hooks/balance/useOpeningBalance";
+
 
 // Components
 import TransactionHeaderForm from "./TransactionHeaderForm/TransactionHeaderForm";
@@ -27,6 +27,7 @@ import { useTransactions } from "@/hooks/transaction/useTransactions";
 import { useAllAccountHead } from "@/hooks/accountHead/useAccountHead";
 import { useItems } from "@/hooks/item/useItems";
 import { useCreateTransactions, useUpdateTransaction, useTransactionByTransId } from "@/hooks/transaction/useTransactions";
+import { useOpeningBalance } from "@/hooks/balance/useOpeningBalance";
 
 // Types & Constants
 import { TransactionType, UpdateTransactionPayload } from "@/types/transcation/Transaction";
@@ -112,6 +113,7 @@ export default function IssuePage() {
     );
 
     const openingData = openingBalance?.data;
+    console.log(openingData,'openingData')
     const createTransaction = useCreateTransactions();
     const { contains } = useFilter({ sensitivity: "base" });
 

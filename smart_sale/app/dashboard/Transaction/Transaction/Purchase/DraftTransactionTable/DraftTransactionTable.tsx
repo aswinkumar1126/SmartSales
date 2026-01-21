@@ -16,6 +16,7 @@ import EditableTable from "@/component/table/EditableTable";
 import AddTransactionItemForm, { FormField } from "./AddTransactionItemForm";
 import { issueColumns, issueDataColumns } from "../../Issue/isseColumns";
 import { applyWeightTouchLogic } from "@/hooks/pure/applyWeightTouchLogic";
+import { toaster } from "@/components/ui/toaster";
 
 interface DraftTransactionTableProps {
     rows: any[];
@@ -34,6 +35,7 @@ interface DraftTransactionTableProps {
     handleClearForm?: any;
     isEditing: boolean;
     isIssue?:boolean;
+    getAvailableWeight?: (id: string | number ) => number | null;
 }
 
 export default function DraftTransactionTable({
@@ -52,7 +54,9 @@ export default function DraftTransactionTable({
     itemsFilter,
     handleClearForm,
     isEditing,
-    isIssue
+    isIssue,
+    getAvailableWeight 
+
 }: DraftTransactionTableProps) {
     console.log("DraftTable - rows:", rows, "editingRowId:", editingRowId, "isEditing:", isEditing);
 
@@ -69,30 +73,40 @@ export default function DraftTransactionTable({
     };
 
     // Create adapter function for updating rows
-    const handleUpdateRowAdapter = useCallback(
-        (rowIndex: number, updatedRow: any) => {
-            const currentRow = rows[rowIndex];
-            if (!currentRow) return;
+   const handleUpdateRowAdapter = useCallback(
+  (rowIndex: number, updatedRow: any) => {
+    const currentRow = rows[rowIndex];
+    if (!currentRow) return;
 
-            // Merge all changes at once
-            const mergedRow = { ...currentRow, ...updatedRow };
+    console.log("🟡 Adapter called");
+    console.log("Row index:", rowIndex);
+    console.log("Current row:", currentRow);
+    console.log("Updated row:", updatedRow);
 
-            // Compute weights / mirrors
-            const computedRow = Object.keys(mergedRow).reduce((acc, key) => {
-                return applyWeightTouchLogic(acc, key, mergedRow[key]);
-            }, currentRow);
+    Object.keys(updatedRow).forEach((field) => {
+      const newValue = updatedRow[field];
+      const oldValue = currentRow[field];
 
-            // Apply changes
-            Object.keys(computedRow).forEach((k) => {
-                if (computedRow[k] !== currentRow[k]) {
-                    onUpdateRow(rowIndex, k, computedRow[k]);
-                }
-            });
-        },
-        [rows, onUpdateRow]
-    );
+      console.log(`➡️ Field: ${field}`);
+      console.log("Old:", oldValue);
+      console.log("New:", newValue);
 
+      // ⛔ Prevent wiping values on focus
+      if (newValue === undefined || newValue === null) {
+        console.warn(`⛔ Blocked wipe for field: ${field}`);
+        return;
+      }
 
+      if (newValue !== oldValue) {
+        console.log(`✅ Calling onUpdateRow(${rowIndex}, ${field}, ${newValue})`);
+        onUpdateRow(rowIndex, field, newValue);
+      } else {
+        console.log(`⚪ No change for field: ${field}`);
+      }
+    });
+  },
+  [rows, onUpdateRow]
+);
 
 
     // Handle delete row
@@ -137,7 +151,6 @@ export default function DraftTransactionTable({
     const handleAddViaForm = useCallback(
         (formData: any) => {
             if (isEditing) {
-                // Show warning when trying to add new rows during edit
                 const confirmAdd = window.confirm(
                     "You are editing an existing transaction. Adding new items will modify the transaction. Continue?"
                 );
@@ -146,7 +159,19 @@ export default function DraftTransactionTable({
                 setHasChanges(true);
             }
 
-            // NETWT and PUREWT are already calculated in the form
+            // 🔥 Check duplicate PUREID
+            const isDuplicate = rows.some(
+                (row) => row.PUREID === formData.PUREID
+            );
+
+            if (isDuplicate) {
+                toaster.create({
+                    title:"This PURE ID already exists.",
+                    type:'error'
+                });
+                return;
+            }
+
             const newRow: any = {
                 ...formData,
                 __rowId: `form-${Date.now()}`,
@@ -155,11 +180,10 @@ export default function DraftTransactionTable({
             };
 
             onAddRow(newRow);
-            // Close form after successful submission
-            // setShowForm(false);
         },
         [rows, onAddRow, isEditing]
     );
+
 
     // Handle inline add
     const handleAddInline = useCallback(() => {
@@ -183,7 +207,7 @@ export default function DraftTransactionTable({
         const numericFields = [
             "PCS", "GRSWT", "LESSWT", "PURITY", "RATE",
             "MCHARGE", "WASTAGE", "AMOUNT", "IGST", "CGST", "SGST",
-            "WT" , "AWT" , "TOUCH" ,"ATOUCH" , "PURE" ,"APURE"
+            "WT" , "A_WT" , "TOUCH" ,"A_TOUCH" , "PURE" ,"A_PURE"
         ];
 
         const baseColumns = isIssue ? issueDataColumns : issueColumns;
@@ -282,7 +306,7 @@ export default function DraftTransactionTable({
             "PURITY", "PUREWT", "RATE",
             "MCHARGE", "WASTAGE", "AMOUNT",
             "IGST", "CGST", "SGST",
-            "WT" , "AWT" , "TOUCH" ,"ATOUCH" , "PURE" ,"APURE"
+            "WT" , "A_WT" , "TOUCH" ,"A_TOUCH" , "PURE" ,"A_PURE"
         ];
 
         return activeColumns.map((col) => {
@@ -493,6 +517,7 @@ export default function DraftTransactionTable({
                         onCancel={() => setShowForm(false)}
                         compact={true}
                         isEditing={isEditing}
+                        getAvailableWeight={getAvailableWeight}
                     />
                 </Box>
             )}
