@@ -2,7 +2,7 @@ import { axiosInstance } from "@/api/axiosInstance";
 import { ApiResponse } from "@/types/api/apiResponse";
 import { TRANSACTION, CreateTransaction, TransactionItem, UpdateTransactionPayload } from "@/types/transcation/Transaction";
 
-const BASE_PATH = "/transaction";
+const BASE_PATH = "/purchase";
 
 export const TransactionService = {
     createMany: async (

@@ -185,10 +185,24 @@ const TouchMasterForm = () => {
         if (!form.companyType) errors.companyType = "Company type is required";
         if (!form.itemId) errors.itemId = "Item is required";
         if (!form.calculationMode) errors.calculationMode = "Calculation Mode is required";
+
         if (!form.touch) {
             errors.touch = "Touch is required";
         } else if (Number(form.touch) <= 0) {
             errors.touch = "Touch must be greater than 0";
+        }
+
+        const isDuplicate = touchData?.some(
+            (item: any) =>
+                form.companyType?.toLowerCase() === item.companyType?.toLowerCase() &&
+                Number(form.accode) === Number(item.accode) &&
+                Number(form.itemId) === Number(item.itemId) &&
+                Number(item.sno) !== Number(editId) // 👈 key fix
+                 // 👇 this line handles UPDATE case
+        );
+
+        if (isDuplicate) {
+            errors.itemId = "Duplicate entry already exists";
         }
 
         return errors;
@@ -266,7 +280,7 @@ const TouchMasterForm = () => {
 
     return (
         <Grid
-            templateColumns={{ base: "1fr", lg: "1fr 2fr" }}
+            templateColumns={{ base: "1fr", lg: "1fr 1fr" }}
             gap={2}
 
 
@@ -274,7 +288,7 @@ const TouchMasterForm = () => {
             <Toaster />
             {/* ---------------- FORM ---------------- */}
             <GridItem >
-                <Box p={2} fontWeight='semibold' borderRadius="lg" bg={theme.colors.formColor} boxShadow="sm" >
+                <Box p={2} minW="full" fontWeight='semibold' borderRadius="lg" bg={theme.colors.formColor} boxShadow="sm" >
                     <Heading fontSize="medium" textAlign='center' mb={4}>
                         TOUCH MASTER
                     </Heading>

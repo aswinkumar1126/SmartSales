@@ -63,6 +63,7 @@ function OrnamentMaster() {
     const { setData ,setColumns ,setShowSno } = usePrint();
 
     const { data: ornamentList, isLoading } = useOrnamentData();
+    console.log(ornamentList,'ornamentList')
 
     const ornaments = Array.isArray(ornamentList?.data)
         ? ornamentList.data
@@ -130,7 +131,26 @@ function OrnamentMaster() {
         setItemCollection(collection);
     }, [items]);
 
+/* -------------------- EFFECTS: CALCULATE NET WT & PURE -------------------- */
+useEffect(() => {
+    // Calculate Net Wt automatically
+    const grswt = parseFloat(form.grswt ?? "") || 0;
+    const stnwt = parseFloat(form.stnwt ?? "") || 0;
+    const netwt = grswt - stnwt;
 
+    // Calculate Pure automatically based on Actual Touch
+    const touch = parseFloat(form.touch ?? "") || 0;
+    const pure = (netwt * touch)/100;
+
+
+
+    setForm((prev) => ({
+        ...prev,
+        netwt: netwt.toFixed(3),  // keep 3 decimals
+        pure: pure.toFixed(3),
+        actualtouch: String(touch),
+    }));
+}, [form.grswt, form.stnwt, form.touch]);
     /* -------------------- HELPERS -------------------- */
    const handleChange = (field: keyof OrnamentFormData, value: any) => {
            setForm((prev) => ({ ...prev, [field]: value }));
@@ -228,9 +248,14 @@ function OrnamentMaster() {
 
     const OrnamentTableColumn =[
         {key:'sno' , label:'S.NO'},
-        {key:'itemId' , label:'Item Id'},
         {key:'itemName' , label:'Item Name'},
         {key:'pcs' , label:'Pcs' ,align:'end' as const},
+        {key:'grswt' , label:'Grs Wt' ,align:'end' as const},
+        {key:'stnwt' , label:'Stone Wt' ,align:'end' as const},
+        {key:'netwt' , label:'Net Wt' ,align:'end' as const},
+        {key:'touch' , label:'Touch' ,align:'end' as const},
+        {key:'pure' , label:'Pure' ,align:'end' as const},
+        {key:'stoneCash' , label:'StoneCash' ,align:'end' as const},
         {key:'action' , label:'Actions' , align: 'center' as const},
     ]
     
@@ -248,6 +273,7 @@ function OrnamentMaster() {
         router.push(`/print?export=${option}`);
     }
 
+    console.log(form.itemId,'itemsid')
 
 
     /* -------------------- UI -------------------- */
@@ -312,17 +338,7 @@ function OrnamentMaster() {
                                         />
                                     </Box>
 
-                                    {/* NET WT */}
-                                    <Box display="flex" alignItems="center" gap={2}>
-                                        <Box minW="80px" fontSize="2xs">NET WT :</Box>
-                                        <CapitalizedInput
-                                            field="netwt"
-                                            value={form.netwt}
-                                            onChange={handleChange}
-                                            type="number"
-                                            size="2xs"
-                                        />
-                                    </Box>
+                                    
 
                                     {/* STONE WT */}
                                     <Box display="flex" alignItems="center" gap={2}>
@@ -336,6 +352,30 @@ function OrnamentMaster() {
                                         />
                                     </Box>
 
+                                    {/* NET WT */}
+                                    <Box display="flex" alignItems="center" gap={2}>
+                                        <Box minW="80px" fontSize="2xs">NET WT :</Box>
+                                        <CapitalizedInput
+                                            field="netwt"
+                                            value={form.netwt}
+                                            onChange={handleChange}
+                                            type="number"
+                                            size="2xs"
+                                            disabled
+                                        />
+                                    </Box>
+
+                                    {/* TOUCH */}
+                                    <Box display="flex" alignItems="center" gap={2}>
+                                        <Box minW="80px" fontSize="2xs">TOUCH :</Box>
+                                        <CapitalizedInput
+                                            field="touch"
+                                            value={form.touch}
+                                            onChange={handleChange}
+                                            type="number"
+                                            size="2xs"
+                                        />
+                                    </Box>
                                     {/* PURE */}
                                     <Box display="flex" alignItems="center" gap={2}>
                                         <Box minW="80px" fontSize="2xs">PURE :</Box>
@@ -345,6 +385,7 @@ function OrnamentMaster() {
                                             onChange={handleChange}
                                             type="number"
                                             size="2xs"
+                                            disabled
                                         />
                                     </Box>
 
@@ -361,7 +402,7 @@ function OrnamentMaster() {
                                     </Box>
 
                                     {/* OPEN CASH */}
-                                    <Box display="flex" alignItems="center" gap={2}>
+                                    {/* <Box display="flex" alignItems="center" gap={2}>
                                         <Box minW="80px" fontSize="2xs">OPEN CASH :</Box>
                                         <CapitalizedInput
                                             field="openCash"
@@ -370,19 +411,8 @@ function OrnamentMaster() {
                                             type="number"
                                             size="2xs"
                                         />
-                                    </Box>
+                                    </Box> */}
 
-                                    {/* TOUCH */}
-                                    <Box display="flex" alignItems="center" gap={2}>
-                                        <Box minW="80px" fontSize="2xs">TOUCH :</Box>
-                                        <CapitalizedInput
-                                            field="touch"
-                                            value={form.touch}
-                                            onChange={handleChange}
-                                            type="number"
-                                            size="2xs"
-                                        />
-                                    </Box>
 
                                     {/* ACTUAL TOUCH */}
                                     <Box display="flex" alignItems="center" gap={2}>
@@ -393,6 +423,7 @@ function OrnamentMaster() {
                                             onChange={handleChange}
                                             type="number"
                                             size="2xs"
+
                                         />
                                     </Box>
 
@@ -472,16 +503,21 @@ function OrnamentMaster() {
                             renderRow={(ornament: any, index: number)=>(
                                 <>
                                  <Table.Cell>{index + 1}</Table.Cell>
-                                    <Table.Cell>{ornament.itemId}</Table.Cell>
                                     <Table.Cell>{ornament.itemName}</Table.Cell>
                                                 <Table.Cell textAlign='end'>{ornament.pcs}</Table.Cell>
+                                                <Table.Cell textAlign='end'>{ornament.grswt}</Table.Cell>
+                                                <Table.Cell textAlign='end'>{ornament.stnwt}</Table.Cell>
+                                                <Table.Cell textAlign='end'>{ornament.netwt}</Table.Cell>
+                                                <Table.Cell textAlign='end'>{ornament.touch}</Table.Cell>
+                                                <Table.Cell textAlign='end'>{ornament.pure}</Table.Cell>
+                                                <Table.Cell textAlign='end'>{ornament.stoneCash}</Table.Cell>
                                                 <Table.Cell>
-                                                    <Box display='flex' justifyContent='center'>
-                                            <FaEdit
+                                                <Box display='flex' justifyContent='center'>
+                                                <FaEdit
                                                 cursor="pointer"
                                                 onClick={() => handleEdit(ornament)}
-                                            />
-                                                    </Box>
+                                                />
+                                                </Box>
                                                    
                                                 </Table.Cell>
                                 </>

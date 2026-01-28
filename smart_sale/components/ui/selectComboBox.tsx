@@ -51,15 +51,25 @@ export const SelectCombobox: React.FC<SelectComboboxProps> = ({
             onChange("");
         }
     }, [disable]);
+    const selectedItem = items?.find(
+        (item) => String(item.value) === String(value)
+    );
+    useEffect(() => {
+        if (!value) {
+            applyFilter("");
+        }
+    }, [value, applyFilter]);
 
+    const inputValue = selectedItem ? selectedItem.label.toUpperCase() : "";
     return (
         <Field.Root>
             {label && <Field.Label fontSize="2xs">{label}</Field.Label>}
 
             <Combobox.Root
-                key={editId}
+                key={`${editId ?? "null"}-${value ?? ""}`} // 🔹 force remount on reset
                 collection={collection}
                 value={value ? [value] : []}
+                inputValue ={inputValue}
                 onValueChange={(e) => {
                     if (e.value.length === 0) {
                         onChange("");
@@ -69,6 +79,7 @@ export const SelectCombobox: React.FC<SelectComboboxProps> = ({
                     const val = e.value[0] || "";
                     onChange(val.toUpperCase()); // 🔥 force uppercase
                 }}
+
                 onInputValueChange={(e) => {
                     const upper = e.inputValue.toUpperCase(); // 🔥 force uppercase
                     applyFilter(upper);

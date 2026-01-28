@@ -85,7 +85,7 @@ const PureGoldOpening = () => {
    
     const { data: allPureGoldNames = []} = usePureGoldNames();
 
-
+    console.log(allPureGoldNames,'allPureGoldNames')
     const createMutation = useCreatePureGoldMast();
     const updateMutation = useUpdatePureGoldMast();
 
@@ -176,6 +176,25 @@ const PureGoldOpening = () => {
     };
 
     /* ---------------- Submit Handler ---------------- */
+    console.log(pureGoldData,'pureGoldData')
+    const isDuplicatePureForMetal = (
+        pureId: any,
+        metalId: any,
+        excludeSno?: number| null
+    ) => {
+        return pureGoldData.some((p: any) => {
+            const sameMetal =
+                String(p.metalId) === String(metalId);
+
+            const samePure =
+                Number(p.pureId) === Number(pureId);
+
+            const notSameRow =
+                excludeSno ? Number(p.sno) !== Number(excludeSno) : true;
+
+            return sameMetal && samePure && notSameRow;
+        });
+    };
 
     const handleSubmit = () => {
         const validationErrors = validateForm(form);
@@ -189,11 +208,26 @@ const PureGoldOpening = () => {
             pureId: Number(form.pureId),
             weight: Number(form.weight),
             actualTouch: Number(form.actualTouch),
-            actualPure: Number(form.actualPure),
-            metalId:form.metalId,
+            // actualPure: Number(form.actualPure),
+            metalId: String(form.metalId),
         };
 
-        console.log(payload ,'payload for pureGold ')
+        // 🔒 duplicate check (common for create & edit)
+        if (form.pureId && form.metalId) {
+            const exists = isDuplicatePureForMetal(
+                form.pureId,
+                form.metalId,
+                editId 
+            );
+
+            if (exists) {
+                setErrors((prev: any) => ({
+                    ...prev,
+                    pureId: 'This purity already exists for the selected metal',
+                }));
+                return;
+            }
+        }
 
         if (editId) {
             updateMutation.mutate(
@@ -217,14 +251,15 @@ const PureGoldOpening = () => {
         }
     };
 
+
     /* ---------------- Table Columns ---------------- */
 
     const columns = [
         { key: "sno", label: "S.No" },
         { key: "pureGoldName", label: "Pure Gold Name" },
         { key: "weight", label: "Weight" ,align : "end" as const },
+        { key: "actualTouch", label: "Actual Touch", align: "end" as const },
         { key: "actualPure", label: "Actual Pure", align: "end" as const },
-        { key: "actualTouch", label: "Actual Touch", align: "center" as const },
         { key: "action", label: "Action", align: "center" as const },
     ];
 
@@ -268,7 +303,7 @@ const PureGoldOpening = () => {
                         mb={4}
                     >
                     <Text fontSize="small" fontWeight="600" >
-                       PURE GOLD MASTER
+                       PURE GOLD OPENING
                     
                     </Text>
                     </Heading>
@@ -331,7 +366,7 @@ const PureGoldOpening = () => {
                                         onChange={handleChange}
                                         placeholder="Enter weight"
                                         size="2xs"
-                                        max={999}
+                                        max={9999999999}
                                         decimalScale={3}
                                     
                                     />
@@ -414,7 +449,7 @@ const PureGoldOpening = () => {
                     <Box display="flex"  gap={2} alignItems="center" justifyContent="space-between">
         
                     <Heading size="md" mb={4}>
-                        Pure Gold Master List
+                        Pure Gold Opening List
                     </Heading>
                      <Flex gap={1}>
                                                 <Button
@@ -455,9 +490,9 @@ const PureGoldOpening = () => {
                                 <Table.Cell>{i + 1}</Table.Cell>
                                 <Table.Cell>{row.pureGoldName}</Table.Cell>
                                 <Table.Cell textAlign="end">{formatToFixed(row.weight ,2)} </Table.Cell>
-                                <Table.Cell textAlign="end" >{formatToFixed(row.actualPure , 2) }</Table.Cell>
+                                <Table.Cell textAlign="end" >{formatToFixed(row.actualTouch , 2) }</Table.Cell>
                                 <Table.Cell textAlign="end">
-                                    {formatToFixed(row.actualTouch,2)}
+                                    {formatToFixed(row.actualPure,2)}
                                 </Table.Cell>
                                 <Table.Cell align="center">
                                     <Box display="flex" justifyContent="center">

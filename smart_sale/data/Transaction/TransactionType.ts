@@ -12,7 +12,7 @@ export const TRANSACTIONTYPES = [
         icon: ArrowUpRight,
     },
     {
-        label: "SALES",
+        label: "PURCHASE",
         value: "SAP",
         icon: ShoppingCart,
     },
@@ -22,7 +22,7 @@ export const TRANSACTIONTYPES = [
         icon: Wallet,
     },
     {
-        label: "SALES RETURN",
+        label: "RETURN",
         value: "SRP",
         icon: RotateCcw,
     },

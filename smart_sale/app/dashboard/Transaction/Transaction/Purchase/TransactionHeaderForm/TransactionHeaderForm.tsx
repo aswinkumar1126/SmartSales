@@ -55,12 +55,17 @@ export default function TransactionHeaderForm({
 
     // Initialize customer input when form changes
     useEffect(() => {
-        if (!isInitialized && customerCollection?.items?.length) {
-            const label = getCustomerLabel(form.CUSTOMER);
-            setCustomerInput(label);
-            setIsInitialized(true);
+        if (!form.CUSTOMER) {
+            setCustomerInput("");
+            return;
         }
-    }, [form.CUSTOMER, customerCollection, isInitialized]);
+
+        if (!customerCollection?.items?.length) return;
+
+        const label = getCustomerLabel(form.CUSTOMER);
+        setCustomerInput(label || "");
+    }, [form.CUSTOMER, customerCollection]);
+
 
     // Update customer input when customer collection changes
     useEffect(() => {
@@ -85,7 +90,7 @@ export default function TransactionHeaderForm({
 
   
 
-  
+  console.log(form ,'formHeader')
 
     return (
         <Box
@@ -169,9 +174,9 @@ export default function TransactionHeaderForm({
             {/* CUSTOMER */}
                 <Box w={{base:'100%' ,md:'150px'}} display={{base:'flex' ,md:'block'}} alignItems='center'>
                     <Text fontSize="2xs" mb={1} minW={{base:'100px' }}>PURCHASER :</Text>
-                <SelectCombobox
+                    <SelectCombobox
                         items={customerCollection}
-                        value={form.CUSTOMER }
+                        value={form.CUSTOMER}
                         onChange={(val) => onFormChange("CUSTOMER", val)}
                         placeholder="Select Customer"
                         rounded="md"

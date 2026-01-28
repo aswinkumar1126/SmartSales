@@ -383,7 +383,7 @@ function AccountHeadMaster() {
         } else {
 
             const isDuplicate = accountList.some(
-                (acc) => acc.ACNAME?.toLowerCase() === form.ACNAME?.toLowerCase()
+                (acc) => acc.ACNAME?.toLowerCase() === form.ACNAME?.toLowerCase() && acc.ACTYPE?.toLowerCase() === form.ACTYPE?.toLowerCase()
             );
 
             if (isDuplicate) {
