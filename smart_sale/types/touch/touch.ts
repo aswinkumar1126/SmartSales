@@ -1,26 +1,27 @@
 export interface Touch {
-    companyType?:string,
+    actype?:string,
     accode?:string;
     itemId?:string;
     touch?:string;
     userId?:string;
     itemName?:string;
     COMPANYNAME?: string;
-    calculationMode?:string;
+    calmode?:string;
 } 
 
 export interface TouchForm {
-    companyType:string,
+    actype:string,
     accode:string,
     itemId:number,
     touch:number, 
+    calmode?:string;
 }
 
 export interface TouchMaster {
-    companyType:string,
+    actype:string,
     accode:string,
     itemId:string,
     touch:string,
-    calculationMode?:string
+    calmode?:string
 }
 

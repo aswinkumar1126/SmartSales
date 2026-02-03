@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { getOpeningBalance } from "@/service/OpenBalance";
+import { getOpeningBalance } from "@/service/OPenBalance";
 
 export const useOpeningBalance = (ACCCODE:number|null|undefined) =>{
     return useQuery({

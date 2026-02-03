@@ -42,16 +42,16 @@ import { AiOutlineSave } from "react-icons/ai";
 /* ---------------- Initial State ---------------- */
 
 const initialFormState: TouchMaster = {
-    companyType: "",
+    actype: "",
     accode: "",
     itemId: "",
     touch: "",
-    calculationMode:"",
+    calmode:"",
 };
 export type TouchTableRow = {
     sno: number;
     acname: string;
-    companyType: string;
+    actype: string;
     itemName: string;
     touch: number;
 };
@@ -75,8 +75,8 @@ const TouchMasterForm = () => {
     const [allItemsList, setAllItemsList] = useState<{ label: string; value: string }[]>([]);
 
     const filters = useMemo(() => ({
-        accountType: form.companyType?.trim().toUpperCase()
-    }), [form.companyType]);
+        accountType: form.actype?.trim().toUpperCase()
+    }), [form.actype]);
 
 
     /* ---------------- Hooks ---------------- */
@@ -151,10 +151,10 @@ const TouchMasterForm = () => {
 
         setForm({
             accode: touchDatabyId.accode ?? "",
-            companyType: touchDatabyId.companyType ?? "",
+            actype: touchDatabyId.actype ?? "",
             itemId: touchDatabyId.itemId ?? "" ,
             touch: String(touchDatabyId.touch),
-            calculationMode: touchDatabyId.calculationMode,
+            calmode: touchDatabyId.calmode,
         });
     }, [touchDatabyId]);
 
@@ -172,19 +172,19 @@ const TouchMasterForm = () => {
     }, [editId]);
 
     const payload = {
-        companyType: form.companyType,
+        actype: form.actype,
         accode: form.accode,
         itemId: Number(form.itemId),
         touch: Number(form.touch),
-        calculationMode:form.calculationMode
+        calmode:form.calmode
     }
     const validateForm = (form: TouchMaster): FormErrors => {
         const errors: FormErrors = {};
 
         if (!form.accode) errors.accode = "Company is required";
-        if (!form.companyType) errors.companyType = "Company type is required";
+        if (!form.actype) errors.actype = "Company type is required";
         if (!form.itemId) errors.itemId = "Item is required";
-        if (!form.calculationMode) errors.calculationMode = "Calculation Mode is required";
+        if (!form.calmode) errors.calmode = "Calculation Mode is required";
 
         if (!form.touch) {
             errors.touch = "Touch is required";
@@ -194,7 +194,7 @@ const TouchMasterForm = () => {
 
         const isDuplicate = touchData?.some(
             (item: any) =>
-                form.companyType?.toLowerCase() === item.companyType?.toLowerCase() &&
+                form.actype?.toLowerCase() === item.actype?.toLowerCase() &&
                 Number(form.accode) === Number(item.accode) &&
                 Number(form.itemId) === Number(item.itemId) &&
                 Number(item.sno) !== Number(editId) // 👈 key fix
@@ -247,7 +247,7 @@ const TouchMasterForm = () => {
         setColumns([
             { key: "sno", label: "S.No" },
             { key: "acname", label: "Company Name" },
-            { key: "companyType", label: "Company Type" },
+            { key: "actype", label: "Company Type" },
             { key: "itemName", label: "Item Name" },
             { key: "touch", label: "Touch", align: 'end' as const, allowTotal: true },
         ]);
@@ -259,7 +259,7 @@ const TouchMasterForm = () => {
     const columns = [
         { key: "sno", label: "S.No" },
         { key: "acname", label: "Company Name" },
-        { key: "companyType", label: "Company Type" },
+        { key: "actype", label: "Company Type" },
         { key: "itemName", label: "Item Name" },
         { key: "touch", label: "Touch", align: 'center' as const },
         { key: "action", label: "Action", align: 'center' as const },
@@ -298,18 +298,18 @@ const TouchMasterForm = () => {
 
                             {/* Company Type */}
                             <Box>
-                                <Field.Root invalid={!!errors.companyType}>
+                                <Field.Root invalid={!!errors.actype}>
                                     <Box display="flex" alignItems="center" gap={2}>
                                         <Box minW="100px" fontSize="2xs">COMPANY TYPE :</Box>
-                                        <SelectCombobox
-                                            value={form.companyType}
-                                            onChange={(val) => handleChange("companyType", val)}
+                                        <SelectCombobox 
+                                            value={form.actype}
+                                            onChange={(val) => handleChange("actype", val)}
                                             editId={Number(editId)}
                                             items={AccountTypeList}
                                             rounded="full"
                                         />
                                     </Box>
-                                    <Field.ErrorText>{errors.companyType}</Field.ErrorText>
+                                    <Field.ErrorText>{errors.actype}</Field.ErrorText>
                                 </Field.Root>
                             </Box>
 
@@ -324,7 +324,7 @@ const TouchMasterForm = () => {
                                             items={allAccountsList}
                                             editId={Number(editId)}
                                             rounded="full"
-                                            disable={!form.companyType}
+                                            disable={!form.actype}
                                         />
                                     </Box>
                                     <Field.ErrorText>{errors.accode}</Field.ErrorText>
@@ -375,15 +375,15 @@ const TouchMasterForm = () => {
                                     <Box display="flex" alignItems="center" gap={2}>
                                         <Box minW="100px" fontSize="2xs">CAL MODE :</Box>
                                         <SelectCombobox
-                                            value={form.calculationMode}
-                                            onChange={(val) => handleChange("calculationMode", val)}
+                                            value={form.calmode}
+                                            onChange={(val) => handleChange("calmode", val)}
                                             editId={Number(editId)}
                                             items={CalTypeCollection}
                                             rounded="full"
 
                                         />
                                     </Box>
-                                    <Field.ErrorText>{errors.calculationMode}</Field.ErrorText>
+                                    <Field.ErrorText>{errors.calmode}</Field.ErrorText>
                                 </Field.Root>
                             </Box>
 
@@ -459,7 +459,7 @@ const TouchMasterForm = () => {
                             <>
                                 <Table.Cell>{i + 1}</Table.Cell>
                                 <Table.Cell>{row.acname}</Table.Cell>
-                                <Table.Cell>{row.companyType}</Table.Cell>
+                                <Table.Cell>{AccountTypeList.find(item => item.value === row.actype)?.label|| row.actype}</Table.Cell>
                                 <Table.Cell>{row.itemName}</Table.Cell>
                                 <Table.Cell textAlign="right">{formatToFixed(row.touch, 2)}</Table.Cell>
                                 <Table.Cell align="center">
