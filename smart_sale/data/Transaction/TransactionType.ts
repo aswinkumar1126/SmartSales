@@ -13,7 +13,7 @@ export const TRANSACTIONTYPES = [
     },
     {
         label: "PURCHASE",
-        value: "SAP",
+        value: "PU",
         icon: ShoppingCart,
     },
     {
@@ -23,7 +23,7 @@ export const TRANSACTIONTYPES = [
     },
     {
         label: "RETURN",
-        value: "SRP",
+        value: "PR",
         icon: RotateCcw,
     },
 ];

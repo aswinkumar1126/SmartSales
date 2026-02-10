@@ -12,6 +12,7 @@ import {
     Select,
     Text,
     IconButton,
+    List,
 } from "@chakra-ui/react";
 import { useMemo, useState } from "react";
 import { FaArrowUp } from "react-icons/fa";
@@ -38,7 +39,7 @@ const columns: TableColumn[] = [
 
 
 type StockDrawerProps = {
-
+    isIssue:boolean;
     showStock:string;
     setShowStock: (val: "PURE" | "ITEM") => void;
 
@@ -58,12 +59,15 @@ type StockDrawerProps = {
     itemCollection?: any[];
 };
 
+
 export default function StockDrawer({
+    isIssue,
     showStock,
     setShowStock,
     stockData,
     open,
     onClose,
+
     onIssue,
     metalId,
     setMetalId,
@@ -144,14 +148,14 @@ const {theme} = useTheme();
                             {/* Filters */}
                             <HStack mb={3} gap={2}>
                                 <SelectCombobox
-                                    items={metalCollection}
+                                    items={metalCollection??[]}
                                     placeholder="Select Metal"
                                     value={metalId}
                                     onChange={setMetalId}
                                 />
 
                                 <SelectCombobox
-                                    items={secondaryCollection}
+                                    items={secondaryCollection??[]}
                                     placeholder={
                                         showStock === "PURE"
                                             ? "Select Pure Gold"

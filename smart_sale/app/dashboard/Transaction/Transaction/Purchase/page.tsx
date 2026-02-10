@@ -1770,7 +1770,7 @@ export default function PurchasePage() {
                     <RightSideDetailsPanel
                         selectedTransactionId={selectedTransactionId}
                         onTransactionClick={handleTransactionClick}
-                        transactionList={transactionList?.data}
+                        transactionList={transactionList}
                         isLoadingTransactions={isLoading}
                         draftTotals={totals}
                         headerForm={headerForm}
@@ -1817,7 +1817,7 @@ export default function PurchasePage() {
                 selectedName={selectedName}
                 setSelectedName={setSelectedName}
                 pureGoldCollection={pureGoldList}
-                itemCollection={itemsCollection}
+                itemCollection={itemsCollection.items}
 
                 onIssue={handleLoadFromStock}
             />

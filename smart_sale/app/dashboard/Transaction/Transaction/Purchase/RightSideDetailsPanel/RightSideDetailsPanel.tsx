@@ -82,11 +82,11 @@ export default function RightSideDetailsPanel({
     const filteredIds = React.useMemo(() => {
         if (!transactionList) return [];
         return [
-            ...(transactionList.issues || []),
-            ...(transactionList.receipts || []),
-        ];
-    }, [transactionList]);
+            ...(transactionList?.data?.snoList|| []),
 
+        ];
+    }, [transactionList?.data?.snoList]);
+console.log(transactionList?.data?.snoList,"list of transaction")
     const totalTransactions = filteredIds.length;
 
     
@@ -194,10 +194,12 @@ export default function RightSideDetailsPanel({
                                            <Combobox.Content>
                                              <Combobox.Empty fontSize='2xs'>No customer found</Combobox.Empty>
                                                 {itemsCollection.items.map((item: any) => (
+
                                                    <Combobox.Item key={item.value} item={item} fontSize='2xs'>
                                                           {item.label}
                                                   <Combobox.ItemIndicator />
                                       </Combobox.Item>
+
                                     ))}
                                  </Combobox.Content>
                                </Combobox.Positioner>

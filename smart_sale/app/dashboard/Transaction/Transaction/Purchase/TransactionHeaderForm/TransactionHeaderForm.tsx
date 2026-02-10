@@ -8,6 +8,7 @@ import { formatToFixed } from "@/utils/format/numberFormat";
 import { HiFilter, HiX } from "react-icons/hi"
 import { SelectCombobox } from "@/components/ui/selectComboBox";
 import { FloatingActionButton } from "@/components/ui/FloatingActionButton";
+import { useTransactions } from "@/hooks/transaction/useTransactions";
 
 
 interface TransactionHeaderFormProps {
@@ -40,7 +41,10 @@ export default function TransactionHeaderForm({
     const [customerInput, setCustomerInput] = useState("");
     const [isInitialized, setIsInitialized] = useState(false);
 
+
     // Get the customer label for the current form.CUSTOMER value
+const { data: transactionList, } = useTransactions();
+    console.log(transactionList,'transactionListdata')
     const getCustomerLabel = (value: any) => {
         if (!value) return "";
         if (getLabelByValue && customerCollection) {
@@ -120,7 +124,7 @@ export default function TransactionHeaderForm({
                 <Box w={{ base: '100%', md: '60px' }} display={{ base: 'flex', md: 'block' }} alignItems={{base:'center' }}>
                     <Text fontSize="2xs" mb={1} minW={{ base:'100px' }}>ENTRY NO :</Text>
                 <CapitalizedInput
-                    value={form.ENTRYNO}
+                    value={transactionList?.data?.nextSno}
                     field="ENTRYNO"
                     onChange={() => { }}
                     disabled
@@ -133,7 +137,7 @@ export default function TransactionHeaderForm({
                 <Box w={{ base: '100%', md: '70px' }} display={{ base: 'flex', md: 'block' }} alignItems={{ base: 'center' }}>
                     <Text fontSize="2xs" mb={1} minW={{ base: '100px' }}>BILL NO :</Text>
                 <CapitalizedInput
-                    value={form.BILLNO}
+                    value={transactionList?.data?.nextBillno}
                     field="BILLNO"
                     onChange={() => { }}
                     disabled
