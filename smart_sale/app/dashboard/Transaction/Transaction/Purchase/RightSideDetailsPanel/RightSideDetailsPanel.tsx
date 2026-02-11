@@ -82,8 +82,8 @@ export default function RightSideDetailsPanel({
     const filteredIds = React.useMemo(() => {
         if (!transactionList) return [];
         return [
-            ...(transactionList.issues || []),
-            ...(transactionList.receipts || []),
+            ...(transactionList?.snoList || []),
+
         ];
     }, [transactionList]);
 

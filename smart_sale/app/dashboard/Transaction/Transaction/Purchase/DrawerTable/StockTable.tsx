@@ -56,6 +56,7 @@ type StockDrawerProps = {
 
     pureGoldCollection?: any[];
     itemCollection?: any[];
+    isIssue?:boolean;
 };
 
 export default function StockDrawer({
@@ -71,7 +72,8 @@ export default function StockDrawer({
     selectedName,
     setSelectedName,
     pureGoldCollection,
-    itemCollection
+    itemCollection,
+    isIssue
 }: StockDrawerProps) {
 
     
@@ -144,14 +146,14 @@ const {theme} = useTheme();
                             {/* Filters */}
                             <HStack mb={3} gap={2}>
                                 <SelectCombobox
-                                    items={metalCollection}
+                                    items={metalCollection ?? []}
                                     placeholder="Select Metal"
                                     value={metalId}
                                     onChange={setMetalId}
                                 />
 
                                 <SelectCombobox
-                                    items={secondaryCollection}
+                                    items={secondaryCollection ?? []} 
                                     placeholder={
                                         showStock === "PURE"
                                             ? "Select Pure Gold"

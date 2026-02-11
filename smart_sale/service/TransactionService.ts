@@ -35,7 +35,7 @@ export const TransactionService = {
             if (startdate) params.startdate = startdate;
             if (enddate) params.enddate = enddate;
             if(itemid) params.itemid=itemid;
-            console.log(params, 'params')
+
             const { data } = await axiosInstance.get(BASE_PATH, { params });
            
             return data;

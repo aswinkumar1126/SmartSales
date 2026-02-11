@@ -37,8 +37,6 @@ export default function TransactionHeaderForm({
     showFilter,
     handleShowFilter
 }: TransactionHeaderFormProps) {
-    const [customerInput, setCustomerInput] = useState("");
-    const [isInitialized, setIsInitialized] = useState(false);
 
     // Get the customer label for the current form.CUSTOMER value
     const getCustomerLabel = (value: any) => {
@@ -53,29 +51,7 @@ export default function TransactionHeaderForm({
         return found?.label || value || "";
     };
 
-    // Initialize customer input when form changes
-    useEffect(() => {
-        if (!form.CUSTOMER) {
-            setCustomerInput("");
-            return;
-        }
 
-        if (!customerCollection?.items?.length) return;
-
-        const label = getCustomerLabel(form.CUSTOMER);
-        setCustomerInput(label || "");
-    }, [form.CUSTOMER, customerCollection]);
-
-
-    // Update customer input when customer collection changes
-    useEffect(() => {
-        if (customerCollection?.items?.length && form.CUSTOMER) {
-            const label = getCustomerLabel(form.CUSTOMER);
-            if (label) {
-                setCustomerInput(label);
-            }
-        }
-    }, [customerCollection, form.CUSTOMER]);
 
     const parseISOToDate = (iso?: string) => {
         if (!iso) return null;
@@ -177,10 +153,15 @@ export default function TransactionHeaderForm({
                     <SelectCombobox
                         items={customerCollection}
                         value={form.CUSTOMER}
-                        onChange={(val) => onFormChange("CUSTOMER", val)}
+                            onChange={(val) => {
+                             
+                                onCustomerSelect(val, getCustomerLabel(val))
+                                onFormChange("CUSTOMER", val);
+                            }}
                         placeholder="Select Customer"
                         rounded="md"
                 />
+                     
                 </Box>
 
              
