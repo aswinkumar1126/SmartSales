@@ -82,10 +82,12 @@ export default function RightSideDetailsPanel({
     const filteredIds = React.useMemo(() => {
         if (!transactionList) return [];
         return [
-            ...(transactionList?.data?.snoList|| []),
+
+
+            ...(transactionList?.snoList || []),
 
         ];
-    }, [transactionList?.data?.snoList]);
+    }, [transactionList]);
 console.log(transactionList?.data?.snoList,"list of transaction")
     const totalTransactions = filteredIds.length;
 

@@ -7,20 +7,12 @@ import {
     Button,
     Flex,
     VStack,
-    HStack,
-    ActionBar,
-    Portal,
-    CloseButton, 
-    Drawer,
-    Input,
-    Select
 
 } from "@chakra-ui/react";
 import { useTheme } from "@/context/theme/themeContext";
 import { toaster, Toaster } from "@/components/ui/toaster";
 import { useListCollection, useFilter } from "@chakra-ui/react";
 import { useOpeningBalance } from "@/hooks/balance/useOpeningBalance";
-import Fab from '@mui/material/Fab';
 import {GiGoldBar} from "react-icons/gi";
 
 // Components
@@ -92,6 +84,8 @@ export default function PurchasePage() {
         CUSTOMER: "",
         CUSTOMER_NAME: "",
     });
+
+    console.log(headerForm ,'headerForm')
     
     const [isEditing, setIsEditing] = useState(false);
     const [editingSno, setEditingSno] = useState<string | null>(null);
@@ -118,7 +112,7 @@ export default function PurchasePage() {
         transactionTitle === "ISSUE" ||
         transactionTitle === "RECEIPT";
 
-    console.log(transactionTitle,'selectedTransactionType');
+    //console.log(transactionTitle,'selectedTransactionType');
 
     /* ================================
        Local Storage Keys
@@ -134,7 +128,7 @@ export default function PurchasePage() {
 
     const { theme } = useTheme();
     const { data: itemsData } = useItems();
-    console.log(itemsData,'itemsData')
+    //console.log(itemsData,'itemsData')
 
     const filters={
         accountType:"PR"
@@ -142,7 +136,7 @@ export default function PurchasePage() {
 
     const { data: allCustomer } = useAllAccountHead(filters);
 
-    console.log(allCustomer,'allCustomer');
+    //console.log(allCustomer,'allCustomer');
     
     const pureGoldDatafilters = {
         metalId,
@@ -162,6 +156,7 @@ export default function PurchasePage() {
     const {data:allPureGoldNames } = usePureGoldNames();
 
     const { data: transactionsById, isLoading: getbySnoLoading } = useTransactionByTransId(selectedTransactionId);
+    //console.log(transactionsById,'transactionsById');
 
     const updateTransaction = useUpdateTransaction();
         const { data: metalsData } = useAllMetals();
@@ -175,7 +170,7 @@ export default function PurchasePage() {
         endDate,
         itemCode
     );
-    console.log(transactionList,'transactionList')
+    //console.log(transactionList,'transactionList')
 
     const openingData = openingBalance?.data;
     const createTransaction = useCreateTransactions();
@@ -183,8 +178,8 @@ export default function PurchasePage() {
 
     // Log transaction data for debugging
     useEffect(() => {
-        console.log("transactionsById data:", transactionsById);
-        console.log("selectedTransactionId:", selectedTransactionId);
+        //console.log("transactionsById data:", transactionsById);
+        //console.log("selectedTransactionId:", selectedTransactionId);
     }, [transactionsById, selectedTransactionId]);
 
     /* ================================
@@ -244,10 +239,13 @@ export default function PurchasePage() {
     
 
     const getLabelByValue = useCallback((collection: any, value: any) => {
-        if (!collection?.items?.length) return value ?? "";
-        const found = collection.items.find(
-            (i: any) => i.value === value?.toString()
-        );
+        if (!collection) return value ?? "";
+
+        // Decide the array to search: either collection.items or collection itself
+        const list = Array.isArray(collection) ? collection : collection.items;
+        if (!list?.length) return value ?? "";
+
+        const found = list.find((i: any) => i.value === value?.toString());
         return found?.label ?? value ?? "";
     }, []);
 
@@ -438,6 +436,8 @@ export default function PurchasePage() {
         const savedHeader = localStorage.getItem(HEADER_KEY);
         const savedType = localStorage.getItem(TYPE_KEY);
 
+  
+
         if (savedHeader) {
             const headerValues = JSON.parse(savedHeader);
             setAccCode(Number(headerValues?.CUSTOMER));
@@ -559,17 +559,29 @@ export default function PurchasePage() {
     
     // This useEffect loads transaction data when transactionsById changes
     useEffect(() => {
-        if (transactionsById?.data && selectedTransactionId) {
-            console.log("Loading transaction data:", transactionsById.data);
-            handleEditTransaction(transactionsById.data, selectedTransactionId);
+        if (transactionsById && selectedTransactionId) {
+            handleEditTransaction(transactionsById, selectedTransactionId);
         }
     }, [transactionsById, selectedTransactionId]);
 
+    useEffect(()=>{
+        const transactionDetails = transactionList?.data || "";
+
+        setHeaderForm(prev => ({
+            ...prev,
+            CUSTOMER: transactionDetails.ACCODE ? String(transactionDetails.ACCODE) : "",
+            CUSTOMER_NAME: transactionDetails.ACNAME,
+            DATE: transactionDetails.TRANDATE || new Date().toISOString().split("T")[0],
+            BILLNO: transactionDetails.nextBillno || "",
+            ENTRYNO: transactionDetails.nextSno || "",
+
+        }));
+    },[transactionList])
+
+
     const handleEditTransaction = useCallback((transactionData: any, sno: string) => {
-        console.log("handleEditTransaction called with:", transactionData);
         
         if (!transactionData) {
-            console.log("No transaction data provided");
             return;
         }
 
@@ -579,18 +591,18 @@ export default function PurchasePage() {
         setSelectedTransactionId(sno);
 
         // Debug: Log the data structure
-        console.log("Full transaction data structure:", JSON.stringify(transactionData, null, 2));
+       // console.log("Full transaction data structure:", JSON.stringify(transactionData, null, 2));
         
         // Try different possible data structures
-        const transactionDetails = transactionData.data?.TRANSACTION_DETAILS || transactionData.TRANSACTION_DETAILS;
+        const transactionDetails = transactionData.header;
         const transactionItems = transactionData.data?.TRANSACTION_ITEM || transactionData.TRANSACTION_ITEM || transactionData.data?.TRANSACTION_ITEMS || transactionData.TRANSACTION_ITEMS;
         
-        console.log("Extracted details:", transactionDetails);
-        console.log("Extracted items:", transactionItems);
+        //console.log("Extracted details:", transactionDetails);
+        //console.log("Extracted items:", transactionItems);
 
         // 1. Load transaction details into header form
         if (transactionDetails) {
-            console.log("Setting header form with details:", transactionDetails);
+           // console.log("Setting header form with details:", transactionDetails);
             
           
 
@@ -600,7 +612,9 @@ export default function PurchasePage() {
                 CUSTOMER: transactionDetails.ACCODE ? String(transactionDetails.ACCODE) : "",
                 CUSTOMER_NAME: transactionDetails.ACNAME,
                 DATE: transactionDetails.TRANDATE || new Date().toISOString().split("T")[0],
-                BILLNO: transactionDetails.TRANNO || ""
+                BILLNO: transactionDetails.BILLNO || "",
+                ENTRYNO: transactionDetails.ENTRYNO || "",
+
             }));
 
             // Set account code
@@ -609,7 +623,7 @@ export default function PurchasePage() {
 
             // Find and set transaction type (readonly)
             const foundType = TRANSACTIONTYPES.find(t => t.value === transactionDetails.TRANTYPE);
-            console.log("Found transaction type:", foundType, "for value:", transactionDetails.TRANTYPE);
+            //console.log("Found transaction type:", foundType, "for value:", transactionDetails.TRANTYPE);
             
             if (foundType) {
                 setSelectedTransactionType(foundType);
@@ -624,12 +638,12 @@ export default function PurchasePage() {
 
         // 2. Load transaction items into draft rows
         if (transactionItems && Array.isArray(transactionItems)) {
-            console.log("Loading", transactionItems.length, "items into draft rows");
+            //console.log("Loading", transactionItems.length, "items into draft rows");
 
-            console.log(transactionItems,'transactionItems')
+            //console.log(transactionItems,'transactionItems')
 
             const newDraftRows = transactionItems.map((item: any, index: number) => {
-                console.log(`Processing item ${index}:`, item);
+                //console.log(`Processing item ${index}:`, item);
 
                 const rowData = isIssue
                     ? {
@@ -673,12 +687,12 @@ export default function PurchasePage() {
                         AMOUNT: item.AMOUNT || item.amount || "",
                     };
 
-                console.log(`Created row ${index}:`, rowData);
+                //console.log(`Created row ${index}:`, rowData);
                 return rowData;
             });
 
             setDraftRows(newDraftRows);
-            console.log("Set draft rows:", newDraftRows);
+            //console.log("Set draft rows:", newDraftRows);
 
             if (newDraftRows.length > 0) {
                 setEditingRowId(newDraftRows[0].__rowId);
@@ -719,16 +733,21 @@ export default function PurchasePage() {
             });
             return;
         }
-        
+
+        console.log(customerValue, customerLabel,'headerFormss')
+
         setHeaderForm(prev => ({
             ...prev,
-            CUSTOMER: customerValue,
-            CUSTOMER_NAME: customerLabel,
+            CUSTOMER: customerValue || "",      // allow clearing
+            CUSTOMER_NAME: customerLabel || "", // clear name as well
         }));
-        setAccCode(Number(customerValue));
+
+        console.log(headerForm,'headerFormsss')
+
+        setAccCode(customerValue ? Number(customerValue) : 0);
         refetchTransactionList();
-        
     };
+
 
     /* ================================
        Date Range Handlers
@@ -1421,7 +1440,7 @@ export default function PurchasePage() {
                 ),
             };
 
-            console.log("CREATE PAYLOAD:", transactionData);
+            //console.log("CREATE PAYLOAD:", transactionData);
 
             await createTransaction.mutateAsync(transactionData);
 
@@ -1471,7 +1490,7 @@ export default function PurchasePage() {
                 TRANSACTION_ITEM: draftRows.length > 0 ? normalizeRowForApi(draftRows[0], isIssue) : null,
             };
 
-            console.log("UPDATE PAYLOAD:", updateData);
+            //console.log("UPDATE PAYLOAD:", updateData);
 
             await updateTransaction.mutateAsync({
                 sno: editingSno,
@@ -1566,7 +1585,7 @@ export default function PurchasePage() {
     };
 
     const handleTransactionClick = useCallback((transactionId: string) => {
-        console.log("Transaction clicked:", transactionId);
+        //console.log("Transaction clicked:", transactionId);
         setSelectedTransactionId(transactionId);
         // Clear any existing draft first
         setDraftRows([]);
@@ -1624,17 +1643,7 @@ export default function PurchasePage() {
                 </Box>
             )}
             
-            {/* Debug info - show current state */}
-            {/* {process.env.NODE_ENV === 'development' && (
-                <Box position="fixed" bottom="10px" right="10px" bg="gray.800" color="white" p={2} borderRadius="md" fontSize="xs" zIndex={1000}>
-                    <Text>Editing: {isEditing ? 'Yes' : 'No'}</Text>
-                    <Text>SNO: {editingSno || 'None'}</Text>
-                    <Text>Selected ID: {selectedTransactionId || 'None'}</Text>
-                    <Text>Draft Rows: {draftRows.length}</Text>
-                    <Text>Customer: {headerForm.CUSTOMER}</Text>
-                    <Text>Type: {selectedTransactionType?.label || 'None'}</Text>
-                </Box>
-            )} */}
+         
             
             {/* LEFT – 70% */}
             <Box w={showFilter ? "70%" : "100%"}>
@@ -1652,6 +1661,7 @@ export default function PurchasePage() {
                         showFilter={showFilter}
                         handleShowFilter={handleShowFilter}
                         // isEditing={isEditing}
+
                     />
 
                     {/* 2. Transaction Type Selector */}
@@ -1818,7 +1828,6 @@ export default function PurchasePage() {
                 setSelectedName={setSelectedName}
                 pureGoldCollection={pureGoldList}
                 itemCollection={itemsCollection.items}
-
                 onIssue={handleLoadFromStock}
             />
 
