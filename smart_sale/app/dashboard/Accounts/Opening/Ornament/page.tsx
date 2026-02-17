@@ -49,7 +49,7 @@ import { toastError } from "@/component/toast/toast";
 import { useRouter } from "next/navigation";
 import { FaFileExcel ,FaPrint } from "react-icons/fa";
 import { SelectCombobox } from "@/components/ui/selectComboBox";
-
+import SearchBar from "@/component/search/SearchBar";
 
 function OrnamentMaster() {
     const { theme } = useTheme();
@@ -60,9 +60,11 @@ function OrnamentMaster() {
 
     /* -------------------- DATA -------------------- */
     const { data: itemsData } = useItems();
-    const { setData ,setColumns ,setShowSno } = usePrint();
+    const { setData ,setColumns ,setShowSno ,title } = usePrint();
 
-    const { data: ornamentList, isLoading } = useOrnamentData();
+    const [filter ,setFilter] = useState<string>('');
+
+    const { data: ornamentList, isLoading } = useOrnamentData(filter);
     console.log(ornamentList,'ornamentList')
 
     const ornaments = Array.isArray(ornamentList?.data)
@@ -270,6 +272,7 @@ useEffect(() => {
             { key:'netwt' , label:'Net Weight' , align:'end' as const,allowTotal:true },
             { key: 'stnwt', label: 'Stone Weight', align: 'end' as const ,allowTotal:true},
         ])
+        title?.("Ornament Opening List")
         router.push(`/print?export=${option}`);
     }
 
@@ -285,7 +288,7 @@ useEffect(() => {
         >
             <Toaster />
 
-            <Grid templateColumns={{ base: "1fr", lg: "1fr 1fr" }} gap={4}>
+            <Grid templateColumns={{ base: "1fr", lg: "1fr 2fr" }} gap={4}>
                 {/* ---------------- FORM ---------------- */}
                 <GridItem>
                     <VStack
@@ -294,13 +297,13 @@ useEffect(() => {
                         borderRadius="xl"
                         border="1px solid #eef"
                     >
-                        <Text fontSize="sm" fontWeight="600" mb={2}>
+                        <Text fontSize="small" fontWeight="semibold" mb={2}>
                             ORNAMENT OPENING
                         </Text>
 
                         <Fieldset.Root size="sm" width="100%">
                             <Fieldset.Content>
-                                <Grid css={{ sm: { gridTemplateColumns: "repeat(1, 1fr)" }, md: { gridTemplateColumns: "repeat(2, 1fr)" } }} gap={3}>
+                                <Grid  gap={2}>
 
                                     {/* ITEM NAME */}
                                     <Box display="flex" alignItems="center" gap={2}>
@@ -461,11 +464,20 @@ useEffect(() => {
                         border="1px solid #eef"
                     >
                         <Box display='flex' mb={4} gap={3} justifyContent='space-between' alignItems='center'>
-                            <Text fontWeight="bold" mb={2}>
+                            <Text fontSize="small" fontWeight="semibold" >
                                 ORMNAMENT DETAILS
                             </Text>
+                            <Box display='flex' gap={1}>
+                                <Box >
+                                    <SearchBar
+                                        searchTerm={filter}
+                                        onChange={setFilter}
+                                        placeholder="Search ornament masters"
+                                        size="2xs"
 
-                        <Flex gap={1}>
+                                    />
+                                </Box>
+                                <Flex>
                             <Button
                                 variant="ghost"
                                 size="xs"
@@ -488,8 +500,8 @@ useEffect(() => {
                                 <FaPrint />
                             </Button>
                         </Flex>
-                        </Box>
-                       
+                    </Box>
+                    </Box>   
                         <CustomTable 
                             columns={OrnamentTableColumn}
                             data={ornaments}
@@ -525,6 +537,7 @@ useEffect(() => {
                             
                             />
                     </Box>
+                 
                 </GridItem>
             </Grid>
         </Box>

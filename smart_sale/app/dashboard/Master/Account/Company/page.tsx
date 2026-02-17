@@ -55,12 +55,12 @@ function CompanyMaster() {
     /* -------------------- API HOOKS -------------------- */
     const { data, isLoading } = useAllCompanies();
     const router = useRouter();
-    const {setData ,setColumns ,setShowSno} =usePrint();
+    const {setData ,setColumns ,setShowSno , title } =usePrint();
     const companies = data?.data ?? [];
     const [inputValue, setInputValue] = useState("")
     const {data:allStates ,isLoading:stateLoading ,isError:stateError} = useAllStates();
 
-
+    console.log(companies,'companies')
     const { mutate: createCompany, isPending } = useCreateCompany();
     const { mutate: updateCompany, isPending: isUpdating } = useUpdateCompany();
 
@@ -70,24 +70,8 @@ function CompanyMaster() {
     }))
 
    
-    const { contains } = useFilter({ sensitivity: "base" })
 
 
-    const { collection: stateCollection, set } = useListCollection<any>({
-        initialItems: [],
-        itemToString: (item) => item.stateName,
-        itemToValue: (item) => String(item.stateId),
-    })
-
-    useEffect(() => {
-        if (!allStates?.length) return
-
-        const filtered = allStates.filter((s: any) =>
-            s.stateName.toLowerCase().includes(inputValue.toLowerCase())
-        )
-
-        set(filtered)
-    }, [inputValue, allStates, set])
     /* -------------------- FORM STATE -------------------- */
     const [form, setForm] = useState<CreateCompanyPayload>({
         COMPANYID: "",
@@ -101,7 +85,7 @@ function CompanyMaster() {
         EMAIL: "",
         GSTNO: "",
         ACTIVE: "Y",
-        STATEID: "",
+        STATEID: "24",
     });
     const [highlightedId ,setHighlightedId] = useState<Number>()
 
@@ -189,18 +173,18 @@ function CompanyMaster() {
             EMAIL: "",
             GSTNO: "",
             ACTIVE: "Y",
-            STATEID: "",
+            STATEID: "24",
         });
     };
 
 
-    const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (file) {
-            setLogoFile(file);
-            setImagePreview(URL.createObjectURL(file));
-        }
-    };
+    // const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    //     const file = e.target.files?.[0];
+    //     if (file) {
+    //         setLogoFile(file);
+    //         setImagePreview(URL.createObjectURL(file));
+    //     }
+    // };
 
     const handleSave = () => {
         if (!form.COMPANYID) {
@@ -217,42 +201,42 @@ function CompanyMaster() {
             toastError("Company Name is required");
             return;
         }
-        if(!form.ADDRESS1?.trim()){
-            toastError("Address is required");
-            return;
-        }
-        if(!form.ADDRESS2?.trim()){
-            toastError("Area is required");
-            return;
-        }
-        if(!form.ADDRESS3?.trim()){
-            toastError("City is required");
-            return;
-        }
-        if (!form.STATEID) {
-            toastError("State is required");
-            return;
-        }
-        if(!form.AREACODE?.trim()){
-            toastError("Pincode is required");
-            return;
-        }
+        // if(!form.ADDRESS1?.trim()){
+        //     toastError("Address is required");
+        //     return;
+        // }
+        // if(!form.ADDRESS2?.trim()){
+        //     toastError("Area is required");
+        //     return;
+        // }
+        // if(!form.ADDRESS3?.trim()){
+        //     toastError("City is required");
+        //     return;
+        // }
+        // if (!form.STATEID) {
+        //     toastError("State is required");
+        //     return;
+        // }
+        // if(!form.AREACODE?.trim()){
+        //     toastError("Pincode is required");
+        //     return;
+        // }
        
-        if(form.AREACODE){
-            const pinRegex = /^[0-9]{6}$/;
-            if (!pinRegex.test(form.AREACODE)) {
-                toastError("Pincode must be exactly 6 digits");
-                return;
-            }
-        }
-        if(!form.PHONE?.trim()){
-            toastError("Mobile Number is required");
-            return;
-        }
-        if(!form.EMAIL?.trim()){
-            toastError("Email is required");
-            return;
-        }
+        // if(form.AREACODE){
+        //     const pinRegex = /^[0-9]{6}$/;
+        //     if (!pinRegex.test(form.AREACODE)) {
+        //         toastError("Pincode must be exactly 6 digits");
+        //         return;
+        //     }
+        // }
+        // if(!form.PHONE?.trim()){
+        //     toastError("Mobile Number is required");
+        //     return;
+        // }
+        // if(!form.EMAIL?.trim()){
+        //     toastError("Email is required");
+        //     return;
+        // }
 
        
         if (editId) {
@@ -285,9 +269,11 @@ function CompanyMaster() {
     };
 
     const CompanyColumn = [
+
+        { key:'COMPANYID' , label:'Sno' },
         {key:'companyId' , label:'Company Id' },
         {key:'companyName' , label:'Company Name' },
-        // {key:'costId' , label:'Cost Id' },
+        // {key:'state' , label:'State' },
         {key:'active', label:'Active'},
         {key:'actions', label:'Actions'},
     ];
@@ -298,11 +284,13 @@ function CompanyMaster() {
         setColumns([
             { key: "COMPANYID", label: "Company Id" },
             { key: "COMPANYNAME", label: "Company Name" },
-            { key: "ADDRESS1", label: "Address" },
+               {key:'ACTIVE', label:'Active'},
+            // { key: "ADDRESS1", label: "Address" },
             // { key: "itemName", label: "Item Name" },
             // { key: "touch", label: "Touch", align: 'end' as const, allowTotal: true },
         ]);
         setShowSno(true);
+        title?.("Company Master")
         router.push(`/print?export=${option}`);
     }
     /* -------------------- UI -------------------- */
@@ -314,17 +302,17 @@ function CompanyMaster() {
         
         >
             <Toaster />
-            <Grid templateColumns={{ base: "1fr", lg: "1fr 1fr" }} gap={4}>
+            <Grid templateColumns={{ base: "1fr", lg: "1fr 1.5fr" }} gap={2}>
                 {/* ---------------- FORM ---------------- */}
                 <GridItem>
                     <VStack bg={theme.colors.formColor} p={4} borderRadius="xl" border="1px solid #eef">
-                        <Text fontSize="medium" fontWeight="600" >
+                        <Text fontSize="small" fontWeight="600" >
                                 COMPANY CREATION
                         </Text>
 
                         <Fieldset.Root size="sm" width="100%">
                             <Fieldset.Content>
-                                <Grid templateColumns={{ base: "1fr", lg: "1fr 1fr" }} gap={2}>
+                                <Grid gap={2}>
 
                                     {/* COMPANY ID */}
                                     <Box display="flex" alignItems="center" gap={2}>
@@ -354,7 +342,7 @@ function CompanyMaster() {
                                     </Box>
 
                                     {/* ADDRESS */}
-                                    <Box display="flex" alignItems="center" gap={2} >
+                                    {/* <Box display="flex" alignItems="center" gap={2} >
                                         <Box minW='90px' fontSize="2xs">ADDRESS :</Box>
                                         <CapitalizedInput
                                             field="ADDRESS1"
@@ -363,10 +351,10 @@ function CompanyMaster() {
                                             size="2xs"
                                             allowSpecial
                                         />
-                                    </Box>
+                                    </Box> */}
 
                                     {/* AREA */}
-                                    <Box display="flex" alignItems="center" gap={2} >
+                                    {/* <Box display="flex" alignItems="center" gap={2} >
                                         <Box minW="90px" fontSize="2xs">AREA :</Box>
                                         <CapitalizedInput
                                             field="ADDRESS2"
@@ -374,10 +362,10 @@ function CompanyMaster() {
                                             onChange={handleChange}
                                             size="2xs"
                                         />
-                                    </Box>
+                                    </Box> */}
 
                                     {/* CITY */}
-                                    <Box display="flex" alignItems="center" gap={2} >
+                                    {/* <Box display="flex" alignItems="center" gap={2} >
                                         <Box minW="90px" fontSize="2xs">CITY :</Box>
                                         <CapitalizedInput
                                             field="ADDRESS3"
@@ -385,7 +373,7 @@ function CompanyMaster() {
                                             onChange={handleChange}
                                             size="2xs"
                                         />
-                                    </Box>
+                                    </Box> */}
 
                                     {/* STATE */}
                                     <Box display="flex" alignItems="center" gap={2}>
@@ -399,7 +387,7 @@ function CompanyMaster() {
                                     </Box>
 
                                     {/* PINCODE */}
-                                    <Box display="flex" alignItems="center" gap={2}>
+                                    {/* <Box display="flex" alignItems="center" gap={2}>
                                         <Box minW="90px" fontSize="2xs">PINCODE :</Box>
                                         <CapitalizedInput
                                             field="AREACODE"
@@ -409,10 +397,10 @@ function CompanyMaster() {
                                             type="number"
                                             size="2xs"
                                         />
-                                    </Box>
+                                    </Box> */}
 
                                     {/* MOBILE */}
-                                    <Box display="flex" alignItems="center" gap={2}>
+                                    {/* <Box display="flex" alignItems="center" gap={2}>
                                         <Box minW="90px" fontSize="2xs">MOBILE :</Box>
                                         <CapitalizedInput
                                             field="PHONE"
@@ -422,10 +410,10 @@ function CompanyMaster() {
                                             type="number"
                                             size="2xs"
                                         />
-                                    </Box>
+                                    </Box> */}
 
                                     {/* EMAIL */}
-                                    <Box display="flex" alignItems="center" gap={2}>
+                                    {/* <Box display="flex" alignItems="center" gap={2}>
                                         <Box minW="90px" fontSize="2xs">EMAIL :</Box>
                                         <CapitalizedInput
                                             field="EMAIL"           
@@ -434,7 +422,7 @@ function CompanyMaster() {
                                             onChange={handleChange}
                                             inputModeType="email"
                                         />
-                                    </Box>
+                                    </Box> */}
 
                                     {/* GSTIN */}
                                     <Box display="flex" alignItems="center" gap={2}>
@@ -483,7 +471,7 @@ function CompanyMaster() {
                         </Fieldset.Root>
 
 
-                        <HStack pt={3}>
+                        <HStack>
                             <Button
                                 size="xs"
                                 colorPalette="blue"
@@ -501,13 +489,13 @@ function CompanyMaster() {
 
                 {/* ---------------- TABLE ---------------- */}
                 <GridItem minW={0}>
-                    <Box bg={theme.colors.formColor} p={4} borderRadius="xl" border="1px solid #eef">
-                        <Box display='flex'  mb={4} gap={3} justifyContent='space-between' alignItems='center'>
-                            <Text fontWeight="bold" mb={2}>
-                                Company Details
+                    <Box bg={theme.colors.formColor} p={2} borderRadius="xl" border="1px solid #eef">
+                        <Box display='flex'  mb={2} gap={2} justifyContent='space-between' alignItems='center'>
+                            <Text fontWeight="semibold" fontSize="small" >
+                                COMPANY DETAILS 
                             </Text>
 
-                            <Flex gap={1}>
+                            <Flex>
                                 <Button
                                     variant="ghost"
                                     size="xs"
@@ -536,11 +524,12 @@ function CompanyMaster() {
                      <CustomTable 
                             columns={CompanyColumn}
                             data={companies}
-                            renderRow={(company) => (
+                            renderRow={(company , index) => (
                                 <>
+                                    <Table.Cell>{index+1}</Table.Cell>
                                     <Table.Cell>{company.COMPANYID}</Table.Cell>
                                     <Table.Cell>{company.COMPANYNAME}</Table.Cell>
-                                    {/* <Table.Cell>{company.COSTID}</Table.Cell> */}
+                                    {/* <Table.Cell>{company.STATE}</Table.Cell> */}
                                     <Table.Cell textAlign="center">{company.ACTIVE}</Table.Cell>
                                     <Table.Cell>
                                         <Box display="flex" justifyContent="center">
@@ -555,7 +544,6 @@ function CompanyMaster() {
                             bodyBg={theme.colors.primary}
                             highlightRowId={highlightedId ? Number(highlightedId) : null} 
                             rowIdKey="COMPANYID"
-                         
                             emptyText="No companies available"
 
                      />

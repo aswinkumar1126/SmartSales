@@ -36,6 +36,7 @@ interface DraftTransactionTableProps {
     isEditing: boolean;
     isIssue?:boolean;
     getAvailableWeight?: (id: string | number ) => number | null;
+    onClear?: () => void;
 }
 
 export default function DraftTransactionTable({
@@ -55,7 +56,8 @@ export default function DraftTransactionTable({
     handleClearForm,
     isEditing,
     isIssue,
-    getAvailableWeight 
+    getAvailableWeight,
+    onClear,
 
 }: DraftTransactionTableProps) {
     console.log("DraftTable - rows:", rows, "editingRowId:", editingRowId, "isEditing:", isEditing);
@@ -160,17 +162,17 @@ export default function DraftTransactionTable({
             }
 
             // 🔥 Check duplicate PUREID
-            const isDuplicate = rows.some(
-                (row) => row.PUREID === formData.PUREID
-            );
+            // const isDuplicate = rows.some(
+            //     (row) => row.PUREID === formData.PUREID
+            // );
 
-            if (isDuplicate) {
-                toaster.create({
-                    title:"This PURE ID already exists.",
-                    type:'error'
-                });
-                return;
-            }
+            // if (isDuplicate) {
+            //     toaster.create({
+            //         title:"This PURE ID already exists.",
+            //         type:'error'
+            //     });
+            //     return;
+            // }
 
             const newRow: any = {
                 ...formData,
@@ -233,7 +235,7 @@ export default function DraftTransactionTable({
                     type: isNumeric ? "number" : "capitalized",
                     isRequired,
                     size: "xs",
-                    ...(isNumeric && 'max' in col && typeof col.max === 'number' ? { max: col.max } : {}),
+                    // ...(isNumeric && 'max' in col && typeof col.max === 'number' ? { max: col.max } : {}),
                     ...(isNumeric && 'decimalScale' in col && typeof col.decimalScale === 'number' ? { decimalScale: col.decimalScale } : {}),
                 };
 
@@ -484,6 +486,15 @@ export default function DraftTransactionTable({
                             >
                                 Add Inline
                             </Button>
+                            <Button
+                                size="2xs"
+                                colorPalette="red"
+                                variant="outline"
+                                onClick={() => onClear?.()}
+                                fontSize='2xs'
+                            >
+                                Clear All
+                            </Button>
                         </>
                     )}
 
@@ -491,22 +502,7 @@ export default function DraftTransactionTable({
                 </HStack>
             </Flex>
 
-            {/* Warning message when editing */}
-            {isEditing && (
-                <Box
-                    bg="yellow.50"
-                    borderWidth="1px"
-                    borderColor="yellow.200"
-                    borderRadius="md"
-                    p={2}
-                    mb={2}
-                >
-                    <Text fontSize="xs" color="yellow.800" fontWeight="medium">
-                        ⚠️ Editing Mode: You can only modify weights, purity, rates, and charges.
-                        Item ID and Item Code cannot be changed. Save your changes before leaving.
-                    </Text>
-                </Box>
-            )}
+           
 
             {/* Form Section - Only shown when showForm is true */}
             {showForm && !isEditing && (
@@ -544,7 +540,7 @@ export default function DraftTransactionTable({
                     onCancelEdit={handleCancelEdit}
                     onDelete={handleDeleteRow}
                     onRowClick={handleRowClick}
-                    fixedHeight="300px"
+                    fixedHeight="200px"
                     renderFooter={
                         rows.length > 0
                             ? () => (

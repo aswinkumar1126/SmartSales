@@ -1,13 +1,12 @@
 import { useQuery } from "@tanstack/react-query";
 import { ItemService } from "@/service/ItemService";
-import { normalizeItem } from "@/utils/normalize/normalizeItem";
 
-export const useItems = () =>
-    useQuery({
-        queryKey: ["items"],
+export const useItems = (filter?: string) => {
+    return useQuery({
+        queryKey: ["items", filter],
         queryFn: async () => {
-            const res = await ItemService.getAll();
-            //console.log(res,'item');
-            return res.data.data;
+            const res = await ItemService.getAll(filter);
+            return res.data; // res is already the data from API
         },
     });
+};

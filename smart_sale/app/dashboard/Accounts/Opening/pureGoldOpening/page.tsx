@@ -37,6 +37,7 @@ import { CapitalizedInput } from "@/component/form/CapitalizedInput";
 import { useAllMetals } from "@/hooks/metal/useMetals";
 import { SelectCombobox } from "@/components/ui/selectComboBox";
 import { safeValue } from "@/utils/comboBox/safeValue";
+import SearchBar from "@/component/search/SearchBar";
 /* ---------------- Initial Form State ---------------- */
 
 const initialFormState: pureGoldMastOpenForm = {
@@ -74,12 +75,12 @@ const PureGoldOpening = () => {
     const [metalData, setMetalData] = useState<{ label: string, value: string }[]>([]);
     const [pureGoldName, setPureGoldName] = useState<{ label: string, value: string }[]>([]);
 
-
+    const [filter,setFilter] = useState<string>('');
     /* ---------------- Hooks ---------------- */
     const router = useRouter();
     const { theme } = useTheme();
-     const {setData ,setColumns } = usePrint();
-     const filter = {}
+     const {setData ,setColumns ,title } = usePrint();
+  
     const { data: pureGoldData = [], refetch } = usePureGoldData(filter);
     const { data: metalsData } = useAllMetals();
    
@@ -275,6 +276,7 @@ const PureGoldOpening = () => {
     /* ---------------- Export ---------------- */
     const handleExport = (option: string) => {
         setData(pureGoldData);
+        title?.("Pure Gold Opening List")
         setColumns([
             { key: "sno", label: "S.No" },
             { key: "pureGoldName", label: "Pure Gold Name" },
@@ -289,25 +291,25 @@ const PureGoldOpening = () => {
     /* ---------------- UI ---------------- */
 
     return (
-        <Grid templateColumns={{ base: "1fr", lg: "1fr 1.2fr" }} p={2} fontWeight='semibold' gap={4}>
+        <Grid templateColumns={{ base: "1fr", lg: "1fr 2fr" }}  fontWeight='semibold' gap={2}>
             <Toaster />
 
             {/* -------- Form Section -------- */}
             <GridItem>
-                <Box p={5} borderRadius="lg" bg={theme.colors.formColor} boxShadow="sm">
+                <Box p={2} borderRadius="lg" bg={theme.colors.formColor} boxShadow="sm">
                     <Heading
                         display="flex"
                         mx="auto"
                         alignItems="center"
                         justifyContent="center"
-                        mb={4}
+                        mb={2}
                     >
-                    <Text fontSize="small" fontWeight="600" >
+                        <Text fontSize="small" fontWeight='semibold'  >
                        PURE GOLD OPENING
                     
                     </Text>
                     </Heading>
-                    <Box display="grid" gridTemplateColumns={{ base: 'repeat(1, 1fr)', md: 'repeat(2, 1fr)' }}  gap={2}>
+                    <Box display="grid"   gap={2}>
                         {/* PURE GOLD NAME */}
                         <Field.Root invalid={!!errors.pureId}>
                             <HStack>
@@ -448,10 +450,20 @@ const PureGoldOpening = () => {
                     
                     <Box display="flex"  gap={2} alignItems="center" justifyContent="space-between">
         
-                    <Heading size="md" mb={4}>
-                        Pure Gold Opening List
+                        <Heading fontSize="small" fontWeight='semibold' >
+                 PURE GOLD OPENING LIST 
                     </Heading>
-                     <Flex gap={1}>
+                        <Box display='flex' gap={1}>
+                            <Box >
+                                <SearchBar
+                                    searchTerm={filter}
+                                    onChange={setFilter}
+                                    placeholder="Search pureGold Opening"
+                                    size="2xs"
+
+                                />
+                            </Box>
+                            <Flex>
                                                 <Button
                                                     variant="ghost"
                                                     size="xs"
@@ -474,6 +486,7 @@ const PureGoldOpening = () => {
                                                     <FaPrint />
                                                 </Button>
                                             </Flex>
+                                            </Box>
                     
                     </Box>
                     <CustomTable<TouchTableRow>

@@ -23,7 +23,7 @@ type PrintCustomization = {
     isNumeric?:boolean;
     headerColor: string;
     totalColumns: (string | number)[];
-    title:string;
+    title:string | undefined;
 };
 type PrintPreviewTableProps<T> = {
     columns: PrintColumn<T>[];
@@ -39,6 +39,8 @@ export function PrintPreviewTable<T extends Record<string, any>>({
     showSno,
 }: PrintPreviewTableProps<T>) {
     const { fontSize, headerBg, showTotals, totalColumns ,headerColor ,title , isNumeric, } = customization;
+
+    console.log(title)
 
     const totals = showTotals
         ? columns.reduce<Record<string, number>>((acc, col) => {

@@ -1,6 +1,6 @@
 import { axiosInstance } from "@/api/axiosInstance";
 import { ApiResponse } from "@/types/api/apiResponse";
-import { TRANSACTION, CreateTransaction, TransactionItem, UpdateTransactionPayload } from "@/types/transcation/Transaction";
+import { TRANSACTION, CreateTransaction,  UpdateTransactionPayload } from "@/types/transcation/Transaction";
 
 const BASE_PATH = "/purchase";
 
@@ -74,8 +74,8 @@ export const TransactionService = {
     // UPDATE (PUT)
     update: async (
         sno: string,
-        payload: UpdateTransactionPayload,
-    ): Promise<ApiResponse<TransactionItem>> => {
+        payload: CreateTransaction,
+    ): Promise<ApiResponse<any>> => {
 
         console.log(sno,'updating sno')
         try {

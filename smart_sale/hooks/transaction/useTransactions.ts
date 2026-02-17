@@ -40,6 +40,7 @@ export const useTransactions = (
             itemid ?? "all",
         ],
         queryFn: () => TransactionService.getAll(trantype, accode, startdate, enddate , itemid),
+        
       
     });
 };
@@ -81,7 +82,7 @@ export const useUpdateTransaction = () => {
             payload,
         }: {
             sno: string;
-            payload: UpdateTransactionPayload;
+            payload: CreateTransaction;
         }) => TransactionService.update(sno, payload),
 
         onSuccess: () => {

@@ -7,17 +7,29 @@ const baseUrlMast = 'puregold/mast';
 
 export const pureGoldMastService = () =>({
 
-    getAllPureGoldData: async (filters: any): Promise<ApiResponse<pureGoldData[]>> => {
+ getAllPureGoldData : async (
+        filter?: string,
+        filters?: Record<string, any>
+    ): Promise<ApiResponse<pureGoldData[]>> => {
         try {
-            const response = await axiosInstance.get(`/${baseUrlOpen}`, {
-                params: filters && Object.keys(filters).length > 0 ? filters : undefined
-            });
+            // Build params dynamically
+            const params: Record<string, any> = {};
 
+            if (filter) params.filter = filter; // string filter
+            if (filters && Object.keys(filters).length > 0) {
+                Object.assign(params, filters); // merge object filters
+            }
+
+            console.log("Axios params:", params);
+
+            const response = await axiosInstance.get(`/${baseUrlOpen}`, { params });
             return response.data;
-        } catch (err) {
+        } catch (err: any) {
+            console.error("Error fetching Pure Gold data:", err?.response?.data || err.message);
             throw err;
         }
     },
+
 
 
     getPureGoldMastDataById : async(id:number):Promise<ApiResponse<pureGoldData>> =>{
@@ -59,9 +71,13 @@ export const pureGoldMastService = () =>({
             throw err;
         }
     },
-    getPureGoldNames : async():Promise<ApiResponse<pureGoldData[]>> =>{
+    getPureGoldNames: async (filter?:string):Promise<ApiResponse<pureGoldData[]>> =>{
         try{
-            const response = await axiosInstance.get(`/${baseUrlMast}`);
+
+            console.log('filter', filter);
+            const response = await axiosInstance.get(`/${baseUrlMast}`, {
+                params: filter ? { filter: filter } : undefined, // wrap string as object
+            });
             return response.data;
 
         }

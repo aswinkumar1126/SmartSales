@@ -11,7 +11,12 @@ import {
   Layers,
   DollarSign,
   SlidersHorizontal,
-   Gem
+   Gem,
+  ShoppingCart,
+  Banknote,
+  BadgeCheck,
+  Landmark,
+  TrendingDown,
 } from "lucide-react";
 import { HiArrowDownCircle, HiArrowUpCircle } from "react-icons/hi2";
 import { AiOutlineShoppingCart } from "react-icons/ai";
@@ -145,7 +150,7 @@ export const SidebarProvider = ({ children }: { children: ReactNode }) => {
           },
           {
             label: "Bank Account Master",
-            route: "/dashboard/Master/Item/bankAccount",
+            route: "/dashboard/Accounts/Opening/bankAccount",
             icon: Layers,
           },
           {
@@ -170,7 +175,26 @@ export const SidebarProvider = ({ children }: { children: ReactNode }) => {
             route: "/dashboard/Transaction/Transaction/Sales",
             icon: AiOutlineDollar,
           },
-         
+          {
+            label: "Approval",
+            route: "/dashboard/Transaction/Transaction/Approval",
+            icon: BadgeCheck,
+          },
+          {
+            label: "Bank Transaction",
+            route: "/dashboard/Transaction/Transaction/BankTransaction",
+            icon: Landmark,
+          },
+          {
+            label: "Expenses",
+            route: "/dashboard/Transaction/Transaction/Expenses",
+            icon: TrendingDown,
+          },
+          {
+            label: "Income",
+            route: "/dashboard/Transaction/Transaction/Income",
+            icon: TrendingUp,
+          },
         ]
       }
 

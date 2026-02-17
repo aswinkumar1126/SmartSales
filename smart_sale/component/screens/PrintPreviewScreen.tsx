@@ -30,11 +30,12 @@ type PrintPreviewScreenProps = {
 
     exportOption?: string|null;
     showSno?: boolean;
+    title?:string;
 
 };
 
 
-export function PrintPreviewScreen({ data, columns ,exportOption,showSno }: PrintPreviewScreenProps) {
+export function PrintPreviewScreen({ data, columns ,exportOption,showSno , title }: PrintPreviewScreenProps) {
 
   
 
@@ -42,7 +43,7 @@ export function PrintPreviewScreen({ data, columns ,exportOption,showSno }: Prin
         fontSize: "md" as "sm" | "md" | "lg",
         headerBg: "#e5e7eb",
         headerColor:'#222',
-        title: "Print Preview",
+        title: title,
         showTotals: false,
         totalColumns: [] as string[],
         isNumeric:false
@@ -172,7 +173,7 @@ export function PrintPreviewScreen({ data, columns ,exportOption,showSno }: Prin
 
 
     return (
-        <Flex h="100vh" bg="gray.50" color="black.700">
+        <Flex  bg="gray.50" color="black.700">
             {/* LEFT PANEL */}
             <Box
                 w="320px"
@@ -182,7 +183,7 @@ export function PrintPreviewScreen({ data, columns ,exportOption,showSno }: Prin
                 borderColor="gray.200"
                 overflowY="auto"
             >   
-                <Heading size="sm" mb={6} color="gray.800" alignItems='center'>
+                <Heading size="sm" mb={2} color="gray.800" alignItems='center'>
                     <Text> Print Settings </Text>
                 </Heading>
 
@@ -190,7 +191,7 @@ export function PrintPreviewScreen({ data, columns ,exportOption,showSno }: Prin
 
                     {/* FONT SETTINGS */}
                     <Box
-                        p={4}
+                        p={2}
                         border="1px solid"
                         borderColor="gray.200"
                         borderRadius="md"
@@ -236,7 +237,7 @@ export function PrintPreviewScreen({ data, columns ,exportOption,showSno }: Prin
 
                     {/* HEADER COLORS */}
                     <Box
-                        p={4}
+                        p={2}
                         border="1px solid"
                         borderColor="gray.200"
                         borderRadius="md"
@@ -324,23 +325,9 @@ export function PrintPreviewScreen({ data, columns ,exportOption,showSno }: Prin
                     </Box>
 
                 </Stack>
-            </Box>
-
-
-            {/* RIGHT PANEL */}
-            <Flex flex={1} direction="column">
-                <Box flex={1} p={6} overflow="auto" id="print-table">
-                    <PrintPreviewTable
-                        data={data}
-                        columns={columns}
-                        customization={settings}
-                        showSno={showSno}
-                    />
-                </Box>
-
                 {/* FOOTER */}
                 <Flex
-                    p={4}
+                    p={2}
                     bg="white"
                     borderTop="1px solid"
                     borderColor="gray.200"
@@ -372,6 +359,21 @@ export function PrintPreviewScreen({ data, columns ,exportOption,showSno }: Prin
                     )}
                 </Flex>
 
+            </Box>
+
+
+            {/* RIGHT PANEL */}
+            <Flex flex={1} direction="column">
+                <Box flex={1} p={6} overflow="auto" id="print-table">
+                    <PrintPreviewTable
+                        data={data}
+                        columns={columns}
+                        customization={settings}
+                        showSno={showSno}
+                    />
+                </Box>
+
+              
             </Flex>
         </Flex>
     );

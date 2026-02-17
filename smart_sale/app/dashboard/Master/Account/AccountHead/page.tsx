@@ -46,6 +46,8 @@ import { useAllStates } from "@/hooks/state/useStates";
 import { useAllAccountHead, useCreateAccountHead, useUpdateAccountHead, useAccountHeadById } from "@/hooks/accountHead/useAccountHead";
 import { AccountHead } from "@/types/accountHead/AccountHead";
 import { SelectCombobox } from "@/components/ui/selectComboBox";
+import SearchBar from "@/component/search/SearchBar";
+
 
 function AccountHeadMaster() {
     const { theme } = useTheme();
@@ -55,9 +57,10 @@ function AccountHeadMaster() {
     /* -------------------- API HOOKS -------------------- */
     const { data, isLoading } = useAllCompanies();
     const router = useRouter();
-    const { setData, setColumns, setShowSno } = usePrint();
+    const { setData, setColumns, setShowSno ,title} = usePrint();
     const companies = data?.data ?? [];
 
+    const [search, setSearch] = useState<string>('');
 
 
     const {
@@ -71,7 +74,8 @@ function AccountHeadMaster() {
         isLoading: accountHeadLoading,
         isError: accountHeadError,
         refetch,
-    } = useAllAccountHead();
+
+    } = useAllAccountHead(search);
 
 
 
@@ -90,7 +94,7 @@ function AccountHeadMaster() {
         ADDRESS2: "",
         AREA: "",
         CITY: "",
-        STATEID: "",
+        STATEID: "24",
         PINCODE: "",
         MOBILE: "",
         EMAILID: "",
@@ -121,6 +125,7 @@ function AccountHeadMaster() {
         ? allAccountHead.data.acheads
         : [];
 
+    console.log(allStates,'allStates')
     const safeValue = (
         value: string | undefined,
         collection: { label: string; value: string }[]
@@ -150,7 +155,7 @@ function AccountHeadMaster() {
                 ADDRESS2: "",
                 AREA: "",
                 CITY: "",
-                STATEID: "",
+                STATEID: "24",
                 PINCODE: "",
                 MOBILE: "",
                 EMAILID: "",
@@ -267,7 +272,7 @@ function AccountHeadMaster() {
             ADDRESS2: "",
             AREA: "",
             CITY: "",
-            STATEID: "",
+            STATEID: "24",
             PINCODE: "",
             MOBILE: "",
             EMAILID: "",
@@ -295,75 +300,75 @@ function AccountHeadMaster() {
             return;
         }
 
-        if (!form.ADDRESS1?.trim()) {
-            toastError("Address is required");
-            return;
-        }
+        // if (!form.ADDRESS1?.trim()) {
+        //     toastError("Address is required");
+        //     return;
+        // }
 
-        if (!form.AREA?.trim()) {
-            toastError("Area is required");
-            return;
-        }
+        // if (!form.AREA?.trim()) {
+        //     toastError("Area is required");
+        //     return;
+        // }
 
-        if (!form.CITY?.trim()) {
-            toastError("City is required");
-            return;
-        }
+        // if (!form.CITY?.trim()) {
+        //     toastError("City is required");
+        //     return;
+        // }
 
-        if (!form.PINCODE?.trim()) {
-            toastError("Pincode is required");
-            return;
-        }
+        // if (!form.PINCODE?.trim()) {
+        //     toastError("Pincode is required");
+        //     return;
+        // }
 
-        if (form.PINCODE) {
-            const pinRegex = /^[0-9]{6}$/;
-            if (!pinRegex.test(form.PINCODE)) {
-                toastError("Pincode must be exactly 6 digits");
-                return;
-            }
-        }
+        // if (form.PINCODE) {
+        //     const pinRegex = /^[0-9]{6}$/;
+        //     if (!pinRegex.test(form.PINCODE)) {
+        //         toastError("Pincode must be exactly 6 digits");
+        //         return;
+        //     }
+        // }
 
-        if (!form.MOBILE?.trim()) {
-            toastError("Mobile Number is required");
-            return;
-        }
+        // if (!form.MOBILE?.trim()) {
+        //     toastError("Mobile Number is required");
+        //     return;
+        // }
 
-        if (form.MOBILE) {
-            const mobileRegex = /^[0-9]{10}$/;
-            if (!mobileRegex.test(form.MOBILE)) {
-                toastError("Mobile number must be exactly 10 digits");
-                return;
-            }
-        }
+        // if (form.MOBILE) {
+        //     const mobileRegex = /^[0-9]{10}$/;
+        //     if (!mobileRegex.test(form.MOBILE)) {
+        //         toastError("Mobile number must be exactly 10 digits");
+        //         return;
+        //     }
+        // }
 
-        if (!form.EMAILID?.trim()) {
-            toastError("Email is required");
-            return;
-        }
-        if (form.GSTNO) {
-            const regexp = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
+        // if (!form.EMAILID?.trim()) {
+        //     toastError("Email is required");
+        //     return;
+        // }
+        // if (form.GSTNO) {
+        //     const regexp = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
 
-            if (!regexp.test(form.GSTNO)) {
-                toastError("Invalid GST Number");
-                return;
-            }
-        }
+        //     if (!regexp.test(form.GSTNO)) {
+        //         toastError("Invalid GST Number");
+        //         return;
+        //     }
+        // }
 
-        if (form.AADHARNO?.trim()) {
-            const aadharRegex = /^[0-9]{12}$/;
-            if (!aadharRegex.test(form.AADHARNO.trim())) {
-                toastError("Aadhar must be exactly 12 digits");
-                return;
-            }
-        }
+        // if (form.AADHARNO?.trim()) {
+        //     const aadharRegex = /^[0-9]{12}$/;
+        //     if (!aadharRegex.test(form.AADHARNO.trim())) {
+        //         toastError("Aadhar must be exactly 12 digits");
+        //         return;
+        //     }
+        // }
 
-        if (form.PAN?.trim()) {
-            const panRegex = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/;
-            if (!panRegex.test(form.PAN.trim().toUpperCase())) {
-                toastError("PAN must be in format: ABCDE1234F");
-                return;
-            }
-        }
+        // if (form.PAN?.trim()) {
+        //     const panRegex = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/;
+        //     if (!panRegex.test(form.PAN.trim().toUpperCase())) {
+        //         toastError("PAN must be in format: ABCDE1234F");
+        //         return;
+        //     }
+        // }
        
         console.log(form, 'updating ')
         if (editId) {
@@ -408,8 +413,11 @@ function AccountHeadMaster() {
 
     /* -------------------- TABLE COLUMNS -------------------- */
     const accountColumn = [
+
+        { key: "ACCODE", label: "Sno" },
         { key: "ACNAME", label: "Name" },
         { key: "ACTYPE", label: "Account Type" },
+        { key: "STATE", label: "State" },
         { key: "ACTIVE", label: "Active" },
         { key: "actions", label: "Actions" },
     ];
@@ -423,6 +431,7 @@ function AccountHeadMaster() {
             { key: "ACTIVE", label: "Active" },
         ]);
         setShowSno(true);
+        title?.("Account Master")
         router.push(`/print?export=${option}`);
     };
 
@@ -436,17 +445,17 @@ function AccountHeadMaster() {
 
         >
             <Toaster />
-            <Grid templateColumns={{ base: "1fr", lg: "1fr 1fr" }} gap={4}>
+            <Grid templateColumns={{ base: "1fr", lg: "1fr 2fr" }} gap={2}>
                 {/* ---------------- FORM ---------------- */}
                 <GridItem>
-                    <VStack bg={theme.colors.formColor} p={4} borderRadius="xl" border="1px solid #eef">
-                        <Text fontSize="medium" fontWeight="600" >
+                    <VStack bg={theme.colors.formColor} p={2} borderRadius="xl" border="1px solid #eef">
+                        <Text fontSize="small" fontWeight="600" >
                             ACCOUNT HEAD
                         </Text>
 
                         <Fieldset.Root size="sm" width="100%">
                             <Fieldset.Content>
-                                <Grid css={{ sm: { gridTemplateColumns: "repeat(1, 1fr)" }, md: { gridTemplateColumns: "repeat(2, 1fr)" } }} gap={3}>
+                                <Grid css={{ gridTemplateColumns: "repeat(1, 1fr)"  }} gap={3}>
 
                                     {/* ENTRY ID */}
                                     <Box display="flex" alignItems="center" gap={2}>
@@ -486,7 +495,7 @@ function AccountHeadMaster() {
                                     </Box>
 
                                     {/* ADDRESS (span 2) */}
-                                    <Box display="flex" alignItems="center" gap={2} >
+                                    {/* <Box display="flex" alignItems="center" gap={2} >
                                         <Box minW="100px" fontSize="2xs">ADDRESS :</Box>
                                         <CapitalizedInput
                                             field="ADDRESS1"
@@ -495,10 +504,10 @@ function AccountHeadMaster() {
                                             size="2xs"
                                             allowSpecial
                                         />
-                                    </Box>
+                                    </Box> */}
 
                                     {/* AREA */}
-                                    <Box display="flex" alignItems="center" gap={2}>
+                                    {/* <Box display="flex" alignItems="center" gap={2}>
                                         <Box minW="100px" fontSize="2xs">AREA :</Box>
                                         <CapitalizedInput
                                             field="AREA"
@@ -506,10 +515,10 @@ function AccountHeadMaster() {
                                             onChange={handleChange}
                                             size="2xs"
                                         />
-                                    </Box>
+                                    </Box> */}
 
                                     {/* CITY */}
-                                    <Box display="flex" alignItems="center" gap={2}>
+                                    {/* <Box display="flex" alignItems="center" gap={2}>
                                         <Box minW="100px" fontSize="2xs">CITY :</Box>
                                         <CapitalizedInput
                                             field="CITY"
@@ -517,7 +526,7 @@ function AccountHeadMaster() {
                                             onChange={handleChange}
                                             size="2xs"
                                         />
-                                    </Box>
+                                    </Box> */}
 
                                     {/* STATE */}
                                     <Box display="flex" alignItems="center" gap={2}>
@@ -533,7 +542,7 @@ function AccountHeadMaster() {
                                     </Box>
 
                                     {/* PINCODE */}
-                                    <Box display="flex" alignItems="center" gap={2}>
+                                    {/* <Box display="flex" alignItems="center" gap={2}>
                                         <Box minW="100px" fontSize="2xs">PINCODE :</Box>
                                         <CapitalizedInput
                                             field="PINCODE"
@@ -543,10 +552,10 @@ function AccountHeadMaster() {
                                             type="number"
                                             inputModeType="pincode"
                                         />
-                                    </Box>
+                                    </Box> */}
 
                                     {/* MOBILE */}
-                                    <Box display="flex" alignItems="center" gap={2}>
+                                    {/* <Box display="flex" alignItems="center" gap={2}>
                                         <Box minW="100px" fontSize="2xs">MOBILE :</Box>
                                         <CapitalizedInput
                                             field="MOBILE"
@@ -557,10 +566,10 @@ function AccountHeadMaster() {
                                             inputModeType="mobile"
                                             allowDecimal={false}
                                         />
-                                    </Box>
+                                    </Box> */}
 
                                     {/* EMAIL */}
-                                    <Box display="flex" alignItems="center" gap={2}>
+                                    {/* <Box display="flex" alignItems="center" gap={2}>
                                         <Box minW="100px" fontSize="2xs">EMAIL :</Box>
                                         <CapitalizedInput
                                             field="EMAILID"
@@ -569,10 +578,10 @@ function AccountHeadMaster() {
                                             onChange={handleChange}
                                             inputModeType="email"
                                         />
-                                    </Box>
+                                    </Box> */}
 
                                     {/* GSTIN */}
-                                    <Box display="flex" alignItems="center" gap={2}>
+                                    {/* <Box display="flex" alignItems="center" gap={2}>
                                         <Box minW="100px" fontSize="2xs">GSTIN :</Box>
                                         <CapitalizedInput
                                             field="GSTNO"
@@ -581,10 +590,10 @@ function AccountHeadMaster() {
                                             size="2xs"
                                             inputModeType="gst"
                                         />
-                                    </Box>
+                                    </Box> */}
 
                                     {/* OPENING WEIGHT */}
-                                    <Box display="flex" alignItems="center" gap={2}>
+                                    {/* <Box display="flex" alignItems="center" gap={2}>
                                         <Box minW="100px" fontSize="2xs">OPENING WEIGHT :</Box>
                                         <CapitalizedInput
                                             field="OPENING_WEIGHT"
@@ -595,10 +604,10 @@ function AccountHeadMaster() {
                                             max={999}
                                             allowDecimal
                                         />
-                                    </Box>
+                                    </Box> */}
 
                                     {/* OPENING PURE */}
-                                    <Box display="flex" alignItems="center" gap={2}>
+                                    {/* <Box display="flex" alignItems="center" gap={2}>
                                         <Box minW="100px" fontSize="2xs">OPENING PURE :</Box>
                                         <CapitalizedInput
                                             field="OPENING_PURE"
@@ -609,10 +618,10 @@ function AccountHeadMaster() {
                                             max={999}
                                             allowDecimal
                                         />
-                                    </Box>
+                                    </Box> */}
 
                                     {/* OPENING CASH */}
-                                    <Box display="flex" alignItems="center" gap={2}>
+                                    {/* <Box display="flex" alignItems="center" gap={2}>
                                         <Box minW="100px" fontSize="2xs">OPENING CASH :</Box>
                                         <CapitalizedInput
                                             field="OPENING_CASH"
@@ -624,10 +633,10 @@ function AccountHeadMaster() {
                                             decimalScale={2}
 
                                         />
-                                    </Box>
+                                    </Box> */}
 
                                     {/* AADHAR NO*/}
-                                    <Box display="flex" alignItems="center" gap={2}>
+                                    {/* <Box display="flex" alignItems="center" gap={2}>
                                         <Box minW="100px" fontSize="2xs">AADHAR NO :</Box>
                                         <CapitalizedInput
                                             field="AADHARNO"
@@ -638,10 +647,10 @@ function AccountHeadMaster() {
                                             inputModeType="aadhaar"
                                             allowDecimal={false}   // 🚫 no dot
                                         />
-                                    </Box>
+                                    </Box> */}
 
                                     {/* PAN NO */}
-                                    <Box display="flex" alignItems="center" gap={2}>
+                                    {/* <Box display="flex" alignItems="center" gap={2}>
                                         <Box minW="100px" fontSize="2xs">PAN NO :</Box>
                                         <CapitalizedInput
                                             field="PAN"
@@ -652,10 +661,10 @@ function AccountHeadMaster() {
                                             allowDecimal={false}
                                             inputModeType="pan"
                                         />
-                                    </Box>
+                                    </Box> */}
 
                                     {/* WEBSITE*/}
-                                    <Box display="flex" alignItems="center" gap={2}>
+                                    {/* <Box display="flex" alignItems="center" gap={2}>
                                         <Box minW="100px" fontSize="2xs">WEBSITE :</Box>
                                         <CapitalizedInput
                                             field="WEBSITE"
@@ -664,7 +673,7 @@ function AccountHeadMaster() {
                                             size="2xs"
                                             allowDecimal={true}
                                         />
-                                    </Box>
+                                    </Box> */}
 
                                     {/* ACTIVE */}
                                     <Box display="flex" alignItems="center" gap={2}>
@@ -699,7 +708,7 @@ function AccountHeadMaster() {
                         </Fieldset.Root>
 
 
-                        <HStack pt={3}>
+                        <HStack>
                             <Button
                                 size="xs"
                                 colorPalette="blue"
@@ -717,46 +726,60 @@ function AccountHeadMaster() {
 
                 {/* ---------------- TABLE ---------------- */}
                 <GridItem minW={0}>
-                    <Box bg={theme.colors.formColor} p={4} borderRadius="xl" border="1px solid #eef">
-                        <Box display='flex' mb={4} gap={3} justifyContent='space-between' alignItems='center'>
-                            <Text fontWeight="bold" mb={2}>
-                                Account Head Details
+                    <Box bg={theme.colors.formColor} p={2} borderRadius="xl" border="1px solid #eef">
+                        <Box display='flex' mb={2}  justifyContent='space-between' alignItems='center'>
+                            <Text fontWeight="semibold" fontSize="small">
+                                ACCOUNT HEAD LIST
                             </Text>
+                            <Box display='flex' gap={1}>
+                                <Box >
+                                    <SearchBar 
+                                        searchTerm={search}
+                                        onChange={setSearch}
+                                        placeholder="Search account masters" 
+                                        size="2xs"
 
-                            <Flex gap={1}>
-                                <Button
-                                    variant="ghost"
-                                    size="2xs"
-                                    color={theme.colors.green}
-                                    _hover={{ color: "black" }}
-                                    onClick={() => handleExport("excel")}
-                                    aria-label="Export Excel"
-                                >
-                                    <FaFileExcel />
-                                </Button>
+                                    />
+                                </Box>
+                                <Flex>
+                                    <Button
+                                        variant="ghost"
+                                        size="2xs"
+                                        color={theme.colors.green}
+                                        _hover={{ color: "black" }}
+                                        onClick={() => handleExport("excel")}
+                                        aria-label="Export Excel"
+                                    >
+                                        <FaFileExcel />
+                                    </Button>
 
-                                <Button
-                                    variant="ghost"
-                                    size="2xs"
-                                    color={theme.colors.primaryText}
-                                    _hover={{ color: "black" }}
-                                    onClick={() => handleExport("pdf")}
-                                    aria-label="Export PDF"
-                                >
-                                    <FaPrint />
-                                </Button>
-                            </Flex>
+                                    <Button
+                                        variant="ghost"
+                                        size="2xs"
+                                        color={theme.colors.primaryText}
+                                        _hover={{ color: "black" }}
+                                        onClick={() => handleExport("pdf")}
+                                        aria-label="Export PDF"
+                                    >
+                                        <FaPrint />
+                                    </Button>
+                                </Flex>
+                            </Box>
+
+                           
                         </Box>
 
 
                         <CustomTable
                             columns={accountColumn}
                             data={accountList}
-                            renderRow={(account) => (
-                                <>
+                            renderRow={(account ,index) => (
+                                <>  
+
+                                    <Table.Cell>{index+1}</Table.Cell>
                                     <Table.Cell>{account.ACNAME}</Table.Cell>
                                     <Table.Cell>{account.ACTYPE}</Table.Cell>
-                                    {/* <Table.Cell>{account.COMPANYNAME}</Table.Cell> */}
+                                    <Table.Cell>{account.STATE}</Table.Cell>
                                     <Table.Cell textAlign="center">{account.ACTIVE}</Table.Cell>
                                     <Table.Cell>
                                         <Box display="flex" justifyContent="center">

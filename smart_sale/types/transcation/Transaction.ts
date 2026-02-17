@@ -1,108 +1,174 @@
-export interface TRANSACTION {
-    SNO?: string | number;
-    ITEM?: string|number;        // ITEMID
-    PCS?: number;
-    GRSWT?: number;
-    LESSWT?: number;
-    NETWT?: number;
-    PURITY?: number;
+/* =========================================================
+   TRANSACTION CORE TYPES
+   ========================================================= */
+
+export interface TRANSACTION {   
+    
+    SNO?: string | number; 
+    ITEM?: string | number; // ITEMID 
+    PCS?: number; 
+    GRSWT?: number; 
+    LESSWT?: number; 
+    NETWT?: number; 
+    PURITY?: number; 
+    PUREWT?: number; 
+    RATE?: number; 
+    MCHARGE?: number; // MAKING COST 
+    WASTAGE?: number; 
+    ISSUES?: any; 
+    NEXTID?: number 
+}
+/** All supported transaction keys (extend here only) */
+export type TransactionKey =
+    | "issue"
+    | "receipt"
+    | "purchase"
+    | "purchase_return";
+
+
+/* =========================================================
+   COMMON WEIGHT STRUCTURE (Reusable Everywhere)
+   ========================================================= */
+
+export interface WeightInfo {
+    WT?: number;
+    TOUCH?: number;
     PUREWT?: number;
-    RATE?: number;
-    MCHARGE?: number;     // MAKING COST
-    WASTAGE?: number;
-    ISSUES?: any;
-    NEXTID?: number
-}
-export interface TransactionType {
-    value?: string;
-    label?: string;
-    icon?: React.ComponentType<any>;
+
+    A_WT?: number;
+    A_TOUCH?: number;
+    A_PUREWT?: number;
 }
 
-export interface TransactionHeader {
-    ENTRYNO?: string;
-    BILLNO?: string;
-    DATE?: string;
-    RATEGM?: string;
-    CUSTOMER?: string;
-    CUSTOMER_NAME?: string;
-    TRANSACTION_TYPE?: string;
-    TRANSACTION_TITLE?: string;
+
+/* =========================================================
+   METAL TRANSACTION (Issue / Receipt)
+   ========================================================= */
+
+export interface MetalTransactionRow extends WeightInfo {
+    PUREID?: number;
 }
 
-export interface TransactionItem {
-  
-    ITEMID?: string;
+
+/* =========================================================
+   ITEM TRANSACTION (Purchase / Return / Sales)
+   ========================================================= */
+
+export interface ItemTransactionRow extends WeightInfo {
+    ITEMID?: number | null;
+
     PCS?: number;
     GRSWT?: number;
     LESSWT?: number;
     NETWT?: number;
+
     PURITY?: number;
     RATE?: number;
     MCHARGE?: number;
     WASTAGE?: number;
-    PUREID?: number | null,
-    
-
-    WT?: number;
-    TOUCH?: number,
-    PUREWT?: number;
-
-    AWT?:number;
-    ATOUCH?: number;
-    APUREWT?: number;
-   
 }
 
 
-export interface TransactionData {
-    header?: TransactionHeader;
-    items?: TransactionItem[];
+/* =========================================================
+   UNION ROW TYPE (Used in Tables & Draft Rows)
+   ========================================================= */
+
+export type TransactionRow = MetalTransactionRow | ItemTransactionRow;
+
+
+/* =========================================================
+   TRANSACTION DETAILS (Matches Backend JSON)
+   ========================================================= */
+
+export type TransactionItems = Partial<{
+    issue: MetalTransactionRow[];
+    receipt: MetalTransactionRow[];
+    purchase: ItemTransactionRow[];
+    purchase_return: ItemTransactionRow[];
+}>;
+
+
+/* =========================================================
+   HEADER INFO (Backend Payload)
+   ========================================================= */
+
+export interface TransactionHeader {
+    ACCODE: number;
+    TRANDATE: string;
+
+    ENTRYNO?: number;
+    BILLNO?: number;
+    RATE?: number;
 }
 
-export interface DraftRow extends TransactionItem {
-    __rowId?: string;
-    __isNew?: boolean;
-    __previewSno?: number;
+
+/* =========================================================
+   CREATE TRANSACTION PAYLOAD
+   ========================================================= */
+
+export interface CreateTransaction {
+    TRANSACTION_HEADER: TransactionHeader;
+    TRANSACTION_DETAILS: TransactionItems;
 }
 
-export interface TransactionInfo{
-    ACCODE:number,
-    TRANTYPE:string,
-    TRANDATE:string
-}
 
-export interface CreateTransaction{
-    TRANSACTION_DETAILS: TransactionInfo;
-    TRANSACTION_ITEMS : TransactionItem[];
-}
+/* =========================================================
+   UPDATE TRANSACTION PAYLOAD
+   ========================================================= */
 
-export type UpdateTransactionPayload = {
+export interface UpdateTransactionPayload {
     TRANSACTION_DETAILS: {
         ACCODE: number;
-        TRANTYPE: string;
+        TRANTYPE: TransactionKey;
         TRANDATE: string;
     };
-    TRANSACTION_ITEM: {
-        PCS: number;
-        GRSWT: number;
-        LESSWT: number;
-        NETWT: number;
-        PURITY: number;
-        PUREWT: number;
-        RATE: number;
-        MCHARGE: number;
-        WASTAGE: number;
-        AMOUNT: number;
-        ITEMID: number | null;
-    } | {
-        PUREID?:number;
-        WT?: number;
-        TOUCH?: number,
-        PUREWT?: number;
 
-        A_WT?: number;
-        A_TOUCH?: number;
-        A_PUREWT?: number;
-} | null;
+    TRANSACTION_ITEM: TransactionRow | null;
+}
+
+
+/* =========================================================
+   TABLE DISPLAY TYPE
+   ========================================================= */
+
+export interface TransactionTableRow extends ItemTransactionRow {
+    SNO?: number | string;
+    NEXTID?: number;
+}
+
+
+/* =========================================================
+   MENU / SIDEBAR TRANSACTION TYPE
+   ========================================================= */
+
+export interface TransactionType {
+    code: "ISP" | "REC" | "PU" | "PR";   // UI short code
+    key: TransactionKey;                 // backend key
+    label: string;
+    value?: string;                      // optional value for compatibility
+    icon?: React.ComponentType<any>;
+}
+
+export const TRANSACTION_KEY_MAP: Record<string, TransactionKey> = {
+    ISP: "issue",
+    REC: "receipt",
+    PU: "purchase",
+    PR: "purchase_return",
+};
+
+
+/* =========================================================
+   TYPE GUARDS (IMPORTANT — prevents runtime bugs)
+   ========================================================= */
+
+export const isMetalTransaction = (
+    row: TransactionRow
+): row is MetalTransactionRow => {
+    return "PUREID" in row && !("ITEMID" in row);
+};
+
+export const isItemTransaction = (
+    row: TransactionRow
+): row is ItemTransactionRow => {
+    return "ITEMID" in row;
 };

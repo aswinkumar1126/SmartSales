@@ -11,7 +11,7 @@ import {
     Heading,
     HStack,
     Text,
-    Flex
+    Flex,
 } from "@chakra-ui/react";
 
 import { useItems } from "@/hooks/item/useItems";
@@ -22,7 +22,7 @@ import { useTouchMastData } from "@/hooks/touch/useTouchMastData";
 import { TouchMaster } from "@/types/touch/touch";
 import { CustomTable } from "@/component/table/CustomTable";
 import { FiEdit } from "react-icons/fi";
-import { IoIosExit, IoIosSave } from "react-icons/io";
+import { IoIosExit } from "react-icons/io";
 import { useTheme } from "@/context/theme/themeContext";
 import { toastLoaded } from "@/component/toast/toast";
 import { Toaster } from "@/components/ui/toaster";
@@ -30,7 +30,6 @@ import scrollToTop from "@/component/scroll/ScrollToTop";
 import { formatToFixed } from "@/utils/format/numberFormat";
 import { FaPrint } from "react-icons/fa";
 import { useRouter } from "next/navigation";
-import { usePrint } from "@/context/print/usePrintContext";
 import { FaFileExcel } from "react-icons/fa";
 import { CapitalizedInput } from "@/component/form/CapitalizedInput";
 import { AccountTypeList } from "@/data/ACCOUNTtYPE/AccountType";
@@ -39,6 +38,9 @@ import { useAllAccountHead } from "@/hooks/accountHead/useAccountHead";
 import { CalTypeCollection } from "@/data/CalType/CalType";
 import { useTouchMasterDataById } from "@/hooks/touch/useTouchMastById";
 import { AiOutlineSave } from "react-icons/ai";
+import { usePrint } from "@/context/print/usePrintContext";
+import SearchBar from "@/component/search/SearchBar";
+
 /* ---------------- Initial State ---------------- */
 
 const initialFormState: TouchMaster = {
@@ -46,8 +48,9 @@ const initialFormState: TouchMaster = {
     accode: "",
     itemId: "",
     touch: "",
-    calmode:"",
+    calmode: "",
 };
+
 export type TouchTableRow = {
     sno: number;
     acname: string;
@@ -61,80 +64,46 @@ export type TouchTableRow = {
 const TouchMasterForm = () => {
 
     const [form, setForm] = useState<TouchMaster>(initialFormState);
-
     const [editId, setEditId] = useState<number | null>(null);
-    
-    type FormErrors = Partial<Record<keyof TouchMaster, string>>;
-
     const [highlightRowId, setHighlightRowId] = useState<number | null>(null);
+    const [errors, setErrors] = useState<Partial<Record<keyof TouchMaster, string>>>({});
+    const [filter,setFilter] = useState<string>('');
 
-    const [errors, setErrors] = useState<FormErrors>({});
-
-    const [allAccountsList, setAllAccountsList] = useState<{ label: string; value: string }[]>([]);
-
-    const [allItemsList, setAllItemsList] = useState<{ label: string; value: string }[]>([]);
-
-    const filters = useMemo(() => ({
-        accountType: form.actype?.trim().toUpperCase()
-    }), [form.actype]);
-
+    const { theme } = useTheme();
+    const router = useRouter();
+    const { setData, setColumns, setShowSno, title } = usePrint();
 
     /* ---------------- Hooks ---------------- */
+    
+    const { data: touchData = [], refetch } = useTouchMastData(filter);
+    const { data: touchDatabyId, refetch: touchDataRefetch } = useTouchMasterDataById(editId);
 
-    const { data: touchData = [], refetch } = useTouchMastData();
+    const accountType = form.actype?.trim().toUpperCase() || undefined;
 
-   
-
-    const { data: touchDatabyId, refetch:touchDataRefetch } = useTouchMasterDataById(editId);
-    console.log(touchDatabyId, 'touchDatabyId')
-    const { data: allAccounts ,refetch:accountRefetch } = useAllAccountHead(filters);
-
-
+    const { data: allAccounts, refetch: accountRefetch } = useAllAccountHead(accountType);
     const { data: items } = useItems();
-    const { theme } = useTheme();
-    const { setData, setColumns } = usePrint();
 
     const createMutation = useTouchMastCreate();
     const updateMutation = useModifyTouchMasterById();
 
-    const router = useRouter();
+    /* ---------------- Memoized Lists ---------------- */
 
-
-    /* ---------------- Collections ---------------- */
-
-
-    
-
-    const accounts = Array.isArray(allAccounts?.data?.acheads) ? allAccounts?.data?.acheads : [];
-
-    useEffect(() => {
-        if (!accounts) return;
-
-        const formattedAccounts = accounts.map((acc: any) => ({
+    const allAccountsList = useMemo(() => {
+        const accounts = Array.isArray(allAccounts?.data?.acheads) ? allAccounts.data.acheads : [];
+        return accounts.map((acc: any) => ({
             label: acc.ACNAME,
             value: String(acc.ACCODE),
         }));
+    }, [allAccounts]);
 
-        setAllAccountsList(formattedAccounts);
-    }, [accounts]);
-
-    useEffect(() => {
-        if (!items?.items) return;
-
-        const formattedItems = items.items.map((item: any) => ({
+    const allItemsList = useMemo(() => {
+        return (items?.items ?? []).map((item: any) => ({
             label: item.itemName,
             value: String(item.itemId),
         }));
+    }, [items]);
 
-        setAllItemsList(formattedItems);
-
-    }, [items])
-
-
-
-    console.log(touchData, 'touchData')
-
-    /* ---------------- Handlers ---------------- */
+    /* ---------------- Form Handlers ---------------- */
 
     const handleChange = (key: keyof TouchMaster, value: string) => {
         setForm((prev) => ({ ...prev, [key]: value }));
@@ -144,52 +113,71 @@ const TouchMasterForm = () => {
         setEditId(row.sno);
         scrollToTop();
         toastLoaded("Touch Master");
-        setTimeout(() => touchDataRefetch(), 0); // 🔥 force reload
     };
-    useEffect(() => {
-        if (!touchDatabyId) return;
-
-        setForm({
-            accode: touchDatabyId.accode ?? "",
-            actype: touchDatabyId.actype ?? "",
-            itemId: touchDatabyId.itemId ?? "" ,
-            touch: String(touchDatabyId.touch),
-            calmode: touchDatabyId.calmode,
-        });
-    }, [touchDatabyId]);
-
-  
 
     const resetForm = () => {
         setForm(initialFormState);
         setEditId(null);
         setErrors({});
     };
+
+    /* ---------------- Sync Edit Data ---------------- */
+
     useEffect(() => {
-        if (!editId) {
-            setForm(initialFormState);
+        if (!touchDatabyId || editId === null) return;
+
+        setForm((prev) => {
+            const next = {
+                accode: touchDatabyId.accode ?? "",
+                actype: touchDatabyId.actype ?? "",
+                itemId: touchDatabyId.itemId ?? "",
+                touch: String(touchDatabyId.touch ?? ""),
+                calmode: touchDatabyId.calmode ?? "",
+            };
+
+            // Prevent unnecessary update → helps avoid loops
+            if (
+                prev.accode === next.accode &&
+                prev.actype === next.actype &&
+                prev.itemId === next.itemId &&
+                prev.touch === next.touch &&
+                prev.calmode === next.calmode
+            ) {
+                return prev;
+            }
+
+            return next;
+        });
+    }, [touchDatabyId, editId]);
+
+    useEffect(() => {
+        if (editId !== null) {
+            touchDataRefetch();
         }
-    }, [editId]);
+    }, [editId, touchDataRefetch]);
+
+    /* ---------------- Validation & Submit ---------------- */
 
     const payload = {
         actype: form.actype,
         accode: form.accode,
         itemId: Number(form.itemId),
         touch: Number(form.touch),
-        calmode:form.calmode
-    }
-    const validateForm = (form: TouchMaster): FormErrors => {
-        const errors: FormErrors = {};
+        calmode: form.calmode,
+    };
 
-        if (!form.accode) errors.accode = "Company is required";
-        if (!form.actype) errors.actype = "Company type is required";
-        if (!form.itemId) errors.itemId = "Item is required";
-        if (!form.calmode) errors.calmode = "Calculation Mode is required";
+    const validateForm = (form: TouchMaster): Partial<Record<keyof TouchMaster, string>> => {
+        const errs: Partial<Record<keyof TouchMaster, string>> = {};
+
+        if (!form.actype) errs.actype = "Company type is required";
+        if (!form.accode) errs.accode = "Company is required";
+        if (!form.itemId) errs.itemId = "Item is required";
+        if (!form.calmode) errs.calmode = "Calculation Mode is required";
 
         if (!form.touch) {
-            errors.touch = "Touch is required";
+            errs.touch = "Touch is required";
         } else if (Number(form.touch) <= 0) {
-            errors.touch = "Touch must be greater than 0";
+            errs.touch = "Touch must be greater than 0";
         }
 
         const isDuplicate = touchData?.some(
@@ -197,43 +185,40 @@ const TouchMasterForm = () => {
                 form.actype?.toLowerCase() === item.actype?.toLowerCase() &&
                 Number(form.accode) === Number(item.accode) &&
                 Number(form.itemId) === Number(item.itemId) &&
-                Number(item.sno) !== Number(editId) // 👈 key fix
-                 // 👇 this line handles UPDATE case
+                Number(item.sno) !== Number(editId)
         );
 
         if (isDuplicate) {
-            errors.itemId = "Duplicate entry already exists";
+            errs.itemId = "Duplicate entry already exists";
         }
 
-        return errors;
+        return errs;
     };
-
 
     const handleSubmit = () => {
         const validationErrors = validateForm(form);
-
         if (Object.keys(validationErrors).length > 0) {
             setErrors(validationErrors);
             return;
         }
 
-        setErrors({}); // clear errors
+        setErrors({});
 
         if (editId) {
             updateMutation.mutate(
                 { id: editId, formData: payload },
                 {
                     onSuccess: () => {
-                        setHighlightRowId(editId);   // 👈 highlight updated row
+                        setHighlightRowId(editId);
                         resetForm();
                         refetch();
-                    }
+                    },
                 }
             );
         } else {
             createMutation.mutate(payload, {
                 onSuccess: (res: any) => {
-                    const createdId = res?.data?.id; // adjust to your API response
+                    const createdId = res?.data?.id;
                     setHighlightRowId(createdId);
                     resetForm();
                     refetch();
@@ -242,18 +227,6 @@ const TouchMasterForm = () => {
         }
     };
 
-    const handleExport = (option: string) => {
-        setData(touchData);
-        setColumns([
-            { key: "sno", label: "S.No" },
-            { key: "acname", label: "Company Name" },
-            { key: "actype", label: "Company Type" },
-            { key: "itemName", label: "Item Name" },
-            { key: "touch", label: "Touch", align: 'end' as const, allowTotal: true },
-        ]);
-        router.push(`/print?export=${option}`);
-    }
-
     /* ---------------- Table Columns ---------------- */
 
     const columns = [
@@ -261,52 +234,75 @@ const TouchMasterForm = () => {
         { key: "acname", label: "Company Name" },
         { key: "actype", label: "Company Type" },
         { key: "itemName", label: "Item Name" },
-        { key: "touch", label: "Touch", align: 'center' as const },
-        { key: "action", label: "Action", align: 'center' as const },
+        { key: "touch", label: "Touch", align: "center" as const },
+        { key: "action", label: "Action", align: "center" as const },
     ];
 
-    /* ------------ Animation----------------------- */
+    const handleExport = (option: string) => {
+        setData(touchData);
+        setColumns([
+            { key: "acname", label: "Company Name" },
+            { key: "actype", label: "Company Type" },
+            { key: "itemName", label: "Item Name" },
+            { key: "touch", label: "Touch", align: "center" as const },
+            { key: "active", label: "Active" },
+        ]);
+        setShowSno(true)
+        title?.("Touch Master List")
+        router.push(`/print?export=${option}`);
+    }
+
+
+    /* ------------ Highlight Timeout ---------------- */
+
     useEffect(() => {
         if (!highlightRowId) return;
-
-        const timer = setTimeout(() => {
-            setHighlightRowId(null);
-        }, 2500); // 2.5s highlight
-
+        const timer = setTimeout(() => setHighlightRowId(null), 2500);
         return () => clearTimeout(timer);
     }, [highlightRowId]);
 
     /* ---------------- UI ---------------- */
 
     return (
-        <Grid
-            templateColumns={{ base: "1fr", lg: "1fr 1fr" }}
-            gap={2}
-
-
-        >
+        <Grid templateColumns={{ base: "1fr", lg: "1fr 2fr" }} gap={2}>
             <Toaster />
-            {/* ---------------- FORM ---------------- */}
-            <GridItem >
-                <Box p={2} minW="full" fontWeight='semibold' borderRadius="lg" bg={theme.colors.formColor} boxShadow="sm" >
-                    <Heading fontSize="medium" textAlign='center' mb={4}>
+
+            {/* FORM */}
+            <GridItem>
+                <Box
+                    p={2}
+                    minW="full"
+                    fontWeight="semibold"
+                    borderRadius="lg"
+                    bg={theme.colors.formColor}
+                    boxShadow="sm"
+                >
+                    <Heading fontSize="small" textAlign="center" fontWeight='semibold'>
                         TOUCH MASTER
                     </Heading>
 
                     <Box>
-                        <Grid css={{ sm: { gridTemplateColumns: "repeat(1, 1fr)" }, md: { gridTemplateColumns: "repeat(2, 1fr)" } }} gap={4}>
-
+                        <Grid
+                            css={{
+                                gridTemplateColumns: "repeat(1, 1fr)"
+                            }}
+                            gap={2}
+                        >
                             {/* Company Type */}
                             <Box>
                                 <Field.Root invalid={!!errors.actype}>
                                     <Box display="flex" alignItems="center" gap={2}>
-                                        <Box minW="100px" fontSize="2xs">COMPANY TYPE :</Box>
-                                        <SelectCombobox 
+                                        <Box minW="100px" fontSize="2xs">
+                                            COMPANY TYPE :
+                                        </Box>
+                                        <SelectCombobox
                                             value={form.actype}
                                             onChange={(val) => handleChange("actype", val)}
-                                            editId={Number(editId)}
+                                            editId={editId ?? undefined}
                                             items={AccountTypeList}
                                             rounded="full"
+                                            placeholder="select company type"
+
                                         />
                                     </Box>
                                     <Field.ErrorText>{errors.actype}</Field.ErrorText>
@@ -317,14 +313,17 @@ const TouchMasterForm = () => {
                             <Box>
                                 <Field.Root invalid={!!errors.accode}>
                                     <Box display="flex" alignItems="center" gap={2}>
-                                        <Box minW="100px" fontSize="2xs">COMPANY NAME :</Box>
+                                        <Box minW="100px" fontSize="2xs">
+                                            COMPANY NAME :
+                                        </Box>
                                         <SelectCombobox
-                                            value={String(form.accode)}
+                                            value={form.accode ? String(form.accode) : ""}
                                             onChange={(val) => handleChange("accode", val)}
                                             items={allAccountsList}
-                                            editId={Number(editId)}
+                                            editId={editId ?? undefined}
                                             rounded="full"
                                             disable={!form.actype}
+                                            placeholder={!form.actype ? "Select Company Type First" : `select ${form.actype}`}
                                         />
                                     </Box>
                                     <Field.ErrorText>{errors.accode}</Field.ErrorText>
@@ -335,13 +334,16 @@ const TouchMasterForm = () => {
                             <Box>
                                 <Field.Root invalid={!!errors.itemId}>
                                     <Box display="flex" alignItems="center" gap={2}>
-                                        <Box minW="100px" fontSize="2xs">ITEM :</Box>
+                                        <Box minW="100px" fontSize="2xs">
+                                            ITEM :
+                                        </Box>
                                         <SelectCombobox
-                                            value={String(form.itemId)}
+                                            value={form.itemId ? String(form.itemId) : ""}
                                             onChange={(val) => handleChange("itemId", val)}
-                                            editId={Number(editId)}
+                                            editId={editId ?? undefined}
                                             items={allItemsList}
                                             rounded="full"
+                                            placeholder="select item"
                                         />
                                     </Box>
                                     <Field.ErrorText>{errors.itemId}</Field.ErrorText>
@@ -352,7 +354,9 @@ const TouchMasterForm = () => {
                             <Box>
                                 <Field.Root invalid={!!errors.touch}>
                                     <Box display="flex" alignItems="center" gap={2}>
-                                        <Box minW="100px" fontSize="2xs">TOUCH :</Box>
+                                        <Box minW="100px" fontSize="2xs">
+                                            TOUCH :
+                                        </Box>
                                         <CapitalizedInput
                                             field="touch"
                                             type="number"
@@ -361,33 +365,34 @@ const TouchMasterForm = () => {
                                             size="2xs"
                                             max={999}
                                             decimalScale={2}
-                                            maxWidth="80px"
+                                            maxWidth="120px"
                                             rounded="full"
-
                                         />
                                     </Box>
                                     <Field.ErrorText>{errors.touch}</Field.ErrorText>
                                 </Field.Root>
                             </Box>
 
+                            {/* Cal Mode */}
                             <Box>
-                                <Field.Root invalid={!!errors.itemId}>
+                                <Field.Root invalid={!!errors.calmode}>
                                     <Box display="flex" alignItems="center" gap={2}>
-                                        <Box minW="100px" fontSize="2xs">CAL MODE :</Box>
+                                        <Box minW="100px" fontSize="2xs">
+                                            CAL MODE :
+                                        </Box>
                                         <SelectCombobox
                                             value={form.calmode}
                                             onChange={(val) => handleChange("calmode", val)}
-                                            editId={Number(editId)}
+                                            editId={editId ?? undefined}
                                             items={CalTypeCollection}
                                             rounded="full"
-
+                                            placeholder="select cal mode"
+                                        
                                         />
                                     </Box>
                                     <Field.ErrorText>{errors.calmode}</Field.ErrorText>
                                 </Field.Root>
                             </Box>
-
-
                         </Grid>
 
                         {/* Buttons */}
@@ -395,36 +400,46 @@ const TouchMasterForm = () => {
                             <Button
                                 colorPalette="blue"
                                 onClick={handleSubmit}
-                                loading={
-                                    createMutation.isPending ||
-                                    updateMutation.isPending
-                                }
+                                loading={createMutation.isPending || updateMutation.isPending}
                                 size="xs"
                             >
-                             <AiOutlineSave /> {editId ? "Update" : "Save"}
+                                <AiOutlineSave /> {editId ? "Update" : "Save"}
                             </Button>
 
-                            <Button
-                                size="xs"
-                                colorPalette="blue"
-                                onClick={resetForm}
-                            >
+                            <Button size="xs" colorPalette="blue" onClick={resetForm}>
                                 Clear <IoIosExit />
                             </Button>
                         </HStack>
                     </Box>
-
-
                 </Box>
             </GridItem>
 
-            {/* ---------------- TABLE ---------------- */}
+            {/* TABLE */}
             <GridItem minW={0}>
                 <Box p={5} borderRadius="lg" bg={theme.colors.formColor} boxShadow="sm">
-                    <Heading display='flex' size="md" mb={4} gap={3} justifyContent='space-between' alignItems='center'>
-                        <Text>Touch Master List</Text>
+                    <Heading
+                        display="flex"
+                       
+                        mb={2}
+                        gap={3}
+                        justifyContent="space-between"
+                        alignItems="center"
+                    >
+                        <Text fontSize='small'>TOUCH MASTER LIST</Text>
 
-                        <Flex gap={1}>
+                        <Box display='flex' gap={1}>
+
+
+                            <Box >
+                                <SearchBar
+                                    searchTerm={filter}
+                                    onChange={setFilter}
+                                    placeholder="Search account masters"
+                                    size="2xs"
+
+                                />
+                            </Box>
+                            <Flex>
                             <Button
                                 variant="ghost"
                                 size="xs"
@@ -435,7 +450,6 @@ const TouchMasterForm = () => {
                             >
                                 <FaFileExcel />
                             </Button>
-
                             <Button
                                 variant="ghost"
                                 size="xs"
@@ -447,11 +461,9 @@ const TouchMasterForm = () => {
                                 <FaPrint />
                             </Button>
                         </Flex>
-
-
-
-
+                        </Box>
                     </Heading>
+
                     <CustomTable<TouchTableRow>
                         columns={columns}
                         data={touchData as TouchTableRow[]}
@@ -459,19 +471,15 @@ const TouchMasterForm = () => {
                             <>
                                 <Table.Cell>{i + 1}</Table.Cell>
                                 <Table.Cell>{row.acname}</Table.Cell>
-                                <Table.Cell>{AccountTypeList.find(item => item.value === row.actype)?.label|| row.actype}</Table.Cell>
+                                <Table.Cell>
+                                    {AccountTypeList.find((item) => item.value === row.actype)?.label || row.actype}
+                                </Table.Cell>
                                 <Table.Cell>{row.itemName}</Table.Cell>
                                 <Table.Cell textAlign="right">{formatToFixed(row.touch, 2)}</Table.Cell>
                                 <Table.Cell align="center">
                                     <Box display="flex" justifyContent="center" alignItems="center">
-                                        <FiEdit
-                                            cursor="pointer"
-                                            onClick={() => {
-                                                handleEdit(row)
-                                            }}
-                                        />
+                                        <FiEdit cursor="pointer" onClick={() => handleEdit(row)} />
                                     </Box>
-
                                 </Table.Cell>
                             </>
                         )}
@@ -480,9 +488,8 @@ const TouchMasterForm = () => {
                         size="sm"
                         headerBg="blue.800"
                         headerColor="white"
-                        rowIdKey='sno'
+                        rowIdKey="sno"
                         highlightRowId={highlightRowId}
-
                     />
                 </Box>
             </GridItem>

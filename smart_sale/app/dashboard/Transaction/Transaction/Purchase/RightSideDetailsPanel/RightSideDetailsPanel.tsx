@@ -45,7 +45,7 @@ export default function RightSideDetailsPanel({
     itemsFilter,
     getLabelByValue,
 }: RightSideDetailsPanelProps) {
-
+    console.log(headerForm,'headerForm')
 
     const [itemInput, setItemInput] = useState("");
     const [isItemInitialized, setIsItemInitialized] = useState(false);
@@ -80,14 +80,15 @@ export default function RightSideDetailsPanel({
 
     // Auto-filtered list – reacts instantly to customer/type/date changes
     const filteredIds = React.useMemo(() => {
-        if (!transactionList) return [];
+        if (!transactionList?.data) return [];
         return [
 
 
-            ...(transactionList?.snoList || []),
+            ...(transactionList?.data?.snoList || []),
 
         ];
     }, [transactionList]);
+    
 console.log(transactionList?.data?.snoList,"list of transaction")
     const totalTransactions = filteredIds.length;
 
@@ -255,43 +256,7 @@ console.log(transactionList?.data?.snoList,"list of transaction")
                 </Box>
             </Box>
 
-
-
-            {/* Customer Info */}
-            <Box>
-                <Text fontSize="xs" fontWeight="medium" mb={1}>
-                    Customer
-                </Text>
-                <Text fontSize="sm" fontWeight="semibold">
-                    {headerForm.CUSTOMER_NAME || "Not selected"}
-                </Text>
-                <Text fontSize="xs" color="gray.500">
-                    Code: {headerForm.CUSTOMER || "-"}
-                </Text>
-            </Box>
-
-            {/* Transaction Type Badge */}
-            {selectedTransactionType && (
-                <Box>
-                    <Text fontSize="xs" fontWeight="medium" mb={1}>
-                        Current Type
-                    </Text>
-                    <Badge
-                        colorScheme={
-                            selectedTransactionType.value === "ISSUE"
-                                ? "blue"
-                                : selectedTransactionType.value === "RECEIPT"
-                                    ? "green"
-                                    : selectedTransactionType.value === "SALES"
-                                        ? "purple"
-                                        : "gray"
-                        }
-                        variant="subtle"
-                    >
-                        {selectedTransactionType.label}
-                    </Badge>
-                </Box>
-            )}
+           
         </VStack>
     );
 }

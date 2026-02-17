@@ -1,8 +1,10 @@
 import { axiosInstance } from "@/api/axiosInstance";
 import { OrnamentPayload, ApiResponse } from "@/types/ornament/ornament";
 
-export const getOrnamentList = async () => {
-    const response = await axiosInstance.get("/ornament");
+export const getOrnamentList = async (filter?:string) => {
+    const response = await axiosInstance.get("/ornament",{
+        params: filter ? { filter: filter } : undefined,
+    });
     return response.data;
 };
 

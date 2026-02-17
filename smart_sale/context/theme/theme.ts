@@ -59,7 +59,7 @@ export const designTokens: DesignTokens = {
         primaryText: "#222222",
         secondaryText: "#444444",
         red: "#EF4444",
-        green: "#22C55E",
+        green: "#15853e",
         blue: "#3B82F6",
         yellow: "#EAB308",
         accient:"#05204bff",

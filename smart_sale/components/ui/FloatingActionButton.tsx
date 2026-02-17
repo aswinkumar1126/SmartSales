@@ -71,7 +71,7 @@ export const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({
                 </Tooltip.Trigger>
 
                 <Tooltip.Positioner >
-                    <Tooltip.Content fontSize="2xs">
+                    <Tooltip.Content fontSize="xs">
                         {tooltip}
                     </Tooltip.Content>
                 </Tooltip.Positioner>

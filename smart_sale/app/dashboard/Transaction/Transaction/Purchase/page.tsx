@@ -7,20 +7,17 @@ import {
     Button,
     Flex,
     VStack,
-
 } from "@chakra-ui/react";
 import { useTheme } from "@/context/theme/themeContext";
 import { toaster, Toaster } from "@/components/ui/toaster";
 import { useListCollection, useFilter } from "@chakra-ui/react";
 import { useOpeningBalance } from "@/hooks/balance/useOpeningBalance";
-import {GiGoldBar} from "react-icons/gi";
-
+import { GiGoldBar } from "react-icons/gi";
 // Components
 import TransactionHeaderForm from "./TransactionHeaderForm/TransactionHeaderForm";
 import TransactionTypeSelector from "./TransactionTypeSelector/TransactionTypeSelector";
 import DraftTransactionTable from "./DraftTransactionTable/DraftTransactionTable";
 import SaveTransactionBar from "./SaveTransactionBar/TransactionBar";
-import TransactionHistoryTable from "./TransactionHistoryTable/TransactionHistoryTable";
 import RightSideDetailsPanel from "./RightSideDetailsPanel/RightSideDetailsPanel";
 import { FloatingActionButton } from "@/components/ui/FloatingActionButton";
 import StockDrawer from "./DrawerTable/StockTable";
@@ -32,12 +29,10 @@ import { useItems } from "@/hooks/item/useItems";
 import { useCreateTransactions, useUpdateTransaction, useTransactionByTransId } from "@/hooks/transaction/useTransactions";
 import { usePureGoldData, usePureGoldNames } from "@/hooks/pureGoldMast/usePureGoldMastData";
 // Types & Constants
-import { TransactionType, UpdateTransactionPayload } from "@/types/transcation/Transaction";
+import { TransactionType, UpdateTransactionPayload, TransactionKey, CreateTransaction, TransactionItems, TRANSACTION_KEY_MAP } from "@/types/transcation/Transaction";
 import { TRANSACTIONTYPES } from "@/data/Transaction/TransactionType";
 import Loader from "@/component/loader/Loader";
-import { applyWeightTouchLogic } from "@/hooks/pure/applyWeightTouchLogic";
 //Icons
-import { LuShare, LuTrash2 } from "react-icons/lu";
 
 
 /* ================================
@@ -49,21 +44,18 @@ export default function PurchasePage() {
     const [accCode, setAccCode] = useState<number | undefined | null>();
     const [showFilter, setShowFilter] = useState<boolean>(false);
     const [loading, setLoading] = useState<boolean>(true);
-    const [purchaserList ,setPurchaserList] = useState<{label:string,value:string}[]>([]);
- 
+    const [purchaserList, setPurchaserList] = useState<{ label: string, value: string }[]>([]);
+    const [filter, setFilter] = useState<string>('')
     const [isStockDrawerOpen, setIsStockDrawerOpen] = useState(false);
 
     const [showStock, setShowStock] = useState<string>("PURE");
-    const [pureGoldList ,setPureGoldList] = useState<{label:string ,value:string}[]>([]);
-    const [metalList ,setMetalList] = useState<{label:string ,value:string}[]>([]);
+    const [pureGoldList, setPureGoldList] = useState<{ label: string, value: string }[]>([]);
+    const [metalList, setMetalList] = useState<{ label: string, value: string }[]>([]);
 
     const [metalId, setMetalId] = useState<string | undefined>();
 
     const [selectedName, setSelectedName] = useState<string | undefined>();
-    const [itemsStockList ,setItemsStockList] = useState<{label:string,value:string}[]>([]);
-
-
-
+    const [itemsStockList, setItemsStockList] = useState<{ label: string, value: string }[]>([]);
 
     /* ================================
        State Management
@@ -85,13 +77,11 @@ export default function PurchasePage() {
         CUSTOMER_NAME: "",
     });
 
-    console.log(headerForm ,'headerForm')
-    
     const [isEditing, setIsEditing] = useState(false);
     const [editingSno, setEditingSno] = useState<string | null>(null);
-    
+
     // Transaction type & draft state
-    const [selectedTransactionType, setSelectedTransactionType] = useState<TransactionType | null>(null);
+    const [selectedTransactionTypes, setSelectedTransactionTypes] = useState<TransactionType[]>([]);
     const [transactionTitle, setTransactionTitle] = useState<string | undefined>();
 
     // Draft rows (local storage backed)
@@ -108,12 +98,6 @@ export default function PurchasePage() {
     const [endDate, setEndDate] = useState<string | null>(null);
     const [itemCode, setItemCode] = useState<number | null>(null);
 
-    const isIssue =
-        transactionTitle === "ISSUE" ||
-        transactionTitle === "RECEIPT";
-
-    //console.log(transactionTitle,'selectedTransactionType');
-
     /* ================================
        Local Storage Keys
     ================================ */
@@ -128,16 +112,14 @@ export default function PurchasePage() {
 
     const { theme } = useTheme();
     const { data: itemsData } = useItems();
-    //console.log(itemsData,'itemsData')
 
-    const filters={
-        accountType:"PR"
+    const filters = {
+        accountType: "PR"
     }
 
-    const { data: allCustomer } = useAllAccountHead(filters);
 
-    //console.log(allCustomer,'allCustomer');
-    
+    const { data: allCustomer } = useAllAccountHead(filter , filters);
+
     const pureGoldDatafilters = {
         metalId,
         selectedName,
@@ -150,42 +132,33 @@ export default function PurchasePage() {
         )
     );
 
-    const { data: pureStockList = [], refetch:stockRefetch } = usePureGoldData(cleanedFilters);
+    const { data: pureStockList = [], refetch: stockRefetch } = usePureGoldData(filter,cleanedFilters);
 
-  
-    const {data:allPureGoldNames } = usePureGoldNames();
+    const { data: allPureGoldNames } = usePureGoldNames();
 
     const { data: transactionsById, isLoading: getbySnoLoading } = useTransactionByTransId(selectedTransactionId);
-    //console.log(transactionsById,'transactionsById');
 
     const updateTransaction = useUpdateTransaction();
-        const { data: metalsData } = useAllMetals();
+    const { data: metalsData } = useAllMetals();
 
     const { data: openingBalance } = useOpeningBalance(accCode);
 
-    const { data: transactionList, isLoading ,refetch:refetchTransactionList  } = useTransactions(
-        selectedTransactionType?.value,
+    // Note: This hook might need to be updated to handle multiple transaction types
+    const { data: transactionList, isLoading, refetch: refetchTransactionList } = useTransactions(
+        selectedTransactionTypes[0]?.value, // Using first type for now
         accCode,
         startDate,
         endDate,
         itemCode
     );
-    //console.log(transactionList,'transactionList')
 
     const openingData = openingBalance?.data;
     const createTransaction = useCreateTransactions();
     const { contains } = useFilter({ sensitivity: "base" });
 
-    // Log transaction data for debugging
-    useEffect(() => {
-        //console.log("transactionsById data:", transactionsById);
-        //console.log("selectedTransactionId:", selectedTransactionId);
-    }, [transactionsById, selectedTransactionId]);
-
     /* ================================
        Selected Collection For Stock List
     ================================ */
-
 
     const selectedStockData = useMemo(() => {
         return showStock === "PURE"
@@ -193,50 +166,46 @@ export default function PurchasePage() {
             : itemsStockList;
     }, [showStock, pureStockList, itemsStockList]);
 
-
     /* ================================
        Customer Data
     ================================ */
     const customerList = Array.isArray(allCustomer?.data?.acheads) ? allCustomer.data.acheads : [];
 
-    useEffect(()=>{
+    useEffect(() => {
         if (!customerList) return;
-        const purchaser = customerList.map((item:any)=>
-            {
-                return{
-                    label:item.ACNAME,
-                    value:item.ACCODE.toString()
-                }
-            })
-            setPurchaserList(purchaser);
+        const purchaser = customerList.map((item: any) => {
+            return {
+                label: item.ACNAME,
+                value: item.ACCODE.toString()
+            }
+        })
+        setPurchaserList(purchaser);
 
     }, [customerList])
 
-     useEffect(() => {
-           if (!Array.isArray(allPureGoldNames)) return;
-           if (!allPureGoldNames.length) return;
-   
-           const fetchedData = allPureGoldNames.map((p: any) => ({
-               label: p.pureGoldName,
-               value: String(p.pureId),
-           }));
-   
-           setPureGoldList(fetchedData);
-       }, [allPureGoldNames]);
-   
+    useEffect(() => {
+        if (!Array.isArray(allPureGoldNames)) return;
+        if (!allPureGoldNames.length) return;
 
-   useEffect(() => {
-          if (!Array.isArray(metalsData)) return;
-          if (!metalsData.length) return;
-  
-          const fetchedData = metalsData.map((m: any) => ({
-              label: m.metalName,
-              value: m.metalId,
-          }));
-  
+        const fetchedData = allPureGoldNames.map((p: any) => ({
+            label: p.pureGoldName,
+            value: String(p.pureId),
+        }));
+
+        setPureGoldList(fetchedData);
+    }, [allPureGoldNames]);
+
+    useEffect(() => {
+        if (!Array.isArray(metalsData)) return;
+        if (!metalsData.length) return;
+
+        const fetchedData = metalsData.map((m: any) => ({
+            label: m.metalName,
+            value: m.metalId,
+        }));
+
         setMetalList(fetchedData);
-      }, [metalsData]);
-    
+    }, [metalsData]);
 
     const getLabelByValue = useCallback((collection: any, value: any) => {
         if (!collection) return value ?? "";
@@ -261,7 +230,6 @@ export default function PurchasePage() {
         [itemsData]
     );
 
-
     const { collection: itemsCollection, filter: itemsFilter, set } = useListCollection({
         initialItems: mappedItems,
         filter: contains,
@@ -273,12 +241,10 @@ export default function PurchasePage() {
 
     /* ================================
       Pure Gold Name Data
-   ================================ */
+    ================================ */
 
     const getAvailableWeight = useCallback(
         (pureId: string | number | null) => {
-         
-
             if (!pureId) return null;
             const stock = pureStockList.find(
                 (s: any) => String(s.pureId) === String(pureId)
@@ -289,9 +255,6 @@ export default function PurchasePage() {
         [pureStockList]
     );
 
-
-
-   
     const mappedPureGoldName = useMemo(
         () =>
             allPureGoldNames?.map((item: any) => ({
@@ -301,49 +264,43 @@ export default function PurchasePage() {
         [allPureGoldNames]
     );
 
-
-    const { collection: pureNameCollection, filter: purenameFilter, set:setPureGoldNames } = useListCollection({
+    const { collection: pureNameCollection, filter: purenameFilter, set: setPureGoldNames } = useListCollection({
         initialItems: mappedPureGoldName,
         filter: contains,
     });
 
     useEffect(() => {
         setPureGoldNames(mappedPureGoldName);
-        purenameFilter(""); // 🔥 RESET FILTER
+        purenameFilter("");
     }, [mappedPureGoldName, setPureGoldNames, purenameFilter]);
 
-
-    
-    const transactionCode = selectedTransactionType?.value;
-    const isISP = transactionCode === "ISP" || "REP";
-
-    const activeCollection = isISP ? pureNameCollection : itemsCollection;
-    const activeFilter = isISP ? purenameFilter : itemsFilter;
-
-    useEffect(() => {
-        // Clear table
-        setDraftRows([]);
-
-        // Clear edit state
-        setEditingRowId(null);
-
-        // Reset filters
-        purenameFilter("");
-        itemsFilter("");
-
-    }, [transactionCode]);
     /* ================================
-         ADD NEW ROW IN DRAFT TABLE
+       Helper Functions
+    ================================ */
+    const isIssueType = (transactionType: TransactionType) => {
+        return transactionType.label.toUpperCase() === "ISSUE" || transactionType.label.toUpperCase() === "RECEIPT";
+    };
+
+    const getActiveCollectionForType = (transactionType: TransactionType) => {
+        return isIssueType(transactionType) ? pureNameCollection : itemsCollection;
+    };
+
+    const getActiveFilterForType = (transactionType: TransactionType) => {
+        return isIssueType(transactionType) ? purenameFilter : itemsFilter;
+    };
+
+    /* ================================
+         ADD NEW ROW IN DRAFT TABLE FOR SPECIFIC TYPE
       ================================ */
-    const createEmptyRow = () => {
+    const createEmptyRowForType = (transactionType: TransactionType) => {
         const base = {
-            __rowId: `row-${Date.now()}`,
+            __rowId: `row-${transactionType.value}-${Date.now()}`,
             __isNew: true,
-            __previewSno: draftRows.length + 1,
-            TRANSACTION_TYPE: transactionCode,
+            __previewSno: draftRows.filter(r => r.TRANSACTION_TYPE === transactionType.value).length + 1,
+            TRANSACTION_TYPE: transactionType.value,
         };
 
-        if (isISP) {
+        if (isIssueType(transactionType)) {
             return {
                 ...base,
                 PUREID: "",
@@ -365,12 +322,22 @@ export default function PurchasePage() {
             NETWT: "",
             PURITY: "",
             PUREWT: "",
-            RATE: headerForm.RATEGM ?? "",
+            RATE:  "",
             MCHARGE: "",
             WASTAGE: "",
         };
     };
 
+    const handleAddRowForType = (transactionType: TransactionType) => {
+        const newRow = createEmptyRowForType(transactionType);
+        setDraftRows(prev => [...prev, newRow]);
+        setEditingRowId(newRow.__rowId);
+    };
+
+    const handleClearRowsForType = (transactionType: TransactionType) => {
+        setDraftRows(prev => prev.filter(row => row.TRANSACTION_TYPE !== transactionType.value));
+        setEditingRowId(null);
+    };
 
     /* ================================
        Local Storage Persistence
@@ -386,8 +353,6 @@ export default function PurchasePage() {
             localStorage.removeItem(DATE_RANGE_KEY);
         }
     }, []);
-
-
 
     useEffect(() => {
         const savedItemCode = localStorage.getItem(ITEMID);
@@ -410,11 +375,12 @@ export default function PurchasePage() {
             localStorage.removeItem(FILTER);
         }
     }, []);
-    useEffect(()=>{
+
+    useEffect(() => {
         const editing = localStorage.getItem(EDITING);
         const sno = localStorage.getItem(EDITING_SNO);
-        if(!editing) return;
-        try{
+        if (!editing) return;
+        try {
             const parsedEditing = JSON.parse(editing);
             setIsEditing(parsedEditing);
 
@@ -424,19 +390,17 @@ export default function PurchasePage() {
             }
 
         }
-        catch{
+        catch {
             localStorage.removeItem(EDITING);
             localStorage.removeItem(EDITING_SNO);
         }
-    },[])
+    }, [])
 
     // Load from localStorage on mount
     useEffect(() => {
         const savedDraft = localStorage.getItem(DRAFT_KEY);
         const savedHeader = localStorage.getItem(HEADER_KEY);
         const savedType = localStorage.getItem(TYPE_KEY);
-
-  
 
         if (savedHeader) {
             const headerValues = JSON.parse(savedHeader);
@@ -465,8 +429,13 @@ export default function PurchasePage() {
         if (savedType) {
             try {
                 const typeData = JSON.parse(savedType);
-                setSelectedTransactionType(typeData);
-                setTransactionTitle(typeData.label || "");
+                // Handle both single and multiple types for backward compatibility
+                if (Array.isArray(typeData)) {
+                    setSelectedTransactionTypes(typeData);
+                } else {
+                    setSelectedTransactionTypes([typeData]);
+                }
+                setTransactionTitle(typeData.label || (typeData[0]?.label || ""));
             } catch (e) {
                 console.error("Failed to parse type:", e);
                 localStorage.removeItem(TYPE_KEY);
@@ -499,10 +468,12 @@ export default function PurchasePage() {
     }, [headerForm]);
 
     useEffect(() => {
-        if (selectedTransactionType) {
-            localStorage.setItem(TYPE_KEY, JSON.stringify(selectedTransactionType));
+        if (selectedTransactionTypes.length > 0) {
+            localStorage.setItem(TYPE_KEY, JSON.stringify(selectedTransactionTypes));
+        } else {
+            localStorage.removeItem(TYPE_KEY);
         }
-    }, [selectedTransactionType]);
+    }, [selectedTransactionTypes]);
 
     useEffect(() => {
         if (itemCode !== null) {
@@ -521,42 +492,23 @@ export default function PurchasePage() {
         }
     }, [startDate, endDate]);
 
-    useEffect(()=>{
-        if(isEditing){
-            localStorage.setItem(EDITING , JSON.stringify(isEditing));
+    useEffect(() => {
+        if (isEditing) {
+            localStorage.setItem(EDITING, JSON.stringify(isEditing));
             if (editingSno) {
-                localStorage.setItem(EDITING_SNO,  JSON.stringify(editingSno));
+                localStorage.setItem(EDITING_SNO, JSON.stringify(editingSno));
             }
         }
-        else{
+        else {
             localStorage.removeItem(EDITING);
             localStorage.removeItem(EDITING_SNO);
         }
     }, [isEditing, editingSno])
 
-
-    /* ================================
-      Condition For Adding New Item or Pure Gold 
-   ================================ */
-
-    // const hasDuplicateId = (
-    //     rows: any[],
-    //     field: "PUREID" | "ITEMID",
-    //     value: any,
-    //     currentIndex: number
-    // ) => {
-    //     return rows.some((r, i) => {
-    //         if (i === currentIndex) return false; // ignore self
-    //         return String(r[field]) === String(value);
-    //     });
-    // };
-
-
-
     /* ================================
        Load Transaction Data When Selected
     ================================ */
-    
+
     // This useEffect loads transaction data when transactionsById changes
     useEffect(() => {
         if (transactionsById && selectedTransactionId) {
@@ -564,23 +516,27 @@ export default function PurchasePage() {
         }
     }, [transactionsById, selectedTransactionId]);
 
-    useEffect(()=>{
-        const transactionDetails = transactionList?.data || "";
+    useEffect(() => {
+        const transactionDetails = transactionList?.data;
 
-        setHeaderForm(prev => ({
-            ...prev,
-            CUSTOMER: transactionDetails.ACCODE ? String(transactionDetails.ACCODE) : "",
-            CUSTOMER_NAME: transactionDetails.ACNAME,
-            DATE: transactionDetails.TRANDATE || new Date().toISOString().split("T")[0],
-            BILLNO: transactionDetails.nextBillno || "",
-            ENTRYNO: transactionDetails.nextSno || "",
+        console.log(transactionDetails,'transactionDetails')
 
-        }));
-    },[transactionList])
+        if (transactionDetails) {
+            console.log('Transaction details updated:', transactionDetails);
 
+            setHeaderForm(prev => ({
+                ...prev,
+                CUSTOMER: transactionDetails.ACCODE ? String(transactionDetails.ACCODE) : prev.CUSTOMER,
+                CUSTOMER_NAME: transactionDetails.ACNAME ,
+                DATE: transactionDetails.TRANDATE || new Date().toISOString().split("T")[0],
+                BILLNO: transactionDetails.BILLNO ,
+                ENTRYNO: transactionDetails.ENTRYNO ,
+            }));
+        }
+    }, [transactionList]);
 
     const handleEditTransaction = useCallback((transactionData: any, sno: string) => {
-        
+
         if (!transactionData) {
             return;
         }
@@ -590,22 +546,12 @@ export default function PurchasePage() {
         setEditingSno(sno);
         setSelectedTransactionId(sno);
 
-        // Debug: Log the data structure
-       // console.log("Full transaction data structure:", JSON.stringify(transactionData, null, 2));
-        
         // Try different possible data structures
         const transactionDetails = transactionData.header;
         const transactionItems = transactionData.data?.TRANSACTION_ITEM || transactionData.TRANSACTION_ITEM || transactionData.data?.TRANSACTION_ITEMS || transactionData.TRANSACTION_ITEMS;
-        
-        //console.log("Extracted details:", transactionDetails);
-        //console.log("Extracted items:", transactionItems);
 
         // 1. Load transaction details into header form
         if (transactionDetails) {
-           // console.log("Setting header form with details:", transactionDetails);
-            
-          
-
             // Set customer and date (readonly during edit)
             setHeaderForm(prev => ({
                 ...prev,
@@ -620,30 +566,23 @@ export default function PurchasePage() {
             // Set account code
             setAccCode(transactionDetails.ACCODE);
 
-
             // Find and set transaction type (readonly)
-            const foundType = TRANSACTIONTYPES.find(t => t.value === transactionDetails.TRANTYPE);
-            //console.log("Found transaction type:", foundType, "for value:", transactionDetails.TRANTYPE);
-            
-            if (foundType) {
-                setSelectedTransactionType(foundType);
-                setTransactionTitle(foundType.label);
-            } else {
-                console.warn("Transaction type not found:", transactionDetails.TRANTYPE);
-            }
+            // const foundType = TRANSACTIONTYPES.find(t => t.value === transactionDetails.TRANTYPE);
+
+            // if (foundType) {
+            //     setSelectedTransactionTypes([foundType]);
+            //     setTransactionTitle(foundType.label);
+            // } else {
+            //     console.warn("Transaction type not found:", transactionDetails.TRANTYPE);
+            // }
         } else {
             console.warn("No transaction details found in data");
         }
 
-
         // 2. Load transaction items into draft rows
         if (transactionItems && Array.isArray(transactionItems)) {
-            //console.log("Loading", transactionItems.length, "items into draft rows");
-
-            //console.log(transactionItems,'transactionItems')
-
             const newDraftRows = transactionItems.map((item: any, index: number) => {
-                //console.log(`Processing item ${index}:`, item);
+                const isIssue = transactionDetails?.TRANTYPE === "ISP" || transactionDetails?.TRANTYPE === "REP";
 
                 const rowData = isIssue
                     ? {
@@ -658,9 +597,9 @@ export default function PurchasePage() {
                         PUREID: item.PUREID || "",
 
                         WT: item.WT || item.WT || "",
-                        A_WT: item.A_WT|| item.WT || "",
+                        A_WT: item.A_WT || item.WT || "",
                         TOUCH: item.TOUCH || "",
-                        A_TOUCH: item.A_TOUCH || item.TOUCH ||"",
+                        A_TOUCH: item.A_TOUCH || item.TOUCH || "",
                         PURE: item.PUREWT || "",
                         A_PURE: item.A_PUREWT || item.PUREWT || "",
                     }
@@ -687,12 +626,10 @@ export default function PurchasePage() {
                         AMOUNT: item.AMOUNT || item.amount || "",
                     };
 
-                //console.log(`Created row ${index}:`, rowData);
                 return rowData;
             });
 
             setDraftRows(newDraftRows);
-            //console.log("Set draft rows:", newDraftRows);
 
             if (newDraftRows.length > 0) {
                 setEditingRowId(newDraftRows[0].__rowId);
@@ -702,7 +639,6 @@ export default function PurchasePage() {
             setDraftRows([]);
         }
 
-
         setTimeout(() => {
             toaster.create({
                 title: "Transaction Loaded",
@@ -711,7 +647,7 @@ export default function PurchasePage() {
             });
         }, 100);
 
-    }, [purchaserList, getLabelByValue]);
+    }, []);
 
     /* ================================
        Header Form Handlers
@@ -734,7 +670,7 @@ export default function PurchasePage() {
             return;
         }
 
-        console.log(customerValue, customerLabel,'headerFormss')
+        console.log('Selected customer:', customerValue, customerLabel); // Add this for debugging
 
         setHeaderForm(prev => ({
             ...prev,
@@ -742,13 +678,13 @@ export default function PurchasePage() {
             CUSTOMER_NAME: customerLabel || "", // clear name as well
         }));
 
-        console.log(headerForm,'headerFormsss')
-
         setAccCode(customerValue ? Number(customerValue) : 0);
-        refetchTransactionList();
+
+        // Add a small delay to ensure state is updated before refetching
+        setTimeout(() => {
+            refetchTransactionList();
+        }, 100);
     };
-
-
     /* ================================
        Date Range Handlers
     ================================ */
@@ -765,84 +701,102 @@ export default function PurchasePage() {
     /* ================================
        Transaction Type Handlers
     ================================ */
-    const handleTransactionTypeSelect = (type: TransactionType) => {
-        if (isEditing) {
+    const handleTransactionTypesSelect = (types: TransactionType[]) => {
+       
+
+        if (!headerForm.CUSTOMER) {
             toaster.create({
-                title: "Cannot Change Transaction Type",
-                description: "Transaction type cannot be changed when editing a transaction.",
-                type: "warning",
+                title: "Customer Required",
+                description: "Select customer first.",
+                type: "warning"
             });
             return;
         }
-        
-        if (!headerForm.CUSTOMER) {
-            toaster.create({ title: "Customer Required", description: "Select customer first.", type: "warning" });
-            return;
-        }
-        if (draftRows.length > 0) {
-            toaster.create({ title: "Unsaved Draft", description: "Save or clear draft before changing type.", type: "warning" });
-            return;
+
+        // Only check draft rows if we're adding new types (not when removing)
+        // if (types.length > selectedTransactionTypes.length && draftRows.length > 0) {
+        //     toaster.create({
+        //         title: "Unsaved Draft",
+        //         description: "Save or clear draft before adding new transaction types.",
+        //         type: "warning"
+        //     });
+        //     return;
+        // }
+
+        setSelectedTransactionTypes(types);
+
+        // Set title based on selected types (optional)
+        if (types.length > 0) {
+            setTransactionTitle(types.map(t => t.label).join(", "));
+        } else {
+            setTransactionTitle(undefined);
         }
 
-        setSelectedTransactionType(type);
-        setTransactionTitle(type.label);
         setSelectedTransactionId(null);
     };
 
     /* ================================
          Handle Stock Table Values
       ================================ */
-    
+
     const handleLoadFromStock = (stockRow: any) => {
-        if (!selectedTransactionType) {
+        if (selectedTransactionTypes.length === 0) {
             toaster.create({
-                title: "Transaction Type Required",
-                description: "Please select a transaction type first.",
+                title: "Transaction Types Required",
+                description: "Please select at least one transaction type first.",
                 type: "warning",
             });
             return;
         }
 
+        // For now, add to the first selected type
+        // You could enhance this to let user choose which type to add to
+        const targetType = selectedTransactionTypes[0];
+        const isIssue = isIssueType(targetType);
+
         const pureId = stockRow.PUREID ?? stockRow.pureId;
-        if (!pureId) return;
 
-        const getUsedWeightInTable = (pureId: string | number) =>
-            draftRows
-                .filter(r => String(r.PUREID) === String(pureId))
-                .reduce((sum, r) => sum + Number(r.WT || 0), 0);
+        if (isIssue) {
+            if (!pureId) return;
 
-        const stockAvailable = getAvailableWeight(pureId) ?? 0;
-        const used = getUsedWeightInTable(pureId);
-        const remaining = Math.max(stockAvailable - used, 0);
+            const getUsedWeightInTable = (pureId: string | number) =>
+                draftRows
+                    .filter(r => String(r.PUREID) === String(pureId) && r.TRANSACTION_TYPE === targetType.value)
+                    .reduce((sum, r) => sum + Number(r.WT || 0), 0);
 
-        if (isIssue && remaining <= 0) {
-            toaster.create({
-                title: "Stock Exhausted",
-                description: "No available balance left for this Pure ID.",
-                type: "error",
-            });
-            return;
+            const stockAvailable = getAvailableWeight(pureId) ?? 0;
+            const used = getUsedWeightInTable(pureId);
+            const remaining = Math.max(stockAvailable - used, 0);
+
+            if (remaining <= 0) {
+                toaster.create({
+                    title: "Stock Exhausted",
+                    description: "No available balance left for this Pure ID.",
+                    type: "error",
+                });
+                return;
+            }
         }
 
-        const rowId = `draft-${Date.now()}`;
+        const rowId = `draft-${targetType.value}-${Date.now()}`;
 
         const newRow = {
             __rowId: rowId,
             __isNew: true,
-            __previewSno: draftRows.length + 1,
-            TRANSACTION_TYPE: selectedTransactionType.value,
+            __previewSno: draftRows.filter(r => r.TRANSACTION_TYPE === targetType.value).length + 1,
+            TRANSACTION_TYPE: targetType.value,
 
-            PUREID: pureId,
+            PUREID: pureId || "",
 
-            WT: remaining,
+            WT: isIssue  ||  "",
             TOUCH: stockRow.TOUCH || stockRow.actualTouch || "",
             PURE: stockRow.PURE || stockRow.actualPure || "",
 
-            A_WT: remaining,
+            A_WT: isIssue||  "",
             A_TOUCH: stockRow.ATOUCH || stockRow.actualTouch || "",
             A_PURE: stockRow.APURE || stockRow.actualPure || "",
 
-            ITEMID: stockRow.ITEMID || "",
+            ITEMID: !isIssue ? (stockRow.ITEMID || "") : "",
             PCS: stockRow.PCS || "",
             GRSWT: stockRow.GRSWT || "",
             LESSWT: stockRow.LESSWT || "",
@@ -858,82 +812,11 @@ export default function PurchasePage() {
         setEditingRowId(rowId);
     };
 
-
-
-    // const handleLoadFromStock = (stockRow: any) => {
-
-       
-    //     if (isIssue) {
-    //         const exists = draftRows.some(r => String(r.pureId) === String(stockRow.PUREID));
-    //         if (exists) {
-    //             toaster.create({
-    //                 title: "Duplicate Pure ID",
-    //                 description: "This Pure ID already exists in the table.",
-    //                 type: "error",
-    //             });
-    //             return;
-    //         }
-    //     } else {
-    //         const exists = draftRows.some(r => String(r.ITEMID) === String(stockRow.ITEMID));
-    //         if (exists) {
-    //             toaster.create({
-    //                 title: "Duplicate Item",
-    //                 description: "This Item already exists in the table.",
-    //                 type: "error",
-    //             });
-    //             return;
-    //         }
-    //     }
-    //     if (!selectedTransactionType) {
-    //         toaster.create({
-    //             title: "Transaction Type Required",
-    //             description: "Please select a transaction type first.",
-    //             type: "warning",
-    //         });
-    //         return;
-    //     }
-
-    //     const rowId = `draft-${Date.now()}`;
-
-    //     const newRow = {
-    //         __rowId: rowId,
-    //         __isNew: true,
-    //         __previewSno: draftRows.length + 1,
-    //         TRANSACTION_TYPE: selectedTransactionType.value,
-
-    //         // Map stock row → transaction row
-    //         PUREID: stockRow.PUREID || stockRow.pureId ||"",
-    //         WT: stockRow.WT || stockRow.weight ||"",
-    //         TOUCH: stockRow.TOUCH || stockRow.actualTouch||"",
-    //         PURE: stockRow.PURE || stockRow.actualPure|| "",
-
-    //         A_WT: stockRow.AWT || stockRow.weight || "",
-    //         A_TOUCH: stockRow.ATOUCH || stockRow.actualTouch || "",
-    //         A_PURE: stockRow.APURE || stockRow.actualPure || "",
-
-    //         ITEMID: stockRow.ITEMID || "",
-    //         PCS: stockRow.PCS || "",
-    //         GRSWT: stockRow.GRSWT || "",
-    //         LESSWT: stockRow.LESSWT || "",
-    //         NETWT: stockRow.NETWT || "",
-    //         PURITY: stockRow.PURITY || "",
-    //         PUREWT: stockRow.PUREWT || "",
-    //         RATE: stockRow.RATE || headerForm.RATEGM || "",
-    //         MCHARGE: stockRow.MCHARGE || "",
-    //         WASTAGE: stockRow.WASTAGE || "",
-    //     };
-
-    //     setDraftRows(prev => [...prev, newRow]);
-    //     setEditingRowId(rowId);
-    // };
-
-
-
     /* ================================
        Draft Table Handlers
     ================================ */
     const handleClearForm = () => {
-        if (!selectedTransactionType) {
+        if (selectedTransactionTypes.length === 0) {
             toaster.create({
                 title: "Transaction Type Required",
                 description: "Please select a transaction type first.",
@@ -942,26 +825,8 @@ export default function PurchasePage() {
             return;
         }
 
-        const rowId = `draft-${Date.now()}`;
-        const newRow = {
-            __rowId: rowId,
-            __isNew: true,
-            __previewSno: draftRows.length + 1,
-            TRANSACTION_TYPE: selectedTransactionType.value,
-            ITEMID: "",
-            PCS: "",
-            GRSWT: "",
-            LESSWT: "",
-            NETWT: "",
-            PURITY: "",
-            PUREWT: "",
-            RATE: headerForm.RATEGM || "",
-            MCHARGE: "",
-            WASTAGE: "",
-        };
-
-        setDraftRows(prev => [...prev, newRow]);
-        setEditingRowId(rowId);
+        // This function is now handled per type, so we'll use handleAddRowForType instead
+        handleAddRowForType(selectedTransactionTypes[0]);
     };
 
     const handleUpdateDraftRow = useCallback(
@@ -970,36 +835,10 @@ export default function PurchasePage() {
                 const newRows = [...prev];
                 let row = { ...newRows[rowIndex], [field]: value };
 
-                // ===============================
-                // 🚫 DUPLICATE PREVENTION
-                // ===============================
-                // if (isIssue && field === "PUREID") {
-                //     const exists = hasDuplicateId(prev, "PUREID", value, rowIndex);
-                //     if (exists) {
-                //         toaster.create({
-                //             title: "Duplicate Pure ID",
-                //             description: "This Pure ID is already added.",
-                //             type: "error",
-                //         });
-                //         return prev; // ⛔ reject change
-                //     }
-                // }
+                const transactionType = TRANSACTIONTYPES.find(t => t.value === row.TRANSACTION_TYPE);
+                const isIssue = transactionType ? isIssueType(transactionType) : false;
 
-                // if (!isIssue && field === "ITEMID") {
-                //     const exists = hasDuplicateId(prev, "ITEMID", value, rowIndex);
-                //     if (exists) {
-                //         toaster.create({
-                //             title: "Duplicate Item",
-                //             description: "This Item is already added.",
-                //             type: "error",
-                //         });
-                //         return prev; // ⛔ reject change
-                //     }
-                // }
-
-                // -------------------------------
                 // Manual override tracking
-                // -------------------------------
                 if (field === "A_WT") row.__manual_A_WT = true;
                 if (field === "A_TOUCH") row.__manual_A_TOUCH = true;
                 if (field === "A_PURE") row.__manual_A_PURE = true;
@@ -1007,32 +846,28 @@ export default function PurchasePage() {
                 if (field === "WT") row.__manual_A_WT = false;
                 if (field === "TOUCH") row.__manual_A_TOUCH = false;
 
-                // -------------------------------
                 // Mirror logic
-                // -------------------------------
                 if (field === "WT" && !row.__manual_A_WT) row.A_WT = value;
                 if (field === "TOUCH" && !row.__manual_A_TOUCH) row.A_TOUCH = value;
 
-                // -------------------------------
-                // 🔒 Stock limit
-                // -------------------------------
-                const getTotalUsedWeight = (
-                    rows: any[],
-                    pureId: string | number,
-                    ignoreIndex?: number
-                ) => {
-                    return rows.reduce((sum, r, idx) => {
-                        if (ignoreIndex === idx) return sum;
-                        if (String(r.PUREID) === String(pureId)) {
-                            return sum + Number(r.WT || 0);
-                        }
-                        return sum;
-                    }, 0);
-                };
-
+                // Stock limit check for issue types
                 if (isIssue && (field === "WT" || field === "A_WT")) {
                     const available = getAvailableWeight(row.PUREID);
                     if (available != null) {
+                        const getTotalUsedWeight = (
+                            rows: any[],
+                            pureId: string | number,
+                            ignoreIndex?: number
+                        ) => {
+                            return rows.reduce((sum, r, idx) => {
+                                if (ignoreIndex === idx) return sum;
+                                if (String(r.PUREID) === String(pureId) && r.TRANSACTION_TYPE === row.TRANSACTION_TYPE) {
+                                    return sum + Number(r.WT || 0);
+                                }
+                                return sum;
+                            }, 0);
+                        };
+
                         const otherUsed = getTotalUsedWeight(prev, row.PUREID, rowIndex);
                         const current = Number(field === "WT" ? value : row.WT) || 0;
                         const total = otherUsed + current;
@@ -1049,32 +884,35 @@ export default function PurchasePage() {
                     }
                 }
 
-                // -------------------------------
-                // Calculations
-                // -------------------------------
-                if (field === "GRSWT" || field === "LESSWT") {
-                    const grswt = Number(row.GRSWT) || 0;
-                    const lesswt = Number(row.LESSWT) || 0;
-                    row.NETWT = Math.max(0, grswt - lesswt);
+                // Calculations for non-issue types
+                if (!isIssue) {
+                    if (field === "GRSWT" || field === "LESSWT") {
+                        const grswt = Number(row.GRSWT) || 0;
+                        const lesswt = Number(row.LESSWT) || 0;
+                        row.NETWT = Math.max(0, grswt - lesswt);
+                    }
+
+                    if (field === "NETWT" || field === "PURITY") {
+                        const netwt = Number(row.NETWT) || 0;
+                        const purity = Number(row.PURITY) || 0;
+                        row.PUREWT = (netwt * purity) / 100;
+                    }
                 }
 
-                if (field === "NETWT" || field === "PURITY") {
-                    const netwt = Number(row.NETWT) || 0;
-                    const purity = Number(row.PURITY) || 0;
-                    row.PUREWT = (netwt * purity) / 100;
-                }
+                // Calculations for issue types
+                if (isIssue) {
+                    if (field === "WT" || field === "TOUCH") {
+                        const wt = Number(row.WT) || 0;
+                        const touch = Number(row.TOUCH) || 0;
+                        row.PURE = (wt * touch) / 100;
+                    }
 
-                if (isIssue && (field === "WT" || field === "TOUCH")) {
-                    const wt = Number(row.WT) || 0;
-                    const touch = Number(row.TOUCH) || 0;
-                    row.PURE = (wt * touch) / 100;
-                }
-
-                if (isIssue && (field === "A_WT" || field === "A_TOUCH")) {
-                    const wt = Number(row.A_WT) || 0;
-                    const touch = Number(row.A_TOUCH) || 0;
-                    if (!row.__manual_A_PURE) {
-                        row.A_PURE = (wt * touch) / 100;
+                    if (field === "A_WT" || field === "A_TOUCH") {
+                        const wt = Number(row.A_WT) || 0;
+                        const touch = Number(row.A_TOUCH) || 0;
+                        if (!row.__manual_A_PURE) {
+                            row.A_PURE = (wt * touch) / 100;
+                        }
                     }
                 }
 
@@ -1084,18 +922,46 @@ export default function PurchasePage() {
                 return newRows;
             });
         },
-        [isIssue, getAvailableWeight, toaster]
+        [getAvailableWeight, toaster]
     );
-
-
-
-
 
     const handleRemoveDraftRow = (rowId: string) => {
         setDraftRows(prev => prev.filter(row => row.__rowId !== rowId));
         if (editingRowId === rowId) {
             setEditingRowId(null);
         }
+    };
+
+    /* ================================
+        Calculate Totals For Specific Type
+     ================================ */
+    const calculateTotalsForType = (transactionType: TransactionType) => {
+        const typeRows = draftRows.filter(row => row.TRANSACTION_TYPE === transactionType.value);
+
+        return typeRows.reduce((acc, row) => {
+            acc.PCS += Number(row.PCS || 0);
+            acc.GRSWT += Number(row.GRSWT || 0);
+            acc.LESSWT += Number(row.LESSWT || 0);
+            acc.NETWT += Number(row.NETWT || 0);
+            acc.PURITY += Number(row.PURITY || 0);
+            acc.PUREWT += Number(row.PUREWT || 0);
+            acc.RATE += Number(row.RATE || 0);
+            acc.MCHARGE += Number(row.MCHARGE || 0);
+            acc.WASTAGE += Number(row.WASTAGE || 0);
+            acc.AMOUNT += Number(row.AMOUNT || 0);
+            return acc;
+        }, {
+            PCS: 0,
+            GRSWT: 0,
+            LESSWT: 0,
+            NETWT: 0,
+            PURITY: 0,
+            PUREWT: 0,
+            RATE: 0,
+            MCHARGE: 0,
+            WASTAGE: 0,
+            AMOUNT: 0
+        });
     };
 
     /* ================================
@@ -1138,6 +1004,7 @@ export default function PurchasePage() {
             ITEMID: rest.ITEMID ? String(rest.ITEMID) : undefined,
         };
     };
+
     /* ================================
          Validation Handler
       ================================ */
@@ -1150,134 +1017,96 @@ export default function PurchasePage() {
             });
             return false;
         }
-        // if (isIssue) {
-        //     const ids = draftRows.map(r => r.PUREID);
-        //     const hasDuplicate = new Set(ids).size !== ids.length;
-        //     if (hasDuplicate) {
-        //         toaster.create({
-        //             title: "Duplicate Pure IDs",
-        //             description: "Remove duplicate Pure IDs before saving.",
-        //             type: "error",
-        //         });
-        //         return false;
-        //     }
-        // } else {
-        //     const ids = draftRows.map(r => r.ITEMID);
-        //     const hasDuplicate = new Set(ids).size !== ids.length;
-        //     if (hasDuplicate) {
-        //         toaster.create({
-        //             title: "Duplicate Items",
-        //             description: "Remove duplicate Items before saving.",
-        //             type: "error",
-        //         });
-        //         return false;
-        //     }
-        // }
 
-        if (isIssue) {
-            const grouped: Record<string, number> = {};
+        // Validate each row based on its transaction type
+        for (let i = 0; i < draftRows.length; i++) {
+            const row = draftRows[i];
+            const transactionType = TRANSACTIONTYPES.find(t => t.value === row.TRANSACTION_TYPE);
 
-            for (const r of draftRows) {
-                if (!r.PUREID) continue;
-                grouped[r.PUREID] =
-                    (grouped[r.PUREID] || 0) + Number(r.WT || 0);
+            if (!transactionType) {
+                toaster.create({
+                    title: "Invalid Transaction Type",
+                    description: `Row ${i + 1}: Invalid transaction type.`,
+                    type: "error",
+                });
+                return false;
             }
 
-            for (const pureId in grouped) {
+            const isIssue = isIssueType(transactionType);
+
+            if (isIssue) {
+                if (!row.PUREID || row.WT == null || row.TOUCH == null || row.PURE == null) {
+                    toaster.create({
+                        title: "Incomplete Items",
+                        description: `Row ${i + 1}: Please fill PUREID, Weight, Touch, and Pure for all rows.`,
+                        type: "error",
+                    });
+                    return false;
+                }
+            } else {
+                if (!row.ITEMID) {
+                    toaster.create({
+                        title: "Incomplete Items",
+                        description: `Row ${i + 1}: Please select an item.`,
+                        type: "error",
+                    });
+                    return false;
+                }
+
+                if (Number(row.GRSWT) <= 0) {
+                    toaster.create({
+                        title: "Invalid Gross Weight",
+                        description: `Row ${i + 1}: Gross weight must be greater than 0.`,
+                        type: "warning",
+                    });
+                    return false;
+                }
+
+                if (Number(row.PURITY) <= 0) {
+                    toaster.create({
+                        title: "Invalid Purity",
+                        description: `Row ${i + 1}: Purity must be greater than 0.`,
+                        type: "warning",
+                    });
+                    return false;
+                }
+            }
+        }
+
+        // Check stock limits for issue-type rows grouped by type
+        const groupedByType: Record<string, Record<string, number>> = {};
+
+        draftRows.forEach((row) => {
+            const transactionType = TRANSACTIONTYPES.find(t => t.value === row.TRANSACTION_TYPE);
+            if (!transactionType) return;
+
+            const isIssue = isIssueType(transactionType);
+
+            if (isIssue && row.PUREID) {
+                if (!groupedByType[row.TRANSACTION_TYPE]) {
+                    groupedByType[row.TRANSACTION_TYPE] = {};
+                }
+                const key = String(row.PUREID);
+                groupedByType[row.TRANSACTION_TYPE][key] = (groupedByType[row.TRANSACTION_TYPE][key] || 0) + Number(row.WT || 0);
+            }
+        });
+
+        for (const typeValue in groupedByType) {
+            for (const pureId in groupedByType[typeValue]) {
                 const available = getAvailableWeight(pureId);
-                if (available != null && grouped[pureId] > available) {
+                if (available != null && groupedByType[typeValue][pureId] > available) {
                     toaster.create({
                         title: "Stock Exceeded",
-                        description: `Pure ID ${pureId} exceeds available stock (${available})`,
+                        description: `Pure ID ${pureId} in transaction type ${typeValue}: Total ${groupedByType[typeValue][pureId]} exceeds available stock (${available})`,
                         type: "error",
                     });
                     return false;
                 }
             }
-        
-
-            const missingFieldsRow = draftRows.find(
-                (r) =>
-                    !r.PUREID ||
-                    r.WT == null ||
-                    r.TOUCH == null ||
-                    r.PURE == null
-            );
-
-            if (missingFieldsRow) {
-                toaster.create({
-                    title: "Incomplete Items",
-                    description: "Please fill PUREID, Weight, Touch, and Pure for all rows.",
-                    type: "error",
-                });
-                return false;
-            }
-        } else {
-            const invalidRows = draftRows.filter(row => !row.ITEMID);
-            if (invalidRows.length > 0) {
-                toaster.create({
-                    title: "Incomplete Items",
-                    description: "Please select an item for all rows.",
-                    type: "error",
-                });
-                return false;
-            }
-
-            const invalidGrossWt = draftRows.findIndex(
-                (r) => Number(r.GRSWT) <= 0
-            );
-            if (invalidGrossWt !== -1) {
-                toaster.create({
-                    title: "Invalid Gross Weight",
-                    description: `Row ${invalidGrossWt + 1}: Gross weight must be greater than 0.`,
-                    type: "warning",
-                });
-                return false;
-            }
-
-            const invalidPurity = draftRows.findIndex(
-                (r) => Number(r.PURITY) <= 0
-            );
-            if (invalidPurity !== -1) {
-                toaster.create({
-                    title: "Invalid Purity",
-                    description: `Row ${invalidPurity + 1}: Purity must be greater than 0.`,
-                    type: "warning",
-                });
-                return false;
-            }
         }
 
         return true;
     };
-
-    const validateIssueStockOnSave = (
-        rows: any[],
-        getAvailableWeight: (pureId: string | number) => number | null
-    ) => {
-        const grouped: Record<string, number> = {};
-
-        for (const r of rows) {
-            if (!r.PUREID) continue;
-
-            const key = String(r.PUREID);
-            grouped[key] = (grouped[key] || 0) + Number(r.WT || 0);
-        }
-
-        for (const pureId in grouped) {
-            const available = getAvailableWeight(pureId);
-            if (available != null && grouped[pureId] > available) {
-                return {
-                    pureId,
-                    used: grouped[pureId],
-                    available,
-                };
-            }
-        }
-
-        return null;
-    };
-
 
     /* ================================
        Save Transaction Handler
@@ -1285,46 +1114,10 @@ export default function PurchasePage() {
     const handleSaveTransaction = async () => {
         setEditingRowId(null);
 
-        if (isIssue) {
-            // 1️⃣ Required fields
-            const missingFieldsRow = draftRows.find(
-                (r) =>
-                    !r.PUREID ||
-                    r.WT == null ||
-                    r.TOUCH == null ||
-                    r.PURE == null
-            );
-
-            if (missingFieldsRow) {
-                toaster.create({
-                    title: "Incomplete Items",
-                    description: "Please fill PUREID, Weight, Touch, and Pure for all rows.",
-                    type: "error",
-                });
-                return;
-            }
-
-            // 2️⃣ Aggregate stock validation (🔥 IMPORTANT)
-            const stockError = validateIssueStockOnSave(
-                draftRows,
-                getAvailableWeight
-            );
-
-            if (stockError) {
-                toaster.create({
-                    title: "Stock Exceeded",
-                    description: `Pure ID ${stockError.pureId}: Used ${stockError.used}, Available ${stockError.available}`,
-                    type: "error",
-                });
-                return;
-            }
-        }
-
-
-        if (!selectedTransactionType) {
+        if (selectedTransactionTypes.length === 0) {
             toaster.create({
-                title: "Transaction Type Required",
-                description: "Please select a transaction type.",
+                title: "Transaction Types Required",
+                description: "Please select at least one transaction type.",
                 type: "error",
             });
             return;
@@ -1348,101 +1141,58 @@ export default function PurchasePage() {
             return;
         }
 
-        // ================= VALIDATION =================
-        if (isIssue) {
-            // const exceededRow = draftRows.find((r) => {
-            //     const available = getAvailableWeight(r.PUREID);
-            //     return available != null && Number(r.WT) > available;
-            // });
-
-            // console.log(draftRows, 'draftRows')
-            // const ids = draftRows.map(r => Number(r.PUREID));
-            // console.log(ids,'draftRows')
-            // const hasDuplicate = new Set(ids).size !== ids.length;
-            // if (hasDuplicate) {
-            //     toaster.create({
-            //         title: "Duplicate Pure IDs",
-            //         description: "Remove duplicate Pure IDs before saving.",
-            //         type: "error",
-            //     });
-            //     return false;
-            // }
-
-            // if (exceededRow) {
-            //     toaster.create({
-            //         title: "Stock Exceeded",
-            //         description: "One or more rows exceed available stock weight.",
-            //         type: "error",
-            //     });
-            //     return;
-            // }
-            const missingFieldsRow = draftRows.find(
-                (r) =>
-                    !r.PUREID ||
-                    r.WT == null ||
-                    r.TOUCH == null ||
-                    r.PURE == null
-            );
-
-            if (missingFieldsRow) {
-                toaster.create({
-                    title: "Incomplete Items",
-                    description: "Please fill PUREID, Weight, Touch, and Pure for all rows.",
-                    type: "error",
-                });
-                return;
-            }
-        } else {
-            const invalidRows = draftRows.filter(row => !row.ITEMID);
-            if (invalidRows.length > 0) {
-                toaster.create({
-                    title: "Incomplete Items",
-                    description: "Please select an item for all rows.",
-                    type: "error",
-                });
-                return;
-            }
-
-            const invalidGrossWt = draftRows.findIndex(
-                (r) => Number(r.GRSWT) <= 0
-            );
-            if (invalidGrossWt !== -1) {
-                toaster.create({
-                    title: "Invalid Gross Weight",
-                    description: `Row ${invalidGrossWt + 1}: Gross weight must be greater than 0.`,
-                    type: "warning",
-                });
-                return;
-            }
-
-            const invalidPurity = draftRows.findIndex(
-                (r) => Number(r.PURITY) <= 0
-            );
-            if (invalidPurity !== -1) {
-                toaster.create({
-                    title: "Invalid Purity",
-                    description: `Row ${invalidPurity + 1}: Purity must be greater than 0.`,
-                    type: "warning",
-                });
-                return;
-            }
-        }
+        if (!validateDraftRows()) return;
 
         try {
-            const transactionData = {
-                TRANSACTION_DETAILS: {
+
+            /* -----------------------------------------
+               STEP 1 — GROUP ROWS BY TYPE
+               ----------------------------------------- */
+
+            const transactionDetails: TransactionItems = {};
+
+            draftRows.forEach(row => {
+                const mappedType = TRANSACTION_KEY_MAP[row.TRANSACTION_TYPE];
+
+                if (!mappedType) return;
+
+                if (!transactionDetails[mappedType]) {
+                    transactionDetails[mappedType] = [];
+                }
+
+                const normalized = normalizeRowForApi(
+                    row,
+                    mappedType === "issue" || mappedType === "receipt"
+                );
+
+                (transactionDetails[mappedType] as any[]).push(normalized);
+            });
+
+            /* -----------------------------------------
+               STEP 2 — BUILD HEADER
+               ----------------------------------------- */
+
+            const payload: CreateTransaction = {
+                TRANSACTION_HEADER: {
                     ACCODE: Number(headerForm.CUSTOMER),
-                    TRANTYPE: String(selectedTransactionType.value),
                     TRANDATE: headerForm.DATE,
+                    BILLNO: headerForm.BILLNO ? Number(headerForm.BILLNO) : undefined,
+                    RATE: headerForm.RATEGM ? Number(headerForm.RATEGM) : undefined,
                 },
-                TRANSACTION_ITEMS: draftRows.map(row =>
-                    normalizeRowForApi(row, isIssue)
-                ),
+                TRANSACTION_DETAILS: transactionDetails,
             };
+            console.log(payload,'createTransaction')
 
-            //console.log("CREATE PAYLOAD:", transactionData);
+            /* -----------------------------------------
+               STEP 3 — SINGLE API CALL
+               ----------------------------------------- */
 
-            await createTransaction.mutateAsync(transactionData);
+            await createTransaction.mutateAsync(payload);
+
+
+            /* -----------------------------------------
+               STEP 4 — CLEANUP
+               ----------------------------------------- */
 
             setDraftRows([]);
             setEditingRowId(null);
@@ -1450,12 +1200,13 @@ export default function PurchasePage() {
 
             toaster.create({
                 title: "Transaction Saved",
-                description: "Transaction has been saved successfully.",
+                description: "Transaction saved successfully.",
                 type: "success",
             });
-            stockRefetch();
 
+            stockRefetch();
             setShowHistory(true);
+
         } catch (error: any) {
             toaster.create({
                 title: "Save Failed",
@@ -1464,7 +1215,6 @@ export default function PurchasePage() {
             });
         }
     };
-
 
     const handleUpdateTransaction = async () => {
         setEditingRowId(null);
@@ -1478,58 +1228,113 @@ export default function PurchasePage() {
             return;
         }
 
+        if (selectedTransactionTypes.length === 0) {
+            toaster.create({
+                title: "Transaction Types Required",
+                description: "Please select at least one transaction type.",
+                type: "error",
+            });
+            return;
+        }
+
+        if (!headerForm.CUSTOMER) {
+            toaster.create({
+                title: "Customer Required",
+                description: "Please select a customer.",
+                type: "error",
+            });
+            return;
+        }
+
+        if (draftRows.length === 0) {
+            toaster.create({
+                title: "No Items",
+                description: "Please add at least one item to the transaction.",
+                type: "error",
+            });
+            return;
+        }
+
         if (!validateDraftRows()) return;
 
         try {
-            const updateData = {
-                TRANSACTION_DETAILS: {
-                    ACCODE: Number(headerForm.CUSTOMER),
-                    TRANTYPE: String(selectedTransactionType?.value),
-                    TRANDATE: headerForm.DATE,
-                },
-                TRANSACTION_ITEM: draftRows.length > 0 ? normalizeRowForApi(draftRows[0], isIssue) : null,
-            };
+            /* -----------------------------------------
+               STEP 1 — GROUP ROWS BY TRANSACTION TYPE
+               ----------------------------------------- */
+            const transactionDetails: TransactionItems = {};
 
-            //console.log("UPDATE PAYLOAD:", updateData);
+            draftRows.forEach(row => {
+                const mappedType = TRANSACTION_KEY_MAP[row.TRANSACTION_TYPE];
+                if (!mappedType) return;
 
-            await updateTransaction.mutateAsync({
-                sno: editingSno,
-                payload: updateData,
+                if (!transactionDetails[mappedType]) transactionDetails[mappedType] = [];
+
+                const isIssue = mappedType === "issue" || mappedType === "receipt";
+                const normalized = normalizeRowForApi(row, isIssue);
+                (transactionDetails[mappedType] as any[]).push(normalized);
             });
 
-            // Reset edit mode
+            /* -----------------------------------------
+               STEP 2 — BUILD HEADER
+               ----------------------------------------- */
+            const payload: CreateTransaction = {
+                TRANSACTION_HEADER: {
+                    ACCODE: Number(headerForm.CUSTOMER),
+                    TRANDATE: headerForm.DATE,
+                    BILLNO: headerForm.BILLNO ? Number(headerForm.BILLNO) : undefined,
+                    RATE: headerForm.RATEGM ? Number(headerForm.RATEGM) : undefined,
+                },
+                TRANSACTION_DETAILS: transactionDetails,
+            };
+
+            console.log("Updating Transaction:", payload);
+
+            /* -----------------------------------------
+               STEP 3 — API CALL
+               ----------------------------------------- */
+            await updateTransaction.mutateAsync({
+                sno: editingSno,
+                payload,
+            });
+
+            /* -----------------------------------------
+               STEP 4 — CLEANUP
+               ----------------------------------------- */
             setIsEditing(false);
             setEditingSno(null);
             setSelectedTransactionId(null);
             setDraftRows([]);
             setEditingRowId(null);
-            setSelectedTransactionType(null);
+            setSelectedTransactionTypes([]);
             setTransactionTitle("");
 
-            setHeaderForm(prev => ({
-                ...prev,
+            setHeaderForm({
+                ENTRYNO: "",
                 CUSTOMER: "",
                 CUSTOMER_NAME: "",
                 BILLNO: "",
                 DATE: new Date().toISOString().split("T")[0],
-                RATEGM: ""
-            }));
+                RATEGM: "",
+            });
 
-            // Clear storage
-            localStorage.removeItem(DRAFT_KEY);
-            localStorage.removeItem(HEADER_KEY);
-            localStorage.removeItem(TYPE_KEY);
-            localStorage.removeItem(DATE_RANGE_KEY);
-            localStorage.removeItem(ITEMID);
-            localStorage.removeItem(FILTER);
-            localStorage.removeItem(EDITING);
-            localStorage.removeItem(EDITING_SNO);
+            // Clear local storage keys
+            [
+                DRAFT_KEY,
+                HEADER_KEY,
+                TYPE_KEY,
+                DATE_RANGE_KEY,
+                ITEMID,
+                FILTER,
+                EDITING,
+                EDITING_SNO,
+            ].forEach(key => localStorage.removeItem(key));
 
             toaster.create({
                 title: "Transaction Updated",
                 description: "Transaction updated successfully.",
                 type: "success",
             });
+
             stockRefetch();
             setShowHistory(true);
 
@@ -1554,10 +1359,9 @@ export default function PurchasePage() {
                 CUSTOMER_NAME: "",
                 BILLNO: "",
                 DATE: new Date().toISOString().split("T")[0],
-                RATEGM:""
+                RATEGM: ""
             }));
-            // If editing, exit edit mode
-            
+
             setIsEditing(false);
             setEditingSno(null);
             setSelectedTransactionId(null);
@@ -1569,7 +1373,7 @@ export default function PurchasePage() {
             });
         } else {
             // If creating new, clear everything
-            setSelectedTransactionType(null);
+            setSelectedTransactionTypes([]);
             setTransactionTitle("");
             localStorage.removeItem(TYPE_KEY);
         }
@@ -1577,15 +1381,10 @@ export default function PurchasePage() {
         localStorage.removeItem(DRAFT_KEY);
     };
 
-    /* ================================
-       History Handlers
-    ================================ */
-    const handleHistoryRowClick = (transaction: any) => {
-        setSelectedHistoryId(transaction.id);
-    };
+  
+
 
     const handleTransactionClick = useCallback((transactionId: string) => {
-        //console.log("Transaction clicked:", transactionId);
         setSelectedTransactionId(transactionId);
         // Clear any existing draft first
         setDraftRows([]);
@@ -1597,7 +1396,7 @@ export default function PurchasePage() {
     }, []);
 
     /* ================================
-       Calculate Totals
+       Calculate Overall Totals
     ================================ */
     const totals = useMemo(() => {
         return draftRows.reduce((acc, row) => {
@@ -1634,21 +1433,19 @@ export default function PurchasePage() {
     return (
         <Flex align="stretch" gap={2} >
             <Toaster />
-            {loading && <Loader isLoading={true} fullscreen={true} />}
-            
+
             {/* Loading indicator for transaction data */}
             {getbySnoLoading && (
                 <Box position="fixed" top="50%" left="50%" transform="translate(-50%, -50%)" zIndex={1000}>
                     <Loader isLoading={true} />
                 </Box>
             )}
-            
-         
-            
+
             {/* LEFT – 70% */}
             <Box w={showFilter ? "70%" : "100%"}>
                 <VStack align="stretch" gap={1}>
                     {/* 1. Transaction Header Form */}
+                 
                     <TransactionHeaderForm
                         form={headerForm}
                         onFormChange={handleHeaderChange}
@@ -1660,117 +1457,129 @@ export default function PurchasePage() {
                         openingData={openingData}
                         showFilter={showFilter}
                         handleShowFilter={handleShowFilter}
-                        // isEditing={isEditing}
-
+                        isEditing={isEditing}
+                        entryNo={transactionList?.data?.ENTRYNO}
+                        billNo={transactionList?.data?.BILLNO}
                     />
 
                     {/* 2. Transaction Type Selector */}
-                    {!isEditing && (
+                  
                         <TransactionTypeSelector
                             transactionTypes={TRANSACTIONTYPES}
-                            selectedType={selectedTransactionType}
-                            onSelectType={handleTransactionTypeSelect}
+                            selectedTypes={selectedTransactionTypes}
+                            onSelectTypes={handleTransactionTypesSelect}
                             theme={theme}
-                            isEditing={isEditing}
                         />
-                    )}
+                
 
                     {/* Show transaction info when editing */}
-                    {isEditing && selectedTransactionType && (
+                    {isEditing && selectedTransactionTypes.length > 0 && (
                         <Box p={2} bg={theme.colors.formColor} borderRadius="md" display='flex' gap={2}>
-                            <Text  fontSize='xs' color={theme.colors.primaryText}>
-                              {selectedTransactionType.label} - {editingSno}
+                            <Text fontSize='xs' color={theme.colors.primaryText}>
+                                {selectedTransactionTypes.map(t => t.label).join(", ")} - {editingSno}
                             </Text>
                             <Text fontSize="xs"> <strong>Customer: </strong>{headerForm.CUSTOMER_NAME}</Text>
                             <Text fontSize="xs"> <strong>Date:</strong> {headerForm.DATE}</Text>
                         </Box>
                     )}
 
-                    {/* Draft Section - show if transaction type selected OR if editing */}
-                    {(selectedTransactionType || isEditing) && (
-                        <>
-                            {/* Draft Transaction Table with Form */}
-                            <DraftTransactionTable
-                                rows={draftRows}
-                                editingRowId={editingRowId}
-                                isEditing={isEditing}
-                                onAddRow={(formData) => {
-                                    if (formData && typeof formData === 'object') {
-                                        const newRow = {
-                                            ...formData,
-                                            __rowId: `row-${Date.now()}`,
-                                            __isNew: true,
-                                            __previewSno: draftRows.length + 1,
-                                        };
-                                        setDraftRows(prev => [...prev, newRow]);
-                                    } else {
-                                        const newRow = {
-                                            __rowId: `row-${Date.now()}`,
-                                            __isNew: true,
-                                            __previewSno: draftRows.length + 1,
-                                        };
-                                        setDraftRows(prev => [...prev, newRow]);
-                                    }
-                                }}
-                                onUpdateRow={handleUpdateDraftRow}
-                                handleClearForm={handleClearForm}
-                                onRemoveRow={handleRemoveDraftRow}
-                                onRowClick={(row) => {
-                                    if (editingRowId !== row.__rowId) {
-                                        setEditingRowId(row.__rowId);
-                                    }
-                                }}
-                                onCancelEdit={(rowId) => {
-                                    if (rowId) {
-                                        handleRemoveDraftRow(rowId);
-                                    }
-                                    setEditingRowId(null);
-                                }}
-                                onSaveRow={(row, isNew) => {
-                                    setEditingRowId(null);
-                                }}
-                                itemsCollection={activeCollection}
-                                itemsFilter={activeFilter}
-                                totals={totals}
-                                transactionTitle={transactionTitle}
-                                theme={theme}
-                                isIssue={isIssue}
-                                getAvailableWeight={getAvailableWeight}
-                               
-                            />
+                    {/* Draft Section - show separate tables for each transaction type */}
+                    {(selectedTransactionTypes.length > 0 || isEditing) && (
+                        <VStack align="stretch">
+                            {selectedTransactionTypes.map((transactionType) => {
+                                const typeRows = draftRows.filter(row => row.TRANSACTION_TYPE === transactionType.value);
+                                const typeTotals = calculateTotalsForType(transactionType);
+                                const activeCollection = getActiveCollectionForType(transactionType);
+                                const activeFilter = getActiveFilterForType(transactionType);
+                                const isIssue = isIssueType(transactionType);
 
-                            {/* Save Transaction Bar */}
-                            <SaveTransactionBar
-                                draftCount={draftRows.length}
-                                onSave={isEditing ? handleUpdateTransaction : handleSaveTransaction}
-                                onReset={handleResetDraft}
-                                isSaving={createTransaction.isPending || updateTransaction.isPending}
-                                isEditing={isEditing}
-                                theme={theme}
-                            />
-                        </>
+                                return (
+                                    <Box
+                                        key={transactionType.value}
+                                        borderWidth="1px"
+                                        borderRadius="md"
+                                       
+                                        borderColor={theme.colors.greyColor}
+                                       
+                                    >
+                                       
+
+                                        {/* Draft Transaction Table for this type */}
+                                        <DraftTransactionTable
+                                            rows={typeRows}
+                                            editingRowId={editingRowId}
+                                            isEditing={isEditing}
+                                            onAddRow={(formData) => {
+                                                if (formData && typeof formData === 'object') {
+                                                    const newRow = {
+                                                        ...formData,
+                                                        TRANSACTION_TYPE: transactionType.value,
+                                                        __rowId: `row-${transactionType.value}-${Date.now()}`,
+                                                        __isNew: true,
+                                                        __previewSno: typeRows.length + 1,
+                                                    };
+                                                    setDraftRows(prev => [...prev, newRow]);
+                                                } else {
+                                                    handleAddRowForType(transactionType);
+                                                }
+                                            }}
+                                            onUpdateRow={(rowIndex, field, value) => {
+                                                // Find the actual index in the main draftRows array
+                                                const actualIndex = draftRows.findIndex(
+                                                    r => r.TRANSACTION_TYPE === transactionType.value &&
+                                                        r.__rowId === typeRows[rowIndex]?.__rowId
+                                                );
+                                                if (actualIndex !== -1) {
+                                                    handleUpdateDraftRow(actualIndex, field, value);
+                                                }
+                                            }}
+                                            handleClearForm={() => handleAddRowForType(transactionType)}
+                                            onRemoveRow={(rowId) => {
+                                                setDraftRows(prev => prev.filter(row => row.__rowId !== rowId));
+                                                if (editingRowId === rowId) {
+                                                    setEditingRowId(null);
+                                                }
+                                            }}
+                                            onRowClick={(row) => {
+                                                if (editingRowId !== row.__rowId) {
+                                                    setEditingRowId(row.__rowId);
+                                                }
+                                            }}
+                                            onCancelEdit={(rowId) => {
+                                                if (rowId) {
+                                                    setDraftRows(prev => prev.filter(row => row.__rowId !== rowId));
+                                                }
+                                                setEditingRowId(null);
+                                            }}
+                                            onSaveRow={(row, isNew) => {
+                                                setEditingRowId(null);
+                                            }}
+                                            itemsCollection={activeCollection}
+                                            itemsFilter={activeFilter}
+                                            totals={typeTotals}
+                                            transactionTitle={transactionType.label}
+                                            theme={theme}
+                                            isIssue={isIssue}
+                                            getAvailableWeight={getAvailableWeight}
+                                            onClear={() => handleClearRowsForType(transactionType)}
+                                        />
+                                    </Box>
+                                );
+                            })}
+
+                            {/* Save Transaction Bar - appears once for all tables */}
+                            {draftRows.length > 0 && (
+                                <SaveTransactionBar
+                                    draftCount={draftRows.length}
+                                    onSave={isEditing ? handleUpdateTransaction : handleSaveTransaction}
+                                    onReset={handleResetDraft}
+                                    isSaving={createTransaction.isPending || updateTransaction.isPending}
+                                    isEditing={isEditing}
+                                    theme={theme}
+                                />
+                            )}
+                        </VStack>
                     )}
-
-                    {/* 5. Transaction History Table */}
-                    <Box>
-                        <Button
-                            size="xs"
-                            variant="outline"
-                            onClick={() => setShowHistory(!showHistory)}
-                            mb={2}
-                        >
-                            {showHistory ? "Hide" : "Show"} History
-                        </Button>
-
-                        {showHistory && (
-                            <TransactionHistoryTable
-                                customerCode={headerForm.CUSTOMER}
-                                transactionType={selectedTransactionType?.value}
-                                onRowClick={handleHistoryRowClick}
-                                theme={theme}
-                            />
-                        )}
-                    </Box>
                 </VStack>
             </Box>
 
@@ -1784,7 +1593,7 @@ export default function PurchasePage() {
                         isLoadingTransactions={isLoading}
                         draftTotals={totals}
                         headerForm={headerForm}
-                        selectedTransactionType={selectedTransactionType}
+                        selectedTransactionType={selectedTransactionTypes}
                         theme={theme}
                         startDate={startDate}
                         endDate={endDate}
@@ -1795,11 +1604,10 @@ export default function PurchasePage() {
                         itemsCollection={itemsCollection}
                         itemsFilter={itemsFilter}
                         getLabelByValue={getLabelByValue}
-                        
-                        // isEditing={isEditing}
                     />
                 </Box>
             )}
+
             <Box>
                 <FloatingActionButton
                     icon={<GiGoldBar />}
@@ -1808,29 +1616,26 @@ export default function PurchasePage() {
                     onClick={() => setIsStockDrawerOpen(true)}
                     position="bottom-right"
                     colorScheme="yellow"
-                    size="lg"
+                    size="md"
                 />
             </Box>
+
             <StockDrawer
-                isIssue={isIssue}
+                isIssue={selectedTransactionTypes.some(t => isIssueType(t))}
                 showStock={showStock}
                 setShowStock={setShowStock}
                 open={isStockDrawerOpen}
                 onClose={() => setIsStockDrawerOpen(false)}
-
                 stockData={selectedStockData}
-
                 metalId={metalId}
                 setMetalId={setMetalId}
                 metalCollection={metalList}
-
                 selectedName={selectedName}
                 setSelectedName={setSelectedName}
                 pureGoldCollection={pureGoldList}
                 itemCollection={itemsCollection.items}
                 onIssue={handleLoadFromStock}
             />
-
         </Flex>
     );
 }

@@ -44,12 +44,15 @@ import { Toaster } from "@/components/ui/toaster";
 import { CustomTable } from "@/component/table/CustomTable";
 import { getImage } from "@/utils/image/getImage";
 import { CapitalizedInput } from "@/component/form/CapitalizedInput";
-
+import { usePrint } from "@/context/print/usePrintContext";
+import { useRouter } from "next/navigation";
+import { FaPrint ,FaFileExcel } from "react-icons/fa";
 export default function UserMasters() {
     const { theme } = useTheme();
     const { user } = useAuth();
+    const router = useRouter();
     //console.log(user ,'user');
-
+    const {setData ,setColumns , title } = usePrint();
 
     const [imagePreview, setImagePreview] = useState<string | undefined | null>(null);
     const [confirmPwd, setConfirmPwd] = useState("");
@@ -263,6 +266,21 @@ export default function UserMasters() {
     ]
     console.log(imagePreview, 'imagePreview');
 
+        const handleExport = (option: string) => {
+            setData(users);
+            setColumns([
+                { key: "userId", label: "User Id" },
+                { key: "username", label: "User Name" },
+                // {key: "costId", label: "Cost Id"},
+                { key: "active", label: "Active", align: 'center' as const },
+            ]);
+          
+            router.push(`/print?export=${option}`);
+            title?.("User List")
+
+        };
+    
+
     return (
         <Box
             fontWeight='semibold'
@@ -271,14 +289,13 @@ export default function UserMasters() {
 
         >
             <Toaster />
-            <Grid templateColumns={{ base: "1fr", lg: "1fr 1fr" }} gap={2}>
+            <Grid templateColumns={{ base: "1fr", lg: "1fr 1.5fr" }} gap={2}>
 
                 {/* LEFT SECTION – USER FORM */}
 
                 <GridItem display="flex" justifyContent="center">
                     <VStack
                         w="full"
-                        maxW="500px"
                         bg={theme.colors.formColor}
                         p={4}
                         borderRadius="xl"
@@ -286,7 +303,7 @@ export default function UserMasters() {
                         boxShadow="0 0 30px rgba(212,212,212,0.2)"
                     >
 
-                        <Text fontSize="medium" fontWeight="600" >
+                        <Text fontSize="small" fontWeight="seminbold" >
                             {editingUserId ? "EDIT USER" : "USER MASTER"}
                         </Text>
 
@@ -433,17 +450,42 @@ export default function UserMasters() {
                 {/* RIGHT SECTION – TABLE */}
                 <GridItem>
                     <Box
-                        p={4}
+                        p={3}
                         borderRadius="xl"
                         bg={theme.colors.formColor}
                         border="1px solid #eef"
                         boxShadow="0 0 30px rgba(212,212,212,0.2)"
                     >
-                        <Text mb={2} fontWeight="bold" fontSize="lg" >
-                            User List
+                        <Box display='flex' alignItems='center' justifyContent='space-between'>
+                        <Text  fontWeight="semibold" fontSize="small" >
+                            USER LIST
                         </Text>
+                         <Flex>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="xs"
+                                                            color={theme.colors.green}
+                                                            _hover={{ color: "black" }}
+                                                            onClick={() => handleExport("excel")}
+                                                            aria-label="Export Excel"
+                                                        >
+                                                            <FaFileExcel />
+                                                        </Button>
+                        
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="xs"
+                                                            color={theme.colors.primaryText}
+                                                            _hover={{ color: "black" }}
+                                                            onClick={() => handleExport("pdf")}
+                                                            aria-label="Export PDF"
+                                                        >
+                                                            <FaPrint />
+                                                        </Button>
+                                                    </Flex>
+                                    </Box>
 
-                        <Stack gap="10">
+                        <Stack>
 
                             <CustomTable
                                 columns={UserMasterColumn}

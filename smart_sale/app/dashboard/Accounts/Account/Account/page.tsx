@@ -51,7 +51,7 @@ function AccountMaster() {
     /* -------------------- API HOOKS -------------------- */
     const { data, isLoading } = useAllCompanies();
     const router = useRouter();
-    const {setData ,setColumns ,setShowSno} =usePrint();
+    const {setData ,setColumns ,setShowSno , title } =usePrint();
     const companies = data?.data ?? [];
 
 
@@ -272,8 +272,9 @@ function AccountMaster() {
             // { key: "itemName", label: "Item Name" },
             // { key: "touch", label: "Touch", align: 'end' as const, allowTotal: true },
         ]);
+        title?.("Bank Account Master")
         setShowSno(true);
-        router.push(`/print?export=${option}`);
+        router.push(`/print?export=${option}&title=${title}`);
     }
     /* -------------------- UI -------------------- */
     return (

@@ -36,7 +36,7 @@ import { CapitalizedInput } from "@/component/form/CapitalizedInput";
 import { useAllMetals } from "@/hooks/metal/useMetals";
 import { SelectCombobox } from "@/components/ui/selectComboBox";
 import { safeValue } from "@/utils/comboBox/safeValue";
-
+import SearchBar from "@/component/search/SearchBar";
 
 /* ---------------- Initial Form State ---------------- */
 
@@ -45,7 +45,7 @@ const initialFormState: pureGoldMastForm = {
     // weight: "",
     // actualTouch: "",
     // actualPure: "",
-    // metalId:""
+    metalId:""
 };
 
 /* ---------------- Table Row Type ---------------- */
@@ -57,7 +57,8 @@ export type TouchTableRow = {
     // weight: number;
     // actualTouch: number;
     // actualPure: number;
-    // metalId ?: string
+    metalId ?: string;
+    metalName?:string;
 
 };
 
@@ -74,14 +75,16 @@ const PureGoldMaster = () => {
     const [errors, setErrors] = useState<FormErrors>({});
     const [metalData, setMetalData] = useState<{ label: string, value: string }[]>([])
 
+    const [filter ,setFilter] =useState<string>('')
     /* ---------------- Hooks ---------------- */
     const router = useRouter();
     const { theme } = useTheme();
-     const {setData ,setColumns } = usePrint();
-     const filter = {}
-    const { data: pureGoldData = [], refetch } = usePureGoldNames();
+     const {setData ,setColumns ,title} = usePrint();
+    console.log(filter,'filter')
 
-    // const { data: metalsData } = useAllMetals();
+    const { data: pureGoldData = [], refetch } = usePureGoldNames(filter);
+
+    const { data: metalsData } = useAllMetals();
 
     console.log(pureGoldData,'pureGoldData')
     const createMutation = useCreatePureGoldNmae();
@@ -89,18 +92,18 @@ const PureGoldMaster = () => {
 
 
     /* --------------- ComboBox Data ------------- */
-    // useEffect(() => {
-    //     if (!Array.isArray(metalsData)) return;
-    //     if (!metalsData.length) return;
+    useEffect(() => {
+        if (!Array.isArray(metalsData)) return;
+        if (!metalsData.length) return;
 
-    //     const fetchedData = metalsData.map((m: any) => ({
-    //         label: m.metalName,
-    //         value: m.metalId,
-    //     }));
+        const fetchedData = metalsData.map((m: any) => ({
+            label: m.metalName,
+            value: m.metalId,
+        }));
 
-    //     setMetalData(fetchedData);
-    // }, [metalsData]);
-    // console.log(metalData ,'metalDAta')
+        setMetalData(fetchedData);
+    }, [metalsData]);
+    console.log(metalData ,'metalDAta')
 
     /* ---------------- Helpers ---------------- */
 
@@ -113,6 +116,7 @@ const PureGoldMaster = () => {
     const resetForm = () => {
         setForm(initialFormState);
         setEditId(null);
+  
         setErrors({});
     };
 
@@ -128,7 +132,7 @@ const PureGoldMaster = () => {
             // weight: String(row.weight),
             // actualPure: String(row.actualPure),
             // actualTouch: String(row.actualTouch),
-            // metalId: row.metalId ?? ''
+            metalId: row.metalId ?? ''
         });
 
         toastLoaded("Pure Gold Master");
@@ -136,15 +140,41 @@ const PureGoldMaster = () => {
 
     /* ---------------- Validation ---------------- */
 
-    const validateForm = (form: pureGoldMastForm): FormErrors => {
+    const validateForm = (
+        form: pureGoldMastForm,
+        pureGoldData: any[],
+        editId?: number | null,
+        originalName?: string
+    ): FormErrors => {
+
         const errors: FormErrors = {};
 
-        if (!form.pureGoldName) errors.pureGoldName = "Pure Gold Name is required";
-        // if (!form.weight) errors.weight = "Weight is required";
-        // if (!form.actualPure) errors.actualPure = "Actual Pure is required";
-        // if (!form.actualTouch) errors.actualTouch = "Actual Touch is required";
-        // if (!form.metalId) errors.metalId = "Metal Name is required";
+        const normalize = (v?: string) => v?.trim().toLowerCase();
 
+        if (!form.pureGoldName?.trim()) {
+            errors.pureGoldName = "Pure Gold Name is required";
+        }
+
+        if (!form.metalId) {
+            errors.metalId = "Metal Name is required";
+        }
+
+        // 🔥 Duplicate validation
+        if (form.pureGoldName?.trim()) {
+
+            const nameChanged =
+                editId &&
+                normalize(originalName) !== normalize(form.pureGoldName);
+
+            const exists = pureGoldData.some((p: any) =>
+                normalize(p.pureGoldName) === normalize(form.pureGoldName) &&
+                p.id !== editId
+            );
+
+            if ((!editId && exists) || (editId && nameChanged && exists)) {
+                errors.pureGoldName = "Pure Gold Name already exists";
+            }
+        }
 
         return errors;
     };
@@ -152,7 +182,13 @@ const PureGoldMaster = () => {
     /* ---------------- Submit Handler ---------------- */
 
     const handleSubmit = () => {
-        const validationErrors = validateForm(form);
+
+        const validationErrors = validateForm(
+            form,
+            pureGoldData,
+            editId,
+            originalName ?? undefined
+        );
 
         if (Object.keys(validationErrors).length > 0) {
             setErrors(validationErrors);
@@ -162,26 +198,6 @@ const PureGoldMaster = () => {
         const payload = {
             pureGoldName: form.pureGoldName,
         };
-
-        const nameChanged =
-            editId &&
-            originalName?.toLowerCase().trim() !==
-            form.pureGoldName.toLowerCase().trim();
-
-        const exists = pureGoldData.some((p: any) =>
-            p.pureGoldName.toLowerCase().trim() ===
-            form.pureGoldName.toLowerCase().trim() &&
-            p.id !== editId
-        );
-
-        // 🔥 Only block if:
-        // - Creating AND duplicate
-        // - Editing AND name changed AND duplicate
-
-        if ((!editId && exists) || (editId && nameChanged && exists)) {
-            toastError("Pure Gold Name already exists");
-            return;
-        }
 
         if (editId) {
             updateMutation.mutate(
@@ -211,6 +227,7 @@ const PureGoldMaster = () => {
 
     const columns = [
         { key: "sno", label: "S.No" },
+        { key: "metalName", label: "Metal Type" },
         { key: "pureGoldName", label: "Pure Gold Name" },
         // { key: "weight", label: "Weight" ,align : "end" as const },
         // { key: "actualPure", label: "Actual Pure", align: "end" as const },
@@ -231,38 +248,58 @@ const PureGoldMaster = () => {
     const handleExport = (option: string) => {
         setData(Array.isArray(pureGoldData) ? pureGoldData : pureGoldData || []);
         setColumns([
-            { key: "sno", label: "S.No" },
+            { key: "metalName", label: "Metal Type" },
             { key: "pureGoldName", label: "Pure Gold Name" },
             // { key: "weight", label: "Weight", align: 'end' as const, allowTotal: true },
             // { key: "actualTouch", label: "Actual Touch", align: 'end' as const, },
             // { key: "actualPure", label: "Actual Pure", align: 'end' as const, allowTotal: true },
         ]);
         router.push(`/print?export=${option}`);
+        title?.("Pure Gold Opening Master")
     }
 
 
     /* ---------------- UI ---------------- */
 
     return (
-        <Grid templateColumns={{ base: "1fr", lg: "1fr 1.2fr" }} p={2} fontWeight='semibold' gap={4}>
+        <Grid templateColumns={{ base: "1fr", lg: "1fr 2fr" }} p={2} fontWeight='semibold' gap={4}>
             <Toaster />
 
             {/* -------- Form Section -------- */}
             <GridItem>
-                <Box p={5} borderRadius="lg" bg={theme.colors.formColor} boxShadow="sm">
+                <Box p={2} borderRadius="lg" bg={theme.colors.formColor} boxShadow="sm">
                     <Heading
                         display="flex"
                         mx="auto"
                         alignItems="center"
                         justifyContent="center"
-                        mb={4}
+                        mb={2}
                     >
-                    <Text fontSize="small" fontWeight="600" >
+                    <Text fontSize="small" fontWeight="semibold" >
                        PURE GOLD MASTER
                     
                     </Text>
                     </Heading>
-                    <Box display="grid" gridTemplateColumns={{ base: 'repeat(1, 1fr)', md: 'repeat(2, 1fr)' }}  gap={2}>
+                    <Box display="grid" gap={2}>
+                        {/* METAL NAME */}
+                        <Field.Root invalid={!!errors.metalId}>
+                            <HStack>
+                                <Box minW="100px">
+                                    <Field.Label fontSize="2xs">METAL :</Field.Label>
+                                </Box>
+                                <Box flex={1}>
+                                    <SelectCombobox
+                                        value={safeValue(form.metalId, metalData)}
+                                        onChange={(val) => handleChange("metalId", val)}
+                                        editId={Number(editId)}
+                                        items={metalData}
+                                        placeholder="SELECT METAL"
+
+                                    />
+                                    <Field.ErrorText>{errors.metalId}</Field.ErrorText>
+                                </Box>
+                            </HStack>
+                        </Field.Root>
                         {/* PURE GOLD NAME */}
                         <Field.Root invalid={!!errors.pureGoldName}>
                             <HStack>
@@ -276,6 +313,7 @@ const PureGoldMaster = () => {
                                         onChange={handleChange}
                                         placeholder="Enter pure gold name"
                                         size="2xs"
+                                        minWidth="250px"
                                         
                                     />
                                     <Field.ErrorText>{errors.pureGoldName}</Field.ErrorText>
@@ -349,25 +387,7 @@ const PureGoldMaster = () => {
                                 </Box>
                             </HStack>
                         </Field.Root> */}
-                        {/* METAL NAME */}
-                        {/* <Field.Root invalid={!!errors.metalId}>
-                            <HStack>
-                                <Box minW="100px">
-                                    <Field.Label fontSize="2xs">METAL :</Field.Label>
-                                </Box>
-                                <Box flex={1}>
-                                   <SelectCombobox 
-                                            value={safeValue(form.metalId, metalData)}
-                                                onChange={(val) => handleChange("metalId", val)}
-                                            editId={Number(editId)}
-                                            items={metalData}
-                                            placeholder="SELECT METAL"
-
-                                   />
-                                    <Field.ErrorText>{errors.metalId}</Field.ErrorText>
-                                </Box>
-                            </HStack>
-                        </Field.Root> */}
+                        
 
                        
                     </Box>
@@ -395,12 +415,24 @@ const PureGoldMaster = () => {
             <GridItem minW={0}>
                 <Box  p={3} borderRadius="lg" bg={theme.colors.formColor} boxShadow="sm">
                     
-                    <Box display="flex"  gap={2} alignItems="center" justifyContent="space-between">
+                    <Box display="flex" mb={2} gap={2} alignItems="center" justifyContent="space-between">
         
-                    <Heading size="md" mb={4}>
-                        Pure Gold Master List
+                    <Heading fontSize="small" >
+                            PURE GOLD MASTER LIST
                     </Heading>
-                     <Flex gap={1}>
+                        <Box display='flex' gap={1}>
+
+
+                            <Box >
+                                <SearchBar
+                                    searchTerm={filter}
+                                    onChange={setFilter}
+                                    placeholder="Search account masters"
+                                    size="2xs"
+
+                                />
+                            </Box>
+                            <Flex>
                                                 <Button
                                                     variant="ghost"
                                                     size="xs"
@@ -425,6 +457,7 @@ const PureGoldMaster = () => {
                                             </Flex>
                     
                     </Box>
+                    </Box>
                     <CustomTable<TouchTableRow>
                         columns={columns}
                         data={pureGoldData as TouchTableRow[]}
@@ -437,6 +470,7 @@ const PureGoldMaster = () => {
                         renderRow={(row, i) => (
                             <>
                                 <Table.Cell>{i + 1}</Table.Cell>
+                                <Table.Cell>{row.metalName}</Table.Cell>
                                 <Table.Cell>{row.pureGoldName}</Table.Cell>
                                 {/* <Table.Cell textAlign="end">{formatToFixed(row.weight ,2)} </Table.Cell>
                                 <Table.Cell textAlign="end" >{formatToFixed(row.actualPure , 2) }</Table.Cell>

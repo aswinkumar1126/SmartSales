@@ -43,6 +43,8 @@ import { CapitalizedInput } from "@/component/form/CapitalizedInput";
 import { usePrint } from "@/context/print/usePrintContext";
 import { useRouter } from "next/navigation";
 
+import SearchBar from "@/component/search/SearchBar";
+
 export default function ItemMasterPage() {
     /* ===================== STATE ===================== */
     const [editingId, setEditingId] = useState<number | null>(null);
@@ -65,10 +67,13 @@ export default function ItemMasterPage() {
     } as ItemMast);
 
     const { theme } = useTheme();
-    const{ setData ,setColumns ,setShowSno } = usePrint()
+    const{ setData ,setColumns ,setShowSno ,title } = usePrint();
+
+    const [filter, setFilter] = useState<string>(''); // object, not string
 
     /* ===================== HOOKS ===================== */
-    const { data: itemsData, isLoading } = useItems();
+
+    const { data: itemsData, isLoading } = useItems(filter);
     const { data: companyData } = useAllCompanies();
     const { data: metalData } = useAllMetals();
     const router = useRouter();
@@ -79,7 +84,7 @@ export default function ItemMasterPage() {
     const { mutate: updateItem, isPending: updating } = useUpdateItem();
 
     /* ===================== NORMALIZE ===================== */
-
+    console.log(itemsData,'itemsData')
     
     const items: ItemMast[] = (itemsData?.items ?? []).map(normalizeItem);
     const companies = Array.isArray(companyData?.data) ? companyData.data : [];
@@ -151,6 +156,18 @@ export default function ItemMasterPage() {
             newErrors.itemName = "Item Name is required";
         }
 
+        if (form.itemName?.trim()) {
+
+            const isDuplicate = items.some(item =>
+                item.itemName?.trim().toUpperCase() === form.itemName?.trim().toUpperCase()
+                && item.itemId !== editingId   // 👈 ignore same record while editing
+            );
+
+            if (isDuplicate) {
+                newErrors.itemName = "Item Name must be unique";
+            }
+        }
+
         setErrors(newErrors);
 
         // ⛔ Stop save if errors exist
@@ -169,7 +186,7 @@ export default function ItemMasterPage() {
             const payload = { ...form };
             delete payload.itemId;
 
-            console.log(payload , 'creating item')
+         
 
             createItem(payload, {
                 onSuccess: (res: any) => {
@@ -200,6 +217,8 @@ export default function ItemMasterPage() {
     ];
 
     const tableColumns: TableColumn[] = [
+
+        { key: "sno", label: "Sno" },
         { key: "itemId", label: "ItemId" },
         { key: "itemName", label: "Item Name" },
         { key: "metalId", label: "Metal" },
@@ -214,10 +233,14 @@ export default function ItemMasterPage() {
             { key: "itemId", label: "ItemId" },
             { key: "itemName", label: "Item" },
             { key: "metalName", label: "Metal" },
-            { key: "companyName", label: "Company" },
-            // { key: "touch", label: "Touch", align: 'end' as const, allowTotal: true },
+            { key: "hsn", label: "HSN Code"},
+            { key: "shortName", label: "Short Name"},
+            { key: "stockType", label: "Stock Type" },
+            { key: "calType", label: "Cal Type"},
+            { key: "active", label: "Active" },
         ]);
         setShowSno(true)
+        title?.("Item Master List")
         router.push(`/print?export=${option}`);
     }
 
@@ -225,11 +248,11 @@ export default function ItemMasterPage() {
     console.log(items ,'items')
     /* ===================== UI ===================== */
     return (
-        <Box p={4} ref={topRef}>
+        <Box  ref={topRef}>
             <Toaster />
             <Grid
-                templateColumns={{ base: "1fr", lg: "1fr 1.3fr" }}
-                gap={4}
+                templateColumns={{ base: "1fr", lg: "1fr 1.8fr" }}
+                gap={2}
                 fontWeight='semibold'
            
             >
@@ -237,17 +260,86 @@ export default function ItemMasterPage() {
                 <GridItem>
                     <VStack
                         bg={theme.colors.formColor}
-                        p={4}
+                        p={2}
                         borderRadius="xl"
                         boxShadow="0 0 20px rgba(212,212,212,0.2)"
                         border="1px solid #eee"
                     >
-                        <Text fontSize="medium" fontWeight="600" textAlign="center">
+                        <Text fontSize="small" fontWeight="semibold" textAlign="center">
                             {editingId ? "EDIT ITEM" : "ITEM MASTER"}
                         </Text>
 
                         <Fieldset.Root width="100%">
-                            <Grid css={{ sm: { gridTemplateColumns: "repeat(1, 1fr)" }, md: { gridTemplateColumns: "repeat(2, 1fr)" } }} gap={4}>
+                            <Grid css={{ gridTemplateColumns: "repeat(1, 1fr)"}} gap={2}>
+
+
+                                {/* ================= SECOND ROW ================= */}
+                                <Field.Root>
+                                    <HStack>
+                                        <Box minW="80px">
+                                            <Field.Label fontSize="2xs">COMPANY :</Field.Label>
+                                        </Box>
+                                        <Box flex={1}>
+                                            <NativeSelect.Root>
+                                                <NativeSelect.Field
+                                                    fontSize="2xs"
+                                                    value={form.companyId ?? ""}
+                                                    onChange={(e) => onChange("companyId", e.target.value)}
+                                                    css={{
+                                                        backgroundColor: "#eee",
+                                                        color: "#111827",
+                                                        border: "1px solid #e5e7eb",
+                                                        borderRadius: "20px",
+                                                        height: "30px",
+                                                        fontSize: "10px",
+                                                        minW: "150px"
+                                                    }}
+                                                >
+
+                                                    {companies.map((c) => (
+                                                        <option key={c.COMPANYID} value={c.COMPANYID}>
+                                                            {c.COMPANYNAME}
+                                                        </option>
+                                                    ))}
+                                                </NativeSelect.Field>
+                                                <NativeSelect.Indicator />
+                                            </NativeSelect.Root>
+                                        </Box>
+                                    </HStack>
+                                </Field.Root>
+
+                                <Field.Root>
+                                    <HStack>
+                                        <Box minW="80px">
+                                            <Field.Label fontSize="2xs">METAL :</Field.Label>
+                                        </Box>
+                                        <Box flex={1}>
+                                            <NativeSelect.Root>
+                                                <NativeSelect.Field
+                                                    fontSize="2xs"
+                                                    value={form.metalId ?? ""}
+                                                    onChange={(e) => onChange("metalId", e.target.value)}
+                                                    css={{
+                                                        backgroundColor: "#eee",
+                                                        color: "#111827",
+                                                        border: "1px solid #e5e7eb",
+                                                        borderRadius: "20px",
+                                                        height: "30px",
+                                                        fontSize: "10px",
+                                                        minW: "150px"
+                                                    }}
+                                                >
+                                                    {metals.map((m: any) => (
+                                                        <option key={m.sno} value={m.sno}>
+                                                            {m.metalName}
+                                                        </option>
+                                                    ))}
+                                                </NativeSelect.Field>
+                                                <NativeSelect.Indicator />
+                                            </NativeSelect.Root>
+                                        </Box>
+                                    </HStack>
+                                </Field.Root>
                                 {/* ================= FIRST ROW ================= */}
                                 <Field.Root>
                                     <HStack>
@@ -279,6 +371,7 @@ export default function ItemMasterPage() {
                                                 value={form.itemName ?? ""}
                                                 onChange={onChange}
                                                 placeholder="Enter Item Name"
+                                                minWidth="250px"
                                             />
                                             {errors.itemName && (
                                                 <Text fontSize="2xs" color="red.500" mt={1}>
@@ -289,73 +382,7 @@ export default function ItemMasterPage() {
                                     </HStack>
                                 </Field.Root>
 
-                                {/* ================= SECOND ROW ================= */}
-                                <Field.Root>
-                                    <HStack>
-                                        <Box minW="80px">
-                                            <Field.Label fontSize="2xs">COMPANY :</Field.Label>
-                                        </Box>
-                                        <Box flex={1}>
-                                            <NativeSelect.Root>
-                                                <NativeSelect.Field
-                                                    fontSize="2xs"
-                                                    value={form.companyId ?? ""}
-                                                    onChange={(e) => onChange("companyId", e.target.value)}
-                                                    css={{
-                                                        backgroundColor: "#eee",
-                                                        color: "#111827",
-                                                        border: "1px solid #e5e7eb",
-                                                        borderRadius: "20px",
-                                                        height: "30px",
-                                                        fontSize: "10px",
-                                                    }}
-                                                >
-                                                    <option value="" disabled>
-                                                        SELECT COMPANY
-                                                    </option>
-                                                    {companies.map((c) => (
-                                                        <option key={c.COMPANYID} value={c.COMPANYID}>
-                                                            {c.COMPANYNAME}
-                                                        </option>
-                                                    ))}
-                                                </NativeSelect.Field>
-                                                <NativeSelect.Indicator />
-                                            </NativeSelect.Root>
-                                        </Box>
-                                    </HStack>
-                                </Field.Root>
-
-                                <Field.Root>
-                                    <HStack>
-                                        <Box minW="80px">
-                                            <Field.Label fontSize="2xs">METAL :</Field.Label>
-                                        </Box>
-                                        <Box flex={1}>
-                                            <NativeSelect.Root>
-                                                <NativeSelect.Field
-                                                    fontSize="2xs"
-                                                    value={form.metalId ?? ""}
-                                                    onChange={(e) => onChange("metalId", e.target.value)}
-                                                    css={{
-                                                        backgroundColor: "#eee",
-                                                        color: "#111827",
-                                                        border: "1px solid #e5e7eb",
-                                                        borderRadius: "20px",
-                                                        height: "30px",
-                                                        fontSize: "10px",
-                                                    }}
-                                                >
-                                                    {metals.map((m: any) => (
-                                                        <option key={m.sno} value={m.sno}>
-                                                            {m.metalName}
-                                                        </option>
-                                                    ))}
-                                                </NativeSelect.Field>
-                                                <NativeSelect.Indicator />
-                                            </NativeSelect.Root>
-                                        </Box>
-                                    </HStack>
-                                </Field.Root>
+                              
 
                                 {/* ================= THIRD ROW ================= */}
                                 <Field.Root>
@@ -369,6 +396,7 @@ export default function ItemMasterPage() {
                                                 field="hsn"
                                                 value={form.hsn ?? ""}
                                                 onChange={onChange}
+                                                minWidth="250px"
                                             />
                                         </Box>
                                     </HStack>
@@ -385,6 +413,7 @@ export default function ItemMasterPage() {
                                                 field="shortName"
                                                 value={form.shortName ?? ""}
                                                 onChange={onChange}
+                                                minWidth="250px"
                                                 placeholder="Enter Short Name"
                                             />
                                         </Box>
@@ -410,6 +439,7 @@ export default function ItemMasterPage() {
                                                         borderRadius: "20px",
                                                         height: "30px",
                                                         fontSize: "10px",
+                                                        minW: "150px"
                                                     }}
                                                 >
                                                     {stockTypeOptions.map((o) => (
@@ -442,6 +472,7 @@ export default function ItemMasterPage() {
                                                         borderRadius: "20px",
                                                         height: "30px",
                                                         fontSize: "10px",
+                                                        minW: "150px"
                                                     }}
                                                 >
                                                     {calTypeOptions.map((o) => (
@@ -474,7 +505,8 @@ export default function ItemMasterPage() {
                                                         border: "1px solid #e5e7eb",
                                                         borderRadius: "20px",
                                                         height: "30px",
-                                                        fontSize: "10px",
+                                                        fontSize: "10px", 
+                                                        minW: "150px"
                                                     }}
                                                 >
                                                     {yesNoOptions.map((o) => (
@@ -492,7 +524,7 @@ export default function ItemMasterPage() {
 
 
                             {/* ================= ACTION BUTTONS ================= */}
-                            <HStack justify="center" pt={4}>
+                            <HStack justify="center">
                                 <Button
                                     size="xs"
                                     colorPalette="blue"
@@ -518,17 +550,28 @@ export default function ItemMasterPage() {
                 <GridItem minW={0}>
                     <Box
                         bg={theme.colors.formColor}
-                        p={4}
+                        p={2}
                         borderRadius="xl"
                         boxShadow="0 0 10px rgba(212,212,212,0.2)"
                         border="1px solid #eee"
                     >   
-                        <Box display='flex' mb={4} gap={3} justifyContent='space-between' alignItems='center'>
-                            <Text fontSize="lg" fontWeight="600" mb={2}>
-                                Item List
+                        <Box display='flex' mb={2}  justifyContent='space-between' alignItems='center'>
+                            <Text fontSize='small' fontWeight='semibold'>
+                                ITEM MASTER LIST
                             </Text>
-                            
-                                                    <Flex gap={1}>
+                            <Box display='flex' gap={1}>
+
+
+                                <Box >
+                                    <SearchBar
+                                        searchTerm={filter}
+                                        onChange={setFilter}
+                                        placeholder="Search account masters"
+                                        size="2xs"
+
+                                    />
+                                </Box>
+                                <Flex>
                                                         <Button
                                                             variant="ghost"
                                                             size="xs"
@@ -551,6 +594,7 @@ export default function ItemMasterPage() {
                                                             <FaPrint />
                                                         </Button>
                                                     </Flex>
+                                                    </Box>
                             
                     </Box>
                         
@@ -565,13 +609,14 @@ export default function ItemMasterPage() {
                             size="sm"
                             rowIdKey="itemId"
                             highlightRowId={highlightId}
-                            renderRow={(item) => (
+                            renderRow={(item , index) => (
                                 <>
+                                    <Table.Cell>{index+1}</Table.Cell>
                                     <Table.Cell>{item.itemId}</Table.Cell>
                                     <Table.Cell>{item.itemName}</Table.Cell>
                                     <Table.Cell>{item.metalName}</Table.Cell>
                                     {/* <Table.Cell textAlign="end">{formatToFixed(item.pieceRate ,2)}</Table.Cell> */}
-                                    <Table.Cell textAlign="center">{item.active === "Y" ? "YES" : "NO"}</Table.Cell>
+                                    <Table.Cell textAlign="center">{item.active}</Table.Cell>
                                     <Table.Cell textAlign="center">
                                         <Box display="flex" justifyContent="center">
                                             <FiEdit

@@ -38,6 +38,7 @@ import { useAllBankAccounts, useCreateBankAccount, useUpdatebankAccount } from "
 import { BankAccount } from "@/types/bankAccount/BankAccount";
 import { bankAccountType } from "@/data/bankAccount/bankAccountTypes";
 import { SelectCombobox } from "@/components/ui/selectComboBox";
+import SearchBar from "@/component/search/SearchBar";
 
 const EMPTY_FORM: BankAccount = {
     ACCOUNTNO: "",
@@ -55,13 +56,14 @@ function BankAccountMaster() {
     const { contains } = useFilter({ sensitivity: "base" });
     const { theme } = useTheme();
     const router = useRouter();
-    const { setData, setColumns, setShowSno } = usePrint();
+    const { setData, setColumns, setShowSno ,title } = usePrint();
+    const [filter, setFilter] = useState<string>('');
 
     const [form, setForm] = useState<BankAccount>(EMPTY_FORM);
     const [editId, setEditId] = useState<number | null>(null);
     const [highlightedId, setHighlightedId] = useState<number | null>(null);
 
-    const { data: allBankAccountsData, refetch } = useAllBankAccounts();
+    const { data: allBankAccountsData, refetch } = useAllBankAccounts(filter);
     const createMutation = useCreateBankAccount();
     const updateMutation = useUpdatebankAccount();
 
@@ -164,6 +166,7 @@ function BankAccountMaster() {
             { key: "OPENINGBALANCE", label: "Opening Balance" },
             { key: "REMARKS", label: "Remarks" },
         ]);
+        title?.("Bank Account Master List")
         setShowSno(true);
         router.push(`/print?export=${option}`);
     };
@@ -183,10 +186,7 @@ function BankAccountMaster() {
         <Box bg={theme.colors.primary}>
             <Toaster />
 
-            <Grid
-                templateColumns={{ base: "repeat(1, 1fr)", md: "repeat(2, 1fr)" }}
-                gap={3}
-            >
+             <Grid templateColumns={{ base: "1fr", lg: "1fr 2fr" }} gap={2}>
                 {/* FORM */}
                 <GridItem>
                     <VStack
@@ -196,13 +196,13 @@ function BankAccountMaster() {
                         border="1px solid #eef"
                   
                     >
-                        <Text fontSize="sm" mb={2}>
+                        <Text fontSize="small" fontWeight='semibold' >
                             BANK ACCOUNT MASTER 
                         </Text>
 
-                        <Fieldset.Root size="sm" width="100%">
+                        <Fieldset.Root width="100%" fontSize="small" fontWeight='semibold'>
                             <Fieldset.Content>
-                                <Grid gridTemplateColumns={{ sm:'repeat(1,1fr)' , md:'repeat(2,1fr)'}} gap={3}>
+                                <Grid gap={2}>
 
                                     {/* BANK A/C */}
                                     <Box display="flex" alignItems="center" gap={2}>
@@ -336,12 +336,21 @@ function BankAccountMaster() {
                 {/* TABLE */}
                 <GridItem minW={0}>
                     <Box bg={theme.colors.formColor} p={5} borderRadius="xl" border="1px solid #eef">
-                        <Flex mb={4} justify="space-between" align="center" wrap="wrap" gap={3}>
-                            <Text fontWeight="semibold" fontSize="medium">
+                        <Flex mb={2} justify="space-between" align="center" wrap="wrap" gap={3}>
+                            <Text fontSize="small" fontWeight='semibold' >
                                BANK ACCOUNT LIST
                             </Text>
+                            <Box display='flex' gap={1}>
+                                <Box >
+                                    <SearchBar
+                                        searchTerm={filter}
+                                        onChange={setFilter}
+                                        placeholder="Search pureGold Opening"
+                                        size="2xs"
 
-                            <HStack >
+                                    />
+                                </Box>
+                                <HStack>
                                 <Button
                                     variant="ghost"
                                     size="xs"
@@ -361,6 +370,7 @@ function BankAccountMaster() {
                                     <FaPrint />
                                 </Button>
                             </HStack>
+                            </Box>
                         </Flex>
 
                         <CustomTable

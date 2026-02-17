@@ -13,9 +13,11 @@ export const createBankAccount = async(payload:BankAccount)=>{
     }
 }
 
-export const getAllBankAccounts = async():Promise<ApiResponse<any>>=>{
+export const getAllBankAccounts = async(filter?:string):Promise<ApiResponse<any>>=>{
     try{
-        const response = await axiosInstance.get(`${base}`);
+        const response = await axiosInstance.get(`${base}` ,{
+            params: filter ? { filter:filter } : undefined,
+        });
         return response.data;
     }
     catch(error){

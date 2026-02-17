@@ -4,10 +4,10 @@ import { toastCreated, toastError, toastUpdated } from "@/component/toast/toast"
 import { OrnamentPayload ,OrnamentFormData } from "@/types/ornament/ornament";
 
 
-export const useOrnamentData = () => {
+export const useOrnamentData = (filter?:string) => {
     return useQuery({
-        queryKey: ['ornaments'],
-        queryFn: getOrnamentList,
+        queryKey: ['ornaments' ,filter],
+        queryFn: () => getOrnamentList(filter),
     });
 }
 

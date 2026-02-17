@@ -59,6 +59,8 @@ function MetalMaster() {
         touch:"",
         pure:""
     });
+    const [metalIdManuallyChanged, setMetalIdManuallyChanged] = useState(false);
+
 
     
 
@@ -68,8 +70,8 @@ function MetalMaster() {
     const [pureGoldCollection, setPureGoldCollection] = useState<any[]>([]);
 
     const { data: metals = [], refetch } = useAllMetals();
-    const filters={}
-    const { data: pureGold } = usePureGoldData(filters);
+   const [filter ,setFilter] =useState<string>('')
+    const { data: pureGold } = usePureGoldData(filter);
 
    
 
@@ -98,7 +100,7 @@ function MetalMaster() {
     const { data: metalBySno, refetch: refetchMetalBySno } = useMetalBySno(editId);
  
 
-    const { setData ,setColumns , setShowSno} = usePrint();
+    const { setData ,setColumns , setShowSno , title} = usePrint();
 
     const createMutation = useCreateMetal();
     const updateMutation = useUpdateMetal();
@@ -112,8 +114,27 @@ function MetalMaster() {
    
 
     const handleChange = (field: keyof Metal, value: any) => {
-        setForm((prev) => ({ ...prev, [field]: value }));
+        setForm((prev) => {
+            let updated = { ...prev, [field]: value };
+
+            // 🔹 If user edits metalId manually → stop auto-sync
+            if (field === "metalId") {
+                setMetalIdManuallyChanged(true);
+            }
+
+            // 🔹 Auto-fill metalId from metalName (only if not manually changed & not edit mode)
+            if (field === "metalName" && !metalIdManuallyChanged && !isEdit) {
+                if (value && value.trim().length > 0) {
+                    updated.metalId = value.trim().charAt(0).toUpperCase();
+                } else {
+                    updated.metalId = "";
+                }
+            }
+
+            return updated;
+        });
     };
+
     
     useEffect(() => {
         if (!highlightId) return;
@@ -184,37 +205,39 @@ function MetalMaster() {
 
     const resetForm = () => {
         setIsEdit(false);
-        setForm({   
-            metalId: "", 
-            metalName: "", 
-            metalType: "M", 
-            displayOrder: Number(metals.length + 1), 
+        setMetalIdManuallyChanged(false); // 🔹 reset auto-sync
+
+        setForm({
+            metalId: "",
+            metalName: "",
+            metalType: "M",
+            displayOrder: Number(metals.length + 1),
             active: "Y",
-            weight:"",
-            touch:"",
-            pure:""
-         });
+            weight: "",
+            touch: "",
+            pure: ""
+        });
+
         setEditId(null);
     };
+
 
     const metalColumns = [
         { key: "metalId", label: "Metal Id" },
         { key: "metalName", label: "Metal Name" },
-        { key: "metalType", label: "Metal Type", align: "end" as const },
-        { key: "displayOrder", label: "Order", align: "end" as const },
-        { key: "active", label: "Active", align: "end" as const },
+        { key: "displayOrder", label: "Order", align: "center" as const },
+        { key: "active", label: "Active", align: "center" as const },
         { key: "actions", label: "Action", align: "center" as const },
     ];
     const handleExport = (option:string) => {
         setData(metals);
         setColumns([{key:'metalId',label:'Metal Id'},
             {key:'metalName',label:'Metal Name'},
-            {key:'metalType',label:'Metal Type'},
             {key:'displayOrder',label:'Order'},
            ]);
         setShowSno(true);
         router.push(`/print?export=${option}`);
-
+        title?.("Metal List")
    
     };
 
@@ -229,22 +252,22 @@ function MetalMaster() {
                 
                >
                    <Toaster />
-                   <Grid templateColumns={{ base: "1fr", lg: "1fr 1fr" }} gap={2}>
+                   <Grid templateColumns={{ base: "1fr", lg: "1fr 2fr" }} gap={2}>
                 {/* LEFT – Form */}
-                <GridItem display="flex" justifyContent="center">
+                <GridItem >
                     <VStack
                         w="full"
                         bg={theme.colors.formColor}
-                        p={4}
+                        p={2}
                         borderRadius="xl"
                         border="1px solid #eef"
                         boxShadow="0 0 30px rgba(212,212,212,0.2)"
                     >
-                        <Text fontSize="medium" fontWeight="600">METAL MASTER</Text>
+                        <Text fontSize="small" fontWeight="600">METAL MASTER</Text>
 
                         <Fieldset.Root size="sm" width="100%">
                             <Fieldset.Content>
-                                <Grid css={{ sm:{gridTemplateColumns: "repeat(1, 1fr)"}, md: {gridTemplateColumns: "repeat(2, 1fr)"}}} gap={3}>
+                                <Grid gap={2}>
 
                                     {/* METAL ID */}
                                     <Box display="flex" alignItems="center" gap={2}>
@@ -258,7 +281,7 @@ function MetalMaster() {
                                             disabled={isEdit}
                                             max={1}
                                             size="2xs"
-                                            maxWidth="80px"
+                                            maxWidth="120px"
                                         />
                                     </Box>
 
@@ -271,6 +294,7 @@ function MetalMaster() {
                                             value={form.metalName || ""}
                                             onChange={handleChange}
                                             size="2xs"
+                                            maxWidth="100%"
                                         />
                                     </Box>
 
@@ -296,6 +320,7 @@ function MetalMaster() {
                                             onChange={handleChange}
                                             size="2xs"
                                             type="number"
+                                            maxWidth="100%"
                                        
 
 
@@ -349,7 +374,7 @@ function MetalMaster() {
                                     {/* ACTIVE */}
                                     <Box display="flex" alignItems="center" gap={2}>
                                         <Box minW="80px" fontSize="2xs">ACTIVE :</Box>
-                                        <NativeSelect.Root size="xs" minW="50px" maxW="80px" fontSize="2xs" >
+                                        <NativeSelect.Root size="xs" minW="50px" fontSize="2xs" >
                                             <NativeSelect.Field
                                                 value={form.active || "Y"}
                                                 onChange={(e) => handleChange("active", e.target.value)}
@@ -403,9 +428,9 @@ function MetalMaster() {
                                            boxShadow="0 0 30px rgba(212,212,212,0.2)"
                         
                                        >
-                                    <Box display='flex'  mb={4} gap={3} justifyContent='space-between' alignItems='center'>
-                                        <Text mb={2} fontWeight="bold" fontSize="lg">Metal List</Text>
-                                        <Flex gap={1}>
+                                    <Box display='flex'  mb={2} gap={2} justifyContent='space-between' alignItems='center'>
+                                        <Text fontWeight="semi-bold" fontSize="small">METAL LIST </Text>
+                                        <Flex >
                                                         <Button
                                                             variant="ghost"
                                                             size="xs"
@@ -432,7 +457,7 @@ function MetalMaster() {
                                         </Box>
                        
 
-                        <Stack gap="10">
+                        <Stack >
                            <CustomTable
                                                 columns={metalColumns}
                                                   data={metals}
@@ -447,7 +472,6 @@ function MetalMaster() {
                                                       <>
                                                           <Table.Cell>{metal.sno}</Table.Cell>
                                                           <Table.Cell>{metal.metalName}</Table.Cell>
-                                                          <Table.Cell textAlign="center">{metal.metalType}</Table.Cell>
                                                           <Table.Cell textAlign="center">{metal.displayOrder}</Table.Cell>
                                                           <Table.Cell textAlign="center">{metal.active}</Table.Cell>
                                                           <Table.Cell>

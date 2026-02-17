@@ -1,10 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { pureGoldMastService } from "@/service/pureGoldService";
 
-export const usePureGoldData = (filters: any) => {
+export const usePureGoldData = (filter?:string,filters?: any) => {
     return useQuery({
-        queryKey: ["pureGoldData", filters], // 👈 include filters
-        queryFn: () => pureGoldMastService().getAllPureGoldData(filters),
+        queryKey: ["pureGoldData", filter, filters], // 👈 include filters
+        queryFn: () => pureGoldMastService().getAllPureGoldData(filter, filters),
         select: (data) => data.data,
     });
 };
@@ -17,10 +17,10 @@ export const usePureGoldDataById = (id: number) => {
 
 /* ----------------------Pure Gold Name ------------------*/
 
-export const usePureGoldNames = () => {
+export const usePureGoldNames = (filter?:string) => {
     return useQuery({
-        queryKey: ["pureGoldDName"], // 👈 include filters
-        queryFn: () => pureGoldMastService().getPureGoldNames(),
+        queryKey: ["pureGoldDName", filter], // 👈 include filters
+        queryFn: () => pureGoldMastService().getPureGoldNames(filter),
         select: (data) => data.data,
     });
 };

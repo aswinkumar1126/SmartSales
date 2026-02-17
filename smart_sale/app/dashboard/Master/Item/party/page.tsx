@@ -67,7 +67,7 @@ function PartyMaster() {
     //------------------------ Hooks-------------------------
     const { theme } = useTheme();
     const router = useRouter();
-    const { setData, setColumns } = usePrint();
+    const { setData, setColumns ,title } = usePrint();
     const { data: companiesData} = useAllCompanies();
     const { data: partyData = [], refetch } = useAllParties();
     const { data: partyById } = usePartyById(id ? String(id) : "");
@@ -239,6 +239,8 @@ function PartyMaster() {
             { key: "openCash", label: "Open Cash", align: "end" as const, allowTotal: true },
         ]);
         router.push(`/print?export=${option}`);
+        title?.("Party Master ")
+
     }
 
     return (

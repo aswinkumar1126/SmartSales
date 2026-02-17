@@ -41,6 +41,7 @@ type CapitalizedInputProps<T> = {
     decimalScale?: number; // how many digits after decimal
     inputModeType?: InputModeType; // 🔥 new
     rounded?:string;
+    minWidth?:string
 };
 
 export function CapitalizedInput<T>({
@@ -66,7 +67,8 @@ export function CapitalizedInput<T>({
     allowSpecial=false,
     decimalScale = 3,
     inputModeType,
-    rounded="full"
+    rounded="full",
+    minWidth 
     
 }: CapitalizedInputProps<T>) {
     const { theme } = useTheme();
@@ -216,6 +218,7 @@ export function CapitalizedInput<T>({
             bg={theme.colors.greyColor}
             fontSize='2xs'  
             rounded={rounded}     
+            minWidth={minWidth}
         />
     );
 }

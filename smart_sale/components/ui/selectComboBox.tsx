@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect ,useState } from "react";
 import { Field, Combobox, Portal, useListCollection, useFilter } from "@chakra-ui/react";
 
 export type SelectItem = {
@@ -30,7 +30,7 @@ export const SelectCombobox: React.FC<SelectComboboxProps> = ({
     disable
 }) => {
     const { contains } = useFilter({ sensitivity: "base" });
-
+    const [typedInput, setTypedInput] = useState("");
     const { collection, filter: applyFilter, set: setCollection } = useListCollection({
         initialItems: items,
         itemToString: (item) => item.label,
@@ -60,34 +60,44 @@ export const SelectCombobox: React.FC<SelectComboboxProps> = ({
         }
     }, [value, applyFilter]);
 
-    const inputValue = selectedItem ? selectedItem.label.toUpperCase() : "";
+    useEffect(() => {
+        // sync typed input with value when value changes externally
+        const selectedItem = items?.find(
+            (item) => String(item.value) === String(value)
+        );
+        setTypedInput(selectedItem ? selectedItem.label.toUpperCase() : "");
+    }, [value, items]);
+
     return (
         <Field.Root>
             {label && <Field.Label fontSize="2xs">{label}</Field.Label>}
 
             <Combobox.Root
-                key={`${editId ?? "null"}-${value ?? ""}`} // 🔹 force remount on reset
+                key={`${editId ?? "null"}-${value ?? ""}`}
                 collection={collection}
                 value={value ? [value] : []}
-                inputValue ={inputValue}
+                inputValue={typedInput}
                 onValueChange={(e) => {
                     if (e.value.length === 0) {
                         onChange("");
+                        setTypedInput(""); // clear typed input too
                         return;
                     }
-                    if(disable) return;
+                    if (disable) return;
                     const val = e.value[0] || "";
-                    onChange(val.toUpperCase()); // 🔥 force uppercase
+                    onChange(val.toUpperCase());
+                    const selectedItem = items?.find(item => item.value === val);
+                    setTypedInput(selectedItem?.label.toUpperCase() || "");
                 }}
-
                 onInputValueChange={(e) => {
-                    const upper = e.inputValue.toUpperCase(); // 🔥 force uppercase
-                    applyFilter(upper);
+                    const upper = e.inputValue.toUpperCase();
+                    setTypedInput(upper);      // update typed input
+                    applyFilter(upper);        // filter dropdown
                 }}
                 size="xs"
                 openOnClick={!disable}
-                
             >
+
                 <Combobox.Control rounded='full' >
                     <Combobox.Input
                         placeholder={placeholder}
