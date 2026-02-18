@@ -12,7 +12,10 @@ import {
     Heading,
     HStack,
     Flex,
-    Text
+    Text,
+    NativeSelect,
+    For,
+    createListCollection
 } from "@chakra-ui/react";
 import { FaFileExcel, FaPrint } from "react-icons/fa";
 import { FiEdit } from "react-icons/fi";
@@ -25,53 +28,41 @@ import { toastError, toastLoaded } from "@/component/toast/toast";
 
 import { CustomTable } from "@/component/table/CustomTable";
 import { usePrint } from "@/context/print/usePrintContext";
-import { pureGoldMastForm } from "@/types/pureGold/pureGold";
-import { usePureGoldNames , usePureGoldNameById } from "@/hooks/pureGoldMast/usePureGoldMastData";
-import { useCreatePureGoldNmae } from "@/hooks/pureGoldMast/usePureGoldMastCreate";
-import { useUpdatePureGoldName } from "@/hooks/pureGoldMast/usePureGoldMastUpdate";
+import { OtherChargeForm } from "@/types/others/OtherCharges";
+import { useOtherCharges, useOtherChargeById, useUpdateOtherCharges, useCreateOtherCharges, useDeleteOtherCharges } from "@/hooks/otherCharges/useOtherCharges";
 import { AiOutlineSave } from "react-icons/ai";
 import { useRouter } from "next/navigation";
-import { formatToFixed } from "@/utils/format/numberFormat";
 import { CapitalizedInput } from "@/component/form/CapitalizedInput";
 import { useAllMetals } from "@/hooks/metal/useMetals";
-import { SelectCombobox } from "@/components/ui/selectComboBox";
-import { safeValue } from "@/utils/comboBox/safeValue";
 import SearchBar from "@/component/search/SearchBar";
 
 /* ---------------- Initial Form State ---------------- */
 
-const initialFormState: pureGoldMastForm = {
-    pureGoldName: "",
-    // weight: "",
-    // actualTouch: "",
-    // actualPure: "",
-    metalId:""
+const initialFormState: OtherChargeForm = {
+    chargeName: "",
+    amount:"",
+    active:"Y",
 };
 
 /* ---------------- Table Row Type ---------------- */
 
 export type TouchTableRow = {
-    pureId?:number;
-    sno: number;
-    pureGoldName: string;
-    // weight: number;
-    // actualTouch: number;
-    // actualPure: number;
-    metalId ?: string;
-    metalName?:string;
-
+    sno:number,
+    chargeName: "",
+    amount: "",
+    active: "Y",
 };
 
 /* ---------------- Component ---------------- */
 
-const PureGoldMaster = () => {
+const OtherCharges = () => {
     /* ---------------- State ---------------- */
 
-    const [form, setForm] = useState<pureGoldMastForm>(initialFormState);
+    const [form, setForm] = useState<OtherChargeForm>(initialFormState);
     const [editId, setEditId] = useState<number | null>(null);
     const [highlightRowId, setHighlightRowId] = useState<number | null>(null);
     const [originalName, setOriginalName] = useState<string | null>(null);
-    type FormErrors = Partial<Record<keyof pureGoldMastForm, string>>;
+    type FormErrors = Partial<Record<keyof OtherChargeForm, string>>;
     const [errors, setErrors] = useState<FormErrors>({});
     const [metalData, setMetalData] = useState<{ label: string, value: string }[]>([])
 
@@ -82,13 +73,24 @@ const PureGoldMaster = () => {
      const {setData ,setColumns ,title} = usePrint();
     console.log(filter,'filter')
 
-    const { data: pureGoldData = [], refetch } = usePureGoldNames(filter);
+    const { data: otherCharges , refetch } = useOtherCharges(filter);
+
+    const otherChargesData = otherCharges?.data ?? [];
+
+
+const activeStatus = createListCollection({
+        items: [
+            { label: "YES", value: "Y" },
+            { label: "NO", value: "N" },
+        ],
+    });
+
 
     const { data: metalsData } = useAllMetals();
 
-    console.log(pureGoldData,'pureGoldData')
-    const createMutation = useCreatePureGoldNmae();
-    const updateMutation = useUpdatePureGoldName();
+
+    const createMutation = useCreateOtherCharges();
+    const updateMutation = useUpdateOtherCharges();
 
 
     /* --------------- ComboBox Data ------------- */
@@ -109,30 +111,27 @@ const PureGoldMaster = () => {
 
 
 
-    const handleChange = (key: keyof pureGoldMastForm, value: string) => {
+    const handleChange = (key: keyof OtherChargeForm, value: string) => {
         setForm((prev) => ({ ...prev, [key]: value }));
     };
 
     const resetForm = () => {
         setForm(initialFormState);
         setEditId(null);
-  
         setErrors({});
     };
 
     /* ---------------- Edit Handler ---------------- */
 
     const handleEdit = (row: TouchTableRow) => {
-        setEditId(row.pureId ?? null);
+        setEditId(row.sno ?? null);
         scrollToTop();
-        setOriginalName(row.pureGoldName); // store original
+        setOriginalName(row.chargeName); // store original
 
         setForm({
-            pureGoldName: row.pureGoldName,
-            // weight: String(row.weight),
-            // actualPure: String(row.actualPure),
-            // actualTouch: String(row.actualTouch),
-            metalId: row.metalId ?? ''
+            chargeName: row.chargeName,
+            amount: row.amount,
+            active:row.active,
         });
 
         toastLoaded("Pure Gold Master");
@@ -141,8 +140,8 @@ const PureGoldMaster = () => {
     /* ---------------- Validation ---------------- */
 
     const validateForm = (
-        form: pureGoldMastForm,
-        pureGoldData: any[],
+        form: OtherChargeForm,
+        otherChargesData: any[],
         editId?: number | null,
         originalName?: string
     ): FormErrors => {
@@ -151,28 +150,28 @@ const PureGoldMaster = () => {
 
         const normalize = (v?: string) => v?.trim().toLowerCase();
 
-        if (!form.pureGoldName?.trim()) {
-            errors.pureGoldName = "Pure Gold Name is required";
+        if (!form.chargeName?.trim()) {
+            errors.chargeName = "charge Name is required";
         }
 
-        if (!form.metalId) {
-            errors.metalId = "Metal Name is required";
+        if (!form.amount) {
+            errors.amount = "Amount is required";
         }
 
         // 🔥 Duplicate validation
-        if (form.pureGoldName?.trim()) {
+        if (form.chargeName?.trim()) {
 
             const nameChanged =
                 editId &&
-                normalize(originalName) !== normalize(form.pureGoldName);
+                normalize(originalName) !== normalize(form.chargeName);
 
-            const exists = pureGoldData.some((p: any) =>
-                normalize(p.pureGoldName) === normalize(form.pureGoldName) &&
+            const exists = otherChargesData.some((p: any) =>
+                normalize(p.chargeName) === normalize(form.chargeName) &&
                 p.id !== editId
             );
 
             if ((!editId && exists) || (editId && nameChanged && exists)) {
-                errors.pureGoldName = "Pure Gold Name already exists";
+                errors.chargeName = "Pure Gold Name already exists";
             }
         }
 
@@ -185,7 +184,7 @@ const PureGoldMaster = () => {
 
         const validationErrors = validateForm(
             form,
-            pureGoldData,
+            otherChargesData,
             editId,
             originalName ?? undefined
         );
@@ -196,7 +195,10 @@ const PureGoldMaster = () => {
         }
 
         const payload = {
-            pureGoldName: form.pureGoldName,
+
+            chargeName: form.chargeName,
+            amount:form.amount,
+            active:form.active
         };
 
         if (editId) {
@@ -227,11 +229,9 @@ const PureGoldMaster = () => {
 
     const columns = [
         { key: "sno", label: "S.No" },
-        { key: "metalName", label: "Metal Type" },
-        { key: "pureGoldName", label: "Pure Gold Name" },
-        // { key: "weight", label: "Weight" ,align : "end" as const },
-        // { key: "actualPure", label: "Actual Pure", align: "end" as const },
-        // { key: "actualTouch", label: "Actual Touch", align: "center" as const },
+        { key: "chargeName", label: "Charge Name" },
+        { key: "amount", label: "Amount" },
+        { key: "active", label: "Active" },
         { key: "action", label: "Action", align: "center" as const },
     ];
 
@@ -246,16 +246,14 @@ const PureGoldMaster = () => {
 
     /* ---------------- Export ---------------- */
     const handleExport = (option: string) => {
-        setData(Array.isArray(pureGoldData) ? pureGoldData : pureGoldData || []);
+        setData(Array.isArray(otherChargesData) ? otherChargesData : otherChargesData || []);
         setColumns([
-            { key: "metalName", label: "Metal Type" },
-            { key: "pureGoldName", label: "Pure Gold Name" },
-            // { key: "weight", label: "Weight", align: 'end' as const, allowTotal: true },
-            // { key: "actualTouch", label: "Actual Touch", align: 'end' as const, },
-            // { key: "actualPure", label: "Actual Pure", align: 'end' as const, allowTotal: true },
+            { key: "chargeName", label: "Charge Name" },
+            { key: "amount", label: "Amount" },
+            { key: "active", label: "Active" },
         ]);
         router.push(`/print?export=${option}`);
-        title?.("Pure Gold Opening Master")
+        title?.("Other Charges List")
     }
 
 
@@ -276,121 +274,88 @@ const PureGoldMaster = () => {
                         mb={2}
                     >
                     <Text fontSize="small" fontWeight="semibold" >
-                       PURE GOLD MASTER
+                    OTHER CHARGES
                     
                     </Text>
                     </Heading>
-                    <Box display="grid" gap={2}>
-                        {/* METAL NAME */}
-                        <Field.Root invalid={!!errors.metalId}>
+                  <Grid gap={2}>
+                      
+                        {/* CHARGE NAME */}
+                        <Field.Root invalid={!!errors.chargeName}>
                             <HStack>
                                 <Box minW="100px">
-                                    <Field.Label fontSize="2xs">METAL :</Field.Label>
-                                </Box>
-                                <Box flex={1}>
-                                    <SelectCombobox
-                                        value={safeValue(form.metalId, metalData)}
-                                        onChange={(val) => handleChange("metalId", val)}
-                                        editId={Number(editId)}
-                                        items={metalData}
-                                        placeholder="SELECT METAL"
-
-                                    />
-                                    <Field.ErrorText>{errors.metalId}</Field.ErrorText>
-                                </Box>
-                            </HStack>
-                        </Field.Root>
-                        {/* PURE GOLD NAME */}
-                        <Field.Root invalid={!!errors.pureGoldName}>
-                            <HStack>
-                                <Box minW="100px">
-                                    <Field.Label fontSize="2xs">PURE GOLD NAME :</Field.Label>
+                                    <Field.Label fontSize="2xs">CHARGE NAME :</Field.Label>
                                 </Box>
                                 <Box >
                                     <CapitalizedInput
-                                        field="pureGoldName"
-                                        value={form.pureGoldName}
+                                        field="chargeName"
+                                        value={form.chargeName}
                                         onChange={handleChange}
-                                        placeholder="Enter pure gold name"
+                                        placeholder="Enter charge Name"
                                         size="2xs"
-                                        minWidth="100%"
+                                        maxWidth="100%"
                                         
                                     />
-                                    <Field.ErrorText>{errors.pureGoldName}</Field.ErrorText>
+                                    <Field.ErrorText>{errors.chargeName}</Field.ErrorText>
                                 </Box>
                             </HStack>
                         </Field.Root>
 
-                        {/* WEIGHT */}
-                        {/* <Field.Root invalid={!!errors.weight}>
+                        {/* AMOUNT */}
+                        <Field.Root invalid={!!errors.chargeName}>
                             <HStack>
                                 <Box minW="100px">
-                                    <Field.Label fontSize="2xs">WEIGHT :</Field.Label>
+                                    <Field.Label fontSize="2xs">AMOUNT :</Field.Label>
                                 </Box>
-                                <Box flex={1}>
+                                <Box >
                                     <CapitalizedInput
-                                        field="weight"
-                                        type="number"
-                                        value={form.weight}
+                                        field="amount"
+                                        value={form.amount}
                                         onChange={handleChange}
-                                        placeholder="Enter weight"
+                                        placeholder="Enter Amount"
                                         size="2xs"
-                                        max={999}
-                                        decimalScale={3}
-                                    
-                                    />
-                                    <Field.ErrorText>{errors.weight}</Field.ErrorText>
-                                </Box>
-                            </HStack>
-                        </Field.Root> */}
+                                        type="number"
 
-                        {/* ACTUAL TOUCH */}
-                        {/* <Field.Root invalid={!!errors.actualTouch}>
-                            <HStack>
-                                <Box minW="100px">
-                                    <Field.Label fontSize="2xs">TOUCH :</Field.Label>
-                                </Box>
-                                <Box flex={1}>
-                                    <CapitalizedInput
-                                        field="actualTouch"
-                                        type="number"
-                                        value={form.actualTouch}
-                                        onChange={handleChange}
-                                        placeholder="Enter actual touch"
-                                        size="2xs"
-                                        max={999}
-                                        decimalScale={2}
                                     />
-                                    <Field.ErrorText>{errors.actualTouch}</Field.ErrorText>
+                                    <Field.ErrorText>{errors.amount}</Field.ErrorText>
                                 </Box>
                             </HStack>
-                        </Field.Root> */}
+                        </Field.Root>
 
-                        {/* ACTUAL PURE */}
-                        {/* <Field.Root invalid={!!errors.actualPure}>
-                            <HStack>
-                                <Box minW="100px">
-                                    <Field.Label fontSize="2xs">PURE :</Field.Label>
-                                </Box>
-                                <Box flex={1}>
-                                    <CapitalizedInput
-                                        field="actualPure"
-                                        type="number"
-                                        value={form.actualPure}
-                                        onChange={handleChange}
-                                        placeholder="Enter actual pure"
-                                        size="2xs"
-                                        max={999}
-                                        decimalScale={3}
-                                    />
-                                    <Field.ErrorText>{errors.actualPure}</Field.ErrorText>
-                                </Box>
-                            </HStack>
-                        </Field.Root> */}
+                                    {/* ACTIVE */}
+                                    <Box display="flex" alignItems="center" gap={2}>
+                                        <Box minW="100px" fontSize="2xs">ACTIVE :</Box>
+                                        <NativeSelect.Root size="xs" maxW="80px" fontSize="2xs" >
+                                            <NativeSelect.Field
+                                                value={form.active || "Y"}
+                                                onChange={(e) => handleChange("active", e.target.value)}
+                                                css={{
+                                                    backgroundColor: "#eee",
+                                                    color: "#111827",
+                                                    border: "1px solid #e5e7eb",
+                                                    borderRadius: "20px",
+                                                    height: "30px",
+                                                    fontSize: "10px",
+                                                   
+                                                }}
+                                            >
+                                                <For each={activeStatus.items}>
+                                                    {(item) => (
+                                                        <option key={item.value} value={item.value}>
+                                                            {item.label}
+                                                        </option>
+                                                    )}
+                                                </For>
+                                            </NativeSelect.Field>
+                                            <NativeSelect.Indicator />
+                                        </NativeSelect.Root>
+                                    </Box>
+
                         
+                        </Grid>
 
                        
-                    </Box>
+            
                     {/* ================= ACTION BUTTONS ================= */}
                     <Box mt={2}>
                         <HStack pt={2} justifyContent="center" gap={2}>
@@ -418,7 +383,7 @@ const PureGoldMaster = () => {
                     <Box display="flex" mb={2} gap={2} alignItems="center" justifyContent="space-between">
         
                     <Heading fontSize="small" >
-                            PURE GOLD MASTER LIST
+                            OTHER CHARGES LIST
                     </Heading>
                         <Box display='flex' gap={1}>
 
@@ -460,7 +425,7 @@ const PureGoldMaster = () => {
                     </Box>
                     <CustomTable<TouchTableRow>
                         columns={columns}
-                        data={pureGoldData as TouchTableRow[]}
+                        data={otherChargesData as TouchTableRow[]}
                         rowIdKey="sno"
                         highlightRowId={highlightRowId}
                         emptyText="No data available"
@@ -470,13 +435,9 @@ const PureGoldMaster = () => {
                         renderRow={(row, i) => (
                             <>
                                 <Table.Cell>{i + 1}</Table.Cell>
-                                <Table.Cell>{row.metalName}</Table.Cell>
-                                <Table.Cell>{row.pureGoldName}</Table.Cell>
-                                {/* <Table.Cell textAlign="end">{formatToFixed(row.weight ,2)} </Table.Cell>
-                                <Table.Cell textAlign="end" >{formatToFixed(row.actualPure , 2) }</Table.Cell>
-                                <Table.Cell textAlign="end">
-                                    {formatToFixed(row.actualTouch,2)}
-                                </Table.Cell> */}
+                                <Table.Cell>{row.chargeName}</Table.Cell>
+                                <Table.Cell>{row.amount}</Table.Cell>
+                                <Table.Cell>{row.active}</Table.Cell>
                                 <Table.Cell align="center">
                                     <Box display="flex" justifyContent="center">
                                         <FiEdit
@@ -495,4 +456,4 @@ const PureGoldMaster = () => {
     );
 };
 
-export default PureGoldMaster;
+export default OtherCharges;

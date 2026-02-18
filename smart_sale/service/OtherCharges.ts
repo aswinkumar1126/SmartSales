@@ -4,7 +4,7 @@ import { axiosInstance } from "@/api/axiosInstance";
 
 export const createOtherCharges = async(data:OtherChargeForm):Promise<ApiResponse<OtherChargeForm>> => {
     try{
-        const response = await axiosInstance.post('/othercharge',data);
+        const response = await axiosInstance.post('/othercharges',data);
         return response.data;
     }
     catch(error){
@@ -12,9 +12,11 @@ export const createOtherCharges = async(data:OtherChargeForm):Promise<ApiRespons
         throw error;
     }
 }
-export const getAllOtherCharges = async (): Promise<ApiResponse<OtherChargeForm[]>> => {
+export const getAllOtherCharges = async (filter?:string): Promise<ApiResponse<OtherChargeForm[]>> => {
     try {
-        const response = await axiosInstance.get('/othercharge');
+        const response = await axiosInstance.get('/othercharges',{
+            params : filter? filter = filter :undefined
+        });
         return response.data;
     } catch (error) {
         console.error(error);
@@ -23,7 +25,7 @@ export const getAllOtherCharges = async (): Promise<ApiResponse<OtherChargeForm[
 }
 export const updateOtherCharges = async (id: number, data: OtherChargeForm): Promise<ApiResponse<OtherChargeForm>> => {
     try {
-        const response = await axiosInstance.put(`/othercharge/${id}`, data);
+        const response = await axiosInstance.put(`/othercharges/${id}`, data);
         return response.data;
     } catch (error) {
         console.error(error);
@@ -32,7 +34,7 @@ export const updateOtherCharges = async (id: number, data: OtherChargeForm): Pro
 }
 export const deleteOtherCharges = async (id: number): Promise<ApiResponse<OtherChargeForm>> => {
     try {
-        const response = await axiosInstance.delete(`/othercharge/${id}`);
+        const response = await axiosInstance.delete(`/othercharges/${id}`);
         return response.data;
     } catch (error) {
         console.error(error);

@@ -17,6 +17,7 @@ import {
   BadgeCheck,
   Landmark,
   TrendingDown,
+  PlusCircle
 } from "lucide-react";
 import { HiArrowDownCircle, HiArrowUpCircle } from "react-icons/hi2";
 import { AiOutlineShoppingCart } from "react-icons/ai";
@@ -194,6 +195,11 @@ export const SidebarProvider = ({ children }: { children: ReactNode }) => {
             label: "Income",
             route: "/dashboard/Transaction/Transaction/Income",
             icon: TrendingUp,
+          },
+          {
+            label: "Other Charges",
+            route: "/dashboard/Transaction/Transaction/OtherCharges",
+            icon: PlusCircle,
           },
         ]
       }

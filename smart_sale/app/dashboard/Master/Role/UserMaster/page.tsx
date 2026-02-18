@@ -47,6 +47,8 @@ import { CapitalizedInput } from "@/component/form/CapitalizedInput";
 import { usePrint } from "@/context/print/usePrintContext";
 import { useRouter } from "next/navigation";
 import { FaPrint ,FaFileExcel } from "react-icons/fa";
+
+
 export default function UserMasters() {
     const { theme } = useTheme();
     const { user } = useAuth();

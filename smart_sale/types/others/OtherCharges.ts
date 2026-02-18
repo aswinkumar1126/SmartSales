@@ -1,8 +1,8 @@
 
 export interface OtherChargeForm {
 
-    NAME: string;
-    AMT: string;
-    ACTIVE: "Y" | "N";
+    chargeName: string;
+    amount: string;
+    active: "Y" | "N";
     
 }

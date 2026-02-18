@@ -12,10 +12,10 @@ import { OtherChargeForm } from "@/types/others/OtherCharges";
 const OTHER_CHARGES_KEY = ["otherCharges"];
 
 /** Fetch all other charges */
-export const useOtherCharges = () => {
+export const useOtherCharges = (filter?:string) => {
     return useQuery({
-        queryKey: OTHER_CHARGES_KEY,
-        queryFn: getAllOtherCharges,
+        queryKey: [...OTHER_CHARGES_KEY , filter],
+        queryFn:() => getAllOtherCharges(filter),
     });
 };
 
