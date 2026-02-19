@@ -21,6 +21,7 @@ export const getAllAccountHead = async (filter?: string, accountFilter?: any): P
 
 }  
 export const createAccountHead = async(data:AccountHead):Promise<ApiResponse<AccountHead>> => {
+    console.log(data,'posting data')
     try{
         const response = await axiosInstance.post('/achead',data);
         return response.data;

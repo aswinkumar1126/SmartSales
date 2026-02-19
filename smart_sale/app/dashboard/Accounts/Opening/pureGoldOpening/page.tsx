@@ -45,7 +45,7 @@ const initialFormState: pureGoldMastOpenForm = {
     weight: "",
     actualTouch: "",
     actualPure: "",
-    metalId:""
+    // metalId:""
 };
 
 /* ---------------- Table Row Type ---------------- */
@@ -57,7 +57,7 @@ export type TouchTableRow = {
     weight: number;
     actualTouch: number;
     actualPure: number;
-    metalId ?: string
+    // metalId ?: string
 
 };
 
@@ -92,17 +92,17 @@ const PureGoldOpening = () => {
 
 
     /* --------------- ComboBox Data ------------- */
-    useEffect(() => {
-        if (!Array.isArray(metalsData)) return;
-        if (!metalsData.length) return;
+    // useEffect(() => {
+    //     if (!Array.isArray(metalsData)) return;
+    //     if (!metalsData.length) return;
 
-        const fetchedData = metalsData.map((m: any) => ({
-            label: m.metalName,
-            value: m.metalId,
-        }));
+    //     const fetchedData = metalsData.map((m: any) => ({
+    //         label: m.metalName,
+    //         value: m.metalId,
+    //     }));
 
-        setMetalData(fetchedData);
-    }, [metalsData]);
+    //     setMetalData(fetchedData);
+    // }, [metalsData]);
 
 
     useEffect(() => {
@@ -155,7 +155,7 @@ const PureGoldOpening = () => {
             weight: String(row.weight),
             actualPure: String(row.actualPure),
             actualTouch: String(row.actualTouch),
-            metalId: row.metalId ?? ''
+            // metalId: row.metalId ?? ''
         });
 
         toastLoaded("Pure Gold Master");
@@ -170,7 +170,7 @@ const PureGoldOpening = () => {
         if (!form.weight) errors.weight = "Weight is required";
         if (!form.actualPure) errors.actualPure = "Actual Pure is required";
         if (!form.actualTouch) errors.actualTouch = "Actual Touch is required";
-        if (!form.metalId) errors.metalId = "Metal Name is required";
+        // if (!form.metalId) errors.metalId = "Metal Name is required";
 
 
         return errors;
@@ -180,20 +180,18 @@ const PureGoldOpening = () => {
     console.log(pureGoldData,'pureGoldData')
     const isDuplicatePureForMetal = (
         pureId: any,
-        metalId: any,
+        // metalId: any,
         excludeSno?: number| null
     ) => {
         return pureGoldData.some((p: any) => {
-            const sameMetal =
-                String(p.metalId) === String(metalId);
-
+          
             const samePure =
                 Number(p.pureId) === Number(pureId);
 
             const notSameRow =
                 excludeSno ? Number(p.sno) !== Number(excludeSno) : true;
 
-            return sameMetal && samePure && notSameRow;
+            return samePure && notSameRow;
         });
     };
 
@@ -210,14 +208,14 @@ const PureGoldOpening = () => {
             weight: Number(form.weight),
             actualTouch: Number(form.actualTouch),
             // actualPure: Number(form.actualPure),
-            metalId: String(form.metalId),
+            // metalId: String(form.metalId),
         };
 
         // 🔒 duplicate check (common for create & edit)
-        if (form.pureId && form.metalId) {
+        if (form.pureId) {
             const exists = isDuplicatePureForMetal(
                 form.pureId,
-                form.metalId,
+                // form.metalId,
                 editId 
             );
 
@@ -333,7 +331,7 @@ const PureGoldOpening = () => {
                         </Field.Root>
 
                         {/* METAL NAME */}
-                        <Field.Root invalid={!!errors.metalId}>
+                        {/* <Field.Root invalid={!!errors.metalId}>
                             <HStack>
                                 <Box minW="100px">
                                     <Field.Label fontSize="2xs">METAL :</Field.Label>
@@ -351,7 +349,7 @@ const PureGoldOpening = () => {
                                     <Field.ErrorText>{errors.metalId}</Field.ErrorText>
                                 </Box>
                             </HStack>
-                        </Field.Root>
+                        </Field.Root> */}
 
 
                         {/* WEIGHT */}

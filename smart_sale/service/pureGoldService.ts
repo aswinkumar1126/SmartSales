@@ -1,5 +1,5 @@
 import { axiosInstance } from "@/api/axiosInstance";
-import { pureGoldForm, pureGoldData, pureGoldOpenForm } from "@/types/pureGold/pureGold";
+import { pureGoldForm, pureGoldData, pureGoldOpenForm ,pureGoldMastForm } from "@/types/pureGold/pureGold";
 import { ApiResponse } from "@/types/api/apiResponse";
 
 const baseUrlOpen = 'puregold/open';
@@ -108,8 +108,9 @@ export const pureGoldMastService = () =>({
 
         }
     },
-    createPureGoldName: async (payload: pureGoldForm) => {
+    createPureGoldName: async (payload: pureGoldMastForm) => {
         try{
+            console.log('payload', payload);
             const response = axiosInstance.post(`/${baseUrlMast}`, payload);
             return response;
         }

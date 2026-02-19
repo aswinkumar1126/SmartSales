@@ -10,7 +10,7 @@ export interface pureGoldOpenForm {
     weight?: number;
     actualPure?: number;
     actualTouch?: number;
-    metalId?:string;
+    // metalId?:string;
 }
 
 export interface pureGoldData{
@@ -25,10 +25,10 @@ export interface pureGoldData{
 export interface pureGoldMastForm{
 
     pureGoldName:string;
-    weight?:string;
-    actualPure?:string;
-    actualTouch?:string;
-    metalId?:string
+    // weight?:string;
+    // actualPure?:string;
+    // actualTouch?:string;
+    metalId?:string;
 }
 
 export interface pureGoldMastOpenForm {

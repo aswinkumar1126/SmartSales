@@ -7,7 +7,7 @@ import {
     getAccountHeadById,
 } from "@/service/AccountHead";
 import { AccountHead } from "@/types/accountHead/AccountHead";
-import { toastUpdated , toastCreated ,toastDeleted } from "@/component/toast/toast";
+import { toastUpdated , toastCreated ,toastDeleted, toastError } from "@/component/toast/toast";
 
 /* -------------------- Queries -------------------- */
 
@@ -35,8 +35,10 @@ export const useCreateAccountHead = () => {
         mutationFn: (data: AccountHead) => createAccountHead(data),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["accountHead"] });
+            toastCreated("Account Head")
 
         },
+        onError:()=>toastError("Account Head")
     });
 };
 

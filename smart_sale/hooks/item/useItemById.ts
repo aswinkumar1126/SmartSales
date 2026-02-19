@@ -10,6 +10,6 @@ export const useItemById = (id?: number) =>
         queryFn: async () => {
             const res = await ItemService.getById(id!);
           
-            return normalizeItem(res.data.data);
+            return normalizeItem(res.data);
         },
     });

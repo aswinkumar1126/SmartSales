@@ -60,8 +60,10 @@ export default function ItemMasterPage() {
         itemId: 0,
         itemName: "",
         metalId: "",
-        metalRate: null,
-        pieceRate: null,
+        hsn:"",
+        shortName:"",
+        stockType:"T",
+        calType:"W",
         active: "Y",
         companyId: "",
     } as ItemMast);
@@ -78,8 +80,10 @@ export default function ItemMasterPage() {
     const { data: metalData } = useAllMetals();
     const router = useRouter();
 
+    console.log(editingId ,'editingId')
     const { data: itemById } = useItemById(editingId ?? undefined);
 
+    console.log(itemById,'itemById')
     const { mutate: createItem, isPending: creating } = useCreateItem();
     const { mutate: updateItem, isPending: updating } = useUpdateItem();
 
@@ -98,6 +102,8 @@ export default function ItemMasterPage() {
                 ...prev,
                 itemId: itemsData?.nextId ?? '0',
                 metalId: metals[0]?.metalId ?? "G", // default first metal
+                companyId:companies[0]?.COMPANYID ?? "",
+                
             }));
             setAutoItemId(itemsData?.nextId ?? '0');
         }
@@ -114,7 +120,7 @@ export default function ItemMasterPage() {
         return () => {
             controller.abort();
         };
-    }, [itemById]);
+    }, [itemById,editingId]);
 
     /* ===================== HANDLERS ===================== */
 
@@ -129,10 +135,13 @@ export default function ItemMasterPage() {
             itemId: autoItemId,
             itemName: "",
             metalId: metals[0]?.metalId ?? "G",
-            metalRate: null,
-            pieceRate: null,
+            hsn:"",
+            shortName:"",
+            stockType:"T",
+            calType:"W",
             active: "Y",
-            companyId: "",
+            companyId: companies[0]?.COMPANYID ?? "", 
+
         }));
     };
 

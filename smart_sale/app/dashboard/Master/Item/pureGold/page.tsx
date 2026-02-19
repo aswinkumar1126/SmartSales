@@ -42,10 +42,10 @@ import SearchBar from "@/component/search/SearchBar";
 
 const initialFormState: pureGoldMastForm = {
     pureGoldName: "",
+    metalId:"",
     // weight: "",
     // actualTouch: "",
     // actualPure: "",
-    metalId:""
 };
 
 /* ---------------- Table Row Type ---------------- */
@@ -54,11 +54,11 @@ export type TouchTableRow = {
     pureId?:number;
     sno: number;
     pureGoldName: string;
+    metalId ?: string;
+    metalName?:string;
     // weight: number;
     // actualTouch: number;
     // actualPure: number;
-    metalId ?: string;
-    metalName?:string;
 
 };
 
@@ -80,13 +80,13 @@ const PureGoldMaster = () => {
     const router = useRouter();
     const { theme } = useTheme();
      const {setData ,setColumns ,title} = usePrint();
-    console.log(filter,'filter')
+ 
 
     const { data: pureGoldData = [], refetch } = usePureGoldNames(filter);
 
     const { data: metalsData } = useAllMetals();
 
-    console.log(pureGoldData,'pureGoldData')
+
     const createMutation = useCreatePureGoldNmae();
     const updateMutation = useUpdatePureGoldName();
 
@@ -129,10 +129,10 @@ const PureGoldMaster = () => {
 
         setForm({
             pureGoldName: row.pureGoldName,
-            // weight: String(row.weight),
-            // actualPure: String(row.actualPure),
-            // actualTouch: String(row.actualTouch),
-            metalId: row.metalId ?? ''
+            metalId: row.metalId ?? '',
+            // weight: row.weight?.toString() ?? "",
+            // actualPure: row.actualPure?.toString() ?? "",
+            // actualTouch: row.actualTouch?.toString() ?? ""
         });
 
         toastLoaded("Pure Gold Master");
@@ -197,6 +197,10 @@ const PureGoldMaster = () => {
 
         const payload = {
             pureGoldName: form.pureGoldName,
+            metalId: form.metalId,
+            // weight: form.weight ? parseFloat(form.weight) : undefined,
+            // actualPure: form.actualPure ? parseFloat(form.actualPure) : undefined,
+            // actualTouch: form.actualTouch ? parseFloat(form.actualTouch) : undefined,
         };
 
         if (editId) {

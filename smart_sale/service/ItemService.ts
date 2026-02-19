@@ -18,7 +18,9 @@ export const ItemService = {
     },
     getById: async (id: number) => {
         try {
+            console.log(id,'id for itemByid')
             const response = await axiosInstance.get(`${BASE}/${id}`);
+            console.log(response.data,'response from itemById')
             return response.data;
         } catch (error: any) {
             console.error(`Error fetching item with id ${id}:`, error?.response?.data || error.message);
@@ -28,6 +30,7 @@ export const ItemService = {
 
     // ✅ Create new item
     create: async (payload: ItemMast) => {
+        console.log("Sending payload to server:", payload);
         try {
             const response = await axiosInstance.post(BASE, payload);
             return response.data;
