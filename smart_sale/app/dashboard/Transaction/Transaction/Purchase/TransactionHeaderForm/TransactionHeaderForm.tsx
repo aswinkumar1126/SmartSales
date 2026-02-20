@@ -71,7 +71,7 @@ export default function TransactionHeaderForm({
         <Box
             display={{ base: 'block', md: 'flex' }}
             flexDirection={{ base: "column", md: "row" }}
-            flexWrap="wrap"
+       
             justifyContent="space-between"
             alignItems="center"
             bg={theme.colors.formColor}
@@ -80,7 +80,6 @@ export default function TransactionHeaderForm({
         >
             <Flex
                 flexDirection={{ base: "column", md: "row" }}
-                flexWrap="wrap"
                 gap={2}
                 w="100%"
             >
@@ -165,7 +164,7 @@ export default function TransactionHeaderForm({
                 </Box>
             </Flex>
 
-            <Box display='flex' alignItems='center' justifyContent='center' className="animate__animated animate__bounce animate__delay-2s">
+            <Flex alignItems='center' justifyContent='center' className="animate__animated animate__bounce animate__delay-1s">
                 {openingBalance && openingData && (
                     <Flex justifyContent="flex-end" align="center" gap={1}>
                         {openingData.OPENING_PURE !== undefined && (
@@ -232,7 +231,7 @@ export default function TransactionHeaderForm({
                         className="animate__animated animate__fadeInUp"
                     />
                 </Box>
-            </Box>
+            </Flex>
         </Box>
     );
 }

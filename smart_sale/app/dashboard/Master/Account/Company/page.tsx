@@ -60,7 +60,7 @@ function CompanyMaster() {
     const [inputValue, setInputValue] = useState("")
     const {data:allStates ,isLoading:stateLoading ,isError:stateError} = useAllStates();
 
-    console.log(companies,'companies')
+
     const { mutate: createCompany, isPending } = useCreateCompany();
     const { mutate: updateCompany, isPending: isUpdating } = useUpdateCompany();
 
@@ -104,7 +104,7 @@ function CompanyMaster() {
     const { data: companyById } = useCompanyById(editId ?? '');
     const company = companyById?.data;
 
-    console.log(company , 'company data by id');
+
 
     useEffect(() => {
         if (!company) return;

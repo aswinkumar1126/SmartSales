@@ -81,7 +81,7 @@ export default function LoginPage() {
             <Toaster />
             <Box
                 minH="100vh"
-                bgImage="url('https://www.goldmarket.fr/wp-content/uploads/2025/09/44dd529dthumbnail-1110x550.jpeg.webp')"
+                bgImage="url('https://static.vecteezy.com/system/resources/previews/014/468/621/large_2x/abstract-digital-technology-background-with-concept-security-vector.jpg')"
                 bgSize="cover"
                 backgroundPosition='center'
                 bgRepeat="no-repeat"
@@ -108,7 +108,7 @@ export default function LoginPage() {
                     bg="whiteAlpha.900"
                     p={8}
                     borderRadius="xl"
-                    boxShadow="0 0 40px rgba(255, 15, 255, 0.3)"
+                    boxShadow="0 0 40px rgba(15, 187, 255, 0.3)"
                     gap={4}
                     css={{ xs: { marginLeft: '0px' }, sm:{marginLeft:'80px'}}}
                 >

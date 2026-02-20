@@ -28,10 +28,7 @@ export const callApi = async <T, R>({
 }: ApiOptions<T>): Promise<R> => {
     try {
 
-        console.log(`🚀 API Request [${method.toUpperCase()}] ${url}`, {
-            params,
-            data,
-        })
+       
         const response = await axiosInstance.request<R>({
             method,
             url,

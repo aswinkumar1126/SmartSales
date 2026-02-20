@@ -28,7 +28,7 @@ import { toastError, toastLoaded } from "@/component/toast/toast";
 
 import { CustomTable } from "@/component/table/CustomTable";
 import { usePrint } from "@/context/print/usePrintContext";
-import { OtherChargeForm } from "@/types/others/OtherCharges";
+import { OtherChargeForm, OtherChargeStateForm } from "@/types/others/OtherCharges";
 import { useOtherCharges, useOtherChargeById, useUpdateOtherCharges, useCreateOtherCharges, useDeleteOtherCharges } from "@/hooks/otherCharges/useOtherCharges";
 import { AiOutlineSave } from "react-icons/ai";
 import { useRouter } from "next/navigation";
@@ -38,7 +38,7 @@ import SearchBar from "@/component/search/SearchBar";
 
 /* ---------------- Initial Form State ---------------- */
 
-const initialFormState: OtherChargeForm = {
+const initialFormState: OtherChargeStateForm = {
     chargeName: "",
     amount:"",
     active:"Y",
@@ -58,7 +58,7 @@ export type TouchTableRow = {
 const OtherCharges = () => {
     /* ---------------- State ---------------- */
 
-    const [form, setForm] = useState<OtherChargeForm>(initialFormState);
+    const [form, setForm] = useState<OtherChargeStateForm>(initialFormState);
     const [editId, setEditId] = useState<number | null>(null);
     const [highlightRowId, setHighlightRowId] = useState<number | null>(null);
     const [originalName, setOriginalName] = useState<string | null>(null);
@@ -71,9 +71,10 @@ const OtherCharges = () => {
     const router = useRouter();
     const { theme } = useTheme();
      const {setData ,setColumns ,title} = usePrint();
-    console.log(filter,'filter')
+
 
     const { data: otherCharges , refetch } = useOtherCharges(filter);
+
 
     const otherChargesData = otherCharges?.data ?? [];
 
@@ -105,7 +106,7 @@ const activeStatus = createListCollection({
 
         setMetalData(fetchedData);
     }, [metalsData]);
-    console.log(metalData ,'metalDAta')
+
 
     /* ---------------- Helpers ---------------- */
 
@@ -134,13 +135,13 @@ const activeStatus = createListCollection({
             active:row.active,
         });
 
-        toastLoaded("Pure Gold Master");
+        toastLoaded("Other charges");
     };
 
     /* ---------------- Validation ---------------- */
 
     const validateForm = (
-        form: OtherChargeForm,
+        form: OtherChargeStateForm,
         otherChargesData: any[],
         editId?: number | null,
         originalName?: string
@@ -153,8 +154,8 @@ const activeStatus = createListCollection({
         if (!form.chargeName?.trim()) {
             errors.chargeName = "charge Name is required";
         }
-
-        if (!form.amount) {
+    
+        if (!Number(form.amount)) {
             errors.amount = "Amount is required";
         }
 
@@ -171,7 +172,7 @@ const activeStatus = createListCollection({
             );
 
             if ((!editId && exists) || (editId && nameChanged && exists)) {
-                errors.chargeName = "Pure Gold Name already exists";
+                errors.chargeName = "Charge Name already exists";
             }
         }
 
@@ -195,9 +196,8 @@ const activeStatus = createListCollection({
         }
 
         const payload = {
-
             chargeName: form.chargeName,
-            amount:form.amount,
+            amount:Number(form.amount),
             active:form.active
         };
 
@@ -423,9 +423,9 @@ const activeStatus = createListCollection({
                     
                     </Box>
                     </Box>
-                    <CustomTable<TouchTableRow>
+                    <CustomTable
                         columns={columns}
-                        data={otherChargesData as TouchTableRow[]}
+                        data={otherChargesData as any[]}
                         rowIdKey="sno"
                         highlightRowId={highlightRowId}
                         emptyText="No data available"

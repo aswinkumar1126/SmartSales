@@ -1,4 +1,5 @@
 // lib/axiosInstance.ts
+import { getStorage } from "@/utils/storage/storage";
 import axios from "axios";
 
 const baseURL =
@@ -16,8 +17,8 @@ export const axiosInstance = axios.create({
 // 🔐 Attach userId securely
 axiosInstance.interceptors.request.use((config) => {
   if (typeof window !== "undefined") {
-    const userId = sessionStorage.getItem("userId");
-    console.log(userId ,'userId header')
+    const userId = getStorage("userId");
+
 
     if (userId) {
       config.headers["USERID"] = userId; // ✅ custom header

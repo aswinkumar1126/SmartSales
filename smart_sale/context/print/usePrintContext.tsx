@@ -1,5 +1,6 @@
 "use client";
 
+import { getStorage, setStorage } from "@/utils/storage/storage";
 import {
     createContext,
     useContext,
@@ -44,19 +45,20 @@ export const PrintProvider = ({ children }: { children: ReactNode }) => {
 
     /* 🔹 Load persisted data on mount */
     useEffect(() => {
-        const stored = sessionStorage.getItem("print-context");
+        const stored = getStorage<any>("print-context");
+
         if (stored) {
-            const parsed = JSON.parse(stored);
-            setData(parsed.data || []);
-            setColumns(parsed.columns || []);
-            setShowSno(parsed.showSno || false);
-            setTitleText(parsed.titleText || ""); // 🔹 make sure to restore titleText
+            setData(stored.data || []);
+            setColumns(stored.columns || []);
+            setShowSno(stored.showSno || false);
+            setTitleText(stored.titleText || "");
         }
     }, []);
 
+
     /* 🔹 Persist on change */
     useEffect(() => {
-        sessionStorage.setItem(
+        setStorage(
             "print-context",
             JSON.stringify({ data, columns, showSno, titleText })
         );

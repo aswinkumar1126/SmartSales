@@ -53,7 +53,7 @@ export default function UserMasters() {
     const { theme } = useTheme();
     const { user } = useAuth();
     const router = useRouter();
-    //console.log(user ,'user');
+   
     const {setData ,setColumns , title } = usePrint();
 
     const [imagePreview, setImagePreview] = useState<string | undefined | null>(null);
@@ -74,14 +74,14 @@ export default function UserMasters() {
     const [highlightId, setHighlightedId] = useState<Number>();
 
     const { data, isLoading } = useUsers();
-    console.log(data, 'data')
+ 
 
     const costCenters = [
         { id: 1, value: "SJ", label: "Head Office" },
         { id: 2, value: "DG", label: "Showroom 1" },
         { id: 3, value: "SM", label: "Showroom 2" },
     ];
-    //console.log(data?.data ,'user');
+
 
     const normalizeUser = (u: any): UserMaster => ({
         userId: u.USERID,
@@ -119,7 +119,7 @@ export default function UserMasters() {
         if (!userByIdData?.data) return;
 
         const { pwd, ...formData } = normalizeUser(userByIdData.data);
-        //console.log(formData)
+     
         setForm({ ...formData, pwd: "" });
         setImagePreview(getImage(formData?.userImage));
         setConfirmPwd("");
@@ -161,6 +161,14 @@ export default function UserMasters() {
         if (editingUserId && form.pwd) {
             if (form.pwd.toLowerCase() !== confirmPwd.toLowerCase()) {
                 setError("Password and Confirm Password do not match");
+                return;
+            }
+        }
+
+        if(form.username){
+            const isDuplicate = users.some((u)=>u.username.toUpperCase() === form.username.toUpperCase()) ;
+            if(isDuplicate){
+                setError("Username already exists");
                 return;
             }
         }
@@ -266,7 +274,7 @@ export default function UserMasters() {
         { key: "action", label: "Actions", align: 'center' as const },
 
     ]
-    console.log(imagePreview, 'imagePreview');
+
 
         const handleExport = (option: string) => {
             setData(users);

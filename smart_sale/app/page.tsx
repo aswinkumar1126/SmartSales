@@ -20,11 +20,7 @@ export default function Home() {
   if (loading) return <Loader isLoading fullscreen />;
 
   const handleCashSave = async (row: any, key: string, value: any) => {
-    console.log("Saving:", {
-      row,
-      key,
-      value,
-    });
+  
 
     // simulate api delay
     await new Promise((res) => setTimeout(res, 500));

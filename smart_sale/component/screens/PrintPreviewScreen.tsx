@@ -13,49 +13,61 @@ import {
     Select,
     Checkbox,
     createListCollection,
+    CloseButton,
+    Drawer,
+    useBreakpointValue,
 } from "@chakra-ui/react";
+
 import { PrintPreviewTable } from "@/component/printing/PrintPreviewTable";
 import { useTheme } from "@/context/theme/themeContext";
 import { useRouter } from "next/navigation";
 import { exportToStyledExcel } from "@/utils/export/exportToExcel";
 
-
 type PrintPreviewScreenProps = {
     data: any[];
-    columns: {  key: string; 
-                label: string, 
-                allowTotal?: boolean,
-                align?:"end"| "start" | "center" | undefined, 
-                isNumeric?:boolean }[];
-
-    exportOption?: string|null;
+    columns: {
+        key: string;
+        label: string;
+        allowTotal?: boolean;
+        align?: "end" | "start" | "center";
+        isNumeric?: boolean;
+    }[];
+    exportOption?: string | null;
     showSno?: boolean;
-    title?:string;
-
+    title?: string;
 };
 
+export function PrintPreviewScreen({
+    data,
+    columns,
+    exportOption,
+    showSno,
+    title,
+}: PrintPreviewScreenProps) {
+    const router = useRouter();
+    const { theme } = useTheme();
 
-export function PrintPreviewScreen({ data, columns ,exportOption,showSno , title }: PrintPreviewScreenProps) {
+    /* responsive layout */
+    const layout = useBreakpointValue({
+        base: "mobile",
+        md: "tablet",
+        lg: "desktop",
+    });
 
-  
+    const [openDrawer, setOpenDrawer] = useState(false);
 
     const [settings, setSettings] = useState({
         fontSize: "md" as "sm" | "md" | "lg",
         headerBg: "#e5e7eb",
-        headerColor:'#222',
+        headerColor: "#222",
         title: title,
         showTotals: false,
         totalColumns: [] as string[],
-        isNumeric:false
     });
 
-    const router = useRouter();
- 
-
-    useEffect(()=>{
-        const items = Array.isArray(data) ? data : [];
-        (items.length > 0) ? null : router.back();
-    } ,[data])
+    useEffect(() => {
+        if (!Array.isArray(data) || data.length === 0) router.back();
+    }, [data]);
 
     const fontSizes = createListCollection({
         items: [
@@ -65,30 +77,21 @@ export function PrintPreviewScreen({ data, columns ,exportOption,showSno , title
         ],
     });
 
-    /* Theme Context */
-    const { theme } = useTheme();
+    const totalableColumns = columns.filter((c) => c.allowTotal);
 
-    const totalableColumns = columns.filter(col => col.allowTotal);
+    /* ================= PRINT ================= */
 
     const columnAlignCSS = columns
         .map((col, index) => {
-            const align =
-                col.align ??
-                (col.isNumeric ? "right" : "left");
-
-            // 👇 Offset because of S.No column
+            const align = col.align ?? (col.isNumeric ? "right" : "left");
             const nthIndex = showSno ? index + 2 : index + 1;
 
             return `
       th:nth-child(${nthIndex}),
-      td:nth-child(${nthIndex}) {
-        text-align: ${align};
-      }
+      td:nth-child(${nthIndex}) { text-align:${align}; }
     `;
         })
         .join("\n");
-
-        
 
     const handlePrint = () => {
         const tableContainer = document.getElementById("print-table");
@@ -100,281 +103,244 @@ export function PrintPreviewScreen({ data, columns ,exportOption,showSno , title
         const fontSizeMap = { sm: "12px", md: "14px", lg: "16px" };
         const fontSize = fontSizeMap[settings.fontSize] || "14px";
 
-        // Calculate totals only for selected columns
-        const totals: Record<string, number> = {};
-        settings.totalColumns.forEach((key) => {
-            totals[key] = data.reduce((sum, row) => sum + Number(row[key] || 0), 0);
-        });
-
-        // Wrap the table content in a div and append totals row at the end
-        const tableHTML = tableContainer.innerHTML;
-      
-
         printWindow.document.write(`
 <html>
 <head>
-  <title>Print Table</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      font-size: ${fontSize};
-      margin: 20px;
-      -webkit-print-color-adjust: exact;
-      print-color-adjust: exact;
-    }
+<title>Print</title>
+<style>
+body{
+ font-family:Arial;
+ font-size:${fontSize};
+ margin:10mm;
+ -webkit-print-color-adjust:exact;
+ print-color-adjust:exact;
+}
 
-    table {
-      border-collapse: collapse;
-      width: 100%;
-      font-size: ${fontSize};
-    }
+table{
+ border-collapse:collapse;
+ width:100%;
+}
 
-    th, td {
-      border: 1px solid #ccc;
-      padding: 6px;
-      font-size: ${fontSize};
-    }
+th,td{
+ border:1px solid #ccc;
+ padding:6px;
+}
 
-    th {
-      background-color: ${settings.headerBg};
-      color: ${settings.headerColor};
-      font-weight: bold;
-    }
+th{
+ background:${settings.headerBg};
+ color:${settings.headerColor};
+ font-weight:bold;
+}
 
-    /* ✅ COLUMN ALIGNMENT FROM CONFIG */
-    ${columnAlignCSS}
+${columnAlignCSS}
 
-    /* TOTAL ROW */
-    tfoot td {
-      font-weight: bold;
-    }
-
-    @media print {
-      thead { display: table-header-group; }
-      tfoot { display: table-row-group; }
-    }
-  </style>
+@page{ size:auto; margin:10mm; }
+tr{ page-break-inside:avoid; }
+</style>
 </head>
 <body>
-  <table>
-    ${tableHTML}
-  </table>
+<table>${tableContainer.innerHTML}</table>
 </body>
 </html>
 `);
 
-
         printWindow.document.close();
-        printWindow.focus();
         printWindow.print();
         printWindow.close();
     };
 
+    /* ================= SETTINGS PANEL ================= */
 
+    const SettingsPanel = () => (
+        <Stack p={5} gap={5}>
+            <Heading size="sm">Print Settings</Heading>
 
-    return (
-        <Flex  bg="gray.50" color="black.700">
-            {/* LEFT PANEL */}
-            <Box
-                w="320px"
-                bg="white"
-                p={5}
-                borderRight="1px solid"
-                borderColor="gray.200"
-                overflowY="auto"
-            >   
-                <Heading size="sm" mb={2} color="gray.800" alignItems='center'>
-                    <Text> Print Settings </Text>
-                </Heading>
+            {/* FONT */}
+            <Box>
+                <Text fontSize="xs">Font Size</Text>
+                <Select.Root
+                    collection={fontSizes}
+                    value={[settings.fontSize]}
+                    onValueChange={(val) =>
+                        setSettings((p) => ({
+                            ...p,
+                            fontSize: val.value[0] as "sm" | "md" | "lg",
+                        }))
+                    }
+                    size="sm"
+                >
+                    <Select.Trigger>
+                        <Select.ValueText placeholder="Font Size" />
+                    </Select.Trigger>
+                    <Portal>
+                        <Select.Positioner>
+                            <Select.Content>
+                                {fontSizes.items.map((item) => (
+                                    <Select.Item item={item} key={item.value}>
+                                        {item.label}
+                                        <Select.ItemIndicator />
+                                    </Select.Item>
+                                ))}
+                            </Select.Content>
+                        </Select.Positioner>
+                    </Portal>
+                </Select.Root>
+            </Box>
 
-                <Stack  color="gray.700">
+            {/* HEADER COLOR */}
+            <Box>
+                <Text fontSize="xs">Header Background</Text>
+                <Input
+                    type="color"
+                    value={settings.headerBg}
+                    onChange={(e) =>
+                        setSettings((p) => ({ ...p, headerBg: e.target.value }))
+                    }
+                />
+            </Box>
 
-                    {/* FONT SETTINGS */}
-                    <Box
-                        p={2}
-                        border="1px solid"
-                        borderColor="gray.200"
-                        borderRadius="md"
-                        bg="gray.50"
-                    >
-                        <Text fontSize="sm" fontWeight="semibold" mb={3}>
-                            Typography
-                        </Text>
+            <Box>
+                <Text fontSize="xs">Header Text</Text>
+                <Input
+                    type="color"
+                    value={settings.headerColor}
+                    onChange={(e) =>
+                        setSettings((p) => ({ ...p, headerColor: e.target.value }))
+                    }
+                />
+            </Box>
 
-                        <Box>
-                            <Text fontSize="xs" mb={1} color="gray.600">
-                                Font Size
-                            </Text>
-                            <Select.Root
-                                collection={fontSizes}
-                                value={[settings.fontSize]}
-                                onValueChange={(val) =>
-                                    setSettings((prev) => ({
-                                        ...prev,
-                                        fontSize: val.value[0] as "sm" | "md" | "lg",
-                                    }))
-                                }
-                                size="sm"
-                            >
-                                <Select.Trigger>
-                                    <Select.ValueText placeholder="Select font size" />
-                                </Select.Trigger>
-                                <Portal>
-                                    <Select.Positioner>
-                                        <Select.Content>
-                                            {fontSizes.items.map((item) => (
-                                                <Select.Item item={item} key={item.value}>
-                                                    {item.label}
-                                                    <Select.ItemIndicator />
-                                                </Select.Item>
-                                            ))}
-                                        </Select.Content>
-                                    </Select.Positioner>
-                                </Portal>
-                            </Select.Root>
-                        </Box>
-                    </Box>
+            {/* TOTALS */}
+            <Checkbox.Root
+                checked={settings.showTotals}
+                onCheckedChange={(v) =>
+                    setSettings((p) => ({
+                        ...p,
+                        showTotals: !!v,
+                        totalColumns: !!v ? p.totalColumns : [],
+                    }))
+                }
+            >
+                <Checkbox.HiddenInput />
+                <Checkbox.Control />
+                <Checkbox.Label>Show Totals</Checkbox.Label>
+            </Checkbox.Root>
 
-                    {/* HEADER COLORS */}
-                    <Box
-                        p={2}
-                        border="1px solid"
-                        borderColor="gray.200"
-                        borderRadius="md"
-                        bg="gray.50"
-                    >
-                        <Text fontSize="sm" fontWeight="semibold" mb={3}>
-                            Table Header Style
-                        </Text>
-
-                        <Stack>
-                            <Box>
-                                <Text fontSize="xs" mb={1} color="gray.600">
-                                    Background Color
-                                </Text>
-                                <Input
-                                    type="color"
-                                    value={settings.headerBg}
-                                    onChange={(e) =>
-                                        setSettings((prev) => ({
-                                            ...prev,
-                                            headerBg: e.target.value,
-                                        }))
-                                    }
-                                />
-                            </Box>
-
-                            <Box>
-                                <Text fontSize="xs" mb={1} color="gray.600">
-                                    Text Color
-                                </Text>
-                                <Input
-                                    type="color"
-                                    value={settings.headerColor}
-                                    onChange={(e) =>
-                                        setSettings((prev) => ({
-                                            ...prev,
-                                            headerColor: e.target.value,
-                                        }))
-                                    }
-                                />
-                            </Box>
-                        </Stack>
-                    </Box>
-
-                    {/* TOTALS */}
-                    <Box>
+            {settings.showTotals && (
+                <Stack pl={4}>
+                    {totalableColumns.map((col) => (
                         <Checkbox.Root
-                            checked={settings.showTotals}
-                            onCheckedChange={(val) =>
-                                setSettings((prev) => ({
-                                    ...prev,
-                                    showTotals: !!val,
-                                    totalColumns: !!val ? prev.totalColumns : [],
+                            key={col.key}
+                            checked={settings.totalColumns.includes(col.key)}
+                            onCheckedChange={(v) =>
+                                setSettings((p) => ({
+                                    ...p,
+                                    totalColumns: v
+                                        ? [...p.totalColumns, col.key]
+                                        : p.totalColumns.filter((c) => c !== col.key),
                                 }))
                             }
-                            
                         >
                             <Checkbox.HiddenInput />
                             <Checkbox.Control />
-                            <Checkbox.Label>Show Totals</Checkbox.Label>
+                            <Checkbox.Label>{col.label}</Checkbox.Label>
                         </Checkbox.Root>
-
-                        {settings.showTotals && (
-                            <Stack mt={2} pl={4} >
-                                {totalableColumns.map((col) => (
-                                    <Checkbox.Root
-                                        key={col.key}
-                                        checked={settings.totalColumns.includes(col.key)}
-                                        onCheckedChange={(val) =>
-                                            setSettings((prev) => ({
-                                                ...prev,
-                                                totalColumns: val
-                                                    ? [...prev.totalColumns, col.key]
-                                                    : prev.totalColumns.filter((c) => c !== col.key),
-                                            }))
-                                        }
-                                    >
-                                        <Checkbox.HiddenInput />
-                                        <Checkbox.Control />
-                                        <Checkbox.Label>{col.label}</Checkbox.Label>
-                                    </Checkbox.Root>
-                                ))}
-                            </Stack>
-                        )}
-                    </Box>
-
+                    ))}
                 </Stack>
-                {/* FOOTER */}
-                <Flex
-                    p={2}
-                    bg="white"
-                    borderTop="1px solid"
-                    borderColor="gray.200"
-                    justify="flex-end"
-                    gap={3}
-                >
-                    <Button variant="outline" onClick={() => window.history.back()}>
-                        Cancel
+            )}
+
+            <Flex gap={3} pt={4}>
+                <Button variant="outline" onClick={() => router.back()}>
+                    Cancel
+                </Button>
+
+                {exportOption === "excel" ? (
+                    <Button
+                        colorScheme="green"
+                        onClick={() =>
+                            exportToStyledExcel(data, columns, settings, settings.title || "Report")
+                        }
+                    >
+                        Export Excel
                     </Button>
-
-                    {exportOption === "excel" ? (
-                        <Button
-                            colorScheme="green"
-                            onClick={() =>
-                                exportToStyledExcel(
-                                    data,
-                                    columns,
-                                    settings,
-                                    settings.title || "Report"
-                                )
-                            }
-                        >
-                            Export Excel
-                        </Button>
-                    ) : (
-                        <Button colorScheme="blue" onClick={handlePrint}>
-                            Print
-                        </Button>
-                    )}
-                </Flex>
-
-            </Box>
-
-
-            {/* RIGHT PANEL */}
-            <Flex flex={1} direction="column">
-                <Box flex={1} p={6} overflow="auto" id="print-table">
-                    <PrintPreviewTable
-                        data={data}
-                        columns={columns}
-                        customization={settings}
-                        showSno={showSno}
-                    />
-                </Box>
-
-              
+                ) : (
+                    <Button colorScheme="blue" onClick={handlePrint}>
+                        Print
+                    </Button>
+                )}
             </Flex>
+        </Stack>
+    );
+
+    /* ================= UI ================= */
+
+    return (
+        <Flex direction="column" h="100vh" bg="gray.50">
+            {/* MOBILE HEADER */}
+            {layout !== "desktop" && (
+                <Flex
+                    p={3}
+                    bg="white"
+                    borderBottom="1px solid"
+                    borderColor="gray.200"
+                    justify="space-between"
+                >
+                    <Text fontWeight="bold">Print Preview</Text>
+                    <Button size="sm" onClick={() => setOpenDrawer(true)}>
+                        Settings
+                    </Button>
+                </Flex>
+            )}
+
+            <Flex flex={1} overflow="hidden">
+                {/* DESKTOP SIDEBAR */}
+                {layout === "desktop" && (
+                    <Box
+                        w="340px"
+                        minW="340px"
+                        bg="white"
+                        borderRight="1px solid"
+                        borderColor="gray.200"
+                        overflowY="auto"
+                    >
+                        <SettingsPanel />
+                    </Box>
+                )}
+
+                {/* PREVIEW */}
+                <Box flex={1} overflow="auto" p={{ base: 2, md: 4, lg: 6 }}>
+                    <Box minW="fit-content">
+                        <PrintPreviewTable
+                            data={data}
+                            columns={columns}
+                            customization={settings}
+                            showSno={showSno}
+                        />
+                    </Box>
+                </Box>
+            </Flex>
+
+            {/* DRAWER FOR MOBILE/TABLET */}
+            <Drawer.Root open={openDrawer} onOpenChange={(e) => setOpenDrawer(e.open)}>
+                <Portal>
+                    <Drawer.Backdrop />
+                    <Drawer.Positioner>
+                        <Drawer.Content maxW="380px">
+                            <Drawer.Header>
+                                <Drawer.Title>Print Settings</Drawer.Title>
+                            </Drawer.Header>
+
+                            <Drawer.Body>
+                                <SettingsPanel />
+                            </Drawer.Body>
+
+                            <Drawer.CloseTrigger asChild>
+                                <CloseButton size="sm" />
+                            </Drawer.CloseTrigger>
+                        </Drawer.Content>
+                    </Drawer.Positioner>
+                </Portal>
+            </Drawer.Root>
         </Flex>
     );
 }

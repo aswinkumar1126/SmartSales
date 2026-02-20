@@ -125,7 +125,7 @@ function AccountHeadMaster() {
         ? allAccountHead.data.acheads
         : [];
 
-    console.log(allStates,'allStates')
+
     const safeValue = (
         value: string | undefined,
         collection: { label: string; value: string }[]
@@ -371,7 +371,7 @@ function AccountHeadMaster() {
         //     }
         // }
        
-        console.log(form, 'updating ')
+  
         if (editId) {
             updateAccountHead(
                 {

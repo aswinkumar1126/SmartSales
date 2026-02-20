@@ -4,7 +4,9 @@ import { axiosInstance } from "@/api/axiosInstance";
 
 export const createOtherCharges = async(data:OtherChargeForm):Promise<ApiResponse<OtherChargeForm>> => {
     try{
+        console.log(data,'service')
         const response = await axiosInstance.post('/othercharges',data);
+        
         return response.data;
     }
     catch(error){

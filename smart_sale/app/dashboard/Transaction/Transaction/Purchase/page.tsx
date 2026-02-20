@@ -82,15 +82,13 @@ export default function PurchasePage() {
 
     // Transaction type & draft state
     const [selectedTransactionTypes, setSelectedTransactionTypes] = useState<TransactionType[]>([]);
-    const [transactionTitle, setTransactionTitle] = useState<string | undefined>();
 
     // Draft rows (local storage backed)
     const [draftRows, setDraftRows] = useState<any[]>([]);
     const [editingRowId, setEditingRowId] = useState<string | number | null>(null);
 
     // History state
-    const [showHistory, setShowHistory] = useState(false);
-    const [selectedHistoryId, setSelectedHistoryId] = useState<string | null>(null);
+
     const [selectedTransactionId, setSelectedTransactionId] = useState<string | null>(null);
 
     // Date range state with localStorage persistence
@@ -435,7 +433,6 @@ export default function PurchasePage() {
                 } else {
                     setSelectedTransactionTypes([typeData]);
                 }
-                setTransactionTitle(typeData.label || (typeData[0]?.label || ""));
             } catch (e) {
                 console.error("Failed to parse type:", e);
                 localStorage.removeItem(TYPE_KEY);
@@ -571,7 +568,6 @@ export default function PurchasePage() {
 
             // if (foundType) {
             //     setSelectedTransactionTypes([foundType]);
-            //     setTransactionTitle(foundType.label);
             // } else {
             //     console.warn("Transaction type not found:", transactionDetails.TRANTYPE);
             // }
@@ -725,12 +721,7 @@ export default function PurchasePage() {
 
         setSelectedTransactionTypes(types);
 
-        // Set title based on selected types (optional)
-        if (types.length > 0) {
-            setTransactionTitle(types.map(t => t.label).join(", "));
-        } else {
-            setTransactionTitle(undefined);
-        }
+       
 
         setSelectedTransactionId(null);
     };
@@ -1205,7 +1196,6 @@ export default function PurchasePage() {
             });
 
             stockRefetch();
-            setShowHistory(true);
 
         } catch (error: any) {
             toaster.create({
@@ -1306,7 +1296,6 @@ export default function PurchasePage() {
             setDraftRows([]);
             setEditingRowId(null);
             setSelectedTransactionTypes([]);
-            setTransactionTitle("");
 
             setHeaderForm({
                 ENTRYNO: "",
@@ -1336,7 +1325,6 @@ export default function PurchasePage() {
             });
 
             stockRefetch();
-            setShowHistory(true);
 
         } catch (error: any) {
             console.error("Update error:", error);
@@ -1374,7 +1362,6 @@ export default function PurchasePage() {
         } else {
             // If creating new, clear everything
             setSelectedTransactionTypes([]);
-            setTransactionTitle("");
             localStorage.removeItem(TYPE_KEY);
         }
 

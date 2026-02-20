@@ -65,7 +65,7 @@ function OrnamentMaster() {
     const [filter ,setFilter] = useState<string>('');
 
     const { data: ornamentList, isLoading } = useOrnamentData(filter);
-    console.log(ornamentList,'ornamentList')
+
 
     const ornaments = Array.isArray(ornamentList?.data)
         ? ornamentList.data
@@ -106,7 +106,7 @@ function OrnamentMaster() {
         if (!editResponse?.data) return;
 
         const o = editResponse.data;
-        console.log(o , 'ornament')
+    
 
         setForm({
             itemId:o.itemId ? String(o.itemId) : "",
@@ -276,7 +276,7 @@ useEffect(() => {
         router.push(`/print?export=${option}`);
     }
 
-    console.log(form.itemId,'itemsid')
+
 
 
     /* -------------------- UI -------------------- */

@@ -64,7 +64,7 @@ export function PrintPreviewTable<T extends Record<string, any>>({
                 <Text color="#222">{title} </Text>
             </Box>
 
-            <Table.Root size={fontSize}  border="1px solid " showColumnBorder borderColor="gray.200" >
+            <Table.Root size={fontSize}  border="1px solid " minW={0}  showColumnBorder borderColor="gray.200" >
                 {/* HEADER */}
                 <Table.Header>
                     <Table.Row bg={headerBg} color={headerColor}>

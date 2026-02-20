@@ -312,7 +312,7 @@ export default function AddTransactionItemForm({
         setErrors((prev) => ({ ...prev, [key]: "" }));
     }, [formData, calculateNetWeight]);
 
-    console.log(formData,'formData')
+   
 
     useEffect(() => {
         if (pureValue) {
@@ -399,8 +399,7 @@ export default function AddTransactionItemForm({
         const size = "xs";
         const isInvalid = !!errors[field.key] && touched[field.key];
 
-        console.log(field ,'formFields')
-
+      
         switch (field.type) {
             case "capitalized":
                 return (

@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { AuthContext, AuthUser } from "./AuthContext";
 import { authService, LoginPayload, ApiResponse as AuthApiResponse } from "@/service/AuthService";
 import { CompanyService, Company, ApiResponse } from "@/service/CompanyService";
+import { getStorage, removeStorage, setStorage } from "@/utils/storage/storage";
 
 export default function AuthProvider({ children }: { children: React.ReactNode }) {
     const [user, setUser] = useState<AuthUser | null>(null);
@@ -58,8 +59,10 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
 
         // ✅ SAFE ACCESS
         const userId = res.data.USERID;
-        console.log(userId ,'user id ')
-        sessionStorage.setItem("userId", String(userId));
+        const isAdmin = res.data.ISADMIN;
+
+        setStorage("userId", String(userId));
+        setStorage("admin" ,isAdmin)
         setUserId(userId);
 
         await refreshUser(userId);
@@ -77,13 +80,14 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     const logout = () => {
         setUser(null);
         setUserId(null);
-        sessionStorage.removeItem("userId");
+        removeStorage("userId");
+        removeStorage("admin");
         window.location.href = "/login";
     };
 
     // ♻ restore session
     useEffect(() => {
-        const storedUserId = sessionStorage.getItem("userId");
+        const storedUserId = getStorage("userId");
         if (storedUserId) {
             const uid = Number(storedUserId);
             setUserId(uid);

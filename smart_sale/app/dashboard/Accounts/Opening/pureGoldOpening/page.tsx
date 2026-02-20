@@ -86,7 +86,7 @@ const PureGoldOpening = () => {
    
     const { data: allPureGoldNames = []} = usePureGoldNames();
 
-    console.log(allPureGoldNames,'allPureGoldNames')
+
     const createMutation = useCreatePureGoldMast();
     const updateMutation = useUpdatePureGoldMast();
 
@@ -148,7 +148,7 @@ const PureGoldOpening = () => {
         setEditId(row.sno);
         scrollToTop();
 
-        console.log(row ,'pureid')
+    
 
         setForm({
             pureId: String(row.pureId),
@@ -177,7 +177,7 @@ const PureGoldOpening = () => {
     };
 
     /* ---------------- Submit Handler ---------------- */
-    console.log(pureGoldData,'pureGoldData')
+
     const isDuplicatePureForMetal = (
         pureId: any,
         // metalId: any,

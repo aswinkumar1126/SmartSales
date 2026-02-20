@@ -223,6 +223,8 @@ function MetalMaster() {
 
 
     const metalColumns = [
+
+        { key: "sno", label: "Sno" },
         { key: "metalId", label: "Metal Id" },
         { key: "metalName", label: "Metal Name" },
         { key: "displayOrder", label: "Order", align: "center" as const },
@@ -469,8 +471,10 @@ function MetalMaster() {
                                                   highlightRowId={highlightId ? Number(highlightId) : null}
                                                   emptyText="No parties available"
                                                   renderRow={(metal, i) => (
-                                                      <>
-                                                          <Table.Cell>{metal.sno}</Table.Cell>
+                                                      <>    
+
+                                                            <Table.Cell>{metal.sno}</Table.Cell>
+                                                            <Table.Cell>{metal.metalId}</Table.Cell>
                                                           <Table.Cell>{metal.metalName}</Table.Cell>
                                                           <Table.Cell textAlign="center">{metal.displayOrder}</Table.Cell>
                                                           <Table.Cell textAlign="center">{metal.active}</Table.Cell>

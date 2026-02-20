@@ -46,6 +46,7 @@ import { useRouter } from "next/navigation";
 import SearchBar from "@/component/search/SearchBar";
 
 export default function ItemMasterPage() {
+
     /* ===================== STATE ===================== */
     const [editingId, setEditingId] = useState<number | null>(null);
     const topRef = React.useRef<HTMLDivElement>(null);
@@ -75,20 +76,19 @@ export default function ItemMasterPage() {
 
     /* ===================== HOOKS ===================== */
 
-    const { data: itemsData, isLoading } = useItems(filter);
+    const { data: itemsData, isLoading ,refetch:itemsRefetch } = useItems(filter);
     const { data: companyData } = useAllCompanies();
     const { data: metalData } = useAllMetals();
     const router = useRouter();
 
-    console.log(editingId ,'editingId')
     const { data: itemById } = useItemById(editingId ?? undefined);
 
-    console.log(itemById,'itemById')
+  
     const { mutate: createItem, isPending: creating } = useCreateItem();
     const { mutate: updateItem, isPending: updating } = useUpdateItem();
 
     /* ===================== NORMALIZE ===================== */
-    console.log(itemsData,'itemsData')
+
     
     const items: ItemMast[] = (itemsData?.items ?? []).map(normalizeItem);
     const companies = Array.isArray(companyData?.data) ? companyData.data : [];
@@ -199,8 +199,10 @@ export default function ItemMasterPage() {
 
             createItem(payload, {
                 onSuccess: (res: any) => {
+                    itemsRefetch();
                     resetForm();
                     scrollToTop();
+
                     setHighlightId(res?.itemId ?? null);
                     setTimeout(() => setHighlightId(null), 2500);
                 },
@@ -254,7 +256,6 @@ export default function ItemMasterPage() {
     }
 
 
-    console.log(items ,'items')
     /* ===================== UI ===================== */
     return (
         <Box  ref={topRef}>
@@ -339,7 +340,7 @@ export default function ItemMasterPage() {
                                                     }}
                                                 >
                                                     {metals.map((m: any) => (
-                                                        <option key={m.sno} value={m.sno}>
+                                                        <option key={m.sno} value={m.metalId}>
                                                             {m.metalName}
                                                         </option>
                                                     ))}
