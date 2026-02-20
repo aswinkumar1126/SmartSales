@@ -2,15 +2,15 @@ export const issueColumns = [
     {
         key: "SNO",
         label: "S.N0",
-        width: "15px",
-        align: "center" as const,
+        width: "10px",
+        align: "left" as const,
         editable: false,
 
     },
     {
         key: "ITEMID",
         label: "ITEM",
-        width: "40px",
+        width: "50px",
         align: "left" as const,
         type: "combobox" as const,
       
@@ -32,11 +32,12 @@ export const issueColumns = [
  
     },
     {
-        key: "LESSWT",
-        label: "LESS WT",
+        key: "STNWT",
+        label: "STONE",
         width: "20px",
         type: "number" as const,
         align: "right" as const,
+
  
     },
     {
@@ -49,12 +50,38 @@ export const issueColumns = [
    
     },
     {
-        key: "PURITY",
-        label: "PURITY",
+        key: "WASTYPE",
+        label: "WAS.TYPE",
         width: "25px",
+        type: "text" as const,
+        align: "right" as const,
+
+    },
+    {
+        key: "WASPER",
+        label: "WAS %",
+        width: "20px",
         type: "number" as const,
         align: "right" as const,
-    
+
+    },
+    {
+        key: "WASTAGE",
+        label: "W",
+        width: "20px",
+        type: "number" as const,
+        align: "right" as const,
+
+    },
+    {
+        key: "TOUCH",
+        label: "TOUCH",
+        width: "20px",
+        type: "number" as const,
+        align: "right" as const,
+        max: 999,
+        decimalScale: 0
+
     },
     {
         key: "PUREWT",
@@ -66,60 +93,28 @@ export const issueColumns = [
  
     },
     {
-        key: "RATE",
-        label: "RATE",
-        width: "20px",
-        type: "number" as const,
-        align: "right" as const,
-
-    },
-    {
-        key: "MCHARGE",
+        key: "MC",
         label: "M.C",
         width: "25px",
         type: "number" as const,
         align: "right" as const,
   
     },
+    
     {
-        key: "WASTAGE",
-        label: "WASTAGE",
-        width: "25px",
+        key: "ATOUCH",
+        label: "A.TOUCH",
+        width: "20px",
         type: "number" as const,
         align: "right" as const,
 
     },
-    
-    {
-        key: "IGST",
-        label: "IGST",
-        width: "20px",
-        type: "number" as const,
-        align: "right" as const,
   
-    },
     {
-        key: "CGST",
-        label: "CGST",
-        width: "20px",
-        type: "number" as const,
-        align: "right" as const,
-  
-    },
-    {
-        key: "SGST",
-        label: "SGST",
-        width: "20px",
-        type: "number" as const,
-        align: "right" as const,
-  
-    },
-    {
-        key: "AMOUNT",
-        label: "AMOUNT",
-        width: "25px",
-        type: "number" as const,
-        align: "right" as const,
+        key: "DESCRIPTION",
+        label: "DESCRIPTION",
+        width: "45px",
+        align: "left" as const,
 
     },
 ];
@@ -127,7 +122,7 @@ export const issueDataColumns = [
     {
         key: "SNO",
         label: "S.N0",
-        width: "15px",
+        width: "10px",
         align: "center" as const,
         editable: false,
 
@@ -141,14 +136,14 @@ export const issueDataColumns = [
 
     },
     
-    
+
     {
         key: "WT",
         label: "WT",
         width: "20px",
         type: "number" as const,
         align: "right" as const,
-        max:9999999999,
+        max: 9999999999,
         decimalScale:3
 
     },
@@ -160,7 +155,6 @@ export const issueDataColumns = [
         align: "right" as const,
         max: 999,
         decimalScale: 3
-       
 
     },
     {
@@ -205,23 +199,7 @@ export const issueDataColumns = [
         disabled:true,
         max: 9999999999,
         decimalScale: 3
-
-
     },
     
 ];
 
-
-export const itemCollection = {
-
-
-    items: [
-        { label: "Gold", value: "GOLD" },
-        { label: "Silver", value: "SILVER" },
-        { label: "Diamond", value: "DIAMOND" },
-        { label: "Platinum", value: "PLATINUM" },
-        { label: "Ruby", value: "RUBY" },
-        { label: "Emerald", value: "EMERALD" },
-        { label: "Sapphire", value: "SAPPHIRE" },
-    ]
-};

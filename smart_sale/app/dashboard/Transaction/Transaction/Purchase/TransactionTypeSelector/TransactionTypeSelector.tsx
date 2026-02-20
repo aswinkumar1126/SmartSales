@@ -1,80 +1,116 @@
 "use client";
 
 import React from "react";
-import { Button ,Box } from "@chakra-ui/react";
-import { ActionBar, Portal } from "@chakra-ui/react";
+import { Button, Box } from "@chakra-ui/react";
 
 export default function TransactionTypeSelector({
     transactionTypes,
-    selectedTypes = [], // Changed from selectedType to selectedTypes array
-    onSelectTypes, // Changed from onSelectType
+    selectedTypes = [],
+    onSelectTypes,
     theme,
-    open = true,
+    TRANSACTIONTYPES_ORDER
 }: any) {
 
-    const handleTypeClick = (clickedType: any) => {
-        // Check if the type is already selected
-        const isSelected = selectedTypes.some((type: any) => type.value === clickedType.value);
+    /* ---------- ORDER BY CODE ---------- */
+    const orderedTypes = TRANSACTIONTYPES_ORDER
+        .map((code: string) => transactionTypes.find((t: any) => t.code === code))
+        .filter(Boolean);
 
-        let newSelectedTypes;
+    /* ---------- CLICK HANDLER ---------- */
+    const handleTypeClick = (clickedType: any) => {
+
+        const isSelected = selectedTypes.some(
+            (type: any) => type.code === clickedType.code
+        );
+
+        let newSelectedTypes = [...selectedTypes];
+
+        // REMOVE
         if (isSelected) {
-            // Remove if already selected
-            newSelectedTypes = selectedTypes.filter((type: any) => type.value !== clickedType.value);
-        } else {
-            // Add if not selected
-            newSelectedTypes = [...selectedTypes, clickedType];
+
+          
+            const confirmRemove = window.confirm(
+                `Remove "${clickedType.label}" from filter ?`
+            );
+
+            if (!confirmRemove) return;
+
+            newSelectedTypes = selectedTypes.filter(
+                (type: any) => type.code !== clickedType.code
+            );
+        }
+        // ADD
+        else {
+            newSelectedTypes.push(clickedType);
         }
 
         onSelectTypes(newSelectedTypes);
     };
 
-    const isTypeSelected = (typeValue: string) => {
-        return selectedTypes.some((type: any) => type.value === typeValue);
+    const isTypeSelected = (code: string) =>
+        selectedTypes.some((type: any) => type.code === code);
+
+    const TYPE_COLORS: Record<string, { bg: string; active: string; text: string }> = {
+        PU:{ bg: "#E6FFFA", active: "#2F855A", text: "#1C4532" },  // Blue
+        PR: { bg: "#FFEAEA", active: "#C53030", text: "#742A2A" },   // Red
+        ISP: { bg: "#FFF4E5", active: "#DD6B20", text: "#7B341E" },   // Orange
+        REC: { bg: "#ffe8fd", active: "#c729ba", text: "#8f1084" }   // Green
     };
 
+
     return (
-     
-                    <Box
-                        p={2}
-                        gap={2}
+        <Box
+            p={2}
+            gap={2}
+            display="flex"
+            rounded="2xl"
+            bg={theme.colors.formColor}
+            flexWrap="wrap"
+        >
+            {orderedTypes.map((btn: any) => {
+                const Icon = btn.icon;
+                const selected = isTypeSelected(btn.code);
+
+                const colors = TYPE_COLORS[btn.code] || {
+                    bg: "#F1F1F1",
+                    active: "#444",
+                    text: "#222"
+                };
+
+                return (
+                    <Button
+                        key={btn.code}
+                        size="xs"
+                        fontSize="2xs"
+                        px={3}
+                        rounded="full"
+                        onClick={() => handleTypeClick(btn)}
                         display="flex"
-                        rounded='2xl'
-                        bg={theme.colors.formColor}
+                        alignItems="center"
+                        gap={1}
+                        transition="all .15s ease"
+
+                        /* -------- COLORS -------- */
+                        bg={selected ? colors.active : colors.bg}
+                        color={selected ? "white" : colors.text}
+                        borderWidth="1px"
+                        borderColor={selected ? colors.active : "transparent"}
+
+                        _hover={{
+                            bg: selected ? colors.active : `${colors.bg}`,
+                            transform: "translateY(-1px)"
+                        }}
+
+                        _active={{
+                            transform: "scale(.96)"
+                        }}
                     >
-
-                        {transactionTypes.map((btn: any) => {
-                            const Icon = btn.icon;
-                            const isSelected = isTypeSelected(btn.value);
-
-                            return (
-                                <Button
-                                    key={btn.value}
-                                    size="xs"
-                                    fontSize="2xs"
-                                    variant={isSelected ? "solid" : "outline"}
-                                    bg={isSelected ? theme.colors.green : theme.colors.primary}
-                                    color={isSelected ? "white" : "inherit"}
-                                    px={2}
-                                    rounded="full"
-                                    onClick={() => handleTypeClick(btn)}
-                                    display="flex"
-                                    gap={1}
-                                    alignItems="center"
-                                    className="transition-transform hover:scale-105 active:scale-95"
-                                    _hover={{
-                                        bg: isSelected ? theme.colors.green : theme.colors.primaryHover || theme.colors.primary,
-                                        opacity: 0.9,
-                                    }}
-                                >
-                                    <Icon size={12} />
-                                    {btn.label}
-                                    {isSelected && (
-                                        <span style={{ marginLeft: '2px', fontSize: '10px' }}>✓</span>
-                                    )}
-                                </Button>
-                            );
-                        })}
+                        <Icon size={12} />
+                        {btn.label}
+                    </Button>
+                );
+            })}
         </Box>
-      
     );
+
 }

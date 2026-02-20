@@ -7,6 +7,8 @@ import {
     Button,
     Flex,
     VStack,
+    Drawer,
+    Portal
 } from "@chakra-ui/react";
 import { useTheme } from "@/context/theme/themeContext";
 import { toaster, Toaster } from "@/components/ui/toaster";
@@ -56,6 +58,12 @@ export default function PurchasePage() {
 
     const [selectedName, setSelectedName] = useState<string | undefined>();
     const [itemsStockList, setItemsStockList] = useState<{ label: string, value: string }[]>([]);
+
+    const TRANSACTIONTYPES_ORDER = ["PU", "PR", "ISP", "REC"];
+
+    const [isFilterOpen, setIsFilterOpen] = useState(false);
+    const openFilter = () => setIsFilterOpen(true);
+    const closeFilter = () => setIsFilterOpen(false);
 
     /* ================================
        State Management
@@ -652,9 +660,7 @@ export default function PurchasePage() {
         setHeaderForm(prev => ({ ...prev, [field]: value }));
     };
 
-    const handleShowFilter = () => {
-        setShowFilter((prev) => !prev);
-    };
+    const handleShowFilter = { openFilter }
 
     const handleCustomerSelect = (customerValue: string, customerLabel: string) => {
         if (isEditing) {
@@ -790,13 +796,14 @@ export default function PurchasePage() {
             ITEMID: !isIssue ? (stockRow.ITEMID || "") : "",
             PCS: stockRow.PCS || "",
             GRSWT: stockRow.GRSWT || "",
-            LESSWT: stockRow.LESSWT || "",
+            STNWT: stockRow.STNWT || "",
             NETWT: stockRow.NETWT || "",
-            PURITY: stockRow.PURITY || "",
-            PUREWT: stockRow.PUREWT || "",
-            RATE: stockRow.RATE || headerForm.RATEGM || "",
-            MCHARGE: stockRow.MCHARGE || "",
+            WASTYPE: stockRow.WASTYPE || "",
+            WASPER: stockRow.WASPER || "",
             WASTAGE: stockRow.WASTAGE || "",
+            PUREWT: stockRow.PUREWT || "",
+            MC: stockRow.MC || "",
+            DESCRIPTION:stockRow.DESCRIPTION || "",
         };
 
         setDraftRows(prev => [...prev, newRow]);
@@ -982,17 +989,19 @@ export default function PurchasePage() {
         }
 
         return {
+            ITEMID: rest.ITEMID ? String(rest.ITEMID) : undefined,
             PCS: Number(rest.PCS || 0),
             GRSWT: Number(rest.GRSWT || 0),
-            LESSWT: Number(rest.LESSWT || 0),
+            STNWT: Number(rest.STNWT || 0),
             NETWT: Number(rest.NETWT || 0),
-            PURITY: Number(rest.PURITY || 0),
-            PUREWT: Number(rest.PUREWT || 0),
-            RATE: Number(rest.RATE || 0),
-            MCHARGE: Number(rest.MCHARGE || 0),
+            WASTYPE: String(rest.WASTYPE || 'TOUCH'),
+            WASPER: Number(rest.WASPER || 0),
             WASTAGE: Number(rest.WASTAGE || 0),
-            AMOUNT: Number(rest.AMOUNT || 0),
-            ITEMID: rest.ITEMID ? String(rest.ITEMID) : undefined,
+            TOUCH: Number(rest.TOUCH || 0),
+            ATOUCH: Number(rest.ATOUCH || 0),
+            PUREWT: Number(rest.PUREWT || 0),
+            MC: Number(rest.MC || 0),
+        
         };
     };
 
@@ -1389,26 +1398,20 @@ export default function PurchasePage() {
         return draftRows.reduce((acc, row) => {
             acc.PCS += Number(row.PCS || 0);
             acc.GRSWT += Number(row.GRSWT || 0);
-            acc.LESSWT += Number(row.LESSWT || 0);
-            acc.NETWT += Number(row.NETWT || 0);
-            acc.PURITY += Number(row.PURITY || 0);
+            acc.STNWT += Number(row.STNWT || 0);
+            acc.NETWT += Number(row.NETWT || 0);       
             acc.PUREWT += Number(row.PUREWT || 0);
-            acc.RATE += Number(row.RATE || 0);
-            acc.MCHARGE += Number(row.MCHARGE || 0);
-            acc.WASTAGE += Number(row.WASTAGE || 0);
-            acc.AMOUNT += Number(row.AMOUNT || 0);
+            acc.MC += Number(row.MC || 0);
+        
+      
             return acc;
         }, {
             PCS: 0,
             GRSWT: 0,
-            LESSWT: 0,
+            STNWT: 0,
             NETWT: 0,
-            PURITY: 0,
             PUREWT: 0,
-            RATE: 0,
-            MCHARGE: 0,
-            WASTAGE: 0,
-            AMOUNT: 0
+            MC: 0,
         });
     }, [draftRows]);
 
@@ -1429,7 +1432,7 @@ export default function PurchasePage() {
             )}
 
             {/* LEFT – 70% */}
-            <Box w={showFilter ? "70%" : "100%"}>
+            <Box w="75%" >
                 <VStack align="stretch" gap={1}>
                     {/* 1. Transaction Header Form */}
                  
@@ -1443,7 +1446,7 @@ export default function PurchasePage() {
                         openingBalance={openingBalance}
                         openingData={openingData}
                         showFilter={showFilter}
-                        handleShowFilter={handleShowFilter}
+                        handleShowFilter={openFilter}
                         isEditing={isEditing}
                         entryNo={transactionList?.data?.ENTRYNO}
                         billNo={transactionList?.data?.BILLNO}
@@ -1456,6 +1459,7 @@ export default function PurchasePage() {
                             selectedTypes={selectedTransactionTypes}
                             onSelectTypes={handleTransactionTypesSelect}
                             theme={theme}
+                            TRANSACTIONTYPES_ORDER={TRANSACTIONTYPES_ORDER}
                         />
                 
 
@@ -1471,129 +1475,160 @@ export default function PurchasePage() {
                     )}
 
                     {/* Draft Section - show separate tables for each transaction type */}
-                    {(selectedTransactionTypes.length > 0 || isEditing) && (
+                    {(selectedTransactionTypes?.length > 0 || isEditing) && (
                         <VStack align="stretch">
-                            {selectedTransactionTypes.map((transactionType) => {
-                                const typeRows = draftRows.filter(row => row.TRANSACTION_TYPE === transactionType.value);
-                                const typeTotals = calculateTotalsForType(transactionType);
-                                const activeCollection = getActiveCollectionForType(transactionType);
-                                const activeFilter = getActiveFilterForType(transactionType);
-                                const isIssue = isIssueType(transactionType);
+                            {TRANSACTIONTYPES_ORDER
+                                .map(code => selectedTransactionTypes?.find(t => t.code === code))
+                                .filter((t): t is TransactionType => !!t)
+                                .map((transactionType) => {
 
-                                return (
-                                    <Box
-                                        key={transactionType.value}
-                                        borderWidth="1px"
-                                        borderRadius="md"
-                                       
-                                        borderColor={theme.colors.greyColor}
-                                       
-                                    >
-                                       
+                                    const typeRows = draftRows.filter(
+                                        row => row.TRANSACTION_TYPE === transactionType.code
+                                    );
 
-                                        {/* Draft Transaction Table for this type */}
-                                        <DraftTransactionTable
-                                            rows={typeRows}
-                                            editingRowId={editingRowId}
-                                            isEditing={isEditing}
-                                            onAddRow={(formData) => {
-                                                if (formData && typeof formData === 'object') {
-                                                    const newRow = {
-                                                        ...formData,
-                                                        TRANSACTION_TYPE: transactionType.value,
-                                                        __rowId: `row-${transactionType.value}-${Date.now()}`,
-                                                        __isNew: true,
-                                                        __previewSno: typeRows.length + 1,
-                                                    };
-                                                    setDraftRows(prev => [...prev, newRow]);
-                                                } else {
-                                                    handleAddRowForType(transactionType);
-                                                }
-                                            }}
-                                            onUpdateRow={(rowIndex, field, value) => {
-                                                // Find the actual index in the main draftRows array
-                                                const actualIndex = draftRows.findIndex(
-                                                    r => r.TRANSACTION_TYPE === transactionType.value &&
-                                                        r.__rowId === typeRows[rowIndex]?.__rowId
-                                                );
-                                                if (actualIndex !== -1) {
-                                                    handleUpdateDraftRow(actualIndex, field, value);
-                                                }
-                                            }}
-                                            handleClearForm={() => handleAddRowForType(transactionType)}
-                                            onRemoveRow={(rowId) => {
-                                                setDraftRows(prev => prev.filter(row => row.__rowId !== rowId));
-                                                if (editingRowId === rowId) {
-                                                    setEditingRowId(null);
-                                                }
-                                            }}
-                                            onRowClick={(row) => {
-                                                if (editingRowId !== row.__rowId) {
-                                                    setEditingRowId(row.__rowId);
-                                                }
-                                            }}
-                                            onCancelEdit={(rowId) => {
-                                                if (rowId) {
+                                    const typeTotals = calculateTotalsForType(transactionType);
+                                    const activeCollection = getActiveCollectionForType(transactionType);
+                                    const activeFilter = getActiveFilterForType(transactionType);
+                                    const isIssue = isIssueType(transactionType);
+
+                                    return (
+                                        <Box
+                                            key={transactionType.code}
+                                            borderWidth="1px"
+                                            borderRadius="md"
+                                            borderColor={theme.colors.greyColor}
+                                        >
+                                            <DraftTransactionTable
+                                                rows={typeRows}
+                                                editingRowId={editingRowId}
+                                                isEditing={isEditing}
+                                                onAddRow={(formData) => {
+                                                    if (formData && typeof formData === 'object') {
+                                                        const newRow = {
+                                                            ...formData,
+                                                            TRANSACTION_TYPE: transactionType.value,
+                                                            __rowId: `row-${transactionType.value}-${Date.now()}`,
+                                                            __isNew: true,
+                                                            __previewSno: typeRows.length + 1,
+                                                        };
+                                                        setDraftRows(prev => [...prev, newRow]);
+                                                    } else {
+                                                        handleAddRowForType(transactionType);
+                                                    }
+                                                }}
+                                                onUpdateRow={(rowIndex, field, value) => {
+                                                    // Find the actual index in the main draftRows array
+                                                    const actualIndex = draftRows.findIndex(
+                                                        r => r.TRANSACTION_TYPE === transactionType.value &&
+                                                            r.__rowId === typeRows[rowIndex]?.__rowId
+                                                    );
+                                                    if (actualIndex !== -1) {
+                                                        handleUpdateDraftRow(actualIndex, field, value);
+                                                    }
+                                                }}
+                                                handleClearForm={() => handleAddRowForType(transactionType)}
+                                                onRemoveRow={(rowId) => {
                                                     setDraftRows(prev => prev.filter(row => row.__rowId !== rowId));
-                                                }
-                                                setEditingRowId(null);
-                                            }}
-                                            onSaveRow={(row, isNew) => {
-                                                setEditingRowId(null);
-                                            }}
-                                            itemsCollection={activeCollection}
-                                            itemsFilter={activeFilter}
-                                            totals={typeTotals}
-                                            transactionTitle={transactionType.label}
-                                            theme={theme}
-                                            isIssue={isIssue}
-                                            getAvailableWeight={getAvailableWeight}
-                                            onClear={() => handleClearRowsForType(transactionType)}
-                                        />
-                                    </Box>
-                                );
-                            })}
-
-                            {/* Save Transaction Bar - appears once for all tables */}
-                            {draftRows.length > 0 && (
-                                <SaveTransactionBar
-                                    draftCount={draftRows.length}
-                                    onSave={isEditing ? handleUpdateTransaction : handleSaveTransaction}
-                                    onReset={handleResetDraft}
-                                    isSaving={createTransaction.isPending || updateTransaction.isPending}
-                                    isEditing={isEditing}
-                                    theme={theme}
-                                />
-                            )}
+                                                    if (editingRowId === rowId) {
+                                                        setEditingRowId(null);
+                                                    }
+                                                }}
+                                                onRowClick={(row) => {
+                                                    if (editingRowId !== row.__rowId) {
+                                                        setEditingRowId(row.__rowId);
+                                                    }
+                                                }}
+                                                onCancelEdit={(rowId) => {
+                                                    if (rowId) {
+                                                        setDraftRows(prev => prev.filter(row => row.__rowId !== rowId));
+                                                    }
+                                                    setEditingRowId(null);
+                                                }}
+                                                onSaveRow={(row, isNew) => {
+                                                    setEditingRowId(null);
+                                                }}
+                                                itemsCollection={activeCollection}
+                                                itemsFilter={activeFilter}
+                                                totals={typeTotals}
+                                                transactionTitle={transactionType.label}
+                                                theme={theme}
+                                                isIssue={isIssue}
+                                                getAvailableWeight={getAvailableWeight}
+                                                onClear={() => handleClearRowsForType(transactionType)}
+                                            />
+                                        </Box>
+                                    );
+                                })}
+                           
                         </VStack>
                     )}
+                   
+
                 </VStack>
+
+                {/* Save Transaction Bar - appears once for all tables */}
+                {draftRows.length > 0 && (
+                    <SaveTransactionBar
+                        draftCount={draftRows.length}
+                        onSave={isEditing ? handleUpdateTransaction : handleSaveTransaction}
+                        onReset={handleResetDraft}
+                        isSaving={createTransaction.isPending || updateTransaction.isPending}
+                        isEditing={isEditing}
+                        theme={theme}
+                    />
+                )}
+                {/* RIGHT – 30% */}
+                {isFilterOpen && (
+                    <Drawer.Root open={isFilterOpen} onOpenChange={(e) => closeFilter()}>
+                        <Portal>
+                            <Drawer.Backdrop />
+                            <Drawer.Positioner>
+                                <Drawer.Content maxW="480px">
+                                    <Drawer.Header borderBottomWidth="1px" bg='cyan.50' fontSize='md'>
+                                        Transaction Filters
+                                        <Drawer.CloseTrigger asChild>
+                                            <Button variant="ghost" size="sm" onClick={closeFilter}>×</Button>
+                                        </Drawer.CloseTrigger>
+                                    </Drawer.Header>
+
+                                    <Drawer.Body p={0}>
+                                        <RightSideDetailsPanel
+                                            selectedTransactionId={selectedTransactionId}
+                                            onTransactionClick={(id: any) => {
+                                                handleTransactionClick(id);
+                                                closeFilter(); // auto close after select
+                                            }}
+                                            transactionList={transactionList}
+                                            isLoadingTransactions={isLoading}
+                                            draftTotals={totals}
+                                            headerForm={headerForm}
+                                            selectedTransactionType={selectedTransactionTypes}
+                                            theme={theme}
+                                            startDate={startDate}
+                                            endDate={endDate}
+                                            onStartDateChange={handleStartDateChange}
+                                            onEndDateChange={handleEndDateChange}
+                                            onSelectItem={handleSelectItemCode}
+                                            selectedItemCode={itemCode}
+                                            itemsCollection={itemsCollection}
+                                            itemsFilter={itemsFilter}
+                                            getLabelByValue={getLabelByValue}
+                                        />
+                                    </Drawer.Body>
+
+                                    <Drawer.Footer borderTopWidth="1px">
+                                        <Button variant="outline" size="sm" onClick={closeFilter}>
+                                            Close
+                                        </Button>
+                                    </Drawer.Footer>
+                                </Drawer.Content>
+                            </Drawer.Positioner>
+                        </Portal>
+                    </Drawer.Root>
+                )}
             </Box>
 
-            {/* RIGHT – 30% */}
-            {showFilter && (
-                <Box width='30%'>
-                    <RightSideDetailsPanel
-                        selectedTransactionId={selectedTransactionId}
-                        onTransactionClick={handleTransactionClick}
-                        transactionList={transactionList}
-                        isLoadingTransactions={isLoading}
-                        draftTotals={totals}
-                        headerForm={headerForm}
-                        selectedTransactionType={selectedTransactionTypes}
-                        theme={theme}
-                        startDate={startDate}
-                        endDate={endDate}
-                        onStartDateChange={handleStartDateChange}
-                        onEndDateChange={handleEndDateChange}
-                        onSelectItem={handleSelectItemCode}
-                        selectedItemCode={itemCode}
-                        itemsCollection={itemsCollection}
-                        itemsFilter={itemsFilter}
-                        getLabelByValue={getLabelByValue}
-                    />
-                </Box>
-            )}
+            
 
             <Box>
                 <FloatingActionButton

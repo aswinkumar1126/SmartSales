@@ -53,7 +53,7 @@ import { SelectCombobox } from "@/components/ui/selectComboBox";
 function CompanyMaster() {
     const { theme } = useTheme();
     /* -------------------- API HOOKS -------------------- */
-    const { data, isLoading } = useAllCompanies();
+    const { data, isLoading , refetch:companyRefetch } = useAllCompanies();
     const router = useRouter();
     const {setData ,setColumns ,setShowSno , title } =usePrint();
     const companies = data?.data ?? [];
@@ -70,7 +70,6 @@ function CompanyMaster() {
     }))
 
    
-
 
     /* -------------------- FORM STATE -------------------- */
     const [form, setForm] = useState<CreateCompanyPayload>({
@@ -246,6 +245,7 @@ function CompanyMaster() {
                 logo: logoFile,
             } ,{
                 onSuccess : () =>{
+                    companyRefetch();
                     resetForm;
                     setHighlightedId(Number(editId));
                 }

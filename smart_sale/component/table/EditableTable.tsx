@@ -1,11 +1,9 @@
 "use client";
 
-import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import React, { useState, useMemo, useCallback, useEffect ,useRef } from 'react';
 import { Eye, Edit2, MapPin, Phone, IndianRupee, Trash2, Save, X, Plus } from 'lucide-react';
-import { useTheme } from '@/context/theme/themeContext';
 import EditableCell from './EditableCell';
 import { Button, Box } from '@chakra-ui/react';
-import { Toaster,toaster } from '@/components/ui/toaster';
 import { formatToFixed } from '@/utils/format/numberFormat';
 
 export interface TableColumn {
@@ -62,12 +60,12 @@ export interface TableProps {
     isEditing?:boolean
  
 }
+type FocusableElement = HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement | null;
+type CellRefMap = Record<number, Record<string, FocusableElement>>;
 
 const EditableTable: React.FC<TableProps> = ({
     columns,
     data,
-    onView,
-    onEdit,
     onDelete,
     onRowClick,
     onUpdateRow,
@@ -77,7 +75,6 @@ const EditableTable: React.FC<TableProps> = ({
     editingRowId,
     striped = true,
     hoverable = true,
-    compact = 'auto',
     className = '',
     headerClassName = '',
     bodyClassName = '',
@@ -100,15 +97,115 @@ const EditableTable: React.FC<TableProps> = ({
         typeof window !== "undefined" ? window.innerWidth : 1024
     );
 
+    const cellRefs = useRef<CellRefMap>({});
+
     useEffect(() => {
         const handleResize = () => setWindowWidth(window.innerWidth);
         window.addEventListener("resize", handleResize);
         return () => window.removeEventListener("resize", handleResize);
     }, []);
 
-    const { theme, mode } = useTheme();
+
+
+    const setCellRef = (
+        rowIndex: number,
+        colKey: string,
+        el: FocusableElement
+    ) => {
+        console.log('📌 setCellRef called:', {
+            rowIndex,
+            colKey,
+            elementType: el?.tagName,
+            elementId: el?.id,
+            hasElement: !!el
+        });
+
+        if (!el) {
+            // This is being called during unmount - we can ignore it
+            // Don't clear the ref, just log and return
+            console.log('⚠️ Unmount ref call for', { rowIndex, colKey });
+            return;
+        }
+
+        if (!cellRefs.current[rowIndex]) {
+            cellRefs.current[rowIndex] = {};
+        }
+
+        cellRefs.current[rowIndex][colKey] = el;
+        console.log('✅ Ref set successfully. Current refs for row', rowIndex, ':',
+            Object.keys(cellRefs.current[rowIndex]));
+    };
+
+
+    const focusNextCell = (rowIndex: number, colIndex: number) => {
+        console.log('🔍 focusNextCell called', { rowIndex, colIndex });
+
+        const cols = finalColumns.filter(c => c.key !== "actions");
+
+        let nextCol = colIndex + 1;
+        let nextRow = rowIndex;
+
+        // move to next row if last column
+        if (nextCol >= cols.length) {
+            nextCol = 0;
+            nextRow = rowIndex + 1;
+        }
+
+        console.log('🎯 Next position', { nextRow, nextCol });
+
+        const nextKey = cols[nextCol]?.key;
+        console.log('🔑 Next key:', nextKey);
+
+        // First, find the row data
+        const nextRowData = data[nextRow];
+        if (!nextRowData) {
+            console.log('❌ Next row not found');
+            return;
+        }
+
+        // Get the next cell's element
+        const nextEl = cellRefs.current?.[nextRow]?.[nextKey];
+        console.log('📌 Next element:', nextEl);
+
+        if (nextEl) {
+            // If element exists, focus it
+            console.log('✅ Focusing existing element');
+            nextEl.focus();
+            if ("select" in nextEl) {
+                try {
+                    nextEl.select();
+                } catch { }
+            }
+        } else {
+            // If element doesn't exist, trigger editing mode for the next cell
+            console.log('🔄 Element not found, triggering edit mode for next cell');
+
+            // Trigger row click to enter edit mode
+            if (onRowClick) {
+                onRowClick(nextRowData);
+            }
+
+            // Wait for the next render cycle for the ref to be created
+            setTimeout(() => {
+                const newEl = cellRefs.current?.[nextRow]?.[nextKey];
+                if (newEl) {
+                    console.log('✅ New element created, focusing now');
+                    newEl.focus();
+                    if ("select" in newEl) {
+                        try {
+                            newEl.select();
+                        } catch { }
+                    }
+                } else {
+                    console.log('❌ Still no element found after timeout');
+                }
+            }, 50);
+        }
+    };
+
+
+
     const isMobile = windowWidth < 640;
-    const isTablet = windowWidth >= 640 && windowWidth < 1024;
 
     const tableStyles = {
         border: "border-[#555]",
@@ -162,8 +259,8 @@ const EditableTable: React.FC<TableProps> = ({
     };
 
     const getPaddingClass = () => isMobile ? "px-2 py-1" : "px-2 py-2";
-    const getTextSizeClass = () => isMobile ? "text-xs" : "text-xs";
-    const getHeadTextSizeClass = () => isMobile ? "text-xs" : "text-xs";
+    const getTextSizeClass = () => isMobile ? "text-sm" : "text-sm";
+    const getHeadTextSizeClass = () => isMobile ? "text-sm" : "text-sm";
 
     const sortedData = useMemo(() => {
         if (!sortKey) return data;
@@ -178,14 +275,14 @@ const EditableTable: React.FC<TableProps> = ({
         });
     }, [data, sortKey, sortDirection]);
 
-    const handleSort = useCallback((key: string) => {
-        if (sortKey === key) {
-            setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
-        } else {
-            setSortKey(key);
-            setSortDirection('asc');
-        }
-    }, [sortKey]);
+    // const handleSort = useCallback((key: string) => {
+    //     if (sortKey === key) {
+    //         setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
+    //     } else {
+    //         setSortKey(key);
+    //         setSortDirection('asc');
+    //     }
+    // }, [sortKey]);
 
     const displayData = useMemo(() => {
         if (showRows > 0) {
@@ -223,11 +320,13 @@ const EditableTable: React.FC<TableProps> = ({
     const handleRowClick = (row: any) => {
         if (!enableInlineEditing || isEmptyRow(row, data.length)) return;
 
-        const rowId = row.SNO || row.id || row._id;
+        const rowId = row.__rowId ?? row.SNO ?? row.id ?? row._id;
+        console.log('🖱️ Row click handler in EditableTable:', { rowId, isCurrentlyEditing: isRowEditing(row) });
+
         if (onRowClick) {
             onRowClick(row);
-           
         } else if (!isRowEditing(row)) {
+            console.log('📝 Setting local editing row:', rowId);
             setLocalEditingRowId(rowId);
             setIsNewRow(false);
         }
@@ -280,7 +379,7 @@ const EditableTable: React.FC<TableProps> = ({
         return value;
     };
 
-    const renderCell = useCallback((column: TableColumn, row: any, rowIndex: number) => {
+    const renderCell = useCallback((column: TableColumn, row: any, rowIndex: number, colIndex: number) => {
         if (isEmptyRow(row, rowIndex)) {
             return <span className="opacity-0">--</span>;
         }
@@ -308,7 +407,8 @@ const EditableTable: React.FC<TableProps> = ({
                         options={column.options}
                         collection={column.collection}
                         getLabelByValue={column.getLabelByValue}
-                        
+                        inputRef={(el) => setCellRef(rowIndex, column.key, el)}
+                        onEnter={() => focusNextCell(rowIndex, colIndex)} // Now colIndex is defined
                     />
                 </div>
             );
@@ -325,7 +425,9 @@ const EditableTable: React.FC<TableProps> = ({
         }
 
         return displayValue;
-    }, [isEmptyRow, isRowEditing, onUpdateRow, isMobile]);
+    }, [isEmptyRow, isRowEditing, onUpdateRow, isMobile, focusNextCell, getDisplayValue, setCellRef]);
+
+
 
     const renderActions = (row: any, rowIndex: number) => {
         if (isEmptyRow(row, rowIndex)) return null;
@@ -478,15 +580,15 @@ const EditableTable: React.FC<TableProps> = ({
                                             <td
                                                 key={column.key}
                                                 className={`
-                                                    ${getPaddingClass()}
-                                                    ${getTextSizeClass()}
-                                                    whitespace-nowrap
-                                                    ${isEmptyRow(row, rowIndex) ? "text-transparent" : tableStyles.bodyText}
-                                                    ${getAlignmentClass(column.align)}
-                                                    border-r border-[#555]
-                                                    last:border-r-0
-                                                    table-body-10
-                                                `}
+        ${getPaddingClass()}
+        ${getTextSizeClass()}
+        whitespace-nowrap
+        ${isEmptyRow(row, rowIndex) ? "text-transparent" : tableStyles.bodyText}
+        ${getAlignmentClass(column.align)}
+        border-r border-[#555]
+        last:border-r-0
+        table-body-10
+    `}
                                                 style={getResponsiveWidth(column.width) ? {
                                                     width: getResponsiveWidth(column.width),
                                                     minWidth: getResponsiveWidth(column.width)
@@ -497,7 +599,7 @@ const EditableTable: React.FC<TableProps> = ({
                                                     renderActions(row, rowIndex)
                                                 ) : (
                                                     <div className={getAlignmentClass(column.align)}>
-                                                        {renderCell(column, row, rowIndex)}
+                                                        {renderCell(column, row, rowIndex, colIndex)} {/* Pass colIndex here */}
                                                     </div>
                                                 )}
                                             </td>
@@ -510,7 +612,7 @@ const EditableTable: React.FC<TableProps> = ({
 
                         {displayData.length === 0 && !loading && (
                             <div className={`text-center p-2 ${tableStyles.bodyBg} border-t border-[#555]`}>
-                                <div className={`${tableStyles.bodyText} ${isMobile ? 'text-xs' : 'text-xs'} table-footer-text  font-medium`}>
+                                <div className={`${tableStyles.bodyText} ${isMobile ? 'text-sm' : 'text-sm'} table-footer-text  font-medium`}>
                                     {emptyMessage}
                                 </div>
                                 <div className="text-gray-500  dark:text-gray-400 table-footer-text mt-1">

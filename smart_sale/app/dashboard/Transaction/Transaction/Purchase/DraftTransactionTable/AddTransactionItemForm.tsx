@@ -1,7 +1,7 @@
 // @/component/form/AddTransactionItemForm.tsx
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
     Box,
     Portal,
@@ -22,6 +22,7 @@ import downLoadIcon from '@/asserts/icons/download.png';
 import Image from "next/image";
 import { useCalculatePure } from "@/hooks/pure/useCalculatePure";
 import { toaster } from "@/components/ui/toaster";
+
 /* ---------------- TYPES ---------------- */
 
 export interface FormField {
@@ -41,10 +42,10 @@ export interface FormField {
     allowNegative?: boolean;
     confirmNegative?: boolean;
     size?: "2xs" | "xs" | "sm" | "md" | "lg";
-    disabled?:boolean;
-    decimalScale?:number;
+    disabled?: boolean;
+    decimalScale?: number;
+    dependsOn?: string; // ADD THIS
 }
-
 /* ---------------- SELECT ---------------- */
 
 export function CustomSelect({
@@ -54,6 +55,9 @@ export function CustomSelect({
     placeholder,
     isInvalid,
     size = "sm",
+    inputRef,
+    onEnter,
+    disabled
 }: {
     value: string;
     onChange: (value: string) => void;
@@ -61,41 +65,74 @@ export function CustomSelect({
     placeholder?: string;
     isInvalid?: boolean;
     size?: "xs" | "sm" | "md" | "lg";
+    inputRef?: React.RefObject<HTMLSelectElement>;
+    onEnter?: () => void;
+    disabled?: boolean;
 }) {
     const selectCollection = createListCollection({
         items: collection?.items || [],
     });
 
-    return (
-        <Select.Root
-            collection={selectCollection}
-            size={size}
-            value={value ? [value] : []}
-            onValueChange={(e) => onChange(e.value[0] || "")}
-        >
-            <Select.HiddenSelect />
-            <Select.Control>
-                <Select.Trigger borderColor={isInvalid ? "red.400" : undefined}>
-                    <Select.ValueText placeholder={placeholder} />
-                </Select.Trigger>
-                <Select.IndicatorGroup>
-                    <Select.Indicator />
-                </Select.IndicatorGroup>
-            </Select.Control>
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLSelectElement>) => {
+        if (e.key === "Enter") {
+            e.preventDefault();
+            onEnter?.();
+        }
+    };
 
-            <Portal>
-                <Select.Positioner>
-                    <Select.Content>
-                        {selectCollection.items.map((item) => (
-                            <Select.Item item={item} key={item.value}>
-                                {item.label}
-                                <Select.ItemIndicator />
-                            </Select.Item>
-                        ))}
-                    </Select.Content>
-                </Select.Positioner>
-            </Portal>
-        </Select.Root>
+    // Create a local ref if no ref is provided
+    const localRef = useRef<HTMLSelectElement>(null);
+    const ref = inputRef || localRef;
+
+    return (
+        <>
+            <Select.Root
+                collection={selectCollection}
+                size={size}
+                value={value ? [value] : []}
+                onValueChange={(e) => onChange(e.value[0] || "")}
+                disabled = {disabled}
+            >
+                <Select.HiddenSelect />
+                <Select.Control>
+                    <Select.Trigger borderColor={isInvalid ? "red.400" : undefined}>
+                        <Select.ValueText placeholder={placeholder} />
+                    </Select.Trigger>
+                    <Select.IndicatorGroup>
+                        <Select.Indicator />
+                    </Select.IndicatorGroup>
+                </Select.Control>
+
+                <Portal>
+                    <Select.Positioner>
+                        <Select.Content>
+                            {selectCollection.items.map((item) => (
+                                <Select.Item item={item} key={item.value}>
+                                    {item.label}
+                                    <Select.ItemIndicator />
+                                </Select.Item>
+                            ))}
+                        </Select.Content>
+                    </Select.Positioner>
+                </Portal>
+            </Select.Root>
+
+            {/* Hidden select field for ref and keyboard events */}
+            <select
+                ref={ref}
+                value={value}
+                onChange={(e) => onChange(e.target.value)}
+                onKeyDown={handleKeyDown}
+                style={{
+                    position: 'absolute',
+                    opacity: 0,
+                    width: 0,
+                    height: 0,
+                    pointerEvents: 'none'
+                }}
+                tabIndex={-1}
+            />
+        </>
     );
 }
 
@@ -108,6 +145,9 @@ export function CustomCombobox({
     placeholder,
     isInvalid,
     size = "sm",
+    inputRef,
+    onEnter,
+    disabled
 }: {
     value: string;
     onChange: (value: string) => void;
@@ -115,6 +155,9 @@ export function CustomCombobox({
     placeholder?: string;
     isInvalid?: boolean;
     size?: "2xs" | "sm" | "md" | "lg" | "xs";
+    inputRef?: React.RefObject<HTMLInputElement>;
+    onEnter?: () => void;
+    disabled?: boolean;
 }) {
     const { contains } = useFilter({ sensitivity: "base" });
 
@@ -123,25 +166,43 @@ export function CustomCombobox({
         filter: contains,
     });
 
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === "Enter") {
+            e.preventDefault();
+            e.stopPropagation();
+            onEnter?.();
+        }
+    };
+
+    // Create a local ref if no ref is provided
+    const localRef = useRef<HTMLInputElement>(null);
+    const ref = inputRef || localRef;
+
     return (
         <Combobox.Root
             collection={filteredCollection}
             value={value ? [value] : []}
-            onValueChange={(e) => onChange(e.value[0] || "")}
+            onValueChange={(e) => {
+                onChange(e.value[0] || "");
+                // After selection, trigger onEnter to move to next field
+                setTimeout(() => onEnter?.(), 50);
+            }}
             onInputValueChange={(e) => filter(e.inputValue)}
             size="xs"
             fontSize="2xs"
             width="100%"
             openOnClick
-          
+            disabled={disabled}
         >
-            <Combobox.Control >
+            <Combobox.Control>
                 <Combobox.Input
+                    ref={ref}
                     placeholder={placeholder}
                     borderColor={isInvalid ? "red.400" : undefined}
                     fontSize="2xs"
                     p={1}
-                   
+                    onKeyDown={handleKeyDown}
+                    disabled={disabled}
                 />
                 <Combobox.IndicatorGroup>
                     <Combobox.ClearTrigger onClick={() => onChange("")} />
@@ -171,9 +232,10 @@ interface AddTransactionItemFormProps {
     onSubmit: (data: any) => Promise<void> | void;
     onCancel: () => void;
     compact?: boolean;
-    handleClearForm?:any;
-    isEditing:boolean;
+    handleClearForm?: any;
+    isEditing: boolean;
     getAvailableWeight?: (pureId: string) => number | null;
+    isIssue?: boolean;
 }
 
 export default function AddTransactionItemForm({
@@ -183,7 +245,8 @@ export default function AddTransactionItemForm({
     compact = false,
     handleClearForm,
     isEditing,
-    getAvailableWeight
+    getAvailableWeight,
+    isIssue
 }: AddTransactionItemFormProps) {
     const [formData, setFormData] = useState<Record<string, any>>({});
     const [errors, setErrors] = useState<Record<string, string>>({});
@@ -192,20 +255,56 @@ export default function AddTransactionItemForm({
 
     const { theme } = useTheme();
 
+    console.log(fields,'fieldsfields')
+
+    // Create refs for each field
+    const fieldRefs = useRef<Record<string, React.RefObject<any>>>({});
+
+    // Initialize refs for each visible field
+    const visibleFields = fields.filter(
+        (field) => field.key !== "NETWT" && field.key !== "PUREWT" && field.key !== "PURE" && field.key !== "A_PURE"
+    );
+
+    // Create refs for each field
+    visibleFields.forEach(field => {
+        if (!fieldRefs.current[field.key]) {
+            fieldRefs.current[field.key] = React.createRef<any>();
+        }
+    });
+
+    // Submit button ref
+    const submitButtonRef = useRef<HTMLButtonElement>(null);
 
     const mirrorMap: Record<string, string> = {
         WT: "A_WT",
         PURE: "A_PURE",
-        TOUCH:"A_TOUCH"
+        TOUCH: "A_TOUCH"
     };
-
-    // Filter out NETWT and PUREWT from the form fields (they will be calculated)
-    const visibleFields = fields.filter(
-        (field) => field.key !== "NETWT" && field.key !== "PUREWT" && field.key !== "PURE" && field.key !== "A_PURE" 
-    );
 
     const pureValue = useCalculatePure(formData.WT, formData.TOUCH);
     const alternativePureValue = useCalculatePure(formData.A_WT, formData.A_TOUCH);
+
+    /* ---------------- NAVIGATION ---------------- */
+
+    const moveToNextField = (currentKey: string) => {
+        const fieldKeys = visibleFields.map(f => f.key);
+        const currentIndex = fieldKeys.indexOf(currentKey);
+
+        if (currentIndex < fieldKeys.length - 1) {
+            // Move to next field
+            const nextKey = fieldKeys[currentIndex + 1];
+            const nextRef = fieldRefs.current[nextKey];
+            if (nextRef?.current) {
+                nextRef.current.focus();
+                if (nextRef.current.select) {
+                    nextRef.current.select();
+                }
+            }
+        } else {
+            // Last field, move to submit button
+            submitButtonRef.current?.focus();
+        }
+    };
 
     /* ---------------- INIT ---------------- */
 
@@ -255,22 +354,19 @@ export default function AddTransactionItemForm({
                 PURE: pureValue,     // or PUREWT
             }));
         }
-        if(alternativePureValue){
-        setFormData(prev => ({
+        if (alternativePureValue) {
+            setFormData(prev => ({
                 ...prev,
                 A_PURE: alternativePureValue
             }));
         }
-    }, [pureValue , alternativePureValue]);
-
-
+    }, [pureValue, alternativePureValue]);
 
     /* ---------------- CHANGE ---------------- */
 
     const handleChange = useCallback((key: string, value: any) => {
         const newFormData = { ...formData, [key]: value };
-        
-        
+
         // ✅ One-way mirror (main → alternative)
         if (mirrorMap[key]) {
             newFormData[mirrorMap[key]] = value;
@@ -310,9 +406,7 @@ export default function AddTransactionItemForm({
         setFormData(newFormData);
         setTouched((prev) => ({ ...prev, [key]: true }));
         setErrors((prev) => ({ ...prev, [key]: "" }));
-    }, [formData, calculateNetWeight]);
-
-   
+    }, [formData, calculateNetWeight, getAvailableWeight]);
 
     useEffect(() => {
         if (pureValue) {
@@ -323,7 +417,6 @@ export default function AddTransactionItemForm({
             }));
         }
     }, [pureValue]);
-
 
     /* ---------------- VALIDATION ---------------- */
 
@@ -386,6 +479,14 @@ export default function AddTransactionItemForm({
             fields.forEach((f) => (reset[f.key] = ""));
             setFormData(reset);
             setTouched({});
+
+            // Focus back to first field after submit
+            setTimeout(() => {
+                const firstField = visibleFields[0]?.key;
+                if (firstField && fieldRefs.current[firstField]?.current) {
+                    fieldRefs.current[firstField].current.focus();
+                }
+            }, 100);
         } catch (err) {
             console.error(err);
         }
@@ -398,8 +499,11 @@ export default function AddTransactionItemForm({
     const renderField = (field: FormField) => {
         const size = "xs";
         const isInvalid = !!errors[field.key] && touched[field.key];
+        const fieldRef = fieldRefs.current[field.key];
 
-      
+        // Check if field should be disabled based on dependency
+        const shouldDisable = field.dependsOn && !formData[field.dependsOn];
+
         switch (field.type) {
             case "capitalized":
                 return (
@@ -409,22 +513,19 @@ export default function AddTransactionItemForm({
                         onChange={(_, v) => handleChange(field.key, v)}
                         type="text"
                         isCapitalized
+                        rounded="md"
                         size={size}
                         max={field.max}
                         decimalScale={field.decimalScale}
+                        inputRef={fieldRef}
+                        onEnter={() => moveToNextField(field.key)}
+                        disabled={shouldDisable || field.disabled}
                     />
                 );
 
             case "number":
-                const shouldDisable =
-                    (field.key === "WT" ||
-                        field.key === "TOUCH" ||
-                        field.key === "A_WT" ||
-                        field.key === "A_TOUCH") &&
-                    !formData.PUREID; // 🔥 disable until PUREID selected
-
+            case "calculated":
                 return (
-                    
                     <CapitalizedInput
                         field={field.key as string}
                         value={formData[field.key] || ""}
@@ -438,7 +539,9 @@ export default function AddTransactionItemForm({
                         rounded="md"
                         max={field.max}
                         decimalScale={field.decimalScale}
-                        disabled={shouldDisable}
+                        disabled={shouldDisable || field.disabled || field.type === "calculated"}
+                        inputRef={fieldRef}
+                        onEnter={() => moveToNextField(field.key)}
                     />
                 );
 
@@ -451,6 +554,10 @@ export default function AddTransactionItemForm({
                         placeholder={field.placeholder}
                         isInvalid={isInvalid}
                         size={size}
+                     
+                        inputRef={fieldRef}
+                        onEnter={() => moveToNextField(field.key)}
+                        disabled={shouldDisable || field.disabled}
                     />
                 );
 
@@ -463,7 +570,9 @@ export default function AddTransactionItemForm({
                         placeholder={field.placeholder}
                         isInvalid={isInvalid}
                         size={size}
-
+                        inputRef={fieldRef}
+                        onEnter={() => moveToNextField(field.key)}
+                        disabled={shouldDisable || field.disabled}
                     />
                 );
 
@@ -478,7 +587,11 @@ export default function AddTransactionItemForm({
                         size={size}
                         onClassUse={true}
                         max={field.max}
+                        rounded="sm"
                         decimalScale={field.decimalScale}
+                        inputRef={fieldRef}
+                        onEnter={() => moveToNextField(field.key)}
+                        disabled={shouldDisable || field.disabled}
                     />
                 );
         }
@@ -489,12 +602,10 @@ export default function AddTransactionItemForm({
     const getGridColumns = () => {
         if (compact) {
             return {
-
                 md: "repeat(4, 1fr)",
                 lg: "repeat(6, 1fr)",
                 xl: "repeat(13, 1fr)",
                 base: "repeat(2, 1fr)", // 12-column grid for flexibility
-               
             };
         }
 
@@ -505,19 +616,20 @@ export default function AddTransactionItemForm({
             xl: "repeat(4, 1fr)",
         };
     };
+
     const getGridColumnSpan = (field: FormField): string => {
         // Define how many columns each field should span
         const spanMap: Record<string, string> = {
-            "PUREID":"span 2",
+            "PUREID": "span 2",
             "ITEMID": "span 2",
-            "DESCRIPTION": "span 2", 
-            "ITEMCODE": "span 1", 
-            "PCS": "span 1", 
+            "DESCRIPTION": "span 2",
+            "ITEMCODE": "span 1",
+            "PCS": "span 1",
             "GRSWT": "span 1",
             "LESSWT": "span 1",
             "PURITY": "span 1",
-            "RATE": "span 1", 
-            "AMOUNT": "span 1", 
+            "RATE": "span 1",
+            "AMOUNT": "span 1",
         };
 
         return spanMap[field.key] || "span 1"; // Default to 1 column
@@ -526,7 +638,6 @@ export default function AddTransactionItemForm({
     /* ---------------- UI ---------------- */
 
     return (
-
         <Box
             p={compact ? 3 : 4}
             borderWidth="1px"
@@ -559,23 +670,19 @@ export default function AddTransactionItemForm({
                     ))}
                 </Grid>
 
-               
-        
                 <Box display="flex" justifyContent="space-between" alignItems="center" mt={1}>
-
                     {/* Show calculated values */}
-
-                        <Flex mt={1} p={1} bg="gray.50" borderRadius="md" gap={2}>
-                            {formData.NETWT && (
-                                <Text fontSize="2xs">
-                                    <strong>NET WT :</strong> {formData.NETWT}
-                                </Text>
-                            )}
-                            {formData.PUREWT && (
-                                <Text fontSize="2xs">
-                                    <strong>PURE WT :</strong> {formData.PUREWT}
-                                </Text>
-                            )}
+                    <Flex mt={1} p={1} bg="gray.50" borderRadius="md" gap={2}>
+                        {formData.NETWT && (
+                            <Text fontSize="2xs">
+                                <strong>NET WT :</strong> {formData.NETWT}
+                            </Text>
+                        )}
+                        {formData.PUREWT && (
+                            <Text fontSize="2xs">
+                                <strong>PURE WT :</strong> {formData.PUREWT}
+                            </Text>
+                        )}
                         {formData.PURE && (
                             <Text fontSize="2xs">
                                 <strong>PURE  :</strong> {formData.PURE}
@@ -586,24 +693,27 @@ export default function AddTransactionItemForm({
                                 <strong>A.PURE :</strong> {formData.A_PURE}
                             </Text>
                         )}
-                        </Flex>
-             
+                    </Flex>
+
                     <Box display='flex' gap={1}>
                         <Button
+                            ref={submitButtonRef}
                             size="2xs"
                             type="submit"
                             loading={isSubmitting}
                             bg={theme.colors.formColor}
                             variant='ghost'
                             color={theme.colors.whiteColor}
+                            onKeyDown={(e) => {
+                                if (e.key === "Enter") {
+                                    e.preventDefault();
+                                    handleSubmit(e);
+                                }
+                            }}
                         >
-                         <Image src={downLoadIcon} alt="download" width={35} />
+                            <Image src={downLoadIcon} alt="download" width={35} />
                         </Button>
-                      
-
-                      
                     </Box>
-                    
                 </Box>
             </form>
         </Box>

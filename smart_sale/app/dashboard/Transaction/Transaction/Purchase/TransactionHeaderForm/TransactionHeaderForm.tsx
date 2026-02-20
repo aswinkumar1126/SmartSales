@@ -67,6 +67,9 @@ export default function TransactionHeaderForm({
         return date.toISOString().split("T")[0];
     };
 
+    const openingCash = openingData?.OPENING_CASH ? formatToFixed(openingData?.OPENING_CASH , 2) : 0;
+    const openingPure = openingData?.OPENING_PURE ? formatToFixed(openingData?.OPENING_PURE, 2) : 0;
+
     return (
         <Box
             display={{ base: 'block', md: 'flex' }}
@@ -78,11 +81,7 @@ export default function TransactionHeaderForm({
             p={2}
             rounded="xl"
         >
-            <Flex
-                flexDirection={{ base: "column", md: "row" }}
-                gap={2}
-                w="100%"
-            >
+            
                 <Box
                     display="flex"
                     gap={2}
@@ -162,62 +161,59 @@ export default function TransactionHeaderForm({
                         />
                     </Box>
                 </Box>
-            </Flex>
+       
 
-            <Flex alignItems='center' justifyContent='center' className="animate__animated animate__bounce animate__delay-1s">
+                <Box display='flex' gap={2}  >
                 {openingBalance && openingData && (
-                    <Flex justifyContent="flex-end" align="center" gap={1}>
-                        {openingData.OPENING_PURE !== undefined && (
+              
+                      <>
                             <Box
-                                display="flex"
-                                alignItems="center"
                                 bg={theme.colors.formColor}
-                                p={2}
+                              
                                 gap={1}
                                 rounded="sm"
-                                justifyContent="space-between"
+
                             >
-                                <Text fontSize="2xs" fontWeight='semibold'>
+                                <Text fontSize="xs" fontWeight='semibold' >
                                     OPENING PURE :
                                 </Text>
                                 <Text
-                                    fontSize="2xs"
+                                    fontSize="sm"
                                     bg={theme.colors.accient}
                                     fontWeight='semibold'
                                     p={1}
                                     rounded="sm"
                                     color={theme.colors.whiteColor}
                                 >
-                                    {formatToFixed(openingData.OPENING_PURE, 2)}
+                                    {openingPure}
                                 </Text>
                             </Box>
-                        )}
-                        {openingData.OPENING_CASH !== undefined && (
+                        
+                     
                             <Box
-                                display="flex"
                                 alignItems="center"
                                 bg={theme.colors.formColor}
-                                p={2}
                                 gap={1}
                                 rounded="sm"
                                 justifyContent="space-between"
                             >
-                                <Text fontSize="2xs" fontWeight='semibold'>
+                                <Text fontSize="xs" fontWeight='semibold'>
                                     OPENING CASH :
                                 </Text>
                                 <Text
-                                    fontSize="2xs"
+                                    fontSize="sm"
                                     bg={theme.colors.accient}
                                     p={1}
                                     rounded="sm"
                                     color={theme.colors.whiteColor}
-                                >
-                                    {formatToFixed(openingData.OPENING_CASH, 2)}
+                                >   
+                                    {openingCash}
                                 </Text>
                             </Box>
-                        )}
-                    </Flex>
+                    </>
+                 
                 )}
+                </Box>
                 <Box>
                     <FloatingActionButton
                         icon={showFilter ? <HiX size={20} /> : <HiFilter size={20} />}
@@ -231,7 +227,7 @@ export default function TransactionHeaderForm({
                         className="animate__animated animate__fadeInUp"
                     />
                 </Box>
-            </Flex>
+          
         </Box>
     );
 }

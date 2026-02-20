@@ -59,13 +59,17 @@ export interface ItemTransactionRow extends WeightInfo {
 
     PCS?: number;
     GRSWT?: number;
-    LESSWT?: number;
+    STNWT?: number;
     NETWT?: number;
+    WASTYPE?:string;
+    WASPER?:number;
+    WASTAGE?:number;
 
-    PURITY?: number;
-    RATE?: number;
-    MCHARGE?: number;
-    WASTAGE?: number;
+    TOUCH?: number;
+    PUREWT?: number;
+    MC?:number;
+    ATOUCH?:number;
+    // DESCRIPTION?:string;
 }
 
 

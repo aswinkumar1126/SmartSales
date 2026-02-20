@@ -1,10 +1,9 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
     Box,
     Button,
-    Input,
     VStack,
     Text,
     Grid,
@@ -12,7 +11,6 @@ import {
     HStack,
     Stack,
     Fieldset,
-    Field,
     NativeSelect,
     createListCollection,
     For,
@@ -29,24 +27,27 @@ import { useTheme } from "@/context/theme/themeContext";
 import { useAllMetals, useMetalBySno } from "@/hooks/metal/useMetals";
 import { useUpdateMetal } from "@/hooks/metal/useUpdateMetal";
 import { useCreateMetal } from "@/hooks/metal/useCreateMetal";
-import { Metal, MetalData } from "@/service/metalService";
-import scrollToTop from "@/component/scroll/ScrollToTop";
-import { toastError, toastLoaded } from '@/component/toast/toast'
+import { Metal } from "@/service/metalService";
+import { toastError } from '@/component/toast/toast'
 import { Toaster } from "@/components/ui/toaster";
 
 import { CustomTable } from "@/component/table/CustomTable";
 import { CapitalizedInput } from "@/component/form/CapitalizedInput";
 import { usePrint } from "@/context/print/usePrintContext";
 import { useRouter } from "next/navigation";
-import { FaPrint ,FaFileExcel } from "react-icons/fa";
+import { FaPrint, FaFileExcel } from "react-icons/fa";
 import { usePureGoldData } from "@/hooks/pureGoldMast/usePureGoldMastData";
-import { SelectCombobox } from "@/components/ui/selectComboBox";
-import { safeValue } from "@/utils/comboBox/safeValue";
-
 
 function MetalMaster() {
     const { theme } = useTheme();
     const router = useRouter();
+
+    // Create refs for each input field
+    const metalIdRef = useRef<HTMLInputElement>(null);
+    const metalNameRef = useRef<HTMLInputElement>(null);
+    const displayOrderRef = useRef<HTMLInputElement>(null);
+    const activeRef = useRef<HTMLSelectElement>(null);
+    const saveButtonRef = useRef<HTMLButtonElement>(null);
 
     // Form state
     const [form, setForm] = useState<Partial<Metal>>({
@@ -55,37 +56,40 @@ function MetalMaster() {
         metalType: "M",
         displayOrder: 1,
         active: "Y",
-        weight:"",
-        touch:"",
-        pure:""
+        weight: "",
+        touch: "",
+        pure: ""
     });
     const [metalIdManuallyChanged, setMetalIdManuallyChanged] = useState(false);
 
-
-    
-
     const [isEdit, setIsEdit] = useState(false);
     const [editId, setEditId] = useState<number | null>(null);
-    const [ highlightId ,setHighLightedId] =useState<String>();
+    const [highlightId, setHighLightedId] = useState<String>();
     const [pureGoldCollection, setPureGoldCollection] = useState<any[]>([]);
 
-    const { data: metals = [], refetch } = useAllMetals();
-   const [filter ,setFilter] =useState<string>('')
+    const { data: metals = [] } = useAllMetals();
+    const [filter, setFilter] = useState<string>('')
     const { data: pureGold } = usePureGoldData(filter);
 
-   
-
-   
+    // Function to move to next field on Enter
+    const moveToNextField = (nextRef: React.RefObject<any>) => {
+        if (nextRef?.current) {
+            nextRef.current.focus();
+            if (nextRef.current.select) {
+                nextRef.current.select();
+            }
+        }
+    };
 
     useEffect(() => {
-            if (!pureGold?.length) return;
-    
-            const mapped = pureGold.map((p: any) => ({
-                label: p.pureGoldName,
-                value: String(p.sno),
-            }));
-    
-            setPureGoldCollection(mapped);
+        if (!pureGold?.length) return;
+
+        const mapped = pureGold.map((p: any) => ({
+            label: p.pureGoldName,
+            value: String(p.sno),
+        }));
+
+        setPureGoldCollection(mapped);
     }, [pureGold]);
 
     useEffect(() => {
@@ -98,9 +102,8 @@ function MetalMaster() {
     }, [metals]);
 
     const { data: metalBySno, refetch: refetchMetalBySno } = useMetalBySno(editId);
- 
 
-    const { setData ,setColumns , setShowSno , title} = usePrint();
+    const { setData, setColumns, setShowSno, title } = usePrint();
 
     const createMutation = useCreateMetal();
     const updateMutation = useUpdateMetal();
@@ -111,7 +114,6 @@ function MetalMaster() {
             { label: "NO", value: "N" },
         ],
     });
-   
 
     const handleChange = (field: keyof Metal, value: any) => {
         setForm((prev) => {
@@ -135,7 +137,6 @@ function MetalMaster() {
         });
     };
 
-    
     useEffect(() => {
         if (!highlightId) return;
 
@@ -146,66 +147,57 @@ function MetalMaster() {
         return () => clearTimeout(timer);
     }, [highlightId]);
 
-
-
-
-
-    const handleSave = () => { 
+    const handleSave = () => {
         if (!form.metalId) {
             toastError("Metal ID is required");
+            metalIdRef.current?.focus();
             return;
         }
 
         if (!form.metalName?.trim()) {
             toastError("Metal name is required");
+            metalNameRef.current?.focus();
             return;
         }
 
-        // 🔹 Check if metalId already exists when creating new
-        // if (!isEdit && metals.some(m => m.metalId === form.metalId)) {
-        //     toastError(`Metal ID "${form.metalId}" already exists`);
-        //     return; // prevent save
-        // }
-
-        if (isEdit && form.metalId ) {
-            
+        if (isEdit && form.metalId) {
             updateMutation.mutate(
                 { sno: Number(form.sno), metal: form as Metal },
-                { onSuccess: () => { 
-                    setHighLightedId(String(form.sno))
-                    resetForm();
-                   } }
+                {
+                    onSuccess: () => {
+                        setHighLightedId(String(form.sno))
+                        resetForm();
+                    }
+                }
             );
         } else {
-            createMutation.mutate(form as Metal, { onSuccess: () => { 
-                resetForm(); 
-                setHighLightedId(String(form.metalId));
-              } });
+            createMutation.mutate(form as Metal, {
+                onSuccess: () => {
+                    resetForm();
+                    setHighLightedId(String(form.metalId));
+                }
+            });
         }
     };
 
-    const handleEdit = (metal:Metal) => {
-       
+    const handleEdit = (metal: Metal) => {
         setIsEdit(true);
-        setEditId( metal.sno || null );
+        setEditId(metal.sno || null);
         refetchMetalBySno();
-     
     };
 
     useEffect(() => {
         if (metalBySno?.data && Object.keys(metalBySno?.data).length > 0) {
-        
             setForm({
                 ...metalBySno?.data,
-                metalType: metalBySno?.data?.metalType || "", // 👈 normalize
+                metalType: metalBySno?.data?.metalType || "",
             });
         }
     }, [metalBySno]);
 
-
     const resetForm = () => {
         setIsEdit(false);
-        setMetalIdManuallyChanged(false); // 🔹 reset auto-sync
+        setMetalIdManuallyChanged(false);
 
         setForm({
             metalId: "",
@@ -219,11 +211,11 @@ function MetalMaster() {
         });
 
         setEditId(null);
+        // Focus to Metal Name after save
+        setTimeout(() => metalNameRef.current?.focus(), 100); // ← Changed to metalNameRef
     };
 
-
     const metalColumns = [
-
         { key: "sno", label: "Sno" },
         { key: "metalId", label: "Metal Id" },
         { key: "metalName", label: "Metal Name" },
@@ -231,32 +223,30 @@ function MetalMaster() {
         { key: "active", label: "Active", align: "center" as const },
         { key: "actions", label: "Action", align: "center" as const },
     ];
-    const handleExport = (option:string) => {
+
+    const handleExport = (option: string) => {
         setData(metals);
-        setColumns([{key:'metalId',label:'Metal Id'},
-            {key:'metalName',label:'Metal Name'},
-            {key:'displayOrder',label:'Order'},
-           ]);
+        setColumns([
+            { key: 'metalId', label: 'Metal Id' },
+            { key: 'metalName', label: 'Metal Name' },
+            { key: 'displayOrder', label: 'Order' },
+        ]);
         setShowSno(true);
         router.push(`/print?export=${option}`);
         title?.("Metal List")
-   
     };
-
 
     return (
         <Box
-                   className={fontVariables}
-                   bg={theme.colors.primary}
-                   color={theme.colors.secondary}
-                   fontWeight='semibold'
-                   
-                
-               >
-                   <Toaster />
-                   <Grid templateColumns={{ base: "1fr", lg: "1fr 2fr" }} gap={2}>
+            className={fontVariables}
+            bg={theme.colors.primary}
+            color={theme.colors.secondary}
+            fontWeight='semibold'
+        >
+            <Toaster />
+            <Grid templateColumns={{ base: "1fr", lg: "1fr 2fr" }} gap={2}>
                 {/* LEFT – Form */}
-                <GridItem >
+                <GridItem>
                     <VStack
                         w="full"
                         bg={theme.colors.formColor}
@@ -270,7 +260,6 @@ function MetalMaster() {
                         <Fieldset.Root size="sm" width="100%">
                             <Fieldset.Content>
                                 <Grid gap={2}>
-
                                     {/* METAL ID */}
                                     <Box display="flex" alignItems="center" gap={2}>
                                         <Box minW="80px" fontSize="2xs">METAL ID :</Box>
@@ -284,6 +273,8 @@ function MetalMaster() {
                                             max={1}
                                             size="2xs"
                                             maxWidth="120px"
+                                            inputRef={metalIdRef}
+                                            onEnter={() => moveToNextField(metalNameRef)}
                                         />
                                     </Box>
 
@@ -297,20 +288,10 @@ function MetalMaster() {
                                             onChange={handleChange}
                                             size="2xs"
                                             maxWidth="100%"
+                                            inputRef={metalNameRef}
+                                            onEnter={() => moveToNextField(displayOrderRef)}
                                         />
                                     </Box>
-
-                                    {/* METAL TYPE */}
-                                    {/* <Box display="flex" alignItems="center" gap={2}>
-                                        <Box minW="80px" fontSize="2xs">METAL TYPE :</Box>
-                                        <SelectCombobox
-                                            value={safeValue(form.metalType, pureGoldCollection) || ""}
-                                            onChange={(val) => handleChange("metalType", val || "")}
-                                            editId={Number(editId)}
-                                            items={pureGoldCollection}
-                                            placeholder="Select Type"
-                                        />
-                                    </Box> */}
 
                                     {/* DISPLAY ORDER */}
                                     <Box display="flex" alignItems="center" gap={2}>
@@ -323,63 +304,25 @@ function MetalMaster() {
                                             size="2xs"
                                             type="number"
                                             maxWidth="100%"
-                                       
-
-
+                                            inputRef={displayOrderRef}
+                                            onEnter={() => moveToNextField(activeRef)}
                                         />
                                     </Box>
-
-                                    {/* WEIGHT */}
-                                    {/* <Box display="flex" alignItems="center" gap={2}>
-                                        <Box minW="80px" fontSize="2xs">WEIGHT :</Box>
-                                        <CapitalizedInput
-                                            field="weight"
-                                            placeholder="Enter Weight"
-                                            value={form.weight || ""}
-                                            onChange={handleChange}
-                                            size="2xs"
-                                            type="number"
-                                            max={999}
-
-                                        />
-                                    </Box> */}
-
-                                    {/* TOUCH */}
-                                    {/* <Box display="flex" alignItems="center" gap={2}>
-                                        <Box minW="80px" fontSize="2xs">TOUCH :</Box>
-                                        <CapitalizedInput
-                                            field="touch"
-                                            placeholder="Enter Touch"
-                                            value={form.touch || ""}
-                                            onChange={handleChange}
-                                            size="2xs"
-                                            type="number"
-                                            max={999}
-                                            decimalScale={2}
-                                        />
-                                    </Box> */}
-
-                                    {/* PURE */}
-                                    {/* <Box display="flex" alignItems="center" gap={2}>
-                                        <Box minW="80px" fontSize="2xs">PURE :</Box>
-                                        <CapitalizedInput
-                                            field="pure"
-                                            placeholder="Enter Pure"
-                                            value={form.pure || ""}
-                                            onChange={handleChange}
-                                            size="2xs"
-                                            type="number"
-                                            max={999}
-                                        />
-                                    </Box> */}
 
                                     {/* ACTIVE */}
                                     <Box display="flex" alignItems="center" gap={2}>
                                         <Box minW="80px" fontSize="2xs">ACTIVE :</Box>
-                                        <NativeSelect.Root size="xs" minW="50px" fontSize="2xs" >
+                                        <NativeSelect.Root size="xs" minW="50px" fontSize="2xs">
                                             <NativeSelect.Field
+                                                ref={activeRef}
                                                 value={form.active || "Y"}
                                                 onChange={(e) => handleChange("active", e.target.value)}
+                                                onKeyDown={(e) => {
+                                                    if (e.key === "Enter") {
+                                                        e.preventDefault();
+                                                        moveToNextField(saveButtonRef);
+                                                    }
+                                                }}
                                                 css={{
                                                     backgroundColor: "#eee",
                                                     color: "#111827",
@@ -400,93 +343,95 @@ function MetalMaster() {
                                             <NativeSelect.Indicator />
                                         </NativeSelect.Root>
                                     </Box>
-
                                 </Grid>
 
                                 {/* BUTTONS */}
                                 <HStack pt={4} justifyContent="center">
-                                    <Button size="xs" colorPalette="blue" onClick={handleSave}>
+                                    <Button
+                                        size="xs"
+                                        colorPalette="blue"
+                                        onClick={handleSave}
+                                        ref={saveButtonRef}
+                                        onKeyDown={(e) => {
+                                            if (e.key === "Enter") {
+                                                e.preventDefault();
+                                                handleSave();
+                                            }
+                                        }}
+                                    >
                                         <AiOutlineSave /> {isEdit ? "Update" : "Save"}
                                     </Button>
                                     <Button size="xs" colorPalette="blue" onClick={resetForm}>
                                         Exit <IoIosExit />
                                     </Button>
                                 </HStack>
-
                             </Fieldset.Content>
                         </Fieldset.Root>
-
                     </VStack>
                 </GridItem>
-
 
                 {/* RIGHT – Table */}
                 <GridItem minW={0}>
                     <Box
-                                           p={4}
-                                           borderRadius="xl"
-                                           bg={theme.colors.formColor}
-                                           border="1px solid #eef"
-                                           boxShadow="0 0 30px rgba(212,212,212,0.2)"
-                        
-                                       >
-                                    <Box display='flex'  mb={2} gap={2} justifyContent='space-between' alignItems='center'>
-                                        <Text fontWeight="semi-bold" fontSize="small">METAL LIST </Text>
-                                        <Flex >
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="xs"
-                                                            color= {theme.colors.green}
-                                                            _hover={{ color: "black" }}
-                                                            onClick={() => handleExport("excel")}
-                                                            aria-label="Export Excel"
-                                                        >
-                                                            <FaFileExcel />
-                                                        </Button>
-                            
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="xs"
-                                                            color={theme.colors.primaryText}
-                                                            _hover={{ color: "black" }}
-                                                            onClick={() => handleExport("pdf")}
-                                                            aria-label="Export PDF"
-                                                        >
-                                                            <FaPrint />
-                                                        </Button>
-                                                    </Flex>
-                            
-                                        </Box>
-                       
+                        p={4}
+                        borderRadius="xl"
+                        bg={theme.colors.formColor}
+                        border="1px solid #eef"
+                        boxShadow="0 0 30px rgba(212,212,212,0.2)"
+                    >
+                        <Box display='flex' mb={2} gap={2} justifyContent='space-between' alignItems='center'>
+                            <Text fontWeight="semi-bold" fontSize="small">METAL LIST </Text>
+                            <Flex>
+                                <Button
+                                    variant="ghost"
+                                    size="xs"
+                                    color={theme.colors.green}
+                                    _hover={{ color: "black" }}
+                                    onClick={() => handleExport("excel")}
+                                    aria-label="Export Excel"
+                                >
+                                    <FaFileExcel />
+                                </Button>
 
-                        <Stack >
-                           <CustomTable
-                                                columns={metalColumns}
-                                                  data={metals}
-                                                  size="sm"
-                                                  headerBg='blue.800'
-                                                  bodyBg = {theme.colors.primary}
-                                                  headerColor='white'
-                                                  rowIdKey="sno"
-                                                  highlightRowId={highlightId ? Number(highlightId) : null}
-                                                  emptyText="No parties available"
-                                                  renderRow={(metal, i) => (
-                                                      <>    
+                                <Button
+                                    variant="ghost"
+                                    size="xs"
+                                    color={theme.colors.primaryText}
+                                    _hover={{ color: "black" }}
+                                    onClick={() => handleExport("pdf")}
+                                    aria-label="Export PDF"
+                                >
+                                    <FaPrint />
+                                </Button>
+                            </Flex>
+                        </Box>
 
-                                                            <Table.Cell>{metal.sno}</Table.Cell>
-                                                            <Table.Cell>{metal.metalId}</Table.Cell>
-                                                          <Table.Cell>{metal.metalName}</Table.Cell>
-                                                          <Table.Cell textAlign="center">{metal.displayOrder}</Table.Cell>
-                                                          <Table.Cell textAlign="center">{metal.active}</Table.Cell>
-                                                          <Table.Cell>
-                                                              <Box display="flex" justifyContent="center">
-                                                                  <FaEdit onClick={() => handleEdit(metal)} cursor="pointer" />
-                                                              </Box>
-                                                          </Table.Cell>
-                                                      </>
-                                                  )}
-                          
-                                              />
+                        <Stack>
+                            <CustomTable
+                                columns={metalColumns}
+                                data={metals}
+                                size="sm"
+                                headerBg='blue.800'
+                                bodyBg={theme.colors.primary}
+                                headerColor='white'
+                                rowIdKey="sno"
+                                highlightRowId={highlightId ? Number(highlightId) : null}
+                                emptyText="No parties available"
+                                renderRow={(metal, i) => (
+                                    <>
+                                        <Table.Cell>{metal.sno}</Table.Cell>
+                                        <Table.Cell>{metal.metalId}</Table.Cell>
+                                        <Table.Cell>{metal.metalName}</Table.Cell>
+                                        <Table.Cell textAlign="center">{metal.displayOrder}</Table.Cell>
+                                        <Table.Cell textAlign="center">{metal.active}</Table.Cell>
+                                        <Table.Cell>
+                                            <Box display="flex" justifyContent="center">
+                                                <FaEdit onClick={() => handleEdit(metal)} cursor="pointer" />
+                                            </Box>
+                                        </Table.Cell>
+                                    </>
+                                )}
+                            />
                         </Stack>
                     </Box>
                 </GridItem>

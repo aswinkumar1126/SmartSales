@@ -16,7 +16,7 @@ import EditableTable from "@/component/table/EditableTable";
 import AddTransactionItemForm, { FormField } from "./AddTransactionItemForm";
 import { issueColumns, issueDataColumns } from "../../Issue/isseColumns";
 import { applyWeightTouchLogic } from "@/hooks/pure/applyWeightTouchLogic";
-import { toaster } from "@/components/ui/toaster";
+
 
 interface DraftTransactionTableProps {
     rows: any[];
@@ -207,11 +207,9 @@ export default function DraftTransactionTable({
     // Prepare form fields from columns with proper grid column spans
     const formFields = useMemo(() => {
         const numericFields = [
-            "PCS", "GRSWT", "LESSWT", "PURITY", "RATE",
-            "MCHARGE", "WASTAGE", "AMOUNT", "IGST", "CGST", "SGST",
-            "WT" , "A_WT" , "TOUCH" ,"A_TOUCH" , "PURE" ,"A_PURE"
+            "PCS", "GRSWT", "STNWT", "NETWT", "WASPER", "WASTAGE", "ATOUCH",
+            "PUREWT", "MC", "ATOUCH", "WT", "A_WT", "TOUCH", "A_TOUCH", "PURE", "A_PURE"
         ];
-
         const baseColumns = isIssue ? issueDataColumns : issueColumns;
 
         return baseColumns
@@ -224,21 +222,22 @@ export default function DraftTransactionTable({
             .map((col): FormField => {
                 const isNumeric = numericFields.includes(col.key);
 
+                // Determine required fields based on transaction type
                 const isRequired = isIssue
-                    ? ["PUREID", "TOUCH", "WT" ,"PURE"].includes(col.key)
-                    : ["ITEMID", "PURITY", "GRSWT"].includes(col.key);
+                    ? ["PUREID", "TOUCH", "WT", "PURE"].includes(col.key)
+                    : ["ITEMID", "PCS", "GRSWT", "TOUCH"].includes(col.key);
 
                 const baseField: FormField = {
                     key: col.key,
                     label: col.label || col.key,
                     placeholder: `Enter ${col.label || col.key}`,
-                    type: isNumeric ? "number" : "capitalized",
+                    type: isNumeric ? "number" : "text", // Changed from "number" to "text" for non-numeric
                     isRequired,
                     size: "xs",
-                    // ...(isNumeric && 'max' in col && typeof col.max === 'number' ? { max: col.max } : {}),
                     ...(isNumeric && 'decimalScale' in col && typeof col.decimalScale === 'number' ? { decimalScale: col.decimalScale } : {}),
                 };
 
+                // Handle ITEMID (Purchase type)
                 if (col.key === "ITEMID") {
                     return {
                         ...baseField,
@@ -249,6 +248,7 @@ export default function DraftTransactionTable({
                     };
                 }
 
+                // Handle PUREID (Issue type)
                 if (col.key === "PUREID") {
                     return {
                         ...baseField,
@@ -258,27 +258,13 @@ export default function DraftTransactionTable({
                         disabled: isEditing,
                     };
                 }
-                if (col.key === "PURITY") {
-                    return {
-                        ...baseField,
-                        type: "number",
-                        min: 0,
-                        max: 100,
-                        step: 0.001,
-                        precision: 3,
-                        isRequired: true,
-                    };
-                }
 
-                if (col.key === "LESSWT" || col.key === "WASTAGE") {
-                    return {
-                        ...baseField,
-                        type: "number",
-                        allowNegative: true,
-                        confirmNegative: false,
-                    };
-                }
+                
+               
 
+               
+
+                // Handle read-only fields during edit
                 if (col.key === "ITEMCODE" || col.key === "HSNCODE") {
                     return {
                         ...baseField,
@@ -287,6 +273,7 @@ export default function DraftTransactionTable({
                     };
                 }
 
+                // Handle RATE and AMOUNT fields
                 if (col.key === "RATE" || col.key === "AMOUNT") {
                     return {
                         ...baseField,
@@ -294,94 +281,145 @@ export default function DraftTransactionTable({
                     };
                 }
 
+                // Add dependency logic for Issue type
+                if (isIssue) {
+                    // Fields that depend on PUREID
+                    if (["WT", "A_WT", "TOUCH", "A_TOUCH"].includes(col.key)) {
+                        return {
+                            ...baseField,
+                            dependsOn: "PUREID",
+                        };
+                    }
+                    // Calculated fields
+                    if (["PURE", "A_PURE"].includes(col.key)) {
+                        return {
+                            ...baseField,
+                            type: "calculated",
+                            disabled: true,
+                        };
+                    }
+                }
+                // Add dependency logic for Purchase type
+                else {
+                    // Fields that depend on ITEMID
+                    if (["PCS", "GRSWT", "STNWT", "WASTYPE","WASPER", "WASTAGE", "MC", "TOUCH" ,"W","ATOUCH", "DESCRIPTION" ].includes(col.key)) {
+                        return {
+                            ...baseField,
+                            dependsOn: "ITEMID",
+                        };
+                    }
+                    // Calculated fields
+                    if (["NETWT", "PUREWT"].includes(col.key)) {
+                        return {
+                            ...baseField,
+                            type: "calculated",
+                            disabled: true,
+                        };
+                    }
+                }
+
                 return baseField;
             });
-    }, [itemsCollection, isEditing, isIssue]);
-
+    }, [itemsCollection, isEditing, isIssue, hiddenFields]);
 
     // Memoize columns for table
     const activeColumns = isIssue ? issueDataColumns : issueColumns;
 
+    // Memoize columns for table with explicit ordering
     const columns = useMemo(() => {
-        const numeric = [
-            "PCS", "GRSWT", "LESSWT", "NETWT",
-            "PURITY", "PUREWT", "RATE",
-            "MCHARGE", "WASTAGE", "AMOUNT",
-            "IGST", "CGST", "SGST",
-            "WT" , "A_WT" , "TOUCH" ,"A_TOUCH" , "PURE" ,"A_PURE"
-        ];
+        // Define the exact order for each type
+        const orderedColumns = isIssue
+            ? [
+                "SNO",
+                "PUREID",
+                "WT",
+                "A_WT",
+                "TOUCH",
+                "A_TOUCH",
+                "PURE",
+                "A_PURE"
+            ]
+            : [
+                "SNO",
+                "ITEMID",
+                "PCS",
+                "GRSWT",
+                "STNWT",
+                "NETWT",
+                "WASTYPE",
+                "WASPER",
+                "WASTAGE",
+                "TOUCH",
+                "PUREWT",
+                "MC",
+                "ATOUCH",
+                "DESCRIPTION"
+            ];
 
-        return activeColumns.map((col) => {
-            if (col.key === "SNO") {
-                return {
-                    ...col,
-                    editable: false,
-                    render: (_: any, row: any) => (
-                        <span className="text-gray-500 text-xs">
-                            {row.__previewSno || "New"}
-                        </span>
-                    ),
-                };
-            }
+        // Create a map of the original columns
+        const columnMap = new Map(
+            activeColumns.map(col => [col.key, col])
+        );
 
-            if (col.key === "ITEMID") {
-                return {
-                    ...col,
-                    type: "combobox" as const,
-                    collection: itemsCollection,
-                    filter: itemsFilter,
-                    align: "left" as const,
-                    headalign: "left" as const,
-                    getLabelByValue: (collection: any, value: any) => {
-                        if (!collection?.items) return value || "";
-                        const item = collection.items.find(
-                            (i: any) => i.value === value?.toString()
-                        );
-                        return item?.label || value || "";
-                    },
-                    editable: !isEditing, // Make ITEMID non-editable during edit
-                    disabled: isEditing, // Visual disable during edit
-                };
-            }
-            if (col.key === "PUREID") {
-                return {
-                    ...col,
-                    type: "combobox" as const,
-                    collection: itemsCollection,
-                    filter: itemsFilter,
-                    align: "left" as const,
-                    headalign: "left" as const,
-                    getLabelByValue: (collection: any, value: any) => {
-                        if (!collection?.items) return value || "";
-                        const item = collection.items.find(
-                            (i: any) => i.value === value?.toString()
-                        );
-                        return item?.label || value || "";
-                    },
-                    editable: !isEditing, // Make ITEMID non-editable during edit
-                    disabled: isEditing, // Visual disable during edit
-                };
-            }
+        // Build columns in the correct order
+        const result = orderedColumns
+            .map(key => columnMap.get(key))
+            .filter((col): col is NonNullable<typeof col> => Boolean(col)) // Remove any undefined
+            .map((col) => {
+                if (col.key === "SNO") {
+                    return {
+                        ...col,
+                        editable: false,
+                        render: (_: any, row: any) => (
+                            <span className="text-gray-500 text-xs">
+                                {row.__previewSno || "New"}
+                            </span>
+                        ),
+                    };
+                }
 
-            if (col.key === "ITEMCODE") {
-                return {
-                    ...col,
-                    editable: !isEditing, // Make ITEMCODE non-editable during edit
-                    disabled: isEditing, // Visual disable during edit
-                };
-            }
+                if (col.key === "ITEMID" || col.key === "PUREID") {
+                    return {
+                        ...col,
+                        type: "combobox" as const,
+                        collection: itemsCollection,
+                        filter: itemsFilter,
+                        align: "left" as const,
+                        headalign: "left" as const,
+                        getLabelByValue: (collection: any, value: any) => {
+                            if (!collection?.items) return value || "";
+                            const item = collection.items.find(
+                                (i: any) => i.value === value?.toString()
+                            );
+                            return item?.label || value || "";
+                        },
+                        editable: !isEditing,
+                        disabled: isEditing,
+                        onClassUse: true,
+                    };
+                }
 
-            return {
-                editable: isEditing ? isFieldEditable(col.key) : true, // Control editability based on mode
-                ...col,
-                type: numeric.includes(col.key) ? ("number" as const) : ("text" as const),
-                align: numeric.includes(col.key) ? ("right" as const) : ("center" as const),
-                headalign: numeric.includes(col.key) ? ("right" as const) : ("center" as const),
-                sum: numeric.includes(col.key),
-                onClassUse: true,
-            };
-        });
-    }, [activeColumns, itemsCollection, itemsFilter, isEditing, isFieldEditable]);
+                // For number fields
+                const numericFields = [
+                    "PCS", "GRSWT", "STNWT", "NETWT", "WASPER", "WASTAGE", "ATOUCH",
+                    "PUREWT", "MC", "ATOUCH", "WT", "A_WT", "TOUCH", "A_TOUCH", "PURE", "A_PURE"
+                ];
+
+                return {
+                    editable: isEditing ? isFieldEditable(col.key) : true,
+                    ...col,
+                    type: numericFields.includes(col.key) ? ("number" as const) : ("text" as const),
+                    align: numericFields.includes(col.key) ? ("right" as const) : ("left" as const),
+                    headalign: numericFields.includes(col.key) ? ("right" as const) : ("left" as const),
+                    sum: numericFields.includes(col.key),
+                    onClassUse: true,
+                };
+            });
+
+        console.log('📋 Final columns order:', result.map(c => c.key));
+        return result;
+    }, [activeColumns, itemsCollection, itemsFilter, isEditing, isFieldEditable, isIssue]);
+
 
     // Handle cancel edit
     const handleCancelEdit = useCallback((rowId?: string) => {
@@ -514,6 +552,7 @@ export default function DraftTransactionTable({
                         compact={true}
                         isEditing={isEditing}
                         getAvailableWeight={getAvailableWeight}
+                        isIssue={isIssue}
                     />
                 </Box>
             )}

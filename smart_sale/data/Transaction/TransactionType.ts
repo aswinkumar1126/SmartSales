@@ -8,25 +8,11 @@ import { TransactionType } from "@/types/transcation/Transaction";
 
 export const TRANSACTIONTYPES: TransactionType[] = [
     {
-        code: "ISP",
-        key: "issue",
-        label: "ISSUE",
-        value: "ISP",
-        icon: ArrowUpRight,
-    },
-    {
         code: "PU",
         key: "purchase",
         label: "PURCHASE",
         value: "PU",
         icon: ShoppingCart,
-    },
-    {
-        code: "REC",
-        key: "receipt",
-        label: "RECEIPT",
-        value: "REP",
-        icon: Wallet,
     },
     {
         code: "PR",
@@ -35,6 +21,21 @@ export const TRANSACTIONTYPES: TransactionType[] = [
         value: "PR",
         icon: RotateCcw,
     },
+    {
+        code: "ISP",
+        key: "issue",
+        label: "ISSUE",
+        value: "ISP",
+        icon: ArrowUpRight,
+    },
+    {
+        code: "REC",
+        key: "receipt",
+        label: "RECEIPT",
+        value: "REC",
+        icon: Wallet,
+    },
+    
 ];
 
 export const SALETRANSACTIONTYPES = [

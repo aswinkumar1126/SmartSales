@@ -7,17 +7,13 @@ import "react-datepicker/dist/react-datepicker.css";
 import {
     Combobox,
     Portal,
-    Field,
     NativeSelect,
     For,
-    useFilter,
-    useListCollection,
     Box
 } from "@chakra-ui/react";
 
 import { formatDateForAPI } from "@/utils/format/formatDateForAPI";
 import { CapitalizedInput } from "@/component/form/CapitalizedInput";
-import { Toaster ,toaster } from "@/components/ui/toaster";
 /* ---------------- TYPES ---------------- */
 
 type EditableType =
@@ -50,85 +46,105 @@ interface EditableCellProps {
     getLabelByValue?: (collection: any, value: any) => string;
     onInputValueChange?: (input: string) => void;
     onClassUse?: boolean;
-
+    inputRef?: (el: any) => void;  // ADD THIS
+    onEnter?: () => void;  // ADD THIS
 }
 
 /* ---------------- COMBOBOX COMPONENT ---------------- */
 
-const ComboBoxEditor: React.FC<{
+const ComboBoxEditor = React.forwardRef<HTMLInputElement, {
     value: any;
     collection: any;
     getLabelByValue?: (collection: any, value: any) => string;
     onSave: (value: any) => Promise<void>;
-    onFilter?: (input: string) => void;   // 🔥 pass filter function
-}> = ({
+    onFilter?: (input: string) => void;
+    onEnter?: () => void;
+}>(({
     value,
     collection,
     getLabelByValue,
     onSave,
     onFilter,
-}) => {
-
+    onEnter,
+}, ref) => {
     const [inputValue, setInputValue] = useState(getLabelByValue?.(collection, value) ?? "");
+    const [isSaving, setIsSaving] = useState(false);
 
     useEffect(() => {
         setInputValue(getLabelByValue?.(collection, value) ?? "");
     }, [value, collection]);
-        const [isSaving, setIsSaving] = useState(false);
 
-        const handleValueChange = async (details: any) => {
-            if (isSaving) return;
+    const handleValueChange = async (details: any) => {
+        if (isSaving) return;
 
-            const val = details.value[0] ?? "";
-            setIsSaving(true);
-            try {
-                await onSave(val);
-            } finally {
-                setIsSaving(false);
-            }
-        };
-
-
-        return (
-            <Box w="100%">
-                <Combobox.Root
-                    collection={collection}
-                    openOnClick
-                    value={value ? [String(value)] : []}
-                    inputValue={inputValue}              // ✅ controlled input
-                    onValueChange={handleValueChange}
-                    onInputValueChange={(e) => {
-                        setInputValue(e.inputValue);  // update the input while typing
-                        onFilter?.(e.inputValue);     // apply the filter to collection
-                    }}
-                    size="xs"
-                >
-                    <Combobox.Control>
-                        <Combobox.Input placeholder="Type to search" />
-                        <Combobox.IndicatorGroup>
-                            <Combobox.ClearTrigger />
-                            <Combobox.Trigger />
-                        </Combobox.IndicatorGroup>
-                    </Combobox.Control>
-
-                    <Portal>
-                        <Combobox.Positioner>
-                            <Combobox.Content>
-                                <Combobox.Empty>No items found</Combobox.Empty>
-
-                                {collection.items.map((item: any) => (
-                                    <Combobox.Item key={item.value} item={item}>
-                                        {item.label}
-                                        <Combobox.ItemIndicator />
-                                    </Combobox.Item>
-                                ))}
-                            </Combobox.Content>
-                        </Combobox.Positioner>
-                    </Portal>
-                </Combobox.Root>
-            </Box>
-        );
+        const val = details.value[0] ?? "";
+        setIsSaving(true);
+        try {
+            await onSave(val);
+            onEnter?.();
+        } finally {
+            setIsSaving(false);
+        }
     };
+
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+        if (e.key === "Enter" && !isSaving) {
+            e.preventDefault();
+            const selectedValue = collection.items.find(
+                (item: any) => item.label === inputValue
+            )?.value;
+            if (selectedValue) {
+                handleValueChange({ value: [selectedValue] });
+            }
+        }
+    };
+
+    return (
+        <Box onKeyDown={handleKeyDown}>
+            <Combobox.Root
+                collection={collection}
+                openOnClick
+                value={value ? [String(value)] : []}
+                inputValue={inputValue}
+                onValueChange={handleValueChange}
+                onInputValueChange={(e) => {
+                    setInputValue(e.inputValue);
+                    onFilter?.(e.inputValue);
+                }}
+                size="xs"
+                w='90%'
+            >
+                <Combobox.Control>
+                    <Combobox.Input
+                        placeholder="Type to search"
+                        ref={ref}
+                        onKeyDown={handleKeyDown}
+                    />
+                    <Combobox.IndicatorGroup>
+                        <Combobox.ClearTrigger />
+                        <Combobox.Trigger />
+                    </Combobox.IndicatorGroup>
+                </Combobox.Control>
+
+                <Portal>
+                    <Combobox.Positioner>
+                        <Combobox.Content>
+                            <Combobox.Empty>No items found</Combobox.Empty>
+                            {collection.items.map((item: any) => (
+                                <Combobox.Item key={item.value} item={item} fontSize='9px'>
+                                    {item.label}
+                                    <Combobox.ItemIndicator />
+                                </Combobox.Item>
+                            ))}
+                        </Combobox.Content>
+                    </Combobox.Positioner>
+                </Portal>
+            </Combobox.Root>
+        </Box>
+    );
+});
+
+ComboBoxEditor.displayName = 'ComboBoxEditor';
 
 /* ---------------- MAIN COMPONENT ---------------- */
 
@@ -141,12 +157,29 @@ const EditableCell: React.FC<EditableCellProps> = ({
     collection,
     getLabelByValue,
     onInputValueChange,
-    onClassUse
+    onClassUse,
+    inputRef,  // ADD THIS
+    onEnter,   // ADD THIS
 }) => {
     const [isEditing, setIsEditing] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const wrapperRef = useRef<HTMLDivElement>(null);
+    const inputRefInternal = useRef<any>(null);
 
+    // Use the provided inputRef or fallback to internal ref
+    // Use the provided inputRef or fallback to internal ref
+    const setRef = (el: any) => {
+        console.log('📌 EditableCell setRef called:', {
+            hasElement: !!el,
+            type,
+            colKey: collection ? 'combobox' : 'input'
+        });
+
+        if (inputRef) {
+            inputRef(el);
+        }
+        inputRefInternal.current = el;
+    };
     const parseDate = (val: any) => {
         if (!val) return null;
         const d = new Date(val);
@@ -225,9 +258,10 @@ const EditableCell: React.FC<EditableCellProps> = ({
             return (
                 <DatePicker
                     selected={editValue}
-                    onChange={(d:any) => setEditValue(d)}
+                    onChange={(d: any) => setEditValue(d)}
                     dateFormat="dd-MM-yyyy"
                     className="w-full px-2 py-1 border border-blue-500 rounded"
+                    autoFocus
                 />
             );
         }
@@ -243,6 +277,7 @@ const EditableCell: React.FC<EditableCellProps> = ({
                                 setEditValue(e.target.value);
                                 saveValue(e.target.value);
                             }}
+                            autoFocus
                         >
                             <For each={options}>
                                 {(item) => (
@@ -258,20 +293,19 @@ const EditableCell: React.FC<EditableCellProps> = ({
             );
         }
 
-        /* COMBOBOX - USING PROPER CHAKRA UI PATTERN */
+        /* COMBOBOX */
+        /* COMBOBOX */
         if (type === "combobox" && collection) {
             return (
-            
-                    <ComboBoxEditor
-                        value={value}
-                        collection={collection}
-                        getLabelByValue={getLabelByValue}
-                        onSave={onSave}
-                        onFilter={onInputValueChange}  // <-- should be the filter function from useListCollection
-                      
-                    />
-      
-                
+                <ComboBoxEditor
+                    ref={setRef}
+                    value={value}
+                    collection={collection}
+                    getLabelByValue={getLabelByValue}
+                    onSave={onSave}
+                    onFilter={onInputValueChange}
+                    onEnter={onEnter}
+                />
             );
         }
 
@@ -279,9 +313,16 @@ const EditableCell: React.FC<EditableCellProps> = ({
         return (
             <div
                 ref={wrapperRef}
-                onKeyDown={(e) => {
-                    if (e.key === "Enter") saveValue();
-                    if (e.key === "Escape") setIsEditing(false);
+                onKeyDown={async (e) => {
+                    if (e.key === "Enter") {
+                        e.preventDefault();
+                        await saveValue();
+                        onEnter?.();
+                    }
+                    if (e.key === "Escape") {
+                        e.preventDefault();
+                        setIsEditing(false);
+                    }
                 }}
             >
                 <CapitalizedInput
@@ -292,8 +333,13 @@ const EditableCell: React.FC<EditableCellProps> = ({
                     onChange={(_, v) => setEditValue(v)}
                     allowNegative
                     confirmNegative
-                    onClassUse
-                   
+                    onClassUse={onClassUse}
+                    inputRef={setRef}
+                    autoFocus
+                    onEnter={() => {
+                        saveValue();
+                        onEnter?.();
+                    }}
                 />
             </div>
         );
@@ -303,15 +349,8 @@ const EditableCell: React.FC<EditableCellProps> = ({
 
     return (
         <div
-            onClick={() => {setIsEditing(true);
-                toaster.create({
-                    title: "Editing Mode",
-                    description: "Make your changes. Item selection is required before saving.",
-                    type: "info",
-                    duration: 4000,
-                });
-            }}
-            className={`cursor-pointer px-1 py-1 hover:bg-blue-50 rounded  min-w-0 ${className}`}
+            onClick={() => setIsEditing(true)}
+            className={`cursor-pointer px-1 py-1 hover:bg-blue-50 rounded min-w-0 ${className}`}
         >
             {displayValue()}
         </div>

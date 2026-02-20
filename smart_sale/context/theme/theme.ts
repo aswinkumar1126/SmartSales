@@ -66,6 +66,7 @@ export const designTokens: DesignTokens = {
         formColor:'#FFF',
         whiteColor: '#FFF',
         greyColor:'#F5F5F5',
+        
     },
 
     fontSizes: {
