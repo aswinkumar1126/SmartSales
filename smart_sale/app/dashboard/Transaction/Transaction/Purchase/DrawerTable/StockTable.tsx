@@ -97,7 +97,7 @@ const {theme} = useTheme();
                 { key: "itemName", label: "Item" },
                 { key: "metalName", label: "Metal" },
                 { key: "grossWeight", label: "Gross Wt", align: "end" },
-                { key: "purity", label: "Purity", align: "end" },
+                { key: "TOUCH", label: "TOUCH", align: "end" },
                 { key: "action", label: "Action", align: "center" },
             ];
     }, [showStock]);
@@ -191,7 +191,7 @@ const {theme} = useTheme();
                                             <Box as="td">{row.itemName}</Box>
                                             <Box as="td">{row.metalName}</Box>
                                             <Box as="td" textAlign="end">{row.grossWeight}</Box>
-                                            <Box as="td" textAlign="end">{row.purity}</Box>
+                                            <Box as="td" textAlign="end">{row.TOUCH}</Box>
                                             <Box as="td" textAlign="center">
                                                 <IconButton size="2xs" onClick={() => onIssue(row)}>
                                                     <FaArrowUp />

@@ -222,7 +222,7 @@ const PureGoldOpening = () => {
             if (exists) {
                 setErrors((prev: any) => ({
                     ...prev,
-                    pureId: 'This purity already exists for the selected metal',
+                    pureId: 'This TOUCH already exists for the selected metal',
                 }));
                 return;
             }

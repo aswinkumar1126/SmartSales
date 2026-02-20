@@ -65,6 +65,9 @@ export default function DraftTransactionTable({
     const [showForm, setShowForm] = useState(false);
     const [hasChanges, setHasChanges] = useState(false);
 
+
+    //wastype drop down
+const wastypecollection = {items: [{label: "Touch",value: "touch"}]};
     // Function to check if a field should be editable based on edit mode
     const isFieldEditable = (field: string) => {
         if (!isEditing) return true;
@@ -208,7 +211,7 @@ export default function DraftTransactionTable({
     const formFields = useMemo(() => {
         const numericFields = [
             "PCS", "GRSWT", "STNWT", "NETWT", "WASPER", "WASTAGE", "ATOUCH",
-            "PUREWT", "MC", "ATOUCH", "WT", "A_WT", "TOUCH", "A_TOUCH", "PURE", "A_PURE"
+            "PUREWT", "MC", "ATOUCH", "WT", "AWT", "TOUCH", "ATOUCH", "PURE", "APURE"
         ];
         const baseColumns = isIssue ? issueDataColumns : issueColumns;
 
@@ -246,6 +249,8 @@ export default function DraftTransactionTable({
                         isRequired: true,
                         disabled: isEditing,
                     };
+
+                    
                 }
 
                 // Handle PUREID (Issue type)
@@ -280,18 +285,32 @@ export default function DraftTransactionTable({
                         type: "number",
                     };
                 }
+                    if (col.key === "WASTYPE") {
+                    return {
+                        key: col.key,
+                        label: col.label || col.key,
+                        placeholder: ``,
+                        size: "xs",
+                        type: "combobox",
+                        collection: wastypecollection,
+                        isRequired: true,
+                        
+                        
+                    };
 
+                    
+                }
                 // Add dependency logic for Issue type
                 if (isIssue) {
                     // Fields that depend on PUREID
-                    if (["WT", "A_WT", "TOUCH", "A_TOUCH"].includes(col.key)) {
+                    if (["WT", "AWT", "TOUCH", "ATOUCH"].includes(col.key)) {
                         return {
                             ...baseField,
                             dependsOn: "PUREID",
                         };
                     }
                     // Calculated fields
-                    if (["PURE", "A_PURE"].includes(col.key)) {
+                    if (["PURE", "APUREWT"].includes(col.key)) {
                         return {
                             ...baseField,
                             type: "calculated",
@@ -333,11 +352,11 @@ export default function DraftTransactionTable({
                 "SNO",
                 "PUREID",
                 "WT",
-                "A_WT",
+                "AWT",
                 "TOUCH",
-                "A_TOUCH",
+                "ATOUCH",
                 "PURE",
-                "A_PURE"
+                "APURE"
             ]
             : [
                 "SNO",
@@ -402,7 +421,7 @@ export default function DraftTransactionTable({
                 // For number fields
                 const numericFields = [
                     "PCS", "GRSWT", "STNWT", "NETWT", "WASPER", "WASTAGE", "ATOUCH",
-                    "PUREWT", "MC", "ATOUCH", "WT", "A_WT", "TOUCH", "A_TOUCH", "PURE", "A_PURE"
+                    "PUREWT", "MC", "ATOUCH", "WT", "AWT", "TOUCH", "ATOUCH", "PURE", "APUREWT"
                 ];
 
                 return {

@@ -33,7 +33,7 @@ export const normalizeItem = (i: any): ItemMast => ({
     compliments: i.compliments ?? "N",
     coverWt: i.coverWt ?? "N",
     diaStone: i.diaStone ?? "N",
-    extraWt: i.extraWt ?? "N",
+    extrAWT: i.extrAWT ?? "N",
     fixedVa: i.fixedVa ?? "N",
     focusPiece: i.focusPiece ?? "N",
     grossNetWtDiff: i.grossNetWtDiff ?? "N",

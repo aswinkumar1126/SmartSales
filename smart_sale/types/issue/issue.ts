@@ -7,7 +7,7 @@ export interface ISSUE {
     GRSWT?: number;
     LESSWT?: number;
     NETWT?: number;
-    PURITY?: number;
+    TOUCH?: number;
     PUREWT?: number;
     RATE?: number;
     MCHARGE?: number;     // MAKING COST

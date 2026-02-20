@@ -51,9 +51,9 @@ export const issueColumns = [
     },
     {
         key: "WASTYPE",
-        label: "WAS.TYPE",
+        label: "WASTYPE",
         width: "25px",
-        type: "text" as const,
+        type: "combobox" as const,
         align: "right" as const,
 
     },
@@ -148,7 +148,7 @@ export const issueDataColumns = [
 
     },
     {
-        key: "A_WT",
+        key: "AWT",
         label: "A.WT",
         width: "25px",
         type: "number" as const,
@@ -168,7 +168,7 @@ export const issueDataColumns = [
 
     },
     {
-        key: "A_TOUCH",
+        key: "ATOUCH",
         label: "A.TOUCH",
         width: "25px",
         type: "number" as const,
@@ -190,7 +190,7 @@ export const issueDataColumns = [
 
     },
     {
-        key: "A_PURE",
+        key: "APURE",
         label: "A.PURE",
         width: "25px",
         type: "number" as const,

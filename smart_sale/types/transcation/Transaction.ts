@@ -10,7 +10,7 @@ export interface TRANSACTION {
     GRSWT?: number; 
     LESSWT?: number; 
     NETWT?: number; 
-    PURITY?: number; 
+    TOUCH?: number; 
     PUREWT?: number; 
     RATE?: number; 
     MCHARGE?: number; // MAKING COST 
@@ -35,9 +35,9 @@ export interface WeightInfo {
     TOUCH?: number;
     PUREWT?: number;
 
-    A_WT?: number;
-    A_TOUCH?: number;
-    A_PUREWT?: number;
+    AWT?: number;
+    ATOUCH?: number;
+    APUREWT?: number;
 }
 
 

@@ -262,7 +262,7 @@ export default function AddTransactionItemForm({
 
     // Initialize refs for each visible field
     const visibleFields = fields.filter(
-        (field) => field.key !== "NETWT" && field.key !== "PUREWT" && field.key !== "PURE" && field.key !== "A_PURE"
+        (field) => field.key !== "NETWT" && field.key !== "PUREWT" && field.key !== "PURE" && field.key !== "APUREWT"
     );
 
     // Create refs for each field
@@ -276,13 +276,13 @@ export default function AddTransactionItemForm({
     const submitButtonRef = useRef<HTMLButtonElement>(null);
 
     const mirrorMap: Record<string, string> = {
-        WT: "A_WT",
-        PURE: "A_PURE",
-        TOUCH: "A_TOUCH"
+        WT: "AWT",
+        PURE: "APUREWT",
+        TOUCH: "ATOUCH"
     };
 
     const pureValue = useCalculatePure(formData.WT, formData.TOUCH);
-    const alternativePureValue = useCalculatePure(formData.A_WT, formData.A_TOUCH);
+    const alternativePureValue = useCalculatePure(formData.AWT, formData.ATOUCH);
 
     /* ---------------- NAVIGATION ---------------- */
 
@@ -325,12 +325,12 @@ export default function AddTransactionItemForm({
         return (grswt - lesswt).toFixed(3);
     }, [formData.GRSWT, formData.LESSWT]);
 
-    // Calculate PUREWT (Net Weight * Purity / 100)
+    // Calculate PUREWT (Net Weight * TOUCH / 100)
     const calculatePureWeight = useCallback(() => {
         const netwt = parseFloat(calculateNetWeight()) || 0;
-        const purity = parseFloat(formData.PURITY) || 0;
-        return ((netwt * purity) / 100).toFixed(3);
-    }, [calculateNetWeight, formData.PURITY]);
+        const TOUCH = parseFloat(formData.TOUCH) || 0;
+        return ((netwt * TOUCH) / 100).toFixed(3);
+    }, [calculateNetWeight, formData.TOUCH]);
 
     // Update calculated fields when relevant fields change
     useEffect(() => {
@@ -341,11 +341,11 @@ export default function AddTransactionItemForm({
     }, [formData.GRSWT, formData.LESSWT, calculateNetWeight]);
 
     useEffect(() => {
-        if (formData.GRSWT || formData.LESSWT || formData.PURITY) {
+        if (formData.GRSWT || formData.LESSWT || formData.TOUCH) {
             const purewt = calculatePureWeight();
             setFormData(prev => ({ ...prev, PUREWT: purewt }));
         }
-    }, [formData.GRSWT, formData.LESSWT, formData.PURITY, calculatePureWeight]);
+    }, [formData.GRSWT, formData.LESSWT, formData.TOUCH, calculatePureWeight]);
 
     useEffect(() => {
         if (pureValue) {
@@ -357,7 +357,7 @@ export default function AddTransactionItemForm({
         if (alternativePureValue) {
             setFormData(prev => ({
                 ...prev,
-                A_PURE: alternativePureValue
+                APUREWT: alternativePureValue
             }));
         }
     }, [pureValue, alternativePureValue]);
@@ -371,7 +371,7 @@ export default function AddTransactionItemForm({
         if (mirrorMap[key]) {
             newFormData[mirrorMap[key]] = value;
         }
-        if ((key === "WT" || key === "A_WT") && formData.PUREID && getAvailableWeight) {
+        if ((key === "WT" || key === "AWT") && formData.PUREID && getAvailableWeight) {
             const available = getAvailableWeight(formData.PUREID);
 
             if (available != null && Number(value) > available) {
@@ -391,16 +391,16 @@ export default function AddTransactionItemForm({
             const lesswt = parseFloat(key === "LESSWT" ? value : formData.LESSWT) || 0;
             newFormData.NETWT = (grswt - lesswt).toFixed(3);
 
-            if (formData.PURITY) {
-                const purity = parseFloat(formData.PURITY) || 0;
-                newFormData.PUREWT = ((grswt - lesswt) * purity / 100).toFixed(3);
+            if (formData.TOUCH) {
+                const TOUCH = parseFloat(formData.TOUCH) || 0;
+                newFormData.PUREWT = ((grswt - lesswt) * TOUCH / 100).toFixed(3);
             }
         }
 
-        if (key === "PURITY") {
-            const purity = parseFloat(value) || 0;
+        if (key === "TOUCH") {
+            const TOUCH = parseFloat(value) || 0;
             const netwt = parseFloat(formData.NETWT || calculateNetWeight()) || 0;
-            newFormData.PUREWT = ((netwt * purity) / 100).toFixed(3);
+            newFormData.PUREWT = ((netwt * TOUCH) / 100).toFixed(3);
         }
 
         setFormData(newFormData);
@@ -413,7 +413,7 @@ export default function AddTransactionItemForm({
             setFormData(prev => ({
                 ...prev,
                 PURE: pureValue,
-                A_PURE: prev.PURE || pureValue, // don’t override if user changed
+                APUREWT: prev.PURE || pureValue, // don’t override if user changed
             }));
         }
     }, [pureValue]);
@@ -627,7 +627,7 @@ export default function AddTransactionItemForm({
             "PCS": "span 1",
             "GRSWT": "span 1",
             "LESSWT": "span 1",
-            "PURITY": "span 1",
+            "TOUCH": "span 1",
             "RATE": "span 1",
             "AMOUNT": "span 1",
         };
@@ -688,9 +688,9 @@ export default function AddTransactionItemForm({
                                 <strong>PURE  :</strong> {formData.PURE}
                             </Text>
                         )}
-                        {formData.A_PURE && (
+                        {formData.APUREWT && (
                             <Text fontSize="2xs">
-                                <strong>A.PURE :</strong> {formData.A_PURE}
+                                <strong>A.PURE :</strong> {formData.APUREWT}
                             </Text>
                         )}
                     </Flex>

@@ -44,6 +44,7 @@ import { usePrint } from "@/context/print/usePrintContext";
 import { useRouter } from "next/navigation";
 
 import SearchBar from "@/component/search/SearchBar";
+import DeleteAction from "@/component/deleteAction/deleteAction";
 
 export default function ItemMasterPage() {
 

@@ -313,9 +313,9 @@ export default function PurchasePage() {
                 WT: "",
                 TOUCH: "",
                 PURE: "",
-                A_WT: "",
-                A_TOUCH: "",
-                A_PURE: "",
+                AWT: "",
+                ATOUCH: "",
+                APURE: "",
             };
         }
 
@@ -326,7 +326,7 @@ export default function PurchasePage() {
             GRSWT: "",
             LESSWT: "",
             NETWT: "",
-            PURITY: "",
+            TOUCH: "",
             PUREWT: "",
             RATE:  "",
             MCHARGE: "",
@@ -601,11 +601,11 @@ export default function PurchasePage() {
                         PUREID: item.PUREID || "",
 
                         WT: item.WT || item.WT || "",
-                        A_WT: item.A_WT || item.WT || "",
+                        AWT: item.AWT || item.WT || "",
                         TOUCH: item.TOUCH || "",
-                        A_TOUCH: item.A_TOUCH || item.TOUCH || "",
+                        ATOUCH: item.ATOUCH || item.TOUCH || "",
                         PURE: item.PUREWT || "",
-                        A_PURE: item.A_PUREWT || item.PUREWT || "",
+                        APUREWT: item.APUREWT || item.PUREWT || "",
                     }
                     : {
                         __rowId: `edit-${Date.now()}-${index}`,
@@ -622,7 +622,7 @@ export default function PurchasePage() {
                         GRSWT: item.GRSWT || item.grswt || "",
                         LESSWT: item.LESSWT || item.lesswt || "",
                         NETWT: item.NETWT || item.netwt || "",
-                        PURITY: item.PURITY || item.purity || "",
+                        TOUCH: item.TOUCH || item.TOUCH || "",
                         PUREWT: item.PUREWT || item.purewt || "",
                         RATE: item.RATE || item.rate || "",
                         MCHARGE: item.MCHARGE || item.mcharge || "",
@@ -789,9 +789,9 @@ export default function PurchasePage() {
             TOUCH: stockRow.TOUCH || stockRow.actualTouch || "",
             PURE: stockRow.PURE || stockRow.actualPure || "",
 
-            A_WT: isIssue||  "",
-            A_TOUCH: stockRow.ATOUCH || stockRow.actualTouch || "",
-            A_PURE: stockRow.APURE || stockRow.actualPure || "",
+            AWT: isIssue||  "",
+            ATOUCH: stockRow.ATOUCH || stockRow.actualTouch || "",
+            APUREWT: stockRow.APURE || stockRow.actualPure || "",
 
             ITEMID: !isIssue ? (stockRow.ITEMID || "") : "",
             PCS: stockRow.PCS || "",
@@ -837,19 +837,19 @@ export default function PurchasePage() {
                 const isIssue = transactionType ? isIssueType(transactionType) : false;
 
                 // Manual override tracking
-                if (field === "A_WT") row.__manual_A_WT = true;
-                if (field === "A_TOUCH") row.__manual_A_TOUCH = true;
-                if (field === "A_PURE") row.__manual_A_PURE = true;
+                if (field === "AWT") row.__manual_AWT = true;
+                if (field === "ATOUCH") row.__manual_ATOUCH = true;
+                if (field === "APUREWT") row.__manual_APUREWT = true;
 
-                if (field === "WT") row.__manual_A_WT = false;
-                if (field === "TOUCH") row.__manual_A_TOUCH = false;
+                if (field === "WT") row.__manual_AWT = false;
+                if (field === "TOUCH") row.__manual_ATOUCH = false;
 
                 // Mirror logic
-                if (field === "WT" && !row.__manual_A_WT) row.A_WT = value;
-                if (field === "TOUCH" && !row.__manual_A_TOUCH) row.A_TOUCH = value;
+                if (field === "WT" && !row.__manual_AWT) row.AWT = value;
+                if (field === "TOUCH" && !row.__manual_ATOUCH) row.ATOUCH = value;
 
                 // Stock limit check for issue types
-                if (isIssue && (field === "WT" || field === "A_WT")) {
+                if (isIssue && (field === "WT" || field === "AWT")) {
                     const available = getAvailableWeight(row.PUREID);
                     if (available != null) {
                         const getTotalUsedWeight = (
@@ -886,14 +886,14 @@ export default function PurchasePage() {
                 if (!isIssue) {
                     if (field === "GRSWT" || field === "LESSWT") {
                         const grswt = Number(row.GRSWT) || 0;
-                        const lesswt = Number(row.LESSWT) || 0;
+                        const lesswt = Number(row.STNWT) || 0;
                         row.NETWT = Math.max(0, grswt - lesswt);
                     }
 
-                    if (field === "NETWT" || field === "PURITY") {
+                    if (field === "NETWT" || field === "TOUCH") {
                         const netwt = Number(row.NETWT) || 0;
-                        const purity = Number(row.PURITY) || 0;
-                        row.PUREWT = (netwt * purity) / 100;
+                        const TOUCH = Number(row.TOUCH) || 0;
+                        row.PUREWT = (netwt * TOUCH) / 100;
                     }
                 }
 
@@ -905,11 +905,11 @@ export default function PurchasePage() {
                         row.PURE = (wt * touch) / 100;
                     }
 
-                    if (field === "A_WT" || field === "A_TOUCH") {
-                        const wt = Number(row.A_WT) || 0;
-                        const touch = Number(row.A_TOUCH) || 0;
-                        if (!row.__manual_A_PURE) {
-                            row.A_PURE = (wt * touch) / 100;
+                    if (field === "AWT" || field === "ATOUCH") {
+                        const wt = Number(row.AWT) || 0;
+                        const touch = Number(row.ATOUCH) || 0;
+                        if (!row.__manual_APUREWT) {
+                            row.APUREWT = (wt * touch) / 100;
                         }
                     }
                 }
@@ -939,9 +939,9 @@ export default function PurchasePage() {
         return typeRows.reduce((acc, row) => {
             acc.PCS += Number(row.PCS || 0);
             acc.GRSWT += Number(row.GRSWT || 0);
-            acc.LESSWT += Number(row.LESSWT || 0);
+            acc.STNWT += Number(row.LESSWT || 0);
             acc.NETWT += Number(row.NETWT || 0);
-            acc.PURITY += Number(row.PURITY || 0);
+            acc.TOUCH += Number(row.TOUCH || 0);
             acc.PUREWT += Number(row.PUREWT || 0);
             acc.RATE += Number(row.RATE || 0);
             acc.MCHARGE += Number(row.MCHARGE || 0);
@@ -953,7 +953,7 @@ export default function PurchasePage() {
             GRSWT: 0,
             LESSWT: 0,
             NETWT: 0,
-            PURITY: 0,
+            TOUCH: 0,
             PUREWT: 0,
             RATE: 0,
             MCHARGE: 0,
@@ -970,9 +970,9 @@ export default function PurchasePage() {
             __rowId,
             __isNew,
             __previewSno,
-            __manual_A_WT,
-            __manual_A_TOUCH,
-            __manual_A_PURE,
+            __manual_AWT,
+            __manual_ATOUCH,
+            __manual_APUREWT,
             ...rest
         } = row;
 
@@ -982,9 +982,9 @@ export default function PurchasePage() {
                 WT: Number(rest.WT || 0),
                 TOUCH: Number(rest.TOUCH || 0),
                 PUREWT: Number(rest.PURE || 0),
-                A_WT: Number(rest.A_WT || 0),
-                A_TOUCH: Number(rest.A_TOUCH || 0),
-                A_PUREWT: Number(rest.A_PURE || 0),
+                AWT: Number(rest.AWT || 0),
+                ATOUCH: Number(rest.ATOUCH || 0),
+                APUREWT: Number(rest.APUREWT || 0),
             };
         }
 
@@ -1062,10 +1062,10 @@ export default function PurchasePage() {
                     return false;
                 }
 
-                if (Number(row.PURITY) <= 0) {
+                if (Number(row.TOUCH) <= 0) {
                     toaster.create({
-                        title: "Invalid Purity",
-                        description: `Row ${i + 1}: Purity must be greater than 0.`,
+                        title: "Invalid TOUCH",
+                        description: `Row ${i + 1}: TOUCH must be greater than 0.`,
                         type: "warning",
                     });
                     return false;

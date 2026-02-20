@@ -142,14 +142,14 @@ useEffect(() => {
 
     // Calculate Pure automatically based on Actual Touch
     const touch = parseFloat(form.touch ?? "") || 0;
-    const pure = (netwt * touch)/100;
+    const purewt = (netwt * touch)/100;
 
 
 
     setForm((prev) => ({
         ...prev,
         netwt: netwt.toFixed(3),  // keep 3 decimals
-        pure: pure.toFixed(3),
+        purewt: purewt.toFixed(3),
         actualtouch: String(touch),
     }));
 }, [form.grswt, form.stnwt, form.touch]);

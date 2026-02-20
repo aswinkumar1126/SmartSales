@@ -32,7 +32,7 @@ export interface ItemMast {
     compliments: "Y" | "N" | null;
     coverWt: "Y" | "N" | null;
     diaStone: "Y" | "N" | null;
-    extraWt: "Y" | "N" | null;
+    extrAWT: "Y" | "N" | null;
     fixedVa: "Y" | "N" | null;
     focusPiece: "Y" | "N" | null;
     grossNetWtDiff: "Y" | "N" | null;
