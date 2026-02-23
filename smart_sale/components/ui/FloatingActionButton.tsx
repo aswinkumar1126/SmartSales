@@ -36,7 +36,7 @@ export const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({
     className
 }) => {
     const positionStyles: Record<FabPosition, any> = {
-        "bottom-right": { bottom: ["10px", "20px"], right: ["10px", "20px"] },
+        "bottom-right": { bottom: ["10px", "10px"], right: ["10px", "10px"] },
         "bottom-left": { bottom: ["10px", "20px"], left: ["10px", "20px"] },
         "top-right": { top: ["10px", "20px"], right: ["10px", "20px"] },
         "top-left": { top: ["10px", "20px"], left: ["10px", "20px"] },

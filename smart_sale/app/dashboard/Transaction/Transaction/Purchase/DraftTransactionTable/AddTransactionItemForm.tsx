@@ -22,6 +22,8 @@ import downLoadIcon from '@/asserts/icons/download.png';
 import Image from "next/image";
 import { useCalculatePure } from "@/hooks/pure/useCalculatePure";
 import { toaster } from "@/components/ui/toaster";
+import StoneEnterMaster from "../StoneMaster/StoneEntryMaster";
+
 
 /* ---------------- TYPES ---------------- */
 
@@ -45,6 +47,7 @@ export interface FormField {
     disabled?: boolean;
     decimalScale?: number;
     dependsOn?: string; // ADD THIS
+    defaultValue?:string;
 }
 /* ---------------- SELECT ---------------- */
 
@@ -57,7 +60,7 @@ export function CustomSelect({
     size = "sm",
     inputRef,
     onEnter,
-    disabled
+    disabled,
 }: {
     value: string;
     onChange: (value: string) => void;
@@ -79,6 +82,7 @@ export function CustomSelect({
             onEnter?.();
         }
     };
+
 
     // Create a local ref if no ref is provided
     const localRef = useRef<HTMLSelectElement>(null);
@@ -160,34 +164,68 @@ export function CustomCombobox({
     disabled?: boolean;
 }) {
     const { contains } = useFilter({ sensitivity: "base" });
+    const [isOpen, setIsOpen] = useState(false);
+    const [highlightedValue, setHighlightedValue] = useState<string | null>(null);
 
     const { collection: filteredCollection, filter } = useListCollection({
         initialItems: collection?.items || [],
         filter: contains,
     });
 
+    // Update collection when items change
+    useEffect(() => {
+        filter("");
+    }, [collection?.items]);
+
+    const localRef = useRef<HTMLInputElement>(null);
+    const ref = inputRef || localRef;
+
     const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
         if (e.key === "Enter") {
             e.preventDefault();
             e.stopPropagation();
-            onEnter?.();
+
+            if (isOpen && filteredCollection.items.length > 0) {
+                // Use highlighted item if user arrowed down, else first filtered item
+                const selectedValue = highlightedValue ?? filteredCollection.items[0].value;
+                const selectedItem =
+                    filteredCollection.items.find((item) => item.value === selectedValue)
+                    ?? filteredCollection.items[0];
+
+                onChange(selectedItem.value);
+                setHighlightedValue(null);
+                setIsOpen(false);
+                setTimeout(() => onEnter?.(), 50);
+            } else {
+                // Dropdown closed or empty, just move to next field
+                onEnter?.();
+            }
         }
     };
-
-    // Create a local ref if no ref is provided
-    const localRef = useRef<HTMLInputElement>(null);
-    const ref = inputRef || localRef;
 
     return (
         <Combobox.Root
             collection={filteredCollection}
             value={value ? [value] : []}
+            open={isOpen}
+            onOpenChange={(e) => setIsOpen(e.open)}
             onValueChange={(e) => {
                 onChange(e.value[0] || "");
-                // After selection, trigger onEnter to move to next field
+                setIsOpen(false);
                 setTimeout(() => onEnter?.(), 50);
             }}
-            onInputValueChange={(e) => filter(e.inputValue)}
+            onInputValueChange={(e) => {
+                filter(e.inputValue);
+                // Open dropdown when typing
+                if (e.inputValue.length > 0) {
+                    setIsOpen(true);
+                } else {
+                    setIsOpen(false);
+                }
+            }}
+            onHighlightChange={(e) => {
+                setHighlightedValue(e.highlightedValue);
+            }}
             size="xs"
             fontSize="2xs"
             width="100%"
@@ -205,7 +243,10 @@ export function CustomCombobox({
                     disabled={disabled}
                 />
                 <Combobox.IndicatorGroup>
-                    <Combobox.ClearTrigger onClick={() => onChange("")} />
+                    <Combobox.ClearTrigger onClick={() => {
+                        onChange("");
+                        setIsOpen(false);
+                    }} />
                     <Combobox.Trigger />
                 </Combobox.IndicatorGroup>
             </Combobox.Control>
@@ -226,7 +267,6 @@ export function CustomCombobox({
         </Combobox.Root>
     );
 }
-
 interface AddTransactionItemFormProps {
     fields: FormField[];
     onSubmit: (data: any) => Promise<void> | void;
@@ -248,21 +288,28 @@ export default function AddTransactionItemForm({
     getAvailableWeight,
     isIssue
 }: AddTransactionItemFormProps) {
+
+
+
     const [formData, setFormData] = useState<Record<string, any>>({});
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [touched, setTouched] = useState<Record<string, boolean>>({});
     const [isSubmitting, setIsSubmitting] = useState(false);
 
+
+    const [isStoneModalOpen, setIsStoneModalOpen] = useState(false);
+    const [currentGRSWT, setCurrentGRSWT] = useState<number>(0);
+
     const { theme } = useTheme();
 
-    console.log(fields,'fieldsfields')
+    console.log(fields,'fieldsfields');
 
     // Create refs for each field
     const fieldRefs = useRef<Record<string, React.RefObject<any>>>({});
 
     // Initialize refs for each visible field
     const visibleFields = fields.filter(
-        (field) => field.key !== "NETWT" && field.key !== "PUREWT" && field.key !== "PURE" && field.key !== "APUREWT"
+        (field) => field.key !== "NETWT" && field.key !== "PUREWT" && field.key !== "PURE" && field.key !== "APURE"
     );
 
     // Create refs for each field
@@ -283,6 +330,12 @@ export default function AddTransactionItemForm({
 
     const pureValue = useCalculatePure(formData.WT, formData.TOUCH);
     const alternativePureValue = useCalculatePure(formData.AWT, formData.ATOUCH);
+    
+
+    const handleStnwtClick = useCallback((grswtValue: number) => {
+        setCurrentGRSWT(grswtValue);
+        setIsStoneModalOpen(true);
+    }, []);
 
     /* ---------------- NAVIGATION ---------------- */
 
@@ -311,11 +364,15 @@ export default function AddTransactionItemForm({
     useEffect(() => {
         const init: Record<string, any> = {};
         fields.forEach((f) => {
-            init[f.key] = "";
+            // Set default value if provided
+            if (f.defaultValue) {
+                init[f.key] = f.defaultValue;
+            } else {
+                init[f.key] = "";
+            }
         });
         setFormData(init);
     }, [fields]);
-
     /* ---------------- CALCULATIONS ---------------- */
 
     // Calculate NETWT (Gross Weight - Less Weight)
@@ -494,8 +551,8 @@ export default function AddTransactionItemForm({
         setIsSubmitting(false);
     };
 
-    /* ---------------- RENDER FIELD ---------------- */
 
+    /* ---------------- RENDER FIELD ---------------- */
     const renderField = (field: FormField) => {
         const size = "xs";
         const isInvalid = !!errors[field.key] && touched[field.key];
@@ -504,6 +561,71 @@ export default function AddTransactionItemForm({
         // Check if field should be disabled based on dependency
         const shouldDisable = field.dependsOn && !formData[field.dependsOn];
 
+        // Special handling for STNWT field
+        if (field.key === "STNWT") {
+            return (
+                <Box
+                    position="relative"
+                    cursor="pointer"
+                    onFocus={() => {
+                        if (formData.GRSWT && Number(formData.GRSWT) > 0) {
+                            handleStnwtClick(Number(formData.GRSWT));
+                        } else {
+                            toaster.create({
+                                title: "GRSWT Required",
+                                description: "Please enter Gross Weight first",
+                                type: "warning",
+                            });
+                        }
+                    }}
+                >
+                    <CapitalizedInput
+                        field={field.key as string}
+                        value={formData[field.key] || ""}
+                        onChange={(_, v) => handleChange(field.key, v)}
+                        type="number"
+                        isCapitalized={false}
+                        allowNegative={field.allowNegative}
+                        confirmNegative={field.confirmNegative}
+                        size={size}
+                        onClassUse={true}
+                        rounded="md"
+                        max={field.max}
+                        decimalScale={field.decimalScale}
+                        disabled={shouldDisable || field.disabled}
+                        inputRef={fieldRef}
+                        onEnter={() => moveToNextField(field.key)}
+                       
+                    />
+                    <Button
+                        size="2xs"
+                        position="absolute"
+                        right="0"
+                        top="0"
+                        height="100%"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            if (formData.GRSWT && Number(formData.GRSWT) > 0) {
+                                handleStnwtClick(Number(formData.GRSWT));
+                            } else {
+                                toaster.create({
+                                    title: "GRSWT Required",
+                                    description: "Please enter Gross Weight first",
+                                    type: "warning",
+                                });
+                            }
+                        }}
+                        disabled={!formData.GRSWT || Number(formData.GRSWT) <= 0}
+                        title="Click to calculate stone weight"
+                        variant="ghost"
+                        minW="auto"
+                        px={1}
+                    >
+                        💎
+                    </Button>
+                </Box>
+            );
+        }
         switch (field.type) {
             case "capitalized":
                 return (
@@ -554,7 +676,6 @@ export default function AddTransactionItemForm({
                         placeholder={field.placeholder}
                         isInvalid={isInvalid}
                         size={size}
-                     
                         inputRef={fieldRef}
                         onEnter={() => moveToNextField(field.key)}
                         disabled={shouldDisable || field.disabled}
@@ -678,7 +799,7 @@ export default function AddTransactionItemForm({
                                 <strong>NET WT :</strong> {formData.NETWT}
                             </Text>
                         )}
-                        {formData.PUREWT && (
+                        {formData.PUREWT && !isIssue &&  (
                             <Text fontSize="2xs">
                                 <strong>PURE WT :</strong> {formData.PUREWT}
                             </Text>
@@ -716,6 +837,55 @@ export default function AddTransactionItemForm({
                     </Box>
                 </Box>
             </form>
+            {isStoneModalOpen && (
+                <Box
+                    position="fixed"
+                    top="0"
+                    left="0"
+                    right="0"
+                    bottom="0"
+                    bg="rgba(0,0,0,0.5)"
+                    zIndex={10}
+                    display="flex"
+                    alignItems="center"
+                    justifyContent="center"
+                    onClick={() => setIsStoneModalOpen(false)}
+                >
+                    <Box
+                        bg={theme.colors.formColor}
+                        borderRadius="lg"
+                        maxW="1200px"
+                        width="100%"
+                        maxH="90vh"
+                        overflow="auto"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <StoneEnterMaster
+                            netWeight={currentGRSWT}
+                            onClose={() => setIsStoneModalOpen(false)}
+                            onSave={(stoneData) => {
+                                // Handle saving stone data
+                                console.log('Stone data:', stoneData);
+                                // You can update the STNWT field with total stone weight
+                                const totalStoneWeight = stoneData.reduce((sum, row) => {
+                                    const weight = row.unit === 'c' ? row.weight / 5 : row.weight;
+                                    return sum + weight;
+                                }, 0);
+                                handleChange('STNWT', totalStoneWeight.toFixed(3));
+                                setIsStoneModalOpen(false);
+                            }}
+                            stoneItems={[
+                                {label:'metal' , value:'m'},
+                                {label:'stone' , value:'s'},
+                            ]}
+                            subStoneItems={[
+                                { label: 'metal', value: 'm' },
+                                { label: 'stone', value: 's' },
+                            ]}
+                        />
+                    </Box>
+                </Box>
+            )}
         </Box>
     );
 }

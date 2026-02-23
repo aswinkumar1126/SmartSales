@@ -66,6 +66,7 @@ export default function ItemMasterPage() {
         shortName:"",
         stockType:"T",
         calType:"W",
+        studded:"N",
         active: "Y",
         companyId: "",
     } as ItemMast);
@@ -103,6 +104,12 @@ export default function ItemMasterPage() {
                 ...prev,
                 itemId: itemsData?.nextId ?? '0',
                 metalId: metals[0]?.metalId ?? "G", // default first metal
+                hsn:"",
+                shortName:"",
+                stockType:"T",
+                calType:"W",
+                active: "Y",
+                studded:"N",
                 companyId:companies[0]?.COMPANYID ?? "",
                 
             }));
@@ -141,6 +148,7 @@ export default function ItemMasterPage() {
             stockType:"T",
             calType:"W",
             active: "Y",
+            studded:"N",
             companyId: companies[0]?.COMPANYID ?? "", 
 
         }));
@@ -195,8 +203,6 @@ export default function ItemMasterPage() {
         } else {
             const payload = { ...form };
             delete payload.itemId;
-
-         
 
             createItem(payload, {
                 onSuccess: (res: any) => {
@@ -487,6 +493,39 @@ export default function ItemMasterPage() {
                                                     }}
                                                 >
                                                     {calTypeOptions.map((o) => (
+                                                        <option key={o.value} value={o.value}>
+                                                            {o.label}
+                                                        </option>
+                                                    ))}
+                                                </NativeSelect.Field>
+                                                <NativeSelect.Indicator />
+                                            </NativeSelect.Root>
+                                        </Box>
+                                    </HStack>
+                                </Field.Root>
+                                {/* ================= FIFTH ROW ================= */}
+                                <Field.Root>
+                                    <HStack>
+                                        <Box minW="80px">
+                                            <Field.Label fontSize="2xs">STUDDED :</Field.Label>
+                                        </Box>
+                                        <Box flex={1}>
+                                            <NativeSelect.Root>
+                                                <NativeSelect.Field
+                                                    fontSize="2xs"
+                                                    value={form.studded ?? "N"}
+                                                    onChange={(e) => onChange("studded", e.target.value)}
+                                                    css={{
+                                                        backgroundColor: "#eee",
+                                                        color: "#111827",
+                                                        border: "1px solid #e5e7eb",
+                                                        borderRadius: "20px",
+                                                        height: "30px",
+                                                        fontSize: "10px",
+                                                        minW: "150px"
+                                                    }}
+                                                >
+                                                    {yesNoOptions.map((o) => (
                                                         <option key={o.value} value={o.value}>
                                                             {o.label}
                                                         </option>

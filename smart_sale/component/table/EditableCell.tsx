@@ -14,6 +14,7 @@ import {
 
 import { formatDateForAPI } from "@/utils/format/formatDateForAPI";
 import { CapitalizedInput } from "@/component/form/CapitalizedInput";
+
 /* ---------------- TYPES ---------------- */
 
 type EditableType =
@@ -35,19 +36,13 @@ interface EditableCellProps {
     type: EditableType;
     onSave: (value: any) => Promise<void>;
     className?: string;
-
-    /* select */
     options?: OptionItem[];
-
-    /* combobox */
-    collection?: {
-        items: OptionItem[];
-    };
+    collection?: { items: OptionItem[] };
     getLabelByValue?: (collection: any, value: any) => string;
     onInputValueChange?: (input: string) => void;
     onClassUse?: boolean;
-    inputRef?: (el: any) => void;  // ADD THIS
-    onEnter?: () => void;  // ADD THIS
+    inputRef?: (el: any) => void;
+    onEnter?: () => void;
 }
 
 /* ---------------- COMBOBOX COMPONENT ---------------- */
@@ -59,66 +54,86 @@ const ComboBoxEditor = React.forwardRef<HTMLInputElement, {
     onSave: (value: any) => Promise<void>;
     onFilter?: (input: string) => void;
     onEnter?: () => void;
-}>(({
-    value,
-    collection,
-    getLabelByValue,
-    onSave,
-    onFilter,
-    onEnter,
-}, ref) => {
+}>(({ value, collection, getLabelByValue, onSave, onFilter, onEnter }, ref) => {
     const [inputValue, setInputValue] = useState(getLabelByValue?.(collection, value) ?? "");
     const [isSaving, setIsSaving] = useState(false);
+    const [isOpen, setIsOpen] = useState(false);
+    const [highlightedValue, setHighlightedValue] = useState<string | null>(null);
+    const [filteredItems, setFilteredItems] = useState(collection?.items || []);
 
     useEffect(() => {
         setInputValue(getLabelByValue?.(collection, value) ?? "");
+        setFilteredItems(collection?.items || []);
     }, [value, collection]);
 
     const handleValueChange = async (details: any) => {
         if (isSaving) return;
-
         const val = details.value[0] ?? "";
         setIsSaving(true);
         try {
             await onSave(val);
-            onEnter?.();
+            setIsOpen(false);
+            setTimeout(() => onEnter?.(), 50);
         } finally {
             setIsSaving(false);
         }
     };
 
-    const handleKeyDown = (e: React.KeyboardEvent) => {
+    const handleKeyDown = async (e: React.KeyboardEvent) => {
         if (e.key === "Enter" && !isSaving) {
             e.preventDefault();
-            const selectedValue = collection.items.find(
-                (item: any) => item.label === inputValue
-            )?.value;
-            if (selectedValue) {
-                handleValueChange({ value: [selectedValue] });
+            e.stopPropagation();
+
+            if (isOpen && filteredItems.length > 0) {
+                // Use highlighted item if user arrowed down, otherwise use first filtered item
+                const targetValue = highlightedValue ?? filteredItems[0]?.value;
+                const targetItem = filteredItems.find((item: any) =>
+                    String(item.value) === String(targetValue)
+                ) ?? filteredItems[0];
+
+                if (targetItem) {
+                    await handleValueChange({ value: [targetItem.value] });
+                }
+            } else {
+                // Dropdown closed, just move to next
+                onEnter?.();
             }
         }
     };
 
     return (
-        <Box onKeyDown={handleKeyDown}>
+        <Box>
             <Combobox.Root
                 collection={collection}
                 openOnClick
+                open={isOpen}
+                onOpenChange={(e) => setIsOpen(e.open)}
                 value={value ? [String(value)] : []}
                 inputValue={inputValue}
                 onValueChange={handleValueChange}
                 onInputValueChange={(e) => {
-                    setInputValue(e.inputValue);
-                    onFilter?.(e.inputValue);
+                    const val = e.inputValue;
+                    setInputValue(val);
+                    onFilter?.(val);
+                    // Filter items locally
+                    const filtered = (collection?.items || []).filter((item: any) =>
+                        item.label.toLowerCase().includes(val.toLowerCase())
+                    );
+                    setFilteredItems(filtered);
+                    setIsOpen(val.length > 0);
+                }}
+                onHighlightChange={(e) => {
+                    setHighlightedValue(e.highlightedValue);
                 }}
                 size="xs"
-                w='90%'
+                w="90%"
             >
                 <Combobox.Control>
                     <Combobox.Input
                         placeholder="Type to search"
                         ref={ref}
                         onKeyDown={handleKeyDown}
+                        autoFocus
                     />
                     <Combobox.IndicatorGroup>
                         <Combobox.ClearTrigger />
@@ -130,8 +145,8 @@ const ComboBoxEditor = React.forwardRef<HTMLInputElement, {
                     <Combobox.Positioner>
                         <Combobox.Content>
                             <Combobox.Empty>No items found</Combobox.Empty>
-                            {collection.items.map((item: any) => (
-                                <Combobox.Item key={item.value} item={item} fontSize='9px'>
+                            {filteredItems.map((item: any) => (
+                                <Combobox.Item key={item.value} item={item} fontSize="9px">
                                     {item.label}
                                     <Combobox.ItemIndicator />
                                 </Combobox.Item>
@@ -144,7 +159,7 @@ const ComboBoxEditor = React.forwardRef<HTMLInputElement, {
     );
 });
 
-ComboBoxEditor.displayName = 'ComboBoxEditor';
+ComboBoxEditor.displayName = "ComboBoxEditor";
 
 /* ---------------- MAIN COMPONENT ---------------- */
 
@@ -158,28 +173,20 @@ const EditableCell: React.FC<EditableCellProps> = ({
     getLabelByValue,
     onInputValueChange,
     onClassUse,
-    inputRef,  // ADD THIS
-    onEnter,   // ADD THIS
+    inputRef,
+    onEnter,
 }) => {
-    const [isEditing, setIsEditing] = useState(false);
+    // Start in edit mode if inputRef is provided (table inline editing)
+    const [isEditing, setIsEditing] = useState(!!inputRef);
     const [isSaving, setIsSaving] = useState(false);
     const wrapperRef = useRef<HTMLDivElement>(null);
     const inputRefInternal = useRef<any>(null);
 
-    // Use the provided inputRef or fallback to internal ref
-    // Use the provided inputRef or fallback to internal ref
     const setRef = (el: any) => {
-        console.log('📌 EditableCell setRef called:', {
-            hasElement: !!el,
-            type,
-            colKey: collection ? 'combobox' : 'input'
-        });
-
-        if (inputRef) {
-            inputRef(el);
-        }
+        if (inputRef) inputRef(el);
         inputRefInternal.current = el;
     };
+
     const parseDate = (val: any) => {
         if (!val) return null;
         const d = new Date(val);
@@ -190,11 +197,15 @@ const EditableCell: React.FC<EditableCellProps> = ({
         type === "date" ? parseDate(value) : value ?? ""
     );
 
+    // Keep editValue in sync when value prop changes
+    useEffect(() => {
+        setEditValue(type === "date" ? parseDate(value) : value ?? "");
+    }, [value]);
+
     /* ---------------- SAVE ---------------- */
 
     const saveValue = async (val = editValue) => {
         if (isSaving) return;
-
         try {
             setIsSaving(true);
             let finalValue = val;
@@ -210,7 +221,8 @@ const EditableCell: React.FC<EditableCellProps> = ({
             }
 
             await onSave(finalValue);
-            setIsEditing(false);
+            // Only exit edit mode if not in table mode (no inputRef)
+            if (!inputRef) setIsEditing(false);
         } finally {
             setIsSaving(false);
         }
@@ -219,7 +231,7 @@ const EditableCell: React.FC<EditableCellProps> = ({
     /* ---------------- CLICK OUTSIDE ---------------- */
 
     useEffect(() => {
-        if (!isEditing) return;
+        if (!isEditing || inputRef) return; // Don't handle outside clicks in table mode
 
         const handleOutside = (e: MouseEvent) => {
             if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
@@ -235,25 +247,17 @@ const EditableCell: React.FC<EditableCellProps> = ({
 
     const displayValue = () => {
         if (value == null || value === "") return "-";
-
         if (type === "date") return new Date(value).toLocaleDateString("en-GB");
-
-        if (type === "numbers")
-            return new Intl.NumberFormat("en-IN").format(value);
-
-        if (type === "select")
-            return options.find(o => o.value === value)?.label ?? value;
-
+        if (type === "numbers") return new Intl.NumberFormat("en-IN").format(value);
+        if (type === "select") return options.find(o => o.value === value)?.label ?? value;
         if (type === "combobox" && collection && getLabelByValue)
             return getLabelByValue(collection, value);
-
         return value;
     };
 
     /* ---------------- EDIT MODE ---------------- */
 
     if (isEditing) {
-        /* DATE */
         if (type === "date") {
             return (
                 <DatePicker
@@ -266,7 +270,6 @@ const EditableCell: React.FC<EditableCellProps> = ({
             );
         }
 
-        /* SELECT */
         if (type === "select") {
             return (
                 <div ref={wrapperRef}>
@@ -277,6 +280,14 @@ const EditableCell: React.FC<EditableCellProps> = ({
                                 setEditValue(e.target.value);
                                 saveValue(e.target.value);
                             }}
+                            onKeyDown={(e) => {
+                                if (e.key === "Enter") {
+                                    e.preventDefault();
+                                    saveValue(editValue);
+                                    onEnter?.();
+                                }
+                            }}
+                            ref={setRef as any}
                             autoFocus
                         >
                             <For each={options}>
@@ -293,8 +304,6 @@ const EditableCell: React.FC<EditableCellProps> = ({
             );
         }
 
-        /* COMBOBOX */
-        /* COMBOBOX */
         if (type === "combobox" && collection) {
             return (
                 <ComboBoxEditor
@@ -321,7 +330,7 @@ const EditableCell: React.FC<EditableCellProps> = ({
                     }
                     if (e.key === "Escape") {
                         e.preventDefault();
-                        setIsEditing(false);
+                        if (!inputRef) setIsEditing(false);
                     }
                 }}
             >
@@ -340,6 +349,7 @@ const EditableCell: React.FC<EditableCellProps> = ({
                         saveValue();
                         onEnter?.();
                     }}
+                    rounded="sm"
                 />
             </div>
         );

@@ -37,6 +37,7 @@ interface DraftTransactionTableProps {
     isIssue?:boolean;
     getAvailableWeight?: (id: string | number ) => number | null;
     onClear?: () => void;
+    transactionType?: string;
 }
 
 export default function DraftTransactionTable({
@@ -58,6 +59,7 @@ export default function DraftTransactionTable({
     isIssue,
     getAvailableWeight,
     onClear,
+    transactionType,
 
 }: DraftTransactionTableProps) {
     console.log("DraftTable - rows:", rows, "editingRowId:", editingRowId, "isEditing:", isEditing);
@@ -67,7 +69,11 @@ export default function DraftTransactionTable({
 
 
     //wastype drop down
-const wastypecollection = {items: [{label: "Touch",value: "touch"}]};
+    const wastypecollection = {
+        items:  [
+                    { label: "TOUCH", value: "TOUCH"}
+                ]
+    };
     // Function to check if a field should be editable based on edit mode
     const isFieldEditable = (field: string) => {
         if (!isEditing) return true;
@@ -164,6 +170,11 @@ const wastypecollection = {items: [{label: "Touch",value: "touch"}]};
                 setHasChanges(true);
             }
 
+            if (!formData.WASTYPE) {
+                formData.WASTYPE = "TOUCH"; // default selection
+            }
+
+
             // 🔥 Check duplicate PUREID
             // const isDuplicate = rows.some(
             //     (row) => row.PUREID === formData.PUREID
@@ -189,7 +200,9 @@ const wastypecollection = {items: [{label: "Touch",value: "touch"}]};
         [rows, onAddRow, isEditing]
     );
 
+ 
 
+    // Handle inline add
     // Handle inline add
     const handleAddInline = useCallback(() => {
         if (isEditing) {
@@ -201,7 +214,8 @@ const wastypecollection = {items: [{label: "Touch",value: "touch"}]};
 
             setHasChanges(true);
         }
-        onAddRow();
+        // Pass default WASTYPE value when adding inline
+        onAddRow({ WASTYPE: "TOUCH" });
     }, [onAddRow, isEditing]);
 
     // Define fields that should be hidden from form (calculated fields)
@@ -228,7 +242,7 @@ const wastypecollection = {items: [{label: "Touch",value: "touch"}]};
                 // Determine required fields based on transaction type
                 const isRequired = isIssue
                     ? ["PUREID", "TOUCH", "WT", "PURE"].includes(col.key)
-                    : ["ITEMID", "PCS", "GRSWT", "TOUCH"].includes(col.key);
+                    : ["ITEMID", "PCS", "GRSWT","NETWT", "TOUCH"].includes(col.key);
 
                 const baseField: FormField = {
                     key: col.key,
@@ -264,11 +278,6 @@ const wastypecollection = {items: [{label: "Touch",value: "touch"}]};
                     };
                 }
 
-                
-               
-
-               
-
                 // Handle read-only fields during edit
                 if (col.key === "ITEMCODE" || col.key === "HSNCODE") {
                     return {
@@ -287,14 +296,16 @@ const wastypecollection = {items: [{label: "Touch",value: "touch"}]};
                 }
                     if (col.key === "WASTYPE") {
                     return {
+                        ...baseField,
                         key: col.key,
                         label: col.label || col.key,
-                        placeholder: ``,
+                        placeholder: `select`,
                         size: "xs",
-                        type: "combobox",
+                        type: "select",
                         collection: wastypecollection,
                         isRequired: true,
-                        
+                        dependsOn:"ITEMID",
+                        defaultValue:'TOUCH'
                         
                     };
 
@@ -340,6 +351,8 @@ const wastypecollection = {items: [{label: "Touch",value: "touch"}]};
                 return baseField;
             });
     }, [itemsCollection, isEditing, isIssue, hiddenFields]);
+
+    
 
     // Memoize columns for table
     const activeColumns = isIssue ? issueDataColumns : issueColumns;
@@ -458,6 +471,14 @@ const wastypecollection = {items: [{label: "Touch",value: "touch"}]};
         }
         onSaveRow(row, isNew);
     }, [onSaveRow, isEditing]);
+
+console.log(columns ,'columns')
+    const formatTotal = (value: any, decimalScale?: number) => {
+        if (value == null) return "";
+        return Number(decimalScale) >= 1
+            ? Number(value).toFixed(decimalScale)
+            : Number(value).toString();
+    };
 
     return (
         <Box>
@@ -599,6 +620,7 @@ const wastypecollection = {items: [{label: "Touch",value: "touch"}]};
                     onDelete={handleDeleteRow}
                     onRowClick={handleRowClick}
                     fixedHeight="200px"
+                    transactionType={transactionType}
                     renderFooter={
                         rows.length > 0
                             ? () => (
@@ -618,9 +640,8 @@ const wastypecollection = {items: [{label: "Touch",value: "touch"}]};
                                             >
                                                 {index === 1
                                                     ? "TOTAL"
-                                                    : totals[column.key] != null
-                                                        ? Number(totals[column.key]).toFixed(3)
-                                                        : ""}
+                                                    : formatTotal(totals[column.key], column.decimalScale)
+                                                }
                                             </td>
                                         ))}
                                     </tr>

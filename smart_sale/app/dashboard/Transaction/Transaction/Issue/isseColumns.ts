@@ -2,7 +2,7 @@ export const issueColumns = [
     {
         key: "SNO",
         label: "S.N0",
-        width: "10px",
+        width: "15px",
         align: "left" as const,
         editable: false,
 
@@ -10,7 +10,7 @@ export const issueColumns = [
     {
         key: "ITEMID",
         label: "ITEM",
-        width: "50px",
+        width: "45px",
         align: "left" as const,
         type: "combobox" as const,
       
@@ -21,6 +21,7 @@ export const issueColumns = [
         width: "20px",
         type: "number" as const,
         align: "right" as const,
+        decimalScale:0
    
     },
     {
@@ -29,15 +30,16 @@ export const issueColumns = [
         width: "25px",
         type: "number" as const,
         align: "right" as const,
+        decimalScale: 3
  
     },
     {
         key: "STNWT",
         label: "STONE",
-        width: "20px",
+        width: "25px",
         type: "number" as const,
         align: "right" as const,
-
+        decimalScale: 3
  
     },
     {
@@ -46,14 +48,15 @@ export const issueColumns = [
         width: "25px",
         type: "number" as const,
         align: "right" as const,
-        editable:false
+        editable:false,
+        decimalScale: 3
    
     },
     {
         key: "WASTYPE",
         label: "WASTYPE",
         width: "25px",
-        type: "combobox" as const,
+        type: "select" as const,
         align: "right" as const,
 
     },
@@ -71,6 +74,7 @@ export const issueColumns = [
         width: "20px",
         type: "number" as const,
         align: "right" as const,
+        decimalScale: 3
 
     },
     {
@@ -80,7 +84,7 @@ export const issueColumns = [
         type: "number" as const,
         align: "right" as const,
         max: 999,
-        decimalScale: 0
+        decimalScale: 1
 
     },
     {
@@ -89,7 +93,8 @@ export const issueColumns = [
         width: "25px",
         type: "number" as const,
         align: "right" as const,
-        editable: false
+        editable: false,
+        decimalScale: 3
  
     },
     {
@@ -98,6 +103,7 @@ export const issueColumns = [
         width: "25px",
         type: "number" as const,
         align: "right" as const,
+        decimalScale: 2
   
     },
     
@@ -107,6 +113,8 @@ export const issueColumns = [
         width: "20px",
         type: "number" as const,
         align: "right" as const,
+        max: 999,
+        decimalScale: 1
 
     },
   

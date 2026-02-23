@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState, useMemo, useCallback, useEffect ,useRef } from 'react';
-import { Eye, Edit2, MapPin, Phone, IndianRupee, Trash2, Save, X, Plus } from 'lucide-react';
+import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
+import { Edit2, Trash2, Save, X, Plus } from 'lucide-react';
 import EditableCell from './EditableCell';
 import { Button, Box } from '@chakra-ui/react';
 import { formatToFixed } from '@/utils/format/numberFormat';
@@ -12,7 +12,7 @@ export interface TableColumn {
     align?: 'left' | 'center' | 'right';
     width?: string;
     sortable?: boolean;
-    responsive?: 'always' | 'xs'|'sm' | 'md' | 'lg' | 'xl';
+    responsive?: 'always' | 'xs' | 'sm' | 'md' | 'lg' | 'xl';
     render?: (value: any, row: any, index: number) => React.ReactNode;
     headalign?: 'left' | 'center' | 'right';
     editable?: boolean;
@@ -20,8 +20,9 @@ export interface TableColumn {
     options?: any[];
     collection?: any;
     getLabelByValue?: (collection: any, value: any) => string;
-    sum?:number|boolean;
+    sum?: number | boolean;
     onClassUse?: boolean;
+    decimalScale?: number;
 }
 
 export interface TableProps {
@@ -57,9 +58,10 @@ export interface TableProps {
     showAddButton?: boolean;
     addButtonText?: string;
     enableInlineEditing?: boolean;
-    isEditing?:boolean
- 
+    isEditing?: boolean;
+    transactionType?: string;
 }
+
 type FocusableElement = HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement | null;
 type CellRefMap = Record<number, Record<string, FocusableElement>>;
 
@@ -90,13 +92,12 @@ const EditableTable: React.FC<TableProps> = ({
     showAddButton = false,
     addButtonText = 'Add New',
     enableInlineEditing = true,
-    isEditing = false
-   
+    isEditing = false,
+    transactionType,
 }) => {
     const [windowWidth, setWindowWidth] = useState(
         typeof window !== "undefined" ? window.innerWidth : 1024
     );
-
     const cellRefs = useRef<CellRefMap>({});
 
     useEffect(() => {
@@ -105,117 +106,20 @@ const EditableTable: React.FC<TableProps> = ({
         return () => window.removeEventListener("resize", handleResize);
     }, []);
 
-
-
-    const setCellRef = (
-        rowIndex: number,
-        colKey: string,
-        el: FocusableElement
-    ) => {
-        console.log('📌 setCellRef called:', {
-            rowIndex,
-            colKey,
-            elementType: el?.tagName,
-            elementId: el?.id,
-            hasElement: !!el
-        });
-
-        if (!el) {
-            // This is being called during unmount - we can ignore it
-            // Don't clear the ref, just log and return
-            console.log('⚠️ Unmount ref call for', { rowIndex, colKey });
-            return;
-        }
-
-        if (!cellRefs.current[rowIndex]) {
-            cellRefs.current[rowIndex] = {};
-        }
-
-        cellRefs.current[rowIndex][colKey] = el;
-        console.log('✅ Ref set successfully. Current refs for row', rowIndex, ':',
-            Object.keys(cellRefs.current[rowIndex]));
-    };
-
-
-    const focusNextCell = (rowIndex: number, colIndex: number) => {
-        console.log('🔍 focusNextCell called', { rowIndex, colIndex });
-
-        const cols = finalColumns.filter(c => c.key !== "actions");
-
-        let nextCol = colIndex + 1;
-        let nextRow = rowIndex;
-
-        // move to next row if last column
-        if (nextCol >= cols.length) {
-            nextCol = 0;
-            nextRow = rowIndex + 1;
-        }
-
-        console.log('🎯 Next position', { nextRow, nextCol });
-
-        const nextKey = cols[nextCol]?.key;
-        console.log('🔑 Next key:', nextKey);
-
-        // First, find the row data
-        const nextRowData = data[nextRow];
-        if (!nextRowData) {
-            console.log('❌ Next row not found');
-            return;
-        }
-
-        // Get the next cell's element
-        const nextEl = cellRefs.current?.[nextRow]?.[nextKey];
-        console.log('📌 Next element:', nextEl);
-
-        if (nextEl) {
-            // If element exists, focus it
-            console.log('✅ Focusing existing element');
-            nextEl.focus();
-            if ("select" in nextEl) {
-                try {
-                    nextEl.select();
-                } catch { }
-            }
-        } else {
-            // If element doesn't exist, trigger editing mode for the next cell
-            console.log('🔄 Element not found, triggering edit mode for next cell');
-
-            // Trigger row click to enter edit mode
-            if (onRowClick) {
-                onRowClick(nextRowData);
-            }
-
-            // Wait for the next render cycle for the ref to be created
-            setTimeout(() => {
-                const newEl = cellRefs.current?.[nextRow]?.[nextKey];
-                if (newEl) {
-                    console.log('✅ New element created, focusing now');
-                    newEl.focus();
-                    if ("select" in newEl) {
-                        try {
-                            newEl.select();
-                        } catch { }
-                    }
-                } else {
-                    console.log('❌ Still no element found after timeout');
-                }
-            }, 50);
-        }
-    };
-
-
-
     const isMobile = windowWidth < 640;
 
-    const tableStyles = {
-        border: "border-[#555]",
-        headerBg: "bg-[var(--table-header-bg)]",
-        headerText: "text-[var(--table-header-text)]",
-        bodyBg: "bg-[var(--table-body-bg)]",
-        bodyText: "text-[var(--table-body-text)]",
-        stripedBg: "bg-[var(--table-striped-bg)]",
-        hoverBg: "hover:bg-[var(--table-hover-bg)]",
+    const getTableStyles = (type?: string) => {
+        const typeColorMap: Record<string, any> = {
+            PU: { headerBg: "bg-[#2F855A]", stripedBg: "bg-blue-50", hoverBg: "hover:bg-blue-100", bodyBg: "bg-[#E6FFFA]" },
+            PR: { headerBg: "bg-[#C53030]", bodyBg: "bg-[#FFEAEA]" },
+            ISP: { headerBg: "bg-[#DD6B20]", stripedBg: "bg-red-50", hoverBg: "hover:bg-red-100", bodyBg: "bg-[#FFF4E5]" },
+            REC: { headerBg: "bg-[#c729ba]", stripedBg: "bg-green-50", hoverBg: "hover:bg-green-100", bodyBg: "bg-[#ffe8fd]" },
+        };
+        const colors = typeColorMap[type || ""] ?? { headerBg: "bg-gray-600", stripedBg: "bg-gray-50", hoverBg: "hover:bg-gray-100" };
+        return { border: "border-[#555]", headerText: "text-white", bodyBg: "bg-white", bodyText: "text-gray-800", ...colors };
     };
+
+    const tableStyles = getTableStyles(transactionType);
 
     const [sortKey, setSortKey] = useState(defaultSortKey);
     const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>(defaultSortDirection);
@@ -224,9 +128,7 @@ const EditableTable: React.FC<TableProps> = ({
 
     const getResponsiveWidth = (width?: string) => {
         if (!width) return undefined;
-        if (isMobile && width.endsWith("px")) {
-            return `${Math.max(60, parseInt(width) * 0.25)}px`;
-        }
+        if (isMobile && width.endsWith("px")) return `${Math.max(60, parseInt(width) * 0.25)}px`;
         return width;
     };
 
@@ -259,8 +161,8 @@ const EditableTable: React.FC<TableProps> = ({
     };
 
     const getPaddingClass = () => isMobile ? "px-2 py-1" : "px-2 py-2";
-    const getTextSizeClass = () => isMobile ? "text-sm" : "text-sm";
-    const getHeadTextSizeClass = () => isMobile ? "text-sm" : "text-sm";
+    const getTextSizeClass = () => "text-sm";
+    const getHeadTextSizeClass = () => "text-sm";
 
     const sortedData = useMemo(() => {
         if (!sortKey) return data;
@@ -275,15 +177,6 @@ const EditableTable: React.FC<TableProps> = ({
         });
     }, [data, sortKey, sortDirection]);
 
-    // const handleSort = useCallback((key: string) => {
-    //     if (sortKey === key) {
-    //         setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
-    //     } else {
-    //         setSortKey(key);
-    //         setSortDirection('asc');
-    //     }
-    // }, [sortKey]);
-
     const displayData = useMemo(() => {
         if (showRows > 0) {
             const emptyRows = Array(Math.max(0, showRows - data.length)).fill({});
@@ -297,20 +190,81 @@ const EditableTable: React.FC<TableProps> = ({
     }, [data.length, showRows]);
 
     const isRowEditing = useCallback((row: any) => {
-        const rowId = row.__rowId ?? row.SNO ?? row.id ?? row._id;  // Prefer __rowId if present
+        const rowId = row.__rowId ?? row.SNO ?? row.id ?? row._id;
         return editingRowId === rowId || localEditingRowId === rowId;
     }, [editingRowId, localEditingRowId]);
+
+    /* ------------------------------------------------------------------ */
+    /* FOCUS NEXT CELL                                                       */
+    /* ------------------------------------------------------------------ */
+    const focusNextCell = useCallback((rowIndex: number, colIndex: number) => {
+        // Get editable columns only (excluding actions, SNO, calculated fields)
+        const editableCols = finalColumns.filter(c =>
+            c.key !== "actions" &&
+            c.editable !== false
+        );
+
+        let nextColIndex = colIndex + 1;
+        let nextRowIndex = rowIndex;
+
+        if (nextColIndex >= editableCols.length) {
+            nextColIndex = 0;
+            nextRowIndex = rowIndex + 1;
+        }
+
+        if (nextRowIndex >= data.length) {
+            nextRowIndex = 0;
+        }
+
+        const nextKey = editableCols[nextColIndex]?.key;
+        if (!nextKey) return;
+
+        const nextRowData = data[nextRowIndex];
+        if (!nextRowData) return;
+
+        const attemptFocus = () => {
+            const el = cellRefs.current?.[nextRowIndex]?.[nextKey];
+            if (el) {
+                el.focus();
+                try { if ("select" in el) el.select(); } catch { }
+                return true;
+            }
+            return false;
+        };
+
+        // If next cell is in a different row, trigger row click first
+        if (nextRowIndex !== rowIndex && onRowClick && editingRowId !== nextRowData.__rowId) {
+            onRowClick(nextRowData);
+        }
+
+        // Try immediately, then retry
+        if (attemptFocus()) return;
+
+        let attempts = 0;
+        const tryFocus = () => {
+            if (attemptFocus()) return;
+            attempts++;
+            if (attempts < 10) setTimeout(tryFocus, 50);
+        };
+        setTimeout(tryFocus, 50);
+    }, [data, editingRowId, onRowClick]);
+
+    /* ------------------------------------------------------------------ */
+
+    const setCellRef = useCallback((rowIndex: number, colKey: string, el: FocusableElement) => {
+        if (!el) return;
+        if (!cellRefs.current[rowIndex]) cellRefs.current[rowIndex] = {};
+        if (cellRefs.current[rowIndex][colKey] !== el) {
+            cellRefs.current[rowIndex][colKey] = el;
+        }
+    }, []);
 
     const handleAddNew = () => {
         if (onAddNew) {
             onAddNew();
         } else {
             const newRow: any = {};
-            columns.forEach(col => {
-                if (col.key !== 'actions') {
-                    newRow[col.key] = '';
-                }
-            });
+            columns.forEach(col => { if (col.key !== 'actions') newRow[col.key] = ''; });
             newRow.SNO = `new-${Date.now()}`;
             setLocalEditingRowId(newRow.SNO);
             setIsNewRow(true);
@@ -319,79 +273,76 @@ const EditableTable: React.FC<TableProps> = ({
 
     const handleRowClick = (row: any) => {
         if (!enableInlineEditing || isEmptyRow(row, data.length)) return;
-
         const rowId = row.__rowId ?? row.SNO ?? row.id ?? row._id;
-        console.log('🖱️ Row click handler in EditableTable:', { rowId, isCurrentlyEditing: isRowEditing(row) });
-
         if (onRowClick) {
             onRowClick(row);
         } else if (!isRowEditing(row)) {
-            console.log('📝 Setting local editing row:', rowId);
             setLocalEditingRowId(rowId);
             setIsNewRow(false);
         }
     };
 
     const handleSave = (row: any) => {
-        if (onSaveRow) {
-            onSaveRow(row, isNewRow);
-        }
+        if (onSaveRow) onSaveRow(row, isNewRow);
         setLocalEditingRowId(null);
         setIsNewRow(false);
-        
     };
 
     const handleCancel = () => {
-        if (onCancelEdit) {
-            onCancelEdit(localEditingRowId);
-        }
+        if (onCancelEdit) onCancelEdit(localEditingRowId);
         setLocalEditingRowId(null);
         setIsNewRow(false);
     };
 
     const getDisplayValue = (column: TableColumn, value: any) => {
-      
-        console.log(column.type ,value ,'valuess')
-
         if (value == null || value === "") return "-";
-
         if (column.type === 'combobox' && column.collection && column.getLabelByValue) {
             return column.getLabelByValue(column.collection, value);
         }
-
         if (column.type === 'select' && column.options) {
             const option = column.options.find(opt => opt.value === value);
             return option?.label || value;
         }
-
-        if (column.type == 'numbers') {
-            return formatToFixed(value , 3) ;
+        if ((column.type === "numbers" || column.type === "number") && Number(column.decimalScale) > 1) {
+            return formatToFixed(value, column.decimalScale);
         }
-        if (column.type == 'number') {
-            console.log(formatToFixed(value,3) ,'formated')
-            return formatToFixed(value, 3);
-        }
-
-        if (column.type === 'date') {
-            return new Date(value).toLocaleDateString("en-GB");
-        }
-
+        if (column.type === 'date') return new Date(value).toLocaleDateString("en-GB");
         return value;
     };
 
+    // Build finalColumns here so focusNextCell can use it
+    const finalColumns = useMemo(() => {
+        return shouldShowActions
+            ? [...visibleColumns, {
+                key: 'actions',
+                label: actionsHeader,
+                align: 'center' as const,
+                width: '25px',
+                headalign: 'center' as const,
+                editable: false,
+                render: (_: any, row: any, index: any) => renderActions(row, index),
+            }]
+            : visibleColumns;
+    }, [visibleColumns, shouldShowActions, actionsHeader]);
+
+    // Get editable columns for focus navigation (mirrors what focusNextCell uses)
+    const editableColKeys = useMemo(() =>
+        finalColumns.filter(c => c.key !== "actions" && c.editable !== false).map(c => c.key),
+        [finalColumns]
+    );
+
     const renderCell = useCallback((column: TableColumn, row: any, rowIndex: number, colIndex: number) => {
-        if (isEmptyRow(row, rowIndex)) {
-            return <span className="opacity-0">--</span>;
-        }
+        if (isEmptyRow(row, rowIndex)) return <span className="opacity-0">--</span>;
 
         const value = row[column.key];
         const issEditing = isRowEditing(row);
 
-        if (column.render) {
-            return column.render(value, row, rowIndex);
-        }
+        if (column.render) return column.render(value, row, rowIndex);
 
         if (issEditing && column.editable !== false && column.key !== 'actions') {
+            // Find the index within editable columns for correct navigation
+            const editableColIndex = editableColKeys.indexOf(column.key);
+
             const handleSaveCell = async (newValue: any) => {
                 const updatedRow = { ...row, [column.key]: newValue };
                 onUpdateRow?.(rowIndex, updatedRow);
@@ -408,7 +359,7 @@ const EditableTable: React.FC<TableProps> = ({
                         collection={column.collection}
                         getLabelByValue={column.getLabelByValue}
                         inputRef={(el) => setCellRef(rowIndex, column.key, el)}
-                        onEnter={() => focusNextCell(rowIndex, colIndex)} // Now colIndex is defined
+                        onEnter={() => focusNextCell(rowIndex, editableColIndex)}
                     />
                 </div>
             );
@@ -417,61 +368,38 @@ const EditableTable: React.FC<TableProps> = ({
         const displayValue = getDisplayValue(column, value);
 
         if (isMobile && typeof displayValue === "string" && displayValue.length > 18) {
-            return (
-                <span className="block truncate " title={displayValue}>
-                    {displayValue}
-                </span>
-            );
+            return <span className="block truncate" title={displayValue}>{displayValue}</span>;
         }
 
         return displayValue;
-    }, [isEmptyRow, isRowEditing, onUpdateRow, isMobile, focusNextCell, getDisplayValue, setCellRef]);
-
-
+    }, [isEmptyRow, isRowEditing, onUpdateRow, isMobile, focusNextCell, getDisplayValue, setCellRef, editableColKeys]);
 
     const renderActions = (row: any, rowIndex: number) => {
         if (isEmptyRow(row, rowIndex)) return null;
-
         const issEditing = isRowEditing(row);
 
         if (issEditing) {
             return (
                 <div className="flex items-center justify-center gap-2">
-                    <button
-                        onClick={() => handleSave(row)}
-                        className="p-1 text-green-600 hover:bg-green-50 rounded transition-colors"
-                        title="Save"
-                    >
-                        <Save size={16} className='p-1 text-green-600 hover:bg-green-50 rounded transition-colors' />
+                    <button onClick={() => handleSave(row)} className="p-1 text-green-600 hover:bg-green-50 rounded transition-colors" title="Save">
+                        <Save size={16} className="p-1 text-green-600 hover:bg-green-50 rounded transition-colors" />
                     </button>
-                    {!isEditing && <button
-                        onClick={handleCancel}
-                        className="p-1 text-red-600 hover:bg-red-50 rounded transition-colors"
-                        title="Cancel"
-                    >
-                        <X size={16} className="p-1 text-red-600 hover:bg-red-50 rounded transition-colors" />
-                    </button> }
-                   
+                    {!isEditing && (
+                        <button onClick={handleCancel} className="p-1 text-red-600 hover:bg-red-50 rounded transition-colors" title="Cancel">
+                            <X size={16} className="p-1 text-red-600 hover:bg-red-50 rounded transition-colors" />
+                        </button>
+                    )}
                 </div>
             );
         }
 
         return (
             <div className="flex items-center justify-center gap-2">
-                <button
-                    onClick={() => handleRowClick(row)}
-                    className="p-1 text-blue-600 hover:bg-blue-50 rounded transition-colors"
-                    title="Edit"
-                >
+                <button onClick={() => handleRowClick(row)} className="p-1 text-blue-600 hover:bg-blue-50 rounded transition-colors" title="Edit">
                     <Edit2 size={16} className="p-1 text-blue-600 hover:bg-blue-50 rounded transition-colors" />
                 </button>
-                
                 {onDelete && !isEditing && (
-                    <button
-                        onClick={() => onDelete(row)}
-                        className="p-1 text-red-600 hover:bg-red-50 rounded transition-colors"
-                        title="Delete"
-                    >
+                    <button onClick={() => onDelete(row)} className="p-1 text-red-600 hover:bg-red-50 rounded transition-colors" title="Delete">
                         <Trash2 size={16} className="p-1 text-red-600 hover:bg-red-50 rounded transition-colors" />
                     </button>
                 )}
@@ -494,70 +422,30 @@ const EditableTable: React.FC<TableProps> = ({
         );
     }
 
-    const finalColumns = shouldShowActions
-        ? [...visibleColumns, {
-            key: 'actions',
-            label: actionsHeader,
-            align: 'center' as const,
-            width: '25px',
-            headalign: 'center' as const,
-            render: (_: any, row: any, index: any) => renderActions(row, index),
-        }]
-        : visibleColumns;
-
     return (
         <div className="space-y-4">
             {showAddButton && (
                 <div className="flex justify-end mb-2">
-                    <Button
-                        onClick={handleAddNew}
-                        colorPalette='cyan'
-                        size="2xs"
-                        className="flex items-center text-[var(--primary-text-size)] gap-1"
-                    >
+                    <Button onClick={handleAddNew} colorPalette="cyan" size="2xs" className="flex items-center text-[var(--primary-text-size)] gap-1">
                         <Plus size={10} />
                         {addButtonText}
                     </Button>
                 </div>
             )}
             <Box marginTop={2}>
-                <div
-                    className={`overflow-hidden border border-[#555] shadow-sm  ${className}`}
-                    style={{ borderCollapse: 'collapse' as const }}
-                >
-                    <div
-                        className="overflow-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 dark:scrollbar-thumb-gray-600 dark:scrollbar-track-gray-800"
-                        style={fixedHeight ? { maxHeight: fixedHeight } : {}}
-                    >
-                        <table className="w-full border-collapse  border border-[#222]" style={{ borderCollapse: 'collapse' ,tableLayout:'fixed' }}>
-                            <thead className={`sticky top-0  ${tableStyles.headerBg} ${headerClassName}`}>
+                <div className={`overflow-hidden border border-[#555] shadow-sm ${className}`} style={{ borderCollapse: 'collapse' as const }}>
+                    <div className="overflow-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 dark:scrollbar-thumb-gray-600 dark:scrollbar-track-gray-800" style={fixedHeight ? { maxHeight: fixedHeight } : {}}>
+                        <table className="w-full border-collapse border border-[#222]" style={{ borderCollapse: 'collapse', tableLayout: 'fixed' }}>
+                            <thead className={`sticky top-0 ${tableStyles.headerBg} ${headerClassName}`}>
                                 <tr>
                                     {finalColumns.map((column) => (
                                         <th
                                             key={column.key}
-                                            className={`
-                                                ${getPaddingClass()}
-                                              
-                                                ${getHeadTextSizeClass()}
-                                                font-semibold
-                                                table-header-10
-                                                ${tableStyles.headerText}
-                                                uppercase tracking-wider
-                                                whitespace-nowrap
-                                                border-b border-[#000]
-                                                border-r border-[#000]
-                                                ${getHeadAlignmentClass(column.headalign)}
-                                                last:border-r-0
-                                            `}
-                                            style={getResponsiveWidth(column.width) ? {
-                                                width: getResponsiveWidth(column.width),
-                                                minWidth: getResponsiveWidth(column.width)
-                                            } : {}}
+                                            className={`${getPaddingClass()} ${getHeadTextSizeClass()} font-semibold table-header-10 ${tableStyles.headerText} uppercase tracking-wider whitespace-nowrap border-b border-[#000] border-r border-[#000] ${getHeadAlignmentClass(column.headalign)} last:border-r-0`}
+                                            style={getResponsiveWidth(column.width) ? { width: getResponsiveWidth(column.width), minWidth: getResponsiveWidth(column.width) } : {}}
                                             scope="col"
                                         >
-                                            <div className={getHeadAlignmentClass(column.headalign)}>
-                                                {column.label}
-                                            </div>
+                                            <div className={getHeadAlignmentClass(column.headalign)}>{column.label}</div>
                                         </th>
                                     ))}
                                 </tr>
@@ -579,27 +467,15 @@ const EditableTable: React.FC<TableProps> = ({
                                         {finalColumns.map((column, colIndex) => (
                                             <td
                                                 key={column.key}
-                                                className={`
-        ${getPaddingClass()}
-        ${getTextSizeClass()}
-        whitespace-nowrap
-        ${isEmptyRow(row, rowIndex) ? "text-transparent" : tableStyles.bodyText}
-        ${getAlignmentClass(column.align)}
-        border-r border-[#555]
-        last:border-r-0
-        table-body-10
-    `}
-                                                style={getResponsiveWidth(column.width) ? {
-                                                    width: getResponsiveWidth(column.width),
-                                                    minWidth: getResponsiveWidth(column.width)
-                                                } : {}}
+                                                className={`${getPaddingClass()} ${getTextSizeClass()} whitespace-nowrap ${isEmptyRow(row, rowIndex) ? "text-transparent" : tableStyles.bodyText} ${getAlignmentClass(column.align)} border-r border-[#555] last:border-r-0 table-body-10`}
+                                                style={getResponsiveWidth(column.width) ? { width: getResponsiveWidth(column.width), minWidth: getResponsiveWidth(column.width) } : {}}
                                                 role="cell"
                                             >
                                                 {column.key === 'actions' ? (
                                                     renderActions(row, rowIndex)
                                                 ) : (
                                                     <div className={getAlignmentClass(column.align)}>
-                                                        {renderCell(column, row, rowIndex, colIndex)} {/* Pass colIndex here */}
+                                                        {renderCell(column, row, rowIndex, colIndex)}
                                                     </div>
                                                 )}
                                             </td>
@@ -612,12 +488,8 @@ const EditableTable: React.FC<TableProps> = ({
 
                         {displayData.length === 0 && !loading && (
                             <div className={`text-center p-2 ${tableStyles.bodyBg} border-t border-[#555]`}>
-                                <div className={`${tableStyles.bodyText} ${isMobile ? 'text-sm' : 'text-sm'} table-footer-text  font-medium`}>
-                                    {emptyMessage}
-                                </div>
-                                <div className="text-gray-500  dark:text-gray-400 table-footer-text mt-1">
-                                    There are no records to display
-                                </div>
+                                <div className={`${tableStyles.bodyText} ${isMobile ? 'text-sm' : 'text-sm'} table-footer-text font-medium`}>{emptyMessage}</div>
+                                <div className="text-gray-500 dark:text-gray-400 table-footer-text mt-1">There are no records to display</div>
                             </div>
                         )}
                     </div>

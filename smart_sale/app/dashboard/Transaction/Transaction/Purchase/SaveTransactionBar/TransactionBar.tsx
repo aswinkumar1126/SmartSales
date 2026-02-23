@@ -34,6 +34,7 @@ export default function SaveTransactionBar({
             rounded="md"
             border="1px"
             borderColor={theme.colors.accient}
+         
         >
             <Text fontSize="xs" fontWeight="bold">
                 Draft Items: {draftCount}

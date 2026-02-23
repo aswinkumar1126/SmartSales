@@ -111,7 +111,7 @@ const {theme} = useTheme();
             
                 <Drawer.Positioner zIndex={10}>
                     <Drawer.Content>
-                        <Drawer.Header bg={theme.colors.accient} height="45px">
+                        <Drawer.Header bg={theme.colors.accient}>
                             <HStack justify="space-between" w='full'>
                                 <Drawer.Title color={theme.colors.whiteColor}>
                                     Stock Details
@@ -205,8 +205,8 @@ const {theme} = useTheme();
 
                         </Drawer.Body>
 
-                        <Drawer.Footer bg={theme.colors.accient}>
-                            <Button variant='plain' color={theme.colors.whiteColor} onClick={onClose} size="xs">
+                        <Drawer.Footer >
+                            <Button onClick={onClose} variant="outline"  size="sm">
                                 Close
                             </Button>
                         </Drawer.Footer>
