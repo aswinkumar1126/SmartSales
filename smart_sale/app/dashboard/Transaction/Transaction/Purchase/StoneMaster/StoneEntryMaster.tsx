@@ -16,17 +16,18 @@ import {
 import { LuX } from "react-icons/lu";
 import { CapitalizedInput } from "@/component/form/CapitalizedInput";
 import { SelectCombobox, SelectItem } from "@/components/ui/selectComboBox";
+import TransactionTable from "@/component/table/TransactionTable";
 
 type StoneRow = {
     id: string;
-    stone: string;
-    subStone: string;
-    pcs: number;
-    weight: number;
-    unit: "g" | "c";
-    cal: "w" | "p";
-    rate: number;
-    amount: number;
+    stoneId: string;
+    subStoneId: string;
+    stonePcs: number;
+    stoneWeight: number;
+    stoneUnit: "g" | "c";
+    stoneCalculation: "w" | "p";
+    stoneRate: number;
+    stoneAmount: number;
 };
 
 type Props = {
@@ -34,91 +35,260 @@ type Props = {
     onClose: () => void;
     onSave: (rows: StoneRow[]) => void;
     initialRows?: StoneRow[];
-    stoneItems?: SelectItem[];  // Dynamic stone items from parent
-    subStoneItems?: SelectItem[]; // Dynamic substone items from parent
+    stoneItems?: SelectItem[];
+    subStoneItems?: SelectItem[];
 };
 
+/* ─── COLUMN WIDTHS ─── */
+const COL_WIDTHS: Record<string, string> = {
+    __sno: "40px",
+    stoneId: "100px",
+    subStoneId: "100px",
+    stonePcs: "60px",
+    stoneWeight: "80px",
+    stoneUnit: "60px",
+    stoneCalculation: "60px",
+    stoneRate: "80px",
+    stoneAmount: "100px",
+    __actions: "100px",
+};
+
+const getWidth = (key: string) => COL_WIDTHS[key] || "80px";
+
+/* ─── CELL STYLE HELPER ─── */
+const getCellStyle = (col: any, extra?: React.CSSProperties): React.CSSProperties => ({
+    width: getWidth(col.key),
+    minWidth: getWidth(col.key),
+    maxWidth: getWidth(col.key),
+    padding: "4px 6px",
+    borderRight: "1px solid #E2E8F0",
+    textAlign: col.align === "right" ? "right" : col.align === "center" ? "center" : "left",
+    overflow: "hidden",
+    boxSizing: "border-box",
+    fontSize: "12px",
+    ...extra,
+});
+
 export default function StoneEnterMaster({
-    netWeight = 50.000,
+    netWeight = 0,
     onClose,
     onSave,
     initialRows = [],
-    stoneItems = [],  // Default to empty array
-    subStoneItems = [] // Default to empty array
+    stoneItems = [],
+    subStoneItems = [],
+
 }: Props) {
+    /* ---------------- TABLE COLUMNS ---------------- */
+
+    const tableCols = [
+        { key: "stoneId", label: "STONE", align: "left" as const },
+        { key: "subStoneId", label: "SUB STONE", align: "left" as const },
+        { key: "stonePcs", label: "PCS", align: "right" as const, decimalScale: 0 },
+        { key: "stoneWeight", label: "WEIGHT", align: "right" as const, decimalScale: 3 },
+        { key: "stoneUnit", label: "UNIT", align: "center" as const },
+        { key: "stoneCalculation", label: "CALCULATION", align: "center" as const },
+        { key: "stoneRate", label: "RATE", align: "right" as const, decimalScale: 2 },
+        { key: "stoneAmount", label: "AMOUNT", align: "right" as const, decimalScale: 2 },
+    ];
+
+    const allDisplayCols = [
+        { key: "__sno", label: "#", align: "center" as const },
+        ...tableCols,
+        { key: "__actions", label: "Action", align: "center" as const },
+    ];
+
     /* ---------------- STATE ---------------- */
 
+    // Form state uses strings for number inputs
     const emptyForm = {
-        stone: "",
-        subStone: "",
-        pcs: 0,
-        weight: 0,
-        unit: "g" as "g",
-        cal: "w" as "w",
-        rate: 0,
+        stoneId: "",
+        subStoneId: "",
+        stonePcs: "",
+        stoneWeight: "",
+        stoneUnit: "g" as "g" | "c",
+        stoneCalculation: "w" as "w" | "p",
+        stoneRate: "",
     };
 
-    const [form, setForm] = useState<Omit<StoneRow, "id" | "amount">>(emptyForm);
+    const [formData, setFormData] = useState<{
+        stoneId: string;
+        subStoneId: string;
+        stonePcs: string;
+        stoneWeight: string;
+        stoneUnit: "g" | "c";
+        stoneCalculation: "w" | "p";
+        stoneRate: string;
+    }>(emptyForm);
+
     const [rows, setRows] = useState<StoneRow[]>(initialRows);
     const [editId, setEditId] = useState<string | null>(null);
+    const [errors, setErrors] = useState<Record<string, string>>({});
+    const [touched, setTouched] = useState<Record<string, boolean>>({});
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     // Create refs for each field
-    const stoneRef = useRef<any>(null);
-    const subStoneRef = useRef<any>(null);
-    const pcsRef = useRef<HTMLInputElement>(null);
-    const weightRef = useRef<HTMLInputElement>(null);
-    const unitRef = useRef<HTMLSelectElement>(null);
-    const calRef = useRef<HTMLSelectElement>(null);
-    const rateRef = useRef<HTMLInputElement>(null);
+    const stoneIdRef = useRef<any>(null);
+    const subStoneIdRef = useRef<any>(null);
+    const stonePcsRef = useRef<HTMLInputElement>(null);
+    const stoneWeightRef = useRef<HTMLInputElement>(null);
+    const stoneUnitRef = useRef<HTMLSelectElement>(null);
+    const stoneCalculationRef = useRef<HTMLSelectElement>(null);
+    const stoneRateRef = useRef<HTMLInputElement>(null);
 
-    // Array of refs for focus navigation
-    const refs = [stoneRef, subStoneRef, pcsRef, weightRef, unitRef, calRef, rateRef];
+    const fieldRefs = {
+        stoneId: stoneIdRef,
+        subStoneId: subStoneIdRef,
+        stonePcs: stonePcsRef,
+        stoneWeight: stoneWeightRef,
+        stoneUnit: stoneUnitRef,
+        stoneCalculation: stoneCalculationRef,
+        stoneRate: stoneRateRef,
+    };
+
+    useEffect(() => {
+        // Focus first field when modal opens
+        setTimeout(() => {
+            stoneIdRef.current?.focus?.();
+            stoneIdRef.current?.select?.();
+        }, 50);
+    }, []);
+
+    /* ---------------- FORM FIELDS DEFINITION ---------------- */
+
+    const formFields = [
+        {
+            key: "stoneId",
+            label: "Stone",
+            type: "combobox" as const,
+            isRequired: true,
+            collection: { items: stoneItems },
+            ref: stoneIdRef,
+
+        },
+        {
+            key: "subStoneId",
+            label: "Sub Stone",
+            type: "combobox" as const,
+            isRequired: true,
+            collection: { items: subStoneItems },
+            ref: subStoneIdRef,
+        },
+        {
+            key: "stonePcs",
+            label: "Pcs",
+            type: "number" as const,
+            isRequired: true,
+            decimalScale: 0,
+            ref: stonePcsRef,
+        },
+        {
+            key: "stoneWeight",
+            label: "Weight",
+            type: "number" as const,
+            isRequired: true,
+            decimalScale: 3,
+            ref: stoneWeightRef,
+        },
+        {
+            key: "stoneUnit",
+            label: "Unit",
+            type: "select" as const,
+            isRequired: true,
+            collection: {
+                items: [
+                    { label: "Gram", value: "g" },
+                    { label: "Carat", value: "c" },
+                ]
+            },
+            ref: stoneUnitRef,
+        },
+        {
+            key: "stoneCalculation",
+            label: "Cal",
+            type: "select" as const,
+            isRequired: true,
+            collection: {
+                items: [
+                    { label: "Weight", value: "w" },
+                    { label: "Piece", value: "p" },
+                ]
+            },
+            ref: stoneCalculationRef,
+        },
+        {
+            key: "stoneRate",
+            label: "Rate",
+            type: "number" as const,
+            isRequired: true,
+            decimalScale: 2,
+            ref: stoneRateRef,
+        },
+    ];
 
     /* ---------------- CALCULATION ---------------- */
 
-    const calculateAmount = (data: any) => {
-        let weight = Number(data.weight) || 0;
-        const pcs = Number(data.pcs) || 0;
-        const rate = Number(data.rate) || 0;
+    const calculateAmount = (data: typeof formData) => {
+        let weight = Number(data.stoneWeight) || 0;
+        const pcs = Number(data.stonePcs) || 0;
+        const rate = Number(data.stoneRate) || 0;
 
-        if (data.unit === "c") weight = weight / 5;
+        if (data.stoneUnit === "c") weight = weight / 5;
 
-        if (data.cal === "w") return weight * rate;
-        if (data.cal === "p") return pcs * weight * rate;
+        if (data.stoneCalculation === "w") return weight * rate;
+        if (data.stoneCalculation === "p") return pcs * weight * rate;
 
         return 0;
     };
 
+    const amount = calculateAmount(formData);
+
     /* ---------------- TOTAL USED ---------------- */
 
     const totalUsedWeight = rows.reduce((sum, r) => {
-        const w = r.unit === "c" ? Number(r.weight) / 5 : Number(r.weight);
+        const w = r.stoneUnit === "c" ? Number(r.stoneWeight) / 5 : Number(r.stoneWeight);
         return sum + w;
     }, 0);
 
     /* ---------------- VALIDATION ---------------- */
 
-    const isFormValid =
-        form.stone.trim() !== "" &&
-        form.subStone.trim() !== "" &&
-        Number(form.pcs) > 0 &&
-        Number(form.weight) > 0 &&
-        Number(form.rate) > 0;
+    const validateForm = (): boolean => {
+        const newErrors: Record<string, string> = {};
+
+        if (!formData.stoneId) newErrors.stoneId = "Stone is required";
+        if (!formData.subStoneId) newErrors.subStoneId = "Sub Stone is required";
+
+        const pcs = Number(formData.stonePcs);
+        if (!formData.stonePcs || isNaN(pcs) || pcs <= 0) {
+            newErrors.stonePcs = "Pcs must be greater than 0";
+        }
+
+        const weight = Number(formData.stoneWeight);
+        if (!formData.stoneWeight || isNaN(weight) || weight <= 0) {
+            newErrors.stoneWeight = "Weight must be greater than 0";
+        }
+
+        const rate = Number(formData.stoneRate);
+        if (!formData.stoneRate || isNaN(rate) || rate <= 0) {
+            newErrors.stoneRate = "Rate must be greater than 0";
+        }
+
+        setErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
+    };
 
     /* ---------------- HANDLERS ---------------- */
 
-    const setField = (field: keyof typeof form, value: any) => {
-        setForm((prev) => ({ ...prev, [field]: value }));
+    const handleChange = (key: string, value: any) => {
+        setFormData((prev) => ({ ...prev, [key]: value }));
+        setTouched((prev) => ({ ...prev, [key]: true }));
+        setErrors((prev) => ({ ...prev, [key]: "" }));
     };
 
-    const handleAddOrUpdate = () => {
-        if (!isFormValid) {
-            alert("Fill all fields properly.");
-            return;
-        }
+    const handleSubmit = () => {
+        if (!validateForm()) return;
 
         const currentWeight =
-            form.unit === "c" ? Number(form.weight) / 5 : Number(form.weight);
+            formData.stoneUnit === "c" ? Number(formData.stoneWeight) / 5 : Number(formData.stoneWeight);
 
         // Calculate base weight excluding current edit row
         const baseWeight = editId
@@ -126,12 +296,12 @@ export default function StoneEnterMaster({
                 .filter((r) => r.id !== editId)
                 .reduce(
                     (sum, r) =>
-                        sum + (r.unit === "c" ? Number(r.weight) / 5 : Number(r.weight)),
+                        sum + (r.stoneUnit === "c" ? Number(r.stoneWeight) / 5 : Number(r.stoneWeight)),
                     0
                 )
             : rows.reduce(
                 (sum, r) =>
-                    sum + (r.unit === "c" ? Number(r.weight) / 5 : Number(r.weight)),
+                    sum + (r.stoneUnit === "c" ? Number(r.stoneWeight) / 5 : Number(r.stoneWeight)),
                 0
             );
 
@@ -140,13 +310,17 @@ export default function StoneEnterMaster({
             return;
         }
 
-        const newRow = {
+        // Convert string values to numbers for the row
+        const newRow: StoneRow = {
             id: editId ?? Date.now().toString(),
-            ...form,
-            pcs: Number(form.pcs),
-            weight: Number(form.weight),
-            rate: Number(form.rate),
-            amount: calculateAmount(form),
+            stoneId: formData.stoneId,
+            subStoneId: formData.subStoneId,
+            stonePcs: Number(formData.stonePcs),
+            stoneWeight: Number(formData.stoneWeight),
+            stoneUnit: formData.stoneUnit,
+            stoneCalculation: formData.stoneCalculation,
+            stoneRate: Number(formData.stoneRate),
+            stoneAmount: calculateAmount(formData),
         };
 
         if (editId) {
@@ -156,284 +330,226 @@ export default function StoneEnterMaster({
             setRows((prev) => [...prev, newRow]);
         }
 
-        setForm(emptyForm);
-        // Focus back to first field after adding
+        resetForm();
+    };
+
+    const resetForm = () => {
+        setFormData(emptyForm);
+        setErrors({});
+        setTouched({});
         setTimeout(() => {
-            stoneRef.current?.focus();
+            stoneIdRef.current?.focus();
         }, 100);
     };
 
-    const handleEdit = (row: StoneRow) => {
-        setForm({
-            stone: row.stone,
-            subStone: row.subStone,
-            pcs: row.pcs,
-            weight: row.weight,
-            unit: row.unit,
-            cal: row.cal,
-            rate: row.rate,
+    const handleEditRow = (row: StoneRow) => {
+        // Convert numbers back to strings for editing
+        setFormData({
+            stoneId: row.stoneId,
+            subStoneId: row.subStoneId,
+            stonePcs: row.stonePcs.toString(),
+            stoneWeight: row.stoneWeight.toString(),
+            stoneUnit: row.stoneUnit,
+            stoneCalculation: row.stoneCalculation,
+            stoneRate: row.stoneRate.toString(),
         });
         setEditId(row.id);
         setTimeout(() => {
-            stoneRef.current?.focus();
+            stoneIdRef.current?.focus();
         }, 100);
     };
 
-    const handleDelete = (id: string) => {
-        setRows((prev) => prev.filter((r) => r.id !== id));
-    };
-
-    const focusNext = (currentIndex: number) => {
-        if (currentIndex < refs.length - 1) {
-            const nextRef = refs[currentIndex + 1];
-            if (nextRef?.current) {
-                setTimeout(() => {
-                    nextRef.current.focus();
-                    if (nextRef.current.select && typeof nextRef.current.select === 'function') {
-                        nextRef.current.select();
-                    }
-                }, 50);
+    const handleDeleteRow = (row: StoneRow) => {
+        if (confirm("Delete this row?")) {
+            setRows((prev) => prev.filter((r) => r.id !== row.id));
+            if (editId === row.id) {
+                resetForm();
             }
-        } else {
-            // Last field, trigger add
-            handleAddOrUpdate();
         }
     };
 
-    const handleSaveAndClose = () => {
-        onSave(rows);
-        onClose();
+    /* ---------------- RENDER FORM CELL ---------------- */
+
+    const renderFormCell = (field: any) => {
+        const ref = fieldRefs[field.key as keyof typeof fieldRefs];
+        const isInvalid = !!errors[field.key] && !!touched[field.key];
+        const value = formData[field.key as keyof typeof formData]?.toString() || "";
+
+        if (field.type === "combobox") {
+            return (
+                <SelectCombobox
+                    value={value}
+                    items={field.collection?.items || []}
+                    onChange={(val) => handleChange(field.key, val)}
+                    ref={ref as React.RefObject<HTMLInputElement>}
+                    onEnter={() => {
+                        const keys = Object.keys(fieldRefs);
+                        const currentIndex = keys.indexOf(field.key);
+                        if (currentIndex < keys.length - 1) {
+                            const nextRef = fieldRefs[keys[currentIndex + 1] as keyof typeof fieldRefs];
+                            setTimeout(() => nextRef?.current?.focus?.(), 50);
+                        } else {
+                            handleSubmit();
+                        }
+                    }}
+                    rounded="sm"
+                    placeholder={`Select ${field.label}`}
+                />
+            );
+        }
+
+        if (field.type === "select") {
+            return (
+                <NativeSelect.Root size="xs">
+                    <NativeSelect.Field
+                        ref={ref as React.RefObject<HTMLSelectElement>}
+                        value={value}
+                        onChange={(e) => handleChange(field.key, e.target.value)}
+                        onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                                e.preventDefault();
+                                const keys = Object.keys(fieldRefs);
+                                const currentIndex = keys.indexOf(field.key);
+                                if (currentIndex < keys.length - 1) {
+                                    const nextRef = fieldRefs[keys[currentIndex + 1] as keyof typeof fieldRefs];
+                                    setTimeout(() => nextRef?.current?.focus?.(), 50);
+                                } else {
+                                    handleSubmit();
+                                }
+                            }
+                        }}
+                        css={{ height: '28px', fontSize: '11px' }}
+                    >
+                        {field.collection?.items.map((item: any) => (
+                            <option key={item.value} value={item.value}>{item.label}</option>
+                        ))}
+                    </NativeSelect.Field>
+                    <NativeSelect.Indicator />
+                </NativeSelect.Root>
+            );
+        }
+
+        return (
+            <CapitalizedInput
+                value={value}
+                field={field.key}
+                type="number"
+                allowDecimal={field.decimalScale > 0}
+                onChange={(field, value) => handleChange(field, value)}
+                inputRef={ref}
+                onEnter={() => {
+                    const keys = Object.keys(fieldRefs);
+                    const currentIndex = keys.indexOf(field.key);
+                    if (currentIndex < keys.length - 1) {
+                        const nextRef = fieldRefs[keys[currentIndex + 1] as keyof typeof fieldRefs];
+                        setTimeout(() => nextRef?.current?.focus?.(), 50);
+                    } else {
+                        handleSubmit();
+                    }
+                }}
+                size="xs"
+                rounded="sm"
+                noBorder
+            />
+        );
     };
-    console.log(stoneItems,subStoneItems ,'stoneItems')
+
+    const getCellValue = (col: any, row: StoneRow) => {
+        if (col.key === "stoneAmount") {
+            return row.stoneAmount.toFixed(2);
+        }
+        if (col.key === "stoneWeight") {
+            return Number(row.stoneWeight).toFixed(3);
+        }
+        if (col.key === "stoneRate") {
+            return Number(row.stoneRate).toFixed(2);
+        }
+
+        // For stoneId and subStoneId, return the label instead of the value
+        if (col.key === "stoneId") {
+            const item = stoneItems.find(i => i.value === row.stoneId);
+            return item?.label || row.stoneId || "-";
+        }
+
+        if (col.key === "subStoneId") {
+            const item = subStoneItems.find(i => i.value === row.subStoneId);
+            return item?.label || row.subStoneId || "-";
+        }
+
+        return row[col.key as keyof StoneRow];
+    };
+
+    const formatTotal = (value: any, decimalScale?: number) => {
+        if (value == null) return "";
+        return Number(value).toFixed(decimalScale || 0);
+    };
+
+    const totals = {
+        stonePcs: rows.reduce((sum, r) => sum + r.stonePcs, 0),
+        stoneWeight: rows.reduce((sum, r) => {
+            const w = r.stoneUnit === "c" ? r.stoneWeight / 5 : r.stoneWeight;
+            return sum + w;
+        }, 0),
+        stoneAmount: rows.reduce((sum, r) => sum + r.stoneAmount, 0),
+    };
+
     /* ---------------- UI ---------------- */
 
     return (
-        <Box p={4}>
+        <Box p={2}>
             {/* Header with Close Button */}
-            <HStack justify="space-between" mb={4}>
-                <Text fontSize="lg" fontWeight="bold">
+            <HStack justify="space-between" mb={2}>
+                <Text fontSize="small" fontWeight="semibold">
                     Stone Entry - Available Weight: {Number(netWeight).toFixed(3)}g
                 </Text>
                 <IconButton
                     aria-label="Close"
                     onClick={onClose}
-                    size="sm"
+                    size="xs"
+                    variant='ghost'
                 >
-                    <LuX />
+                    <LuX size={14} />
                 </IconButton>
             </HStack>
 
-            {/* ================= FORM ================= */}
-            <form
-                onSubmit={(e) => {
-                    e.preventDefault();
-                    handleAddOrUpdate();
+            {/* Transaction Table */}
+            <TransactionTable
+                theme={{
+                    colors: {
+                        borderColor: "#CBD5E0",
+                        formColor: "#EDF2F7",
+                    }
                 }}
-            >
-                <Box borderWidth="1px" rounded="md" p={3} mb={5} bg="#FFF1F5">
-                    <Grid
-                        templateColumns="repeat(8, 1fr) 100px"
-                        gap={2}
-                        alignItems="end"
-                    >
-                        <GridItem>
-                            <Text fontSize="sm">Stone</Text>
-                            <SelectCombobox
-                                value={form.stone}
-                                items={stoneItems}
-                                onChange={(val) => setField("stone", val)}
-                                ref={stoneRef}
-                                onEnter={() => focusNext(0)}
-                                rounded="sm"
-                                placeholder="Select Stone"
-                            />
-                        </GridItem>
-
-                        <GridItem>
-                            <Text fontSize="sm">Sub</Text>
-                            <SelectCombobox
-                                value={form.subStone}
-                                items={subStoneItems}
-                                onChange={(val) => setField("subStone", val)}
-                                ref={subStoneRef}
-                                onEnter={() => focusNext(1)}
-                                rounded="sm"
-                                placeholder="Select Sub Stone"
-                            />
-                        </GridItem>
-
-                        <GridItem>
-                            <Text fontSize="sm">Pcs</Text>
-                            <CapitalizedInput
-                                value={form.pcs?.toString()}
-                                field="pcs"
-                                type="number"
-                                onChange={(field, value) => setField("pcs", value)}
-                                inputRef={pcsRef}
-                                onEnter={() => focusNext(2)}
-                                size="xs"
-                                rounded="sm"
-                            />
-                        </GridItem>
-
-                        <GridItem>
-                            <Text fontSize="sm">Weight</Text>
-                            <CapitalizedInput
-                                value={form.weight?.toString()}
-                                field="weight"
-                                type="number"
-                                allowDecimal
-                                onChange={(field, value) => setField("weight", value)}
-                                inputRef={weightRef}
-                                onEnter={() => focusNext(3)}
-                                size="xs"
-                                rounded="sm"
-                            />
-                        </GridItem>
-
-                        <GridItem>
-                            <Text fontSize="sm">Unit</Text>
-                            <NativeSelect.Root size="sm">
-                                <NativeSelect.Field
-                                    ref={unitRef}
-                                    value={form.unit}
-                                    onChange={(e) => setField("unit", e.target.value as "g" | "c")}
-                                    onKeyDown={(e) => {
-                                        if (e.key === "Enter") {
-                                            e.preventDefault();
-                                            focusNext(4);
-                                        }
-                                    }}
-                                    css={{ height: '32px' }}
-                                >
-                                    <option value="g">Gram</option>
-                                    <option value="c">Carat</option>
-                                </NativeSelect.Field>
-                                <NativeSelect.Indicator />
-                            </NativeSelect.Root>
-                        </GridItem>
-
-                        <GridItem>
-                            <Text fontSize="sm">Cal</Text>
-                            <NativeSelect.Root size="sm">
-                                <NativeSelect.Field
-                                    ref={calRef}
-                                    value={form.cal}
-                                    onChange={(e) => setField("cal", e.target.value as "w" | "p")}
-                                    onKeyDown={(e) => {
-                                        if (e.key === "Enter") {
-                                            e.preventDefault();
-                                            focusNext(5);
-                                        }
-                                    }}
-                                    css={{ height: '32px' }}
-                                >
-                                    <option value="w">Weight</option>
-                                    <option value="p">Piece</option>
-                                </NativeSelect.Field>
-                                <NativeSelect.Indicator />
-                            </NativeSelect.Root>
-                        </GridItem>
-
-                        <GridItem>
-                            <Text fontSize="sm">Rate</Text>
-                            <CapitalizedInput
-                                value={form.rate?.toString()}
-                                field="rate"
-                                type="number"
-                                allowDecimal
-                                onChange={(field, value) => setField("rate", value)}
-                                inputRef={rateRef}
-                                onEnter={() => handleAddOrUpdate()}
-                                size="xs"
-                                rounded="sm"
-                            />
-                        </GridItem>
-
-                        <GridItem>
-                            <Text fontSize="sm">Amount</Text>
-                            <Input
-                                value={calculateAmount(form).toFixed(2)}
-                                disabled
-                                css={{ height: '32px' }}
-                            />
-                        </GridItem>
-
-                        <GridItem>
-                            <Button
-                                colorScheme="blue"
-                                size="sm"
-                                onClick={handleAddOrUpdate}
-                                disabled={!isFormValid}
-                            >
-                                {editId ? "Update" : "Add"}
-                            </Button>
-                        </GridItem>
-                    </Grid>
-                </Box>
-            </form>
-
-            {/* ================= TABLE ================= */}
-
-            <Text mb={2} fontWeight="600">
-                Total Used: {Number(totalUsedWeight).toFixed(3)} / {Number(netWeight).toFixed(3)} g
-            </Text>
-
-            <Table.Root size="sm" variant="outline" mb={4}>
-                <Table.Header>
-                    <Table.Row>
-                        <Table.ColumnHeader textAlign="left">Sno</Table.ColumnHeader>
-                        <Table.ColumnHeader textAlign="center">Stone</Table.ColumnHeader>
-                        <Table.ColumnHeader textAlign="center">Sub</Table.ColumnHeader>
-                        <Table.ColumnHeader textAlign="center">Pcs</Table.ColumnHeader>
-                        <Table.ColumnHeader textAlign="center">Weight</Table.ColumnHeader>
-                        <Table.ColumnHeader textAlign="center">Unit</Table.ColumnHeader>
-                        <Table.ColumnHeader textAlign="center">Cal</Table.ColumnHeader>
-                        <Table.ColumnHeader textAlign="center">Rate</Table.ColumnHeader>
-                        <Table.ColumnHeader textAlign="center">Amount</Table.ColumnHeader>
-                        <Table.ColumnHeader textAlign="center">Action</Table.ColumnHeader>
-                    </Table.Row>
-                </Table.Header>
-
-                <Table.Body>
-                    {rows.map((row, index) => (
-                        <Table.Row key={row.id}>
-                            <Table.Cell>{index + 1}</Table.Cell>
-                            <Table.Cell>{row.stone}</Table.Cell>
-                            <Table.Cell>{row.subStone}</Table.Cell>
-                            <Table.Cell>{row.pcs}</Table.Cell>
-                            <Table.Cell textAlign="end">{Number(row.weight || 0).toFixed(3)}</Table.Cell>
-                            <Table.Cell textAlign="center">{row.unit}</Table.Cell>
-                            <Table.Cell textAlign="center">{row.cal}</Table.Cell>
-                            <Table.Cell textAlign="end">{row.rate}</Table.Cell>
-                            <Table.Cell textAlign="end">{row.amount.toFixed(2)}</Table.Cell>
-                            <Table.Cell textAlign='center'>
-                                <Button
-                                    size="xs"
-                                    mr={2}
-                                    onClick={() => handleEdit(row)}
-                                >
-                                    Edit
-                                </Button>
-                                <Button
-                                    size="xs"
-                                    colorScheme="red"
-                                    onClick={() => handleDelete(row.id)}
-                                >
-                                    Remove
-                                </Button>
-                            </Table.Cell>
-                        </Table.Row>
-                    ))}
-                </Table.Body>
-            </Table.Root>
+                tableCols={tableCols}
+                formFields={formFields}
+                rows={rows}
+                formData={formData}
+                errors={errors}
+                touched={touched}
+                localEditId={editId}
+                isSubmitting={isSubmitting}
+                totals={totals}
+                stripedBg="#F7FAFC"
+                allDisplayCols={allDisplayCols}
+                resetForm={resetForm}
+                handleSubmit={handleSubmit}
+                handleEditRow={handleEditRow}
+                handleDeleteRow={handleDeleteRow}
+                renderFormCell={renderFormCell}
+                getCellValue={getCellValue}
+                formatTotal={formatTotal}
+                getCellStyle={getCellStyle}
+            />
 
             {/* Save and Close Buttons */}
-            <HStack justify="flex-end" gap={2}>
-                <Button variant="outline" onClick={onClose}>
+            <HStack justify="flex-end" gap={2} mt={4}>
+                <Text m={2} fontSize='small' fontWeight="500">
+                    Total Used: {Number(totalUsedWeight).toFixed(3)} / {Number(netWeight).toFixed(3)} g
+                </Text>
+                <Button variant="outline" size='xs' onClick={onClose}>
                     Cancel
                 </Button>
-                <Button colorScheme="blue" onClick={handleSaveAndClose}>
+                <Button colorPalette="blue" size='xs' onClick={() => onSave(rows)}>
                     Save & Close
                 </Button>
             </HStack>

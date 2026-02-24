@@ -30,6 +30,7 @@ type PrintPreviewTableProps<T> = {
     data: T[];
     customization: PrintCustomization;
     showSno?: boolean;
+    ref?:any;
 };
 
 export function PrintPreviewTable<T extends Record<string, any>>({
@@ -37,6 +38,7 @@ export function PrintPreviewTable<T extends Record<string, any>>({
     data,
     customization,
     showSno,
+    ref
 }: PrintPreviewTableProps<T>) {
     const { fontSize, headerBg, showTotals, totalColumns ,headerColor ,title , isNumeric, } = customization;
 
@@ -64,7 +66,7 @@ export function PrintPreviewTable<T extends Record<string, any>>({
                 <Text color="#222">{title} </Text>
             </Box>
 
-            <Table.Root size={fontSize}  border="1px solid " minW={0}  showColumnBorder borderColor="gray.200" >
+            <Table.Root size={fontSize} ref={ref} border="1px solid " minW={0}  showColumnBorder borderColor="gray.200" >
                 {/* HEADER */}
                 <Table.Header>
                     <Table.Row bg={headerBg} color={headerColor}>

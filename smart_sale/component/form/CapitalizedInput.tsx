@@ -17,7 +17,7 @@ type InputModeType =
 
 type CapitalizedInputProps<T> = {
     value: string | undefined;
-    field: keyof T;
+    field:any;
     onChange: (field: keyof T, value: any) => void;
     placeholder?: string;
     isCapitalized?: boolean;
@@ -43,6 +43,7 @@ type CapitalizedInputProps<T> = {
     inputModeType?: InputModeType;
     rounded?: string;
     minWidth?: string;
+    noBorder?:boolean;
 };
 
 export function CapitalizedInput<T>({
@@ -70,7 +71,8 @@ export function CapitalizedInput<T>({
     decimalScale = 3,
     inputModeType,
     rounded = "full",
-    minWidth
+    minWidth,
+    noBorder
 }: CapitalizedInputProps<T>) {
     const { theme } = useTheme();
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -169,17 +171,25 @@ export function CapitalizedInput<T>({
             }}
             className={onClassUse ? "type-inputs" : ""}
             maxWidth={maxWidth}
-            bg={theme.colors.greyColor}
+            bg={noBorder ? '#ffffff':theme.colors.greyColor}
             fontSize='2xs'
             rounded={rounded}
             minWidth={minWidth}
+            border="1px solid transparent"
+            _focus={{
+                border: "1px solid #FFF",
+                boxShadow: "none",
+            }}
+            _hover={{
+                border: "1px solid #FFF",
+            }}
             css={type === "number" ? {
                 WebkitAppearance: 'none',
                 MozAppearance: 'textfield',
                 '&::-webkit-outer-spin-button, &::-webkit-inner-spin-button': {
                     WebkitAppearance: 'none',
                     margin: 0,
-                },
+                }
             } : undefined}
         />
 

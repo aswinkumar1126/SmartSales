@@ -16,6 +16,18 @@ export const ItemService = {
             throw error;
         }
     },
+    getStoneItems: async (filter?: string) => {
+        try {
+            const response = await axiosInstance.get(`${BASE}/stone`, {
+                // If filter exists, send as `search` query param
+                params: filter ? { filter: filter } : undefined,
+            });
+            return response.data;
+        } catch (error: any) {
+            console.error('Error fetching all items:', error?.response?.data || error.message);
+            throw error;
+        }
+    },
     getById: async (id: number) => {
         try {
             console.log(id,'id for itemByid')

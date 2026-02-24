@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState ,useRef} from "react";
 import {
     Box,
     Flex,
@@ -44,6 +44,8 @@ export function PrintPreviewScreen({
     showSno,
     title,
 }: PrintPreviewScreenProps) {
+
+    const printRef = useRef<HTMLDivElement | null>(null);
     const router = useRouter();
     const { theme } = useTheme();
 
@@ -94,7 +96,8 @@ export function PrintPreviewScreen({
         .join("\n");
 
     const handlePrint = () => {
-        const tableContainer = document.getElementById("print-table");
+
+        const tableContainer = printRef.current;
         if (!tableContainer) return;
 
         const printWindow = window.open("", "_blank");
@@ -104,47 +107,54 @@ export function PrintPreviewScreen({
         const fontSize = fontSizeMap[settings.fontSize] || "14px";
 
         printWindow.document.write(`
-<html>
-<head>
-<title>Print</title>
-<style>
-body{
- font-family:Arial;
- font-size:${fontSize};
- margin:10mm;
- -webkit-print-color-adjust:exact;
- print-color-adjust:exact;
-}
+        <html>
+        <head>
+            <title>Print</title>
+            <style>
+                body{
+                    font-family: Arial, sans-serif;
+                    font-size: ${fontSize};
+                    margin: 10mm;
+                    -webkit-print-color-adjust: exact;
+                    print-color-adjust: exact;
+                }
 
-table{
- border-collapse:collapse;
- width:100%;
-}
+                table{
+                    border-collapse: collapse;
+                    width: 100%;
+                }
 
-th,td{
- border:1px solid #ccc;
- padding:6px;
-}
+                th, td{
+                    border: 1px solid #ccc;
+                    padding: 6px;
+                }
 
-th{
- background:${settings.headerBg};
- color:${settings.headerColor};
- font-weight:bold;
-}
+                th{
+                    background: ${settings.headerBg};
+                    color: ${settings.headerColor};
+                    font-weight: bold;
+                }
 
-${columnAlignCSS}
+                ${columnAlignCSS}
 
-@page{ size:auto; margin:10mm; }
-tr{ page-break-inside:avoid; }
-</style>
-</head>
-<body>
-<table>${tableContainer.innerHTML}</table>
-</body>
-</html>
-`);
+                @page{
+                    size: auto;
+                    margin: 10mm;
+                }
+
+                tr{
+                    page-break-inside: avoid;
+                }
+            </style>
+        </head>
+        <body>
+            ${tableContainer.outerHTML}
+        </body>
+        </html>
+    `);
 
         printWindow.document.close();
+        printWindow.focus();
         printWindow.print();
         printWindow.close();
     };
@@ -315,6 +325,7 @@ tr{ page-break-inside:avoid; }
                             columns={columns}
                             customization={settings}
                             showSno={showSno}
+                            ref={printRef}
                         />
                     </Box>
                 </Box>

@@ -378,9 +378,9 @@ export default function AddTransactionItemForm({
     // Calculate NETWT (Gross Weight - Less Weight)
     const calculateNetWeight = useCallback(() => {
         const grswt = parseFloat(formData.GRSWT) || 0;
-        const lesswt = parseFloat(formData.LESSWT) || 0;
-        return (grswt - lesswt).toFixed(3);
-    }, [formData.GRSWT, formData.LESSWT]);
+        const stnwt = parseFloat(formData.STNWT) || 0;
+        return (grswt - stnwt).toFixed(3);
+    }, [formData.GRSWT, formData.STNWT]);
 
     // Calculate PUREWT (Net Weight * TOUCH / 100)
     const calculatePureWeight = useCallback(() => {
@@ -391,18 +391,18 @@ export default function AddTransactionItemForm({
 
     // Update calculated fields when relevant fields change
     useEffect(() => {
-        if (formData.GRSWT || formData.LESSWT) {
+        if (formData.GRSWT || formData.STNWT) {
             const netwt = calculateNetWeight();
             setFormData(prev => ({ ...prev, NETWT: netwt }));
         }
-    }, [formData.GRSWT, formData.LESSWT, calculateNetWeight]);
+    }, [formData.GRSWT, formData.STNWT, calculateNetWeight]);
 
     useEffect(() => {
-        if (formData.GRSWT || formData.LESSWT || formData.TOUCH) {
+        if (formData.GRSWT || formData.STNWT || formData.TOUCH) {
             const purewt = calculatePureWeight();
             setFormData(prev => ({ ...prev, PUREWT: purewt }));
         }
-    }, [formData.GRSWT, formData.LESSWT, formData.TOUCH, calculatePureWeight]);
+    }, [formData.GRSWT, formData.STNWT, formData.TOUCH, calculatePureWeight]);
 
     useEffect(() => {
         if (pureValue) {
@@ -443,14 +443,14 @@ export default function AddTransactionItemForm({
         }
 
         // Existing logic
-        if (key === "GRSWT" || key === "LESSWT") {
+        if (key === "GRSWT" || key === "STNWT") {
             const grswt = parseFloat(key === "GRSWT" ? value : formData.GRSWT) || 0;
-            const lesswt = parseFloat(key === "LESSWT" ? value : formData.LESSWT) || 0;
-            newFormData.NETWT = (grswt - lesswt).toFixed(3);
+            const stnwt = parseFloat(key === "STNWT" ? value : formData.STNWT) || 0;
+            newFormData.NETWT = (grswt - stnwt).toFixed(3);
 
             if (formData.TOUCH) {
                 const TOUCH = parseFloat(formData.TOUCH) || 0;
-                newFormData.PUREWT = ((grswt - lesswt) * TOUCH / 100).toFixed(3);
+                newFormData.PUREWT = ((grswt - stnwt) * TOUCH / 100).toFixed(3);
             }
         }
 

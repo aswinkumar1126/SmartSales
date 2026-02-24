@@ -60,23 +60,23 @@ export const issueColumns = [
         align: "right" as const,
 
     },
-    {
-        key: "WASPER",
-        label: "WAS %",
-        width: "20px",
-        type: "number" as const,
-        align: "right" as const,
+    // {
+    //     key: "WASPER",
+    //     label: "WAS %",
+    //     width: "20px",
+    //     type: "number" as const,
+    //     align: "right" as const,
 
-    },
-    {
-        key: "WASTAGE",
-        label: "W",
-        width: "20px",
-        type: "number" as const,
-        align: "right" as const,
-        decimalScale: 3
+    // },
+    // {
+    //     key: "WASTAGE",
+    //     label: "WASTAGE",
+    //     width: "20px",
+    //     type: "number" as const,
+    //     align: "right" as const,
+    //     decimalScale: 3
 
-    },
+    // },
     {
         key: "TOUCH",
         label: "TOUCH",

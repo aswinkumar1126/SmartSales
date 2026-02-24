@@ -10,3 +10,13 @@ export const useItems = (filter?: string) => {
         },
     });
 };
+
+export const useStoneItems = (filter?:string) =>{
+    return useQuery({
+        queryKey: ["stoneItems", filter],
+        queryFn: async () => {
+            const res = await ItemService.getStoneItems(filter);
+            return res.data; // res is already the data from API
+        },
+    });
+}

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useCallback, useState ,useEffect } from "react";
+import React, { useMemo, useCallback, useState, useEffect, useRef } from "react";
 import {
     Box,
     Text,
@@ -8,15 +8,36 @@ import {
     Flex,
     Badge,
     HStack,
-    Stack,
     Icon,
 } from "@chakra-ui/react";
-import { LuPlus, LuX } from "react-icons/lu";
-import EditableTable from "@/component/table/EditableTable";
-import AddTransactionItemForm, { FormField } from "./AddTransactionItemForm";
+import { LuX, LuPencil, LuTrash2 } from "react-icons/lu";
+import { CapitalizedInput } from "@/component/form/CapitalizedInput";
 import { issueColumns, issueDataColumns } from "../../Issue/isseColumns";
-import { applyWeightTouchLogic } from "@/hooks/pure/applyWeightTouchLogic";
+import { useCalculatePure } from "@/hooks/pure/useCalculatePure";
+import { toaster } from "@/components/ui/toaster";
+import StoneEnterMaster from "../StoneMaster/StoneEntryMaster";
+import TransactionTable from "@/component/table/TransactionTable";
+import { useStoneItems } from "@/hooks/item/useItems";
+import { SelectCombobox } from "@/components/ui/selectComboBox";
 
+/* ─── TYPES ─── */
+export interface FormField {
+    key: string;
+    label?: string;
+    type: "text" | "number" | "select" | "combobox" | "capitalized" | "calculated";
+    placeholder?: string;
+    collection?: { items: { label: string; value: string }[] };
+    getLabelByValue?: (collection: any, value: any) => string;
+    isRequired?: boolean;
+    min?: number;
+    max?: number;
+    allowNegative?: boolean;
+    size?: "2xs" | "xs" | "sm" | "md" | "lg";
+    disabled?: boolean;
+    decimalScale?: number;
+    dependsOn?: string;
+    defaultValue?: string;
+}
 
 interface DraftTransactionTableProps {
     rows: any[];
@@ -34,623 +55,585 @@ interface DraftTransactionTableProps {
     itemsFilter: any;
     handleClearForm?: any;
     isEditing: boolean;
-    isIssue?:boolean;
-    getAvailableWeight?: (id: string | number ) => number | null;
+    isIssue?: boolean;
+    getAvailableWeight?: (id: string | number) => number | null;
     onClear?: () => void;
     transactionType?: string;
 }
 
+/* ─── COLUMN WIDTHS ─── */
+const COL_WIDTHS: Record<string, string> = {
+    __sno: "26px", ITEMID: "120px", PUREID: "120px",
+    PCS: "30px", GRSWT: "52px", STNWT: "52px", NETWT: "52px",
+    WASTYPE: "52px", WASPER: "40px", WASTAGE: "48px",
+    TOUCH: "44px", PUREWT: "52px", MC: "40px", ATOUCH: "44px",
+    DESCRIPTION: "80px", WT: "52px", AWT: "52px",
+    PURE: "52px", APURE: "52px", __actions: "54px",
+};
+const getWidth = (key: string) => COL_WIDTHS[key] || "48px";
+
+
+/* ─── INLINE SELECT ─── */
+function InlineSelect({
+    value, onChange, collection, placeholder, inputRef, onEnter, disabled, isInvalid,
+}: {
+    value: string; onChange: (v: string) => void;
+    collection?: { items: { label: string; value: string }[] };
+    placeholder?: string; isInvalid?: boolean;
+    inputRef?: React.RefObject<HTMLSelectElement>;
+    onEnter?: () => void; disabled?: boolean;
+}) {
+    const localRef = useRef<HTMLSelectElement>(null);
+    const ref = (inputRef || localRef) as React.RefObject<HTMLSelectElement>;
+
+    // Safe default for collection items
+    const safeItems = collection?.items || [];
+
+    return (
+        <select
+            ref={ref}
+            value={value}
+            onChange={e => onChange(e.target.value)}
+            onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); onEnter?.(); } }}
+            disabled={disabled}
+            style={{
+                width: "100%", height: 22, fontSize: 10, borderRadius: 3,
+                border: isInvalid ? "1px solid #FC8181" : "1px solid transparent",
+                outline: "none", padding: "0 4px",
+                background: disabled ? "#F7FAFC" : "white",
+            }}
+        >
+            {/* {placeholder && <option value="">{placeholder}</option>} */}
+            {safeItems.map(opt => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+            ))}
+        </select>
+    );
+}
+
+/* ════════════════════════════════════════════
+   MAIN
+════════════════════════════════════════════ */
 export default function DraftTransactionTable({
-    rows,
-    editingRowId,
-    onAddRow,
-    onUpdateRow,
-    onRemoveRow,
-    onRowClick,
-    onCancelEdit,
-    onSaveRow,
-    itemsCollection,
-    totals,
-    transactionTitle,
-    theme,
-    itemsFilter,
-    handleClearForm,
-    isEditing,
-    isIssue,
-    getAvailableWeight,
-    onClear,
-    transactionType,
-
+    rows, editingRowId, onAddRow, onUpdateRow, onRemoveRow, onRowClick,
+    onCancelEdit, onSaveRow, itemsCollection, totals, transactionTitle,
+    theme, itemsFilter, handleClearForm, isEditing, isIssue,
+    getAvailableWeight, onClear, transactionType,
 }: DraftTransactionTableProps) {
-    console.log("DraftTable - rows:", rows, "editingRowId:", editingRowId, "isEditing:", isEditing);
-
-    const [showForm, setShowForm] = useState(false);
-    const [hasChanges, setHasChanges] = useState(false);
 
 
-    //wastype drop down
-    const wastypecollection = {
-        items:  [
-                    { label: "TOUCH", value: "TOUCH"}
-                ]
-    };
-    // Function to check if a field should be editable based on edit mode
-    const isFieldEditable = (field: string) => {
-        if (!isEditing) return true;
+    const { data: stoneItemsData } = useStoneItems();
 
-        // Fields that CANNOT be edited during transaction edit
-        const nonEditableFields = ['ITEMID', 'ITEMCODE', 'TRANSACTION_TYPE'];
-        return !nonEditableFields.includes(field);
-    };
+    const [stoneItemsCollection, setStoneItemCollection] = useState<
+        { label: string; value: string }[]
+    >([]);
 
-    // Create adapter function for updating rows
-   const handleUpdateRowAdapter = useCallback(
-  (rowIndex: number, updatedRow: any) => {
-    const currentRow = rows[rowIndex];
-    if (!currentRow) return;
+    useEffect(() => {
+        if (!stoneItemsData) return;
 
-    console.log("🟡 Adapter called");
-    console.log("Row index:", rowIndex);
-    console.log("Current row:", currentRow);
-    console.log("Updated row:", updatedRow);
-
-    Object.keys(updatedRow).forEach((field) => {
-      const newValue = updatedRow[field];
-      const oldValue = currentRow[field];
-
-      console.log(`➡️ Field: ${field}`);
-      console.log("Old:", oldValue);
-      console.log("New:", newValue);
-
-      // ⛔ Prevent wiping values on focus
-      if (newValue === undefined || newValue === null) {
-        console.warn(`⛔ Blocked wipe for field: ${field}`);
-        return;
-      }
-
-      if (newValue !== oldValue) {
-        console.log(`✅ Calling onUpdateRow(${rowIndex}, ${field}, ${newValue})`);
-        onUpdateRow(rowIndex, field, newValue);
-      } else {
-        console.log(`⚪ No change for field: ${field}`);
-      }
-    });
-  },
-  [rows, onUpdateRow]
-);
-
-
-    // Handle delete row
-    const handleDeleteRow = useCallback(
-        (row: any) => {
-            if (isEditing) {
-                // Show warning when trying to delete during edit
-                const canDelete = window.confirm(
-                    "Are you sure you want to delete this item? You must save the transaction first."
-                );
-                if (!canDelete) return;
-            }
-
-            const rowId = row.__rowId;
-            console.log("Deleting row:", rowId);
-
-            if (rowId) {
-                const confirmDelete = window.confirm(
-                    "Are you sure you want to delete this row?"
-                );
-                if (confirmDelete) {
-                    onRemoveRow(rowId);
-                    if (isEditing) {
-                        setHasChanges(true);
-                    }
-                }
-            }
-        },
-        [onRemoveRow, isEditing]
-    );
-
-    // Handle row click
-    const handleRowClick = useCallback(
-        (row: any) => {
-            console.log("Row clicked:", row.__rowId);
-            onRowClick(row);
-        },
-        [onRowClick]
-    );
-
-    // Handle add via form submission
-    const handleAddViaForm = useCallback(
-        (formData: any) => {
-            if (isEditing) {
-                const confirmAdd = window.confirm(
-                    "You are editing an existing transaction. Adding new items will modify the transaction. Continue?"
-                );
-                if (!confirmAdd) return;
-
-                setHasChanges(true);
-            }
-
-            if (!formData.WASTYPE) {
-                formData.WASTYPE = "TOUCH"; // default selection
-            }
-
-
-            // 🔥 Check duplicate PUREID
-            // const isDuplicate = rows.some(
-            //     (row) => row.PUREID === formData.PUREID
-            // );
-
-            // if (isDuplicate) {
-            //     toaster.create({
-            //         title:"This PURE ID already exists.",
-            //         type:'error'
-            //     });
-            //     return;
-            // }
-
-            const newRow: any = {
-                ...formData,
-                __rowId: `form-${Date.now()}`,
-                __isNew: true,
-                __previewSno: rows.length + 1,
-            };
-
-            onAddRow(newRow);
-        },
-        [rows, onAddRow, isEditing]
-    );
-
- 
-
-    // Handle inline add
-    // Handle inline add
-    const handleAddInline = useCallback(() => {
-        if (isEditing) {
-            // Show warning when trying to add new rows during edit
-            const confirmAdd = window.confirm(
-                "You are editing an existing transaction. Adding new items will modify the transaction. Continue?"
-            );
-            if (!confirmAdd) return;
-
-            setHasChanges(true);
-        }
-        // Pass default WASTYPE value when adding inline
-        onAddRow({ WASTYPE: "TOUCH" });
-    }, [onAddRow, isEditing]);
-
-    // Define fields that should be hidden from form (calculated fields)
-    const hiddenFields = ["NETWT", "PUREWT"];
-
-    // Prepare form fields from columns with proper grid column spans
-    const formFields = useMemo(() => {
-        const numericFields = [
-            "PCS", "GRSWT", "STNWT", "NETWT", "WASPER", "WASTAGE", "ATOUCH",
-            "PUREWT", "MC", "ATOUCH", "WT", "AWT", "TOUCH", "ATOUCH", "PURE", "APURE"
-        ];
-        const baseColumns = isIssue ? issueDataColumns : issueColumns;
-
-        return baseColumns
-            .filter(
-                (col) =>
-                    col.key !== "SNO" &&
-                    col.key !== "ACTIONS" &&
-                    !hiddenFields.includes(col.key)
-            )
-            .map((col): FormField => {
-                const isNumeric = numericFields.includes(col.key);
-
-                // Determine required fields based on transaction type
-                const isRequired = isIssue
-                    ? ["PUREID", "TOUCH", "WT", "PURE"].includes(col.key)
-                    : ["ITEMID", "PCS", "GRSWT","NETWT", "TOUCH"].includes(col.key);
-
-                const baseField: FormField = {
-                    key: col.key,
-                    label: col.label || col.key,
-                    placeholder: `Enter ${col.label || col.key}`,
-                    type: isNumeric ? "number" : "text", // Changed from "number" to "text" for non-numeric
-                    isRequired,
-                    size: "xs",
-                    ...(isNumeric && 'decimalScale' in col && typeof col.decimalScale === 'number' ? { decimalScale: col.decimalScale } : {}),
-                };
-
-                // Handle ITEMID (Purchase type)
-                if (col.key === "ITEMID") {
-                    return {
-                        ...baseField,
-                        type: "combobox",
-                        collection: itemsCollection,
-                        isRequired: true,
-                        disabled: isEditing,
-                    };
-
-                    
-                }
-
-                // Handle PUREID (Issue type)
-                if (col.key === "PUREID") {
-                    return {
-                        ...baseField,
-                        type: "combobox",
-                        collection: itemsCollection,
-                        isRequired: true,
-                        disabled: isEditing,
-                    };
-                }
-
-                // Handle read-only fields during edit
-                if (col.key === "ITEMCODE" || col.key === "HSNCODE") {
-                    return {
-                        ...baseField,
-                        type: "capitalized",
-                        disabled: isEditing,
-                    };
-                }
-
-                // Handle RATE and AMOUNT fields
-                if (col.key === "RATE" || col.key === "AMOUNT") {
-                    return {
-                        ...baseField,
-                        type: "number",
-                    };
-                }
-                    if (col.key === "WASTYPE") {
-                    return {
-                        ...baseField,
-                        key: col.key,
-                        label: col.label || col.key,
-                        placeholder: `select`,
-                        size: "xs",
-                        type: "select",
-                        collection: wastypecollection,
-                        isRequired: true,
-                        dependsOn:"ITEMID",
-                        defaultValue:'TOUCH'
-                        
-                    };
-
-                    
-                }
-                // Add dependency logic for Issue type
-                if (isIssue) {
-                    // Fields that depend on PUREID
-                    if (["WT", "AWT", "TOUCH", "ATOUCH"].includes(col.key)) {
-                        return {
-                            ...baseField,
-                            dependsOn: "PUREID",
-                        };
-                    }
-                    // Calculated fields
-                    if (["PURE", "APUREWT"].includes(col.key)) {
-                        return {
-                            ...baseField,
-                            type: "calculated",
-                            disabled: true,
-                        };
-                    }
-                }
-                // Add dependency logic for Purchase type
-                else {
-                    // Fields that depend on ITEMID
-                    if (["PCS", "GRSWT", "STNWT", "WASTYPE","WASPER", "WASTAGE", "MC", "TOUCH" ,"W","ATOUCH", "DESCRIPTION" ].includes(col.key)) {
-                        return {
-                            ...baseField,
-                            dependsOn: "ITEMID",
-                        };
-                    }
-                    // Calculated fields
-                    if (["NETWT", "PUREWT"].includes(col.key)) {
-                        return {
-                            ...baseField,
-                            type: "calculated",
-                            disabled: true,
-                        };
-                    }
-                }
-
-                return baseField;
-            });
-    }, [itemsCollection, isEditing, isIssue, hiddenFields]);
+        setStoneItemCollection(
+            stoneItemsData.map((item: any) => ({
+                label: item.itemName,
+                value: item.itemId.toString(),
+            }))
+        );
+    }, [stoneItemsData]);
 
     
 
-    // Memoize columns for table
-    const activeColumns = isIssue ? issueDataColumns : issueColumns;
+    const [formData, setFormData] = useState<Record<string, any>>({});
+    const [errors, setErrors] = useState<Record<string, string>>({});
+    const [touched, setTouched] = useState<Record<string, boolean>>({});
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [localEditId, setLocalEditId] = useState<string | null>(null);
+    const [isStoneModalOpen, setIsStoneModalOpen] = useState(false);
+    const [currentGRSWT, setCurrentGRSWT] = useState<number>(0);
 
-    // Memoize columns for table with explicit ordering
-    const columns = useMemo(() => {
-        // Define the exact order for each type
-        const orderedColumns = isIssue
-            ? [
-                "SNO",
-                "PUREID",
-                "WT",
-                "AWT",
-                "TOUCH",
-                "ATOUCH",
-                "PURE",
-                "APURE"
-            ]
-            : [
-                "SNO",
-                "ITEMID",
-                "PCS",
-                "GRSWT",
-                "STNWT",
-                "NETWT",
-                "WASTYPE",
-                "WASPER",
-                "WASTAGE",
-                "TOUCH",
-                "PUREWT",
-                "MC",
-                "ATOUCH",
-                "DESCRIPTION"
-            ];
+    const fieldRefs = useRef<Record<string, React.RefObject<any>>>({});
+    const submitBtnRef = useRef<HTMLButtonElement>(null);
 
-        // Create a map of the original columns
-        const columnMap = new Map(
-            activeColumns.map(col => [col.key, col])
-        );
+    const wastypecollection = { items: [{ label: "TOUCH", value: "TOUCH" }] };
+    const numericFields = [
+        "PCS", "GRSWT", "STNWT", "NETWT", "WASPER", "WASTAGE", "ATOUCH",
+        "PUREWT", "MC", "WT", "AWT", "TOUCH", "PURE", "APURE",
+    ];
 
-        // Build columns in the correct order
-        const result = orderedColumns
-            .map(key => columnMap.get(key))
-            .filter((col): col is NonNullable<typeof col> => Boolean(col)) // Remove any undefined
-            .map((col) => {
-                if (col.key === "SNO") {
-                    return {
-                        ...col,
-                        editable: false,
-                        render: (_: any, row: any) => (
-                            <span className="text-gray-500 text-xs">
-                                {row.__previewSno || "New"}
-                            </span>
-                        ),
-                    };
-                }
+    const orderedKeys = isIssue
+        ? ["PUREID", "WT", "AWT", "TOUCH", "ATOUCH", "PURE", "APURE"]
+        : ["ITEMID", "PCS", "GRSWT", "STNWT", "NETWT", "WASTYPE", "WASPER", "WASTAGE", "TOUCH", "PUREWT", "MC", "ATOUCH", "DESCRIPTION"];
 
-                if (col.key === "ITEMID" || col.key === "PUREID") {
-                    return {
-                        ...col,
-                        type: "combobox" as const,
-                        collection: itemsCollection,
-                        filter: itemsFilter,
-                        align: "left" as const,
-                        headalign: "left" as const,
-                        getLabelByValue: (collection: any, value: any) => {
-                            if (!collection?.items) return value || "";
-                            const item = collection.items.find(
-                                (i: any) => i.value === value?.toString()
-                            );
-                            return item?.label || value || "";
-                        },
-                        editable: !isEditing,
-                        disabled: isEditing,
-                        onClassUse: true,
-                    };
-                }
+    const baseColumns = isIssue ? issueDataColumns : issueColumns;
+    const colMap = useMemo(() => new Map(baseColumns.map(c => [c.key, c])), [baseColumns]);
+    const tableCols = useMemo(() =>
+        orderedKeys.map(k => colMap.get(k)).filter(Boolean) as any[],
+        [isIssue, colMap]
+    );
 
-                // For number fields
-                const numericFields = [
-                    "PCS", "GRSWT", "STNWT", "NETWT", "WASPER", "WASTAGE", "ATOUCH",
-                    "PUREWT", "MC", "ATOUCH", "WT", "AWT", "TOUCH", "ATOUCH", "PURE", "APUREWT"
-                ];
+    /* ─── form field definitions ─── */
+    const formFields = useMemo<FormField[]>(() => {
+        return tableCols.map((col): FormField => {
+            const isNum = numericFields.includes(col.key);
+            const isRequired = isIssue
+                ? ["PUREID", "TOUCH", "WT"].includes(col.key)
+                : ["ITEMID", "PCS", "GRSWT", "TOUCH"].includes(col.key);
 
+            const base: FormField = {
+                key: col.key,
+                label: col.label || col.key || "",
+                placeholder: col.label || col.key,
+                type: isNum ? "number" : "text",
+                isRequired,
+                size: "xs",
+                ...("decimalScale" in col && typeof col.decimalScale === "number"
+                    ? { decimalScale: col.decimalScale } : {}),
+            };
+
+            // ITEMID / PUREID — combobox
+            if (col.key === "ITEMID" || col.key === "PUREID") {
                 return {
-                    editable: isEditing ? isFieldEditable(col.key) : true,
-                    ...col,
-                    type: numericFields.includes(col.key) ? ("number" as const) : ("text" as const),
-                    align: numericFields.includes(col.key) ? ("right" as const) : ("left" as const),
-                    headalign: numericFields.includes(col.key) ? ("right" as const) : ("left" as const),
-                    sum: numericFields.includes(col.key),
-                    onClassUse: true,
+                    ...base,
+                    type: "combobox",
+                    // Only pass collection if it exists, otherwise pass empty collection
+                    collection: itemsCollection || {items:[]},
+                    isRequired: true
                 };
-            });
+            }
 
-        console.log('📋 Final columns order:', result.map(c => c.key));
-        return result;
-    }, [activeColumns, itemsCollection, itemsFilter, isEditing, isFieldEditable, isIssue]);
+            if (col.key === "ITEMCODE" || col.key === "HSNCODE")
+                return { ...base, type: "capitalized" };
 
+            if (col.key === "WASTYPE")
+                return { ...base, type: "select", collection: wastypecollection, isRequired: true, dependsOn: "ITEMID", defaultValue: "TOUCH" };
 
-    // Handle cancel edit
-    const handleCancelEdit = useCallback((rowId?: string) => {
-        if (isEditing && hasChanges) {
-            const confirmCancel = window.confirm(
-                "You have unsaved changes. Are you sure you want to cancel editing? All changes will be lost."
-            );
-            if (!confirmCancel) return;
+            if (!isIssue && ["NETWT", "PUREWT"].includes(col.key))
+                return { ...base, type: "calculated", disabled: true };
+
+            if (isIssue && ["PURE", "APURE"].includes(col.key))
+                return { ...base, type: "calculated", disabled: true };
+
+            if (!isIssue && ["PCS", "GRSWT", "STNWT", "WASTYPE", "WASPER", "WASTAGE", "MC", "TOUCH", "ATOUCH", "DESCRIPTION"].includes(col.key))
+                return { ...base, dependsOn: "ITEMID" };
+
+            if (isIssue && ["WT", "AWT", "TOUCH", "ATOUCH"].includes(col.key))
+                return { ...base, dependsOn: "PUREID" };
+
+            return base;
+        });
+    }, [tableCols, itemsCollection, isIssue]); // Keep itemsCollection in deps but with fallback
+
+    const visibleFormFields = useMemo(() =>
+        formFields.filter(f => !["NETWT", "PUREWT", "PURE", "APURE"].includes(f.key) && f.type !== "calculated"),
+        [formFields]
+    );
+
+    // Initialize refs for visible fields
+    useEffect(() => {
+        visibleFormFields.forEach(f => {
+            if (!fieldRefs.current[f.key]) {
+                fieldRefs.current[f.key] = React.createRef<any>();
+            }
+        });
+    }, [visibleFormFields]);
+
+    /* ─── calculations ─── */
+    const pureValue = useCalculatePure(formData.WT, formData.TOUCH);
+    const altPureValue = useCalculatePure(formData.AWT, formData.ATOUCH);
+
+    const calcNet = useCallback(() => {
+        const g = parseFloat(formData.GRSWT) || 0;
+        const s = parseFloat(formData.STNWT) || 0;
+        return (g - s).toFixed(3);
+    }, [formData.GRSWT, formData.STNWT]);
+
+    const calcPure = useCallback(() => {
+        const n = parseFloat(calcNet()) || 0;
+        const t = parseFloat(formData.TOUCH) || 0;
+        return ((n * t) / 100).toFixed(3);
+    }, [calcNet, formData.TOUCH]);
+
+    useEffect(() => {
+        setFormData(p => ({ ...p, NETWT: calcNet() }));
+    }, [formData.GRSWT, formData.STNWT, calcNet]);
+
+    useEffect(() => {
+        setFormData(p => ({ ...p, PUREWT: calcPure() }));
+    }, [formData.GRSWT, formData.STNWT, formData.TOUCH, calcPure]);
+
+    useEffect(() => {
+        if (pureValue) setFormData(p => ({ ...p, PURE: pureValue }));
+        if (altPureValue) setFormData(p => ({ ...p, APURE: altPureValue }));
+    }, [pureValue, altPureValue]);
+
+    /* init */
+    useEffect(() => {
+        const init: Record<string, any> = {};
+        formFields.forEach(f => { init[f.key] = f.defaultValue ?? ""; });
+        setFormData(init);
+    }, [formFields]);
+
+    /* ─── change ─── */
+    const handleChange = useCallback((key: string, value: any) => {
+        const mirror: Record<string, string> = { WT: "AWT", TOUCH: "ATOUCH" };
+        const next = { ...formData, [key]: value };
+        if (mirror[key]) next[mirror[key]] = value;
+
+        if ((key === "WT" || key === "AWT") && formData.PUREID && getAvailableWeight) {
+            const avail = getAvailableWeight(formData.PUREID);
+            if (avail != null && Number(value) > avail) {
+                toaster.create({ title: "Stock Limit Exceeded", description: `Available: ${avail}`, type: "error" });
+                next[key] = avail;
+            }
         }
-        onCancelEdit(rowId);
-    }, [onCancelEdit, isEditing, hasChanges]);
-
-    // Handle save row
-    const handleSaveRow = useCallback((row: any, isNew: boolean) => {
-        if (isEditing) {
-            setHasChanges(true);
+        if (key === "GRSWT" || key === "STNWT") {
+            const g = parseFloat(key === "GRSWT" ? value : formData.GRSWT) || 0;
+            const s = parseFloat(key === "STNWT" ? value : formData.STNWT) || 0;
+            next.NETWT = (g - s).toFixed(3);
+            if (formData.TOUCH) next.PUREWT = ((g - s) * (parseFloat(formData.TOUCH) || 0) / 100).toFixed(3);
         }
-        onSaveRow(row, isNew);
-    }, [onSaveRow, isEditing]);
+        if (key === "TOUCH") {
+            const n = parseFloat(formData.NETWT || calcNet()) || 0;
+            next.PUREWT = ((n * (parseFloat(value) || 0)) / 100).toFixed(3);
+        }
+        setFormData(next);
+        setTouched(p => ({ ...p, [key]: true }));
+        setErrors(p => ({ ...p, [key]: "" }));
+    }, [formData, calcNet, getAvailableWeight]);
 
-console.log(columns ,'columns')
-    const formatTotal = (value: any, decimalScale?: number) => {
-        if (value == null) return "";
-        return Number(decimalScale) >= 1
-            ? Number(value).toFixed(decimalScale)
-            : Number(value).toString();
+    /* ─── navigation ─── */
+    const focusIdx = useCallback((idx: number) => {
+        const f = visibleFormFields[idx];
+        if (!f) return;
+        const ref = fieldRefs.current[f.key];
+        setTimeout(() => { ref?.current?.focus?.(); ref?.current?.select?.(); }, 60);
+    }, [visibleFormFields]);
+
+    const moveNext = useCallback((key: string) => {
+        const idx = visibleFormFields.findIndex(f => f.key === key);
+        let next = idx + 1;
+        while (
+            next < visibleFormFields.length &&
+            (visibleFormFields[next].disabled ||
+                (visibleFormFields[next].dependsOn && !formData[visibleFormFields[next].dependsOn!]))
+        ) next++;
+        if (next < visibleFormFields.length) focusIdx(next);
+        else submitBtnRef.current?.click();
+    }, [visibleFormFields, formData, focusIdx]);
+
+
+    /* ─── validation ─── */
+    const validateForm = useCallback((): boolean => {
+        const errs: Record<string, string> = {};
+        let valid = true;
+        visibleFormFields.forEach(f => {
+            const val = formData[f.key];
+            if (f.isRequired && (!val || val.toString().trim() === "")) {
+                errs[f.key] = `${f.label} is required`;
+                valid = false;
+            }
+        });
+        const allTouched: Record<string, boolean> = {};
+        visibleFormFields.forEach(f => { allTouched[f.key] = true; });
+        setTouched(allTouched);
+        setErrors(errs);
+
+        if (!valid) {
+            const firstErrField = visibleFormFields.find(f => errs[f.key]);
+            if (firstErrField) {
+                focusIdx(visibleFormFields.findIndex(f => f.key === firstErrField.key));
+                toaster.create({
+                    title: "Validation Error",
+                    description: errs[firstErrField.key],
+                    type: "error",
+                });
+            }
+        }
+        return valid;
+    }, [visibleFormFields, formData, focusIdx]);
+
+    /* ─── reset ─── */
+    const resetForm = useCallback(() => {
+        const reset: Record<string, any> = {};
+        formFields.forEach(f => { reset[f.key] = f.defaultValue ?? ""; });
+        setFormData(reset);
+        setErrors({}); setTouched({}); setLocalEditId(null);
+        setTimeout(() => focusIdx(0), 100);
+    }, [formFields, focusIdx]);
+
+    /* ─── submit — ADD or UPDATE ─── */
+    const handleSubmit = useCallback(async () => {
+        if (!validateForm()) return;
+        setIsSubmitting(true);
+        try {
+            const isUpdate = !!localEditId;
+            const existingRow = rows.find(r => r.__rowId === localEditId);
+            const submitData = {
+                ...formData,
+                NETWT: calcNet(),
+                PUREWT: calcPure(),
+                WASTYPE: formData.WASTYPE || "TOUCH",
+                __rowId: localEditId ?? `row-${Date.now()}`,
+                __isNew: !isUpdate,
+                __previewSno: isUpdate
+                    ? existingRow?.__previewSno
+                    : rows.length + 1,
+                ...(isUpdate && existingRow?.TRANSACTION_TYPE
+                    ? { TRANSACTION_TYPE: existingRow.TRANSACTION_TYPE }
+                    : {}),
+            };
+            onAddRow(submitData);
+            resetForm();
+        } finally { setIsSubmitting(false); }
+    }, [formData, calcNet, calcPure, localEditId, rows, onAddRow, validateForm, resetForm]);
+
+    /* ─── edit row → populate form ─── */
+    const handleEditRow = useCallback((row: any) => {
+        const next: Record<string, any> = {};
+        formFields.forEach(f => { next[f.key] = row[f.key] ?? f.defaultValue ?? ""; });
+        setFormData(next); setErrors({}); setTouched({});
+        setLocalEditId(row.__rowId);
+        setTimeout(() => focusIdx(0), 100);
+    }, [formFields, focusIdx]);
+
+    /* ─── delete ─── */
+    const handleDeleteRow = useCallback((row: any) => {
+        if (!window.confirm("Delete this row?")) return;
+        onRemoveRow(row.__rowId);
+        if (localEditId === row.__rowId) resetForm();
+    }, [onRemoveRow, localEditId, resetForm]);
+
+    /* ─── display value ─── */
+    const getCellValue = (col: any, row: any) => {
+        const val = row[col.key];
+        if (col.getLabelByValue && col.collection) return col.getLabelByValue(col.collection, val);
+        if (col.key === "ITEMID" || col.key === "PUREID") {
+            // Safe access to itemsCollection
+            const items = itemsCollection?.items || [];
+            const item = items.find((i: any) => i.value === val?.toString());
+            return item?.label || val || "-";
+        }
+        if (val == null || val === "") return "-";
+        if (col.decimalScale && Number(col.decimalScale) > 0) return Number(val || 0).toFixed(col.decimalScale);
+        return val;
     };
 
-    return (
-        <Box>
-            {/* Header with Action Buttons */}
-            <Flex
-                justifyContent="space-between"
-                alignItems="center"
-                px={2}
-                py={1}
-                bg={theme.colors.formColor}
-                rounded="md"
-                borderWidth="1px"
-                borderColor={theme.colors.borderColor}
-            >
-                <Flex alignItems="center" gap={3}>
-                    <Text
-                        fontSize="xs"
-                        fontWeight="semibold"
-                        color={theme.colors.primaryText}
-                    >
-                        {transactionTitle || "Transaction"} Items
-                        {isEditing && " (Editing Mode)"}
-                    </Text>
-                    <Badge
-                        colorScheme={rows.length > 0 ? "green" : "gray"}
-                        variant="subtle"
-                        fontSize="2xs"
-                        px={2}
-                        py={0.5}
-                    >
-                        {rows.length} item{rows.length !== 1 ? "s" : ""}
-                    </Badge>
+    const formatTotal = (value: any, decimalScale?: number) => {
+        if (value == null) return "";
+        return Number(decimalScale) >= 1 ? Number(value).toFixed(decimalScale) : Number(value).toString();
+    };
 
-                    {/* Warning badge if changes made during edit */}
-                    {isEditing && hasChanges && (
-                        <Badge
-                            colorScheme="orange"
-                            variant="solid"
-                            fontSize="2xs"
-                            px={2}
-                            py={0.5}
-                        >
-                            Unsaved Changes
-                        </Badge>
-                    )}
-                </Flex>
+    /* ─── render one input cell ─── */
+    const renderFormCell = (field: FormField) => {
+        const ref = fieldRefs.current[field.key];
+        const isInvalid = !!errors[field.key] && !!touched[field.key];
+        const shouldDisable =
+            field.disabled ||
+            (!!field.dependsOn && !formData[field.dependsOn]);
 
-                <HStack>
-                    {/* Only show Add buttons when NOT in edit mode OR show with warning */}
-                    {!isEditing && (
-                        <>
-                            {!showForm ? (
-                                <Button
-                                    size="xs"
-                                    variant="solid"
-                                    colorPalette="cyan"
-                                    onClick={() => setShowForm(true)}
-                                    fontSize="2xs"
-                                    height="24px"
-                                >
-                                    Add via Form
-                                </Button>
-                            ) : (
-                                <Button
-                                    size="xs"
-                                    variant="outline"
-                                    colorPalette="red"
-                                    onClick={() => setShowForm(false)}
-                                    fontSize="2xs"
-                                    height="24px"
-                                >
-                                    <Icon as={LuX} boxSize={2} /> Close Form
-                                </Button>
-                            )}
-
-                            <Button
-                                size="xs"
-                                variant="outline"
-                                colorPalette="green"
-                                onClick={handleAddInline}
-                                fontSize="2xs"
-                                height="24px"
-                            >
-                                Add Inline
-                            </Button>
-                            <Button
-                                size="2xs"
-                                colorPalette="red"
-                                variant="outline"
-                                onClick={() => onClear?.()}
-                                fontSize='2xs'
-                            >
-                                Clear All
-                            </Button>
-                        </>
-                    )}
-
-                   
-                </HStack>
-            </Flex>
-
-           
-
-            {/* Form Section - Only shown when showForm is true */}
-            {showForm && !isEditing && (
-                <Box mb={1}>
-                    <AddTransactionItemForm
-                        fields={formFields}
-                        onSubmit={handleAddViaForm}
-                        onCancel={() => setShowForm(false)}
-                        compact={true}
-                        isEditing={isEditing}
-                        getAvailableWeight={getAvailableWeight}
-                        isIssue={isIssue}
+        if (field.key === "STNWT") {
+            return (
+                <Box position="relative" width="100%" onFocus={() => {
+                    if (formData.GRSWT && Number(formData.GRSWT) > 0) {
+                        setCurrentGRSWT(Number(formData.GRSWT));
+                        setIsStoneModalOpen(true);
+                    } else toaster.create({ title: "Enter GRSWT first", type: "warning" });
+                }}>
+                    <CapitalizedInput
+                        field={field.key} value={formData[field.key] || ""}
+                        onChange={(_, v) => handleChange(field.key, v)}
+                        type="number" isCapitalized={false} size="xs" onClassUse rounded="sm"
+                        decimalScale={field.decimalScale} disabled={shouldDisable}
+                        inputRef={ref} onEnter={() => moveNext(field.key)} noBorder
+                    />
+                    <Button
+                        size="2xs" position="absolute" right="0" top="0" height="100%"
+                        disabled={!formData.GRSWT || Number(formData.GRSWT) <= 0}
+                        variant="ghost" minW="auto" px={0.5}
+                    >💎</Button>
+                </Box>
+            );
+        }
+        if (field.key === "DESCRIPTION") {
+            return (
+                <Box position="relative" width="100%">
+                    <CapitalizedInput
+                        field={field.key}
+                        value={formData[field.key] || ""}
+                        onChange={(_, v) => handleChange(field.key, v)}
+                        type="number"
+                        isCapitalized={false}
+                        size="xs"
+                        onClassUse
+                        rounded="sm"
+                        decimalScale={field.decimalScale}
+                        disabled={shouldDisable}
+                        inputRef={ref}
+                        onEnter={() => handleSubmit()} // <-- save row
+                        noBorder
                     />
                 </Box>
+            );
+        }
+        switch (field.type) {
+            case "combobox":
+                return (
+                    <SelectCombobox
+                        value={formData[field.key] || ""}
+                        onChange={(v) => {
+                            handleChange(field.key, v);  // update formData first
+                            if (v) moveNext(field.key);  // move next only if a value is selected
+                        }}
+                        items={field.collection?.items || []}
+                        placeholder={field.placeholder || `Select ${field.label}`}
+                        ref={ref as React.RefObject<HTMLInputElement>}
+                        rounded="sm"
+                        disable={shouldDisable}
+                        onEnter={() => moveNext(field.key)}
+                        
+                    />
+                );
+            case "select":
+                return (
+                    <InlineSelect
+                        value={formData[field.key] || ""}
+                        onChange={v => handleChange(field.key, v)}
+                        collection={field.collection}
+                        placeholder={field.placeholder}
+                        isInvalid={isInvalid}
+                        inputRef={ref as any}
+                        onEnter={() => moveNext(field.key)}
+                        disabled={shouldDisable}
+                        
+                    />
+                );
+            case "capitalized":
+                return (
+                    <CapitalizedInput
+                        field={field.key} value={formData[field.key] || ""}
+                        onChange={(_, v) => handleChange(field.key, v)}
+                        type="text" isCapitalized size="xs" rounded="sm"
+                        inputRef={ref} onEnter={() => moveNext(field.key)} disabled={shouldDisable}
+                        noBorder
+                    />
+                );
+            default:
+                return (
+                    <CapitalizedInput
+                        field={field.key} value={formData[field.key] || ""}
+                        onChange={(_, v) => handleChange(field.key, v)}
+                        type="number" isCapitalized={false} size="xs" onClassUse rounded="sm"
+                        decimalScale={field.decimalScale} disabled={shouldDisable}
+                        inputRef={ref} onEnter={() => moveNext(field.key)} noBorder
+                    />
+                );
+        }
+    };
+
+    const allDisplayCols = useMemo(() => [
+        { key: "__sno", label: "#", align: "center" as const },
+        ...tableCols,
+        { key: "__actions", label: "ACT", align: "center" as const },
+    ], [tableCols]);
+
+    const stripedBg = transactionType === "PU" ? "#EBF8FF"
+        : transactionType === "PR" ? "#FFF5F5"
+            : transactionType === "ISP" ? "#FFFAF0"
+                : "#F7FAFC";
+
+    const getCellStyle = (col: any, extra?: React.CSSProperties): React.CSSProperties => ({
+        width: getWidth(col.key),
+        minWidth: getWidth(col.key),
+        maxWidth: getWidth(col.key),
+        padding: "1px 3px",
+        borderRight: "1px solid #E2E8F0",
+        textAlign: col.align === "right" ? "right" : col.align === "center" ? "center" : "left",
+        overflow: "hidden",
+        boxSizing: "border-box",
+        fontSize: "10px",
+        ...extra,
+    });
+
+
+    /* ════════ RENDER ════════ */
+    return (
+        <Box display="flex" flexDirection="column" gap={1}>
+            {/* top bar */}
+            <Flex
+                justifyContent="space-between" alignItems="center"
+                px={2} py={1}
+                bg={theme?.colors?.formColor || "#EDF2F7"}
+                rounded="md" borderWidth="1px"
+                borderColor={theme?.colors?.borderColor || "#CBD5E0"}
+            >
+                <HStack gap={2}>
+                    <Text fontSize="xs" fontWeight="semibold" color={theme?.colors?.primaryText || "#1a202c"}>
+                        {transactionTitle || "Transaction"} Items
+                        {localEditId && (
+                            <Text as="span" color="blue.500" ml={1} fontSize="2xs"> ✎ Editing</Text>
+                        )}
+                    </Text>
+                    <Badge colorPalette={rows.length > 0 ? "green" : "gray"} variant="subtle" fontSize="2xs" px={2}>
+                        {rows.length} item{rows.length !== 1 ? "s" : ""}
+                    </Badge>
+                </HStack>
+                {!isEditing && (
+                    <Button size="2xs" colorPalette="red" variant="outline"
+                        onClick={() => { onClear?.(); resetForm(); }} fontSize="2xs">
+                        <Icon as={LuX} boxSize={2} /> Clear All
+                    </Button>
+                )}
+            </Flex>
+
+            {/* unified table */}
+            {!isEditing && (
+                <TransactionTable
+                    theme={theme}
+                    tableCols={tableCols}
+                    formFields={formFields}
+                    rows={rows}
+                    formData={formData}
+                    errors={errors}
+                    touched={touched}
+                    localEditId={localEditId}
+                    isSubmitting={isSubmitting}
+                    totals={totals}
+                    stripedBg={stripedBg}
+                    allDisplayCols={allDisplayCols}
+                    isIssue={isIssue}
+                    resetForm={resetForm}
+                    handleSubmit={handleSubmit}
+                    handleEditRow={handleEditRow}
+                    handleDeleteRow={handleDeleteRow}
+                    renderFormCell={renderFormCell}
+                    getCellValue={getCellValue}
+                    formatTotal={formatTotal}
+                    getCellStyle={getCellStyle}
+                />
             )}
 
-            {/* Table Section */}
-            <Box
-                borderWidth="1px"
-                borderColor={theme.colors.borderColor}
-                borderRadius="lg"
-                overflow="hidden"
-                bg="white"
-            >
-                <EditableTable
-                    columns={columns}
-                    isEditing={isEditing}
-                    data={rows}
-                    editingRowId={editingRowId}
-                    enableInlineEditing
-                    striped
-                    hoverable
-                    showActions="responsive"
-                    onUpdateRow={handleUpdateRowAdapter}
-                    onSaveRow={handleSaveRow}
-                    onCancelEdit={handleCancelEdit}
-                    onDelete={handleDeleteRow}
-                    onRowClick={handleRowClick}
-                    fixedHeight="200px"
-                    transactionType={transactionType}
-                    renderFooter={
-                        rows.length > 0
-                            ? () => (
-                                <tfoot className="sticky bottom-0 bg-gray-600 border-t border-gray-500">
-                                    <tr>
-                                        {columns.map((column, index) => (
-                                            <td
-                                                key={column.key}
-                                                className={`
-                            px-3 py-2 font-semibold text-xs
-                            ${column.align === "right" ? "text-right" : "text-left"}
-                            border-r border-gray-500
-                            last:border-r-0
-                            text-white
-                            table-footer-10
-                          `}
-                                            >
-                                                {index === 1
-                                                    ? "TOTAL"
-                                                    : formatTotal(totals[column.key], column.decimalScale)
-                                                }
-                                            </td>
-                                        ))}
-                                    </tr>
-                                </tfoot>
-                            )
-                            : undefined
-                    }
-                />
-            </Box>
+            {/* stone modal */}
+            {isStoneModalOpen && (
+                <Box position="fixed" top={0} left={0} right={0} bottom={0}
+                    bg="rgba(0,0,0,0.5)" zIndex={100}
+                    display="flex" alignItems="center" justifyContent="center"
+                    onClick={() => setIsStoneModalOpen(false)}>
+                    <Box bg={theme?.colors?.formColor || "white"} borderRadius="lg"
+                        maxW="1200px" width="100%" maxH="90vh" overflow="auto"
+                        onClick={e => e.stopPropagation()}>
+                        <StoneEnterMaster
+                            netWeight={currentGRSWT}
+                            onClose={() => setIsStoneModalOpen(false)}
+                            onSave={stoneData => {
+                                const total = stoneData.reduce((sum, r) => sum + (r.stoneUnit === "c" ? r.stoneWeight / 5 : r.stoneWeight), 0);
+                                handleChange("STNWT", total.toFixed(3));
+                                setIsStoneModalOpen(false);
+                                setTimeout(() => focusIdx(5), 50); // focus first field after closing modal
+                            }}
+                            stoneItems={stoneItemsCollection} 
+                            subStoneItems={stoneItemsCollection}
+                        />
+                    </Box>
+                </Box>
+            )}
         </Box>
     );
 }

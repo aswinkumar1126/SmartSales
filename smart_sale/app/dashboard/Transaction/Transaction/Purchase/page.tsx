@@ -29,7 +29,7 @@ import { useAllMetals } from "@/hooks/metal/useMetals";
 // Hooks
 import { useTransactions } from "@/hooks/transaction/useTransactions";
 import { useAllAccountHead } from "@/hooks/accountHead/useAccountHead";
-import { useItems } from "@/hooks/item/useItems";
+import { useItems, useStoneItems } from "@/hooks/item/useItems";
 import { useCreateTransactions, useUpdateTransaction, useTransactionByTransId } from "@/hooks/transaction/useTransactions";
 import { usePureGoldData, usePureGoldNames } from "@/hooks/pureGoldMast/usePureGoldMastData";
 // Types & Constants
@@ -123,6 +123,7 @@ export default function PurchasePage() {
 
     const { theme } = useTheme();
     const { data: itemsData } = useItems();
+   
 
     const filters = {
         accountType: "PR"
@@ -329,7 +330,7 @@ export default function PurchasePage() {
             ITEMID: "",
             PCS: "",
             GRSWT: "",
-            LESSWT: "",
+            STNWT: "",
             NETWT: "",
             TOUCH: "",
             PUREWT: "",
@@ -625,7 +626,7 @@ export default function PurchasePage() {
 
                         PCS: item.PCS || item.pcs || "",
                         GRSWT: item.GRSWT || item.grswt || "",
-                        LESSWT: item.LESSWT || item.lesswt || "",
+                        STNWT: item.STNWT || item.stnwt || "",
                         NETWT: item.NETWT || item.netwt || "",
                         TOUCH: item.TOUCH || item.TOUCH || "",
                         PUREWT: item.PUREWT || item.purewt || "",
@@ -889,10 +890,10 @@ export default function PurchasePage() {
 
                 // Calculations for non-issue types
                 if (!isIssue) {
-                    if (field === "GRSWT" || field === "LESSWT") {
+                    if (field === "GRSWT" || field === "STNWT") {
                         const grswt = Number(row.GRSWT) || 0;
-                        const lesswt = Number(row.STNWT) || 0;
-                        row.NETWT = Math.max(0, grswt - lesswt);
+                        const stnwt = Number(row.STNWT) || 0;
+                        row.NETWT = Math.max(0, grswt - stnwt);
                     }
 
                     if (field === "NETWT" || field === "TOUCH") {
@@ -944,7 +945,7 @@ export default function PurchasePage() {
         return typeRows.reduce((acc, row) => {
             acc.PCS += Number(row.PCS || 0);
             acc.GRSWT += Number(row.GRSWT || 0);
-            acc.STNWT += Number(row.LESSWT || 0);
+            acc.STNWT += Number(row.STNWT || 0);
             acc.NETWT += Number(row.NETWT || 0);
             acc.TOUCH += Number(row.TOUCH || 0);
             acc.PUREWT += Number(row.PUREWT || 0);
@@ -956,7 +957,7 @@ export default function PurchasePage() {
         }, {
             PCS: 0,
             GRSWT: 0,
-            LESSWT: 0,
+            STNWT: 0,
             NETWT: 0,
             TOUCH: 0,
             PUREWT: 0,
@@ -1438,7 +1439,7 @@ export default function PurchasePage() {
             )}
 
             {/* LEFT – 70% */}
-            <Box>
+            <Box w='100%'>
                 <VStack align="stretch" gap={1}>
                     {/* 1. Transaction Header Form */}
                  
@@ -1483,11 +1484,11 @@ export default function PurchasePage() {
                     {/* Draft Section - show separate tables for each transaction type */}
                     {/* Draft Section - show separate tables for each transaction type */}
                     {(selectedTransactionTypes?.length > 0 || isEditing) && (
-                        <Flex align="flex-start" gap={1}>
+                        <Box display='flex' gap={1} >
 
                             {/* LEFT SIDE - Tables */}
-                            <Box flex="1">
-                                <VStack align="stretch" gap={2}>
+                            <Box w='100%'>
+                                    <Box  gap={2}>
                                     {TRANSACTIONTYPES_ORDER
                                         .map(code => selectedTransactionTypes?.find(t => t.code === code))
                                         .filter((t): t is TransactionType => !!t)
@@ -1508,21 +1509,30 @@ export default function PurchasePage() {
                                                     borderWidth="1px"
                                                     borderRadius="md"
                                                     borderColor={theme.colors.greyColor}
+                                                    w='100%'
                                                 >
                                                     <DraftTransactionTable
                                                         rows={typeRows}
                                                         editingRowId={editingRowId}
                                                         isEditing={isEditing}
                                                         onAddRow={(formData) => {
-                                                            if (formData && typeof formData === 'object') {
-                                                                const newRow = {
-                                                                    ...formData,
-                                                                    TRANSACTION_TYPE: transactionType.value,
-                                                                    __rowId: `row-${transactionType.value}-${Date.now()}`,
-                                                                    __isNew: true,
-                                                                    __previewSno: typeRows.length + 1,
-                                                                };
-                                                                setDraftRows(prev => [...prev, newRow]);
+                                                            if (formData && typeof formData === "object") {
+
+                                                                if (!formData.__isNew) {
+                                                                    // ── UPDATE existing row in place ──
+                                                                    setDraftRows(prev =>
+                                                                        prev.map(r => r.__rowId === formData.__rowId ? formData : r)
+                                                                    );
+                                                                } else {
+                                                                    // ── ADD new row ──
+                                                                    const newRow = {
+                                                                        ...formData,
+                                                                        TRANSACTION_TYPE: transactionType.value,
+                                                                        // __rowId and __previewSno already set by DraftTransactionTable
+                                                                    };
+                                                                    setDraftRows(prev => [...prev, newRow]);
+                                                                }
+
                                                             } else {
                                                                 handleAddRowForType(transactionType);
                                                             }
@@ -1571,16 +1581,16 @@ export default function PurchasePage() {
                                                 </Box>
                                             );
                                         })}
-                                </VStack>
+                                </Box>
                             </Box>
 
 
                             {/* RIGHT SIDE - Summary Panel */}
-                            <Box w="320px" flexShrink={0} position="sticky">
+                            <Box position="sticky">
                                 <BalanceSummary theme={theme} />
                             </Box>
                           
-                        </Flex>
+                        </Box>
                    
                     )}
                     {/* Save Transaction Bar - appears once for all tables */}

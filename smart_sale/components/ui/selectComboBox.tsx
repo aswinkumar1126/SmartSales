@@ -83,25 +83,34 @@ export const SelectCombobox = forwardRef<HTMLInputElement, SelectComboboxProps>(
         if (e.key === "Enter") {
             e.preventDefault();
             e.stopPropagation();
-            if (isOpen && collection.items.length > 0) {
-                // Use highlighted item if available, otherwise fall back to first
-                const selectedValue = highlightedValue ?? collection.items[0].value;
-                const selectedItem = collection.items.find(item => item.value === selectedValue)
-                    ?? collection.items[0];
 
+            let selectedItem: SelectItem | undefined;
+
+            if (highlightedValue) {
+                selectedItem = collection.items.find(item => item.value === highlightedValue);
+            } else if (typedInput) {
+                selectedItem = collection.items.find(item => item.label.toUpperCase() === typedInput.toUpperCase());
+            }
+
+            // Fallback to first item if nothing is typed/highlighted
+            if (!selectedItem && collection.items.length > 0) {
+                selectedItem = collection.items[0];
+            }
+
+            if (selectedItem) {
                 onChange(selectedItem.value);
                 setTypedInput(selectedItem.label.toUpperCase());
-                setHighlightedValue(null);
-                setIsOpen(false);
-                setTimeout(() => {
-                    if (onEnter) onEnter();
-                }, 50);
-            } else {
-                if (onEnter) onEnter();
             }
+
+            setHighlightedValue(null);
+            setIsOpen(false);
+
+            // Move to next field
+            setTimeout(() => {
+                if (onEnter) onEnter();
+            }, 50);
         }
     };
-
     const handleValueChange = (e: any) => {
         if (e.value.length === 0) {
             onChange("");

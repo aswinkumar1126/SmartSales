@@ -1,5 +1,5 @@
 "use client"
-
+import React from "react";
 import { PrintPreviewScreen } from "@/component/screens/PrintPreviewScreen";
 import { usePrint } from "@/context/print/usePrintContext";
 import { useSearchParams } from "next/navigation";
