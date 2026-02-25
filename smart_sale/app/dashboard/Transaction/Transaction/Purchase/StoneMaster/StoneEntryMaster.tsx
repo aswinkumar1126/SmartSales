@@ -3,13 +3,9 @@
 import { useState, useRef, useEffect } from "react";
 import {
     Box,
-    Table,
-    Grid,
-    GridItem,
     Text,
     NativeSelect,
     Button,
-    Input,
     HStack,
     IconButton,
 } from "@chakra-ui/react";
@@ -20,6 +16,7 @@ import TransactionTable from "@/component/table/TransactionTable";
 
 type StoneRow = {
     id: string;
+    draftRowId: string;
     stoneId: string;
     subStoneId: string;
     stonePcs: number;
@@ -31,7 +28,8 @@ type StoneRow = {
 };
 
 type Props = {
-    netWeight?: number;
+    draftRowId: string;
+    grsWeight?: number;
     onClose: () => void;
     onSave: (rows: StoneRow[]) => void;
     initialRows?: StoneRow[];
@@ -70,13 +68,13 @@ const getCellStyle = (col: any, extra?: React.CSSProperties): React.CSSPropertie
 });
 
 export default function StoneEnterMaster({
-    netWeight = 0,
+    grsWeight = 0,
     onClose,
     onSave,
     initialRows = [],
     stoneItems = [],
     subStoneItems = [],
-
+    draftRowId
 }: Props) {
     /* ---------------- TABLE COLUMNS ---------------- */
 
@@ -99,7 +97,6 @@ export default function StoneEnterMaster({
 
     /* ---------------- STATE ---------------- */
 
-    // Form state uses strings for number inputs
     const emptyForm = {
         stoneId: "",
         subStoneId: "",
@@ -120,13 +117,18 @@ export default function StoneEnterMaster({
         stoneRate: string;
     }>(emptyForm);
 
-    const [rows, setRows] = useState<StoneRow[]>(initialRows);
+    const [rows, setRows] = useState<StoneRow[]>([]);
     const [editId, setEditId] = useState<string | null>(null);
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [touched, setTouched] = useState<Record<string, boolean>>({});
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isInitialized, setIsInitialized] = useState(false);
 
+    
+    const hasLoadedRef = useRef(false);
     // Create refs for each field
+
+
     const stoneIdRef = useRef<any>(null);
     const subStoneIdRef = useRef<any>(null);
     const stonePcsRef = useRef<HTMLInputElement>(null);
@@ -145,14 +147,106 @@ export default function StoneEnterMaster({
         stoneRate: stoneRateRef,
     };
 
+   
+    // Load stones from localStorage ONLY when draftRowId changes
     useEffect(() => {
+        if (!draftRowId) return;
+
+        // Prevent double loading
+        if (hasLoadedRef.current && rows.length > 0) {
+            console.log(`Already loaded stones for ${draftRowId}, skipping...`);
+            return;
+        }
+
+        const all: StoneRow[] = JSON.parse(localStorage.getItem('STONE_MASTER') || "[]");
+        let linked = all.filter(s => s.draftRowId === draftRowId);
+
+        console.log(`Loaded ${linked.length} raw stones for draft row ${draftRowId}:`, linked);
+
+        // Filter out empty rows - but keep at least one empty row if no data
+        const nonEmptyRows = linked.filter(s =>
+            s.stoneId && s.stoneId !== "" &&
+            (s.stonePcs && s.stonePcs > 0) &&
+            (s.stoneWeight && s.stoneWeight > 0) &&
+            (s.stoneRate && s.stoneRate > 0)
+        );
+
+        console.log(`Found ${nonEmptyRows.length} non-empty stones`);
+
+        if (nonEmptyRows.length > 0) {
+            // We have real data, only keep the non-empty rows
+            setRows(nonEmptyRows);
+
+            // Update localStorage to remove empty rows
+            const filtered = all.filter(s =>
+                s.draftRowId !== draftRowId ||
+                (s.stoneId && s.stoneId !== "" && s.stonePcs > 0 && s.stoneWeight > 0 && s.stoneRate > 0)
+            );
+            localStorage.setItem('STONE_MASTER', JSON.stringify(filtered));
+        } else {
+            // No real data, keep one empty row
+            // const emptyRow = linked.length > 0 ? linked[0] : {
+            //     id: `stone-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+            //     draftRowId: draftRowId,
+            //     stoneId: "",
+            //     subStoneId: "",
+            //     stonePcs: 0,
+            //     stoneWeight: 0,
+            //     stoneUnit: "g" as "g" | "c",
+            //     stoneCalculation: "w" as "w" | "p",
+            //     stoneRate: 0,
+            //     stoneAmount: 0,
+            // };
+            // setRows([emptyRow]);
+        }
+
+        setIsInitialized(true);
+        hasLoadedRef.current = true;
+
         // Focus first field when modal opens
         setTimeout(() => {
             stoneIdRef.current?.focus?.();
-            stoneIdRef.current?.select?.();
-        }, 50);
-    }, []);
+        }, 100);
 
+        // Reset the ref when modal closes
+        return () => {
+            setTimeout(() => {
+                hasLoadedRef.current = false;
+            }, 300);
+        };
+    }, [draftRowId]);
+
+
+    // Save to localStorage only when rows change AND we're initialized
+    useEffect(() => {
+        if (!isInitialized || !draftRowId) return;
+        saveStonesToStorage();
+    }, [rows, draftRowId, isInitialized]);
+
+    const saveStonesToStorage = () => {
+        const all: StoneRow[] = JSON.parse(localStorage.getItem('STONE_MASTER') || "[]");
+
+        // Remove ALL existing stones for THIS draft row
+        const filtered = all.filter(s => s.draftRowId !== draftRowId);
+
+        // Filter out empty rows before saving - only keep rows with real data
+        const nonEmptyRows = rows.filter(s =>
+            s.stoneId && s.stoneId !== "" &&
+            s.stonePcs > 0 &&
+            s.stoneWeight > 0 &&
+            s.stoneRate > 0
+        );
+
+        console.log(`Saving ${nonEmptyRows.length} non-empty stones for draft row ${draftRowId}`);
+
+        // Add current rows (only non-empty)
+        const updated = [...filtered, ...nonEmptyRows];
+
+        localStorage.setItem('STONE_MASTER', JSON.stringify(updated));
+    };
+
+
+    
     /* ---------------- FORM FIELDS DEFINITION ---------------- */
 
     const formFields = [
@@ -163,7 +257,6 @@ export default function StoneEnterMaster({
             isRequired: true,
             collection: { items: stoneItems },
             ref: stoneIdRef,
-
         },
         {
             key: "subStoneId",
@@ -240,8 +333,6 @@ export default function StoneEnterMaster({
         return 0;
     };
 
-    const amount = calculateAmount(formData);
-
     /* ---------------- TOTAL USED ---------------- */
 
     const totalUsedWeight = rows.reduce((sum, r) => {
@@ -290,7 +381,6 @@ export default function StoneEnterMaster({
         const currentWeight =
             formData.stoneUnit === "c" ? Number(formData.stoneWeight) / 5 : Number(formData.stoneWeight);
 
-        // Calculate base weight excluding current edit row
         const baseWeight = editId
             ? rows
                 .filter((r) => r.id !== editId)
@@ -305,14 +395,25 @@ export default function StoneEnterMaster({
                 0
             );
 
-        if (baseWeight + currentWeight > Number(netWeight)) {
-            alert(`Weight exceeded! Maximum available: ${netWeight.toFixed(3)}g`);
+        if (baseWeight + currentWeight > Number(grsWeight)) {
+            alert(`Weight exceeded! Maximum available: ${grsWeight.toFixed(3)}g`);
             return;
         }
 
-        // Convert string values to numbers for the row
+        // Check if there's an empty stone row that we should update
+        // An empty row has all stone-related fields empty/zero
+        const emptyStoneRow = !editId ? rows.find(r =>
+            !r.stoneId || r.stoneId === "" ||
+            !r.stonePcs || r.stonePcs === 0 ||
+            !r.stoneWeight || r.stoneWeight === 0 ||
+            !r.stoneRate || r.stoneRate === 0
+        ) : null;
+
+        console.log('Empty stone row found:', emptyStoneRow);
+
         const newRow: StoneRow = {
-            id: editId ?? Date.now().toString(),
+            id: editId ?? (emptyStoneRow?.id || `stone-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`),
+            draftRowId: draftRowId,
             stoneId: formData.stoneId,
             subStoneId: formData.subStoneId,
             stonePcs: Number(formData.stonePcs),
@@ -324,15 +425,22 @@ export default function StoneEnterMaster({
         };
 
         if (editId) {
-            setRows((prev) => prev.map((r) => (r.id === editId ? newRow : r)));
+            // Updating an existing row
+            console.log('Updating existing row:', newRow);
+            setRows(prev => prev.map((r) => (r.id === editId ? newRow : r)));
             setEditId(null);
+        } else if (emptyStoneRow) {
+            // Replace the empty stone row with the new data
+            console.log('Replacing empty row with data:', newRow);
+            setRows(prev => prev.map((r) => (r.id === emptyStoneRow.id ? newRow : r)));
         } else {
-            setRows((prev) => [...prev, newRow]);
+            // Add a new row
+            console.log('Adding new row:', newRow);
+            setRows(prev => [...prev, newRow]);
         }
 
         resetForm();
     };
-
     const resetForm = () => {
         setFormData(emptyForm);
         setErrors({});
@@ -343,7 +451,6 @@ export default function StoneEnterMaster({
     };
 
     const handleEditRow = (row: StoneRow) => {
-        // Convert numbers back to strings for editing
         setFormData({
             stoneId: row.stoneId,
             subStoneId: row.subStoneId,
@@ -361,11 +468,45 @@ export default function StoneEnterMaster({
 
     const handleDeleteRow = (row: StoneRow) => {
         if (confirm("Delete this row?")) {
-            setRows((prev) => prev.filter((r) => r.id !== row.id));
+            // Filter out the deleted row
+            const remainingRows = rows.filter((r) => r.id !== row.id);
+
+            // Check if we have any non-empty rows left
+            const hasNonEmptyRows = remainingRows.some(r =>
+                r.stoneId && r.stoneId !== "" && r.stonePcs > 0 && r.stoneWeight > 0 && r.stoneRate > 0
+            );
+
+            if (!hasNonEmptyRows && remainingRows.length === 0) {
+                // No rows left, create a new empty row
+                const emptyRow: StoneRow = {
+                    id: `stone-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+                    draftRowId: draftRowId,
+                    stoneId: "",
+                    subStoneId: "",
+                    stonePcs: 0,
+                    stoneWeight: 0,
+                    stoneUnit: "g",
+                    stoneCalculation: "w",
+                    stoneRate: 0,
+                    stoneAmount: 0,
+                };
+                setRows([emptyRow]);
+            } else {
+                // Keep the remaining rows (which include non-empty rows)
+                setRows(remainingRows);
+            }
+
             if (editId === row.id) {
                 resetForm();
             }
         }
+    };
+
+    const handleSaveAndClose = () => {
+        // Final save before closing
+        saveStonesToStorage();
+        onSave(rows);
+        onClose();
     };
 
     /* ---------------- RENDER FORM CELL ---------------- */
@@ -465,7 +606,6 @@ export default function StoneEnterMaster({
             return Number(row.stoneRate).toFixed(2);
         }
 
-        // For stoneId and subStoneId, return the label instead of the value
         if (col.key === "stoneId") {
             const item = stoneItems.find(i => i.value === row.stoneId);
             return item?.label || row.stoneId || "-";
@@ -497,10 +637,9 @@ export default function StoneEnterMaster({
 
     return (
         <Box p={2}>
-            {/* Header with Close Button */}
             <HStack justify="space-between" mb={2}>
                 <Text fontSize="small" fontWeight="semibold">
-                    Stone Entry - Available Weight: {Number(netWeight).toFixed(3)}g
+                    Stone Entry - Available Weight: {Number(grsWeight).toFixed(3)}g
                 </Text>
                 <IconButton
                     aria-label="Close"
@@ -512,7 +651,6 @@ export default function StoneEnterMaster({
                 </IconButton>
             </HStack>
 
-            {/* Transaction Table */}
             <TransactionTable
                 theme={{
                     colors: {
@@ -541,15 +679,14 @@ export default function StoneEnterMaster({
                 getCellStyle={getCellStyle}
             />
 
-            {/* Save and Close Buttons */}
             <HStack justify="flex-end" gap={2} mt={4}>
                 <Text m={2} fontSize='small' fontWeight="500">
-                    Total Used: {Number(totalUsedWeight).toFixed(3)} / {Number(netWeight).toFixed(3)} g
+                    Total Used: {Number(totalUsedWeight).toFixed(3)} / {Number(grsWeight).toFixed(3)} g
                 </Text>
                 <Button variant="outline" size='xs' onClick={onClose}>
                     Cancel
                 </Button>
-                <Button colorPalette="blue" size='xs' onClick={() => onSave(rows)}>
+                <Button colorPalette="blue" size='xs' onClick={handleSaveAndClose}>
                     Save & Close
                 </Button>
             </HStack>

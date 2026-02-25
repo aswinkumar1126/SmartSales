@@ -147,7 +147,7 @@ export const issueDataColumns = [
 
     {
         key: "WT",
-        label: "WT",
+        label: "WEIGHT",
         width: "20px",
         type: "number" as const,
         align: "right" as const,
@@ -157,7 +157,7 @@ export const issueDataColumns = [
     },
     {
         key: "AWT",
-        label: "A.WT",
+        label: "A.WEIGHT",
         width: "25px",
         type: "number" as const,
         align: "right" as const,

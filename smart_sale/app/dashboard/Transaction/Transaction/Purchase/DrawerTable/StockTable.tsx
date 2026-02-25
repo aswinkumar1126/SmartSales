@@ -27,38 +27,29 @@ type TableColumn = {
     align?: "start" | "center" | "end";
 };
 
-
-const columns: TableColumn[] = [
-    { key: "pureGoldName", label: "Pure Gold" },
-    { key: "metalName", label: "Metal" },
-    { key: "weight", label: "Weight", align: "end" },
-    { key: "actualTouch", label: "Touch", align: "end" },
-    { key: "actualPure", label: "Pure", align: "end" },
-    { key: "action", label: "Action", align: "center" },
-];
-
+type StockAvailable = {
+    total: number;
+    used: number;
+    remaining: number;
+}
 
 type StockDrawerProps = {
-    isIssue:boolean;
-    showStock:string;
+    isIssue: boolean;
+    showStock: string;
     setShowStock: (val: "PURE" | "ITEM") => void;
-
     stockData: any[];
     open: boolean;
     onClose: () => void;
     onIssue: (row: any) => void;
-
     metalId?: string;
     setMetalId: (val?: string) => void;
     metalCollection?: any[];
-
     selectedName?: string;
     setSelectedName: (val?: string) => void;
-
     pureGoldCollection?: any[];
     itemCollection?: any[];
+    getStockAvailability?: (id: string) => StockAvailable | undefined;
 };
-
 
 export default function StockDrawer({
     isIssue,
@@ -67,7 +58,6 @@ export default function StockDrawer({
     stockData,
     open,
     onClose,
-
     onIssue,
     metalId,
     setMetalId,
@@ -75,13 +65,11 @@ export default function StockDrawer({
     selectedName,
     setSelectedName,
     pureGoldCollection,
-    itemCollection
+    itemCollection,
+    getStockAvailability
 }: StockDrawerProps) {
 
-    
-    console.log(metalCollection, pureGoldCollection,'metalCollection');
-const {theme} = useTheme();
-
+    const { theme } = useTheme();
 
     const columns: TableColumn[] = useMemo(() => {
         return showStock === "PURE"
@@ -105,10 +93,17 @@ const {theme} = useTheme();
     const secondaryCollection = showStock === "PURE"
         ? pureGoldCollection
         : itemCollection;
+
+    // Helper function to get stock status color
+    const getStockStatusColor = (remaining: number) => {
+        if (remaining <= 0) return "red.500";
+        if (remaining < 10) return "orange.500";
+        return "green.500";
+    };
+
     return (
-        <Drawer.Root open={open} onOpenChange={(e) => !e.open && onClose()} size="xl" >
-            <Portal >
-            
+        <Drawer.Root open={open} onOpenChange={(e) => !e.open && onClose()} size="xl">
+            <Portal>
                 <Drawer.Positioner zIndex={10}>
                     <Drawer.Content>
                         <Drawer.Header bg={theme.colors.accient}>
@@ -126,7 +121,7 @@ const {theme} = useTheme();
                                         color={showStock === "PURE" ? theme.colors.accient : "white"}
                                         onClick={() => setShowStock("PURE")}
                                     >
-                                        <GiGoldBar />  Pure
+                                        <GiGoldBar /> Pure
                                     </Button>
 
                                     <Button
@@ -137,25 +132,24 @@ const {theme} = useTheme();
                                         color={showStock === "ITEM" ? theme.colors.accient : "white"}
                                         onClick={() => setShowStock("ITEM")}
                                     >
-                                        <FaArrowUp />  Item
+                                        <FaArrowUp /> Item
                                     </Button>
                                 </HStack>
                             </HStack>
                         </Drawer.Header>
 
-
-                        <Drawer.Body >
+                        <Drawer.Body>
                             {/* Filters */}
                             <HStack mb={3} gap={2}>
                                 <SelectCombobox
-                                    items={metalCollection??[]}
+                                    items={metalCollection ?? []}
                                     placeholder="Select Metal"
                                     value={metalId}
                                     onChange={setMetalId}
                                 />
 
                                 <SelectCombobox
-                                    items={secondaryCollection??[]}
+                                    items={secondaryCollection ?? []}
                                     placeholder={
                                         showStock === "PURE"
                                             ? "Select Pure Gold"
@@ -165,6 +159,7 @@ const {theme} = useTheme();
                                     onChange={setSelectedName}
                                 />
                             </HStack>
+
                             {/* Table */}
                             <CustomTable
                                 columns={columns}
@@ -172,16 +167,50 @@ const {theme} = useTheme();
                                 rowIdKey="id"
                                 headerBg={theme.colors.accient}
                                 headerColor={theme.colors.whiteColor}
-                                renderRow={(row) =>
-                                    showStock === "PURE" ? (
+                                renderRow={(row) => {
+                                    // Get availability for this row if it's a pure gold item
+                                    const availability = showStock === "PURE" && getStockAvailability
+                                        ? getStockAvailability(row.pureId || row.PUREID)
+                                        : undefined;
+
+                                    const isOutOfStock = (availability?.remaining ?? Infinity) <= 0;
+
+                                    return showStock === "PURE" ? (
                                         <>
                                             <Box as="td">{row.pureGoldName}</Box>
                                             <Box as="td">{row.metalName}</Box>
-                                            <Box as="td" textAlign="end">{row.weight}</Box>
+                                            <Box as="td" textAlign="end">
+                                                <Stack gap={0}>
+                                                    <Text fontWeight="medium">
+                                                        {Number(row.weight).toFixed(3)}g
+                                                    </Text>
+                                                    {availability && (
+                                                        <Text
+                                                            fontSize="xs"
+                                                            color={getStockStatusColor(availability.remaining)}
+                                                        >
+                                                            Available: {availability.remaining.toFixed(3)}g
+                                                            {availability.used > 0 && (
+                                                                <Text as="span" color="gray.500" ml={1}>
+                                                                    (Used: {availability.used.toFixed(3)}g)
+                                                                </Text>
+                                                            )}
+                                                        </Text>
+                                                    )}
+                                                </Stack>
+                                            </Box>
                                             <Box as="td" textAlign="end">{row.actualTouch}</Box>
-                                            <Box as="td" textAlign="end">{row.actualPure}</Box>
+                                            <Box as="td" textAlign="end">
+                                                {Number(row.actualPure).toFixed(3)}
+                                            </Box>
                                             <Box as="td" textAlign="center">
-                                                <IconButton size="2xs" onClick={() => onIssue(row)}>
+                                                <IconButton
+                                                    size="2xs"
+                                                    onClick={() => onIssue(row)}
+                                                    disabled={isOutOfStock}
+                                                    title={isOutOfStock ? "Out of stock" : "Add to transaction"}
+                                                    colorScheme={isOutOfStock ? "gray" : "blue"}
+                                                >
                                                     <FaArrowUp />
                                                 </IconButton>
                                             </Box>
@@ -190,23 +219,27 @@ const {theme} = useTheme();
                                         <>
                                             <Box as="td">{row.itemName}</Box>
                                             <Box as="td">{row.metalName}</Box>
-                                            <Box as="td" textAlign="end">{row.grossWeight}</Box>
+                                            <Box as="td" textAlign="end">
+                                                {Number(row.grossWeight).toFixed(3)}g
+                                            </Box>
                                             <Box as="td" textAlign="end">{row.TOUCH}</Box>
                                             <Box as="td" textAlign="center">
-                                                <IconButton size="2xs" onClick={() => onIssue(row)}>
+                                                <IconButton
+                                                    size="2xs"
+                                                    onClick={() => onIssue(row)}
+                                                    colorScheme="blue"
+                                                >
                                                     <FaArrowUp />
                                                 </IconButton>
                                             </Box>
                                         </>
-                                    )
-                                }
+                                    );
+                                }}
                             />
-
-
                         </Drawer.Body>
 
-                        <Drawer.Footer >
-                            <Button onClick={onClose} variant="outline"  size="sm">
+                        <Drawer.Footer>
+                            <Button onClick={onClose} variant="outline" size="sm">
                                 Close
                             </Button>
                         </Drawer.Footer>

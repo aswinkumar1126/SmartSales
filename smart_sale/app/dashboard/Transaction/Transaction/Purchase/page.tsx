@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState, useCallback } from "react";
+import React, { useEffect, useMemo, useState, useCallback ,useRef } from "react";
 import {
     Text,
     Box,
@@ -39,7 +39,21 @@ import Loader from "@/component/loader/Loader";
 import { CapitalizedInput } from "@/component/form/CapitalizedInput";
 import BalanceSummary from "./Balance/BalanceSummary";
 import StoneEnterMaster from "./StoneMaster/StoneEntryMaster";
+
+
 //Icons
+type StoneRow = {
+    id:string;
+    draftRowId:string;
+    stoneId: string;
+    subStoneId: string;
+    stonePcs: string;
+    stoneWeight: string;
+    stoneUnit: "g" | "c";
+    stoneCalculation: "w" | "p";
+    stoneRate: string;
+    stoneAmount: string;
+};
 
 
 /* ================================
@@ -69,6 +83,13 @@ export default function PurchasePage() {
     const [isFilterOpen, setIsFilterOpen] = useState(false);
     const openFilter = () => setIsFilterOpen(true);
     const closeFilter = () => setIsFilterOpen(false);
+
+    const draftRowTempId = useRef<string | null>(null);
+
+    const [editingState, setEditingState] = useState<{
+        rowId: string | null;
+        transactionType: string | null;
+    }>({ rowId: null, transactionType: null });
 
     /* ================================
        State Management
@@ -120,6 +141,8 @@ export default function PurchasePage() {
     const FILTER = "show_filter";
     const EDITING = "isEditing";
     const EDITING_SNO = "editing_sno";
+
+    const STONE_MASTER_KEY = "STONE_MASTER";
 
     const { theme } = useTheme();
     const { data: itemsData } = useItems();
@@ -251,21 +274,75 @@ export default function PurchasePage() {
         set(mappedItems);
     }, [mappedItems, set]);
 
+
+
+
+    // Function to get or create draft row temp ID
+    const getDraftRowTempId = () => {
+        if (!draftRowTempId.current) {
+            draftRowTempId.current = `draft-form-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
+            console.log(`Created new draft row temp ID: ${draftRowTempId.current}`);
+        }
+        return draftRowTempId.current;
+    };
+
+    // Reset draft row temp ID
+    const resetDraftRowTempId = () => {
+        draftRowTempId.current = null;
+    };
+
+
     /* ================================
-      Pure Gold Name Data
-    ================================ */
+   Calculate Used Weight for Pure IDs
+================================ */
+    const getUsedWeightByPureId = useCallback((pureId: string | number) => {
+        const pureIdStr = String(pureId);
 
-    const getAvailableWeight = useCallback(
-        (pureId: string | number | null) => {
-            if (!pureId) return null;
-            const stock = pureStockList.find(
-                (s: any) => String(s.pureId) === String(pureId)
-            );
+        // Sum up all WT values for this Pure ID across all issue-type rows
+        const used = draftRows
+            .filter(row => {
+                const transactionType = TRANSACTIONTYPES.find(t => t.value === row.TRANSACTION_TYPE);
+                return transactionType &&
+                    isIssueType(transactionType) &&
+                    String(row.PUREID) === pureIdStr;
+            })
+            .reduce((sum, row) => sum + (Number(row.WT) || 0), 0);
 
-            return stock ? Number(stock.weight || 0) : null;
-        },
-        [pureStockList]
-    );
+        return used;
+    }, [draftRows]);
+
+    /* ================================
+    Get Stock Availability with Used Weight
+ ================================ */
+    const getStockAvailability = useCallback((pureId: string | number | null) => {
+        if (!pureId) return undefined;
+
+        const stock = pureStockList.find(
+            (s: any) => String(s.pureId) === String(pureId)
+        );
+
+        if (!stock) return undefined;
+
+        const totalAvailable = Number(stock.weight || 0);
+        const used = getUsedWeightByPureId(pureId);
+        const remaining = Math.max(totalAvailable - used, 0);
+
+        return {
+            total: totalAvailable,
+            used: used,
+            remaining: remaining,
+        };
+    }, [pureStockList, getUsedWeightByPureId]);
+
+
+    const getAvailableWeight = useCallback((pureId: string | number | null) => {
+        if (!pureId) return null;
+        const availability = getStockAvailability(pureId);
+        return availability?.remaining ?? null;
+    }, [getStockAvailability]);
+    /* ================================
+    Pure Gold Name Data
+  ================================ */
 
     const mappedPureGoldName = useMemo(
         () =>
@@ -284,13 +361,18 @@ export default function PurchasePage() {
     useEffect(() => {
         setPureGoldNames(mappedPureGoldName);
         purenameFilter("");
-    }, [mappedPureGoldName, setPureGoldNames, purenameFilter]);
+    }, [mappedPureGoldName, setPureGoldNames]);
 
     /* ================================
        Helper Functions
     ================================ */
     const isIssueType = (transactionType: TransactionType) => {
         return transactionType.label.toUpperCase() === "ISSUE" || transactionType.label.toUpperCase() === "RECEIPT";
+    };
+
+    // Determines if a stock row should be treated as an Issue-type (ISSUE / RECEIPT)
+    const isIssueStock = (stockRow: any): boolean => {
+        return !!stockRow.pureId; // if pureId exists, it's issue stock
     };
 
     const getActiveCollectionForType = (transactionType: TransactionType) => {
@@ -306,12 +388,12 @@ export default function PurchasePage() {
       ================================ */
     const createEmptyRowForType = (transactionType: TransactionType) => {
         const base = {
-            __rowId: `row-${transactionType.value}-${Date.now()}`,
+            // Make sure this ID is unique and consistent
+            __rowId: `row-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
             __isNew: true,
             __previewSno: draftRows.filter(r => r.TRANSACTION_TYPE === transactionType.value).length + 1,
             TRANSACTION_TYPE: transactionType.value,
         };
-
         if (isIssueType(transactionType)) {
             return {
                 ...base,
@@ -339,17 +421,87 @@ export default function PurchasePage() {
             WASTAGE: "",
         };
     };
-
     const handleAddRowForType = (transactionType: TransactionType) => {
-        const newRow = createEmptyRowForType(transactionType);
-        setDraftRows(prev => [...prev, newRow]);
-        setEditingRowId(newRow.__rowId);
-    };
+        // Use temp ID if we're in the middle of editing, otherwise create permanent
+        const rowId = draftRowTempId.current || `row-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
 
+        // 1️⃣ Create the new draft row with the ID
+        const newRow = {
+            ...createEmptyRowForType(transactionType),
+            __rowId: rowId,
+        };
+
+        // 2️⃣ Add to draft rows state
+        setDraftRows(prev => [...prev, newRow]);
+        setEditingRowId(rowId);
+
+        // 3️⃣ For purchase types, check if there are stones from a temp ID
+        if (!isIssueType(transactionType)) {
+            // Check if there are any stones in localStorage for this row already
+            const existingStones = JSON.parse(localStorage.getItem(STONE_MASTER_KEY) || "[]");
+            const stonesForThisRow = existingStones.filter((s: StoneRow) => s.draftRowId === rowId);
+
+            if (stonesForThisRow.length === 0) {
+                // Only create an empty stone row if no stones exist
+                const stoneRow = createEmptyStoneRow(rowId);
+                existingStones.push(stoneRow);
+                localStorage.setItem(STONE_MASTER_KEY, JSON.stringify(existingStones));
+                console.log(`Created empty stone row for draft row: ${rowId}`);
+            } else {
+                console.log(`Found ${stonesForThisRow.length} existing stones for draft row: ${rowId}`);
+            }
+        }
+
+        // Clear the temp ID after using it
+        resetDraftRowTempId();
+    };
     const handleClearRowsForType = (transactionType: TransactionType) => {
         setDraftRows(prev => prev.filter(row => row.TRANSACTION_TYPE !== transactionType.value));
         setEditingRowId(null);
+        resetDraftRowTempId(); // Reset temp ID when clearing
     };
+
+  
+// Get all stones for a specific draft row
+    const getStonesByDraftRowId = (draftRowId: string): StoneRow[] => {
+        const all = JSON.parse(localStorage.getItem(STONE_MASTER_KEY) || "[]");
+        return all.filter((s: StoneRow) => s.draftRowId === draftRowId);
+    };
+
+    // Save stones for a specific draft row
+    const saveStonesForDraftRow = (draftRowId: string, stones: StoneRow[]) => {
+        const all = JSON.parse(localStorage.getItem(STONE_MASTER_KEY) || "[]");
+        // Remove existing stones for this draft row
+        const filtered = all.filter((s: StoneRow) => s.draftRowId !== draftRowId);
+        // Add updated stones
+        const updated = [...filtered, ...stones];
+        localStorage.setItem(STONE_MASTER_KEY, JSON.stringify(updated));
+        return updated;
+    };
+
+    // Delete stones for a specific draft row
+    const deleteStonesForDraftRow = (draftRowId: string) => {
+        const all = JSON.parse(localStorage.getItem(STONE_MASTER_KEY) || "[]");
+        const filtered = all.filter((s: StoneRow) => s.draftRowId !== draftRowId);
+        localStorage.setItem(STONE_MASTER_KEY, JSON.stringify(filtered));
+    };
+
+    // Create empty stone row for a draft row
+    const createEmptyStoneRow = (draftRowId: string): StoneRow => {
+        return {
+            id: `stone-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+            draftRowId, // This must match the draft row ID exactly
+            stoneId: "",
+            subStoneId: "",
+            stonePcs: "",
+            stoneWeight: "",
+            stoneUnit: "g",
+            stoneCalculation: "w",
+            stoneRate: "",
+            stoneAmount: "",
+        };
+    };
+ 
 
     /* ================================
        Local Storage Persistence
@@ -474,6 +626,7 @@ export default function PurchasePage() {
         localStorage.setItem(FILTER, JSON.stringify(showFilter));
     }, [showFilter]);
 
+   
     useEffect(() => {
         localStorage.setItem(HEADER_KEY, JSON.stringify(headerForm));
     }, [headerForm]);
@@ -545,6 +698,15 @@ export default function PurchasePage() {
             }));
         }
     }, [transactionList]);
+
+
+    const handleRowClick = (row: any, clickedTransactionType: string) => {
+        setEditingState({
+            rowId: row.__rowId,
+            transactionType: clickedTransactionType
+        });
+        setEditingRowId(row.__rowId);
+    };
 
     const handleEditTransaction = useCallback((transactionData: any, sno: string) => {
 
@@ -743,44 +905,58 @@ export default function PurchasePage() {
       ================================ */
 
     const handleLoadFromStock = (stockRow: any) => {
-        if (selectedTransactionTypes.length === 0) {
+        // 1️⃣ Determine if this is issue-type stock
+        const issueStock = isIssueStock(stockRow);
+
+        // 2️⃣ Pick target type deterministically
+        const targetType = issueStock
+            ? TRANSACTIONTYPES.find(t => isIssueType(t))
+            : TRANSACTIONTYPES.find(t => t.key === "purchase_return");
+
+        if (!targetType) {
             toaster.create({
-                title: "Transaction Types Required",
-                description: "Please select at least one transaction type first.",
+                title: "Transaction Type Missing",
+                description: "No suitable transaction type found for this stock.",
                 type: "warning",
             });
             return;
         }
 
-        // For now, add to the first selected type
-        // You could enhance this to let user choose which type to add to
-        const targetType = selectedTransactionTypes[0];
-        const isIssue = isIssueType(targetType);
-
+        const isIssue = issueStock;
         const pureId = stockRow.PUREID ?? stockRow.pureId;
 
-        if (isIssue) {
-            if (!pureId) return;
+        // 3️⃣ Check stock availability if issue
+        if (isIssue && pureId) {
+            const availability = getStockAvailability(pureId);
 
-            const getUsedWeightInTable = (pureId: string | number) =>
-                draftRows
-                    .filter(r => String(r.PUREID) === String(pureId) && r.TRANSACTION_TYPE === targetType.value)
-                    .reduce((sum, r) => sum + Number(r.WT || 0), 0);
-
-            const stockAvailable = getAvailableWeight(pureId) ?? 0;
-            const used = getUsedWeightInTable(pureId);
-            const remaining = Math.max(stockAvailable - used, 0);
-
-            if (remaining <= 0) {
+            if (!availability) {
                 toaster.create({
-                    title: "Stock Exhausted",
-                    description: "No available balance left for this Pure ID.",
+                    title: "Stock Not Found",
+                    description: "Stock information not available.",
                     type: "error",
                 });
                 return;
             }
+
+            if (availability.remaining <= 0) {
+                toaster.create({
+                    title: "Stock Exhausted",
+                    description: `No available balance left. Total: ${availability.total.toFixed(3)}g, Used: ${availability.used.toFixed(3)}g`,
+                    type: "error",
+                });
+                return;
+            }
+
+            // Optional: Show available info to user
+            toaster.create({
+                title: "Stock Available",
+                description: `Available: ${availability.remaining.toFixed(3)}g of ${availability.total.toFixed(3)}g`,
+                type: "info",
+                duration: 3000,
+            });
         }
 
+        // 4️⃣ Add the stock row
         const rowId = `draft-${targetType.value}-${Date.now()}`;
 
         const newRow = {
@@ -788,28 +964,27 @@ export default function PurchasePage() {
             __isNew: true,
             __previewSno: draftRows.filter(r => r.TRANSACTION_TYPE === targetType.value).length + 1,
             TRANSACTION_TYPE: targetType.value,
-
             PUREID: pureId || "",
 
-            WT: isIssue  ||  "",
+            WT: isIssue ? Number(stockRow.WT || stockRow.weight || 0) : 0,
             TOUCH: stockRow.TOUCH || stockRow.actualTouch || "",
             PURE: stockRow.PURE || stockRow.actualPure || "",
 
-            AWT: isIssue||  "",
+            AWT: isIssue ? Number(stockRow.AWT || stockRow.weight || 0) : 0,
             ATOUCH: stockRow.ATOUCH || stockRow.actualTouch || "",
-            APUREWT: stockRow.APURE || stockRow.actualPure || "",
+            APURE: stockRow.APURE || stockRow.actualPure || "",
 
             ITEMID: !isIssue ? (stockRow.ITEMID || "") : "",
-            PCS: stockRow.PCS || "",
-            GRSWT: stockRow.GRSWT || "",
-            STNWT: stockRow.STNWT || "",
-            NETWT: stockRow.NETWT || "",
+            PCS: stockRow.PCS || 0,
+            GRSWT: stockRow.GRSWT || 0,
+            STNWT: stockRow.STNWT || 0,
+            NETWT: stockRow.NETWT || 0,
             WASTYPE: stockRow.WASTYPE || "",
             WASPER: stockRow.WASPER || "",
-            WASTAGE: stockRow.WASTAGE || "",
-            PUREWT: stockRow.PUREWT || "",
-            MC: stockRow.MC || "",
-            DESCRIPTION:stockRow.DESCRIPTION || "",
+            WASTAGE: stockRow.WASTAGE || 0,
+            PUREWT: stockRow.PUREWT || 0,
+            MC: stockRow.MC || 0,
+            DESCRIPTION: stockRow.DESCRIPTION || "",
         };
 
         setDraftRows(prev => [...prev, newRow]);
@@ -846,7 +1021,6 @@ export default function PurchasePage() {
                 if (field === "AWT") row.__manual_AWT = true;
                 if (field === "ATOUCH") row.__manual_ATOUCH = true;
                 if (field === "APUREWT") row.__manual_APUREWT = true;
-
                 if (field === "WT") row.__manual_AWT = false;
                 if (field === "TOUCH") row.__manual_ATOUCH = false;
 
@@ -854,36 +1028,43 @@ export default function PurchasePage() {
                 if (field === "WT" && !row.__manual_AWT) row.AWT = value;
                 if (field === "TOUCH" && !row.__manual_ATOUCH) row.ATOUCH = value;
 
-                // Stock limit check for issue types
+                // Stock limit check for issue types - ONLY when increasing
                 if (isIssue && (field === "WT" || field === "AWT")) {
-                    const available = getAvailableWeight(row.PUREID);
-                    if (available != null) {
-                        const getTotalUsedWeight = (
-                            rows: any[],
-                            pureId: string | number,
-                            ignoreIndex?: number
-                        ) => {
-                            return rows.reduce((sum, r, idx) => {
-                                if (ignoreIndex === idx) return sum;
-                                if (String(r.PUREID) === String(pureId) && r.TRANSACTION_TYPE === row.TRANSACTION_TYPE) {
+                    const availability = getStockAvailability?.(row.PUREID);
+                    if (availability) {
+                        const currentValue = Number(prev[rowIndex][field]) || 0;
+                        const newValue = Number(value) || 0;
+
+                        // If we're decreasing, always allow it
+                        if (newValue < currentValue) {
+                            console.log('Decreasing value, allowing update');
+                        }
+                        // If we're increasing, check if we have enough stock
+                        else if (newValue > currentValue) {
+                            // Calculate total used for this PUREID EXCLUDING the current row's OLD value
+                            const otherUsed = prev.reduce((sum, r, idx) => {
+                                if (idx === rowIndex) return sum;
+                                if (String(r.PUREID) === String(row.PUREID) &&
+                                    TRANSACTIONTYPES.find(t => t.value === r.TRANSACTION_TYPE && isIssueType(t))) {
                                     return sum + Number(r.WT || 0);
                                 }
                                 return sum;
                             }, 0);
-                        };
 
-                        const otherUsed = getTotalUsedWeight(prev, row.PUREID, rowIndex);
-                        const current = Number(field === "WT" ? value : row.WT) || 0;
-                        const total = otherUsed + current;
+                            // The new total will be otherUsed + newValue
+                            const newTotal = otherUsed + newValue;
 
-                        if (total > available) {
-                            toaster.create({
-                                title: "Stock Limit Exceeded",
-                                description: `Available: ${available}, Used: ${otherUsed}`,
-                                type: "error",
-                            });
+                            // Check if new total exceeds available stock
+                            if (newTotal > availability.total) {
+                                toaster.create({
+                                    title: "Stock Limit Exceeded",
+                                    description: `Maximum allowed: ${(availability.total - otherUsed).toFixed(3)}g increase`,
+                                    type: "error",
+                                });
 
-                            return prev; // ⛔ reject update
+                                // Reject the update by returning prev
+                                return prev;
+                            }
                         }
                     }
                 }
@@ -893,13 +1074,12 @@ export default function PurchasePage() {
                     if (field === "GRSWT" || field === "STNWT") {
                         const grswt = Number(row.GRSWT) || 0;
                         const stnwt = Number(row.STNWT) || 0;
-                        row.NETWT = Math.max(0, grswt - stnwt);
-                    }
+                        row.NETWT = Math.max(0, grswt - stnwt).toFixed(3);
 
-                    if (field === "NETWT" || field === "TOUCH") {
-                        const netwt = Number(row.NETWT) || 0;
-                        const TOUCH = Number(row.TOUCH) || 0;
-                        row.PUREWT = (netwt * TOUCH) / 100;
+                        if (row.TOUCH) {
+                            const touch = Number(row.TOUCH) || 0;
+                            row.PUREWT = ((grswt - stnwt) * touch / 100).toFixed(3);
+                        }
                     }
                 }
 
@@ -908,25 +1088,24 @@ export default function PurchasePage() {
                     if (field === "WT" || field === "TOUCH") {
                         const wt = Number(row.WT) || 0;
                         const touch = Number(row.TOUCH) || 0;
-                        row.PURE = (wt * touch) / 100;
+                        row.PURE = ((wt * touch) / 100).toFixed(3);
                     }
 
                     if (field === "AWT" || field === "ATOUCH") {
                         const wt = Number(row.AWT) || 0;
                         const touch = Number(row.ATOUCH) || 0;
                         if (!row.__manual_APUREWT) {
-                            row.APUREWT = (wt * touch) / 100;
+                            row.APUREWT = ((wt * touch) / 100).toFixed(3);
                         }
                     }
                 }
 
                 row.__previewSno = rowIndex + 1;
-
                 newRows[rowIndex] = row;
                 return newRows;
             });
         },
-        [getAvailableWeight, toaster]
+        [getStockAvailability, toaster]
     );
 
     const handleRemoveDraftRow = (rowId: string) => {
@@ -942,35 +1121,22 @@ export default function PurchasePage() {
     const calculateTotalsForType = (transactionType: TransactionType) => {
         const typeRows = draftRows.filter(row => row.TRANSACTION_TYPE === transactionType.value);
 
-        return typeRows.reduce((acc, row) => {
-            acc.PCS += Number(row.PCS || 0);
-            acc.GRSWT += Number(row.GRSWT || 0);
-            acc.STNWT += Number(row.STNWT || 0);
-            acc.NETWT += Number(row.NETWT || 0);
-            acc.TOUCH += Number(row.TOUCH || 0);
-            acc.PUREWT += Number(row.PUREWT || 0);
-            acc.RATE += Number(row.RATE || 0);
-            acc.MCHARGE += Number(row.MCHARGE || 0);
-            acc.WASTAGE += Number(row.WASTAGE || 0);
-            acc.AMOUNT += Number(row.AMOUNT || 0);
-            return acc;
-        }, {
-            PCS: 0,
-            GRSWT: 0,
-            STNWT: 0,
-            NETWT: 0,
-            TOUCH: 0,
-            PUREWT: 0,
-            RATE: 0,
-            MCHARGE: 0,
-            WASTAGE: 0,
-            AMOUNT: 0
-        });
-    };
+        const isIssue = isIssueType(transactionType);
 
+        const keys = isIssue
+            ? ["PURE", "APURE" , "WT" ,"AWT" ] // add other issue-specific numeric fields if needed
+            : ["PCS", "GRSWT", "STNWT", "NETWT", "PUREWT", "RATE", "MCHARGE", "WASTAGE", "AMOUNT"];
+
+        return typeRows.reduce((acc, row) => {
+            keys.forEach(k => {
+                acc[k] = (acc[k] || 0) + Number(row[k] || 0);
+            });
+            return acc;
+        }, Object.fromEntries(keys.map(k => [k, 0])));
+    };
     /* ================================
-        Normalize Handler
-     ================================ */
+     Normalize Handler with Stone Details Support
+  ================================ */
     const normalizeRowForApi = (row: any, isIssue: boolean) => {
         const {
             __rowId,
@@ -1007,7 +1173,7 @@ export default function PurchasePage() {
             ATOUCH: Number(rest.ATOUCH || 0),
             PUREWT: Number(rest.PUREWT || 0),
             MC: Number(rest.MC || 0),
-        
+            // Note: STONE_DETAILS will be added separately in the save handler
         };
     };
 
@@ -1079,8 +1245,8 @@ export default function PurchasePage() {
             }
         }
 
-        // Check stock limits for issue-type rows grouped by type
-        const groupedByType: Record<string, Record<string, number>> = {};
+        // Check stock limits for issue-type rows
+        const usedByPureId: Record<string, number> = {};
 
         draftRows.forEach((row) => {
             const transactionType = TRANSACTIONTYPES.find(t => t.value === row.TRANSACTION_TYPE);
@@ -1089,34 +1255,30 @@ export default function PurchasePage() {
             const isIssue = isIssueType(transactionType);
 
             if (isIssue && row.PUREID) {
-                if (!groupedByType[row.TRANSACTION_TYPE]) {
-                    groupedByType[row.TRANSACTION_TYPE] = {};
-                }
                 const key = String(row.PUREID);
-                groupedByType[row.TRANSACTION_TYPE][key] = (groupedByType[row.TRANSACTION_TYPE][key] || 0) + Number(row.WT || 0);
+                usedByPureId[key] = (usedByPureId[key] || 0) + Number(row.WT || 0);
             }
         });
 
-        for (const typeValue in groupedByType) {
-            for (const pureId in groupedByType[typeValue]) {
-                const available = getAvailableWeight(pureId);
-                if (available != null && groupedByType[typeValue][pureId] > available) {
-                    toaster.create({
-                        title: "Stock Exceeded",
-                        description: `Pure ID ${pureId} in transaction type ${typeValue}: Total ${groupedByType[typeValue][pureId]} exceeds available stock (${available})`,
-                        type: "error",
-                    });
-                    return false;
-                }
+        for (const pureId in usedByPureId) {
+            const availability = getStockAvailability(pureId);
+            if (availability && usedByPureId[pureId] > availability.total) {
+                toaster.create({
+                    title: "Stock Exceeded",
+                    description: `Pure ID ${pureId}: Total ${usedByPureId[pureId].toFixed(3)}g exceeds available stock (${availability.total.toFixed(3)}g)`,
+                    type: "error",
+                });
+                return false;
             }
         }
 
         return true;
     };
 
+
     /* ================================
-       Save Transaction Handler
-    ================================ */
+   Save Transaction Handler with Stone Details
+================================ */
     const handleSaveTransaction = async () => {
         setEditingRowId(null);
 
@@ -1150,34 +1312,73 @@ export default function PurchasePage() {
         if (!validateDraftRows()) return;
 
         try {
+            // Get all stones from localStorage
+            const allStones = JSON.parse(localStorage.getItem(STONE_MASTER_KEY) || "[]");
+
+            // Create a map for quick lookup of stones by draftRowId
+            const stonesByDraftRowId = allStones.reduce((acc: Record<string, StoneRow[]>, stone: StoneRow) => {
+                if (!acc[stone.draftRowId]) {
+                    acc[stone.draftRowId] = [];
+                }
+                acc[stone.draftRowId].push(stone);
+                return acc;
+            }, {});
 
             /* -----------------------------------------
                STEP 1 — GROUP ROWS BY TYPE
                ----------------------------------------- */
-
             const transactionDetails: TransactionItems = {};
 
+            // Process each draft row and include its stones
             draftRows.forEach(row => {
                 const mappedType = TRANSACTION_KEY_MAP[row.TRANSACTION_TYPE];
-
                 if (!mappedType) return;
 
                 if (!transactionDetails[mappedType]) {
                     transactionDetails[mappedType] = [];
                 }
 
+                // Get stones for this row
+                const rowStones = stonesByDraftRowId[row.__rowId] || [];
+
+                // Filter out empty stones (only include stones with real data)
+                const validStones = rowStones.filter((stone:any) =>
+                    stone.stoneId &&
+                    stone.stoneId !== "" &&
+                    stone.stonePcs > 0 &&
+                    stone.stoneWeight > 0 &&
+                    stone.stoneRate > 0
+                );
+
+                // Normalize the main row data
                 const normalized = normalizeRowForApi(
                     row,
                     mappedType === "issue" || mappedType === "receipt"
                 );
 
-                (transactionDetails[mappedType] as any[]).push(normalized);
+                // Add stones to the normalized row if they exist
+                const rowWithStones = {
+                    ...normalized,
+                    ...(validStones.length > 0 && {
+                        STONE_DETAILS: validStones.map((stone:any) => ({
+                            stoneId: stone.stoneId,
+                            subStoneId: stone.subStoneId,
+                            stonePcs: stone.stonePcs,
+                            stoneWeight: stone.stoneWeight,
+                            stoneUnit: stone.stoneUnit,
+                            stoneCalculation: stone.stoneCalculation,
+                            stoneRate: stone.stoneRate,
+                            stoneAmount: stone.stoneAmount,
+                        }))
+                    })
+                };
+
+                (transactionDetails[mappedType] as any[]).push(rowWithStones);
             });
 
             /* -----------------------------------------
                STEP 2 — BUILD HEADER
                ----------------------------------------- */
-
             const payload: CreateTransaction = {
                 TRANSACTION_HEADER: {
                     ACCODE: Number(headerForm.CUSTOMER),
@@ -1187,32 +1388,34 @@ export default function PurchasePage() {
                 },
                 TRANSACTION_DETAILS: transactionDetails,
             };
-            console.log(payload,'createTransaction')
+
+            console.log('Transaction payload with stone details:', payload);
 
             /* -----------------------------------------
                STEP 3 — SINGLE API CALL
                ----------------------------------------- */
-
             await createTransaction.mutateAsync(payload);
-
 
             /* -----------------------------------------
                STEP 4 — CLEANUP
                ----------------------------------------- */
-
             setDraftRows([]);
             setEditingRowId(null);
+
+            // Clear stones from localStorage after successful save
+            localStorage.removeItem(STONE_MASTER_KEY);
             localStorage.removeItem(DRAFT_KEY);
 
             toaster.create({
                 title: "Transaction Saved",
-                description: "Transaction saved successfully.",
+                description: "Transaction saved successfully with stone details.",
                 type: "success",
             });
 
             stockRefetch();
 
         } catch (error: any) {
+            console.error('Save error:', error);
             toaster.create({
                 title: "Save Failed",
                 description: error.message || "Failed to save transaction.",
@@ -1354,6 +1557,8 @@ export default function PurchasePage() {
     const handleResetDraft = () => {
         setDraftRows([]);
         setEditingRowId(null);
+        resetDraftRowTempId(); // Reset temp ID
+   
 
         if (isEditing) {
             setHeaderForm(prev => ({
@@ -1382,7 +1587,6 @@ export default function PurchasePage() {
 
         localStorage.removeItem(DRAFT_KEY);
     };
-
   
 
 
@@ -1482,117 +1686,193 @@ export default function PurchasePage() {
                     )}
 
                     {/* Draft Section - show separate tables for each transaction type */}
-                    {/* Draft Section - show separate tables for each transaction type */}
-                    {(selectedTransactionTypes?.length > 0 || isEditing) && (
-                        <Box display='flex' gap={1} >
+                        {/* Draft Section - show separate tables for each transaction type */}
+                        {(selectedTransactionTypes?.length > 0 || isEditing) && (
+                            <Box display='flex' gap={1}>
+                                {/* LEFT SIDE - Tables */}
+                                <Box w='100%'>
+                                    <Box gap={2}>
+                                        {TRANSACTIONTYPES_ORDER
+                                            .map(code => selectedTransactionTypes?.find(t => t.code === code))
+                                            .filter((t): t is TransactionType => !!t)
+                                            .map((transactionType) => {
+                                                const typeRows = draftRows.filter(
+                                                    row => row.TRANSACTION_TYPE === transactionType.code
+                                                );
 
-                            {/* LEFT SIDE - Tables */}
-                            <Box w='100%'>
-                                    <Box  gap={2}>
-                                    {TRANSACTIONTYPES_ORDER
-                                        .map(code => selectedTransactionTypes?.find(t => t.code === code))
-                                        .filter((t): t is TransactionType => !!t)
-                                        .map((transactionType) => {
+                                                const typeTotals = calculateTotalsForType(transactionType);
+                                                const activeCollection = getActiveCollectionForType(transactionType);
+                                                const activeFilter = getActiveFilterForType(transactionType);
+                                                const isIssue = isIssueType(transactionType);
 
-                                            const typeRows = draftRows.filter(
-                                                row => row.TRANSACTION_TYPE === transactionType.code
-                                            );
-
-                                            const typeTotals = calculateTotalsForType(transactionType);
-                                            const activeCollection = getActiveCollectionForType(transactionType);
-                                            const activeFilter = getActiveFilterForType(transactionType);
-                                            const isIssue = isIssueType(transactionType);
-
-                                            return (
-                                                <Box
-                                                    key={transactionType.code}
-                                                    borderWidth="1px"
-                                                    borderRadius="md"
-                                                    borderColor={theme.colors.greyColor}
-                                                    w='100%'
-                                                >
-                                                    <DraftTransactionTable
-                                                        rows={typeRows}
-                                                        editingRowId={editingRowId}
-                                                        isEditing={isEditing}
-                                                        onAddRow={(formData) => {
-                                                            if (formData && typeof formData === "object") {
-
-                                                                if (!formData.__isNew) {
-                                                                    // ── UPDATE existing row in place ──
-                                                                    setDraftRows(prev =>
-                                                                        prev.map(r => r.__rowId === formData.__rowId ? formData : r)
-                                                                    );
-                                                                } else {
-                                                                    // ── ADD new row ──
+                                                return (
+                                                    <Box
+                                                        key={transactionType.code}
+                                                        borderWidth="1px"
+                                                        borderRadius="md"
+                                                        borderColor={theme.colors.greyColor}
+                                                        w='100%'
+                                                    >
+                                                        <DraftTransactionTable
+                                                            rows={typeRows}
+                                                            editingRowId={editingRowId}
+                                                            isEditing={isEditing}
+                                                            onAddRow={(formData) => {
+                                                                if (!formData) {
+                                                                    // Just create empty row with temp ID
+                                                                    const tempId = getDraftRowTempId();
                                                                     const newRow = {
-                                                                        ...formData,
-                                                                        TRANSACTION_TYPE: transactionType.value,
-                                                                        // __rowId and __previewSno already set by DraftTransactionTable
+                                                                        ...createEmptyRowForType(transactionType),
+                                                                        __rowId: tempId,
+                                                                        __isNew: true,
+                                                                        __tempId: tempId,
                                                                     };
                                                                     setDraftRows(prev => [...prev, newRow]);
+                                                                    setEditingRowId(tempId);
+                                                                    return;
                                                                 }
 
-                                                            } else {
-                                                                handleAddRowForType(transactionType);
-                                                            }
-                                                        }}
-                                                        onUpdateRow={(rowIndex, field, value) => {
-                                                            const actualIndex = draftRows.findIndex(
-                                                                r =>
-                                                                    r.TRANSACTION_TYPE === transactionType.value &&
-                                                                    r.__rowId === typeRows[rowIndex]?.__rowId
-                                                            );
-                                                            if (actualIndex !== -1) {
-                                                                handleUpdateDraftRow(actualIndex, field, value);
-                                                            }
-                                                        }}
-                                                        handleClearForm={() => handleAddRowForType(transactionType)}
-                                                        onRemoveRow={(rowId) => {
-                                                            setDraftRows(prev => prev.filter(row => row.__rowId !== rowId));
-                                                            if (editingRowId === rowId) {
-                                                                setEditingRowId(null);
-                                                            }
-                                                        }}
-                                                        onRowClick={(row) => {
-                                                            if (editingRowId !== row.__rowId) {
-                                                                setEditingRowId(row.__rowId);
-                                                            }
-                                                        }}
-                                                        onCancelEdit={(rowId) => {
-                                                            if (rowId) {
+                                                                // Check if this is an update (has __rowId and it's not a temp ID)
+                                                                if (formData.__rowId && !formData.__rowId.toString().startsWith('draft-form-')) {
+                                                                    // 🔥 IMPORTANT: This is an UPDATE - find and replace the existing row
+                                                                    setDraftRows(prev =>
+                                                                        prev.map(row =>
+                                                                            row.__rowId === formData.__rowId
+                                                                                ? {
+                                                                                    ...row,
+                                                                                    ...formData,
+                                                                                    // Preserve these important fields
+                                                                                    __rowId: row.__rowId,
+                                                                                    TRANSACTION_TYPE: row.TRANSACTION_TYPE,
+                                                                                    __previewSno: row.__previewSno
+                                                                                }
+                                                                                : row
+                                                                        )
+                                                                    );
+
+                                                                    // Clear editing state
+                                                                    setEditingRowId(null);
+
+                                                                    // Show success message
+                                                                    toaster.create({
+                                                                        title: "Row Updated",
+                                                                        description: "Row has been updated successfully",
+                                                                        type: "success",
+                                                                        duration: 2000,
+                                                                    });
+                                                                } else {
+                                                                    // This is a NEW row
+                                                                    const tempId = formData.__rowId || formData.__tempId;
+
+                                                                    // Create permanent ID
+                                                                    const permanentId = `row-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
+
+                                                                    const newRow = {
+                                                                        ...formData,
+                                                                        __rowId: permanentId,
+                                                                        __isNew: false,
+                                                                        __previewSno: typeRows.length + 1,
+                                                                        TRANSACTION_TYPE: transactionType.value,
+                                                                    };
+
+                                                                    setDraftRows(prev => [...prev, newRow]);
+
+                                                                    // Handle stone transfer if there are pending stones
+                                                                    if (formData._stoneTempId && formData._stones) {
+                                                                        const allStones = JSON.parse(localStorage.getItem(STONE_MASTER_KEY) || "[]");
+
+                                                                        // Remove stones with temp ID
+                                                                        const filtered = allStones.filter((s: StoneRow) =>
+                                                                            s.draftRowId !== formData._stoneTempId
+                                                                        );
+
+                                                                        // Update stones to use the new permanent ID
+                                                                        const updatedStones = formData._stones.map((s: StoneRow) => ({
+                                                                            ...s,
+                                                                            draftRowId: permanentId
+                                                                        }));
+
+                                                                        // Save back to localStorage
+                                                                        const finalStones = [...filtered, ...updatedStones];
+                                                                        localStorage.setItem(STONE_MASTER_KEY, JSON.stringify(finalStones));
+
+                                                                        // Update the STNWT field in the draft row
+                                                                        if (formData._stoneTotalWeight) {
+                                                                            newRow.STNWT = formData._stoneTotalWeight.toFixed(3);
+                                                                        }
+                                                                    } else {
+                                                                        // Create empty stone row for non-issue types if no stones
+                                                                        if (!isIssueType(transactionType)) {
+                                                                            const stoneRow = createEmptyStoneRow(permanentId);
+                                                                            const existingStones = JSON.parse(localStorage.getItem(STONE_MASTER_KEY) || "[]");
+                                                                            existingStones.push(stoneRow);
+                                                                            localStorage.setItem(STONE_MASTER_KEY, JSON.stringify(existingStones));
+                                                                        }
+                                                                    }
+
+                                                                    // Clear editing state
+                                                                    setEditingRowId(null);
+                                                                }
+
+                                                                // Clear the temp ID ref
+                                                                resetDraftRowTempId();
+                                                            }}
+                                                            onRemoveRow={(rowId) => {
+                                                                const removedRow = draftRows.find(r => r.__rowId === rowId);
                                                                 setDraftRows(prev => prev.filter(row => row.__rowId !== rowId));
-                                                            }
-                                                            setEditingRowId(null);
-                                                        }}
-                                                        onSaveRow={() => {
-                                                            setEditingRowId(null);
-                                                        }}
-                                                        itemsCollection={activeCollection}
-                                                        itemsFilter={activeFilter}
-                                                        totals={typeTotals}
-                                                        transactionTitle={transactionType.label}
-                                                        transactionType = {transactionType.code}
-                                                        theme={theme}
-                                                        isIssue={isIssue}
-                                                        getAvailableWeight={getAvailableWeight}
-                                                        onClear={() => handleClearRowsForType(transactionType)}
-                                                    />
-                                                </Box>
-                                            );
-                                        })}
+                                                                if (editingRowId === rowId) setEditingRowId(null);
+
+                                                                // Remove associated stones when draft row is deleted
+                                                                if (removedRow && !isIssueType(transactionType)) {
+                                                                    deleteStonesForDraftRow(rowId);
+                                                                }
+                                                            }}
+                                                            onUpdateRow={(rowIndex, field, value) => {
+                                                                // Find the actual index in the main draftRows array
+                                                                const targetRow = typeRows[rowIndex];
+                                                                if (!targetRow) return;
+
+                                                                const actualIndex = draftRows.findIndex(
+                                                                    r => r.__rowId === targetRow.__rowId
+                                                                );
+
+                                                                if (actualIndex !== -1) {
+                                                                    handleUpdateDraftRow(actualIndex, field, value);
+                                                                }
+                                                            }}
+                                                            onRowClick={handleRowClick} 
+
+                                                            onCancelEdit={() => {
+                                                                // If we're canceling while using a temp ID, remove the temp row
+                                                                if (editingRowId && editingRowId.toString().startsWith('draft-form-')) {
+                                                                    setDraftRows(prev => prev.filter(row => row.__rowId !== editingRowId));
+                                                                }
+                                                                // Just clear editing state
+                                                                setEditingRowId(null);
+                                                                resetDraftRowTempId();
+                                                            }}
+                                                            itemsCollection={activeCollection}
+                                                            // itemsFilter={activeFilter}
+                                                            totals={typeTotals}
+                                                            transactionTitle={transactionType.label}
+                                                            transactionType={transactionType.code}
+                                                            theme={theme}
+                                                            isIssue={isIssue}
+                                                            getAvailableWeight={getAvailableWeight}
+                                                            onClear={() => handleClearRowsForType(transactionType)}
+                                                        />
+                                                    </Box>
+                                                );
+                                            })}
+                                    </Box>
+                                </Box>
+
+                                {/* RIGHT SIDE - Summary Panel */}
+                                <Box position="sticky">
+                                    <BalanceSummary theme={theme} />
                                 </Box>
                             </Box>
-
-
-                            {/* RIGHT SIDE - Summary Panel */}
-                            <Box position="sticky">
-                                <BalanceSummary theme={theme} />
-                            </Box>
-                          
-                        </Box>
-                   
-                    )}
+                        )}
                     {/* Save Transaction Bar - appears once for all tables */}
                     {draftRows.length > 0 && (
                         <Box
@@ -1703,6 +1983,7 @@ export default function PurchasePage() {
                 pureGoldCollection={pureGoldList}
                 itemCollection={itemsCollection.items}
                 onIssue={handleLoadFromStock}
+                getStockAvailability={getStockAvailability}
             />
         </Flex>
      
