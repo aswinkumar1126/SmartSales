@@ -36,9 +36,7 @@ import { usePureGoldData, usePureGoldNames } from "@/hooks/pureGoldMast/usePureG
 import { TransactionType, UpdateTransactionPayload, TransactionKey, CreateTransaction, TransactionItems, TRANSACTION_KEY_MAP } from "@/types/transcation/Transaction";
 import { TRANSACTIONTYPES } from "@/data/Transaction/TransactionType";
 import Loader from "@/component/loader/Loader";
-import { CapitalizedInput } from "@/component/form/CapitalizedInput";
 import BalanceSummary from "./Balance/BalanceSummary";
-import StoneEnterMaster from "./StoneMaster/StoneEntryMaster";
 
 
 //Icons
@@ -293,14 +291,15 @@ export default function PurchasePage() {
 
 
     /* ================================
-   Calculate Used Weight for Pure IDs
-================================ */
-    const getUsedWeightByPureId = useCallback((pureId: string | number) => {
+    Calculate Used Weight for Pure IDs
+ ================================ */
+    const getUsedWeightByPureId = useCallback((pureId: string | number, excludeRowId?: string) => {
         const pureIdStr = String(pureId);
 
         // Sum up all WT values for this Pure ID across all issue-type rows
         const used = draftRows
             .filter(row => {
+                if (excludeRowId && row.__rowId === excludeRowId) return false;
                 const transactionType = TRANSACTIONTYPES.find(t => t.value === row.TRANSACTION_TYPE);
                 return transactionType &&
                     isIssueType(transactionType) &&
@@ -312,9 +311,9 @@ export default function PurchasePage() {
     }, [draftRows]);
 
     /* ================================
-    Get Stock Availability with Used Weight
- ================================ */
-    const getStockAvailability = useCallback((pureId: string | number | null) => {
+        Get Stock Availability with Used Weight
+     ================================ */
+    const getStockAvailability = useCallback((pureId: string | number | null, excludeRowId?: string) => {
         if (!pureId) return undefined;
 
         const stock = pureStockList.find(
@@ -324,7 +323,7 @@ export default function PurchasePage() {
         if (!stock) return undefined;
 
         const totalAvailable = Number(stock.weight || 0);
-        const used = getUsedWeightByPureId(pureId);
+        const used = getUsedWeightByPureId(pureId, excludeRowId);
         const remaining = Math.max(totalAvailable - used, 0);
 
         return {
@@ -334,12 +333,13 @@ export default function PurchasePage() {
         };
     }, [pureStockList, getUsedWeightByPureId]);
 
-
-    const getAvailableWeight = useCallback((pureId: string | number | null) => {
+    const getAvailableWeight = useCallback((pureId: string | number | null, excludeRowId?: string) => {
         if (!pureId) return null;
-        const availability = getStockAvailability(pureId);
+        const availability = getStockAvailability(pureId, excludeRowId);
         return availability?.remaining ?? null;
     }, [getStockAvailability]);
+
+
     /* ================================
     Pure Gold Name Data
   ================================ */
@@ -461,24 +461,7 @@ export default function PurchasePage() {
         resetDraftRowTempId(); // Reset temp ID when clearing
     };
 
-  
-// Get all stones for a specific draft row
-    const getStonesByDraftRowId = (draftRowId: string): StoneRow[] => {
-        const all = JSON.parse(localStorage.getItem(STONE_MASTER_KEY) || "[]");
-        return all.filter((s: StoneRow) => s.draftRowId === draftRowId);
-    };
-
-    // Save stones for a specific draft row
-    const saveStonesForDraftRow = (draftRowId: string, stones: StoneRow[]) => {
-        const all = JSON.parse(localStorage.getItem(STONE_MASTER_KEY) || "[]");
-        // Remove existing stones for this draft row
-        const filtered = all.filter((s: StoneRow) => s.draftRowId !== draftRowId);
-        // Add updated stones
-        const updated = [...filtered, ...stones];
-        localStorage.setItem(STONE_MASTER_KEY, JSON.stringify(updated));
-        return updated;
-    };
-
+ 
     // Delete stones for a specific draft row
     const deleteStonesForDraftRow = (draftRowId: string) => {
         const all = JSON.parse(localStorage.getItem(STONE_MASTER_KEY) || "[]");
@@ -707,6 +690,22 @@ export default function PurchasePage() {
         });
         setEditingRowId(row.__rowId);
     };
+    const handleCancelEdit = useCallback(() => {
+        console.log('Cancelling edit, editingRowId:', editingRowId);
+
+        // If we're canceling while using a temp ID, remove the temp row
+        if (editingRowId && editingRowId.toString().startsWith('draft-form-')) {
+            setDraftRows(prev => prev.filter(row => row.__rowId !== editingRowId));
+        }
+
+        // Clear editing state
+        setEditingRowId(null);
+        setEditingState({ rowId: null, transactionType: null });
+        resetDraftRowTempId();
+
+        // Also clear any initial form data
+        // setInitialFormData(null);
+    }, [editingRowId]);
 
     const handleEditTransaction = useCallback((transactionData: any, sno: string) => {
 
@@ -925,7 +924,11 @@ export default function PurchasePage() {
         const isIssue = issueStock;
         const pureId = stockRow.PUREID ?? stockRow.pureId;
 
-        // 3️⃣ Check stock availability if issue
+        // 3️⃣ Get the REMAINING/AVAILABLE weight, not the total
+        let availableWeight = 0;
+        let totalWeight = 0;
+        let usedWeight = 0;
+
         if (isIssue && pureId) {
             const availability = getStockAvailability(pureId);
 
@@ -947,30 +950,42 @@ export default function PurchasePage() {
                 return;
             }
 
-            // Optional: Show available info to user
+            // 🔥 IMPORTANT: Use the REMAINING weight
+            availableWeight = availability.remaining;
+            totalWeight = availability.total;
+            usedWeight = availability.used;
+
             toaster.create({
                 title: "Stock Available",
-                description: `Available: ${availability.remaining.toFixed(3)}g of ${availability.total.toFixed(3)}g`,
+                description: `Available: ${availableWeight.toFixed(3)}g of ${totalWeight.toFixed(3)}g`,
                 type: "info",
                 duration: 3000,
             });
         }
 
-        // 4️⃣ Add the stock row
-        const rowId = `draft-${targetType.value}-${Date.now()}`;
+        // 4️⃣ Create a TEMPORARY row with the AVAILABLE weight
+        const rowId = `temp-${targetType.value}-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
 
         const newRow = {
             __rowId: rowId,
             __isNew: true,
+            __tempId: rowId,
             __previewSno: draftRows.filter(r => r.TRANSACTION_TYPE === targetType.value).length + 1,
             TRANSACTION_TYPE: targetType.value,
             PUREID: pureId || "",
 
-            WT: isIssue ? Number(stockRow.WT || stockRow.weight || 0) : 0,
+            // 🔥 Store stock info for validation and UI
+            _totalStock: totalWeight,
+            _availableStock: availableWeight,
+            _usedStock: usedWeight,
+            _originalWeight: 0,
+
+            // 🔥 Use AVAILABLE weight, not total stock
+            WT: isIssue ? availableWeight : 0,
             TOUCH: stockRow.TOUCH || stockRow.actualTouch || "",
             PURE: stockRow.PURE || stockRow.actualPure || "",
 
-            AWT: isIssue ? Number(stockRow.AWT || stockRow.weight || 0) : 0,
+            AWT: isIssue ? availableWeight : 0,
             ATOUCH: stockRow.ATOUCH || stockRow.actualTouch || "",
             APURE: stockRow.APURE || stockRow.actualPure || "",
 
@@ -987,8 +1002,13 @@ export default function PurchasePage() {
             DESCRIPTION: stockRow.DESCRIPTION || "",
         };
 
+        // 5️⃣ Add to draft rows
         setDraftRows(prev => [...prev, newRow]);
         setEditingRowId(rowId);
+
+        if (draftRowTempId) {
+            draftRowTempId.current = rowId;
+        }
     };
 
     /* ================================
@@ -1842,15 +1862,7 @@ export default function PurchasePage() {
                                                             }}
                                                             onRowClick={handleRowClick} 
 
-                                                            onCancelEdit={() => {
-                                                                // If we're canceling while using a temp ID, remove the temp row
-                                                                if (editingRowId && editingRowId.toString().startsWith('draft-form-')) {
-                                                                    setDraftRows(prev => prev.filter(row => row.__rowId !== editingRowId));
-                                                                }
-                                                                // Just clear editing state
-                                                                setEditingRowId(null);
-                                                                resetDraftRowTempId();
-                                                            }}
+                                                            onCancelEdit={handleCancelEdit}
                                                             itemsCollection={activeCollection}
                                                             // itemsFilter={activeFilter}
                                                             totals={typeTotals}
@@ -1860,6 +1872,7 @@ export default function PurchasePage() {
                                                             isIssue={isIssue}
                                                             getAvailableWeight={getAvailableWeight}
                                                             onClear={() => handleClearRowsForType(transactionType)}
+                                                            getStockAvailability={getStockAvailability}
                                                         />
                                                     </Box>
                                                 );

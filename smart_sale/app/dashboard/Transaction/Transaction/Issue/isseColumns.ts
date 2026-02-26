@@ -54,7 +54,7 @@ export const issueColumns = [
     },
     {
         key: "WASTYPE",
-        label: "WASTYPE",
+        label: "W.TYPE",
         width: "25px",
         type: "select" as const,
         align: "right" as const,
@@ -96,6 +96,15 @@ export const issueColumns = [
         editable: false,
         decimalScale: 3
  
+    },
+    {
+        key: "HMC",
+        label: "HMC",
+        width: "25px",
+        type: "number" as const,
+        align: "right" as const,
+        decimalScale: 3
+
     },
     {
         key: "MC",

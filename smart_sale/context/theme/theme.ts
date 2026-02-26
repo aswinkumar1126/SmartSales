@@ -19,7 +19,9 @@ export type ColorTokens = {
     accient:string;
     formColor:string;
     whiteColor:string;
-    greyColor:string;   
+    greyColor:string; 
+    sideBar:string;
+    sideBarFont:string;
 };
 
 export type FontSizeTokens = {
@@ -66,6 +68,8 @@ export const designTokens: DesignTokens = {
         formColor:'#FFF',
         whiteColor: '#FFF',
         greyColor:'#F5F5F5',
+        sideBar:'#222D32',
+        sideBarFont: '#afc0cb'
         
     },
 
@@ -90,11 +94,15 @@ export const lightTheme: DesignTokens = {
         primary: "#EEEEEE",
         secondary: "#000000",
         primaryText: "#222",
+
         secondaryText: "#444444",
         accient:"#1868b2",
         formColor:'#FFF',
         whiteColor:'#FFF',
         greyColor:'#F5F5F5',
+        sideBar:'#222D32',
+        sideBarFont:'#afc0cb'
+    
 
     },
 };
@@ -103,7 +111,7 @@ export const darkTheme: DesignTokens = {
     ...designTokens,
     colors: {
         ...designTokens.colors,
-        primary: "#000",
+        primary: "#111",
         secondary: "#FFFFFF",
         primaryText: "#E5E7EB",
         secondaryText: "#9CA3AF",
@@ -111,6 +119,8 @@ export const darkTheme: DesignTokens = {
         formColor: '#222',
         whiteColor: '#FFF',
         greyColor:'#222',
+        sideBar: '#1A2226',
+        sideBarFont: '#FFFFFF'
 
     },
 };

@@ -41,14 +41,10 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
             <Sidebar
                 isOpen={isOpen}
                 onClose={() => setIsOpen(false)}
+
             />
 
-            {/* <Box ml={getMainContentMargin()}
-                transition="margin-left 0.25s ease"
             
-                bg={theme.colors.primary}>
-                summa content
-            </Box> */}
             {/* Main content area */}
             <Box
                 ml={getMainContentMargin()}

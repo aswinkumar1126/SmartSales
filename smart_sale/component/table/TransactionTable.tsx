@@ -195,7 +195,7 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
                                         border: "none",
                                         borderRadius: 4,
                                         cursor: isSubmitting ? "not-allowed" : "pointer",
-                                        fontSize: 11,
+                                        fontSize: 12,
                                         fontWeight: 700,
                                         display: "flex",
                                         alignItems: "center",
@@ -239,11 +239,11 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
                                     transition: "background-color 0.15s",
                                 }}
                             >
-                                <td style={getCellStyle({ key: "__sno", label: "#", align: "center" }, { fontSize: 11, color: "#718096" })}>
+                                <td style={getCellStyle({ key: "__sno", label: "#", align: "center" }, { fontSize: 15, color: "#718096" })}>
                                     {idx + 1}
                                 </td>
                                 {tableCols.map(col => (
-                                    <td key={col.key} style={getCellStyle(col, { fontSize: 11, color: "#1A202C", whiteSpace: "nowrap" })}>
+                                    <td key={col.key} style={getCellStyle(col, { fontSize: 14, color: "#1A202C", whiteSpace: "nowrap" })}>
                                         {getCellValue(col, row)}
                                     </td>
                                 ))}

@@ -150,7 +150,7 @@ export function CapitalizedInput<T>({
         <Input
             type={type === "number" ? "number" : type}
             value={value ?? ""}
-            pl={icon ? "2.5rem" : "1rem"}
+            pl={icon ? "2.5rem" : "0.2rem"}
             textTransform={isCapitalized ? "uppercase" : "none"}
             placeholder={placeholder}
             onChange={handleChange}
@@ -172,7 +172,7 @@ export function CapitalizedInput<T>({
             className={onClassUse ? "type-inputs" : ""}
             maxWidth={maxWidth}
             bg={noBorder ? '#ffffff':theme.colors.greyColor}
-            fontSize='2xs'
+            fontSize='xs'
             rounded={rounded}
             minWidth={minWidth}
             border="1px solid transparent"
