@@ -17,6 +17,8 @@ import { toaster, Toaster } from "@/components/ui/toaster";
 import { useListCollection, useFilter } from "@chakra-ui/react";
 import { useOpeningBalance } from "@/hooks/balance/useOpeningBalance";
 import { GiGoldBar } from "react-icons/gi";
+
+
 // Components
 import TransactionHeaderForm from "./TransactionHeaderForm/TransactionHeaderForm";
 import TransactionTypeSelector from "./TransactionTypeSelector/TransactionTypeSelector";
@@ -26,17 +28,23 @@ import RightSideDetailsPanel from "./RightSideDetailsPanel/RightSideDetailsPanel
 import { FloatingActionButton } from "@/components/ui/FloatingActionButton";
 import StockDrawer from "./DrawerTable/StockTable";
 import { useAllMetals } from "@/hooks/metal/useMetals";
+import Loader from "@/component/loader/Loader";
+import BalanceSummary from "./Balance/BalanceSummary";
+
+
 // Hooks
 import { useTransactions } from "@/hooks/transaction/useTransactions";
 import { useAllAccountHead } from "@/hooks/accountHead/useAccountHead";
 import { useItems, useStoneItems } from "@/hooks/item/useItems";
 import { useCreateTransactions, useUpdateTransaction, useTransactionByTransId } from "@/hooks/transaction/useTransactions";
 import { usePureGoldData, usePureGoldNames } from "@/hooks/pureGoldMast/usePureGoldMastData";
+import { useOtherCharges } from "@/hooks/otherCharges/useOtherCharges";
+
+
 // Types & Constants
 import { TransactionType, UpdateTransactionPayload, TransactionKey, CreateTransaction, TransactionItems, TRANSACTION_KEY_MAP } from "@/types/transcation/Transaction";
 import { TRANSACTIONTYPES } from "@/data/Transaction/TransactionType";
-import Loader from "@/component/loader/Loader";
-import BalanceSummary from "./Balance/BalanceSummary";
+
 
 
 //Icons
@@ -70,6 +78,7 @@ export default function PurchasePage() {
     const [showStock, setShowStock] = useState<string>("PURE");
     const [pureGoldList, setPureGoldList] = useState<{ label: string, value: string }[]>([]);
     const [metalList, setMetalList] = useState<{ label: string, value: string }[]>([]);
+    const [otherCharges, setOtherCharges] = useState<{ label: string, value: string }[]>([]);
 
     const [metalId, setMetalId] = useState<string | undefined>();
 
@@ -88,6 +97,8 @@ export default function PurchasePage() {
         rowId: string | null;
         transactionType: string | null;
     }>({ rowId: null, transactionType: null });
+
+
 
     /* ================================
        State Management
@@ -171,6 +182,9 @@ export default function PurchasePage() {
 
     const { data: transactionsById, isLoading: getbySnoLoading } = useTransactionByTransId(selectedTransactionId);
 
+    const {data: otherChargesData } = useOtherCharges();
+
+
     const updateTransaction = useUpdateTransaction();
     const { data: metalsData } = useAllMetals();
 
@@ -239,6 +253,20 @@ export default function PurchasePage() {
 
         setMetalList(fetchedData);
     }, [metalsData]);
+    console.log(otherChargesData,'otherChargers')
+
+    useEffect(() => {
+        if (!otherChargesData) return;
+        const otherCharges = otherChargesData.data.map((charges: any) => {
+            return {
+                label: charges.chargeName,
+                value: charges.sno.toString()
+            }
+        })
+        setOtherCharges(otherCharges);
+
+    }, [otherChargesData]);
+
 
     const getLabelByValue = useCallback((collection: any, value: any) => {
         if (!collection) return value ?? "";
@@ -1873,6 +1901,8 @@ export default function PurchasePage() {
                                                             getAvailableWeight={getAvailableWeight}
                                                             onClear={() => handleClearRowsForType(transactionType)}
                                                             getStockAvailability={getStockAvailability}
+                                                            otherChargesList={otherCharges}
+                                                            otherChargesData={otherChargesData?.data}
                                                         />
                                                     </Box>
                                                 );

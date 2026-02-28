@@ -50,6 +50,7 @@ export interface FormField {
     decimalScale?: number;
     dependsOn?: string;
     defaultValue?: string;
+  
 }
 
 interface DraftTransactionTableProps {
@@ -72,15 +73,20 @@ interface DraftTransactionTableProps {
     initialFormData?: any;
     onFormDataChange?: (data: any) => void;
     getStockAvailability?: (id: string, rowId?: string) => { remaining: number; used: number; total: number } | undefined;
+    otherChargesList: {label: string;value: string;}[];
+    otherChargesData:any;
+
 }
 
 const COL_WIDTHS: Record<string, string> = {
     __sno: "26px", ITEMID: "120px", PUREID: "120px",
-    PCS: "30px", GRSWT: "52px", STNWT: "52px",HMC:"40px", NETWT: "52px",
-    WASTYPE: "52px", WASPER: "40px", WASTAGE: "48px",
-    TOUCH: "44px", PUREWT: "52px", MC: "40px", ATOUCH: "44px",
-    DESCRIPTION: "80px", WT: "52px", AWT: "52px",
-    PURE: "52px", APURE: "52px", __actions: "54px",
+    PCS: "25px", GRSWT: "35px", STNWT: "52px",HMC:"52px", NETWT: "35px",
+    WASTYPE: "52px", WASPER: "30px", WASTAGE: "35px",
+    TOUCH: "35px", PUREWT: "40px", MC: "40px", ATOUCH: "44px",
+    DESCRIPTION: "80px",
+    
+    WT: "60px", AWT: "60px",
+    PURE: "60px", APURE: "60px", __actions: "60px",
 };
 
 const getWidth = (key: string) => COL_WIDTHS[key] || "48px";
@@ -123,8 +129,10 @@ export default function DraftTransactionTable({
     rows, editingRowId, onAddRow, onUpdateRow, onRemoveRow, onRowClick,
     onCancelEdit, itemsCollection, totals, transactionTitle,
     theme, isEditing, isIssue,
-    getAvailableWeight, onClear, transactionType, initialFormData, onFormDataChange, getStockAvailability
+    getAvailableWeight, onClear, transactionType, initialFormData, onFormDataChange, getStockAvailability, otherChargesList, otherChargesData
 }: DraftTransactionTableProps) {
+
+    console.log(otherChargesList,'otherChargesList')
 
     // FIX: Separate state for each modal's draft row ID
     const [stoneDraftRowId, setStoneDraftRowId] = useState<string>("");
@@ -317,6 +325,9 @@ export default function DraftTransactionTable({
 
             if (isIssue && ["WT", "AWT", "TOUCH", "ATOUCH"].includes(col.key))
                 return { ...base, dependsOn: "PUREID" };
+
+            if(!isIssue && ["HMC"].includes(col.key))
+                return { ...base, dependsOn: "ITEMID" };
 
             return base;
         });
@@ -781,8 +792,8 @@ export default function DraftTransactionTable({
                     />
                     <Button
                         size="2xs" position="absolute" right="0" top="0" height="100%"
-    
                         variant="ghost" minW="auto" px={0.5} title="Other Charges"
+
                     >📋</Button>
                 </Box>
             );
@@ -1003,15 +1014,8 @@ export default function DraftTransactionTable({
                                     if (nextFieldIndex < visibleFormFields.length) focusIdx(nextFieldIndex);
                                 }, 50);
                             }}
-                            chargeItems={[
-                                { label: "HALLMARK CHARGES", value: "HALLMARK CHARGES" },
-                                { label: "MAKING CHARGES", value: "MAKING CHARGES" },
-                                { label: "WASTAGE CHARGES", value: "WASTAGE CHARGES" },
-                                { label: "POLISHING CHARGES", value: "POLISHING CHARGES" },
-                                { label: "RHODIUM CHARGES", value: "RHODIUM CHARGES" },
-                                { label: "STONE SETTING CHARGES", value: "STONE SETTING CHARGES" },
-                                { label: "OTHER CHARGES", value: "OTHER CHARGES" },
-                            ]}
+                            chargeItems={otherChargesList}
+                            otherChargesData={otherChargesData}
                         />
                     </Box>
                 </Box>

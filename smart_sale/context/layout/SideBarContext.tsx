@@ -109,7 +109,12 @@ export const SidebarProvider = ({ children }: { children: ReactNode }) => {
             label: 'PureGold Master',
             route: '/dashboard/Master/Item/pureGold',
             icon: Gem
-          }
+          },
+          {
+            label: "Other Charges",
+            route: "/dashboard/Master/Item/OtherCharges",
+            icon: PlusCircle,
+          },
          
         ],
       },
@@ -196,11 +201,7 @@ export const SidebarProvider = ({ children }: { children: ReactNode }) => {
             route: "/dashboard/Transaction/Transaction/Income",
             icon: TrendingUp,
           },
-          {
-            label: "Other Charges",
-            route: "/dashboard/Transaction/Transaction/OtherCharges",
-            icon: PlusCircle,
-          },
+          
         ]
       }
 

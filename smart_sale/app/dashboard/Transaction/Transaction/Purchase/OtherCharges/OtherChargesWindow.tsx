@@ -27,6 +27,7 @@ type Props = {
     onSave: (rows: MiscChargeRow[]) => void;
     initialRows?: MiscChargeRow[];
     chargeItems?: SelectItem[];
+    otherChargesData?:any;
 };
 
 const COL_WIDTHS: Record<string, string> = {
@@ -51,23 +52,27 @@ const getCellStyle = (col: any, extra?: React.CSSProperties): React.CSSPropertie
     ...extra,
 });
 
-const DEFAULT_CHARGE_ITEMS: SelectItem[] = [
-    { label: "HALLMARK CHARGES", value: "HALLMARK CHARGES" },
-    { label: "MAKING CHARGES", value: "MAKING CHARGES" },
-    { label: "WASTAGE CHARGES", value: "WASTAGE CHARGES" },
-    { label: "POLISHING CHARGES", value: "POLISHING CHARGES" },
-    { label: "RHODIUM CHARGES", value: "RHODIUM CHARGES" },
-    { label: "STONE SETTING CHARGES", value: "STONE SETTING CHARGES" },
-    { label: "OTHER CHARGES", value: "OTHER CHARGES" },
-];
+// const DEFAULT_CHARGE_ITEMS: SelectItem[] = [
+//     { label: "HALLMARK CHARGES", value: "HALLMARK CHARGES" },
+//     { label: "MAKING CHARGES", value: "MAKING CHARGES" },
+//     { label: "WASTAGE CHARGES", value: "WASTAGE CHARGES" },
+//     { label: "POLISHING CHARGES", value: "POLISHING CHARGES" },
+//     { label: "RHODIUM CHARGES", value: "RHODIUM CHARGES" },
+//     { label: "STONE SETTING CHARGES", value: "STONE SETTING CHARGES" },
+//     { label: "OTHER CHARGES", value: "OTHER CHARGES" },
+// ];
 
 export default function OtherChargesWindow({
     draftRowId,
     onClose,
     onSave,
     initialRows = [],
-    chargeItems = DEFAULT_CHARGE_ITEMS
+    chargeItems,
+    otherChargesData
 }: Props) {
+
+    console.log(otherChargesData, 'otherChargesData');
+
     const tableCols = [
         { key: "chargeName", label: "MISCELLANEOUS", align: "left" as const },
         { key: "amount", label: "AMOUNT", align: "right" as const, decimalScale: 2 },
@@ -88,6 +93,8 @@ export default function OtherChargesWindow({
     const [touched, setTouched] = useState<Record<string, boolean>>({});
     const [isSubmitting] = useState(false);
     const [isInitialized, setIsInitialized] = useState(false);
+    // Add state to track if amount was manually changed
+    const [isAmountManuallyChanged, setIsAmountManuallyChanged] = useState(false);
 
     const hasLoadedRef = useRef(false);
     const chargeNameRef = useRef<any>(null);
@@ -100,6 +107,46 @@ export default function OtherChargesWindow({
 
     // Field order for focus traversal
     const fieldOrder = ["chargeName", "amount"] as const;
+
+    // useEffect to load amount when charge name changes
+    useEffect(() => {
+        // Only auto-load if we're not in edit mode and amount hasn't been manually changed
+        if (!editId && formData.chargeName && !isAmountManuallyChanged) {
+            console.log(formData.chargeName ,'checking')
+            // Try to find amount from otherChargesData first
+            if (otherChargesData && Array.isArray(otherChargesData)) {
+                const selectedCharge = otherChargesData.find(
+                    (item: any) => Number(item.sno) === Number(formData.chargeName)
+                );
+                console.log(selectedCharge, 'checking')
+
+                if (selectedCharge && selectedCharge.amount) {
+                    setFormData(prev => ({
+                        ...prev,
+                        amount: String(selectedCharge.amount)
+                    }));
+                }
+            }
+            // Optionally try from chargeItems if they contain amount
+            // else if (otherChargesData && Array.isArray(otherChargesData)) {
+            //     const selectedItem = otherChargesData.find(
+            //         (item: any) => item.value === formData.chargeName
+            //     );
+
+            //     if (selectedItem && selectedItem.amount) {
+            //         setFormData(prev => ({
+            //             ...prev,
+            //             amount: selectedItem.amount.toString()
+            //         }));
+            //     }
+            // }
+        }
+
+        // Reset manual change flag when charge name changes (if we're in a new selection)
+        if (formData.chargeName) {
+            setIsAmountManuallyChanged(true);
+        }
+    }, [formData.chargeName, editId, otherChargesData, chargeItems, isAmountManuallyChanged]);
 
     /* ---------------- LOAD FROM LOCALSTORAGE ---------------- */
     useEffect(() => {
@@ -139,7 +186,6 @@ export default function OtherChargesWindow({
             if (e.key === "Escape") {
                 e.preventDefault();
                 e.stopPropagation();
-                
                 onClose();
             }
         };
@@ -167,7 +213,7 @@ export default function OtherChargesWindow({
             label: "Charge Name",
             type: "combobox" as const,
             isRequired: true,
-            collection: { items: chargeItems },
+            collection: { items: chargeItems || [] },
             ref: chargeNameRef,
         },
         {
@@ -190,14 +236,6 @@ export default function OtherChargesWindow({
         }, 50);
     }, []);
 
-    const moveToNext = useCallback((currentKey: typeof fieldOrder[number]) => {
-        const idx = fieldOrder.indexOf(currentKey);
-        if (idx < fieldOrder.length - 1) {
-            focusField(fieldOrder[idx + 1]);
-        } else {
-            handleSubmit();
-        }
-    }, [formData]);
 
     /* ---------------- VALIDATION with focus ---------------- */
     const validateForm = useCallback((): boolean => {
@@ -243,6 +281,11 @@ export default function OtherChargesWindow({
         setFormData(prev => ({ ...prev, [key]: value }));
         setTouched(prev => ({ ...prev, [key]: true }));
         setErrors(prev => ({ ...prev, [key]: "" }));
+
+        // If user manually changes amount, set the flag
+        if (key === 'amount') {
+            setIsAmountManuallyChanged(true);
+        }
     };
 
     const handleSubmit = useCallback(() => {
@@ -265,10 +308,24 @@ export default function OtherChargesWindow({
         resetForm();
     }, [formData, editId, draftRowId, validateForm]);
 
+
+
+    const moveToNext = useCallback((currentKey: typeof fieldOrder[number]) => {
+        const idx = fieldOrder.indexOf(currentKey);
+        if (idx < fieldOrder.length - 1) {
+            focusField(fieldOrder[idx + 1]);
+        } else {
+            handleSubmit();
+        }
+    }, [focusField, handleSubmit]);
+
+
+
     const resetForm = () => {
         setFormData(emptyForm);
         setErrors({});
         setTouched({});
+        setIsAmountManuallyChanged(false); // Reset manual change flag
         setTimeout(() => { chargeNameRef.current?.focus(); }, 100);
     };
 
@@ -277,6 +334,7 @@ export default function OtherChargesWindow({
         setEditId(row.id);
         setErrors({});
         setTouched({});
+        setIsAmountManuallyChanged(true); // When editing, treat as manually set
         setTimeout(() => { chargeNameRef.current?.focus(); }, 100);
     };
 
@@ -294,17 +352,21 @@ export default function OtherChargesWindow({
         onClose();
     };
 
-    const handleAddNewRow = () => {
-        // If form has partial data, validate before resetting
-        const hasPartialData = formData.chargeName || formData.amount;
-        if (hasPartialData) {
-            // Validate what's there before wiping
-            if (!validateForm()) return;
-            // If valid, submit first then reset
-            handleSubmit();
-            return;
+    // Optional: Add a reset to default button functionality
+    const handleResetToDefault = () => {
+        if (formData.chargeName && otherChargesData) {
+            const selectedCharge = otherChargesData.find(
+                (item: any) => item.value === formData.chargeName || item.label === formData.chargeName
+            );
+
+            if (selectedCharge && selectedCharge.amount) {
+                setFormData(prev => ({
+                    ...prev,
+                    amount: selectedCharge.amount.toString()
+                }));
+                setIsAmountManuallyChanged(false);
+            }
         }
-        resetForm();
     };
 
     /* ---------------- RENDER FORM CELL ---------------- */
@@ -327,13 +389,7 @@ export default function OtherChargesWindow({
                         onEnter={() => moveToNext(field.key)}
                         rounded="sm"
                         placeholder={`Select ${field.label}`}
-                   
                     />
-                    {isInvalid && (
-                        <Text fontSize="9px" color="red.500" position="absolute" bottom="-13px" left="2px" whiteSpace="nowrap">
-                            {errors[field.key]}
-                        </Text>
-                    )}
                 </Box>
             );
         }
@@ -351,21 +407,19 @@ export default function OtherChargesWindow({
                     size="xs"
                     rounded="sm"
                     noBorder
-                
                 />
-                {isInvalid && (
-                    <Text fontSize="9px" color="red.500" position="absolute" bottom="-13px" left="2px" whiteSpace="nowrap">
-                        {errors[field.key]}
-                    </Text>
-                )}
+               
             </Box>
         );
     };
 
     const getCellValue = (col: any, row: MiscChargeRow) => {
-        if (col.key === "amount") return row.amount;
+        if (col.key === "amount") {
+        
+            return `${row.amount.toLocaleString()}`;
+        }
         if (col.key === "chargeName") {
-            const item = chargeItems.find(i => i.value === row.chargeName);
+            const item = chargeItems?.find(i => i.value === row.chargeName);
             return item?.label || row.chargeName || "-";
         }
         return row[col.key as keyof MiscChargeRow];
@@ -388,21 +442,12 @@ export default function OtherChargesWindow({
                     OTHER CHARGES DETAILS
                 </Text>
                 <HStack gap={1}>
-                    <Button
-                        size="xs"
-                        colorPalette="green"
-                        onClick={handleAddNewRow}
-                        variant="ghost"
-                        title="Add charge (or press Enter on last field)"
-                    >
-                        <LuPlus size={14} /> Add
-                    </Button>
                     <IconButton
-                        aria-label="Close (ESC)"
+                        aria-label="Close"
                         onClick={onClose}
                         size="xs"
                         variant="ghost"
-                        title="Close (ESC)"
+                        title="Close"
                     >
                         <LuX size={14} />
                     </IconButton>
@@ -433,11 +478,22 @@ export default function OtherChargesWindow({
             />
 
             <HStack justify="flex-end" gap={2} mt={4}>
+                {/* Optional: Reset button */}
+                {isAmountManuallyChanged && formData.chargeName && (
+                    <Button
+                        variant="ghost"
+                        size="xs"
+                        onClick={handleResetToDefault}
+                        colorScheme="orange"
+                    >
+                        Reset to Default
+                    </Button>
+                )}
                 <Text m={2} fontSize="small" fontWeight="500">
                     Total: ₹{totals.amount.toFixed(2)}
                 </Text>
                 <Button variant="outline" size="xs" onClick={onClose} title="ESC">
-                    Cancel (ESC)
+                    Cancel
                 </Button>
                 <Button colorPalette="blue" size="xs" onClick={handleSaveAndClose}>
                     Save & Close

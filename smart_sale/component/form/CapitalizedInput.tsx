@@ -191,6 +191,14 @@ export function CapitalizedInput<T>({
                     margin: 0,
                 }
             } : undefined}
+            _disabled={{
+                opacity: 1,  // Keep full opacity
+                cursor: 'not-allowed',  // Show disabled cursor
+                bg: noBorder ? '#ffffff' : theme.colors.greyColor,  // Maintain background
+                border: "1px solid transparent",  // Keep border consistent
+                color:theme.colors.green,
+                fontWeight:'bold'
+            }}
         />
 
     );

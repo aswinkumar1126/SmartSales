@@ -236,7 +236,6 @@ export default function StoneEnterMaster({
         let weight = Number(data.stoneWeight) || 0;
         const pcs = Number(data.stonePcs) || 0;
         const rate = Number(data.stoneRate) || 0;
-        if (data.stoneUnit === "c") weight = weight / 5;
         if (data.stoneCalculation === "w") return weight * rate;
         if (data.stoneCalculation === "p") return pcs * rate;
         return 0;

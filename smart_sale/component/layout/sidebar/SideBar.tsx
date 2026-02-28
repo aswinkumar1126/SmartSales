@@ -715,7 +715,8 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
             left={0}
             top='49px'
             h="100vh"
-            zIndex={10}
+            
+            zIndex={50}
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
         >

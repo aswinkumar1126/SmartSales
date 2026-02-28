@@ -100,10 +100,11 @@ export const issueColumns = [
     {
         key: "HMC",
         label: "HMC",
-        width: "25px",
+        width: "30px",
         type: "number" as const,
         align: "right" as const,
-        decimalScale: 3
+        decimalScale: 3,
+        dependsOn:"ITEMID"
 
     },
     {
