@@ -5,7 +5,7 @@ import { axiosInstance } from "@/api/axiosInstance";
 export const createOtherCharges = async(data:OtherChargeForm):Promise<ApiResponse<OtherChargeForm>> => {
     try{
         console.log(data,'service')
-        const response = await axiosInstance.post('/othercharges',data);
+        const response = await axiosInstance.post('/otherchargesmast',data);
         
         return response.data;
     }
@@ -16,8 +16,20 @@ export const createOtherCharges = async(data:OtherChargeForm):Promise<ApiRespons
 }
 export const getAllOtherCharges = async (filter?:string): Promise<ApiResponse<OtherChargeForm[]>> => {
     try {
-        const response = await axiosInstance.get('/othercharges',{
+        const response = await axiosInstance.get('/otherchargesmast',{
             params : filter? filter = filter :undefined
+        });
+        return response.data;
+    } catch (error) {
+        console.error(error);
+        throw error;
+    }
+}
+
+export const getActiveOtherCharges = async (filter?: string): Promise<ApiResponse<OtherChargeForm[]>> => {
+    try {
+        const response = await axiosInstance.get('/otherchargesmast/active', {
+            params: filter ? filter = filter : undefined
         });
         return response.data;
     } catch (error) {
@@ -27,7 +39,7 @@ export const getAllOtherCharges = async (filter?:string): Promise<ApiResponse<Ot
 }
 export const updateOtherCharges = async (id: number, data: OtherChargeForm): Promise<ApiResponse<OtherChargeForm>> => {
     try {
-        const response = await axiosInstance.put(`/othercharges/${id}`, data);
+        const response = await axiosInstance.put(`/otherchargesmast/${id}`, data);
         return response.data;
     } catch (error) {
         console.error(error);
@@ -36,7 +48,7 @@ export const updateOtherCharges = async (id: number, data: OtherChargeForm): Pro
 }
 export const deleteOtherCharges = async (id: number): Promise<ApiResponse<OtherChargeForm>> => {
     try {
-        const response = await axiosInstance.delete(`/othercharges/${id}`);
+        const response = await axiosInstance.delete(`/otherchargesmast/${id}`);
         return response.data;
     } catch (error) {
         console.error(error);
@@ -45,7 +57,7 @@ export const deleteOtherCharges = async (id: number): Promise<ApiResponse<OtherC
 }
 export const getOtherChargeById = async (id: number): Promise<ApiResponse<OtherChargeForm>> => {
     try {
-        const response = await axiosInstance.get(`/othercharge/${id}`);
+        const response = await axiosInstance.get(`/otherchargesmast/${id}`);
         return response.data;
     }
     catch (error) {

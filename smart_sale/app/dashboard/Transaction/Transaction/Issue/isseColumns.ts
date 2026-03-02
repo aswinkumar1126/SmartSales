@@ -2,7 +2,7 @@ export const issueColumns = [
     {
         key: "SNO",
         label: "S.N0",
-        width: "15px",
+        width: "25px",
         align: "left" as const,
         editable: false,
 
@@ -10,7 +10,7 @@ export const issueColumns = [
     {
         key: "ITEMID",
         label: "ITEM",
-        width: "45px",
+        width: "120px",
         align: "left" as const,
         type: "combobox" as const,
       
@@ -18,7 +18,7 @@ export const issueColumns = [
     {
         key: "PCS",
         label: "PCS",
-        width: "20px",
+        width: "25px",
         type: "number" as const,
         align: "right" as const,
         decimalScale:0
@@ -27,7 +27,7 @@ export const issueColumns = [
     {
         key: "GRSWT",
         label: "GRS WT",
-        width: "25px",
+        width: "45px",
         type: "number" as const,
         align: "right" as const,
         decimalScale: 3
@@ -36,7 +36,7 @@ export const issueColumns = [
     {
         key: "STNWT",
         label: "STONE",
-        width: "25px",
+        width: "45px",
         type: "number" as const,
         align: "right" as const,
         decimalScale: 3
@@ -45,7 +45,7 @@ export const issueColumns = [
     {
         key: "NETWT",
         label: "NET WT",
-        width: "25px",
+        width: "45px",
         type: "number" as const,
         align: "right" as const,
         editable:false,
@@ -55,7 +55,7 @@ export const issueColumns = [
     {
         key: "WASTYPE",
         label: "W.TYPE",
-        width: "25px",
+        width: "40px",
         type: "select" as const,
         align: "right" as const,
 
@@ -80,7 +80,7 @@ export const issueColumns = [
     {
         key: "TOUCH",
         label: "TOUCH",
-        width: "20px",
+        width: "35px",
         type: "number" as const,
         align: "right" as const,
         max: 999,
@@ -90,7 +90,7 @@ export const issueColumns = [
     {
         key: "PUREWT",
         label: "PURE WT",
-        width: "25px",
+        width: "45px",
         type: "number" as const,
         align: "right" as const,
         editable: false,
@@ -100,7 +100,7 @@ export const issueColumns = [
     {
         key: "HMC",
         label: "HMC",
-        width: "30px",
+        width: "45px",
         type: "number" as const,
         align: "right" as const,
         decimalScale: 3,
@@ -110,7 +110,7 @@ export const issueColumns = [
     {
         key: "MC",
         label: "M.C",
-        width: "25px",
+        width: "35px",
         type: "number" as const,
         align: "right" as const,
         decimalScale: 2
@@ -120,7 +120,7 @@ export const issueColumns = [
     {
         key: "ATOUCH",
         label: "A.TOUCH",
-        width: "20px",
+        width: "45px",
         type: "number" as const,
         align: "right" as const,
         max: 999,
@@ -131,7 +131,7 @@ export const issueColumns = [
     {
         key: "DESCRIPTION",
         label: "DESCRIPTION",
-        width: "45px",
+        width: "50px",
         align: "left" as const,
 
     },

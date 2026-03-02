@@ -1,14 +1,22 @@
 "use client";
 
 import React from "react";
-import { Button, Box } from "@chakra-ui/react";
+import { Button, Box, Text } from "@chakra-ui/react";
+import { GiGoldBar } from "react-icons/gi";
+import { HiFilter, HiX } from "react-icons/hi";
+
 
 export default function TransactionTypeSelector({
     transactionTypes,
     selectedTypes = [],
     onSelectTypes,
     theme,
-    TRANSACTIONTYPES_ORDER
+    TRANSACTIONTYPES_ORDER,
+    showFilter,
+    handleShowFilter,
+    setIsStockDrawerOpen,
+
+    isEditing = false,
 }: any) {
 
     /* ---------- ORDER BY CODE ---------- */
@@ -28,7 +36,7 @@ export default function TransactionTypeSelector({
         // REMOVE
         if (isSelected) {
 
-          
+
             const confirmRemove = window.confirm(
                 `Remove "${clickedType.label}" from filter ?`
             );
@@ -51,7 +59,7 @@ export default function TransactionTypeSelector({
         selectedTypes.some((type: any) => type.code === code);
 
     const TYPE_COLORS: Record<string, { bg: string; active: string; text: string }> = {
-        PU:{ bg: "#E6FFFA", active: "#2F855A", text: "#1C4532" },  // Blue
+        PU: { bg: "#E6FFFA", active: "#2F855A", text: "#1C4532" },  // Blue
         PR: { bg: "#FFEAEA", active: "#C53030", text: "#742A2A" },   // Red
         ISP: { bg: "#FFF4E5", active: "#DD6B20", text: "#7B341E" },   // Orange
         REC: { bg: "#ffe8fd", active: "#c729ba", text: "#8f1084" }   // Green
@@ -59,57 +67,87 @@ export default function TransactionTypeSelector({
 
 
     return (
-        <Box
-            p={2}
+        <Box p={2}
             gap={2}
             display="flex"
-            rounded="2xl"
             bg={theme.colors.formColor}
-            flexWrap="wrap"
+            rounded="2xl"
+            justifyContent='space-between'
+            alignItems='center'
         >
-            {orderedTypes.map((btn: any) => {
-                const Icon = btn.icon;
-                const selected = isTypeSelected(btn.code);
+            <Box
+                display="flex"
+                flexWrap="wrap"
+                gap={2}
+            >
+                {orderedTypes.map((btn: any) => {
+                    const Icon = btn.icon;
+                    const selected = isTypeSelected(btn.code);
 
-                const colors = TYPE_COLORS[btn.code] || {
-                    bg: "#F1F1F1",
-                    active: "#444",
-                    text: "#222"
-                };
+                    const colors = TYPE_COLORS[btn.code] || {
+                        bg: "#F1F1F1",
+                        active: "#444",
+                        text: "#222"
+                    };
 
-                return (
-                    <Button
-                        key={btn.code}
-                        size="xs"
-                        fontSize="2xs"
-                        px={3}
-                        rounded="full"
-                        onClick={() => handleTypeClick(btn)}
-                        display="flex"
-                        alignItems="center"
-                        gap={1}
-                        transition="all .15s ease"
+                    return (
+                        <Button
+                            key={btn.code}
+                            size="xs"
+                            fontSize="2xs"
+                            px={3}
+                            rounded="full"
+                            onClick={() => handleTypeClick(btn)}
+                            display="flex"
+                            alignItems="center"
+                            gap={1}
+                            transition="all .15s ease"
 
-                        /* -------- COLORS -------- */
-                        bg={selected ? colors.active : colors.bg}
-                        color={selected ? "white" : colors.text}
-                        borderWidth="1px"
-                        borderColor={selected ? colors.active : "transparent"}
+                            /* -------- COLORS -------- */
+                            bg={selected ? colors.active : colors.bg}
+                            color={selected ? "white" : colors.text}
+                            borderWidth="1px"
+                            borderColor={selected ? colors.active : "transparent"}
 
-                        _hover={{
-                            bg: selected ? colors.active : `${colors.bg}`,
-                            transform: "translateY(-1px)"
-                        }}
+                            _hover={{
+                                bg: selected ? colors.active : `${colors.bg}`,
+                                transform: "translateY(-1px)"
+                            }}
 
-                        _active={{
-                            transform: "scale(.96)"
-                        }}
-                    >
-                        <Icon size={12} />
-                        {btn.label}
-                    </Button>
-                );
-            })}
+                            _active={{
+                                transform: "scale(.96)"
+                            }}
+                        >
+                            <Icon size={12} />
+                            {btn.label}
+                        </Button>
+                    );
+                })}
+            </Box>
+            <Box display='flex' gap={4}>
+
+                {/* ALL STOCK */}
+                <Box
+                    className="flex flex-col items-center cursor-pointer gap-1"
+                    onClick={() => setIsStockDrawerOpen(true)}
+                >
+                    <GiGoldBar size={20} />
+                    <Text fontSize="x-small" fontWeight="semibold">
+                        ALL STOCK
+                    </Text>
+                </Box>
+
+                {/* SHOW / HIDE FILTER */}
+                <Box
+                    className="flex flex-col items-center cursor-pointer animate__animated animate__fadeInUp gap-1"
+                    onClick={() => handleShowFilter(!showFilter)}
+                >
+                    {showFilter ? <HiX size={20} className="text-red-500" /> : <HiFilter size={20} className="text-blue-500" />}
+                    <Text fontSize="x-small" fontWeight="semibold">
+                        {showFilter ? "HIDE FILTER" : "SHOW FILTER"}
+                    </Text>
+                </Box>
+            </Box>
         </Box>
     );
 

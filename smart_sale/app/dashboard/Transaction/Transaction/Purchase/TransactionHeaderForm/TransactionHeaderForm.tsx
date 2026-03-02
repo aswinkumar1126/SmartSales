@@ -1,13 +1,14 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Box, Text, Flex } from "@chakra-ui/react";
+import { Box, Text, Flex ,Button } from "@chakra-ui/react";
 import DatePicker from "react-datepicker";
 import { CapitalizedInput } from "@/component/form/CapitalizedInput";
 import { formatToFixed } from "@/utils/format/numberFormat";
-import { HiFilter, HiX } from "react-icons/hi";
+
 import { SelectCombobox } from "@/components/ui/selectComboBox";
-import { FloatingActionButton } from "@/components/ui/FloatingActionButton";
+
+
 
 interface TransactionHeaderFormProps {
     form: any;
@@ -19,8 +20,6 @@ interface TransactionHeaderFormProps {
     theme: any;
     openingBalance: any;
     openingData: any;
-    showFilter: boolean;
-    handleShowFilter: (checked: boolean) => void;
     isEditing?: boolean;
     entryNo?: string;
     billNo?: string;
@@ -36,11 +35,12 @@ export default function TransactionHeaderForm({
     theme,
     openingBalance,
     openingData,
-    showFilter,
-    handleShowFilter,
+ 
     isEditing = false,
     entryNo,
-    billNo
+    billNo,
+  
+
 }: TransactionHeaderFormProps) {
 
     // Get the customer label for the current form.CUSTOMER value
@@ -74,7 +74,6 @@ export default function TransactionHeaderForm({
         <Box
             display={{ base: 'block', md: 'flex' }}
             flexDirection={{ base: "column", md: "row" }}
-       
             justifyContent="space-between"
             alignItems="center"
             bg={theme.colors.formColor}
@@ -160,74 +159,60 @@ export default function TransactionHeaderForm({
                             rounded="md"
                         />
                     </Box>
-                </Box>
-       
-
-                <Box display='flex' gap={2}  >
-                {openingBalance && openingData && (
               
-                      <>
-                            <Box
-                                bg={theme.colors.formColor}
-                              
-                                gap={1}
-                                rounded="sm"
+                </Box>
+            <Box display='flex' gap={2}  >
+                {openingBalance && openingData && (
 
-                            >
-                                <Text fontSize="xs" fontWeight='semibold' >
-                                    OPENING PURE :
-                                </Text>
-                                <Text
-                                    fontSize="sm"
-                                    bg={theme.colors.accient}
-                                    fontWeight='semibold'
-                                    p={1}
-                                    rounded="sm"
-                                    color={theme.colors.whiteColor}
-                                >
-                                    {openingPure}
-                                </Text>
-                            </Box>
-                        
-                     
-                            <Box
-                                alignItems="center"
-                                bg={theme.colors.formColor}
-                                gap={1}
+                    <>
+                        <Box
+                            bg={theme.colors.formColor}
+
+                            gap={1}
+                            rounded="sm"
+
+                        >
+                            <Text fontSize="xs" fontWeight='semibold' >
+                                OPENING PURE :
+                            </Text>
+                            <Text
+                                fontSize="sm"
+                                bg={theme.colors.accient}
+                                fontWeight='semibold'
+                                p={1}
                                 rounded="sm"
-                                justifyContent="space-between"
+                                color={theme.colors.whiteColor}
                             >
-                                <Text fontSize="xs" fontWeight='semibold'>
-                                    OPENING CASH :
-                                </Text>
-                                <Text
-                                    fontSize="sm"
-                                    bg={theme.colors.accient}
-                                    p={1}
-                                    rounded="sm"
-                                    color={theme.colors.whiteColor}
-                                >   
-                                    {openingCash}
-                                </Text>
-                            </Box>
+                                {openingPure}
+                            </Text>
+                        </Box>
+
+
+                        <Box
+                            alignItems="center"
+                            bg={theme.colors.formColor}
+                            gap={1}
+                            rounded="sm"
+                            justifyContent="space-between"
+                        >
+                            <Text fontSize="xs" fontWeight='semibold'>
+                                OPENING CASH :
+                            </Text>
+                            <Text
+                                fontSize="sm"
+                                bg={theme.colors.accient}
+                                p={1}
+                                rounded="sm"
+                                color={theme.colors.whiteColor}
+                            >
+                                {openingCash}
+                            </Text>
+                        </Box>
                     </>
-                 
+
                 )}
-                </Box>
-                <Box>
-                    <FloatingActionButton
-                        icon={showFilter ? <HiX size={20} /> : <HiFilter size={20} />}
-                        ariaLabel="Toggle Filter"
-                        onClick={() => handleShowFilter(!showFilter)}
-                        position="top-right-high"
-                        size="xs"
-                        colorScheme={showFilter ? "red" : "blue"}
-                        tooltip={showFilter ? "Hide Filter" : "Show Filter"}
-                        zIndex={10}
-                        className="animate__animated animate__fadeInUp"
-                    />
-                </Box>
-          
+            </Box>
+      
         </Box>
     );
 }

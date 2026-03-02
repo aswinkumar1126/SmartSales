@@ -45,7 +45,7 @@ const Header = ({ onOpenMenu }: any) => {
             p={2}
             position="sticky"
             top="0"
-            zIndex={20}
+            zIndex={10}
             width="100%"
         >
             <Box

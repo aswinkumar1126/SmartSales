@@ -3,6 +3,7 @@ import React,{useState ,useEffect} from "react";
 import { Box, Text, VStack, Badge, Spinner, Combobox, Portal } from "@chakra-ui/react";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
+import { SelectCombobox } from "@/components/ui/selectComboBox";
 
 interface RightSideDetailsPanelProps {
     selectedTransactionId: string | null;
@@ -49,6 +50,8 @@ export default function RightSideDetailsPanel({
 
     const [itemInput, setItemInput] = useState("");
     const [isItemInitialized, setIsItemInitialized] = useState(false);
+
+    console.log(itemsCollection,'itemsCollection')
 
     useEffect(() => {
         if (!isItemInitialized && itemsCollection?.items?.length) {
@@ -143,7 +146,15 @@ console.log(transactionList?.data?.snoList,"list of transaction")
                         />
                     </Box>
                     <Box>
-                        <Combobox.Root
+                        <SelectCombobox 
+                            label="SELECT ITEM"
+                            value={selectedItemCode ? String(selectedItemCode) : ''}
+                            onChange={(val) => onSelectItem(val ? Number(val) : null)}
+                            items={itemsCollection?.items || []}
+                            rounded="sm"
+                            
+                        />
+                        {/* <Combobox.Root
                             collection={itemsCollection}
                             openOnClick
                             value={selectedItemCode ? [String(selectedItemCode)] : []}
@@ -207,7 +218,7 @@ console.log(transactionList?.data?.snoList,"list of transaction")
                                  </Combobox.Content>
                                </Combobox.Positioner>
                             </Portal>
-                         </Combobox.Root>
+                         </Combobox.Root> */}
                     </Box>
                 </Box>
             </Box>

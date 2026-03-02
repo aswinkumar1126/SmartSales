@@ -40,7 +40,7 @@ import SearchBar from "@/component/search/SearchBar";
 
 const initialFormState: OtherChargeStateForm = {
     chargeName: "",
-    amount:"",
+    chargeAmount:"",
     active:"Y",
 };
 
@@ -49,7 +49,7 @@ const initialFormState: OtherChargeStateForm = {
 export type TouchTableRow = {
     sno:number,
     chargeName: "",
-    amount: "",
+    chargeAmount: "",
     active: "Y",
 };
 
@@ -131,7 +131,7 @@ const activeStatus = createListCollection({
 
         setForm({
             chargeName: row.chargeName,
-            amount: row.amount,
+            chargeAmount: row.chargeAmount,
             active:row.active,
         });
 
@@ -155,8 +155,8 @@ const activeStatus = createListCollection({
             errors.chargeName = "charge Name is required";
         }
     
-        if (!Number(form.amount)) {
-            errors.amount = "Amount is required";
+        if (!Number(form.chargeAmount)) {
+            errors.chargeAmount = "Amount is required";
         }
 
         // 🔥 Duplicate validation
@@ -197,7 +197,7 @@ const activeStatus = createListCollection({
 
         const payload = {
             chargeName: form.chargeName,
-            amount:Number(form.amount),
+            chargeAmount: Number(form.chargeAmount),
             active:form.active
         };
 
@@ -230,7 +230,7 @@ const activeStatus = createListCollection({
     const columns = [
         { key: "sno", label: "S.No" },
         { key: "chargeName", label: "Charge Name" },
-        { key: "amount", label: "Amount" },
+        { key: "chargeAmount", label: "Amount" },
         { key: "active", label: "Active" },
         { key: "action", label: "Action", align: "center" as const },
     ];
@@ -249,7 +249,7 @@ const activeStatus = createListCollection({
         setData(Array.isArray(otherChargesData) ? otherChargesData : otherChargesData || []);
         setColumns([
             { key: "chargeName", label: "Charge Name" },
-            { key: "amount", label: "Amount" },
+            { key: "chargeAmount", label: "Amount" },
             { key: "active", label: "Active" },
         ]);
         router.push(`/print?export=${option}`);
@@ -309,15 +309,15 @@ const activeStatus = createListCollection({
                                 </Box>
                                 <Box >
                                     <CapitalizedInput
-                                        field="amount"
-                                        value={form.amount}
+                                        field="chargeAmount"
+                                        value={form.chargeAmount}
                                         onChange={handleChange}
                                         placeholder="Enter Amount"
                                         size="2xs"
                                         type="number"
 
                                     />
-                                    <Field.ErrorText>{errors.amount}</Field.ErrorText>
+                                    <Field.ErrorText>{errors.chargeAmount}</Field.ErrorText>
                                 </Box>
                             </HStack>
                         </Field.Root>
@@ -436,7 +436,7 @@ const activeStatus = createListCollection({
                             <>
                                 <Table.Cell>{i + 1}</Table.Cell>
                                 <Table.Cell>{row.chargeName}</Table.Cell>
-                                <Table.Cell>{row.amount}</Table.Cell>
+                                <Table.Cell>{row.chargeAmount}</Table.Cell>
                                 <Table.Cell>{row.active}</Table.Cell>
                                 <Table.Cell align="center">
                                     <Box display="flex" justifyContent="center">

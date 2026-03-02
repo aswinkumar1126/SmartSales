@@ -55,20 +55,26 @@ export interface MetalTransactionRow extends WeightInfo {
    ========================================================= */
 
 export interface ItemTransactionRow extends WeightInfo {
-    ITEMID?: number | null;
 
-    PCS?: number;
-    GRSWT?: number;
-    STNWT?: number;
-    NETWT?: number;
-    WASTYPE?:string;
-    WASPER?:number;
-    WASTAGE?:number;
+    ITEMID: number | null;
 
-    TOUCH?: number;
-    PUREWT?: number;
-    MC?:number;
-    ATOUCH?:number;
+
+    PCS: number;
+    GRSWT: number;
+    STNWT: number;
+    NETWT: number;
+    WASTYPE:string;
+    WASPER:number;
+    WASTAGE:number;
+
+    
+    TOUCH: number;
+    PUREWT: number;
+
+    HMC:number;
+
+    MC:number;
+    ATOUCH:number;
     // DESCRIPTION?:string;
 }
 

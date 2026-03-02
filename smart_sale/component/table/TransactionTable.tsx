@@ -53,9 +53,6 @@ interface TransactionTableProps {
 }
 
 
-
-
-
 export const TransactionTable: React.FC<TransactionTableProps> = ({
     theme,
     tableCols,
@@ -290,12 +287,14 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
                     {/* totals footer */}
                     {rows.length > 0 && (
                         <tfoot style={{ position: "sticky", bottom: 0, zIndex: 1 }}>
-                            <tr style={{ backgroundColor: "#4A5568" }}>
-                                <td style={getCellStyle({ key: "__sno", label: "#", align: "left" }, { fontSize: 10, fontWeight: 700, color: "white" })}>
-                                    TOT
+                            
+                            <tr style={{ backgroundColor: "#2a2a2a" }}>
+                                
+                                <td style={getCellStyle({ key: "__sno", label: "#", align: "left" }, { fontSize: 12, fontWeight: 700, color: "white" })}>
+                                    TOTALS
                                 </td>
                                 {tableCols.map(col => (
-                                    <td key={col.key} style={getCellStyle(col, { fontSize: 11, fontWeight: 600, color: "white" })}>
+                                    <td key={col.key} style={getCellStyle(col, { fontSize: 12, fontWeight: 600, color: "white" })}>
                                         {formatTotal(totals?.[col.key], col.decimalScale)}
                                     </td>
                                 ))}

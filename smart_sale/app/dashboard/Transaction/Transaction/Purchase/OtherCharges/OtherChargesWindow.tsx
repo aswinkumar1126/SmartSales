@@ -116,30 +116,18 @@ export default function OtherChargesWindow({
             // Try to find amount from otherChargesData first
             if (otherChargesData && Array.isArray(otherChargesData)) {
                 const selectedCharge = otherChargesData.find(
-                    (item: any) => Number(item.sno) === Number(formData.chargeName)
+                    (item: any) => Number(item.chargeId) === Number(formData.chargeName)
                 );
                 console.log(selectedCharge, 'checking')
 
-                if (selectedCharge && selectedCharge.amount) {
+                if (selectedCharge && selectedCharge.chargeAmount) {
                     setFormData(prev => ({
                         ...prev,
-                        amount: String(selectedCharge.amount)
+                        amount: String(selectedCharge.chargeAmount)
                     }));
                 }
             }
-            // Optionally try from chargeItems if they contain amount
-            // else if (otherChargesData && Array.isArray(otherChargesData)) {
-            //     const selectedItem = otherChargesData.find(
-            //         (item: any) => item.value === formData.chargeName
-            //     );
-
-            //     if (selectedItem && selectedItem.amount) {
-            //         setFormData(prev => ({
-            //             ...prev,
-            //             amount: selectedItem.amount.toString()
-            //         }));
-            //     }
-            // }
+       
         }
 
         // Reset manual change flag when charge name changes (if we're in a new selection)
@@ -355,18 +343,25 @@ export default function OtherChargesWindow({
     // Optional: Add a reset to default button functionality
     const handleResetToDefault = () => {
         if (formData.chargeName && otherChargesData) {
-            const selectedCharge = otherChargesData.find(
-                (item: any) => item.value === formData.chargeName || item.label === formData.chargeName
-            );
 
-            if (selectedCharge && selectedCharge.amount) {
+            console.log('enters');
+            console.log(formData.chargeName, 'checking');
+
+            const selectedCharge = otherChargesData.find(
+                (item: any) => Number(item.chargeId) === Number(formData.chargeName)
+            );
+            console.log(selectedCharge, 'selectedCharge');
+            console.log(formData.chargeName, 'checking');
+
+            if (selectedCharge && selectedCharge.chargeAmount) {
                 setFormData(prev => ({
                     ...prev,
-                    amount: selectedCharge.amount.toString()
+                    amount: selectedCharge.chargeAmount.toString()
                 }));
                 setIsAmountManuallyChanged(false);
             }
         }
+        console.log('not enters');
     };
 
     /* ---------------- RENDER FORM CELL ---------------- */
@@ -414,6 +409,8 @@ export default function OtherChargesWindow({
     };
 
     const getCellValue = (col: any, row: MiscChargeRow) => {
+
+        
         if (col.key === "amount") {
         
             return `${row.amount.toLocaleString()}`;

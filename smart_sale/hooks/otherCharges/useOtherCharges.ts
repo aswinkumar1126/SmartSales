@@ -5,6 +5,7 @@ import {
     deleteOtherCharges,
     getAllOtherCharges,
     getOtherChargeById,
+    getActiveOtherCharges,
 } from "@/service/OtherCharges";
 import { OtherChargeForm } from "@/types/others/OtherCharges";
 
@@ -19,6 +20,15 @@ export const useOtherCharges = (filter?:string) => {
     });
 };
 
+
+/** Fetch all Active other charges */
+export const useActiveOtherCharges = (filter?: string) => {
+    return useQuery({
+        queryKey: [...OTHER_CHARGES_KEY, filter],
+        queryFn: () => getActiveOtherCharges(filter),
+    });
+};
+
 /** Fetch a single other charge by ID */
 export const useOtherChargeById = (id: number) => {
     return useQuery({
@@ -27,6 +37,10 @@ export const useOtherChargeById = (id: number) => {
         enabled: !!id,
     });
 };
+
+
+
+
 
 /** Create a new other charge */
 export const useCreateOtherCharges = () => {

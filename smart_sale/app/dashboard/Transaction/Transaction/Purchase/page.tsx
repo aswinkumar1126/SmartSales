@@ -16,7 +16,7 @@ import { useTheme } from "@/context/theme/themeContext";
 import { toaster, Toaster } from "@/components/ui/toaster";
 import { useListCollection, useFilter } from "@chakra-ui/react";
 import { useOpeningBalance } from "@/hooks/balance/useOpeningBalance";
-import { GiGoldBar } from "react-icons/gi";
+
 
 
 // Components
@@ -38,7 +38,7 @@ import { useAllAccountHead } from "@/hooks/accountHead/useAccountHead";
 import { useItems, useStoneItems } from "@/hooks/item/useItems";
 import { useCreateTransactions, useUpdateTransaction, useTransactionByTransId } from "@/hooks/transaction/useTransactions";
 import { usePureGoldData, usePureGoldNames } from "@/hooks/pureGoldMast/usePureGoldMastData";
-import { useOtherCharges } from "@/hooks/otherCharges/useOtherCharges";
+import { useActiveOtherCharges } from "@/hooks/otherCharges/useOtherCharges";
 
 
 // Types & Constants
@@ -126,8 +126,10 @@ export default function PurchasePage() {
     // Transaction type & draft state
     const [selectedTransactionTypes, setSelectedTransactionTypes] = useState<TransactionType[]>([]);
 
+
     // Draft rows (local storage backed)
     const [draftRows, setDraftRows] = useState<any[]>([]);
+
     const [editingRowId, setEditingRowId] = useState<string | number | null>(null);
 
     // History state
@@ -175,6 +177,9 @@ export default function PurchasePage() {
             ([_, value]) => value !== undefined && value !== ""
         )
     );
+    console.log(filter, cleanedFilters,'cleanedFilters')
+
+
 
     const { data: pureStockList = [], refetch: stockRefetch } = usePureGoldData(filter,cleanedFilters);
 
@@ -182,7 +187,7 @@ export default function PurchasePage() {
 
     const { data: transactionsById, isLoading: getbySnoLoading } = useTransactionByTransId(selectedTransactionId);
 
-    const {data: otherChargesData } = useOtherCharges();
+    const { data: otherChargesData } = useActiveOtherCharges();
 
 
     const updateTransaction = useUpdateTransaction();
@@ -260,7 +265,7 @@ export default function PurchasePage() {
         const otherCharges = otherChargesData.data.map((charges: any) => {
             return {
                 label: charges.chargeName,
-                value: charges.sno.toString()
+                value: charges.chargeId.toString()
             }
         })
         setOtherCharges(otherCharges);
@@ -299,8 +304,6 @@ export default function PurchasePage() {
     useEffect(() => {
         set(mappedItems);
     }, [mappedItems, set]);
-
-
 
 
     // Function to get or create draft row temp ID
@@ -444,6 +447,7 @@ export default function PurchasePage() {
             NETWT: "",
             TOUCH: "",
             PUREWT: "",
+            HMC:"",
             RATE:  "",
             MCHARGE: "",
             WASTAGE: "",
@@ -736,6 +740,7 @@ export default function PurchasePage() {
     }, [editingRowId]);
 
     const handleEditTransaction = useCallback((transactionData: any, sno: string) => {
+        console.log(transactionData, sno, 'transactionData');
 
         if (!transactionData) {
             return;
@@ -748,103 +753,233 @@ export default function PurchasePage() {
 
         // Try different possible data structures
         const transactionDetails = transactionData.header;
-        const transactionItems = transactionData.data?.TRANSACTION_ITEM || transactionData.TRANSACTION_ITEM || transactionData.data?.TRANSACTION_ITEMS || transactionData.TRANSACTION_ITEMS;
+
+        // Collect ALL transaction types that have data
+        let transactionTypes: string[] = [];
+        let allTransactionItems: any[] = [];
+
+        // Check if TRANSACTION_DETAILS exists and has data
+        if (transactionData.TRANSACTION_DETAILS) {
+            const details = transactionData.TRANSACTION_DETAILS;
+
+            // Load purchase items
+            if (details.purchase && details.purchase.length > 0) {
+                transactionTypes.push('PU');
+                allTransactionItems = [...allTransactionItems, ...details.purchase.map((item: any) => ({
+                    ...item,
+                    _type: 'PU'
+                }))];
+            }
+
+            // Load issue items
+            if (details.issue && details.issue.length > 0) {
+                transactionTypes.push('ISP');
+                allTransactionItems = [...allTransactionItems, ...details.issue.map((item: any) => ({
+                    ...item,
+                    _type: 'ISP'
+                }))];
+            }
+
+            // Load purchase return items
+            if (details.purchase_return && details.purchase_return.length > 0) {
+                transactionTypes.push('PR');
+                allTransactionItems = [...allTransactionItems, ...details.purchase_return.map((item: any) => ({
+                    ...item,
+                    _type: 'PR'
+                }))];
+            }
+
+            // Load receipt items
+            if (details.receipt && details.receipt.length > 0) {
+                transactionTypes.push('REP');
+                allTransactionItems = [...allTransactionItems, ...details.receipt.map((item: any) => ({
+                    ...item,
+                    _type: 'REP'
+                }))];
+            }
+        }
+
+        // Remove duplicate transaction types
+        const uniqueTransactionTypes = [...new Set(transactionTypes)];
+
+        console.log('Detected transaction types:', uniqueTransactionTypes);
+        console.log('Total transaction items:', allTransactionItems.length);
 
         // 1. Load transaction details into header form
         if (transactionDetails) {
-            // Set customer and date (readonly during edit)
             setHeaderForm(prev => ({
                 ...prev,
                 CUSTOMER: transactionDetails.ACCODE ? String(transactionDetails.ACCODE) : "",
-                CUSTOMER_NAME: transactionDetails.ACNAME,
+                CUSTOMER_NAME: transactionDetails.ACNAME || "",
                 DATE: transactionDetails.TRANDATE || new Date().toISOString().split("T")[0],
                 BILLNO: transactionDetails.BILLNO || "",
                 ENTRYNO: transactionDetails.ENTRYNO || "",
-
             }));
 
-            // Set account code
             setAccCode(transactionDetails.ACCODE);
 
-            // Find and set transaction type (readonly)
-            // const foundType = TRANSACTIONTYPES.find(t => t.value === transactionDetails.TRANTYPE);
-
-            // if (foundType) {
-            //     setSelectedTransactionTypes([foundType]);
-            // } else {
-            //     console.warn("Transaction type not found:", transactionDetails.TRANTYPE);
-            // }
-        } else {
-            console.warn("No transaction details found in data");
+            // Set ALL transaction types that are present
+            if (uniqueTransactionTypes.length > 0) {
+                const foundTypes = TRANSACTIONTYPES.filter(t => uniqueTransactionTypes.includes(t.code));
+                if (foundTypes.length > 0) {
+                    setSelectedTransactionTypes(foundTypes);
+                    console.log('Set transaction types to:', foundTypes);
+                }
+            }
         }
 
-        // 2. Load transaction items into draft rows
-        if (transactionItems && Array.isArray(transactionItems)) {
-            const newDraftRows = transactionItems.map((item: any, index: number) => {
-                const isIssue = transactionDetails?.TRANTYPE === "ISP" || transactionDetails?.TRANTYPE === "REP";
+        // 2. Load ALL transaction items into draft rows and load stones/charges into localStorage
+        if (allTransactionItems && allTransactionItems.length > 0) {
+            const allStones: any[] = [];
+            const allCharges: any[] = [];
 
-                const rowData = isIssue
-                    ? {
-                        __rowId: `edit-${Date.now()}-${index}`,
+            const newDraftRows = allTransactionItems.map((item: any, index: number) => {
+                const itemType = item._type;
+                const isIssue = itemType === "ISP" || itemType === "REP";
+
+                // Generate a unique row ID for this item
+                const rowId = `edit-${Date.now()}-${index}-${Math.random().toString(36).substr(2, 9)}`;
+
+                // Process stone details if they exist (for purchase/purchase_return)
+                if (!isIssue && item.stoneDetails && item.stoneDetails.length > 0) {
+                    const stonesForRow = item.stoneDetails.map((stone: any, stoneIndex: number) => ({
+                        id: `stone-${Date.now()}-${index}-${stoneIndex}-${Math.random().toString(36).substr(2, 5)}`,
+                        draftRowId: rowId,
+                        stoneId: String(stone.stoneId || stone.substoneId || stone.subStoneId || ""),
+                        subStoneId: String(stone.substoneId || stone.stoneId || stone.subStoneId || ""),
+                        stonePcs: stone.stonepcs || stone.stonePcs || stone.pcs || 0,
+                        stoneWeight: stone.stoneWeight || stone.weight || 0,
+                        stoneUnit: stone.stoneUnit || stone.unit || "g",
+                        stoneCalculation: stone.stoneCalculation || stone.calculation || "w",
+                        stoneRate: stone.stoneRate || stone.rate || 0,
+                        stoneAmount: stone.stoneAmount || stone.amount || 0,
+                    }));
+                    allStones.push(...stonesForRow);
+                }
+
+                // Process other charges details if they exist
+                if (!isIssue && item.otherChargesDetails && item.otherChargesDetails.length > 0) {
+                    const chargesForRow = item.otherChargesDetails.map((charge: any, chargeIndex: number) => ({
+                        id: `charge-${Date.now()}-${index}-${chargeIndex}-${Math.random().toString(36).substr(2, 5)}`,
+                        draftRowId: rowId,
+                        chargeName: String(charge.chargeId || charge.chargeName || ""),
+                        amount: charge.chargeAmount || charge.amount || 0,
+                    }));
+                    allCharges.push(...chargesForRow);
+                }
+
+                if (isIssue) {
+                    // Issue/Receipt type transaction
+                    return {
+                        __rowId: rowId,
                         __isNew: false,
                         __isEditing: true,
                         __previewSno: index + 1,
                         __originalItemId: item.PUREID,
                         __originalSno: item.SNO,
+                        __originalTransNo: item.TRANNO,
 
-                        TRANSACTION_TYPE: transactionDetails?.TRANTYPE,
+                        TRANSACTION_TYPE: itemType,
                         PUREID: item.PUREID || "",
 
-                        WT: item.WT || item.WT || "",
+                        WT: item.WT || "",
                         AWT: item.AWT || item.WT || "",
                         TOUCH: item.TOUCH || "",
                         ATOUCH: item.ATOUCH || item.TOUCH || "",
                         PURE: item.PUREWT || "",
                         APUREWT: item.APUREWT || item.PUREWT || "",
-                    }
-                    : {
-                        __rowId: `edit-${Date.now()}-${index}`,
+
+                        BATCHNO: item.BATCHNO || "",
+                    };
+                } else {
+                    // Purchase/Purchase Return type transaction
+                    return {
+                        __rowId: rowId,
                         __isNew: false,
                         __isEditing: true,
                         __previewSno: index + 1,
                         __originalItemId: item.ITEMID,
                         __originalSno: item.SNO,
+                        __originalTransNo: item.TRANNO,
 
-                        TRANSACTION_TYPE: transactionDetails?.TRANTYPE,
+                        TRANSACTION_TYPE: itemType,
                         ITEMID: item.ITEMID ? String(item.ITEMID) : "",
 
-                        PCS: item.PCS || item.pcs || "",
-                        GRSWT: item.GRSWT || item.grswt || "",
-                        STNWT: item.STNWT || item.stnwt || "",
-                        NETWT: item.NETWT || item.netwt || "",
-                        TOUCH: item.TOUCH || item.TOUCH || "",
-                        PUREWT: item.PUREWT || item.purewt || "",
-                        RATE: item.RATE || item.rate || "",
-                        MCHARGE: item.MCHARGE || item.mcharge || "",
-                        WASTAGE: item.WASTAGE || item.wastage || "",
-                        AMOUNT: item.AMOUNT || item.amount || "",
-                    };
+                        PCS: item.PCS || "",
+                        GRSWT: item.GRSWT || "",
+                        STNWT: item.STNWT || "",
+                        HMC: item.HMC || "",
+                        NETWT: item.NETWT || "",
+                        TOUCH: item.TOUCH || "",
+                        ATOUCH: item.ATOUCH || "",
+                        PUREWT: item.PUREWT || "",
+                        RATE: item.RATE || "",
+                        MC: item.MC || item.MCHARGE || "",
+                        WASTYPE: item.WASTYPE || "",
+                        WASTAGE: item.WASTAGE || "",
+                        AMOUNT: item.AMOUNT || "",
+                        DESCRIPTION: item.DESCRIPTION || "",
+                        BATCHNO: item.BATCHNO || "",
 
-                return rowData;
+                        // Store references to stones and charges
+                        _hasStones: item.stoneDetails && item.stoneDetails.length > 0,
+                        _hasCharges: item.otherChargesDetails && item.otherChargesDetails.length > 0,
+                    };
+                }
             });
+
+            // Save stones to localStorage
+            if (allStones.length > 0) {
+                localStorage.setItem(STONE_MASTER_KEY, JSON.stringify(allStones));
+                console.log('Loaded stones to localStorage:', allStones);
+            } else {
+                localStorage.removeItem(STONE_MASTER_KEY);
+            }
+
+            // Save charges to localStorage
+            if (allCharges.length > 0) {
+                localStorage.setItem("MISC_CHARGE_MASTER", JSON.stringify(allCharges));
+                console.log('Loaded charges to localStorage:', allCharges);
+            } else {
+                localStorage.removeItem("MISC_CHARGE_MASTER");
+            }
 
             setDraftRows(newDraftRows);
 
             if (newDraftRows.length > 0) {
                 setEditingRowId(newDraftRows[0].__rowId);
             }
-        } else {
-            console.warn("No transaction items found or items is not an array");
-            setDraftRows([]);
-        }
 
-        setTimeout(() => {
-            toaster.create({
-                title: "Transaction Loaded",
-                description: "Transaction loaded for editing. Only weights and values can be modified.",
-                type: "success",
-            });
-        }, 100);
+            // Show appropriate message
+            setTimeout(() => {
+                const stoneCount = allStones.length;
+                const chargeCount = allCharges.length;
+                let detailsMessage = '';
+
+                if (stoneCount > 0 || chargeCount > 0) {
+                    detailsMessage = ` with ${stoneCount} stone(s) and ${chargeCount} charge(s)`;
+                }
+
+                toaster.create({
+                    title: "Transaction Loaded",
+                    description: `Loaded ${uniqueTransactionTypes.join(', ')} transaction with ${allTransactionItems.length} item(s)${detailsMessage}. Only weights and values can be modified.`,
+                    type: "success",
+                });
+            }, 100);
+        } else {
+            console.warn("No transaction items found");
+            setDraftRows([]);
+            localStorage.removeItem(STONE_MASTER_KEY);
+            localStorage.removeItem("MISC_CHARGE_MASTER");
+
+            setTimeout(() => {
+                toaster.create({
+                    title: "Transaction Loaded",
+                    description: "Transaction header loaded but no items found.",
+                    type: "info",
+                });
+            }, 100);
+        }
 
     }, []);
 
@@ -937,8 +1072,29 @@ export default function PurchasePage() {
 
         // 2️⃣ Pick target type deterministically
         const targetType = issueStock
-            ? TRANSACTIONTYPES.find(t => isIssueType(t))
+            ? TRANSACTIONTYPES.find(t => t.key === "issue")
             : TRANSACTIONTYPES.find(t => t.key === "purchase_return");
+
+        // 2a️⃣ Check if transaction type exists
+        if (!targetType) {
+            toaster.create({
+                title: "Transaction Type Missing",
+                description: "No suitable transaction type found for this stock.",
+                type: "warning",
+            });
+            return;
+
+        }
+        console.log(targetType,'targetType')
+        // 2b️⃣ Check if transaction type is open
+        if (!selectedTransactionTypes.some(t => t.key === targetType.key)) {
+            toaster.create({
+                title: "Transaction Type Not Opened",
+                description: `The transaction type "${targetType.label}" is currently closed.`,
+                type: "error",
+            });
+            return;
+        }
 
         if (!targetType) {
             toaster.create({
@@ -1173,7 +1329,7 @@ export default function PurchasePage() {
 
         const keys = isIssue
             ? ["PURE", "APURE" , "WT" ,"AWT" ] // add other issue-specific numeric fields if needed
-            : ["PCS", "GRSWT", "STNWT", "NETWT", "PUREWT", "RATE", "MCHARGE", "WASTAGE", "AMOUNT"];
+            : ["PCS", "GRSWT", "STNWT", "NETWT", "PUREWT","HMC", "RATE", "MCHARGE", "WASTAGE", "AMOUNT"];
 
         return typeRows.reduce((acc, row) => {
             keys.forEach(k => {
@@ -1182,9 +1338,11 @@ export default function PurchasePage() {
             return acc;
         }, Object.fromEntries(keys.map(k => [k, 0])));
     };
+
     /* ================================
      Normalize Handler with Stone Details Support
   ================================ */
+
     const normalizeRowForApi = (row: any, isIssue: boolean) => {
         const {
             __rowId,
@@ -1193,6 +1351,9 @@ export default function PurchasePage() {
             __manual_AWT,
             __manual_ATOUCH,
             __manual_APUREWT,
+            // Don't destructure these - we want to keep them
+            // _stoneTempId, _stones, _stoneTotalWeight,
+            // _miscTempId, _miscCharges, _miscTotalAmount,
             ...rest
         } = row;
 
@@ -1220,11 +1381,32 @@ export default function PurchasePage() {
             TOUCH: Number(rest.TOUCH || 0),
             ATOUCH: Number(rest.ATOUCH || 0),
             PUREWT: Number(rest.PUREWT || 0),
+            HMC:Number(rest.HMC || 0),
             MC: Number(rest.MC || 0),
-            // Note: STONE_DETAILS will be added separately in the save handler
+
+            // Include stone details if they exist
+            ...(row._stones && row._stones.length > 0 && {
+                STONEDETAILS: row._stones.map((stone: any) => ({
+                    stoneId: stone.stoneId,
+                    subStoneId: stone.subStoneId,
+                    stonePcs: stone.stonePcs,
+                    stoneWeight: stone.stoneWeight,
+                    stoneUnit: stone.stoneUnit,
+                    stoneCalculation: stone.stoneCalculation,
+                    stoneRate: stone.stoneRate,
+                    stoneAmount: stone.stoneAmount,
+                }))
+            }),
+
+            // Include other charges if they exist
+            ...(row._miscCharges && row._miscCharges.length > 0 && {
+                OTHERCHARGESDETAILS: row._miscCharges.map((charge: any) => ({
+                    chargeId: Number(charge.chargeName),
+                    chargeAmount: charge.amount,
+                }))
+            })
         };
     };
-
     /* ================================
          Validation Handler
       ================================ */
@@ -1363,6 +1545,11 @@ export default function PurchasePage() {
             // Get all stones from localStorage
             const allStones = JSON.parse(localStorage.getItem(STONE_MASTER_KEY) || "[]");
 
+            const allCharges = JSON.parse(localStorage.getItem("MISC_CHARGE_MASTER") || "[]");
+
+
+            console.log(allCharges,'allCharges');
+
             // Create a map for quick lookup of stones by draftRowId
             const stonesByDraftRowId = allStones.reduce((acc: Record<string, StoneRow[]>, stone: StoneRow) => {
                 if (!acc[stone.draftRowId]) {
@@ -1371,6 +1558,19 @@ export default function PurchasePage() {
                 acc[stone.draftRowId].push(stone);
                 return acc;
             }, {});
+            // Create a map for quick lookup of charges by draftRowId
+            const chargesByDraftRowId = allCharges.reduce(
+                (acc: Record<string, any[]>, charge: any) => {
+                    if (!acc[charge.draftRowId]) {
+                        acc[charge.draftRowId] = [];
+                    }
+                    acc[charge.draftRowId].push(charge);
+                    return acc;
+                },
+                {}
+            );
+
+
 
             /* -----------------------------------------
                STEP 1 — GROUP ROWS BY TYPE
@@ -1389,6 +1589,7 @@ export default function PurchasePage() {
                 // Get stones for this row
                 const rowStones = stonesByDraftRowId[row.__rowId] || [];
 
+
                 // Filter out empty stones (only include stones with real data)
                 const validStones = rowStones.filter((stone:any) =>
                     stone.stoneId &&
@@ -1396,6 +1597,18 @@ export default function PurchasePage() {
                     stone.stonePcs > 0 &&
                     stone.stoneWeight > 0 &&
                     stone.stoneRate > 0
+                );
+
+                // Get charges for this row - first check if attached directly to row, then fallback to localStorage
+                const rowCharges = row._miscCharges || chargesByDraftRowId[row.__rowId] || [];
+
+                console.log(rowCharges,'rowCharges')
+
+                // Filter valid charges
+                const validCharges = rowCharges.filter((charge: any) =>
+                    charge.id &&
+                    charge.id !== "" &&
+                    Number(charge.amount) > 0
                 );
 
                 // Normalize the main row data
@@ -1408,7 +1621,7 @@ export default function PurchasePage() {
                 const rowWithStones = {
                     ...normalized,
                     ...(validStones.length > 0 && {
-                        STONE_DETAILS: validStones.map((stone:any) => ({
+                        STONEDETAILS: validStones.map((stone:any) => ({
                             stoneId: stone.stoneId,
                             subStoneId: stone.subStoneId,
                             stonePcs: stone.stonePcs,
@@ -1417,6 +1630,12 @@ export default function PurchasePage() {
                             stoneCalculation: stone.stoneCalculation,
                             stoneRate: stone.stoneRate,
                             stoneAmount: stone.stoneAmount,
+                        }))
+                    }),
+                     ...(validCharges.length > 0 && {
+                        OTHERCHARGESDETAILS: validCharges.map((charge: any) => ({
+                            chargeId: Number(charge.chargeName),
+                            chargeAmount: charge.amount,
                         }))
                     })
                 };
@@ -1680,7 +1899,7 @@ export default function PurchasePage() {
 
     return (
         <>
-        <Flex align="stretch" gap={2} >
+        <Flex gap={2} >
             <Toaster />
 
             {/* Loading indicator for transaction data */}
@@ -1691,8 +1910,8 @@ export default function PurchasePage() {
             )}
 
             {/* LEFT – 70% */}
-            <Box w='100%'>
-                <VStack align="stretch" gap={1}>
+                <Box display='flex' gap={1} w='100%' >
+                    <VStack align="stretch" gap={1} w='100%'> 
                     {/* 1. Transaction Header Form */}
                  
                     <TransactionHeaderForm
@@ -1704,11 +1923,11 @@ export default function PurchasePage() {
                         theme={theme}
                         openingBalance={openingBalance}
                         openingData={openingData}
-                        showFilter={showFilter}
-                        handleShowFilter={openFilter}
+                     
                         isEditing={isEditing}
                         entryNo={transactionList?.data?.ENTRYNO}
                         billNo={transactionList?.data?.BILLNO}
+                   
                     />
 
                     {/* 2. Transaction Type Selector */}
@@ -1719,6 +1938,10 @@ export default function PurchasePage() {
                             onSelectTypes={handleTransactionTypesSelect}
                             theme={theme}
                             TRANSACTIONTYPES_ORDER={TRANSACTIONTYPES_ORDER}
+                            setIsStockDrawerOpen={setIsStockDrawerOpen}
+                            showFilter={showFilter}
+                            handleShowFilter={openFilter}
+                            isEditing={isEditing}
                         />
                 
 
@@ -1910,10 +2133,6 @@ export default function PurchasePage() {
                                     </Box>
                                 </Box>
 
-                                {/* RIGHT SIDE - Summary Panel */}
-                                <Box position="sticky">
-                                    <BalanceSummary theme={theme} />
-                                </Box>
                             </Box>
                         )}
                     {/* Save Transaction Bar - appears once for all tables */}
@@ -1928,7 +2147,7 @@ export default function PurchasePage() {
                            
                         >
                             <Flex justify='start'>
-                                <Box w={'75%'} bg={theme.colors.formColor}  rounded='lg'>
+                                <Box w={'100%'} bg={theme.colors.formColor}  rounded='lg'>
                                     <SaveTransactionBar
                                         draftCount={draftRows.length}
                                         onSave={isEditing ? handleUpdateTransaction : handleSaveTransaction}
@@ -1945,6 +2164,8 @@ export default function PurchasePage() {
                      
                     )}
                 </VStack>
+
+                   
 
                 {/* RIGHT – 30% */}
                 {isFilterOpen && (
@@ -1998,19 +2219,10 @@ export default function PurchasePage() {
                
             </Box>    
     
-
-            <Box>
-                <FloatingActionButton
-                    icon={<GiGoldBar />}
-                    ariaLabel="Share"
-                    tooltip="ALL STOCK"
-                    onClick={() => setIsStockDrawerOpen(true)}
-                    position="bottom-right"
-                    colorScheme="yellow"
-                    size="md"
-                />
-            </Box>
-
+                {/* RIGHT SIDE - Summary Panel */}
+                <Box position="sticky">
+                    <BalanceSummary theme={theme} />
+                </Box>
             <StockDrawer
                 isIssue={selectedTransactionTypes.some(t => isIssueType(t))}
                 showStock={showStock}

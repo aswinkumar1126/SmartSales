@@ -2,7 +2,7 @@
 export interface OtherChargeForm {
 
     chargeName: string;
-    amount: number;
+    chargeAmount: number;
     active: "Y" | "N";
     
 }
@@ -10,6 +10,6 @@ export interface OtherChargeForm {
 export interface OtherChargeStateForm {
 
     chargeName: string;
-    amount: string;
+    chargeAmount: string;
     active: "Y" | "N";
 }

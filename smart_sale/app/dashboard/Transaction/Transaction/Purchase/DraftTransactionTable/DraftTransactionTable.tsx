@@ -78,18 +78,20 @@ interface DraftTransactionTableProps {
 
 }
 
-const COL_WIDTHS: Record<string, string> = {
-    __sno: "26px", ITEMID: "120px", PUREID: "120px",
-    PCS: "25px", GRSWT: "35px", STNWT: "52px",HMC:"52px", NETWT: "35px",
-    WASTYPE: "52px", WASPER: "30px", WASTAGE: "35px",
-    TOUCH: "35px", PUREWT: "40px", MC: "40px", ATOUCH: "44px",
-    DESCRIPTION: "80px",
+// const COL_WIDTHS: Record<string, string> = {
+//     __sno: "26px", ITEMID: "120px", PUREID: "110px",
+//     PCS: "25px", GRSWT: "40px", STNWT: "52px",HMC:"52px", NETWT: "40px",
+//     WASTYPE: "52px", WASPER: "30px", WASTAGE: "35px",
+//     TOUCH: "35px", PUREWT: "40px", MC: "40px", ATOUCH: "44px",
+//     DESCRIPTION: "80px",
     
-    WT: "60px", AWT: "60px",
-    PURE: "60px", APURE: "60px", __actions: "60px",
-};
 
-const getWidth = (key: string) => COL_WIDTHS[key] || "48px";
+//     WT: "60px", AWT: "60px",
+//     PURE: "60px", APURE: "60px", __actions: "60px",
+// };
+
+const getWidth = (width: string | number) => width || "30px";
+
 
 function InlineSelect({
     value, onChange, collection, inputRef, onEnter, disabled, isInvalid,
@@ -132,7 +134,6 @@ export default function DraftTransactionTable({
     getAvailableWeight, onClear, transactionType, initialFormData, onFormDataChange, getStockAvailability, otherChargesList, otherChargesData
 }: DraftTransactionTableProps) {
 
-    console.log(otherChargesList,'otherChargesList')
 
     // FIX: Separate state for each modal's draft row ID
     const [stoneDraftRowId, setStoneDraftRowId] = useState<string>("");
@@ -160,6 +161,7 @@ export default function DraftTransactionTable({
         totalAmount: number;
     } | null>(null);
 
+    
     // rowsRef so setTimeout closures always see latest rows
     const rowsRef = useRef(rows);
     useEffect(() => { rowsRef.current = rows; }, [rows]);
@@ -188,7 +190,7 @@ export default function DraftTransactionTable({
 
     const wastypecollection = { items: [{ label: "TOUCH", value: "TOUCH" }] };
     const numericFields = [
-        "PCS", "GRSWT", "STNWT",  "NETWT", "WASPER", "WASTAGE", "ATOUCH",
+        "PCS", "GRSWT", "STNWT",  "NETWT", "WASPER", "WASTAGE", "ATOUCH", 
         "PUREWT", "HMC", "MC", "WT", "AWT", "TOUCH", "PURE", "APURE",
     ];
 
@@ -292,7 +294,7 @@ export default function DraftTransactionTable({
             const isNum = numericFields.includes(col.key);
             const isRequired = isIssue
                 ? ["PUREID", "TOUCH", "WT"].includes(col.key)
-                : ["ITEMID", "PCS", "GRSWT", "TOUCH"].includes(col.key);
+                : ["ITEMID", "PCS", "GRSWT", "TOUCH" ,"HMC"].includes(col.key);
 
             const base: FormField = {
                 key: col.key,
@@ -326,8 +328,8 @@ export default function DraftTransactionTable({
             if (isIssue && ["WT", "AWT", "TOUCH", "ATOUCH"].includes(col.key))
                 return { ...base, dependsOn: "PUREID" };
 
-            if(!isIssue && ["HMC"].includes(col.key))
-                return { ...base, dependsOn: "ITEMID" };
+            // if(!isIssue && ["HMC"].includes(col.key))
+            //     return { ...base, dependsOn: "ITEMID" };
 
             return base;
         });
@@ -881,7 +883,7 @@ export default function DraftTransactionTable({
     };
 
     const allDisplayCols = useMemo(() => [
-        { key: "__sno", label: "#", align: "center" as const },
+        { key: "__sno", label: "", align: "center" as const },
         ...tableCols,
         { key: "__actions", label: "ACT", align: "center" as const },
     ], [tableCols]);
@@ -892,9 +894,12 @@ export default function DraftTransactionTable({
                 : "#F7FAFC";
 
     const getCellStyle = (col: any, extra?: React.CSSProperties): React.CSSProperties => ({
-        width: getWidth(col.key),
-        minWidth: getWidth(col.key),
-        maxWidth: getWidth(col.key),
+    
+
+        
+        width: getWidth(col.width),
+        minWidth: getWidth(col.width),
+        maxWidth: getWidth(col.width),
         padding: "1px 3px",
         borderRight: "1px solid #E2E8F0",
         textAlign: col.align === "right" ? "right" : col.align === "center" ? "center" : "left",
@@ -932,7 +937,7 @@ export default function DraftTransactionTable({
                 )}
             </Flex>
 
-            {!isEditing && (
+       
                 <TransactionTable
                     theme={theme}
                     tableCols={tableCols}
@@ -956,7 +961,7 @@ export default function DraftTransactionTable({
                     formatTotal={formatTotal}
                     getCellStyle={getCellStyle}
                 />
-            )}
+        
 
             {/* MISC MODAL — uses miscDraftRowId only, never touches stoneDraftRowId */}
             {isMiscModalOpen && (

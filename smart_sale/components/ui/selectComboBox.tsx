@@ -156,6 +156,7 @@ export const SelectCombobox = forwardRef<HTMLInputElement, SelectComboboxProps>(
                     setHighlightedValue(e.highlightedValue);
                 }}
                 openOnClick={!disable}
+              
             >
                 <Combobox.Control rounded='full'>
                     <Combobox.Input
