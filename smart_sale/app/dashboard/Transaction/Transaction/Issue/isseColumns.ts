@@ -63,7 +63,7 @@ export const issueColumns = [
     // {
     //     key: "WASPER",
     //     label: "WAS %",
-    //     width: "20px",
+    //     width: "35px",
     //     type: "number" as const,
     //     align: "right" as const,
 
@@ -71,7 +71,7 @@ export const issueColumns = [
     // {
     //     key: "WASTAGE",
     //     label: "WASTAGE",
-    //     width: "20px",
+    //     width: "40px",
     //     type: "number" as const,
     //     align: "right" as const,
     //     decimalScale: 3
@@ -117,14 +117,25 @@ export const issueColumns = [
   
     },
     
+    // {
+    //     key: "ATOUCH",
+    //     label: "A.TOUCH",
+    //     width: "45px",
+    //     type: "number" as const,
+    //     align: "right" as const,
+    //     max: 999,
+    //     decimalScale: 1
+
+    // },
     {
-        key: "ATOUCH",
-        label: "A.TOUCH",
+        key: "STNAMT",
+        label: "STN AMT",
         width: "45px",
         type: "number" as const,
         align: "right" as const,
-        max: 999,
-        decimalScale: 1
+        max: 999999999,
+        decimalScale: 2,
+        editable:false
 
     },
   
@@ -165,16 +176,16 @@ export const issueDataColumns = [
         decimalScale:3
 
     },
-    {
-        key: "AWT",
-        label: "A.WEIGHT",
-        width: "25px",
-        type: "number" as const,
-        align: "right" as const,
-        max: 999,
-        decimalScale: 3
+    // {
+    //     key: "AWT",
+    //     label: "A.WEIGHT",
+    //     width: "25px",
+    //     type: "number" as const,
+    //     align: "right" as const,
+    //     max: 999,
+    //     decimalScale: 3
 
-    },
+    // },
     {
         key: "TOUCH",
         label: "TOUCH",
@@ -185,16 +196,16 @@ export const issueDataColumns = [
         decimalScale: 3
 
     },
-    {
-        key: "ATOUCH",
-        label: "A.TOUCH",
-        width: "25px",
-        type: "number" as const,
-        align: "right" as const,
-        max: 999,
-        decimalScale: 3
+    // {
+    //     key: "ATOUCH",
+    //     label: "A.TOUCH",
+    //     width: "25px",
+    //     type: "number" as const,
+    //     align: "right" as const,
+    //     max: 999,
+    //     decimalScale: 3
 
-    },
+    // },
     {
         key: "PURE",
         label: "PURE",
@@ -207,17 +218,17 @@ export const issueDataColumns = [
         decimalScale: 3
 
     },
-    {
-        key: "APURE",
-        label: "A.PURE",
-        width: "25px",
-        type: "number" as const,
-        align: "right" as const,
-        editable: false,
-        disabled:true,
-        max: 9999999999,
-        decimalScale: 3
-    },
+    // {
+    //     key: "APURE",
+    //     label: "A.PURE",
+    //     width: "25px",
+    //     type: "number" as const,
+    //     align: "right" as const,
+    //     editable: false,
+    //     disabled:true,
+    //     max: 9999999999,
+    //     decimalScale: 3
+    // },
     
 ];
 

@@ -50,12 +50,13 @@ export interface FormField {
     decimalScale?: number;
     dependsOn?: string;
     defaultValue?: string;
-  
+
 }
 
 interface DraftTransactionTableProps {
     rows: any[];
-    editingRowId: string | number | null;
+    // 🔥 FIX: Replace editingRowId with editingState
+    editingState: { rowId: string | null; transactionType: string | null };
     onAddRow: (formData?: any) => void;
     onUpdateRow: (rowIndex: number, field: string, value: any) => void;
     onRemoveRow: (rowId: string) => void;
@@ -73,9 +74,8 @@ interface DraftTransactionTableProps {
     initialFormData?: any;
     onFormDataChange?: (data: any) => void;
     getStockAvailability?: (id: string, rowId?: string) => { remaining: number; used: number; total: number } | undefined;
-    otherChargesList: {label: string;value: string;}[];
-    otherChargesData:any;
-
+    otherChargesList: { label: string; value: string; }[];
+    otherChargesData: any;
 }
 
 // const COL_WIDTHS: Record<string, string> = {
@@ -84,7 +84,7 @@ interface DraftTransactionTableProps {
 //     WASTYPE: "52px", WASPER: "30px", WASTAGE: "35px",
 //     TOUCH: "35px", PUREWT: "40px", MC: "40px", ATOUCH: "44px",
 //     DESCRIPTION: "80px",
-    
+
 
 //     WT: "60px", AWT: "60px",
 //     PURE: "60px", APURE: "60px", __actions: "60px",
@@ -128,12 +128,37 @@ function InlineSelect({
 }
 
 export default function DraftTransactionTable({
-    rows, editingRowId, onAddRow, onUpdateRow, onRemoveRow, onRowClick,
-    onCancelEdit, itemsCollection, totals, transactionTitle,
-    theme, isEditing, isIssue,
-    getAvailableWeight, onClear, transactionType, initialFormData, onFormDataChange, getStockAvailability, otherChargesList, otherChargesData
+    rows,
+    // 🔥 FIX: Use editingState instead of editingRowId
+    editingState,
+    onAddRow,
+    onUpdateRow,
+    onRemoveRow,
+    onRowClick,
+    onCancelEdit,
+    itemsCollection,
+    totals,
+    transactionTitle,
+    theme,
+    isEditing,
+    isIssue,
+    getAvailableWeight,
+    onClear,
+    transactionType,
+    initialFormData,
+    onFormDataChange,
+    getStockAvailability,
+    otherChargesList,
+    otherChargesData
 }: DraftTransactionTableProps) {
 
+    // 🔥 FIX: Get the current editing row ID and its transaction type
+    const currentEditingRowId = editingState?.rowId;
+    const currentEditingTransactionType = editingState?.transactionType;
+
+    // Check if this table should be in editing mode
+    const isThisTableEditing = currentEditingRowId !== null &&
+        currentEditingTransactionType === transactionType;
 
     // FIX: Separate state for each modal's draft row ID
     const [stoneDraftRowId, setStoneDraftRowId] = useState<string>("");
@@ -161,7 +186,7 @@ export default function DraftTransactionTable({
         totalAmount: number;
     } | null>(null);
 
-    
+
     // rowsRef so setTimeout closures always see latest rows
     const rowsRef = useRef(rows);
     useEffect(() => { rowsRef.current = rows; }, [rows]);
@@ -190,13 +215,13 @@ export default function DraftTransactionTable({
 
     const wastypecollection = { items: [{ label: "TOUCH", value: "TOUCH" }] };
     const numericFields = [
-        "PCS", "GRSWT", "STNWT",  "NETWT", "WASPER", "WASTAGE", "ATOUCH", 
+        "PCS", "GRSWT", "STNWT", "NETWT", "WASPER", "WASTAGE", "STNAMT", "ATOUCH",
         "PUREWT", "HMC", "MC", "WT", "AWT", "TOUCH", "PURE", "APURE",
     ];
 
     const orderedKeys = isIssue
         ? ["PUREID", "WT", "AWT", "TOUCH", "ATOUCH", "PURE", "APURE"]
-        : ["ITEMID", "PCS", "GRSWT", "STNWT", "NETWT", "WASTYPE", "WASPER", "WASTAGE", "TOUCH", "PUREWT", "HMC", "MC", "ATOUCH", "DESCRIPTION"];
+        : ["ITEMID", "PCS", "GRSWT", "STNWT", "NETWT", "WASTYPE", "WASPER", "WASTAGE", "TOUCH", "PUREWT", "HMC", "MC", "STNAMT", "DESCRIPTION"];
 
     const baseColumns = isIssue ? issueDataColumns : issueColumns;
     const colMap = useMemo(() => new Map(baseColumns.map(c => [c.key, c])), [baseColumns]);
@@ -229,8 +254,9 @@ export default function DraftTransactionTable({
         stoneModalOpenedRef.current = true;
         setCurrentGRSWT(grsWeight);
 
-        if (editingRowId) {
-            setStoneDraftRowId(editingRowId as string);
+        // 🔥 FIX: Use currentEditingRowId instead of editingRowId
+        if (currentEditingRowId) {
+            setStoneDraftRowId(currentEditingRowId as string);
         } else {
             setStoneDraftRowId(getStoneTempId());
         }
@@ -246,8 +272,9 @@ export default function DraftTransactionTable({
 
         let idToUse: string;
 
-        if (editingRowId) {
-            idToUse = editingRowId as string;
+        // 🔥 FIX: Use currentEditingRowId instead of editingRowId
+        if (currentEditingRowId) {
+            idToUse = currentEditingRowId as string;
             console.log("Opening misc modal for existing row:", idToUse);
 
             const allCharges = JSON.parse(localStorage.getItem("MISC_CHARGE_MASTER") || "[]");
@@ -284,7 +311,7 @@ export default function DraftTransactionTable({
         setStoneDraftRowId("");
     };
 
-    const closeOtherChargeModal = () =>{
+    const closeOtherChargeModal = () => {
         setIsMiscModalOpen(false);
         resetMiscTempId();
     }
@@ -294,7 +321,7 @@ export default function DraftTransactionTable({
             const isNum = numericFields.includes(col.key);
             const isRequired = isIssue
                 ? ["PUREID", "TOUCH", "WT"].includes(col.key)
-                : ["ITEMID", "PCS", "GRSWT", "TOUCH" ,"HMC"].includes(col.key);
+                : ["ITEMID", "PCS", "GRSWT", "TOUCH", "HMC"].includes(col.key);
 
             const base: FormField = {
                 key: col.key,
@@ -322,14 +349,13 @@ export default function DraftTransactionTable({
             if (isIssue && ["PURE", "APURE"].includes(col.key))
                 return { ...base, type: "calculated", disabled: true };
 
-            if (!isIssue && ["PCS", "GRSWT", "STNWT", "WASTYPE", "WASPER", "WASTAGE", "MC","HMC", "TOUCH", "ATOUCH", "DESCRIPTION"].includes(col.key))
+            if (!isIssue && ["PCS", "GRSWT", "STNWT", "WASTYPE", "WASPER", "WASTAGE", "MC", "HMC", "TOUCH", "STNAMT", "DESCRIPTION"].includes(col.key))
                 return { ...base, dependsOn: "ITEMID" };
+
 
             if (isIssue && ["WT", "AWT", "TOUCH", "ATOUCH"].includes(col.key))
                 return { ...base, dependsOn: "PUREID" };
 
-            // if(!isIssue && ["HMC"].includes(col.key))
-            //     return { ...base, dependsOn: "ITEMID" };
 
             return base;
         });
@@ -399,10 +425,10 @@ export default function DraftTransactionTable({
         setFormData(init);
     }, [formFields]);
 
-    // Populate form + load stones/misc when editingRowId changes
+    // 🔥 FIX: Populate form + load stones/misc when currentEditingRowId changes
     useEffect(() => {
-        if (editingRowId) {
-            const rowToEdit = rows.find(r => r.__rowId === editingRowId);
+        if (currentEditingRowId && currentEditingTransactionType === transactionType) {
+            const rowToEdit = rows.find(r => r.__rowId === currentEditingRowId);
             if (rowToEdit) {
                 const next: Record<string, any> = {};
                 formFields.forEach(f => {
@@ -416,7 +442,7 @@ export default function DraftTransactionTable({
 
                 // Load stones
                 const allStones = JSON.parse(localStorage.getItem("STONE_MASTER") || "[]");
-                const rowStones = allStones.filter((s: StoneRow) => s.draftRowId === editingRowId);
+                const rowStones = allStones.filter((s: StoneRow) => s.draftRowId === currentEditingRowId);
                 if (rowStones.length > 0) {
                     const totalStoneWeight = rowStones.reduce(
                         (sum: any, s: any) => sum + (s.stoneUnit === "c" ? s.stoneWeight / 5 : s.stoneWeight), 0
@@ -424,18 +450,18 @@ export default function DraftTransactionTable({
                     if (totalStoneWeight > 0) {
                         setFormData(prev => ({ ...prev, STNWT: totalStoneWeight.toFixed(3) }));
                     }
-                    pendingStoneData.current = { tempId: editingRowId as string, stones: rowStones, totalWeight: totalStoneWeight };
-                    setStoneDraftRowId(editingRowId as string);
+                    pendingStoneData.current = { tempId: currentEditingRowId as string, stones: rowStones, totalWeight: totalStoneWeight };
+                    setStoneDraftRowId(currentEditingRowId as string);
                 }
 
                 // Load misc charges
                 const allCharges = JSON.parse(localStorage.getItem("MISC_CHARGE_MASTER") || "[]");
-                const rowCharges = allCharges.filter((c: any) => c.draftRowId === editingRowId);
+                const rowCharges = allCharges.filter((c: any) => c.draftRowId === currentEditingRowId);
                 if (rowCharges.length > 0) {
                     const totalMiscAmount = rowCharges.reduce((sum: any, c: any) => sum + (c.amount || 0), 0);
                     setFormData(prev => ({ ...prev, HMC: totalMiscAmount.toFixed(2) }));
-                    pendingMiscData.current = { tempId: editingRowId as string, charges: rowCharges, totalAmount: totalMiscAmount };
-                    setMiscDraftRowId(editingRowId as string);
+                    pendingMiscData.current = { tempId: currentEditingRowId as string, charges: rowCharges, totalAmount: totalMiscAmount };
+                    setMiscDraftRowId(currentEditingRowId as string);
                 }
 
                 setErrors({});
@@ -451,7 +477,7 @@ export default function DraftTransactionTable({
             setStoneDraftRowId("");
             setMiscDraftRowId("");
         }
-    }, [editingRowId, rows, formFields]);
+    }, [currentEditingRowId, currentEditingTransactionType, transactionType, rows, formFields]);
 
     const handleChange = useCallback((key: string, value: any) => {
         const mirror: Record<string, string> = { WT: "AWT", TOUCH: "ATOUCH" };
@@ -460,8 +486,8 @@ export default function DraftTransactionTable({
 
         if ((key === "WT" || key === "AWT") && formData.PUREID && getAvailableWeight) {
             const newValue = Number(value) || 0;
-            const otherUsed = editingRowId
-                ? rows.filter(r => String(r.PUREID) === String(formData.PUREID) && r.__rowId !== editingRowId)
+            const otherUsed = currentEditingRowId
+                ? rows.filter(r => String(r.PUREID) === String(formData.PUREID) && r.__rowId !== currentEditingRowId)
                     .reduce((sum, r) => sum + Number(r.WT || 0), 0)
                 : rows.filter(r => String(r.PUREID) === String(formData.PUREID))
                     .reduce((sum, r) => sum + Number(r.WT || 0), 0);
@@ -517,7 +543,7 @@ export default function DraftTransactionTable({
         setFormData(next);
         setTouched(p => ({ ...p, [key]: true }));
         setErrors(p => ({ ...p, [key]: "" }));
-    }, [formData, calcNet, getAvailableWeight, getStockAvailability, editingRowId, rows]);
+    }, [formData, calcNet, getAvailableWeight, getStockAvailability, currentEditingRowId, rows]);
 
     const focusIdx = useCallback((idx: number) => {
         const f = visibleFormFields[idx];
@@ -622,8 +648,9 @@ export default function DraftTransactionTable({
                 }
             }
 
-            if (editingRowId) {
-                const rowIndex = rows.findIndex(r => r.__rowId === editingRowId);
+            // 🔥 FIX: Use currentEditingRowId instead of editingRowId
+            if (currentEditingRowId && currentEditingTransactionType === transactionType) {
+                const rowIndex = rows.findIndex(r => r.__rowId === currentEditingRowId);
                 if (rowIndex === -1) { console.error("Row not found for update"); return; }
 
                 Object.keys(submitData).forEach(key => {
@@ -690,9 +717,10 @@ export default function DraftTransactionTable({
         } finally {
             setIsSubmitting(false);
         }
-    }, [formData, calcNet, calcPure, validateForm, isIssue, onAddRow, onUpdateRow, onCancelEdit, editingRowId, rows, transactionType, miscDraftRowId, resetForm]);
+    }, [formData, calcNet, calcPure, validateForm, isIssue, onAddRow, onUpdateRow, onCancelEdit, currentEditingRowId, currentEditingTransactionType, transactionType, rows, miscDraftRowId, resetForm]);
 
-    const handleEditRow = useCallback((row: any) => {
+    const handleEditRow = useCallback((row: any, tranType: string | undefined) => {
+
         const next: Record<string, any> = {};
         formFields.forEach(f => {
             if (f.type === "number" && row[f.key] !== undefined) {
@@ -721,16 +749,20 @@ export default function DraftTransactionTable({
         setFormData(next);
         setErrors({});
         setTouched({});
-        onRowClick(row, transactionType || "");
+        // Pass transaction type here
+        onRowClick(row, tranType || "");
         pendingStoneData.current = null;
         setTimeout(() => focusIdx(0), 100);
     }, [formFields, focusIdx, onRowClick, transactionType, isIssue, getStockAvailability]);
 
+
+
     const handleDeleteRow = useCallback((row: any) => {
         if (!window.confirm("Delete this row?")) return;
         onRemoveRow(row.__rowId);
-        if (editingRowId === row.__rowId) resetForm();
-    }, [onRemoveRow, editingRowId, resetForm]);
+        // 🔥 FIX: Use currentEditingRowId instead of editingRowId
+        if (currentEditingRowId === row.__rowId) resetForm();
+    }, [onRemoveRow, currentEditingRowId, resetForm]);
 
     const getCellValue = (col: any, row: any) => {
         const val = row[col.key];
@@ -786,10 +818,10 @@ export default function DraftTransactionTable({
                     <CapitalizedInput
                         field={field.key} value={formData[field.key] || ""}
                         onChange={(_, v) => handleChange(field.key, v)}
-                        type="number" isCapitalized={false} 
-                        size="xs" 
+                        type="number" isCapitalized={false}
+                        size="xs"
                         rounded="sm"
-                        decimalScale={2} inputRef={ref} 
+                        decimalScale={2} inputRef={ref}
                         onEnter={() => moveNext(field.key)} noBorder
                     />
                     <Button
@@ -821,11 +853,18 @@ export default function DraftTransactionTable({
             return (
                 <Box position="relative" width="100%">
                     <CapitalizedInput
-                        field={field.key} value={formData[field.key] || ""}
+                        field={field.key}
+                        value={formData[field.key] || ""}
                         onChange={(_, v) => handleChange(field.key, v)}
-                        type="number" isCapitalized={false} size="xs" rounded="sm"
-                        decimalScale={field.decimalScale} disabled={shouldDisable}
-                        inputRef={ref} onEnter={() => moveNext(field.key)} noBorder
+                        type="number"
+                        isCapitalized={false}
+                        size="xs"
+                        rounded="sm"
+                        decimalScale={field.decimalScale}
+                        disabled={shouldDisable}
+                        inputRef={ref}
+                        onEnter={() => moveNext(field.key)}
+                        noBorder
                     />
                     {availableStock && (
                         <Text
@@ -860,13 +899,32 @@ export default function DraftTransactionTable({
                         inputRef={ref as any} onEnter={() => moveNext(field.key)} disabled={shouldDisable}
                     />
                 );
+            case "number":
+                return (
+                    <CapitalizedInput
+                        field={field.key}
+                        value={formData[field.key] || ""}
+                        onChange={(_, v) => handleChange(field.key, v)}
+                        type="text"
+                        isCapitalized
+                        size="sm"
+                        rounded="sm"
+                        inputRef={ref} onEnter={() => moveNext(field.key)}
+                        disabled={shouldDisable} noBorder
+                    />
+                );
             case "capitalized":
                 return (
                     <CapitalizedInput
-                        field={field.key} value={formData[field.key] || ""}
+                        field={field.key}
+                        value={formData[field.key] || ""}
                         onChange={(_, v) => handleChange(field.key, v)}
-                        type="text" isCapitalized size="sm" rounded="sm"
-                        inputRef={ref} onEnter={() => moveNext(field.key)} disabled={shouldDisable} noBorder
+                        type="text"
+                        isCapitalized
+                        size="sm"
+                        rounded="sm"
+                        inputRef={ref} onEnter={() => moveNext(field.key)}
+                        disabled={shouldDisable} noBorder
                     />
                 );
             default:
@@ -877,6 +935,7 @@ export default function DraftTransactionTable({
                         type="number" isCapitalized={false} size="sm" rounded="sm"
                         decimalScale={field.decimalScale} disabled={shouldDisable}
                         inputRef={ref} onEnter={() => moveNext(field.key)} noBorder
+
                     />
                 );
         }
@@ -894,9 +953,8 @@ export default function DraftTransactionTable({
                 : "#F7FAFC";
 
     const getCellStyle = (col: any, extra?: React.CSSProperties): React.CSSProperties => ({
-    
 
-        
+
         width: getWidth(col.width),
         minWidth: getWidth(col.width),
         maxWidth: getWidth(col.width),
@@ -921,7 +979,8 @@ export default function DraftTransactionTable({
                 <HStack gap={2}>
                     <Text fontSize="xs" fontWeight="semibold" color={theme?.colors?.primaryText || "#1a202c"}>
                         {transactionTitle || "Transaction"} Items
-                        {editingRowId && (
+                        {/* 🔥 FIX: Use isThisTableEditing to show editing indicator */}
+                        {isThisTableEditing && (
                             <Text as="span" color="blue.500" ml={1} fontSize="2xs"> ✎ Editing</Text>
                         )}
                     </Text>
@@ -937,31 +996,33 @@ export default function DraftTransactionTable({
                 )}
             </Flex>
 
-       
-                <TransactionTable
-                    theme={theme}
-                    tableCols={tableCols}
-                    formFields={formFields}
-                    rows={rows}
-                    formData={formData}
-                    errors={errors}
-                    touched={touched}
-                    localEditId={editingRowId as string}
-                    isSubmitting={isSubmitting}
-                    totals={totals}
-                    stripedBg={stripedBg}
-                    allDisplayCols={allDisplayCols}
-                    isIssue={isIssue}
-                    resetForm={resetForm}
-                    handleSubmit={handleSubmit}
-                    handleEditRow={handleEditRow}
-                    handleDeleteRow={handleDeleteRow}
-                    renderFormCell={renderFormCell}
-                    getCellValue={getCellValue}
-                    formatTotal={formatTotal}
-                    getCellStyle={getCellStyle}
-                />
-        
+
+            <TransactionTable
+                theme={theme}
+                tableCols={tableCols}
+                formFields={formFields}
+                rows={rows}
+                formData={formData}
+                errors={errors}
+                touched={touched}
+                // 🔥 FIX: Pass currentEditingRowId to TransactionTable
+                localEditId={isThisTableEditing ? currentEditingRowId as string : null}
+                isSubmitting={isSubmitting}
+                totals={totals}
+                stripedBg={stripedBg}
+                allDisplayCols={allDisplayCols}
+                isIssue={isIssue}
+                resetForm={resetForm}
+                handleSubmit={handleSubmit}
+                handleEditRow={handleEditRow}
+                handleDeleteRow={handleDeleteRow}
+                renderFormCell={renderFormCell}
+                getCellValue={getCellValue}
+                formatTotal={formatTotal}
+                getCellStyle={getCellStyle}
+                transactionType={transactionType}
+            />
+
 
             {/* MISC MODAL — uses miscDraftRowId only, never touches stoneDraftRowId */}
             {isMiscModalOpen && (
@@ -977,7 +1038,7 @@ export default function DraftTransactionTable({
                 >
                     <Box
                         bg={theme?.colors?.formColor || "white"} borderRadius="lg"
-                        maxW="600px" width="100%" maxH="90vh" overflow="auto"
+                        maxW="500px" width="100%" maxH="90vh" overflow="auto"
                         onClick={e => e.stopPropagation()}
                     >
                         <OtherChargesWindow
@@ -1041,7 +1102,7 @@ export default function DraftTransactionTable({
                     >
                         <StoneEnterMaster
                             grsWeight={currentGRSWT}
-                            onClose={ closeStoneModal}
+                            onClose={closeStoneModal}
                             draftRowId={stoneDraftRowId}
                             onSave={(stoneRows) => {
                                 if (!stoneDraftRowId) return;
@@ -1051,18 +1112,21 @@ export default function DraftTransactionTable({
                                 const updatedStones = stoneRows.map(s => ({ ...s, draftRowId: stoneDraftRowId }));
                                 localStorage.setItem("STONE_MASTER", JSON.stringify([...filtered, ...updatedStones]));
 
-                                const total = updatedStones.reduce(
-                                    (sum, r) => sum + (r.stoneUnit === "c" ? r.stoneWeight / 5 : r.stoneWeight), 0
+                                const stoneWtTotal = updatedStones.reduce(
+                                    (sum, r) => sum + r.stoneWeight, 0
                                 );
-                                handleChange("STNWT", total.toFixed(3));
+
+                                handleChange("STNWT", stoneWtTotal.toFixed(3));
 
                                 if (stoneDraftRowId.startsWith("stone-form-")) {
                                     pendingStoneData.current = {
                                         tempId: stoneDraftRowId,
                                         stones: updatedStones,
-                                        totalWeight: total
+                                        totalWeight: stoneWtTotal
                                     };
                                 }
+                                const stnAmtTotal = updatedStones.reduce((sum, r) => sum + r.stoneAmount, 0)
+                                handleChange("STNAMT", (stnAmtTotal).toFixed(2));
 
                                 setIsStoneModalOpen(false);
                                 // Only clear stone ID — misc is completely untouched
@@ -1071,7 +1135,7 @@ export default function DraftTransactionTable({
                             }}
                             stoneItems={stoneItemsCollection}
                             subStoneItems={stoneItemsCollection}
-                            
+
                         />
                     </Box>
                 </Box>

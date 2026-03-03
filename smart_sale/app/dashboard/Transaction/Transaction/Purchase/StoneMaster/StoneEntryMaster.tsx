@@ -521,7 +521,7 @@ export default function StoneEnterMaster({
 
     const totals = {
         stonePcs: rows.reduce((sum, r) => sum + r.stonePcs, 0),
-        stoneWeight: rows.reduce((sum, r) => sum + (r.stoneUnit === "c" ? r.stoneWeight / 5 : r.stoneWeight), 0),
+        stoneWeight: rows.reduce((sum, r) => sum + (r.stoneWeight), 0),
         stoneAmount: rows.reduce((sum, r) => sum + r.stoneAmount, 0),
     };
 

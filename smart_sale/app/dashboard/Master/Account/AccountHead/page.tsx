@@ -102,8 +102,8 @@ function AccountHeadMaster() {
         // PAN: "",
         // WEBSITE: "",
         // AADHARNO: "",
-        // OPENING_CASH: "",
-        // OPENING_PURE: "",
+        OPENING_CASH: "",
+        OPENING_PURE: "",
         // OPENING_WEIGHT: "",
         ACTIVE: "Y",
     });
@@ -161,8 +161,8 @@ function AccountHeadMaster() {
                 // EMAILID: "",
                 // GSTNO: "",
                 // ACTIVE: "Y",
-                // OPENING_CASH: "",
-                // OPENING_PURE: "",
+                OPENING_CASH: "",
+                OPENING_PURE: "",
                 // OPENING_WEIGHT: "",
                 // PAN: "",
                 // WEBSITE: "",
@@ -221,8 +221,8 @@ function AccountHeadMaster() {
             // GSTNO: account.GSTNO ?? "",
             ACTIVE: account.ACTIVE ?? "Y",
             STATEID: String(account.STATEID) ?? "",
-            // OPENING_CASH: account.OPENING_CASH ?? "",
-            // OPENING_PURE: account.OPENING_PURE ?? "",
+            OPENING_CASH: account.OPENING_CASH ?? "",
+            OPENING_PURE: account.OPENING_PURE ?? "",
             // OPENING_WEIGHT: account.OPENING_WEIGHT ?? "",
             // PAN: account.PAN ?? "",
             // WEBSITE: account.WEBSITE ?? "",
@@ -281,8 +281,8 @@ function AccountHeadMaster() {
             // PAN: "",
             // WEBSITE: "",
             // AADHARNO: "",
-            // OPENING_CASH: "",
-            // OPENING_PURE: "",
+            OPENING_CASH: "",
+            OPENING_PURE: "",
             // OPENING_WEIGHT: "",
             ACTIVE: "Y",
         });
@@ -418,6 +418,10 @@ function AccountHeadMaster() {
         { key: "ACNAME", label: "Name" },
         { key: "ACTYPE", label: "Account Type" },
         { key: "STATE", label: "State" },
+        { key: "OPENING_PURE", label: "Opening Pure" },
+        { key: "OPENING_CASH", label: "Opening Cash" },
+      
+        // { key: "OPENING_WEIGHT", label: "Opening Weight" },
         { key: "ACTIVE", label: "Active" },
         { key: "actions", label: "Actions" },
     ];
@@ -607,7 +611,7 @@ function AccountHeadMaster() {
                                     </Box> */}
 
                                     {/* OPENING PURE */}
-                                    {/* <Box display="flex" alignItems="center" gap={2}>
+                                    <Box display="flex" alignItems="center" gap={2}>
                                         <Box minW="100px" fontSize="2xs">OPENING PURE :</Box>
                                         <CapitalizedInput
                                             field="OPENING_PURE"
@@ -617,11 +621,12 @@ function AccountHeadMaster() {
                                             type="number"
                                             max={999}
                                             allowDecimal
+                                            allowNegative
                                         />
-                                    </Box> */}
+                                    </Box>
 
                                     {/* OPENING CASH */}
-                                    {/* <Box display="flex" alignItems="center" gap={2}>
+                                    <Box display="flex" alignItems="center" gap={2}>
                                         <Box minW="100px" fontSize="2xs">OPENING CASH :</Box>
                                         <CapitalizedInput
                                             field="OPENING_CASH"
@@ -633,7 +638,7 @@ function AccountHeadMaster() {
                                             decimalScale={2}
 
                                         />
-                                    </Box> */}
+                                    </Box>
 
                                     {/* AADHAR NO*/}
                                     {/* <Box display="flex" alignItems="center" gap={2}>
@@ -780,6 +785,10 @@ function AccountHeadMaster() {
                                     <Table.Cell>{account.ACNAME}</Table.Cell>
                                     <Table.Cell>{account.ACTYPE}</Table.Cell>
                                     <Table.Cell>{account.STATE}</Table.Cell>
+                                    <Table.Cell textAlign="center">{account.OPENING_PURE}</Table.Cell>
+                                    <Table.Cell textAlign="center">{account.OPENING_CASH}</Table.Cell>
+                            
+                                    {/* <Table.Cell textAlign="center">{account.OPENING_WEIGHT}</Table.Cell> */}
                                     <Table.Cell textAlign="center">{account.ACTIVE}</Table.Cell>
                                     <Table.Cell>
                                         <Box display="flex" justifyContent="center">

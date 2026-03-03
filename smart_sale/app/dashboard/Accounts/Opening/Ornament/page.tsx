@@ -50,18 +50,59 @@ import { useRouter } from "next/navigation";
 import { FaFileExcel ,FaPrint } from "react-icons/fa";
 import { SelectCombobox } from "@/components/ui/selectComboBox";
 import SearchBar from "@/component/search/SearchBar";
+import { RadioButton } from "@/components/RadioButton";
+import { stockTypes } from "@/data/stock/StockTypesData";
+import { transactionTypes } from "@/data/stock/TransactionTypeData";
+
+import { useAllAccountHead } from "@/hooks/accountHead/useAccountHead";
+import { useAllMetals } from "@/hooks/metal/useMetals";
+
 
 function OrnamentMaster() {
+    /* -------------------- FORM STATE -------------------- */
+    const [form, setForm] = useState<OrnamentFormData>({
+        stockType: "CY",
+        accode: "",
+        tranType: "IS",
+        metalId:"G",
+        itemId: "",   // ✅ NOT null
+        pcs: "",
+        grswt: "",
+        netwt: "",
+        touch: "",
+        purewt: "",
+        stnwt: "",
+        openCash: "",
+        stoneCash: "",
+        // actualtouch: "",
+        
+
+    });
+    const [higlightedId, setHiglightedId] = useState<Number>();
+    const [itemCollection, setItemCollection] = useState<{ label: string, value: string }[]>([])
+
+
+    const [editId, setEditId] = useState<number | null>(null);
+
+
     const { theme } = useTheme();
     const router = useRouter();
     type OrnamentErrors = Partial<Record<keyof typeof form, string>>;
 
     const [errors, setErrors] = React.useState<OrnamentErrors>({});
-
+    const accountType = form.stockType?.trim().toUpperCase() || undefined;
     /* -------------------- DATA -------------------- */
     const { data: itemsData } = useItems();
     const { setData ,setColumns ,setShowSno ,title } = usePrint();
+   
+    console.log(accountType,'accountType')
+    
+    const { data: allAccounts, refetch: accountRefetch } = useAllAccountHead(accountType);
+    const { data: metalData } = useAllMetals();
 
+  
+
+    console.log(metalData,'metalData')
     const [filter ,setFilter] = useState<string>('');
 
     const { data: ornamentList, isLoading } = useOrnamentData(filter);
@@ -70,35 +111,39 @@ function OrnamentMaster() {
     const ornaments = Array.isArray(ornamentList?.data)
         ? ornamentList.data
         : [];
+
     const items: ItemMast[] = useMemo(() => {
         return (itemsData?.items ?? []).map(normalizeItem);
     }, [itemsData?.items]);
     
-    /* -------------------- FORM STATE -------------------- */
-    const [form, setForm] = useState<OrnamentFormData>({
-        itemId:  "",   // ✅ NOT null
-        pcs: "",
-        grswt: "",
-        netwt: "",
-        touch: "",
-        pure: "",
-        stnwt: "",
-        openCash:"",
-        stoneCash:"",
-        actualtouch:"",
-    });
-    const [higlightedId, setHiglightedId] =useState<Number>();
-    const [itemCollection ,setItemCollection] = useState<{label:string , value:string}[]>([])
+    
+       const allAccountsList = useMemo(() => {
+            const accounts = Array.isArray(allAccounts?.data?.acheads) ? allAccounts.data.acheads : [];
+            return accounts.map((acc: any) => ({
+                label: acc.ACNAME,
+                value: String(acc.ACCODE),
+            }));
+        }, [allAccounts]);
 
+    const allMetalList = useMemo(() => {
+        const metalList = Array.isArray(metalData) ? metalData : [];
+        return metalList.map((acc: any) => ({
+            label: acc.metalName,
+            value: acc.metalId,
+        }));
+    }, [metalData]);
 
-    const [editId, setEditId] = useState<number | null>(null);
 
     /* -------------------- EDIT FETCH -------------------- */
     const { data: editResponse } = useOrnamentDataById(editId!);
 
+    console.log(editResponse,'editResponse')
+
     /* -------------------- MUTATIONS -------------------- */
     const { mutate: createOrnament, isPending } = useCreateOrnament();
     const { mutate: updateOrnament, isPending: isUpdating } = useUpdateOrnament();
+
+
 
 
     /* -------------------- EFFECT: LOAD EDIT DATA -------------------- */
@@ -109,16 +154,20 @@ function OrnamentMaster() {
     
 
         setForm({
+            stockType: o.stockType ?? "CY",
+            accode: o.accode ? String(o.accode) : "",
+            tranType: o.tranType ?? "IS",
+            metalId:o.metalId ?? "G",
             itemId:o.itemId ? String(o.itemId) : "",
             pcs: o.pcs ? String(o.pcs) : "",
             grswt: o.grswt? String(o.grswt) : "",
             netwt: o.netwt ? String(o.netwt) : "",
             touch: o.touch ? String(o.touch) : "",
-            pure: o.pure ? String(o.pure) : "",
+            purewt: o.purewt ? String(o.pure) : "",
             stnwt: o.stnwt ? String(o.stnwt) : "",
             openCash: o.openCash ?  String(o.openCash) : "",
             stoneCash: o.stoneCash ?  String(o.stoneCash) : "",
-            actualtouch: o.actualtouch ? String(o.actualtouch) :"",
+            // actualtouch: o.actualtouch ? String(o.actualtouch) :"",
         });
     }, [editResponse]);
 
@@ -153,37 +202,47 @@ useEffect(() => {
         actualtouch: String(touch),
     }));
 }, [form.grswt, form.stnwt, form.touch]);
+
+
     /* -------------------- HELPERS -------------------- */
    const handleChange = (field: keyof OrnamentFormData, value: any) => {
            setForm((prev) => ({ ...prev, [field]: value }));
        };
 
     const toPayload = (form: OrnamentFormData): OrnamentPayload => ({
+        stockType: form.stockType,
+        accode: Number(form.accode),
+        tranType: form.tranType,
+        metalId: form.metalId,
         itemId: Number(form.itemId),
         pcs: Number(form.pcs),
         grswt: Number(form.grswt),
         netwt: Number(form.netwt),
         touch: Number(form.touch),
-        pure: Number(form.pure),
+        purewt: Number(form.purewt),
         stnwt: Number(form.stnwt),
         openCash: Number(form.openCash),
         stoneCash: Number(form.stoneCash),
-        actualtouch: Number(form.actualtouch),
+        // actualtouch: Number(form.actualtouch),
     });
 
     const resetForm = () => {
         setEditId(null);
         setForm({
+            stockType: "CY",
+            accode: "",
+            tranType: "IS",
+            metalId:"G",
             itemId: "",
             pcs: "",
             grswt:"",
             netwt: "",
             touch: "",
-            pure: "",
+            purewt: "",
             stnwt: "",
             openCash: "",
             stoneCash: "",
-            actualtouch:"",
+            // actualtouch:"",
         });
     };
 
@@ -199,19 +258,41 @@ useEffect(() => {
     }, [higlightedId]);
 
     /* -------------------- VALIDATION -------------------- */
-    const validateForm = () => {
-        if (!form.itemId) return toastError("Item is required");
-        if (!form.pcs || Number(form.pcs) <= 0) return toastError("Pieces must be greater than 0");
-        if (!form.grswt || Number(form.grswt) <= 0) return toastError("Gross weight must be greater than 0");
-        if (!form.netwt || Number(form.netwt) <= 0) return toastError("Net weight must be greater than 0");
-        if (form.pure !== undefined && Number(form.pure) < 0) return toastError("Pure cannot be negative");
-        if (form.touch !== undefined && Number(form.touch) < 0) return toastError("Touch cannot be negative");
-        if (form.actualtouch !== undefined && Number(form.actualtouch) < 0) return toastError("Actual touch cannot be negative");
-        if (form.stnwt !== undefined && Number(form.stnwt) < 0) return toastError("Stone weight cannot be negative");
-        if (form.stoneCash !== undefined && Number(form.stoneCash) < 0) return toastError("Stone cash cannot be negative");
-        if (form.openCash !== undefined && Number(form.openCash) < 0) return toastError("Open cash cannot be negative");
+    const validateForm = (): boolean => {
+        // Define validation rules
+        const rules: {
+            field: keyof typeof form;
+            condition: () => boolean;
+            message: string
+        }[] = [
+                { field: "itemId", condition: () => !!form.itemId, message: "Item is required" },
+                { field: "pcs", condition: () => !!form.pcs && Number(form.pcs) > 0, message: "Pieces must be greater than 0" },
+                { field: "grswt", condition: () => !!form.grswt && Number(form.grswt) > 0, message: "Gross weight must be greater than 0" },
+                { field: "netwt", condition: () => !!form.netwt && Number(form.netwt) > 0, message: "Net weight must be greater than 0" },
+                { field: "purewt", condition: () => form.purewt === undefined || Number(form.purewt) >= 0, message: "Pure weight cannot be negative" },
+                { field: "touch", condition: () => form.touch === undefined || Number(form.touch) >= 0, message: "Touch cannot be negative" },
+                { field: "metalId", condition: () => !!form.metalId, message: "Metal is required" },
+                {
+                    field: "accode",
+                    condition: () => !(["CR", "PR"].includes(form.stockType) && !form.accode),
+                    message: "Account is required for CR or PR stock types"
+                },
+                { field: "stnwt", condition: () => form.stnwt === undefined || Number(form.stnwt) >= 0, message: "Stone weight cannot be negative" },
+                { field: "stoneCash", condition: () => form.stoneCash === undefined || Number(form.stoneCash) >= 0, message: "Stone cash cannot be negative" },
+                { field: "openCash", condition: () => form.openCash === undefined || Number(form.openCash) >= 0, message: "Open cash cannot be negative" },
+                // Uncomment if actual touch validation is needed
+                // { field: "actualtouch", condition: () => form.actualtouch === undefined || Number(form.actualtouch) >= 0, message: "Actual touch cannot be negative" },
+            ];
 
-        return true; // all valid
+        // Run through rules
+        for (const rule of rules) {
+            if (!rule.condition()) {
+                toastError(rule.message);
+                return false;
+            }
+        }
+
+        return true;
     };
     /* -------------------- SAVE -------------------- */
     const handleSave = () => {
@@ -239,9 +320,9 @@ useEffect(() => {
 
     /* -------------------- EDIT -------------------- */
     const handleEdit = (ornament: any) => {
-       
+       console.log(ornament, 'ornament')
 
-        setEditId(ornament.sno); // ✅ IMPORTANT: SNO
+        setEditId(ornament.ornamentId); // ✅ IMPORTANT: SNO
         ScrollToTop();
         toastLoaded("Ornament");
     };
@@ -261,6 +342,8 @@ useEffect(() => {
         {key:'action' , label:'Actions' , align: 'center' as const},
     ]
     
+
+    console.log(accountType, form.stockType,'accountType')
 
     /*----------Print ---------- */
     const handleExport = (option:string)=>{
@@ -303,11 +386,62 @@ useEffect(() => {
 
                         <Fieldset.Root size="sm" width="100%">
                             <Fieldset.Content>
-                                <Grid  gap={2}>
-
-                                    {/* ITEM NAME */}
+                                <Grid  gap={3}>
+                                      {/* ITEM NAME */}
                                     <Box display="flex" alignItems="center" gap={2}>
-                                        <Box minW="80px" fontSize="2xs">ITEM NAME :</Box>
+                                        <Box minW="100px" fontSize="2xs">STOCK TYPE :</Box>
+                                        <RadioButton 
+                                            collection={stockTypes}
+                                            value={form.stockType}
+                                            onChange={(value) => handleChange("stockType", value)}
+                                            defaultValue="CY"
+                                            size="xs"
+
+                                        />
+                                    </Box>
+                                    {/* Company */}
+                                                               <Box>
+                                                              
+                                                                       <Box display="flex" alignItems="center" gap={2}>
+                                                                           <Box minW="100px" fontSize="2xs">
+                                                                               PARTY NAME :
+                                                                           </Box>
+                                                                           <SelectCombobox
+                                                                               value={form.accode ? String(form.accode) : ""}
+                                                                               onChange={(val) => handleChange("accode", val)}
+                                                                               items={allAccountsList}
+                                                                               rounded="full"
+                                                                               disable={!form.stockType || String(form.stockType) == "CY" }
+                                                                               placeholder={!form.stockType ? "Select Company Type First" : `select ${form.stockType}`}
+                                                                           />
+                                                                       </Box>
+                                                                      
+                                                               </Box>
+                                    <Box display="flex" alignItems="center" gap={2}>
+                                        <Box minW="100px" fontSize="2xs">TRAN TYPE :</Box>
+                                        <RadioButton
+                                            collection={transactionTypes}
+                                            value={form.tranType}
+                                            onChange={(value) => handleChange("tranType", value)}
+                                            defaultValue="IS"
+                                            size="xs"
+                                        />
+                                    </Box>
+                                   
+                                    {/* METAL NAME */}
+                                    <Box display="flex" alignItems="center" gap={2}>
+                                        <Box minW="100px" fontSize="2xs">METAL TYPE :</Box>
+                                        <SelectCombobox
+                                            items={allMetalList}
+                                            value={form.metalId}
+                                            onChange={(value) => handleChange("metalId", value)}
+                                            placeholder="select metal"
+
+                                        />
+                                    </Box>
+                                    {/* METAL NAME */}
+                                    <Box display="flex" alignItems="center" gap={2}>
+                                        <Box minW="100px" fontSize="2xs">ITEM NAME :</Box>
                                         <SelectCombobox 
                                              items={itemCollection}
                                              value={form.itemId}
@@ -319,7 +453,7 @@ useEffect(() => {
 
                                     {/* PIECES */}
                                     <Box display="flex" alignItems="center" gap={2}>
-                                        <Box minW="80px" fontSize="2xs">PIECES :</Box>
+                                        <Box minW="100px" fontSize="2xs">PIECES :</Box>
                                         <CapitalizedInput
                                             field="pcs"
                                             value={form.pcs}
@@ -331,7 +465,7 @@ useEffect(() => {
 
                                     {/* GROSS WT */}
                                     <Box display="flex" alignItems="center" gap={2}>
-                                        <Box minW="80px" fontSize="2xs">GROSS WT :</Box>
+                                        <Box minW="100px" fontSize="2xs">GROSS WT :</Box>
                                         <CapitalizedInput
                                             field="grswt"
                                             value={form.grswt}
@@ -345,7 +479,7 @@ useEffect(() => {
 
                                     {/* STONE WT */}
                                     <Box display="flex" alignItems="center" gap={2}>
-                                        <Box minW="80px" fontSize="2xs">STONE WT :</Box>
+                                        <Box minW="100px" fontSize="2xs">STONE WT :</Box>
                                         <CapitalizedInput
                                             field="stnwt"
                                             value={form.stnwt}
@@ -357,7 +491,7 @@ useEffect(() => {
 
                                     {/* NET WT */}
                                     <Box display="flex" alignItems="center" gap={2}>
-                                        <Box minW="80px" fontSize="2xs">NET WT :</Box>
+                                        <Box minW="100px" fontSize="2xs">NET WT :</Box>
                                         <CapitalizedInput
                                             field="netwt"
                                             value={form.netwt}
@@ -370,7 +504,7 @@ useEffect(() => {
 
                                     {/* TOUCH */}
                                     <Box display="flex" alignItems="center" gap={2}>
-                                        <Box minW="80px" fontSize="2xs">TOUCH :</Box>
+                                        <Box minW="100px" fontSize="2xs">TOUCH :</Box>
                                         <CapitalizedInput
                                             field="touch"
                                             value={form.touch}
@@ -381,10 +515,10 @@ useEffect(() => {
                                     </Box>
                                     {/* PURE */}
                                     <Box display="flex" alignItems="center" gap={2}>
-                                        <Box minW="80px" fontSize="2xs">PURE :</Box>
+                                        <Box minW="100px" fontSize="2xs">PURE :</Box>
                                         <CapitalizedInput
                                             field="pure"
-                                            value={form.pure}
+                                            value={form.purewt}
                                             onChange={handleChange}
                                             type="number"
                                             size="2xs"
@@ -394,7 +528,7 @@ useEffect(() => {
 
                                     {/* STONE CASH */}
                                     <Box display="flex" alignItems="center" gap={2}>
-                                        <Box minW="80px" fontSize="2xs">STONE CASH :</Box>
+                                        <Box minW="100px" fontSize="2xs">STONE CASH :</Box>
                                         <CapitalizedInput
                                             field="stoneCash"
                                             value={form.stoneCash}
@@ -406,7 +540,7 @@ useEffect(() => {
 
                                     {/* OPEN CASH */}
                                     {/* <Box display="flex" alignItems="center" gap={2}>
-                                        <Box minW="80px" fontSize="2xs">OPEN CASH :</Box>
+                                        <Box minW="100px" fontSize="2xs">OPEN CASH :</Box>
                                         <CapitalizedInput
                                             field="openCash"
                                             value={form.openCash}
@@ -418,8 +552,8 @@ useEffect(() => {
 
 
                                     {/* ACTUAL TOUCH */}
-                                    <Box display="flex" alignItems="center" gap={2}>
-                                        <Box minW="80px" fontSize="2xs">ACTUAL TOUCH :</Box>
+                                    {/* <Box display="flex" alignItems="center" gap={2}>
+                                        <Box minW="100px" fontSize="2xs">ACTUAL TOUCH :</Box>
                                         <CapitalizedInput
                                             field="actualtouch"
                                             value={form.actualtouch}
@@ -428,7 +562,7 @@ useEffect(() => {
                                             size="2xs"
 
                                         />
-                                    </Box>
+                                    </Box> */}
 
                                 </Grid>
 
@@ -521,7 +655,7 @@ useEffect(() => {
                                                 <Table.Cell textAlign='end'>{ornament.stnwt}</Table.Cell>
                                                 <Table.Cell textAlign='end'>{ornament.netwt}</Table.Cell>
                                                 <Table.Cell textAlign='end'>{ornament.touch}</Table.Cell>
-                                                <Table.Cell textAlign='end'>{ornament.pure}</Table.Cell>
+                                                <Table.Cell textAlign='end'>{ornament.purewt}</Table.Cell>
                                                 <Table.Cell textAlign='end'>{ornament.stoneCash}</Table.Cell>
                                                 <Table.Cell>
                                                 <Box display='flex' justifyContent='center'>

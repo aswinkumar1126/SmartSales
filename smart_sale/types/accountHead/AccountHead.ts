@@ -20,9 +20,9 @@ export interface AccountHead{
     // WEBSITE?:string;
     // GSTNO?:string;
 
-    // OPENING_CASH?:string;
-    // OPENING_WEIGHT?:string;
-    // OPENING_PURE?:string;
+    OPENING_CASH?:string;
+    OPENING_WEIGHT?:string;
+    OPENING_PURE?:string;
     // PAN?:string;
     // AADHARNO?:string;
 

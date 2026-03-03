@@ -44,6 +44,7 @@ import { useActiveOtherCharges } from "@/hooks/otherCharges/useOtherCharges";
 // Types & Constants
 import { TransactionType, UpdateTransactionPayload, TransactionKey, CreateTransaction, TransactionItems, TRANSACTION_KEY_MAP } from "@/types/transcation/Transaction";
 import { TRANSACTIONTYPES } from "@/data/Transaction/TransactionType";
+import { useOrnamentData } from "@/hooks/ornament/useOrnamentData";
 
 
 
@@ -83,7 +84,7 @@ export default function PurchasePage() {
     const [metalId, setMetalId] = useState<string | undefined>();
 
     const [selectedName, setSelectedName] = useState<string | undefined>();
-    const [itemsStockList, setItemsStockList] = useState<{ label: string, value: string }[]>([]);
+    // const [itemsStockList, setItemsStockList] = useState<{ label: string, value: string }[]>([]);
 
     const TRANSACTIONTYPES_ORDER = ["PU", "PR", "ISP", "REC"];
 
@@ -97,6 +98,7 @@ export default function PurchasePage() {
         rowId: string | null;
         transactionType: string | null;
     }>({ rowId: null, transactionType: null });
+
 
 
 
@@ -130,7 +132,7 @@ export default function PurchasePage() {
     // Draft rows (local storage backed)
     const [draftRows, setDraftRows] = useState<any[]>([]);
 
-    const [editingRowId, setEditingRowId] = useState<string | number | null>(null);
+    // const [editingRowId, setEditingRowId] = useState<string | number | null>(null);
 
     // History state
 
@@ -181,7 +183,10 @@ export default function PurchasePage() {
 
 
 
-    const { data: pureStockList = [], refetch: stockRefetch } = usePureGoldData(filter,cleanedFilters);
+    const { data: pureStockList = [], refetch: goldStockRefetch } = usePureGoldData(filter,cleanedFilters);
+    const {data : itemsStock ,refetch: itemStockRefetch  } = useOrnamentData(filter);
+
+
 
     const { data: allPureGoldNames } = usePureGoldNames();
 
@@ -211,12 +216,15 @@ export default function PurchasePage() {
     /* ================================
        Selected Collection For Stock List
     ================================ */
+    const itemsStockList = itemsStock?.data || [] ;
 
     const selectedStockData = useMemo(() => {
         return showStock === "PURE"
             ? pureStockList
             : itemsStockList;
     }, [showStock, pureStockList, itemsStockList]);
+
+    console.log(selectedStockData, 'selectedStockData')
 
     /* ================================
        Customer Data
@@ -319,6 +327,8 @@ export default function PurchasePage() {
     const resetDraftRowTempId = () => {
         draftRowTempId.current = null;
     };
+
+    console.log(selectedTransactionTypes,'selectedTransactionTypes')
 
 
     /* ================================
@@ -465,7 +475,8 @@ export default function PurchasePage() {
 
         // 2️⃣ Add to draft rows state
         setDraftRows(prev => [...prev, newRow]);
-        setEditingRowId(rowId);
+
+        // setEditingRowId(rowId);
 
         // 3️⃣ For purchase types, check if there are stones from a temp ID
         if (!isIssueType(transactionType)) {
@@ -489,7 +500,8 @@ export default function PurchasePage() {
     };
     const handleClearRowsForType = (transactionType: TransactionType) => {
         setDraftRows(prev => prev.filter(row => row.TRANSACTION_TYPE !== transactionType.value));
-        setEditingRowId(null);
+        setEditingState({ rowId: null, transactionType: null })
+        // setEditingRowId(null);
         resetDraftRowTempId(); // Reset temp ID when clearing
     };
 
@@ -716,28 +728,28 @@ export default function PurchasePage() {
 
 
     const handleRowClick = (row: any, clickedTransactionType: string) => {
+        console.log('Row clicked:', row, 'Type:', clickedTransactionType);
         setEditingState({
             rowId: row.__rowId,
             transactionType: clickedTransactionType
         });
-        setEditingRowId(row.__rowId);
+        // setEditingRowId(row.__rowId);
+    
     };
     const handleCancelEdit = useCallback(() => {
-        console.log('Cancelling edit, editingRowId:', editingRowId);
+        console.log('Cancelling edit, editingState:', editingState);
 
-        // If we're canceling while using a temp ID, remove the temp row
-        if (editingRowId && editingRowId.toString().startsWith('draft-form-')) {
-            setDraftRows(prev => prev.filter(row => row.__rowId !== editingRowId));
+        // Remove temp row ONLY for the current transaction type
+        if (editingState.rowId?.toString().startsWith('draft-form-') && editingState.transactionType) {
+            setDraftRows(prev => prev.filter(
+                row => !(row.__rowId === editingState.rowId && row.TRANSACTION_TYPE === editingState.transactionType)
+            ));
         }
 
         // Clear editing state
-        setEditingRowId(null);
         setEditingState({ rowId: null, transactionType: null });
         resetDraftRowTempId();
-
-        // Also clear any initial form data
-        // setInitialFormData(null);
-    }, [editingRowId]);
+    }, [editingState]);
 
     const handleEditTransaction = useCallback((transactionData: any, sno: string) => {
         console.log(transactionData, sno, 'transactionData');
@@ -947,7 +959,7 @@ export default function PurchasePage() {
             setDraftRows(newDraftRows);
 
             if (newDraftRows.length > 0) {
-                setEditingRowId(newDraftRows[0].__rowId);
+                setEditingState(isIssue(tranType) , newDraftRows[0].__rowId);
             }
 
             // Show appropriate message
@@ -1070,10 +1082,14 @@ export default function PurchasePage() {
         // 1️⃣ Determine if this is issue-type stock
         const issueStock = isIssueStock(stockRow);
 
+        console.log(stockRow, 'stockRow');
+
         // 2️⃣ Pick target type deterministically
         const targetType = issueStock
             ? TRANSACTIONTYPES.find(t => t.key === "issue")
             : TRANSACTIONTYPES.find(t => t.key === "purchase_return");
+
+        console.log(targetType, 'targetType');
 
         // 2a️⃣ Check if transaction type exists
         if (!targetType) {
@@ -1083,9 +1099,10 @@ export default function PurchasePage() {
                 type: "warning",
             });
             return;
-
         }
-        console.log(targetType,'targetType')
+
+        console.log(targetType, 'targetType');
+
         // 2b️⃣ Check if transaction type is open
         if (!selectedTransactionTypes.some(t => t.key === targetType.key)) {
             toaster.create({
@@ -1096,17 +1113,9 @@ export default function PurchasePage() {
             return;
         }
 
-        if (!targetType) {
-            toaster.create({
-                title: "Transaction Type Missing",
-                description: "No suitable transaction type found for this stock.",
-                type: "warning",
-            });
-            return;
-        }
-
         const isIssue = issueStock;
         const pureId = stockRow.PUREID ?? stockRow.pureId;
+        const itemId = stockRow.ITEMID ?? stockRow.itemId;
 
         // 3️⃣ Get the REMAINING/AVAILABLE weight, not the total
         let availableWeight = 0;
@@ -1150,6 +1159,11 @@ export default function PurchasePage() {
         // 4️⃣ Create a TEMPORARY row with the AVAILABLE weight
         const rowId = `temp-${targetType.value}-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
 
+        // Calculate NETWT for item stock (Gross Weight - Stone Weight)
+        const grswt = Number(stockRow.GRSWT || stockRow.grswt || 0);
+        const stnwt = Number(stockRow.STNWT || stockRow.stnwt || 0);
+        const calculatedNetwt = grswt - stnwt;
+
         const newRow = {
             __rowId: rowId,
             __isNew: true,
@@ -1157,6 +1171,7 @@ export default function PurchasePage() {
             __previewSno: draftRows.filter(r => r.TRANSACTION_TYPE === targetType.value).length + 1,
             TRANSACTION_TYPE: targetType.value,
             PUREID: pureId || "",
+            ITEMID: !isIssue ? String(itemId || stockRow.ITEMID || "") : "",
 
             // 🔥 Store stock info for validation and UI
             _totalStock: totalWeight,
@@ -1164,53 +1179,53 @@ export default function PurchasePage() {
             _usedStock: usedWeight,
             _originalWeight: 0,
 
-            // 🔥 Use AVAILABLE weight, not total stock
+            // 🔥 Use AVAILABLE weight for issue type, or original weights for item type
             WT: isIssue ? availableWeight : 0,
-            TOUCH: stockRow.TOUCH || stockRow.actualTouch || "",
-            PURE: stockRow.PURE || stockRow.actualPure || "",
-
             AWT: isIssue ? availableWeight : 0,
-            ATOUCH: stockRow.ATOUCH || stockRow.actualTouch || "",
-            APURE: stockRow.APURE || stockRow.actualPure || "",
 
-            ITEMID: !isIssue ? (stockRow.ITEMID || "") : "",
-            PCS: stockRow.PCS || 0,
-            GRSWT: stockRow.GRSWT || 0,
-            STNWT: stockRow.STNWT || 0,
-            NETWT: stockRow.NETWT || 0,
-            WASTYPE: stockRow.WASTYPE || "",
-            WASPER: stockRow.WASPER || "",
-            WASTAGE: stockRow.WASTAGE || 0,
-            PUREWT: stockRow.PUREWT || 0,
-            MC: stockRow.MC || 0,
-            DESCRIPTION: stockRow.DESCRIPTION || "",
+            TOUCH: stockRow.TOUCH || stockRow.actualTouch || stockRow.touch || "",
+            ATOUCH: stockRow.ATOUCH || stockRow.actualTouch || stockRow.touch || "",
+
+            PURE: stockRow.PURE || stockRow.actualPure || stockRow.pure || "",
+            APURE: stockRow.APURE || stockRow.actualPure || stockRow.pure || "",
+
+            // Item stock fields (for non-issue)
+            PCS: stockRow.PCS || stockRow.pcs || 0,
+            GRSWT: grswt,
+            STNWT: stnwt,
+            NETWT: calculatedNetwt, // 🔥 Important: Set NETWT properly
+            HMC: stockRow.HMC || stockRow.hmc || 0,
+            PUREWT: stockRow.PUREWT || stockRow.purewt || stockRow.pureWeight || 0,
+            RATE: stockRow.RATE || stockRow.rate || 0,
+            MC: stockRow.MC || stockRow.mc || stockRow.MCHARGE || 0,
+            WASTYPE: stockRow.WASTYPE || stockRow.wastype || "TOUCH",
+            WASPER: stockRow.WASPER || stockRow.wasper || 0,
+            WASTAGE: stockRow.WASTAGE || stockRow.wastage || 0,
+            AMOUNT: stockRow.AMOUNT || stockRow.amount || 0,
+            DESCRIPTION: stockRow.DESCRIPTION || stockRow.description || "",
+
+            // Stone details (if any)
+            stoneDetails: stockRow.stoneDetails || [],
+            otherChargesDetails: stockRow.otherChargesDetails || [],
         };
+
+        console.log('Created new row with NETWT:', newRow.NETWT);
 
         // 5️⃣ Add to draft rows
         setDraftRows(prev => [...prev, newRow]);
         setEditingRowId(rowId);
+        setIsStockDrawerOpen(false)
 
         if (draftRowTempId) {
             draftRowTempId.current = rowId;
         }
+        
     };
 
     /* ================================
        Draft Table Handlers
     ================================ */
-    const handleClearForm = () => {
-        if (selectedTransactionTypes.length === 0) {
-            toaster.create({
-                title: "Transaction Type Required",
-                description: "Please select a transaction type first.",
-                type: "warning",
-            });
-            return;
-        }
-
-        // This function is now handled per type, so we'll use handleAddRowForType instead
-        handleAddRowForType(selectedTransactionTypes[0]);
-    };
+  
 
     const handleUpdateDraftRow = useCallback(
         (rowIndex: number, field: string, value: any) => {
@@ -1312,12 +1327,7 @@ export default function PurchasePage() {
         [getStockAvailability, toaster]
     );
 
-    const handleRemoveDraftRow = (rowId: string) => {
-        setDraftRows(prev => prev.filter(row => row.__rowId !== rowId));
-        if (editingRowId === rowId) {
-            setEditingRowId(null);
-        }
-    };
+   
 
     /* ================================
         Calculate Totals For Specific Type
@@ -1679,7 +1689,8 @@ export default function PurchasePage() {
                 type: "success",
             });
 
-            stockRefetch();
+            goldStockRefetch();
+            itemStockRefetch();
 
         } catch (error: any) {
             console.error('Save error:', error);
@@ -1809,7 +1820,8 @@ export default function PurchasePage() {
                 type: "success",
             });
 
-            stockRefetch();
+            goldStockRefetch();
+            itemStockRefetch();
 
         } catch (error: any) {
             console.error("Update error:", error);
@@ -1823,7 +1835,7 @@ export default function PurchasePage() {
 
     const handleResetDraft = () => {
         setDraftRows([]);
-        setEditingRowId(null);
+        setEditingState({rowId:null , transactionType:null});
         resetDraftRowTempId(); // Reset temp ID
    
 
@@ -1959,34 +1971,32 @@ export default function PurchasePage() {
                     {/* Draft Section - show separate tables for each transaction type */}
                         {/* Draft Section - show separate tables for each transaction type */}
                         {(selectedTransactionTypes?.length > 0 || isEditing) && (
-                            <Box display='flex' gap={1}>
-                                {/* LEFT SIDE - Tables */}
-                                <Box w='100%'>
-                                    <Box gap={2}>
-                                        {TRANSACTIONTYPES_ORDER
-                                            .map(code => selectedTransactionTypes?.find(t => t.code === code))
-                                            .filter((t): t is TransactionType => !!t)
-                                            .map((transactionType) => {
-                                                const typeRows = draftRows.filter(
-                                                    row => row.TRANSACTION_TYPE === transactionType.code
-                                                );
+                            <Box display="flex" gap={2} flexWrap="wrap">
+                                {/* Map selected transaction types in order */}
+                                {TRANSACTIONTYPES_ORDER
+                                    .map(code => selectedTransactionTypes?.find(t => t.code === code))
+                                    .filter((t): t is TransactionType => !!t)
+                                    .map(transactionType => {
+                                        const typeRows = draftRows.filter(
+                                            row => row.TRANSACTION_TYPE === transactionType.code
+                                        );
+                                        const typeTotals = calculateTotalsForType(transactionType);
+                                        const activeCollection = getActiveCollectionForType(transactionType);
+                                        const isIssue = isIssueType(transactionType);
 
-                                                const typeTotals = calculateTotalsForType(transactionType);
-                                                const activeCollection = getActiveCollectionForType(transactionType);
-                                                const activeFilter = getActiveFilterForType(transactionType);
-                                                const isIssue = isIssueType(transactionType);
-
-                                                return (
-                                                    <Box
-                                                        key={transactionType.code}
-                                                        borderWidth="1px"
-                                                        borderRadius="md"
-                                                        borderColor={theme.colors.greyColor}
-                                                        w='100%'
-                                                    >
+                                        return (
+                                            <Box
+                                                key={transactionType.code}
+                                                borderWidth="1px"
+                                                borderRadius="md"
+                                                borderColor={theme.colors.greyColor}
+                                                flex={isIssue ? 1 : '100%'} // Issue types share flex, others full width
+                                                minW={isIssue ? '300px' : '100%'} // Minimum width for side by side
+                                                mb={2}
+                                            >
                                                         <DraftTransactionTable
                                                             rows={typeRows}
-                                                            editingRowId={editingRowId}
+                                                          editingState={editingState}
                                                             isEditing={isEditing}
                                                             onAddRow={(formData) => {
                                                                 if (!formData) {
@@ -1999,7 +2009,7 @@ export default function PurchasePage() {
                                                                         __tempId: tempId,
                                                                     };
                                                                     setDraftRows(prev => [...prev, newRow]);
-                                                                    setEditingRowId(tempId);
+                                                                    setEditingState(tempId);
                                                                     return;
                                                                 }
 
@@ -2022,7 +2032,7 @@ export default function PurchasePage() {
                                                                     );
 
                                                                     // Clear editing state
-                                                                    setEditingRowId(null);
+                                                                    setEditingState({ rowId: null, transactionType: null });
 
                                                                     // Show success message
                                                                     toaster.create({
@@ -2082,7 +2092,7 @@ export default function PurchasePage() {
                                                                     }
 
                                                                     // Clear editing state
-                                                                    setEditingRowId(null);
+                                                                    setEditingState({rowId:null ,transactionType:null});
                                                                 }
 
                                                                 // Clear the temp ID ref
@@ -2091,7 +2101,7 @@ export default function PurchasePage() {
                                                             onRemoveRow={(rowId) => {
                                                                 const removedRow = draftRows.find(r => r.__rowId === rowId);
                                                                 setDraftRows(prev => prev.filter(row => row.__rowId !== rowId));
-                                                                if (editingRowId === rowId) setEditingRowId(null);
+                                                                if (editingState.rowId === rowId) setEditingState({rowId:null ,transactionType:null} );
 
                                                                 // Remove associated stones when draft row is deleted
                                                                 if (removedRow && !isIssueType(transactionType)) {
@@ -2131,9 +2141,7 @@ export default function PurchasePage() {
                                                 );
                                             })}
                                     </Box>
-                                </Box>
-
-                            </Box>
+                         
                         )}
                     {/* Save Transaction Bar - appears once for all tables */}
                     {draftRows.length > 0 && (

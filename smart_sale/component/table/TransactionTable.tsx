@@ -45,11 +45,12 @@ interface TransactionTableProps {
     // Handlers
     resetForm: () => void;
     handleSubmit: () => void;
-    handleEditRow: (row: any) => void;
+    handleEditRow: (row: any, tranType:string|undefined) => void;
     handleDeleteRow: (row: any) => void;
     renderFormCell: any;
     getCellValue: (col: Column, row: any) => React.ReactNode;
     formatTotal: (value: number | undefined, decimals?: number) => string;
+    transactionType?:string;
 }
 
 
@@ -74,7 +75,8 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
     renderFormCell,
     getCellValue,
     formatTotal,
-    getCellStyle
+    getCellStyle,
+    transactionType
 }) => {
     const submitBtnRef = useRef<HTMLButtonElement>(null);
 
@@ -236,11 +238,11 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
                                     transition: "background-color 0.15s",
                                 }}
                             >
-                                <td style={getCellStyle({ key: "__sno", label: "#", align: "center" }, { fontSize: 15, color: "#718096" })}>
+                                <td style={getCellStyle({ key: "__sno", label: "#", align: "center" }, { fontSize: 12, color: "#718096" })}>
                                     {idx + 1}
                                 </td>
                                 {tableCols.map(col => (
-                                    <td key={col.key} style={getCellStyle(col, { fontSize: 14, color: "#1A202C", whiteSpace: "nowrap" })}>
+                                    <td key={col.key} style={getCellStyle(col, { fontSize: 12, color: "#1A202C", whiteSpace: "nowrap" })}>
                                         {getCellValue(col, row)}
                                     </td>
                                 ))}
@@ -249,7 +251,7 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
                                         <button
                                             onClick={(e) => {
                                                 e.stopPropagation();
-                                                handleEditRow(row);
+                                                handleEditRow(row,transactionType);
                                             }}
                                             title="Edit"
                                             style={{
@@ -290,11 +292,11 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
                             
                             <tr style={{ backgroundColor: "#2a2a2a" }}>
                                 
-                                <td style={getCellStyle({ key: "__sno", label: "#", align: "left" }, { fontSize: 12, fontWeight: 700, color: "white" })}>
-                                    TOTALS
+                                <td style={getCellStyle({ key: "__sno", label: "#", align: "left" }, { fontSize: 13, fontWeight: 600, color: "white" })}>
+                                    TOTAL
                                 </td>
                                 {tableCols.map(col => (
-                                    <td key={col.key} style={getCellStyle(col, { fontSize: 12, fontWeight: 600, color: "white" })}>
+                                    <td key={col.key} style={getCellStyle(col, { fontSize: 13, fontWeight: 600, color: "white" })}>
                                         {formatTotal(totals?.[col.key], col.decimalScale)}
                                     </td>
                                 ))}

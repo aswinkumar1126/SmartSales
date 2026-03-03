@@ -84,8 +84,12 @@ export default function StockDrawer({
             : [
                 { key: "itemName", label: "Item" },
                 { key: "metalName", label: "Metal" },
-                { key: "grossWeight", label: "Gross Wt", align: "end" },
-                { key: "TOUCH", label: "TOUCH", align: "end" },
+                { key: "pcs", label: "Pcs" },
+                { key: "grswt", label: "Gross Wt", align: "end" },
+                { key: "stnwt", label: "Stone Wt", align: "end" },
+                { key: "netwt", label: "Net Wt", align: "end" },
+                { key: "touch", label: "Touch", align: "end" },
+                { key: "purewt", label: "Pure Wt", align: "end" },
                 { key: "action", label: "Action", align: "center" },
             ];
     }, [showStock]);
@@ -94,11 +98,20 @@ export default function StockDrawer({
         ? pureGoldCollection
         : itemCollection;
 
+    console.log(itemCollection, 'itemCollection');
+
     // Helper function to get stock status color
     const getStockStatusColor = (remaining: number) => {
         if (remaining <= 0) return "red.500";
         if (remaining < 10) return "orange.500";
         return "green.500";
+    };
+
+    // Calculate NETWT for item display
+    const getNetWeight = (row: any) => {
+        const grswt = Number(row.GRSWT || row.grswt || 0);
+        const stnwt = Number(row.STNWT || row.stnwt || 0);
+        return grswt - stnwt;
     };
 
     return (
@@ -107,7 +120,7 @@ export default function StockDrawer({
                 <Drawer.Positioner zIndex={10}>
                     <Drawer.Content>
                         <Drawer.Header bg={theme.colors.accient}>
-                            <HStack justify="space-between" w='full'>
+                            <HStack justify="space-between" w='full' h={3}>
                                 <Drawer.Title color={theme.colors.whiteColor}>
                                     Stock Details
                                 </Drawer.Title>
@@ -175,65 +188,88 @@ export default function StockDrawer({
 
                                     const isOutOfStock = (availability?.remaining ?? Infinity) <= 0;
 
-                                    return showStock === "PURE" ? (
-                                        <>
-                                            <Box as="td">{row.pureGoldName}</Box>
-                                            <Box as="td">{row.metalName}</Box>
-                                            <Box as="td" textAlign="end">
-                                                <Stack gap={0}>
-                                                    <Text fontWeight="medium">
-                                                        {Number(row.weight).toFixed(3)}g
-                                                    </Text>
-                                                    {availability && (
-                                                        <Text
-                                                            fontSize="xs"
-                                                            color={getStockStatusColor(availability.remaining)}
-                                                        >
-                                                            Available: {availability.remaining.toFixed(3)}g
-                                                            {availability.used > 0 && (
-                                                                <Text as="span" color="gray.500" ml={1}>
-                                                                    (Used: {availability.used.toFixed(3)}g)
-                                                                </Text>
-                                                            )}
+                                    if (showStock === "PURE") {
+                                        return (
+                                            <>
+                                                <Box as="td">{row.pureGoldName}</Box>
+                                                <Box as="td">{row.metalName}</Box>
+                                                <Box as="td" textAlign="end">
+                                                    <Stack gap={0}>
+                                                        <Text fontWeight="medium">
+                                                            {Number(row.weight).toFixed(3)}g
                                                         </Text>
-                                                    )}
-                                                </Stack>
-                                            </Box>
-                                            <Box as="td" textAlign="end">{row.actualTouch}</Box>
-                                            <Box as="td" textAlign="end">
-                                                {Number(row.actualPure).toFixed(3)}
-                                            </Box>
-                                            <Box as="td" textAlign="center">
-                                                <IconButton
-                                                    size="2xs"
-                                                    onClick={() => onIssue(row)}
-                                                    disabled={isOutOfStock}
-                                                    title={isOutOfStock ? "Out of stock" : "Add to transaction"}
-                                                    colorScheme={isOutOfStock ? "gray" : "blue"}
-                                                >
-                                                    <FaArrowUp />
-                                                </IconButton>
-                                            </Box>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <Box as="td">{row.itemName}</Box>
-                                            <Box as="td">{row.metalName}</Box>
-                                            <Box as="td" textAlign="end">
-                                                {Number(row.grossWeight).toFixed(3)}g
-                                            </Box>
-                                            <Box as="td" textAlign="end">{row.TOUCH}</Box>
-                                            <Box as="td" textAlign="center">
-                                                <IconButton
-                                                    size="2xs"
-                                                    onClick={() => onIssue(row)}
-                                                    colorScheme="blue"
-                                                >
-                                                    <FaArrowUp />
-                                                </IconButton>
-                                            </Box>
-                                        </>
-                                    );
+                                                        {availability && (
+                                                            <Text
+                                                                fontSize="xs"
+                                                                color={getStockStatusColor(availability.remaining)}
+                                                            >
+                                                                Available: {availability.remaining.toFixed(3)}g
+                                                                {availability.used > 0 && (
+                                                                    <Text as="span" color="gray.500" ml={1}>
+                                                                        (Used: {availability.used.toFixed(3)}g)
+                                                                    </Text>
+                                                                )}
+                                                            </Text>
+                                                        )}
+                                                    </Stack>
+                                                </Box>
+                                                <Box as="td" textAlign="end">{row.actualTouch}</Box>
+                                                <Box as="td" textAlign="end">
+                                                    {Number(row.actualPure).toFixed(3)}
+                                                </Box>
+                                                <Box as="td" textAlign="center">
+                                                    <IconButton
+                                                        size="2xs"
+                                                        onClick={() => onIssue(row)}
+                                                        disabled={isOutOfStock}
+                                                        title={isOutOfStock ? "Out of stock" : "Add to transaction"}
+                                                        colorScheme={isOutOfStock ? "gray" : "blue"}
+                                                    >
+                                                        <FaArrowUp />
+                                                    </IconButton>
+                                                </Box>
+                                            </>
+                                        );
+                                    } else {
+                                        const netwt = getNetWeight(row);
+                                        return (
+                                            <>
+                                                <Box as="td">{row.itemName}</Box>
+                                                <Box as="td">{row.metalName}</Box>
+                                                <Box as="td">{row.pcs}</Box>
+                                                <Box as="td" textAlign="end">
+                                                    {Number(row.grswt || 0).toFixed(3)}
+                                                </Box>
+                                                <Box as="td" textAlign="end">
+                                                    {Number(row.stnwt || 0).toFixed(3)}
+                                                </Box>
+                                                <Box as="td" textAlign="end">
+                                                    <Stack gap={0}>
+                                                        <Text fontWeight="bold" color="blue.600">
+                                                            {row.netwt.toFixed(3)}g
+                                                        </Text>
+                                                        
+                                                    </Stack>
+                                                </Box>
+                                                <Box as="td" textAlign="end">
+                                                    {row.TOUCH || row.touch || ""}
+                                                </Box>
+                                                <Box as="td" textAlign="end">
+                                                    {Number(row.PUREWT || row.purewt || 0).toFixed(3)}
+                                                </Box>
+                                                <Box as="td" textAlign="center">
+                                                    <IconButton
+                                                        size="2xs"
+                                                        onClick={() => onIssue(row)}
+                                                        colorScheme="blue"
+                                                        title="Add to transaction"
+                                                    >
+                                                        <FaArrowUp />
+                                                    </IconButton>
+                                                </Box>
+                                            </>
+                                        );
+                                    }
                                 }}
                             />
                         </Drawer.Body>
