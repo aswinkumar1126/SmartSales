@@ -479,71 +479,45 @@ export default function DraftTransactionTable({
         }
     }, [currentEditingRowId, currentEditingTransactionType, transactionType, rows, formFields]);
 
-    const handleChange = useCallback((key: string, value: any) => {
-        const mirror: Record<string, string> = { WT: "AWT", TOUCH: "ATOUCH" };
-        const next = { ...formData, [key]: value };
-        if (mirror[key]) next[mirror[key]] = value;
+    type FormData = typeof formData;
 
-        if ((key === "WT" || key === "AWT") && formData.PUREID && getAvailableWeight) {
-            const newValue = Number(value) || 0;
-            const otherUsed = currentEditingRowId
-                ? rows.filter(r => String(r.PUREID) === String(formData.PUREID) && r.__rowId !== currentEditingRowId)
-                    .reduce((sum, r) => sum + Number(r.WT || 0), 0)
-                : rows.filter(r => String(r.PUREID) === String(formData.PUREID))
-                    .reduce((sum, r) => sum + Number(r.WT || 0), 0);
+    const handleChange = useCallback(
+        (keyOrObject: string | Partial<FormData>, value?: any) => {
+            let next = { ...formData };
 
-            const totalStock = getStockAvailability ? getStockAvailability(formData.PUREID)?.total || 0 : 0;
-
-            if (otherUsed + newValue > totalStock) {
-                toaster.create({
-                    title: "Stock Limit Exceeded",
-                    description: `Maximum allowed: ${(totalStock - otherUsed).toFixed(3)}g`,
-                    type: "error",
-                });
-                return;
+            if (typeof keyOrObject === "string") {
+                next[keyOrObject] = value;
+            } else {
+                next = { ...next, ...keyOrObject };
             }
 
-            const remainingAfterChange = totalStock - (otherUsed + newValue);
-            if (remainingAfterChange < 10 && remainingAfterChange > 0) {
-                toaster.create({
-                    title: "Low Stock Warning",
-                    description: `Only ${remainingAfterChange.toFixed(3)}g remaining after this change`,
-                    type: "warning",
-                    duration: 2000,
-                });
-            }
-        }
+            // Mirror logic
+            const mirror: Record<string, string> = { WT: "AWT", TOUCH: "ATOUCH" };
+            Object.keys(next).forEach(k => {
+                if (mirror[k]) next[mirror[k]] = next[k];
+            });
 
-        // if ((key === "WT" || key === "AWT" || key === "GRSWT" || key === "STNWT") && Number(value) < 0) {
-        //     toaster.create({ title: "Invalid Value", description: "Weight cannot be negative", type: "warning" });
-        //     next[key] = 0;
-        // }
-
-        // if (key === "TOUCH" && Number(value) <= 0) {
-        //     toaster.create({ title: "Invalid Touch", description: "Touch must be greater than 0", type: "warning" });
-        //     return;
-        // }
-
-        if (key === "GRSWT" || key === "STNWT") {
-            const g = parseFloat(key === "GRSWT" ? value : formData.GRSWT) || 0;
-            const s = parseFloat(key === "STNWT" ? value : formData.STNWT) || 0;
+            // Recalculate NETWT / PUREWT if relevant
+            const g = parseFloat(next.GRSWT || 0);
+            const s = parseFloat(next.STNWT || 0);
             next.NETWT = (g - s).toFixed(3);
-            if (formData.TOUCH) {
-                const touch = parseFloat(formData.TOUCH) || 0;
-                next.PUREWT = ((g - s) * touch / 100).toFixed(3);
+            const touch = parseFloat(next.TOUCH || 0);
+            next.PUREWT = ((g - s) * touch / 100).toFixed(3);
+
+            setFormData(next);
+            // Mark touched fields
+            if (typeof keyOrObject === "string") {
+                setTouched(p => ({ ...p, [keyOrObject]: true }));
+                setErrors(p => ({ ...p, [keyOrObject]: "" }));
+            } else {
+                Object.keys(keyOrObject).forEach(k => {
+                    setTouched(p => ({ ...p, [k]: true }));
+                    setErrors(p => ({ ...p, [k]: "" }));
+                });
             }
-        }
-
-        if (key === "TOUCH") {
-            const n = parseFloat(formData.NETWT || calcNet()) || 0;
-            const touch = parseFloat(value) || 0;
-            next.PUREWT = ((n * touch) / 100).toFixed(3);
-        }
-
-        setFormData(next);
-        setTouched(p => ({ ...p, [key]: true }));
-        setErrors(p => ({ ...p, [key]: "" }));
-    }, [formData, calcNet, getAvailableWeight, getStockAvailability, currentEditingRowId, rows]);
+        },
+        [formData]
+    );
 
     const focusIdx = useCallback((idx: number) => {
         const f = visibleFormFields[idx];
@@ -787,6 +761,8 @@ export default function DraftTransactionTable({
         const isInvalid = !!errors[field.key] && !!touched[field.key];
         const shouldDisable = field.disabled || (!!field.dependsOn && !formData[field.dependsOn]);
 
+        console.log(formData,'formDataformData')
+
         if (field.key === "STNWT") {
             return (
                 <Box position="relative" width="100%" onFocus={() => {
@@ -797,11 +773,19 @@ export default function DraftTransactionTable({
                     }
                 }}>
                     <CapitalizedInput
-                        field={field.key} value={formData[field.key] || ""}
+                        field={field.key} 
+                        value={formData[field.key] || ""}
                         onChange={(_, v) => handleChange(field.key, v)}
-                        type="number" isCapitalized={false} size="xs" rounded="sm"
-                        decimalScale={field.decimalScale} disabled={shouldDisable}
-                        inputRef={ref} onEnter={() => moveNext(field.key)} noBorder
+                        type="number" 
+                        isCapitalized={false} 
+                        size="xs" 
+                        rounded="sm"
+                        decimalScale={field.decimalScale} 
+                        disabled={shouldDisable}
+                        inputRef={ref} 
+                        onEnter={() => 
+                        moveNext(field.key)} 
+                        noBorder
                     />
                     <Button
                         size="2xs" position="absolute" right="0" top="0" height="100%"
@@ -1107,35 +1091,46 @@ export default function DraftTransactionTable({
                             onSave={(stoneRows) => {
                                 if (!stoneDraftRowId) return;
 
+                                // Get existing stones from localStorage
                                 const allStones = JSON.parse(localStorage.getItem("STONE_MASTER") || "[]");
+
+                                // Remove stones for the current draft row
                                 const filtered = allStones.filter((s: any) => s.draftRowId !== stoneDraftRowId);
+
+                                // Attach draftRowId to new stones
                                 const updatedStones = stoneRows.map(s => ({ ...s, draftRowId: stoneDraftRowId }));
+
+                                // Save back to localStorage
                                 localStorage.setItem("STONE_MASTER", JSON.stringify([...filtered, ...updatedStones]));
 
-                                const stoneWtTotal = updatedStones.reduce(
-                                    (sum, r) => sum + r.stoneWeight, 0
-                                );
+                                const stoneWtTotal = updatedStones.reduce((sum, r) => sum + r.stoneWeight, 0);
+                                const stnAmtTotal = updatedStones.reduce((sum, r) => sum + r.stoneAmount, 0);
 
-                                handleChange("STNWT", stoneWtTotal.toFixed(3));
+                                handleChange({
+                                    STNWT: stoneWtTotal.toFixed(2),
+                                    STNAMT: stnAmtTotal.toFixed(2),
+                                });
 
+                                // Store pending stone data if draftRowId is temporary
                                 if (stoneDraftRowId.startsWith("stone-form-")) {
                                     pendingStoneData.current = {
                                         tempId: stoneDraftRowId,
                                         stones: updatedStones,
-                                        totalWeight: stoneWtTotal
+                                        totalWeight: stoneWtTotal,
                                     };
                                 }
-                                const stnAmtTotal = updatedStones.reduce((sum, r) => sum + r.stoneAmount, 0)
-                                handleChange("STNAMT", (stnAmtTotal).toFixed(2));
 
+                                // Close modal and reset draft row
                                 setIsStoneModalOpen(false);
-                                // Only clear stone ID — misc is completely untouched
                                 setStoneDraftRowId("");
+
+                                // Focus next input after short delay
                                 setTimeout(() => focusIdx(5), 50);
+
+                                console.log("Updated stones:", updatedStones, "Weight:", stoneWtTotal, "Amount:", stnAmtTotal);
                             }}
                             stoneItems={stoneItemsCollection}
                             subStoneItems={stoneItemsCollection}
-
                         />
                     </Box>
                 </Box>

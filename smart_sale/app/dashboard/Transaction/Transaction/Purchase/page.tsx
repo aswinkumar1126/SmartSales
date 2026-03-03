@@ -959,9 +959,12 @@ export default function PurchasePage() {
             setDraftRows(newDraftRows);
 
             if (newDraftRows.length > 0) {
-                setEditingState(isIssue(tranType) , newDraftRows[0].__rowId);
+                const firstRow = newDraftRows[0];
+                setEditingState({
+                    rowId: firstRow.__rowId,
+                    transactionType: firstRow.TRANSACTION_TYPE // Use the row's transaction type
+                });
             }
-
             // Show appropriate message
             setTimeout(() => {
                 const stoneCount = allStones.length;
@@ -1213,7 +1216,7 @@ export default function PurchasePage() {
 
         // 5️⃣ Add to draft rows
         setDraftRows(prev => [...prev, newRow]);
-        setEditingRowId(rowId);
+        setEditingState({rowId:rowId, transactionType: targetType.code});
         setIsStockDrawerOpen(false)
 
         if (draftRowTempId) {
@@ -1520,7 +1523,7 @@ export default function PurchasePage() {
    Save Transaction Handler with Stone Details
 ================================ */
     const handleSaveTransaction = async () => {
-        setEditingRowId(null);
+        setEditingState({rowId: null, transactionType: null });
 
         if (selectedTransactionTypes.length === 0) {
             toaster.create({
@@ -1677,7 +1680,7 @@ export default function PurchasePage() {
                STEP 4 — CLEANUP
                ----------------------------------------- */
             setDraftRows([]);
-            setEditingRowId(null);
+          setEditingState({rowId: null, transactionType: null})
 
             // Clear stones from localStorage after successful save
             localStorage.removeItem(STONE_MASTER_KEY);
@@ -1703,7 +1706,7 @@ export default function PurchasePage() {
     };
 
     const handleUpdateTransaction = async () => {
-        setEditingRowId(null);
+        setEditingState({ rowId: null, transactionType: null })
 
         if (!editingSno) {
             toaster.create({
@@ -1790,7 +1793,7 @@ export default function PurchasePage() {
             setEditingSno(null);
             setSelectedTransactionId(null);
             setDraftRows([]);
-            setEditingRowId(null);
+            setEditingState({ rowId: null, transactionType: null })
             setSelectedTransactionTypes([]);
 
             setHeaderForm({
@@ -1996,7 +1999,7 @@ export default function PurchasePage() {
                                             >
                                                         <DraftTransactionTable
                                                             rows={typeRows}
-                                                          editingState={editingState}
+                                                            editingState={editingState}
                                                             isEditing={isEditing}
                                                             onAddRow={(formData) => {
                                                                 if (!formData) {
@@ -2009,7 +2012,7 @@ export default function PurchasePage() {
                                                                         __tempId: tempId,
                                                                     };
                                                                     setDraftRows(prev => [...prev, newRow]);
-                                                                    setEditingState(tempId);
+                                                                    // setEditingState(tempId);
                                                                     return;
                                                                 }
 
