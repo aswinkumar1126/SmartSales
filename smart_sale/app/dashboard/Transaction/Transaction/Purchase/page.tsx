@@ -917,19 +917,36 @@ export default function PurchasePage() {
                         TRANSACTION_TYPE: itemType,
                         ITEMID: item.ITEMID ? String(item.ITEMID) : "",
 
+                        SNO:item.SNO || "",
+
                         PCS: item.PCS || "",
+
                         GRSWT: item.GRSWT || "",
                         STNWT: item.STNWT || "",
-                        HMC: item.HMC || "",
                         NETWT: item.NETWT || "",
+
+                       
                         TOUCH: item.TOUCH || "",
-                        ATOUCH: item.ATOUCH || "",
                         PUREWT: item.PUREWT || "",
-                        RATE: item.RATE || "",
+
+                        // ATOUCH: item.ATOUCH || "",
+                        // RATE: item.RATE || "",
+
+
                         MC: item.MC || item.MCHARGE || "",
+
                         WASTYPE: item.WASTYPE || "",
-                        WASTAGE: item.WASTAGE || "",
+
+
+
+                        // WASPER: item.WASPER || "",
+                        // WASTAGE: item.WASTAGE || "",
+
+
                         AMOUNT: item.AMOUNT || "",
+                        STNAMT: item.STNAMT || "",
+                        HMC: item.HMC || "",
+
                         DESCRIPTION: item.DESCRIPTION || "",
                         BATCHNO: item.BATCHNO || "",
 
@@ -1202,8 +1219,8 @@ export default function PurchasePage() {
             RATE: stockRow.RATE || stockRow.rate || 0,
             MC: stockRow.MC || stockRow.mc || stockRow.MCHARGE || 0,
             WASTYPE: stockRow.WASTYPE || stockRow.wastype || "TOUCH",
-            WASPER: stockRow.WASPER || stockRow.wasper || 0,
-            WASTAGE: stockRow.WASTAGE || stockRow.wastage || 0,
+            // WASPER: stockRow.WASPER || stockRow.wasper || 0,
+            // WASTAGE: stockRow.WASTAGE || stockRow.wastage || 0,
             AMOUNT: stockRow.AMOUNT || stockRow.amount || 0,
             DESCRIPTION: stockRow.DESCRIPTION || stockRow.description || "",
 
@@ -1356,7 +1373,9 @@ export default function PurchasePage() {
      Normalize Handler with Stone Details Support
   ================================ */
 
-    const normalizeRowForApi = (row: any, isIssue: boolean) => {
+    const normalizeRowForApi = (row: any, isIssue: boolean ,editTransaction?:boolean) => {
+
+        console.log(row,'row')
         const {
             __rowId,
             __isNew,
@@ -1385,17 +1404,29 @@ export default function PurchasePage() {
         return {
             ITEMID: rest.ITEMID ? String(rest.ITEMID) : undefined,
             PCS: Number(rest.PCS || 0),
+
+            // ✅ Only add SNO when editing
+            ...(editTransaction && {
+                SNO: String(rest.SNO || ""),
+            }),
+
             GRSWT: Number(rest.GRSWT || 0),
             STNWT: Number(rest.STNWT || 0),
             NETWT: Number(rest.NETWT || 0),
+
+
             WASTYPE: String(rest.WASTYPE || 'TOUCH'),
-            WASPER: Number(rest.WASPER || 0),
-            WASTAGE: Number(rest.WASTAGE || 0),
+
+            // WASPER: Number(rest.WASPER || 0),
+            // WASTAGE: Number(rest.WASTAGE || 0),
             TOUCH: Number(rest.TOUCH || 0),
-            ATOUCH: Number(rest.ATOUCH || 0),
+            // ATOUCH: Number(rest.ATOUCH || 0),
             PUREWT: Number(rest.PUREWT || 0),
+
+            
             HMC:Number(rest.HMC || 0),
             MC: Number(rest.MC || 0),
+            STNAMT:Number(rest.STNAMT || 0),
 
             // Include stone details if they exist
             ...(row._stones && row._stones.length > 0 && {
@@ -1590,6 +1621,8 @@ export default function PurchasePage() {
                ----------------------------------------- */
             const transactionDetails: TransactionItems = {};
 
+            console.log("draftRows", draftRows);
+
             // Process each draft row and include its stones
             draftRows.forEach(row => {
                 const mappedType = TRANSACTION_KEY_MAP[row.TRANSACTION_TYPE];
@@ -1615,7 +1648,6 @@ export default function PurchasePage() {
                 // Get charges for this row - first check if attached directly to row, then fallback to localStorage
                 const rowCharges = row._miscCharges || chargesByDraftRowId[row.__rowId] || [];
 
-                console.log(rowCharges,'rowCharges')
 
                 // Filter valid charges
                 const validCharges = rowCharges.filter((charge: any) =>
@@ -1752,6 +1784,8 @@ export default function PurchasePage() {
                ----------------------------------------- */
             const transactionDetails: TransactionItems = {};
 
+            console.group(draftRows,'draftRowsforUpdate')
+
             draftRows.forEach(row => {
                 const mappedType = TRANSACTION_KEY_MAP[row.TRANSACTION_TYPE];
                 if (!mappedType) return;
@@ -1759,10 +1793,13 @@ export default function PurchasePage() {
                 if (!transactionDetails[mappedType]) transactionDetails[mappedType] = [];
 
                 const isIssue = mappedType === "issue" || mappedType === "receipt";
-                const normalized = normalizeRowForApi(row, isIssue);
+                const normalized = normalizeRowForApi(row, isIssue , true);
+
+          
                 (transactionDetails[mappedType] as any[]).push(normalized);
             });
 
+            console.log(transactionDetails,'transactionDetailsforUpdate')
             /* -----------------------------------------
                STEP 2 — BUILD HEADER
                ----------------------------------------- */
@@ -1777,12 +1814,13 @@ export default function PurchasePage() {
             };
 
             console.log("Updating Transaction:", payload);
+ 
 
             /* -----------------------------------------
                STEP 3 — API CALL
                ----------------------------------------- */
             await updateTransaction.mutateAsync({
-                sno: editingSno,
+                entryNo: Number(headerForm.ENTRYNO),
                 payload,
             });
 

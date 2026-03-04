@@ -78,12 +78,12 @@ export const useUpdateTransaction = () => {
 
     return useMutation({
         mutationFn: ({
-            sno,
+            entryNo,
             payload,
         }: {
-            sno: string;
+            entryNo: number;
             payload: CreateTransaction;
-        }) => TransactionService.update(sno, payload),
+            }) => TransactionService.update(entryNo, payload),
 
         onSuccess: () => {
             queryClient.invalidateQueries({

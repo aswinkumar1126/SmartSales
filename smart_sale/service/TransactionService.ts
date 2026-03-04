@@ -73,14 +73,14 @@ export const TransactionService = {
 
     // UPDATE (PUT)
     update: async (
-        sno: string,
+        entryNo: number,
         payload: CreateTransaction,
     ): Promise<ApiResponse<any>> => {
 
-        console.log(sno,'updating sno')
+        console.log(entryNo,payload,'updating entry no')
         try {
             const { data } = await axiosInstance.put(
-                `${BASE_PATH}/${sno}`,
+                `${BASE_PATH}/${entryNo}`,
                 payload,
             );
             console.log(data, 'resultData')

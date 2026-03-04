@@ -761,7 +761,7 @@ export default function DraftTransactionTable({
         const isInvalid = !!errors[field.key] && !!touched[field.key];
         const shouldDisable = field.disabled || (!!field.dependsOn && !formData[field.dependsOn]);
 
-        console.log(formData,'formDataformData')
+
 
         if (field.key === "STNWT") {
             return (
