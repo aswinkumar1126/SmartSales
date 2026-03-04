@@ -1,6 +1,7 @@
 import React, { useRef } from 'react';
-import { LuPencil, LuTrash2 } from 'react-icons/lu';
 import { Box, Flex, Text } from '@chakra-ui/react';
+import { PlusCircle, Edit2, Save, XCircle, Trash2, RefreshCcw } from "lucide-react";
+
 
 interface Column {
     key: string;
@@ -103,7 +104,7 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
                            
                         }}>
                             <th style={getCellStyle({ key: "__sno", label: "#", align: "center" }, { fontSize: 11, fontWeight: 700, color: "#4A5568", padding: "5px 3px" })}>
-                                #
+                                S.NO
                             </th>
                             {tableCols.map(col => {
                                 const fld = formFields.find(f => f.key === col.key);
@@ -140,7 +141,7 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
                                             fontWeight: 700
                                         }}
                                     >
-                                        ✕ CANCEL
+                                       <XCircle size={14}/>
                                     </button>
                                 ) : "ACT"}
                             </th>
@@ -186,6 +187,7 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
                                     onClick={handleSubmit}
                                     disabled={isSubmitting}
                                     title={localEditId ? "Update Row" : "Add Row"}
+                                    
                                     style={{
                                         width: "100%",
                                         height: 22,
@@ -200,9 +202,10 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
                                         alignItems: "center",
                                         justifyContent: "center",
                                         opacity: isSubmitting ? 0.7 : 1,
+                                        
                                     }}
                                 >
-                                    {isSubmitting ? "..." : localEditId ? "✓ UPDATE" : "+ ADD"}
+                                    {isSubmitting ? "..." : localEditId ? <Save size={14} /> : <Save size={14} />}
                                 </button>
                             </td>
                         </tr>
@@ -262,7 +265,7 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
                                                 cursor: "pointer"
                                             }}
                                         >
-                                            <LuPencil size={11} />
+                                            <Edit2 size={14} />
                                         </button>
                                         <button
                                             onClick={(e) => {
@@ -278,7 +281,7 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
                                                 cursor: "pointer"
                                             }}
                                         >
-                                            <LuTrash2 size={11} />
+                                            <Trash2 size={14} />
                                         </button>
                                     </div>
                                 </td>

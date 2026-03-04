@@ -434,6 +434,8 @@ function CompanyMaster() {
                                             size="2xs"
                                             type="text"
                                             inputModeType="gst"
+                                            
+
                                            
                                         />
                                     </Box>

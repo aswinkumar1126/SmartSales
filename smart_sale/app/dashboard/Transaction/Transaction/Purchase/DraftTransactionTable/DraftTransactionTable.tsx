@@ -564,6 +564,7 @@ export default function DraftTransactionTable({
     }, [visibleFormFields, formData, focusIdx]);
 
     const resetForm = useCallback(() => {
+        onCancelEdit?.();
         const reset: Record<string, any> = {};
         formFields.forEach(f => { reset[f.key] = f.defaultValue ?? ""; });
         setFormData(reset);
@@ -817,15 +818,21 @@ export default function DraftTransactionTable({
             );
         }
 
-        if (field.key === "DESCRIPTION" || field.key === "ATOUCH") {
+        if (field.key === "DESCRIPTION" ) {
             return (
                 <Box position="relative" width="100%">
                     <CapitalizedInput
-                        field={field.key} value={formData[field.key] || ""}
+                        field={field.key} 
+                        value={formData[field.key] || ""}
                         onChange={(_, v) => handleChange(field.key, v)}
-                        type="number" isCapitalized={false} size="xs" rounded="sm"
-                        decimalScale={field.decimalScale} disabled={shouldDisable}
-                        inputRef={ref} onEnter={() => handleSubmit()} noBorder
+                        type="text" 
+                        isCapitalized
+                        size="xs" 
+                        rounded="sm"
+                        decimalScale={field.decimalScale} 
+                        disabled={shouldDisable}
+                        inputRef={ref} 
+                        onEnter={() => handleSubmit()} noBorder
                     />
                 </Box>
             );

@@ -144,6 +144,7 @@ export const issueColumns = [
         label: "DESCRIPTION",
         width: "50px",
         align: "left" as const,
+        type: "text" as const,
 
     },
 ];

@@ -80,7 +80,7 @@ export interface ItemTransactionRow extends WeightInfo {
     STNAMT:number;
     MC:number;
     // ATOUCH:number;
-    // DESCRIPTION?:string;
+    DESCRIPTION?:string;
 }
 
 
