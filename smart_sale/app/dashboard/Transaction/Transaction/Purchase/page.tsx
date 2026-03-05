@@ -17,8 +17,6 @@ import { toaster, Toaster } from "@/components/ui/toaster";
 import { useListCollection, useFilter } from "@chakra-ui/react";
 import { useOpeningBalance } from "@/hooks/balance/useOpeningBalance";
 
-
-
 // Components
 import TransactionHeaderForm from "./TransactionHeaderForm/TransactionHeaderForm";
 import TransactionTypeSelector from "./TransactionTypeSelector/TransactionTypeSelector";
@@ -62,6 +60,14 @@ type StoneRow = {
     stoneAmount: string;
 };
 
+type TransactionRow ={
+    TRANSACTION_TYPE: string;
+    PUREWT?: number;
+    HMC?:number;
+    STNAMT?:number;
+    MC?:number;
+}
+
 
 /* ================================
    Main Component
@@ -73,7 +79,8 @@ export default function PurchasePage() {
     const [showFilter, setShowFilter] = useState<boolean>(false);
     const [loading, setLoading] = useState<boolean>(true);
     const [purchaserList, setPurchaserList] = useState<{ label: string, value: string }[]>([]);
-    const [filter, setFilter] = useState<string>('')
+
+    const [filter, setFilter] = useState<string>('');
     const [isStockDrawerOpen, setIsStockDrawerOpen] = useState(false);
 
     const [showStock, setShowStock] = useState<string>("PURE");
@@ -87,6 +94,8 @@ export default function PurchasePage() {
     // const [itemsStockList, setItemsStockList] = useState<{ label: string, value: string }[]>([]);
 
     const TRANSACTIONTYPES_ORDER = ["PU", "PR", "ISP", "REC"];
+
+
 
     const [isFilterOpen, setIsFilterOpen] = useState(false);
     const openFilter = () => setIsFilterOpen(true);
@@ -198,7 +207,7 @@ export default function PurchasePage() {
     const updateTransaction = useUpdateTransaction();
     const { data: metalsData } = useAllMetals();
 
-    const { data: openingBalance } = useOpeningBalance(accCode);
+    const { data: openingBalance ,refetch:openingBalanceRefetch } = useOpeningBalance(accCode);
 
     // Note: This hook might need to be updated to handle multiple transaction types
     const { data: transactionList, isLoading, refetch: refetchTransactionList } = useTransactions(
@@ -209,9 +218,28 @@ export default function PurchasePage() {
         itemCode
     );
 
-    const openingData = openingBalance?.data;
+    const [apiBalanceOpening, setApiBalanceOpening] = useState({
+        openPure: 0,
+        openCash: 0
+    });
+
+    const [openingBalances, setOpeningBalances] = useState({
+        openPure: 0,
+        openCash: 0
+    });
+
+    useEffect(() => {
+        if (openingBalance?.data) {
+            setApiBalanceOpening({
+                openPure: Number(openingBalance.data.openpure) || 0,
+                openCash: Number(openingBalance.data.opencash) || 0
+            });
+        }
+    }, [openingBalance, accCode]);
+
     const createTransaction = useCreateTransactions();
     const { contains } = useFilter({ sensitivity: "base" });
+    
 
     /* ================================
        Selected Collection For Stock List
@@ -381,6 +409,81 @@ export default function PurchasePage() {
     }, [getStockAvailability]);
 
 
+    // Main calculation function
+    function calculateOpeningBalances(
+        draftRows: TransactionRow[],
+        initialPure: number,
+        initialCash: number
+    ) {
+        let openPure = initialPure;
+        let openCash = initialCash;
+
+        draftRows.forEach((row) => {
+            const type = TRANSACTION_KEY_MAP[row.TRANSACTION_TYPE];
+            const pureWt = Number(row.PUREWT) || 0;
+
+            // Calculate cash amount for this row
+            const cash = (Number(row.HMC) || 0) +
+                (Number(row.STNAMT) || 0) +
+                (Number(row.MC) || 0);
+
+            console.log(cash, 'cashamount for row', row.TRANSACTION_TYPE);
+
+            switch (type) {
+                case "purchase":
+                    openPure += pureWt;
+                    openCash += cash;
+                    break;
+
+                case "purchase_return":
+                    openPure -= pureWt;
+                    openCash -= cash;
+                    break;
+
+                case "receipt":
+                    openPure += pureWt;
+                    // Receipt doesn't affect cash balance
+                    // openCash remains unchanged
+                    break;
+
+                case "issue":
+                    openPure -= pureWt;
+                    // Issue doesn't affect cash balance
+                    // openCash remains unchanged
+                    break;
+            }
+        });
+
+        console.log({
+            openPure: parseFloat(openPure.toFixed(3)),
+            openCash: parseFloat(openCash.toFixed(2))
+        }, 'final opening balances');
+
+        return {
+            openPure: parseFloat(openPure.toFixed(3)),
+            openCash: parseFloat(openCash.toFixed(2))
+        };
+    }
+
+    // Single useEffect to calculate balances when either draftRows or API balances change
+    useEffect(() => {
+        if (apiBalanceOpening.openPure !== undefined && apiBalanceOpening.openCash !== undefined) {
+            const balances = calculateOpeningBalances(
+                draftRows,
+                apiBalanceOpening.openPure,
+                apiBalanceOpening.openCash  // ✅ Fixed: Now using openCash, not openPure
+            );
+
+            console.log(balances, 'calculated balances');
+            setOpeningBalances(balances);
+
+            localStorage.setItem(
+                "OPENING_BALANCES",
+                JSON.stringify(balances)
+            );
+        }
+    }, [draftRows, apiBalanceOpening]); // ✅ Single dependency array
+
     /* ================================
     Pure Gold Name Data
   ================================ */
@@ -439,12 +542,13 @@ export default function PurchasePage() {
             return {
                 ...base,
                 PUREID: "",
+
                 WT: "",
                 TOUCH: "",
-                PURE: "",
-                AWT: "",
-                ATOUCH: "",
-                APURE: "",
+                PUREWT: "",
+                // AWT: "",
+                // ATOUCH: "",
+                // APUREWT: "",
             };
         }
 
@@ -463,41 +567,10 @@ export default function PurchasePage() {
             WASTAGE: "",
         };
     };
-    const handleAddRowForType = (transactionType: TransactionType) => {
-        // Use temp ID if we're in the middle of editing, otherwise create permanent
-        const rowId = draftRowTempId.current || `row-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
+  
 
-        // 1️⃣ Create the new draft row with the ID
-        const newRow = {
-            ...createEmptyRowForType(transactionType),
-            __rowId: rowId,
-        };
 
-        // 2️⃣ Add to draft rows state
-        setDraftRows(prev => [...prev, newRow]);
 
-        // setEditingRowId(rowId);
-
-        // 3️⃣ For purchase types, check if there are stones from a temp ID
-        if (!isIssueType(transactionType)) {
-            // Check if there are any stones in localStorage for this row already
-            const existingStones = JSON.parse(localStorage.getItem(STONE_MASTER_KEY) || "[]");
-            const stonesForThisRow = existingStones.filter((s: StoneRow) => s.draftRowId === rowId);
-
-            if (stonesForThisRow.length === 0) {
-                // Only create an empty stone row if no stones exist
-                const stoneRow = createEmptyStoneRow(rowId);
-                existingStones.push(stoneRow);
-                localStorage.setItem(STONE_MASTER_KEY, JSON.stringify(existingStones));
-                console.log(`Created empty stone row for draft row: ${rowId}`);
-            } else {
-                console.log(`Found ${stonesForThisRow.length} existing stones for draft row: ${rowId}`);
-            }
-        }
-
-        // Clear the temp ID after using it
-        resetDraftRowTempId();
-    };
     const handleClearRowsForType = (transactionType: TransactionType) => {
         setDraftRows(prev => prev.filter(row => row.TRANSACTION_TYPE !== transactionType.value));
         setEditingState({ rowId: null, transactionType: null })
@@ -602,6 +675,7 @@ export default function PurchasePage() {
             try {
                 const parsed = JSON.parse(savedDraft);
                 setDraftRows(parsed);
+                console.log('parsed')
             } catch (e) {
                 console.error("Failed to parse draft:", e);
                 localStorage.removeItem(DRAFT_KEY);
@@ -895,11 +969,12 @@ export default function PurchasePage() {
                         PUREID: item.PUREID || "",
 
                         WT: item.WT || "",
-                        AWT: item.AWT || item.WT || "",
                         TOUCH: item.TOUCH || "",
-                        ATOUCH: item.ATOUCH || item.TOUCH || "",
-                        PURE: item.PUREWT || "",
-                        APUREWT: item.APUREWT || item.PUREWT || "",
+                        PUREWT: item.PUREWT || "",
+
+                        // AWT: item.AWT || item.WT || "",
+                        // ATOUCH: item.ATOUCH || item.TOUCH || "",
+                        // APUREWT: item.APUREWT || item.PUREWT || "",
 
                         BATCHNO: item.BATCHNO || "",
                     };
@@ -1206,8 +1281,8 @@ export default function PurchasePage() {
             TOUCH: stockRow.TOUCH || stockRow.actualTouch || stockRow.touch || "",
             ATOUCH: stockRow.ATOUCH || stockRow.actualTouch || stockRow.touch || "",
 
-            PURE: stockRow.PURE || stockRow.actualPure || stockRow.pure || "",
-            APURE: stockRow.APURE || stockRow.actualPure || stockRow.pure || "",
+            // PURE: stockRow.PURE || stockRow.actualPure || stockRow.pure || "",
+            // APURE: stockRow.APURE || stockRow.actualPure || stockRow.pure || "",
 
             // Item stock fields (for non-issue)
             PCS: stockRow.PCS || stockRow.pcs || 0,
@@ -1257,9 +1332,9 @@ export default function PurchasePage() {
                 const isIssue = transactionType ? isIssueType(transactionType) : false;
 
                 // Manual override tracking
-                if (field === "AWT") row.__manual_AWT = true;
-                if (field === "ATOUCH") row.__manual_ATOUCH = true;
-                if (field === "APUREWT") row.__manual_APUREWT = true;
+                // if (field === "AWT") row.__manual_AWT = true;
+                // if (field === "ATOUCH") row.__manual_ATOUCH = true;
+                // if (field === "APUREWT") row.__manual_APUREWT = true;
                 if (field === "WT") row.__manual_AWT = false;
                 if (field === "TOUCH") row.__manual_ATOUCH = false;
 
@@ -1330,13 +1405,13 @@ export default function PurchasePage() {
                         row.PURE = ((wt * touch) / 100).toFixed(3);
                     }
 
-                    if (field === "AWT" || field === "ATOUCH") {
-                        const wt = Number(row.AWT) || 0;
-                        const touch = Number(row.ATOUCH) || 0;
-                        if (!row.__manual_APUREWT) {
-                            row.APUREWT = ((wt * touch) / 100).toFixed(3);
-                        }
-                    }
+                    // if (field === "AWT" || field === "ATOUCH") {
+                    //     const wt = Number(row.AWT) || 0;
+                    //     const touch = Number(row.ATOUCH) || 0;
+                    //     if (!row.__manual_APUREWT) {
+                    //         row.APUREWT = ((wt * touch) / 100).toFixed(3);
+                    //     }
+                    // }
                 }
 
                 row.__previewSno = rowIndex + 1;
@@ -1354,12 +1429,13 @@ export default function PurchasePage() {
      ================================ */
     const calculateTotalsForType = (transactionType: TransactionType) => {
         const typeRows = draftRows.filter(row => row.TRANSACTION_TYPE === transactionType.value);
-
+        
+console.log(typeRows,'typeRows')
         const isIssue = isIssueType(transactionType);
 
         const keys = isIssue
-            ? ["PURE", "APURE" , "WT" ,"AWT" ] // add other issue-specific numeric fields if needed
-            : ["PCS", "GRSWT", "STNWT", "NETWT", "PUREWT","HMC", "RATE", "MCHARGE", "WASTAGE", "AMOUNT"];
+            ? ["PUREWT", "APUREWT" , "WT" ,"AWT" ] // add other issue-specific numeric fields if needed
+            : ["PCS", "GRSWT", "STNWT", "NETWT", "PUREWT","HMC", "RATE", "MC", "WASTAGE", "AMOUNT" ,"STNAMT"];
 
         return typeRows.reduce((acc, row) => {
             keys.forEach(k => {
@@ -1395,9 +1471,9 @@ export default function PurchasePage() {
                 WT: Number(rest.WT || 0),
                 TOUCH: Number(rest.TOUCH || 0),
                 PUREWT: Number(rest.PURE || 0),
-                AWT: Number(rest.AWT || 0),
-                ATOUCH: Number(rest.ATOUCH || 0),
-                APUREWT: Number(rest.APUREWT || 0),
+                // AWT: Number(rest.AWT || 0),
+                // ATOUCH: Number(rest.ATOUCH || 0),
+                // APUREWT: Number(rest.APUREWT || 0),
             };
         }
 
@@ -1481,7 +1557,7 @@ export default function PurchasePage() {
             const isIssue = isIssueType(transactionType);
 
             if (isIssue) {
-                if (!row.PUREID || row.WT == null || row.TOUCH == null || row.PURE == null) {
+                if (!row.PUREID || row.WT == null || row.TOUCH == null || row.PUREWT == null) {
                     toaster.create({
                         title: "Incomplete Items",
                         description: `Row ${i + 1}: Please fill PUREID, Weight, Touch, and Pure for all rows.`,
@@ -1726,6 +1802,7 @@ export default function PurchasePage() {
 
             goldStockRefetch();
             itemStockRefetch();
+            openingBalanceRefetch();
 
         } catch (error: any) {
             console.error('Save error:', error);
@@ -1734,6 +1811,7 @@ export default function PurchasePage() {
                 description: error.message || "Failed to save transaction.",
                 type: "error",
             });
+            openingBalanceRefetch();
         }
     };
 
@@ -1863,6 +1941,7 @@ export default function PurchasePage() {
 
             goldStockRefetch();
             itemStockRefetch();
+            openingBalanceRefetch();
 
         } catch (error: any) {
             console.error("Update error:", error);
@@ -1871,6 +1950,7 @@ export default function PurchasePage() {
                 description: error.message || "Failed to update transaction.",
                 type: "error",
             });
+            openingBalanceRefetch();
         }
     };
 
@@ -1965,6 +2045,7 @@ export default function PurchasePage() {
             {/* LEFT – 70% */}
                 <Box display='flex' gap={1} w='100%' >
                     <VStack align="stretch" gap={1} w='100%'> 
+
                     {/* 1. Transaction Header Form */}
                  
                     <TransactionHeaderForm
@@ -1974,9 +2055,8 @@ export default function PurchasePage() {
                         customerCollection={purchaserList}
                         getLabelByValue={getLabelByValue}
                         theme={theme}
-                        openingBalance={openingBalance}
-                        openingData={openingData}
-                     
+                        openingBalance={apiBalanceOpening}
+                        openingData={openingBalance}
                         isEditing={isEditing}
                         entryNo={transactionList?.data?.ENTRYNO}
                         billNo={transactionList?.data?.BILLNO}
@@ -2270,7 +2350,7 @@ export default function PurchasePage() {
     
                 {/* RIGHT SIDE - Summary Panel */}
                 <Box position="sticky">
-                    <BalanceSummary theme={theme} />
+                    <BalanceSummary theme={theme} openBalance={openingBalances} />
                 </Box>
             <StockDrawer
                 isIssue={selectedTransactionTypes.some(t => isIssueType(t))}

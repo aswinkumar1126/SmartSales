@@ -32,7 +32,7 @@ import { toastError } from '@/component/toast/toast'
 import { Toaster } from "@/components/ui/toaster";
 
 import { CustomTable } from "@/component/table/CustomTable";
-import { CapitalizedInput } from "@/component/form/CapitalizedInput";
+import { CapitalizedInput } from "@/components/ui/CapitalizedInput";
 import { usePrint } from "@/context/print/usePrintContext";
 import { useRouter } from "next/navigation";
 import { FaPrint, FaFileExcel } from "react-icons/fa";

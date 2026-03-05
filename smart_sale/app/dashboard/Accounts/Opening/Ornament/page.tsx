@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState ,useMemo} from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import {
     Box,
     Button,
@@ -40,17 +40,17 @@ import {
     useUpdateOrnament,
 } from "@/hooks/ornament/useOrnamentData";
 import { usePrint } from "@/context/print/usePrintContext";
-import { OrnamentPayload ,OrnamentFormData } from "@/types/ornament/ornament";
+import { OrnamentPayload, OrnamentFormData } from "@/types/ornament/ornament";
 import { formatToFixed } from "@/utils/format/numberFormat";
 import { parseFixedNumber } from "@/utils/format/numberInput";
 import { CustomTable } from "@/component/table/CustomTable";
-import { CapitalizedInput } from "@/component/form/CapitalizedInput";
+import { CapitalizedInput } from "@/components/ui/CapitalizedInput";
 import { toastError } from "@/component/toast/toast";
 import { useRouter } from "next/navigation";
-import { FaFileExcel ,FaPrint } from "react-icons/fa";
+import { FaFileExcel, FaPrint } from "react-icons/fa";
 import { SelectCombobox } from "@/components/ui/selectComboBox";
 import SearchBar from "@/component/search/SearchBar";
-import { RadioButton } from "@/components/RadioButton";
+import RadioButton from "@/components/ui/RadioButton";
 import { stockTypes } from "@/data/stock/StockTypesData";
 import { transactionTypes } from "@/data/stock/TransactionTypeData";
 
@@ -64,7 +64,7 @@ function OrnamentMaster() {
         stockType: "CY",
         accode: "",
         tranType: "IS",
-        metalId:"G",
+        metalId: "G",
         itemId: "",   // ✅ NOT null
         pcs: "",
         grswt: "",
@@ -75,7 +75,7 @@ function OrnamentMaster() {
         openCash: "",
         stoneCash: "",
         // actualtouch: "",
-        
+
 
     });
     const [higlightedId, setHiglightedId] = useState<Number>();
@@ -93,17 +93,17 @@ function OrnamentMaster() {
     const accountType = form.stockType?.trim().toUpperCase() || undefined;
     /* -------------------- DATA -------------------- */
     const { data: itemsData } = useItems();
-    const { setData ,setColumns ,setShowSno ,title } = usePrint();
-   
-    console.log(accountType,'accountType')
-    
+    const { setData, setColumns, setShowSno, title } = usePrint();
+
+    console.log(accountType, 'accountType')
+
     const { data: allAccounts, refetch: accountRefetch } = useAllAccountHead(accountType);
     const { data: metalData } = useAllMetals();
 
-  
 
-    console.log(metalData,'metalData')
-    const [filter ,setFilter] = useState<string>('');
+
+    console.log(metalData, 'metalData')
+    const [filter, setFilter] = useState<string>('');
 
     const { data: ornamentList, isLoading } = useOrnamentData(filter);
 
@@ -115,15 +115,15 @@ function OrnamentMaster() {
     const items: ItemMast[] = useMemo(() => {
         return (itemsData?.items ?? []).map(normalizeItem);
     }, [itemsData?.items]);
-    
-    
-       const allAccountsList = useMemo(() => {
-            const accounts = Array.isArray(allAccounts?.data?.acheads) ? allAccounts.data.acheads : [];
-            return accounts.map((acc: any) => ({
-                label: acc.ACNAME,
-                value: String(acc.ACCODE),
-            }));
-        }, [allAccounts]);
+
+
+    const allAccountsList = useMemo(() => {
+        const accounts = Array.isArray(allAccounts?.data?.acheads) ? allAccounts.data.acheads : [];
+        return accounts.map((acc: any) => ({
+            label: acc.ACNAME,
+            value: String(acc.ACCODE),
+        }));
+    }, [allAccounts]);
 
     const allMetalList = useMemo(() => {
         const metalList = Array.isArray(metalData) ? metalData : [];
@@ -137,7 +137,7 @@ function OrnamentMaster() {
     /* -------------------- EDIT FETCH -------------------- */
     const { data: editResponse } = useOrnamentDataById(editId!);
 
-    console.log(editResponse,'editResponse')
+    console.log(editResponse, 'editResponse')
 
     /* -------------------- MUTATIONS -------------------- */
     const { mutate: createOrnament, isPending } = useCreateOrnament();
@@ -151,22 +151,22 @@ function OrnamentMaster() {
         if (!editResponse?.data) return;
 
         const o = editResponse.data;
-    
+
 
         setForm({
             stockType: o.stockType ?? "CY",
             accode: o.accode ? String(o.accode) : "",
             tranType: o.tranType ?? "IS",
-            metalId:o.metalId ?? "G",
-            itemId:o.itemId ? String(o.itemId) : "",
+            metalId: o.metalId ?? "G",
+            itemId: o.itemId ? String(o.itemId) : "",
             pcs: o.pcs ? String(o.pcs) : "",
-            grswt: o.grswt? String(o.grswt) : "",
+            grswt: o.grswt ? String(o.grswt) : "",
             netwt: o.netwt ? String(o.netwt) : "",
             touch: o.touch ? String(o.touch) : "",
             purewt: o.purewt ? String(o.pure) : "",
             stnwt: o.stnwt ? String(o.stnwt) : "",
-            openCash: o.openCash ?  String(o.openCash) : "",
-            stoneCash: o.stoneCash ?  String(o.stoneCash) : "",
+            openCash: o.openCash ? String(o.openCash) : "",
+            stoneCash: o.stoneCash ? String(o.stoneCash) : "",
             // actualtouch: o.actualtouch ? String(o.actualtouch) :"",
         });
     }, [editResponse]);
@@ -182,32 +182,32 @@ function OrnamentMaster() {
         setItemCollection(collection);
     }, [items]);
 
-/* -------------------- EFFECTS: CALCULATE NET WT & PURE -------------------- */
-useEffect(() => {
-    // Calculate Net Wt automatically
-    const grswt = parseFloat(form.grswt ?? "") || 0;
-    const stnwt = parseFloat(form.stnwt ?? "") || 0;
-    const netwt = grswt - stnwt;
+    /* -------------------- EFFECTS: CALCULATE NET WT & PURE -------------------- */
+    useEffect(() => {
+        // Calculate Net Wt automatically
+        const grswt = parseFloat(form.grswt ?? "") || 0;
+        const stnwt = parseFloat(form.stnwt ?? "") || 0;
+        const netwt = grswt - stnwt;
 
-    // Calculate Pure automatically based on Actual Touch
-    const touch = parseFloat(form.touch ?? "") || 0;
-    const purewt = (netwt * touch)/100;
+        // Calculate Pure automatically based on Actual Touch
+        const touch = parseFloat(form.touch ?? "") || 0;
+        const purewt = (netwt * touch) / 100;
 
 
 
-    setForm((prev) => ({
-        ...prev,
-        netwt: netwt.toFixed(3),  // keep 3 decimals
-        purewt: purewt.toFixed(3),
-        actualtouch: String(touch),
-    }));
-}, [form.grswt, form.stnwt, form.touch]);
+        setForm((prev) => ({
+            ...prev,
+            netwt: netwt.toFixed(3),  // keep 3 decimals
+            purewt: purewt.toFixed(3),
+            actualtouch: String(touch),
+        }));
+    }, [form.grswt, form.stnwt, form.touch]);
 
 
     /* -------------------- HELPERS -------------------- */
-   const handleChange = (field: keyof OrnamentFormData, value: any) => {
-           setForm((prev) => ({ ...prev, [field]: value }));
-       };
+    const handleChange = (field: keyof OrnamentFormData, value: any) => {
+        setForm((prev) => ({ ...prev, [field]: value }));
+    };
 
     const toPayload = (form: OrnamentFormData): OrnamentPayload => ({
         stockType: form.stockType,
@@ -232,10 +232,10 @@ useEffect(() => {
             stockType: "CY",
             accode: "",
             tranType: "IS",
-            metalId:"G",
+            metalId: "G",
             itemId: "",
             pcs: "",
-            grswt:"",
+            grswt: "",
             netwt: "",
             touch: "",
             purewt: "",
@@ -247,13 +247,13 @@ useEffect(() => {
     };
 
     useEffect(() => {
-   if(!higlightedId) {
-    return;
-   }
-    const timer = setTimeout(() => {
-        setHiglightedId(undefined);
-    }, 3000); // Highlight for 3 seconds
-    return () => clearTimeout(timer);
+        if (!higlightedId) {
+            return;
+        }
+        const timer = setTimeout(() => {
+            setHiglightedId(undefined);
+        }, 3000); // Highlight for 3 seconds
+        return () => clearTimeout(timer);
 
     }, [higlightedId]);
 
@@ -305,11 +305,12 @@ useEffect(() => {
         if (editId) {
             updateOrnament(
                 { id: editId, ornamentData: payload },
-                { onSuccess:()=> {
-                    resetForm();
-                    setHiglightedId(Number(editId));
-                }
-                  
+                {
+                    onSuccess: () => {
+                        resetForm();
+                        setHiglightedId(Number(editId));
+                    }
+
                 }
             );
         } else {
@@ -320,7 +321,7 @@ useEffect(() => {
 
     /* -------------------- EDIT -------------------- */
     const handleEdit = (ornament: any) => {
-       console.log(ornament, 'ornament')
+        console.log(ornament, 'ornament')
 
         setEditId(ornament.ornamentId); // ✅ IMPORTANT: SNO
         ScrollToTop();
@@ -329,31 +330,31 @@ useEffect(() => {
 
     /*----------Table Columns ---------- */
 
-    const OrnamentTableColumn =[
-        {key:'sno' , label:'S.NO'},
-        {key:'itemName' , label:'Item Name'},
-        {key:'pcs' , label:'Pcs' ,align:'end' as const},
-        {key:'grswt' , label:'Grs Wt' ,align:'end' as const},
-        {key:'stnwt' , label:'Stone Wt' ,align:'end' as const},
-        {key:'netwt' , label:'Net Wt' ,align:'end' as const},
-        {key:'touch' , label:'Touch' ,align:'end' as const},
-        {key:'pure' , label:'Pure' ,align:'end' as const},
-        {key:'stoneCash' , label:'StoneCash' ,align:'end' as const},
-        {key:'action' , label:'Actions' , align: 'center' as const},
+    const OrnamentTableColumn = [
+        { key: 'sno', label: 'S.NO' },
+        { key: 'itemName', label: 'Item Name' },
+        { key: 'pcs', label: 'Pcs', align: 'end' as const },
+        { key: 'grswt', label: 'Grs Wt', align: 'end' as const },
+        { key: 'stnwt', label: 'Stone Wt', align: 'end' as const },
+        { key: 'netwt', label: 'Net Wt', align: 'end' as const },
+        { key: 'touch', label: 'Touch', align: 'end' as const },
+        { key: 'pure', label: 'Pure', align: 'end' as const },
+        { key: 'stoneCash', label: 'StoneCash', align: 'end' as const },
+        { key: 'action', label: 'Actions', align: 'center' as const },
     ]
-    
 
-    console.log(accountType, form.stockType,'accountType')
+
+    console.log(accountType, form.stockType, 'accountType')
 
     /*----------Print ---------- */
-    const handleExport = (option:string)=>{
+    const handleExport = (option: string) => {
         setData(ornaments);
         setColumns([
-            {key:'itemName' ,label:'Item Name' },
-            {key:'pcs' ,label:'Pieces' ,align:'end' as const , allowTotal:true},
-            { key: 'grswt', label: 'Gross Weight', align: 'end' as const,allowTotal:true },
-            { key:'netwt' , label:'Net Weight' , align:'end' as const,allowTotal:true },
-            { key: 'stnwt', label: 'Stone Weight', align: 'end' as const ,allowTotal:true},
+            { key: 'itemName', label: 'Item Name' },
+            { key: 'pcs', label: 'Pieces', align: 'end' as const, allowTotal: true },
+            { key: 'grswt', label: 'Gross Weight', align: 'end' as const, allowTotal: true },
+            { key: 'netwt', label: 'Net Weight', align: 'end' as const, allowTotal: true },
+            { key: 'stnwt', label: 'Stone Weight', align: 'end' as const, allowTotal: true },
         ])
         title?.("Ornament Opening List")
         router.push(`/print?export=${option}`);
@@ -365,7 +366,7 @@ useEffect(() => {
     /* -------------------- UI -------------------- */
     return (
         <Box
-           fontWeight='semibold'
+            fontWeight='semibold'
             bg={theme.colors.primary}
             color={theme.colors.secondary}
         >
@@ -386,11 +387,11 @@ useEffect(() => {
 
                         <Fieldset.Root size="sm" width="100%">
                             <Fieldset.Content>
-                                <Grid  gap={3}>
-                                      {/* ITEM NAME */}
+                                <Grid gap={3}>
+                                    {/* ITEM NAME */}
                                     <Box display="flex" alignItems="center" gap={2}>
                                         <Box minW="100px" fontSize="2xs">STOCK TYPE :</Box>
-                                        <RadioButton 
+                                        <RadioButton
                                             collection={stockTypes}
                                             value={form.stockType}
                                             onChange={(value) => handleChange("stockType", value)}
@@ -400,23 +401,23 @@ useEffect(() => {
                                         />
                                     </Box>
                                     {/* Company */}
-                                                               <Box>
-                                                              
-                                                                       <Box display="flex" alignItems="center" gap={2}>
-                                                                           <Box minW="100px" fontSize="2xs">
-                                                                               PARTY NAME :
-                                                                           </Box>
-                                                                           <SelectCombobox
-                                                                               value={form.accode ? String(form.accode) : ""}
-                                                                               onChange={(val) => handleChange("accode", val)}
-                                                                               items={allAccountsList}
-                                                                               rounded="full"
-                                                                               disable={!form.stockType || String(form.stockType) == "CY" }
-                                                                               placeholder={!form.stockType ? "Select Company Type First" : `select ${form.stockType}`}
-                                                                           />
-                                                                       </Box>
-                                                                      
-                                                               </Box>
+                                    <Box>
+
+                                        <Box display="flex" alignItems="center" gap={2}>
+                                            <Box minW="100px" fontSize="2xs">
+                                                PARTY NAME :
+                                            </Box>
+                                            <SelectCombobox
+                                                value={form.accode ? String(form.accode) : ""}
+                                                onChange={(val) => handleChange("accode", val)}
+                                                items={allAccountsList}
+                                                rounded="full"
+                                                disable={!form.stockType || String(form.stockType) == "CY"}
+                                                placeholder={!form.stockType ? "Select Company Type First" : `select ${form.stockType}`}
+                                            />
+                                        </Box>
+
+                                    </Box>
                                     <Box display="flex" alignItems="center" gap={2}>
                                         <Box minW="100px" fontSize="2xs">TRAN TYPE :</Box>
                                         <RadioButton
@@ -427,7 +428,7 @@ useEffect(() => {
                                             size="xs"
                                         />
                                     </Box>
-                                   
+
                                     {/* METAL NAME */}
                                     <Box display="flex" alignItems="center" gap={2}>
                                         <Box minW="100px" fontSize="2xs">METAL TYPE :</Box>
@@ -442,11 +443,11 @@ useEffect(() => {
                                     {/* METAL NAME */}
                                     <Box display="flex" alignItems="center" gap={2}>
                                         <Box minW="100px" fontSize="2xs">ITEM NAME :</Box>
-                                        <SelectCombobox 
-                                             items={itemCollection}
-                                             value={form.itemId}
-                                             onChange={(value) => handleChange("itemId", value)}
-                                             placeholder="select item"               
+                                        <SelectCombobox
+                                            items={itemCollection}
+                                            value={form.itemId}
+                                            onChange={(value) => handleChange("itemId", value)}
+                                            placeholder="select item"
 
                                         />
                                     </Box>
@@ -475,7 +476,7 @@ useEffect(() => {
                                         />
                                     </Box>
 
-                                    
+
 
                                     {/* STONE WT */}
                                     <Box display="flex" alignItems="center" gap={2}>
@@ -585,7 +586,7 @@ useEffect(() => {
                         </Fieldset.Root>
 
 
-                        
+
                     </VStack>
                 </GridItem>
 
@@ -612,31 +613,31 @@ useEffect(() => {
                                     />
                                 </Box>
                                 <Flex>
-                            <Button
-                                variant="ghost"
-                                size="xs"
-                                color= {theme.colors.green}
-                                _hover={{ color: "black" }}
-                                onClick={() => handleExport("excel")}
-                                aria-label="Export Excel"
-                            >
-                                <FaFileExcel />
-                            </Button>
+                                    <Button
+                                        variant="ghost"
+                                        size="xs"
+                                        color={theme.colors.green}
+                                        _hover={{ color: "black" }}
+                                        onClick={() => handleExport("excel")}
+                                        aria-label="Export Excel"
+                                    >
+                                        <FaFileExcel />
+                                    </Button>
 
-                            <Button
-                                variant="ghost"
-                                size="xs"
-                                color={theme.colors.primaryText}
-                                _hover={{ color: "black" }}
-                                onClick={() => handleExport("pdf")}
-                                aria-label="Export PDF"
-                            >
-                                <FaPrint />
-                            </Button>
-                        </Flex>
-                    </Box>
-                    </Box>   
-                        <CustomTable 
+                                    <Button
+                                        variant="ghost"
+                                        size="xs"
+                                        color={theme.colors.primaryText}
+                                        _hover={{ color: "black" }}
+                                        onClick={() => handleExport("pdf")}
+                                        aria-label="Export PDF"
+                                    >
+                                        <FaPrint />
+                                    </Button>
+                                </Flex>
+                            </Box>
+                        </Box>
+                        <CustomTable
                             columns={OrnamentTableColumn}
                             data={ornaments}
                             size="sm"
@@ -646,32 +647,32 @@ useEffect(() => {
                             emptyText="No Ornaments available"
                             rowIdKey='sno'
                             highlightRowId={higlightedId ? Number(higlightedId) : null}
-                            renderRow={(ornament: any, index: number)=>(
+                            renderRow={(ornament: any, index: number) => (
                                 <>
-                                 <Table.Cell>{index + 1}</Table.Cell>
+                                    <Table.Cell>{index + 1}</Table.Cell>
                                     <Table.Cell>{ornament.itemName}</Table.Cell>
-                                                <Table.Cell textAlign='end'>{ornament.pcs}</Table.Cell>
-                                                <Table.Cell textAlign='end'>{ornament.grswt}</Table.Cell>
-                                                <Table.Cell textAlign='end'>{ornament.stnwt}</Table.Cell>
-                                                <Table.Cell textAlign='end'>{ornament.netwt}</Table.Cell>
-                                                <Table.Cell textAlign='end'>{ornament.touch}</Table.Cell>
-                                                <Table.Cell textAlign='end'>{ornament.purewt}</Table.Cell>
-                                                <Table.Cell textAlign='end'>{ornament.stoneCash}</Table.Cell>
-                                                <Table.Cell>
-                                                <Box display='flex' justifyContent='center'>
-                                                <FaEdit
+                                    <Table.Cell textAlign='end'>{ornament.pcs}</Table.Cell>
+                                    <Table.Cell textAlign='end'>{ornament.grswt}</Table.Cell>
+                                    <Table.Cell textAlign='end'>{ornament.stnwt}</Table.Cell>
+                                    <Table.Cell textAlign='end'>{ornament.netwt}</Table.Cell>
+                                    <Table.Cell textAlign='end'>{ornament.touch}</Table.Cell>
+                                    <Table.Cell textAlign='end'>{ornament.purewt}</Table.Cell>
+                                    <Table.Cell textAlign='end'>{ornament.stoneCash}</Table.Cell>
+                                    <Table.Cell>
+                                        <Box display='flex' justifyContent='center'>
+                                            <FaEdit
                                                 cursor="pointer"
                                                 onClick={() => handleEdit(ornament)}
-                                                />
-                                                </Box>
-                                                   
-                                                </Table.Cell>
+                                            />
+                                        </Box>
+
+                                    </Table.Cell>
                                 </>
-    )}
-                            
-                            />
+                            )}
+
+                        />
                     </Box>
-                 
+
                 </GridItem>
             </Grid>
         </Box>

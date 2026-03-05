@@ -35,9 +35,9 @@ export interface WeightInfo {
     TOUCH?: number;
     PUREWT?: number;
 
-    AWT?: number;
-    ATOUCH?: number;
-    APUREWT?: number;
+    // AWT?: number;
+    // ATOUCH?: number;
+    // APUREWT?: number;
 }
 
 

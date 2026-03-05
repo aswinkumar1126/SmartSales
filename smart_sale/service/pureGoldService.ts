@@ -34,6 +34,7 @@ export const pureGoldMastService = () =>({
 
     getPureGoldMastDataById : async(id:number):Promise<ApiResponse<pureGoldData>> =>{
         try{
+            
             const response = await axiosInstance.get(`/${baseUrlOpen}/${id}`);
             return response.data;
 
@@ -55,6 +56,7 @@ export const pureGoldMastService = () =>({
     },
     updatepureGoldMastById: async (id: number, data: pureGoldOpenForm):Promise<ApiResponse<pureGoldData>> =>{
         try{
+
             const response = await axiosInstance.put(`/${baseUrlOpen}/${id}`,data);
             return response.data;
         }

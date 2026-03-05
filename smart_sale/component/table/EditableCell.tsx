@@ -13,7 +13,7 @@ import {
 } from "@chakra-ui/react";
 
 import { formatDateForAPI } from "@/utils/format/formatDateForAPI";
-import { CapitalizedInput } from "@/component/form/CapitalizedInput";
+import { CapitalizedInput } from "@/components/ui/CapitalizedInput";
 
 /* ---------------- TYPES ---------------- */
 

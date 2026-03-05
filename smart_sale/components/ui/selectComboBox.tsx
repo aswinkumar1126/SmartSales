@@ -18,6 +18,9 @@ type SelectComboboxProps = {
     rounded?: string;
     disable?: boolean;
     onEnter?: () => void;
+    onKeyDown?: (e: React.KeyboardEvent) => void; // Add this prop
+    ref?: React.Ref<HTMLInputElement>;
+    onBlur?:()=>void
 };
 
 export const SelectCombobox = forwardRef<HTMLInputElement, SelectComboboxProps>(({
@@ -29,7 +32,10 @@ export const SelectCombobox = forwardRef<HTMLInputElement, SelectComboboxProps>(
     placeholder = "Select an option",
     rounded = "full",
     disable,
-    onEnter
+    onEnter,
+    onKeyDown, // Receive the onKeyDown from EnterWrapperon
+    onBlur
+
 }, ref) => {
     const { contains } = useFilter({ sensitivity: "base" });
     const [typedInput, setTypedInput] = useState("");
@@ -71,7 +77,7 @@ export const SelectCombobox = forwardRef<HTMLInputElement, SelectComboboxProps>(
     useEffect(() => {
         if (value && items?.length > 0) {
             const selectedItem = items.find(
-                (item) => String(item.value) === String(value) // now matches correctly
+                (item) => String(item.value) === String(value)
             );
             setTypedInput(selectedItem ? selectedItem.label.toUpperCase() : "");
         } else {
@@ -84,17 +90,17 @@ export const SelectCombobox = forwardRef<HTMLInputElement, SelectComboboxProps>(
             e.preventDefault();
             e.stopPropagation();
 
-            let selectedItem: SelectItem | undefined;
-
-            if (highlightedValue) {
-                selectedItem = collection.items.find(item => item.value === highlightedValue);
-            } else if (typedInput) {
-                selectedItem = collection.items.find(item => item.label.toUpperCase() === typedInput.toUpperCase());
+            // select current value
+            let selectedItem = collection.items.find(
+                (item) => item.value === highlightedValue
+            );
+            if (!selectedItem && typedInput) {
+                selectedItem = collection.items.find(
+                    (item) => item.label.toUpperCase() === typedInput.toUpperCase()
+                );
             }
-
-            // Fallback to first item if nothing is typed/highlighted
             if (!selectedItem && collection.items.length > 0) {
-                selectedItem = collection.items[0];
+                selectedItem = collection.items[0]; // fallback
             }
 
             if (selectedItem) {
@@ -102,15 +108,18 @@ export const SelectCombobox = forwardRef<HTMLInputElement, SelectComboboxProps>(
                 setTypedInput(selectedItem.label.toUpperCase());
             }
 
-            setHighlightedValue(null);
             setIsOpen(false);
+            setHighlightedValue(null);
 
-            // Move to next field
-            setTimeout(() => {
-                if (onEnter) onEnter();
-            }, 50);
+            // ✅ Move to next field
+            setTimeout(() => onEnter?.(), 50);
+            return;
         }
+
+        // Forward all other keys
+        onKeyDown?.(e);
     };
+
     const handleValueChange = (e: any) => {
         if (e.value.length === 0) {
             onChange("");
@@ -120,14 +129,17 @@ export const SelectCombobox = forwardRef<HTMLInputElement, SelectComboboxProps>(
         }
         if (disable) return;
         const val = e.value[0] || "";
-        onChange(val); // ← no toUpperCase on value
+        onChange(val);
         const selectedItem = items?.find(item => item.value === val);
         setTypedInput(selectedItem?.label.toUpperCase() || "");
         setIsOpen(false);
+
+        // Move to next field when value changes via click
         setTimeout(() => {
             if (onEnter) onEnter();
         }, 50);
     };
+
     return (
         <Field.Root>
             {label && <Field.Label fontSize="2xs">{label}</Field.Label>}
@@ -151,12 +163,12 @@ export const SelectCombobox = forwardRef<HTMLInputElement, SelectComboboxProps>(
                         setIsOpen(false);
                     }
                 }}
+                onBlur={onBlur}
                 size="xs"
                 onHighlightChange={(e) => {
                     setHighlightedValue(e.highlightedValue);
                 }}
                 openOnClick={!disable}
-              
             >
                 <Combobox.Control rounded='full'>
                     <Combobox.Input
@@ -166,7 +178,7 @@ export const SelectCombobox = forwardRef<HTMLInputElement, SelectComboboxProps>(
                         textTransform="uppercase"
                         rounded={rounded}
                         disabled={disable}
-                        onKeyDown={handleKeyDown}
+                        onKeyDown={handleKeyDown} // Use our combined handler
                         onFocus={() => {
                             if (typedInput.length > 0) {
                                 setIsOpen(true);

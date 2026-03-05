@@ -139,7 +139,7 @@ export const SidebarProvider = ({ children }: { children: ReactNode }) => {
         items: [
           {
             label: "Gold Rate",
-            route: "/dashboard/Rate/Gold",
+            route: "/dashboard/RateEntry",
             icon: TrendingUp,
           },
         ],

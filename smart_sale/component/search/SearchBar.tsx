@@ -1,6 +1,6 @@
 import React from 'react';
 import { InputGroup } from '@chakra-ui/react';
-import { CapitalizedInput } from '../form/CapitalizedInput';
+import { CapitalizedInput } from '../../components/ui/CapitalizedInput';
 import { FiSearch, FiX } from 'react-icons/fi';
 import { useTheme } from '@/context/theme/themeContext';
 
@@ -51,7 +51,7 @@ const SearchBar = <T,>({
     return (
         <InputGroup
             className={className}
-            startElement={<FiSearch color={theme?.colors?.accient || '#011f4b' } />}
+            startElement={<FiSearch color={theme?.colors?.accient || '#011f4b'} />}
             endElement={
                 searchTerm && !disabled ? (
                     <FiX
@@ -84,7 +84,7 @@ const SearchBar = <T,>({
                 minWidth="0"
                 icon={true}
                 allowSpecial={allowSpecial}
-            
+
             />
         </InputGroup>
     );

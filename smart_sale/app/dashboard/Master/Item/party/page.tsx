@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState ,useMemo } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import {
     Box,
     Button,
@@ -14,13 +14,13 @@ import {
     Fieldset,
     Field,
     Select,
-    Portal ,
+    Portal,
     createListCollection,
     Flex
 } from "@chakra-ui/react";
 import { Table } from "@chakra-ui/react/table";
 import { AiOutlineSave } from "react-icons/ai";
-import { FaEdit ,FaPrint ,FaFileExcel } from "react-icons/fa";
+import { FaEdit, FaPrint, FaFileExcel } from "react-icons/fa";
 import { IoIosExit } from "react-icons/io";
 import { fontVariables } from "@/context/theme/font";
 import { useTheme } from "@/context/theme/themeContext";
@@ -41,7 +41,7 @@ import { formatToFixed } from "@/utils/format/numberFormat";
 
 import { usePrint } from "@/context/print/usePrintContext";
 import { useRouter } from "next/navigation";
-import { CapitalizedInput } from "@/component/form/CapitalizedInput";
+import { CapitalizedInput } from "@/components/ui/CapitalizedInput";
 
 const initialFormState: PartyForm = {
     companyType: "",
@@ -57,7 +57,7 @@ const initialFormState: PartyForm = {
 function PartyMaster() {
 
     //---------------State ManageMent---------------------
-   
+
 
     const [form, setForm] = useState<PartyForm>(initialFormState);
     const [isEdit, setIsEdit] = useState(false);
@@ -67,14 +67,14 @@ function PartyMaster() {
     //------------------------ Hooks-------------------------
     const { theme } = useTheme();
     const router = useRouter();
-    const { setData, setColumns ,title } = usePrint();
-    const { data: companiesData} = useAllCompanies();
+    const { setData, setColumns, title } = usePrint();
+    const { data: companiesData } = useAllCompanies();
     const { data: partyData = [], refetch } = useAllParties();
     const { data: partyById } = usePartyById(id ? String(id) : "");
     const createParty = useCreateParty();
     const updateParty = useUpdateParty();
 
- 
+
 
     /* Map API → Form on edit */
     useEffect(() => {
@@ -83,7 +83,7 @@ function PartyMaster() {
         setForm({
             companyType: partyById.companyType ?? "",
             companyId: partyById.companyId ?? "",
-            bookName: partyById.bookName ?? "",  
+            bookName: partyById.bookName ?? "",
             slipNo: partyById.slipNo ? String(partyById.slipNo) : "",
             openWeight: partyById.openWeight ? String(partyById.openWeight) : "",
             openPure: partyById.openPure ? String(partyById.openPure) : "",
@@ -109,31 +109,31 @@ function PartyMaster() {
             }),
         [companies]
     );
-     const companyTypeCollection = useMemo(
-            () =>
-                createListCollection({
-                    items: [
-                        { value: "CUS", label: "CUSTOMER" },
-                        { value: "SEL", label: "SELLER" },
-                    ],
-                }),
-            []
-        );
+    const companyTypeCollection = useMemo(
+        () =>
+            createListCollection({
+                items: [
+                    { value: "CUS", label: "CUSTOMER" },
+                    { value: "SEL", label: "SELLER" },
+                ],
+            }),
+        []
+    );
 
     const resetForm = () => {
         setForm(initialFormState);
         setIsEdit(false);
         setId(null);
     };
-      useEffect(()=>{
-        if(!highlightRowId) {
+    useEffect(() => {
+        if (!highlightRowId) {
             return;
         }
         const timer = setTimeout(() => {
             setHighlightRowId(null);
         }, 3000);
         return () => clearTimeout(timer);
-       })
+    })
 
     /** Convert Form → API Payload */
     const buildPayload = (): CreateParty => ({
@@ -154,7 +154,7 @@ function PartyMaster() {
             toastError("Company name is required");
             return;
         }
-        if(!form.companyType){
+        if (!form.companyType) {
             toastError("Company type is required");
             return;
         }
@@ -171,7 +171,7 @@ function PartyMaster() {
             toastError("Open cash is required");
             return;
         }
-        if(!form.openCash){
+        if (!form.openCash) {
             toastError("Open cash is required");
             return;
         }
@@ -181,7 +181,7 @@ function PartyMaster() {
         if (isEdit && id !== null) {
             updateParty.mutate(
                 {
-                    id: id,              
+                    id: id,
                     payload: payload,
                 },
                 {
@@ -197,7 +197,7 @@ function PartyMaster() {
         } else {
             createParty.mutate(payload, {
                 onSuccess: (res) => {
-                   
+
                     toastLoaded("Party created successfully");
                     resetForm();
                     refetch();
@@ -223,7 +223,7 @@ function PartyMaster() {
         { key: "sno", label: "S.No" },
         { key: "company", label: "Company" },
         { key: "slip", label: "Slip", align: "end" as const },
-        { key: "weight", label: "Open Wt", align: "end" as const ,showTotal:true },
+        { key: "weight", label: "Open Wt", align: "end" as const, showTotal: true },
         { key: "cash", label: "Cash", align: "end" as const },
         { key: "action", label: "Action", align: "center" as const },
     ];
@@ -234,7 +234,7 @@ function PartyMaster() {
         setColumns([
             { key: "sno", label: "S.No" },
             { key: "COMPANYNAME", label: "Company" },
-            { key: "slipNo", label: "Slip"},
+            { key: "slipNo", label: "Slip" },
             { key: "openWeight", label: "Open Wt", align: "end" as const, allowTotal: true },
             { key: "openCash", label: "Open Cash", align: "end" as const, allowTotal: true },
         ]);
@@ -290,7 +290,7 @@ function PartyMaster() {
                                 <Portal>
                                     <Select.Positioner>
                                         <Select.Content>
-                                            {companyCollection.items.map((company:any) => (
+                                            {companyCollection.items.map((company: any) => (
                                                 <Select.Item item={company} key={company.value}>
                                                     {company.label}
                                                     <Select.ItemIndicator />
@@ -301,66 +301,66 @@ function PartyMaster() {
                                 </Portal>
                             </Select.Root>
                         </Field.Root>
-                             <Field.Root >
-                                                    <Field.Label>Company Type</Field.Label>
-                                                    <Select.Root
-                                                        collection={companyTypeCollection}
-                                                        value={[form.companyType]}
-                                                        onValueChange={(e) =>
-                                                            handleChange("companyType", e.value[0])
-                                                        }
-                                                    >
-                                                        <Select.HiddenSelect />
-                                                      
-                                                        <Select.Control>
-                                                            <Select.Trigger>
-                                                                <Select.ValueText placeholder="Select Type" />
-                                                            </Select.Trigger>
-                                                            <Select.IndicatorGroup>
-                                                                <Select.Indicator />
-                                                            
-                                                            </Select.IndicatorGroup>
-                                                        </Select.Control>
-                                                     
-                                                        <Portal>
-                                                            <Select.Positioner>
-                                                                <Select.Content>
-                                                                    {companyTypeCollection.items.map((item:any) => (
-                                                                        <Select.Item key={item.value} item={item}>
-                                                                            <Select.ItemText>
-                                                                                {item.label}
-                                                                            </Select.ItemText>
-                                                                            <Select.ItemIndicator />
-                                                                        </Select.Item>
-                                                                    ))}
-                                                                </Select.Content>
-                                                            </Select.Positioner>
-                                                        </Portal>
-                                                    </Select.Root>
-                                                    {/* <Field.ErrorText>{errors.companyType}</Field.ErrorText> */}
-                                                </Field.Root>
+                        <Field.Root >
+                            <Field.Label>Company Type</Field.Label>
+                            <Select.Root
+                                collection={companyTypeCollection}
+                                value={[form.companyType]}
+                                onValueChange={(e) =>
+                                    handleChange("companyType", e.value[0])
+                                }
+                            >
+                                <Select.HiddenSelect />
+
+                                <Select.Control>
+                                    <Select.Trigger>
+                                        <Select.ValueText placeholder="Select Type" />
+                                    </Select.Trigger>
+                                    <Select.IndicatorGroup>
+                                        <Select.Indicator />
+
+                                    </Select.IndicatorGroup>
+                                </Select.Control>
+
+                                <Portal>
+                                    <Select.Positioner>
+                                        <Select.Content>
+                                            {companyTypeCollection.items.map((item: any) => (
+                                                <Select.Item key={item.value} item={item}>
+                                                    <Select.ItemText>
+                                                        {item.label}
+                                                    </Select.ItemText>
+                                                    <Select.ItemIndicator />
+                                                </Select.Item>
+                                            ))}
+                                        </Select.Content>
+                                    </Select.Positioner>
+                                </Portal>
+                            </Select.Root>
+                            {/* <Field.ErrorText>{errors.companyType}</Field.ErrorText> */}
+                        </Field.Root>
 
 
                         <Fieldset.Root>
 
                             <Field.Root>
                                 <Field.Label>
-                                           Book Name                          
+                                    Book Name
                                 </Field.Label>
-                                <CapitalizedInput 
+                                <CapitalizedInput
                                     field="bookName"
-                                    type="text" 
+                                    type="text"
                                     value={form.bookName}
                                     onChange={handleChange}
                                     placeholder="enter your book name"
-                                />                                   
+                                />
 
                             </Field.Root>
                             <Fieldset.Content>
                                 {[
-                                 
+
                                     ["Slip No", "slipNo"],
-                                  
+
                                     ["Open Weight", "openWeight"],
                                     ["Open Pure", "openPure"],
                                     ["Open Cash", "openCash"],
@@ -404,64 +404,64 @@ function PartyMaster() {
                         bg={theme.colors.formColor}
                         border="1px solid #eef"
                         boxShadow="0 0 30px rgba(212,212,212,0.2)"
-                       
+
                     >
-                      <Box display="flex" justifyContent="space-between" gap={2}>
+                        <Box display="flex" justifyContent="space-between" gap={2}>
                             <Text fontSize='18px' fontWeight="bold">
                                 Party List
                             </Text>
-                              <Flex gap={1}>
-                                                                            <Button
-                                                                                variant="ghost"
-                                                                                size="xs"
-                                                                                color= {theme.colors.green}
-                                                                                _hover={{ color: "black" }}
-                                                                                onClick={() => handleExport("excel")}
-                                                                                aria-label="Export Excel"
-                                                                            >
-                                                                                <FaFileExcel />
-                                                                            </Button>
-                                                
-                                                                            <Button
-                                                                                variant="ghost"
-                                                                                size="xs"
-                                                                                color={theme.colors.primaryText}
-                                                                                _hover={{ color: "black" }}
-                                                                                onClick={() => handleExport("pdf")}
-                                                                                aria-label="Export PDF"
-                                                                            >
-                                                                                <FaPrint />
-                                                                            </Button>
-                                                                        </Flex>    
+                            <Flex gap={1}>
+                                <Button
+                                    variant="ghost"
+                                    size="xs"
+                                    color={theme.colors.green}
+                                    _hover={{ color: "black" }}
+                                    onClick={() => handleExport("excel")}
+                                    aria-label="Export Excel"
+                                >
+                                    <FaFileExcel />
+                                </Button>
 
-                      </Box>
-                 
-                    <CustomTable
-                        columns={partyColumns}
-                        data={partyData}
-                        size="sm"
-                        headerBg='blue.800'
-                        bodyBg = {theme.colors.primary}
-                        headerColor='white'
-                        emptyText="No parties available"
-                        rowIdKey="sno"
-                        highlightRowId={highlightRowId}
-                        renderRow={(party, i) => (
-                            <>
-                                <Table.Cell>{i + 1}</Table.Cell>
-                                <Table.Cell>{party.COMPANYNAME}</Table.Cell>
-                                <Table.Cell textAlign="end">{party.slipNo}</Table.Cell>
-                                <Table.Cell textAlign="end">{formatToFixed(party.openWeight,3)}</Table.Cell>
-                                <Table.Cell textAlign="end">{formatToFixed(party.openCash ,2) }</Table.Cell>
-                                <Table.Cell>
-                                    <Box display="flex" justifyContent="center">
-                                        <FiEdit onClick={() => handleEdit(party)} cursor="pointer" />
-                                    </Box>
-                                </Table.Cell>
-                            </>
-                        )}
+                                <Button
+                                    variant="ghost"
+                                    size="xs"
+                                    color={theme.colors.primaryText}
+                                    _hover={{ color: "black" }}
+                                    onClick={() => handleExport("pdf")}
+                                    aria-label="Export PDF"
+                                >
+                                    <FaPrint />
+                                </Button>
+                            </Flex>
 
-                    />
+                        </Box>
+
+                        <CustomTable
+                            columns={partyColumns}
+                            data={partyData}
+                            size="sm"
+                            headerBg='blue.800'
+                            bodyBg={theme.colors.primary}
+                            headerColor='white'
+                            emptyText="No parties available"
+                            rowIdKey="sno"
+                            highlightRowId={highlightRowId}
+                            renderRow={(party, i) => (
+                                <>
+                                    <Table.Cell>{i + 1}</Table.Cell>
+                                    <Table.Cell>{party.COMPANYNAME}</Table.Cell>
+                                    <Table.Cell textAlign="end">{party.slipNo}</Table.Cell>
+                                    <Table.Cell textAlign="end">{formatToFixed(party.openWeight, 3)}</Table.Cell>
+                                    <Table.Cell textAlign="end">{formatToFixed(party.openCash, 2)}</Table.Cell>
+                                    <Table.Cell>
+                                        <Box display="flex" justifyContent="center">
+                                            <FiEdit onClick={() => handleEdit(party)} cursor="pointer" />
+                                        </Box>
+                                    </Table.Cell>
+                                </>
+                            )}
+
+                        />
                     </Box>
                 </GridItem>
 

@@ -31,7 +31,7 @@ import { formatToFixed } from "@/utils/format/numberFormat";
 import { FaPrint } from "react-icons/fa";
 import { useRouter } from "next/navigation";
 import { FaFileExcel } from "react-icons/fa";
-import { CapitalizedInput } from "@/component/form/CapitalizedInput";
+import { CapitalizedInput } from "@/components/ui/CapitalizedInput";
 import { AccountTypeList } from "@/data/ACCOUNTtYPE/AccountType";
 import { SelectCombobox } from "@/components/ui/selectComboBox";
 import { useAllAccountHead } from "@/hooks/accountHead/useAccountHead";
@@ -67,14 +67,14 @@ const TouchMasterForm = () => {
     const [editId, setEditId] = useState<number | null>(null);
     const [highlightRowId, setHighlightRowId] = useState<number | null>(null);
     const [errors, setErrors] = useState<Partial<Record<keyof TouchMaster, string>>>({});
-    const [filter,setFilter] = useState<string>('');
+    const [filter, setFilter] = useState<string>('');
 
     const { theme } = useTheme();
     const router = useRouter();
     const { setData, setColumns, setShowSno, title } = usePrint();
 
     /* ---------------- Hooks ---------------- */
-    
+
     const { data: touchData = [], refetch } = useTouchMastData(filter);
     const { data: touchDatabyId, refetch: touchDataRefetch } = useTouchMasterDataById(editId);
 
@@ -387,7 +387,7 @@ const TouchMasterForm = () => {
                                             items={CalTypeCollection}
                                             rounded="full"
                                             placeholder="select cal mode"
-                                        
+
                                         />
                                     </Box>
                                     <Field.ErrorText>{errors.calmode}</Field.ErrorText>
@@ -419,7 +419,7 @@ const TouchMasterForm = () => {
                 <Box p={5} borderRadius="lg" bg={theme.colors.formColor} boxShadow="sm">
                     <Heading
                         display="flex"
-                       
+
                         mb={2}
                         gap={3}
                         justifyContent="space-between"
@@ -440,27 +440,27 @@ const TouchMasterForm = () => {
                                 />
                             </Box>
                             <Flex>
-                            <Button
-                                variant="ghost"
-                                size="xs"
-                                color={theme.colors.green}
-                                _hover={{ color: "black" }}
-                                onClick={() => handleExport("excel")}
-                                aria-label="Export Excel"
-                            >
-                                <FaFileExcel />
-                            </Button>
-                            <Button
-                                variant="ghost"
-                                size="xs"
-                                color={theme.colors.primaryText}
-                                _hover={{ color: "black" }}
-                                onClick={() => handleExport("pdf")}
-                                aria-label="Export PDF"
-                            >
-                                <FaPrint />
-                            </Button>
-                        </Flex>
+                                <Button
+                                    variant="ghost"
+                                    size="xs"
+                                    color={theme.colors.green}
+                                    _hover={{ color: "black" }}
+                                    onClick={() => handleExport("excel")}
+                                    aria-label="Export Excel"
+                                >
+                                    <FaFileExcel />
+                                </Button>
+                                <Button
+                                    variant="ghost"
+                                    size="xs"
+                                    color={theme.colors.primaryText}
+                                    _hover={{ color: "black" }}
+                                    onClick={() => handleExport("pdf")}
+                                    aria-label="Export PDF"
+                                >
+                                    <FaPrint />
+                                </Button>
+                            </Flex>
                         </Box>
                     </Heading>
 

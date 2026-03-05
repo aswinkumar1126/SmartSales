@@ -11,7 +11,7 @@ import {
 import { LuX, LuPlus } from "react-icons/lu";
 import { SelectCombobox, SelectItem } from "@/components/ui/selectComboBox";
 import TransactionTable from "@/component/table/TransactionTable";
-import { CapitalizedInput } from "@/component/form/CapitalizedInput";
+import { CapitalizedInput } from "@/components/ui/CapitalizedInput";
 import { toaster } from "@/components/ui/toaster";
 
 type MiscChargeRow = {
@@ -27,7 +27,7 @@ type Props = {
     onSave: (rows: MiscChargeRow[]) => void;
     initialRows?: MiscChargeRow[];
     chargeItems?: SelectItem[];
-    otherChargesData?:any;
+    otherChargesData?: any;
 };
 
 const COL_WIDTHS: Record<string, string> = {
@@ -112,7 +112,7 @@ export default function OtherChargesWindow({
     useEffect(() => {
         // Only auto-load if we're not in edit mode and amount hasn't been manually changed
         if (!editId && formData.chargeName && !isAmountManuallyChanged) {
-            console.log(formData.chargeName ,'checking')
+            console.log(formData.chargeName, 'checking')
             // Try to find amount from otherChargesData first
             if (otherChargesData && Array.isArray(otherChargesData)) {
                 const selectedCharge = otherChargesData.find(
@@ -127,7 +127,7 @@ export default function OtherChargesWindow({
                     }));
                 }
             }
-       
+
         }
 
         // Reset manual change flag when charge name changes (if we're in a new selection)
@@ -403,16 +403,16 @@ export default function OtherChargesWindow({
                     rounded="sm"
                     noBorder
                 />
-               
+
             </Box>
         );
     };
 
     const getCellValue = (col: any, row: MiscChargeRow) => {
 
-        
+
         if (col.key === "amount") {
-        
+
             return `${row.amount.toLocaleString()}`;
         }
         if (col.key === "chargeName") {

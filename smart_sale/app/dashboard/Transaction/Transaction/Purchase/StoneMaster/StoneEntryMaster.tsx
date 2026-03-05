@@ -10,7 +10,7 @@ import {
     IconButton,
 } from "@chakra-ui/react";
 import { LuX } from "react-icons/lu";
-import { CapitalizedInput } from "@/component/form/CapitalizedInput";
+import { CapitalizedInput } from "@/components/ui/CapitalizedInput";
 import { SelectCombobox, SelectItem } from "@/components/ui/selectComboBox";
 import TransactionTable from "@/component/table/TransactionTable";
 import { toaster } from "@/components/ui/toaster";

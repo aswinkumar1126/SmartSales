@@ -1,6 +1,6 @@
 "use client";
 
-import { Box, HStack, Button, IconButton, Group, Text, Icon } from "@chakra-ui/react";
+import { Box, HStack, Button, IconButton, Group, Text, Icon ,Menu,Portal ,Flex  } from "@chakra-ui/react";
 import { FiMenu, FiEye, FiEyeOff, FiSun, FiMoon } from "react-icons/fi";
 import { useMediaQuery } from "@chakra-ui/react";
 import { useSidebar } from "@/context/layout/SideBarContext";
@@ -9,16 +9,22 @@ import { Tooltip } from "@/components/ui/tooltip";
 import {
     ChevronsLeft,
     ChevronsRight,
-    Menu,
+    Menu as MenuIcon,
     X,
 } from "lucide-react";
+import { useRates } from "@/hooks/rate/useRate";
+import { MetalRatesMenu } from "../rates/MetalRates";
 
 const Header = ({ onOpenMenu }: any) => {
     const { theme, mode, toggleTheme } = useTheme();
+
+
     const {
         sidebarCollapsed,
         toggleSidebar
     } = useSidebar();
+    const {data:metalRates , isLoading , isError} =useRates();
+   
 
     const [isDesktop] = useMediaQuery(["(min-width: 768px)"]);
     const now = new Date();
@@ -35,6 +41,14 @@ const Header = ({ onOpenMenu }: any) => {
         minute: "2-digit",
         hour12: true,
     });
+
+    {
+if(isError) return <div>Error fetching rates</div>
+    }
+    { if (isLoading) return <div>Error fetching rates</div> }
+
+
+
 
     return (
         <Box
@@ -72,7 +86,7 @@ const Header = ({ onOpenMenu }: any) => {
                                     }}
                                     size="sm"
                                 >
-                                    <Menu size={18} />
+                                    <MenuIcon size={18} />
                                 </IconButton>
                             </Tooltip>
                         )}
@@ -104,7 +118,7 @@ const Header = ({ onOpenMenu }: any) => {
                                     }}
                                     size="sm"
                                 >
-                                    {sidebarCollapsed ? <Menu size={18} /> : <X size={18} />}
+                                    {sidebarCollapsed ? <MenuIcon size={18} /> : <X size={18} />}
                                 </IconButton>
                             </Tooltip>
                         )}
@@ -118,6 +132,9 @@ const Header = ({ onOpenMenu }: any) => {
                     width={{ base: "100%", sm: "auto" }}
                     justify={{ base: "flex-end", sm: "flex-start" }}
                 >
+                    <HStack>
+                        <MetalRatesMenu rates={metalRates} isLoading={isLoading} isError={isError}/>
+                    </HStack>
                     {/* Date and Time - visible on all screens */}
                     <HStack
                         display="flex"

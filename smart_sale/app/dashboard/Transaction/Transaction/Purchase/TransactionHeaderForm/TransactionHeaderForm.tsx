@@ -1,11 +1,10 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Box, Text, Flex ,Button } from "@chakra-ui/react";
+import { Box, Text, Flex, Button } from "@chakra-ui/react";
 import DatePicker from "react-datepicker";
-import { CapitalizedInput } from "@/component/form/CapitalizedInput";
+import { CapitalizedInput } from "@/components/ui/CapitalizedInput";
 import { formatToFixed } from "@/utils/format/numberFormat";
-
 import { SelectCombobox } from "@/components/ui/selectComboBox";
 
 
@@ -35,11 +34,11 @@ export default function TransactionHeaderForm({
     theme,
     openingBalance,
     openingData,
- 
+
     isEditing = false,
     entryNo,
     billNo,
-  
+
 
 }: TransactionHeaderFormProps) {
 
@@ -66,9 +65,10 @@ export default function TransactionHeaderForm({
         if (!date) return "";
         return date.toISOString().split("T")[0];
     };
+    console.log(openingBalance,'openingBalance')
 
-    const openingCash = openingData?.OPENING_CASH ? formatToFixed(openingData?.OPENING_CASH , 2) : 0;
-    const openingPure = openingData?.OPENING_PURE ? formatToFixed(openingData?.OPENING_PURE, 2) : 0;
+    const openingCash = openingBalance.openCash ? formatToFixed(openingBalance.openCash, 2) : 0;
+    const openingPure = openingBalance.openPure ? formatToFixed(openingBalance.openPure, 2) : 0;
 
     return (
         <Box
@@ -80,87 +80,87 @@ export default function TransactionHeaderForm({
             p={2}
             rounded="xl"
         >
-            
-                <Box
-                    display="flex"
-                    gap={2}
-                    flexDirection={{ base: "column", md: "row" }}
-                    fontWeight='semibold'
-                    w={{ base: '100%', md: 'fit-content' }}
-                >
-                    {/* ENTRY NO */}
-                    <Box w={{ base: '100%', md: '60px' }} display={{ base: 'flex', md: 'block' }} alignItems={{ base: 'center' }}>
-                        <Text fontSize="2xs" mb={1} minW={{ base: '100px' }}>ENTRY NO :</Text>
-                        <CapitalizedInput
-                            value={entryNo || form.ENTRYNO}
-                            field="ENTRYNO"
-                            onChange={() => { }}
-                            disabled
-                            size="xs"
-                            rounded="md"
-                        />
-                    </Box>
 
-                    {/* BILL NO */}
-                    <Box w={{ base: '100%', md: '70px' }} display={{ base: 'flex', md: 'block' }} alignItems={{ base: 'center' }}>
-                        <Text fontSize="2xs" mb={1} minW={{ base: '100px' }}>BILL NO :</Text>
-                        <CapitalizedInput
-                            value={billNo || form.BILLNO}
-                            field="BILLNO"
-                            onChange={() => { }}
-                            disabled
-                            size="xs"
-                            rounded="md"
-                        />
-                    </Box>
-
-                    {/* DATE */}
-                    <Box w={{ base: '100%', md: '150px' }} display={{ base: 'flex', md: 'block' }} alignItems='center'>
-                        <Text fontSize="2xs" mb={1} minW={{ base: '100px' }}>DATE :</Text>
-                        <DatePicker
-                            selected={parseISOToDate(form.DATE)}
-                            onChange={(date: Date | null) => {
-                                if (!date) return;
-                                onFormChange("DATE", formatDateToISO(date));
-                            }}
-                            maxDate={new Date()}
-                            dateFormat="dd-MM-yyyy"
-                            placeholderText="dd-mm-yyyy"
-                            className="w-full px-2 py-1 text-xs border border-gray-400 rounded input-date"
-                            disabled={isEditing}
-                        />
-                    </Box>
-
-                    {/* RATE / GM */}
-                    <Box w={{ base: '100%', md: '150px' }} display={{ base: 'flex', md: 'block' }} alignItems='center'>
-                        <Text fontSize="2xs" mb={1} minW={{ base: '100px' }}>RATE / GM :</Text>
-                        <CapitalizedInput
-                            value={form.RATEGM}
-                            field="RATEGM"
-                            onChange={(field, value) => onFormChange(field, value)}
-                            type="number"
-                            size="xs"
-                            rounded="sm"
-                        />
-                    </Box>
-
-                    {/* CUSTOMER */}
-                    <Box w={{ base: '100%', md: '150px' }} display={{ base: 'flex', md: 'block' }} alignItems='center'>
-                        <Text fontSize="2xs" mb={1} minW={{ base: '100px' }}>PURCHASER :</Text>
-                        <SelectCombobox
-                            items={customerCollection}
-                            value={form.CUSTOMER}
-                            onChange={(val) => {
-                                // Only call onCustomerSelect, it will handle both state updates
-                                onCustomerSelect(val, getCustomerLabel(val));
-                                // Remove onFormChange here to avoid double update
-                            }}
-                            placeholder="Select Customer"
-                            rounded="md"
-                        />
-                    </Box>
-              
+            <Box
+                display="flex"
+                gap={2}
+                flexDirection={{ base: "column", md: "row" }}
+                fontWeight='semibold'
+                w={{ base: '100%', md: 'fit-content' }}
+            >
+                {/* ENTRY NO */}
+                <Box w={{ base: '100%', md: '60px' }} display={{ base: 'flex', md: 'block' }} alignItems={{ base: 'center' }}>
+                    <Text fontSize="2xs" mb={1} minW={{ base: '100px' }}>ENTRY NO :</Text>
+                    <CapitalizedInput
+                        value={entryNo || form.ENTRYNO}
+                        field="ENTRYNO"
+                        onChange={() => { }}
+                        disabled
+                        size="xs"
+                        rounded="md"
+                    />
                 </Box>
+
+                {/* BILL NO */}
+                <Box w={{ base: '100%', md: '70px' }} display={{ base: 'flex', md: 'block' }} alignItems={{ base: 'center' }}>
+                    <Text fontSize="2xs" mb={1} minW={{ base: '100px' }}>BILL NO :</Text>
+                    <CapitalizedInput
+                        value={billNo || form.BILLNO}
+                        field="BILLNO"
+                        onChange={() => { }}
+                        disabled
+                        size="xs"
+                        rounded="md"
+                    />
+                </Box>
+
+                {/* DATE */}
+                <Box w={{ base: '100%', md: '150px' }} display={{ base: 'flex', md: 'block' }} alignItems='center'>
+                    <Text fontSize="2xs" mb={1} minW={{ base: '100px' }}>DATE :</Text>
+                    <DatePicker
+                        selected={parseISOToDate(form.DATE)}
+                        onChange={(date: Date | null) => {
+                            if (!date) return;
+                            onFormChange("DATE", formatDateToISO(date));
+                        }}
+                        maxDate={new Date()}
+                        dateFormat="dd-MM-yyyy"
+                        placeholderText="dd-mm-yyyy"
+                        className="w-full px-2 py-1 text-xs border border-gray-400 rounded input-date"
+                        disabled={isEditing}
+                    />
+                </Box>
+
+                {/* RATE / GM */}
+                <Box w={{ base: '100%', md: '150px' }} display={{ base: 'flex', md: 'block' }} alignItems='center'>
+                    <Text fontSize="2xs" mb={1} minW={{ base: '100px' }}>RATE / GM :</Text>
+                    <CapitalizedInput
+                        value={form.RATEGM}
+                        field="RATEGM"
+                        onChange={(field, value) => onFormChange(field, value)}
+                        type="number"
+                        size="xs"
+                        rounded="sm"
+                    />
+                </Box>
+
+                {/* CUSTOMER */}
+                <Box w={{ base: '100%', md: '150px' }} display={{ base: 'flex', md: 'block' }} alignItems='center'>
+                    <Text fontSize="2xs" mb={1} minW={{ base: '100px' }}>PURCHASER :</Text>
+                    <SelectCombobox
+                        items={customerCollection}
+                        value={form.CUSTOMER}
+                        onChange={(val) => {
+                            // Only call onCustomerSelect, it will handle both state updates
+                            onCustomerSelect(val, getCustomerLabel(val));
+                            // Remove onFormChange here to avoid double update
+                        }}
+                        placeholder="Select Customer"
+                        rounded="md"
+                    />
+                </Box>
+
+            </Box>
             <Box display='flex' gap={2}  >
                 {openingBalance && openingData && (
 
@@ -212,7 +212,7 @@ export default function TransactionHeaderForm({
 
                 )}
             </Box>
-      
+
         </Box>
     );
 }

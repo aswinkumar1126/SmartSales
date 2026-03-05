@@ -37,7 +37,7 @@ import {
 import ScrollToTop from "@/component/scroll/ScrollToTop";
 import { toastCreated, toastError, toastLoaded, toastUpdated, toastUploaded } from "@/component/toast/toast";
 import { CustomTable } from "@/component/table/CustomTable";
-import { CapitalizedInput } from "@/component/form/CapitalizedInput";
+import { CapitalizedInput } from "@/components/ui/CapitalizedInput";
 import { usePrint } from "@/context/print/usePrintContext";
 import { useRouter } from "next/navigation";
 import { FaPrint, FaFileExcel } from "react-icons/fa";
@@ -57,7 +57,7 @@ function AccountHeadMaster() {
     /* -------------------- API HOOKS -------------------- */
     const { data, isLoading } = useAllCompanies();
     const router = useRouter();
-    const { setData, setColumns, setShowSno ,title} = usePrint();
+    const { setData, setColumns, setShowSno, title } = usePrint();
     const companies = data?.data ?? [];
 
     const [search, setSearch] = useState<string>('');
@@ -370,8 +370,8 @@ function AccountHeadMaster() {
         //         return;
         //     }
         // }
-       
-  
+
+
         if (editId) {
             updateAccountHead(
                 {
@@ -379,7 +379,7 @@ function AccountHeadMaster() {
                     data: form,
                 },
                 {
-                    onSuccess: () => {              
+                    onSuccess: () => {
                         refetch();
                         setHighlightedId(Number(editId));
                         resetForm();
@@ -420,7 +420,7 @@ function AccountHeadMaster() {
         { key: "STATE", label: "State" },
         { key: "OPENING_PURE", label: "Opening Pure" },
         { key: "OPENING_CASH", label: "Opening Cash" },
-      
+
         // { key: "OPENING_WEIGHT", label: "Opening Weight" },
         { key: "ACTIVE", label: "Active" },
         { key: "actions", label: "Actions" },
@@ -459,7 +459,7 @@ function AccountHeadMaster() {
 
                         <Fieldset.Root size="sm" width="100%">
                             <Fieldset.Content>
-                                <Grid css={{ gridTemplateColumns: "repeat(1, 1fr)"  }} gap={3}>
+                                <Grid css={{ gridTemplateColumns: "repeat(1, 1fr)" }} gap={3}>
 
                                     {/* ENTRY ID */}
                                     <Box display="flex" alignItems="center" gap={2}>
@@ -732,16 +732,16 @@ function AccountHeadMaster() {
                 {/* ---------------- TABLE ---------------- */}
                 <GridItem minW={0}>
                     <Box bg={theme.colors.formColor} p={2} borderRadius="xl" border="1px solid #eef">
-                        <Box display='flex' mb={2}  justifyContent='space-between' alignItems='center'>
+                        <Box display='flex' mb={2} justifyContent='space-between' alignItems='center'>
                             <Text fontWeight="semibold" fontSize="small">
                                 ACCOUNT HEAD LIST
                             </Text>
                             <Box display='flex' gap={1}>
                                 <Box >
-                                    <SearchBar 
+                                    <SearchBar
                                         searchTerm={search}
                                         onChange={setSearch}
-                                        placeholder="Search account masters" 
+                                        placeholder="Search account masters"
                                         size="2xs"
 
                                     />
@@ -771,23 +771,23 @@ function AccountHeadMaster() {
                                 </Flex>
                             </Box>
 
-                           
+
                         </Box>
 
 
                         <CustomTable
                             columns={accountColumn}
                             data={accountList}
-                            renderRow={(account ,index) => (
-                                <>  
+                            renderRow={(account, index) => (
+                                <>
 
-                                    <Table.Cell>{index+1}</Table.Cell>
+                                    <Table.Cell>{index + 1}</Table.Cell>
                                     <Table.Cell>{account.ACNAME}</Table.Cell>
                                     <Table.Cell>{account.ACTYPE}</Table.Cell>
                                     <Table.Cell>{account.STATE}</Table.Cell>
                                     <Table.Cell textAlign="center">{account.OPENING_PURE}</Table.Cell>
                                     <Table.Cell textAlign="center">{account.OPENING_CASH}</Table.Cell>
-                            
+
                                     {/* <Table.Cell textAlign="center">{account.OPENING_WEIGHT}</Table.Cell> */}
                                     <Table.Cell textAlign="center">{account.ACTIVE}</Table.Cell>
                                     <Table.Cell>

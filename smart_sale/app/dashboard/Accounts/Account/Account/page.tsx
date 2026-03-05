@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState ,useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import {
     Box,
     Button,
@@ -31,17 +31,17 @@ import {
     useAllCompanies,
     useCompanyById,
     useCreateCompany,
-    useUpdateCompany,  
+    useUpdateCompany,
 } from "@/hooks/company/useCompany";
 
 import ScrollToTop from "@/component/scroll/ScrollToTop";
 import { CreateCompanyPayload, Company } from "@/service/CompanyService";
 import { toastCreated, toastError, toastLoaded, toastUpdated, toastUploaded } from "@/component/toast/toast";
 import { CustomTable } from "@/component/table/CustomTable";
-import { CapitalizedInput } from "@/component/form/CapitalizedInput";
+import { CapitalizedInput } from "@/components/ui/CapitalizedInput";
 import { usePrint } from "@/context/print/usePrintContext";
 import { useRouter } from "next/navigation";
-import { FaPrint ,FaFileExcel } from "react-icons/fa";
+import { FaPrint, FaFileExcel } from "react-icons/fa";
 
 
 
@@ -51,7 +51,7 @@ function AccountMaster() {
     /* -------------------- API HOOKS -------------------- */
     const { data, isLoading } = useAllCompanies();
     const router = useRouter();
-    const {setData ,setColumns ,setShowSno , title } =usePrint();
+    const { setData, setColumns, setShowSno, title } = usePrint();
     const companies = data?.data ?? [];
 
 
@@ -64,16 +64,16 @@ function AccountMaster() {
         COMPANYNAME: "",
         // costid: "",
         ADDRESS1: "",
-        ADDRESS2:"",
-        ADDRESS3:"",
+        ADDRESS2: "",
+        ADDRESS3: "",
         AREACODE: "",
         PHONE: "",
         EMAIL: "",
         GSTNO: "",
         ACTIVE: "Y",
-        STATEID:"",
+        STATEID: "",
     });
-    const [highlightedId ,setHighlightedId] = useState<Number>()
+    const [highlightedId, setHighlightedId] = useState<Number>()
 
     const [logoFile, setLogoFile] = useState<File>();
     const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -89,8 +89,8 @@ function AccountMaster() {
 
     const stateItems = createListCollection({
         items: [
-            { label: "TAMILNADU" ,value :'TAMILNADU'},
-          
+            { label: "TAMILNADU", value: 'TAMILNADU' },
+
         ],
     });
 
@@ -99,13 +99,13 @@ function AccountMaster() {
 
     useEffect(() => {
         if (!company) return;
-          
+
         setForm({
             COMPANYID: company.COMPANYID,
             COMPANYNAME: company.COMPANYNAME,
             // costid: company.COSTID ?? "",
             ADDRESS1: company.ADDRESS1 ?? "",
-            ADDRESS2: company.ADDRESS2?? "",
+            ADDRESS2: company.ADDRESS2 ?? "",
             ADDRESS3: company.ADDRESS3 ?? "",
             AREACODE: company.AREACODE ?? "",
             PHONE: company.PHONE ?? "",
@@ -133,7 +133,7 @@ function AccountMaster() {
 
         // ✅ AFTER render is fully committed
         const timer = setTimeout(() => {
-            
+
             setHighlightedId(undefined);
         }, 3000);
 
@@ -146,7 +146,7 @@ function AccountMaster() {
     const handleChange = (field: keyof CreateCompanyPayload, value: any) => {
         setForm((prev) => ({ ...prev, [field]: value }));
     };
-    
+
     const resetForm = () => {
         setEditId(null);
         setLogoFile(undefined);
@@ -191,59 +191,59 @@ function AccountMaster() {
             toastError("Company Name is required");
             return;
         }
-        if(!form.ADDRESS1?.trim()){
+        if (!form.ADDRESS1?.trim()) {
             toastError("Address is required");
             return;
         }
-        if(!form.ADDRESS2?.trim()){
+        if (!form.ADDRESS2?.trim()) {
             toastError("Area is required");
             return;
         }
-        if(!form.ADDRESS3?.trim()){
+        if (!form.ADDRESS3?.trim()) {
             toastError("City is required");
             return;
         }
-        if(!form.AREACODE?.trim()){
+        if (!form.AREACODE?.trim()) {
             toastError("Pincode is required");
             return;
         }
-       
-        if(form.AREACODE){
+
+        if (form.AREACODE) {
             const pinRegex = /^[0-9]{6}$/;
             if (!pinRegex.test(form.AREACODE)) {
                 toastError("Pincode must be exactly 6 digits");
                 return;
             }
         }
-        if(!form.PHONE?.trim()){
+        if (!form.PHONE?.trim()) {
             toastError("Mobile Number is required");
             return;
         }
-        if(!form.EMAIL?.trim()){
+        if (!form.EMAIL?.trim()) {
             toastError("Email is required");
             return;
         }
 
-       
+
         if (editId) {
             updateCompany({
                 id: editId,
                 payload: form,
                 logo: logoFile,
-            } ,{
-                onSuccess : () =>{
+            }, {
+                onSuccess: () => {
                     resetForm;
                     setHighlightedId(Number(editId));
                 }
-            }) 
-            ;
-          
+            })
+                ;
+
         } else {
             createCompany({
                 payload: form,
                 logo: logoFile,
             });
-            
+
         }
 
         resetForm();
@@ -255,13 +255,13 @@ function AccountMaster() {
     };
 
     const CompanyColumn = [
-        {key:'companyId' , label:'Company Id' },
-        {key:'companyName' , label:'Company Name' },
+        { key: 'companyId', label: 'Company Id' },
+        { key: 'companyName', label: 'Company Name' },
         // {key:'costId' , label:'Cost Id' },
-        {key:'active', label:'Active'},
-        {key:'actions', label:'Actions'},
+        { key: 'active', label: 'Active' },
+        { key: 'actions', label: 'Actions' },
     ];
- 
+
     /* -------------------- Export -------------------- */
     const handleExport = (option: string) => {
         setData(companies);
@@ -283,7 +283,7 @@ function AccountMaster() {
             fontFamily="var(--font-lustria)"
             bg={theme.colors.primary}
             color={theme.colors.secondary}
-        
+
         >
             <Toaster />
             <Grid templateColumns={{ base: "1fr", lg: "1fr 1fr" }} gap={4}>
@@ -296,7 +296,7 @@ function AccountMaster() {
 
                         <Fieldset.Root size="sm" width="100%">
                             <Fieldset.Content>
-                                <Grid css={{ sm: { gridTemplateColumns: "repeat(1, 1fr)" }, md: { gridTemplateColumns: "repeat(2, 1fr)" }}} gap={2}>
+                                <Grid css={{ sm: { gridTemplateColumns: "repeat(1, 1fr)" }, md: { gridTemplateColumns: "repeat(2, 1fr)" } }} gap={2}>
                                     <Field.Root>
                                         <Field.Label>Company Id</Field.Label>
                                         <CapitalizedInput<CreateCompanyPayload>
@@ -305,7 +305,7 @@ function AccountMaster() {
                                             disabled={!!editId}   // ✅ lock during edit
                                             onChange={handleChange}
                                             max={3}
-                                         
+
                                         />
                                     </Field.Root>
 
@@ -374,7 +374,7 @@ function AccountMaster() {
                                             <NativeSelect.Indicator />
                                         </NativeSelect.Root>
                                     </Field.Root>
-                                    
+
                                     <Field.Root>
 
                                         <Field.Label>PinCode</Field.Label>
@@ -384,7 +384,7 @@ function AccountMaster() {
                                             onChange={handleChange}
                                             max={999999}
                                             type="number"
-                                          
+
                                         />
                                     </Field.Root>
                                     <Field.Root>
@@ -395,7 +395,7 @@ function AccountMaster() {
                                             onChange={handleChange}
                                             max={9999999999}
                                             type="number"
-                                       
+
                                         />
                                     </Field.Root>
                                     <Field.Root>
@@ -412,11 +412,11 @@ function AccountMaster() {
                                             field="GSTNO"
                                             value={form.GSTNO}
                                             onChange={handleChange}
-                                            
+
                                         />
                                     </Field.Root>
 
-                                    
+
 
                                     <Field.Root>
                                         <Field.Label>Active</Field.Label>
@@ -459,7 +459,7 @@ function AccountMaster() {
                 {/* ---------------- TABLE ---------------- */}
                 <GridItem minW={0}>
                     <Box bg={theme.colors.formColor} p={4} borderRadius="xl" border="1px solid #eef">
-                        <Box display='flex'  mb={4} gap={3} justifyContent='space-between' alignItems='center'>
+                        <Box display='flex' mb={4} gap={3} justifyContent='space-between' alignItems='center'>
                             <Text fontWeight="bold" mb={2}>
                                 Company Details
                             </Text>
@@ -488,9 +488,9 @@ function AccountMaster() {
                                 </Button>
                             </Flex>
                         </Box>
-                       
 
-                     <CustomTable 
+
+                        <CustomTable
                             columns={CompanyColumn}
                             data={companies}
                             renderRow={(company) => (
@@ -510,12 +510,12 @@ function AccountMaster() {
                             headerColor="white"
                             borderColor="white"
                             bodyBg={theme.colors.primary}
-                            highlightRowId={highlightedId ? Number(highlightedId) : null} 
+                            highlightRowId={highlightedId ? Number(highlightedId) : null}
                             rowIdKey="COMPANYID"
-                         
+
                             emptyText="No companies available"
 
-                     />
+                        />
                     </Box>
                 </GridItem>
             </Grid>

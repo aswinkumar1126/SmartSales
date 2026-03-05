@@ -19,3 +19,4 @@ export const useCalculatePure = (weight: string | number, touch: string | number
 
     return pure;
 };
+

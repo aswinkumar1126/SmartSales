@@ -3,7 +3,7 @@ import { ApiResponse } from "@/types/api/apiResponse";
 
 export const getOpeningBalance = async(id:number|null|undefined):Promise<ApiResponse<any>> =>{
     try{
-         const {data} = await axiosInstance.get(`/transaction/balance/${id}`);
+         const {data} = await axiosInstance.get(`/purchase/balance/${id}`);
          return data;
     }
     catch(err){

@@ -11,7 +11,7 @@ import {
     Icon,
 } from "@chakra-ui/react";
 import { LuX } from "react-icons/lu";
-import { CapitalizedInput } from "@/component/form/CapitalizedInput";
+import { CapitalizedInput } from "@/components/ui/CapitalizedInput";
 import { issueColumns, issueDataColumns } from "../../Issue/isseColumns";
 import { useCalculatePure } from "@/hooks/pure/useCalculatePure";
 import { toaster } from "@/components/ui/toaster";
@@ -152,6 +152,8 @@ export default function DraftTransactionTable({
     otherChargesData
 }: DraftTransactionTableProps) {
 
+    console.log(totals,'totals')
+
     // 🔥 FIX: Get the current editing row ID and its transaction type
     const currentEditingRowId = editingState?.rowId;
     const currentEditingTransactionType = editingState?.transactionType;
@@ -215,12 +217,12 @@ export default function DraftTransactionTable({
 
     const wastypecollection = { items: [{ label: "TOUCH", value: "TOUCH" }] };
     const numericFields = [
-        "PCS", "GRSWT", "STNWT", "NETWT", "WASPER", "WASTAGE", "STNAMT", "ATOUCH",
-        "PUREWT", "HMC", "MC", "WT", "AWT", "TOUCH", "PURE", "APURE",
+        "PCS", "GRSWT", "STNWT", "NETWT", "WASPER", "WASTAGE", "STNAMT", 
+        "PUREWT", "HMC", "MC", "WT",  "TOUCH",
     ];
 
     const orderedKeys = isIssue
-        ? ["PUREID", "WT", "AWT", "TOUCH", "ATOUCH", "PURE", "APURE"]
+        ? ["PUREID", "WT",  "TOUCH",  "PUREWT"]
         : ["ITEMID", "PCS", "GRSWT", "STNWT", "NETWT", "WASTYPE", "WASPER", "WASTAGE", "TOUCH", "PUREWT", "HMC", "MC", "STNAMT", "DESCRIPTION"];
 
     const baseColumns = isIssue ? issueDataColumns : issueColumns;
@@ -346,7 +348,7 @@ export default function DraftTransactionTable({
             if (!isIssue && ["NETWT", "PUREWT"].includes(col.key))
                 return { ...base, type: "calculated", disabled: true };
 
-            if (isIssue && ["PURE", "APURE"].includes(col.key))
+            if (isIssue && ["PUREWT"].includes(col.key))
                 return { ...base, type: "calculated", disabled: true };
 
             if (!isIssue && ["PCS", "GRSWT", "STNWT", "WASTYPE", "WASPER", "WASTAGE", "MC", "HMC", "TOUCH", "STNAMT", "DESCRIPTION"].includes(col.key))
@@ -356,13 +358,15 @@ export default function DraftTransactionTable({
             if (isIssue && ["WT", "AWT", "TOUCH", "ATOUCH"].includes(col.key))
                 return { ...base, dependsOn: "PUREID" };
 
+            if (!isIssue && ["STNAMT"].includes(col.key))
+                return { ...base, type: "calculated", disabled: true };
 
             return base;
         });
     }, [tableCols, itemsCollection, isIssue]);
 
     const visibleFormFields = useMemo(() =>
-        formFields.filter(f => !["NETWT", "PUREWT", "PURE", "APURE"].includes(f.key) && f.type !== "calculated"),
+        formFields.filter(f => !["NETWT", "PUREWT"].includes(f.key) && f.type !== "calculated"),
         [formFields]
     );
 
@@ -392,7 +396,9 @@ export default function DraftTransactionTable({
     }, [visibleFormFields]);
 
     const pureValue = useCalculatePure(formData.WT, formData.TOUCH);
-    const altPureValue = useCalculatePure(formData.AWT, formData.ATOUCH);
+
+    console.log(pureValue,'pureValue')
+    // const altPureValue = useCalculatePure(formData.AWT, formData.ATOUCH);
 
     const calcNet = useCallback(() => {
         const g = parseFloat(formData.GRSWT) || 0;
@@ -405,6 +411,7 @@ export default function DraftTransactionTable({
         const t = parseFloat(formData.TOUCH) || 0;
         return ((n * t) / 100).toFixed(3);
     }, [calcNet, formData.TOUCH]);
+    
 
     useEffect(() => {
         setFormData(p => ({ ...p, NETWT: calcNet() }));
@@ -415,9 +422,9 @@ export default function DraftTransactionTable({
     }, [formData.GRSWT, formData.STNWT, formData.TOUCH, calcPure]);
 
     useEffect(() => {
-        if (pureValue) setFormData(p => ({ ...p, PURE: pureValue }));
-        if (altPureValue) setFormData(p => ({ ...p, APURE: altPureValue }));
-    }, [pureValue, altPureValue]);
+        if (pureValue) setFormData(p => ({ ...p, PUREWT: pureValue }));
+        // if (altPureValue) setFormData(p => ({ ...p, APURE: altPureValue }));
+    }, [pureValue]);
 
     useEffect(() => {
         const init: Record<string, any> = {};
@@ -601,7 +608,7 @@ export default function DraftTransactionTable({
             const submitData: any = {
                 ...formData,
                 NETWT: calcNet(),
-                PUREWT: calcPure(),
+                PUREWT: isIssue ? pureValue :calcPure(),
                 WASTYPE: formData.WASTYPE || "TOUCH",
             };
 
@@ -774,18 +781,18 @@ export default function DraftTransactionTable({
                     }
                 }}>
                     <CapitalizedInput
-                        field={field.key} 
+                        field={field.key}
                         value={formData[field.key] || ""}
                         onChange={(_, v) => handleChange(field.key, v)}
-                        type="number" 
-                        isCapitalized={false} 
-                        size="xs" 
+                        type="number"
+                        isCapitalized={false}
+                        size="xs"
                         rounded="sm"
-                        decimalScale={field.decimalScale} 
+                        decimalScale={field.decimalScale}
                         disabled={shouldDisable}
-                        inputRef={ref} 
-                        onEnter={() => 
-                        moveNext(field.key)} 
+                        inputRef={ref}
+                        onEnter={() =>
+                            moveNext(field.key)}
                         noBorder
                     />
                     <Button
@@ -818,20 +825,20 @@ export default function DraftTransactionTable({
             );
         }
 
-        if (field.key === "DESCRIPTION" ) {
+        if (field.key === "DESCRIPTION") {
             return (
                 <Box position="relative" width="100%">
                     <CapitalizedInput
-                        field={field.key} 
+                        field={field.key}
                         value={formData[field.key] || ""}
                         onChange={(_, v) => handleChange(field.key, v)}
-                        type="text" 
+                        type="text"
                         isCapitalized
-                        size="xs" 
+                        size="xs"
                         rounded="sm"
-                        decimalScale={field.decimalScale} 
+                        decimalScale={field.decimalScale}
                         disabled={shouldDisable}
-                        inputRef={ref} 
+                        inputRef={ref}
                         onEnter={() => handleSubmit()} noBorder
                     />
                 </Box>

@@ -43,18 +43,18 @@ import { toastLoaded } from "@/component/toast/toast";
 import { Toaster } from "@/components/ui/toaster";
 import { CustomTable } from "@/component/table/CustomTable";
 import { getImage } from "@/utils/image/getImage";
-import { CapitalizedInput } from "@/component/form/CapitalizedInput";
+import { CapitalizedInput } from "@/components/ui/CapitalizedInput";
 import { usePrint } from "@/context/print/usePrintContext";
 import { useRouter } from "next/navigation";
-import { FaPrint ,FaFileExcel } from "react-icons/fa";
+import { FaPrint, FaFileExcel } from "react-icons/fa";
 
 
 export default function UserMasters() {
     const { theme } = useTheme();
     const { user } = useAuth();
     const router = useRouter();
-   
-    const {setData ,setColumns , title } = usePrint();
+
+    const { setData, setColumns, title } = usePrint();
 
     const [imagePreview, setImagePreview] = useState<string | undefined | null>(null);
     const [confirmPwd, setConfirmPwd] = useState("");
@@ -74,7 +74,7 @@ export default function UserMasters() {
     const [highlightId, setHighlightedId] = useState<Number>();
 
     const { data, isLoading } = useUsers();
- 
+
 
     const costCenters = [
         { id: 1, value: "SJ", label: "Head Office" },
@@ -119,7 +119,7 @@ export default function UserMasters() {
         if (!userByIdData?.data) return;
 
         const { pwd, ...formData } = normalizeUser(userByIdData.data);
-     
+
         setForm({ ...formData, pwd: "" });
         setImagePreview(getImage(formData?.userImage));
         setConfirmPwd("");
@@ -165,9 +165,9 @@ export default function UserMasters() {
             }
         }
 
-        if(form.username){
-            const isDuplicate = users.some((u)=>u.username.toUpperCase() === form.username.toUpperCase()) ;
-            if(isDuplicate){
+        if (form.username) {
+            const isDuplicate = users.some((u) => u.username.toUpperCase() === form.username.toUpperCase());
+            if (isDuplicate) {
                 setError("Username already exists");
                 return;
             }
@@ -276,20 +276,20 @@ export default function UserMasters() {
     ]
 
 
-        const handleExport = (option: string) => {
-            setData(users);
-            setColumns([
-                { key: "userId", label: "User Id" },
-                { key: "username", label: "User Name" },
-                // {key: "costId", label: "Cost Id"},
-                { key: "active", label: "Active", align: 'center' as const },
-            ]);
-          
-            router.push(`/print?export=${option}`);
-            title?.("User List")
+    const handleExport = (option: string) => {
+        setData(users);
+        setColumns([
+            { key: "userId", label: "User Id" },
+            { key: "username", label: "User Name" },
+            // {key: "costId", label: "Cost Id"},
+            { key: "active", label: "Active", align: 'center' as const },
+        ]);
 
-        };
-    
+        router.push(`/print?export=${option}`);
+        title?.("User List")
+
+    };
+
 
     return (
         <Box
@@ -322,40 +322,40 @@ export default function UserMasters() {
                         {/* -------------------- USER SECTION -------------------- */}
                         <Fieldset.Root size="lg" width="100%">
                             <Fieldset.Content>
-                                <Box display='flex' flexDirection='column'  gap={2}>
-                                    
-                                        <Box display="flex" gap={2} justifyContent="space-between">
-                                            <Box minW="120px" fontSize="2xs">USER NAME :</Box>
-                                            <InputGroup startElement={<LuUser color="#4A90E2" />}>
-                                                <CapitalizedInput
-                                                    field="username"
-                                                    placeholder="Enter user name"
-                                                    value={form.username}
-                                                    onChange={onChange}
-                                                    icon
-                                                    size="2xs"
-                                                    inputModeType="text"
-                                                />
-                                            </InputGroup>
-                                        </Box>
-                                        <Box display="flex" alignItems="center" gap={2}>
+                                <Box display='flex' flexDirection='column' gap={2}>
+
+                                    <Box display="flex" gap={2} justifyContent="space-between">
+                                        <Box minW="120px" fontSize="2xs">USER NAME :</Box>
+                                        <InputGroup startElement={<LuUser color="#4A90E2" />}>
+                                            <CapitalizedInput
+                                                field="username"
+                                                placeholder="Enter user name"
+                                                value={form.username}
+                                                onChange={onChange}
+                                                icon
+                                                size="2xs"
+                                                inputModeType="text"
+                                            />
+                                        </InputGroup>
+                                    </Box>
+                                    <Box display="flex" alignItems="center" gap={2}>
                                         <Box minW="120px" fontSize="2xs">PASSWORD :</Box>
-                                            <InputGroup startElement={<RiLockPasswordLine color="#4A90E2" />}>
-                                                <CapitalizedInput
-                                                    field="pwd"
-                                                    placeholder="Enter your password"
-                                                    value={form.pwd ?? ""}
-                                                    onChange={onChange}
-                                                    type="password"
-                                                    icon
-                                                    size="2xs"
-                                                   
-                                                />
-                                            </InputGroup>
-                                        </Box>
-                                        <Box display="flex" alignItems="center" gap={2}>
-                                            <Box minW="120px" fontSize="2xs">CONFIRM PASSWORD :</Box>
-                                            <InputGroup startElement={<RiLockPasswordLine color="#4A90E2" />}>
+                                        <InputGroup startElement={<RiLockPasswordLine color="#4A90E2" />}>
+                                            <CapitalizedInput
+                                                field="pwd"
+                                                placeholder="Enter your password"
+                                                value={form.pwd ?? ""}
+                                                onChange={onChange}
+                                                type="password"
+                                                icon
+                                                size="2xs"
+
+                                            />
+                                        </InputGroup>
+                                    </Box>
+                                    <Box display="flex" alignItems="center" gap={2}>
+                                        <Box minW="120px" fontSize="2xs">CONFIRM PASSWORD :</Box>
+                                        <InputGroup startElement={<RiLockPasswordLine color="#4A90E2" />}>
                                             <CapitalizedInput
                                                 field="confirmPwd"
                                                 placeholder="Re-enter password"
@@ -363,10 +363,10 @@ export default function UserMasters() {
                                                 onChange={(f, v) => setConfirmPwd(v)}
                                                 type="password"
                                                 icon
-                                                    size="2xs"
+                                                size="2xs"
                                             />
-                                            </InputGroup>
-                                        </Box>
+                                        </InputGroup>
+                                    </Box>
 
                                     <Box display='flex' gap={5} justifyContent='space-between'>
                                         {/* COST CENTER + ACTIVE */}
@@ -423,13 +423,13 @@ export default function UserMasters() {
                                                 <input type="file" hidden accept="image/*" onChange={handleImageSelect} />
                                             </Button>
                                         </Box>
-                                        
+
 
                                     </Box>
-                                   
+
                                 </Box>
 
-                              
+
 
                                 {error && (
                                     <Text color="red.500" fontSize="sm" textAlign="center">
@@ -467,33 +467,33 @@ export default function UserMasters() {
                         boxShadow="0 0 30px rgba(212,212,212,0.2)"
                     >
                         <Box display='flex' alignItems='center' justifyContent='space-between'>
-                        <Text  fontWeight="semibold" fontSize="small" >
-                            USER LIST
-                        </Text>
-                         <Flex>
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="xs"
-                                                            color={theme.colors.green}
-                                                            _hover={{ color: "black" }}
-                                                            onClick={() => handleExport("excel")}
-                                                            aria-label="Export Excel"
-                                                        >
-                                                            <FaFileExcel />
-                                                        </Button>
-                        
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="xs"
-                                                            color={theme.colors.primaryText}
-                                                            _hover={{ color: "black" }}
-                                                            onClick={() => handleExport("pdf")}
-                                                            aria-label="Export PDF"
-                                                        >
-                                                            <FaPrint />
-                                                        </Button>
-                                                    </Flex>
-                                    </Box>
+                            <Text fontWeight="semibold" fontSize="small" >
+                                USER LIST
+                            </Text>
+                            <Flex>
+                                <Button
+                                    variant="ghost"
+                                    size="xs"
+                                    color={theme.colors.green}
+                                    _hover={{ color: "black" }}
+                                    onClick={() => handleExport("excel")}
+                                    aria-label="Export Excel"
+                                >
+                                    <FaFileExcel />
+                                </Button>
+
+                                <Button
+                                    variant="ghost"
+                                    size="xs"
+                                    color={theme.colors.primaryText}
+                                    _hover={{ color: "black" }}
+                                    onClick={() => handleExport("pdf")}
+                                    aria-label="Export PDF"
+                                >
+                                    <FaPrint />
+                                </Button>
+                            </Flex>
+                        </Box>
 
                         <Stack>
 

@@ -32,7 +32,7 @@ import { OtherChargeForm, OtherChargeStateForm } from "@/types/others/OtherCharg
 import { useOtherCharges, useOtherChargeById, useUpdateOtherCharges, useCreateOtherCharges, useDeleteOtherCharges } from "@/hooks/otherCharges/useOtherCharges";
 import { AiOutlineSave } from "react-icons/ai";
 import { useRouter } from "next/navigation";
-import { CapitalizedInput } from "@/component/form/CapitalizedInput";
+import { CapitalizedInput } from "@/components/ui/CapitalizedInput";
 import { useAllMetals } from "@/hooks/metal/useMetals";
 import SearchBar from "@/component/search/SearchBar";
 
@@ -40,14 +40,14 @@ import SearchBar from "@/component/search/SearchBar";
 
 const initialFormState: OtherChargeStateForm = {
     chargeName: "",
-    chargeAmount:"",
-    active:"Y",
+    chargeAmount: "",
+    active: "Y",
 };
 
 /* ---------------- Table Row Type ---------------- */
 
 export type TouchTableRow = {
-    sno:number,
+    sno: number,
     chargeName: "",
     chargeAmount: "",
     active: "Y",
@@ -66,20 +66,20 @@ const OtherCharges = () => {
     const [errors, setErrors] = useState<FormErrors>({});
     const [metalData, setMetalData] = useState<{ label: string, value: string }[]>([])
 
-    const [filter ,setFilter] =useState<string>('')
+    const [filter, setFilter] = useState<string>('')
     /* ---------------- Hooks ---------------- */
     const router = useRouter();
     const { theme } = useTheme();
-     const {setData ,setColumns ,title} = usePrint();
+    const { setData, setColumns, title } = usePrint();
 
 
-    const { data: otherCharges , refetch } = useOtherCharges(filter);
+    const { data: otherCharges, refetch } = useOtherCharges(filter);
 
 
     const otherChargesData = otherCharges?.data ?? [];
 
 
-const activeStatus = createListCollection({
+    const activeStatus = createListCollection({
         items: [
             { label: "YES", value: "Y" },
             { label: "NO", value: "N" },
@@ -132,7 +132,7 @@ const activeStatus = createListCollection({
         setForm({
             chargeName: row.chargeName,
             chargeAmount: row.chargeAmount,
-            active:row.active,
+            active: row.active,
         });
 
         toastLoaded("Other charges");
@@ -154,7 +154,7 @@ const activeStatus = createListCollection({
         if (!form.chargeName?.trim()) {
             errors.chargeName = "charge Name is required";
         }
-    
+
         if (!Number(form.chargeAmount)) {
             errors.chargeAmount = "Amount is required";
         }
@@ -198,7 +198,7 @@ const activeStatus = createListCollection({
         const payload = {
             chargeName: form.chargeName,
             chargeAmount: Number(form.chargeAmount),
-            active:form.active
+            active: form.active
         };
 
         if (editId) {
@@ -273,13 +273,13 @@ const activeStatus = createListCollection({
                         justifyContent="center"
                         mb={2}
                     >
-                    <Text fontSize="small" fontWeight="semibold" >
-                    OTHER CHARGES
-                    
-                    </Text>
+                        <Text fontSize="small" fontWeight="semibold" >
+                            OTHER CHARGES
+
+                        </Text>
                     </Heading>
-                  <Grid gap={2}>
-                      
+                    <Grid gap={2}>
+
                         {/* CHARGE NAME */}
                         <Field.Root invalid={!!errors.chargeName}>
                             <HStack>
@@ -294,7 +294,7 @@ const activeStatus = createListCollection({
                                         placeholder="Enter charge Name"
                                         size="2xs"
                                         maxWidth="100%"
-                                        
+
                                     />
                                     <Field.ErrorText>{errors.chargeName}</Field.ErrorText>
                                 </Box>
@@ -322,40 +322,40 @@ const activeStatus = createListCollection({
                             </HStack>
                         </Field.Root>
 
-                                    {/* ACTIVE */}
-                                    <Box display="flex" alignItems="center" gap={2}>
-                                        <Box minW="100px" fontSize="2xs">ACTIVE :</Box>
-                                        <NativeSelect.Root size="xs" maxW="80px" fontSize="2xs" >
-                                            <NativeSelect.Field
-                                                value={form.active || "Y"}
-                                                onChange={(e) => handleChange("active", e.target.value)}
-                                                css={{
-                                                    backgroundColor: "#eee",
-                                                    color: "#111827",
-                                                    border: "1px solid #e5e7eb",
-                                                    borderRadius: "20px",
-                                                    height: "30px",
-                                                    fontSize: "10px",
-                                                   
-                                                }}
-                                            >
-                                                <For each={activeStatus.items}>
-                                                    {(item) => (
-                                                        <option key={item.value} value={item.value}>
-                                                            {item.label}
-                                                        </option>
-                                                    )}
-                                                </For>
-                                            </NativeSelect.Field>
-                                            <NativeSelect.Indicator />
-                                        </NativeSelect.Root>
-                                    </Box>
+                        {/* ACTIVE */}
+                        <Box display="flex" alignItems="center" gap={2}>
+                            <Box minW="100px" fontSize="2xs">ACTIVE :</Box>
+                            <NativeSelect.Root size="xs" maxW="80px" fontSize="2xs" >
+                                <NativeSelect.Field
+                                    value={form.active || "Y"}
+                                    onChange={(e) => handleChange("active", e.target.value)}
+                                    css={{
+                                        backgroundColor: "#eee",
+                                        color: "#111827",
+                                        border: "1px solid #e5e7eb",
+                                        borderRadius: "20px",
+                                        height: "30px",
+                                        fontSize: "10px",
 
-                        
-                        </Grid>
+                                    }}
+                                >
+                                    <For each={activeStatus.items}>
+                                        {(item) => (
+                                            <option key={item.value} value={item.value}>
+                                                {item.label}
+                                            </option>
+                                        )}
+                                    </For>
+                                </NativeSelect.Field>
+                                <NativeSelect.Indicator />
+                            </NativeSelect.Root>
+                        </Box>
 
-                       
-            
+
+                    </Grid>
+
+
+
                     {/* ================= ACTION BUTTONS ================= */}
                     <Box mt={2}>
                         <HStack pt={2} justifyContent="center" gap={2}>
@@ -378,13 +378,13 @@ const activeStatus = createListCollection({
 
             {/* -------- Table Section -------- */}
             <GridItem minW={0}>
-                <Box  p={3} borderRadius="lg" bg={theme.colors.formColor} boxShadow="sm">
-                    
+                <Box p={3} borderRadius="lg" bg={theme.colors.formColor} boxShadow="sm">
+
                     <Box display="flex" mb={2} gap={2} alignItems="center" justifyContent="space-between">
-        
-                    <Heading fontSize="small" >
+
+                        <Heading fontSize="small" >
                             OTHER CHARGES LIST
-                    </Heading>
+                        </Heading>
                         <Box display='flex' gap={1}>
 
 
@@ -398,30 +398,30 @@ const activeStatus = createListCollection({
                                 />
                             </Box>
                             <Flex>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="xs"
-                                                    color= {theme.colors.green}
-                                                    _hover={{ color: "black" }}
-                                                    onClick={() => handleExport("excel")}
-                                                    aria-label="Export Excel"
-                                                >
-                                                    <FaFileExcel />
-                                                </Button>
-                    
-                                                <Button
-                                                    variant="ghost"
-                                                    size="xs"
-                                                    color={theme.colors.primaryText}
-                                                    _hover={{ color: "black" }}
-                                                    onClick={() => handleExport("pdf")}
-                                                    aria-label="Export PDF"
-                                                >
-                                                    <FaPrint />
-                                                </Button>
-                                            </Flex>
-                    
-                    </Box>
+                                <Button
+                                    variant="ghost"
+                                    size="xs"
+                                    color={theme.colors.green}
+                                    _hover={{ color: "black" }}
+                                    onClick={() => handleExport("excel")}
+                                    aria-label="Export Excel"
+                                >
+                                    <FaFileExcel />
+                                </Button>
+
+                                <Button
+                                    variant="ghost"
+                                    size="xs"
+                                    color={theme.colors.primaryText}
+                                    _hover={{ color: "black" }}
+                                    onClick={() => handleExport("pdf")}
+                                    aria-label="Export PDF"
+                                >
+                                    <FaPrint />
+                                </Button>
+                            </Flex>
+
+                        </Box>
                     </Box>
                     <CustomTable
                         columns={columns}
@@ -445,7 +445,7 @@ const activeStatus = createListCollection({
                                             onClick={() => handleEdit(row)}
                                         />
                                     </Box>
-                                  
+
                                 </Table.Cell>
                             </>
                         )}

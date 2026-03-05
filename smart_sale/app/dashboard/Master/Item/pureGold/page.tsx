@@ -26,13 +26,13 @@ import { toastError, toastLoaded } from "@/component/toast/toast";
 import { CustomTable } from "@/component/table/CustomTable";
 import { usePrint } from "@/context/print/usePrintContext";
 import { pureGoldMastForm } from "@/types/pureGold/pureGold";
-import { usePureGoldNames , usePureGoldNameById } from "@/hooks/pureGoldMast/usePureGoldMastData";
+import { usePureGoldNames, usePureGoldNameById } from "@/hooks/pureGoldMast/usePureGoldMastData";
 import { useCreatePureGoldNmae } from "@/hooks/pureGoldMast/usePureGoldMastCreate";
 import { useUpdatePureGoldName } from "@/hooks/pureGoldMast/usePureGoldMastUpdate";
 import { AiOutlineSave } from "react-icons/ai";
 import { useRouter } from "next/navigation";
 import { formatToFixed } from "@/utils/format/numberFormat";
-import { CapitalizedInput } from "@/component/form/CapitalizedInput";
+import { CapitalizedInput } from "@/components/ui/CapitalizedInput";
 import { useAllMetals } from "@/hooks/metal/useMetals";
 import { SelectCombobox } from "@/components/ui/selectComboBox";
 import { safeValue } from "@/utils/comboBox/safeValue";
@@ -42,7 +42,7 @@ import SearchBar from "@/component/search/SearchBar";
 
 const initialFormState: pureGoldMastForm = {
     pureGoldName: "",
-    metalId:"",
+    metalId: "",
     // weight: "",
     // actualTouch: "",
     // actualPure: "",
@@ -51,11 +51,11 @@ const initialFormState: pureGoldMastForm = {
 /* ---------------- Table Row Type ---------------- */
 
 export type TouchTableRow = {
-    pureId?:number;
+    pureId?: number;
     sno: number;
     pureGoldName: string;
-    metalId ?: string;
-    metalName?:string;
+    metalId?: string;
+    metalName?: string;
     // weight: number;
     // actualTouch: number;
     // actualPure: number;
@@ -75,12 +75,12 @@ const PureGoldMaster = () => {
     const [errors, setErrors] = useState<FormErrors>({});
     const [metalData, setMetalData] = useState<{ label: string, value: string }[]>([])
 
-    const [filter ,setFilter] =useState<string>('')
+    const [filter, setFilter] = useState<string>('')
     /* ---------------- Hooks ---------------- */
     const router = useRouter();
     const { theme } = useTheme();
-     const {setData ,setColumns ,title} = usePrint();
- 
+    const { setData, setColumns, title } = usePrint();
+
 
     const { data: pureGoldData = [], refetch } = usePureGoldNames(filter);
 
@@ -103,7 +103,7 @@ const PureGoldMaster = () => {
 
         setMetalData(fetchedData);
     }, [metalsData]);
-    console.log(metalData ,'metalDAta')
+    console.log(metalData, 'metalDAta')
 
     /* ---------------- Helpers ---------------- */
 
@@ -116,7 +116,7 @@ const PureGoldMaster = () => {
     const resetForm = () => {
         setForm(initialFormState);
         setEditId(null);
-  
+
         setErrors({});
     };
 
@@ -279,10 +279,10 @@ const PureGoldMaster = () => {
                         justifyContent="center"
                         mb={2}
                     >
-                    <Text fontSize="small" fontWeight="semibold" >
-                       PURE GOLD MASTER
-                    
-                    </Text>
+                        <Text fontSize="small" fontWeight="semibold" >
+                            PURE GOLD MASTER
+
+                        </Text>
                     </Heading>
                     <Box display="grid" gap={2}>
                         {/* METAL NAME */}
@@ -318,7 +318,7 @@ const PureGoldMaster = () => {
                                         placeholder="Enter pure gold name"
                                         size="2xs"
                                         minWidth="100%"
-                                        
+
                                     />
                                     <Field.ErrorText>{errors.pureGoldName}</Field.ErrorText>
                                 </Box>
@@ -391,9 +391,9 @@ const PureGoldMaster = () => {
                                 </Box>
                             </HStack>
                         </Field.Root> */}
-                        
 
-                       
+
+
                     </Box>
                     {/* ================= ACTION BUTTONS ================= */}
                     <Box mt={2}>
@@ -417,13 +417,13 @@ const PureGoldMaster = () => {
 
             {/* -------- Table Section -------- */}
             <GridItem minW={0}>
-                <Box  p={3} borderRadius="lg" bg={theme.colors.formColor} boxShadow="sm">
-                    
+                <Box p={3} borderRadius="lg" bg={theme.colors.formColor} boxShadow="sm">
+
                     <Box display="flex" mb={2} gap={2} alignItems="center" justifyContent="space-between">
-        
-                    <Heading fontSize="small" >
+
+                        <Heading fontSize="small" >
                             PURE GOLD MASTER LIST
-                    </Heading>
+                        </Heading>
                         <Box display='flex' gap={1}>
 
 
@@ -437,30 +437,30 @@ const PureGoldMaster = () => {
                                 />
                             </Box>
                             <Flex>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="xs"
-                                                    color= {theme.colors.green}
-                                                    _hover={{ color: "black" }}
-                                                    onClick={() => handleExport("excel")}
-                                                    aria-label="Export Excel"
-                                                >
-                                                    <FaFileExcel />
-                                                </Button>
-                    
-                                                <Button
-                                                    variant="ghost"
-                                                    size="xs"
-                                                    color={theme.colors.primaryText}
-                                                    _hover={{ color: "black" }}
-                                                    onClick={() => handleExport("pdf")}
-                                                    aria-label="Export PDF"
-                                                >
-                                                    <FaPrint />
-                                                </Button>
-                                            </Flex>
-                    
-                    </Box>
+                                <Button
+                                    variant="ghost"
+                                    size="xs"
+                                    color={theme.colors.green}
+                                    _hover={{ color: "black" }}
+                                    onClick={() => handleExport("excel")}
+                                    aria-label="Export Excel"
+                                >
+                                    <FaFileExcel />
+                                </Button>
+
+                                <Button
+                                    variant="ghost"
+                                    size="xs"
+                                    color={theme.colors.primaryText}
+                                    _hover={{ color: "black" }}
+                                    onClick={() => handleExport("pdf")}
+                                    aria-label="Export PDF"
+                                >
+                                    <FaPrint />
+                                </Button>
+                            </Flex>
+
+                        </Box>
                     </Box>
                     <CustomTable<TouchTableRow>
                         columns={columns}
@@ -488,7 +488,7 @@ const PureGoldMaster = () => {
                                             onClick={() => handleEdit(row)}
                                         />
                                     </Box>
-                                  
+
                                 </Table.Cell>
                             </>
                         )}

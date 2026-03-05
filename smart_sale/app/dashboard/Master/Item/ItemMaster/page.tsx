@@ -17,7 +17,7 @@ import {
     Flex
 } from "@chakra-ui/react";
 import { FiEdit } from "react-icons/fi";
-import { FaFileExcel ,FaPrint } from "react-icons/fa";
+import { FaFileExcel, FaPrint } from "react-icons/fa";
 import { AiOutlineSave } from "react-icons/ai";
 import { IoIosExit } from "react-icons/io";
 
@@ -39,7 +39,7 @@ import { useTheme } from "@/context/theme/themeContext";
 import scrollToTop from "@/component/scroll/ScrollToTop";
 import { toastLoaded } from "@/component/toast/toast";
 import { formatToFixed } from "@/utils/format/numberFormat";
-import { CapitalizedInput } from "@/component/form/CapitalizedInput";
+import { CapitalizedInput } from "@/components/ui/CapitalizedInput";
 import { usePrint } from "@/context/print/usePrintContext";
 import { useRouter } from "next/navigation";
 
@@ -62,36 +62,36 @@ export default function ItemMasterPage() {
         itemId: 0,
         itemName: "",
         metalId: "",
-        hsn:"",
-        shortName:"",
-        stockType:"T",
-        calType:"W",
-        studded:"N",
+        hsn: "",
+        shortName: "",
+        stockType: "T",
+        calType: "W",
+        studded: "N",
         active: "Y",
         companyId: "",
     } as ItemMast);
 
     const { theme } = useTheme();
-    const{ setData ,setColumns ,setShowSno ,title } = usePrint();
+    const { setData, setColumns, setShowSno, title } = usePrint();
 
     const [filter, setFilter] = useState<string>(''); // object, not string
 
     /* ===================== HOOKS ===================== */
 
-    const { data: itemsData, isLoading ,refetch:itemsRefetch } = useItems(filter);
+    const { data: itemsData, isLoading, refetch: itemsRefetch } = useItems(filter);
     const { data: companyData } = useAllCompanies();
     const { data: metalData } = useAllMetals();
     const router = useRouter();
 
     const { data: itemById } = useItemById(editingId ?? undefined);
 
-  
+
     const { mutate: createItem, isPending: creating } = useCreateItem();
     const { mutate: updateItem, isPending: updating } = useUpdateItem();
 
     /* ===================== NORMALIZE ===================== */
 
-    
+
     const items: ItemMast[] = (itemsData?.items ?? []).map(normalizeItem);
     const companies = Array.isArray(companyData?.data) ? companyData.data : [];
     const metals = Array.isArray(metalData) ? metalData : [];
@@ -104,14 +104,14 @@ export default function ItemMasterPage() {
                 ...prev,
                 itemId: itemsData?.nextId ?? '0',
                 metalId: metals[0]?.metalId ?? "G", // default first metal
-                hsn:"",
-                shortName:"",
-                stockType:"T",
-                calType:"W",
+                hsn: "",
+                shortName: "",
+                stockType: "T",
+                calType: "W",
                 active: "Y",
-                studded:"N",
-                companyId:companies[0]?.COMPANYID ?? "",
-                
+                studded: "N",
+                companyId: companies[0]?.COMPANYID ?? "",
+
             }));
             setAutoItemId(itemsData?.nextId ?? '0');
         }
@@ -128,12 +128,12 @@ export default function ItemMasterPage() {
         return () => {
             controller.abort();
         };
-    }, [itemById,editingId]);
+    }, [itemById, editingId]);
 
     /* ===================== HANDLERS ===================== */
 
-    const onChange = (field: keyof ItemMast, value: any)=>{
-        setForm((prev)=>({...prev ,[field]:value}))    
+    const onChange = (field: keyof ItemMast, value: any) => {
+        setForm((prev) => ({ ...prev, [field]: value }))
     }
 
     const resetForm = () => {
@@ -143,30 +143,30 @@ export default function ItemMasterPage() {
             itemId: autoItemId,
             itemName: "",
             metalId: metals[0]?.metalId ?? "G",
-            hsn:"",
-            shortName:"",
-            stockType:"T",
-            calType:"W",
+            hsn: "",
+            shortName: "",
+            stockType: "T",
+            calType: "W",
             active: "Y",
-            studded:"N",
-            companyId: companies[0]?.COMPANYID ?? "", 
+            studded: "N",
+            companyId: companies[0]?.COMPANYID ?? "",
 
         }));
     };
 
-   useEffect(()=>{
-    if(!highlightId) {
-        return;
-    }
-    const timer = setTimeout(() => {
-        setHighlightId(null);
-    }, 2500);
-    return () => {
-        clearTimeout(timer);
-        controller.abort();
-    };
-   })
-   
+    useEffect(() => {
+        if (!highlightId) {
+            return;
+        }
+        const timer = setTimeout(() => {
+            setHighlightId(null);
+        }, 2500);
+        return () => {
+            clearTimeout(timer);
+            controller.abort();
+        };
+    })
+
     const handleSave = () => {
         const newErrors: typeof errors = {};
 
@@ -245,16 +245,16 @@ export default function ItemMasterPage() {
         { key: "action", label: "Action", align: "center" },
     ];
 
-    const handleExport =  (option:string) =>{
+    const handleExport = (option: string) => {
         setData(items);
         setColumns([
             { key: "itemId", label: "ItemId" },
             { key: "itemName", label: "Item" },
             { key: "metalName", label: "Metal" },
-            { key: "hsn", label: "HSN Code"},
-            { key: "shortName", label: "Short Name"},
+            { key: "hsn", label: "HSN Code" },
+            { key: "shortName", label: "Short Name" },
             { key: "stockType", label: "Stock Type" },
-            { key: "calType", label: "Cal Type"},
+            { key: "calType", label: "Cal Type" },
             { key: "active", label: "Active" },
         ]);
         setShowSno(true)
@@ -265,13 +265,13 @@ export default function ItemMasterPage() {
 
     /* ===================== UI ===================== */
     return (
-        <Box  ref={topRef}>
+        <Box ref={topRef}>
             <Toaster />
             <Grid
                 templateColumns={{ base: "1fr", lg: "1fr 1.8fr" }}
                 gap={2}
                 fontWeight='semibold'
-           
+
             >
                 {/* ================= LEFT FORM ================= */}
                 <GridItem>
@@ -287,7 +287,7 @@ export default function ItemMasterPage() {
                         </Text>
 
                         <Fieldset.Root width="100%">
-                            <Grid css={{ gridTemplateColumns: "repeat(1, 1fr)"}} gap={2}>
+                            <Grid css={{ gridTemplateColumns: "repeat(1, 1fr)" }} gap={2}>
 
 
                                 {/* ================= SECOND ROW ================= */}
@@ -399,7 +399,7 @@ export default function ItemMasterPage() {
                                     </HStack>
                                 </Field.Root>
 
-                              
+
 
                                 {/* ================= THIRD ROW ================= */}
                                 <Field.Root>
@@ -555,7 +555,7 @@ export default function ItemMasterPage() {
                                                         border: "1px solid #e5e7eb",
                                                         borderRadius: "20px",
                                                         height: "30px",
-                                                        fontSize: "10px", 
+                                                        fontSize: "10px",
                                                         minW: "150px"
                                                     }}
                                                 >
@@ -604,8 +604,8 @@ export default function ItemMasterPage() {
                         borderRadius="xl"
                         boxShadow="0 0 10px rgba(212,212,212,0.2)"
                         border="1px solid #eee"
-                    >   
-                        <Box display='flex' mb={2}  justifyContent='space-between' alignItems='center'>
+                    >
+                        <Box display='flex' mb={2} justifyContent='space-between' alignItems='center'>
                             <Text fontSize='small' fontWeight='semibold'>
                                 ITEM MASTER LIST
                             </Text>
@@ -622,32 +622,32 @@ export default function ItemMasterPage() {
                                     />
                                 </Box>
                                 <Flex>
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="xs"
-                                                            color= {theme.colors.green}
-                                                            _hover={{ color: "black" }}
-                                                            onClick={() => handleExport("excel")}
-                                                            aria-label="Export Excel"
-                                                        >
-                                                            <FaFileExcel />
-                                                        </Button>
-                            
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="xs"
-                                                            color={theme.colors.primaryText}
-                                                            _hover={{ color: "black" }}
-                                                            onClick={() => handleExport("pdf")}
-                                                            aria-label="Export PDF"
-                                                        >
-                                                            <FaPrint />
-                                                        </Button>
-                                                    </Flex>
-                                                    </Box>
-                            
-                    </Box>
-                        
+                                    <Button
+                                        variant="ghost"
+                                        size="xs"
+                                        color={theme.colors.green}
+                                        _hover={{ color: "black" }}
+                                        onClick={() => handleExport("excel")}
+                                        aria-label="Export Excel"
+                                    >
+                                        <FaFileExcel />
+                                    </Button>
+
+                                    <Button
+                                        variant="ghost"
+                                        size="xs"
+                                        color={theme.colors.primaryText}
+                                        _hover={{ color: "black" }}
+                                        onClick={() => handleExport("pdf")}
+                                        aria-label="Export PDF"
+                                    >
+                                        <FaPrint />
+                                    </Button>
+                                </Flex>
+                            </Box>
+
+                        </Box>
+
                         <CustomTable
                             columns={tableColumns}
                             data={items}
@@ -659,9 +659,9 @@ export default function ItemMasterPage() {
                             size="sm"
                             rowIdKey="itemId"
                             highlightRowId={highlightId}
-                            renderRow={(item , index) => (
+                            renderRow={(item, index) => (
                                 <>
-                                    <Table.Cell>{index+1}</Table.Cell>
+                                    <Table.Cell>{index + 1}</Table.Cell>
                                     <Table.Cell>{item.itemId}</Table.Cell>
                                     <Table.Cell>{item.itemName}</Table.Cell>
                                     <Table.Cell>{item.metalName}</Table.Cell>

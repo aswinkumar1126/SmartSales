@@ -27,13 +27,13 @@ import { CustomTable } from "@/component/table/CustomTable";
 import { usePrint } from "@/context/print/usePrintContext";
 import { pureGoldMastForm, pureGoldMastOpenForm } from "@/types/pureGold/pureGold";
 
-import { usePureGoldData ,usePureGoldNames} from "@/hooks/pureGoldMast/usePureGoldMastData";
+import { usePureGoldData, usePureGoldNames } from "@/hooks/pureGoldMast/usePureGoldMastData";
 import { useCreatePureGoldMast } from "@/hooks/pureGoldMast/usePureGoldMastCreate";
 import { useUpdatePureGoldMast } from "@/hooks/pureGoldMast/usePureGoldMastUpdate";
 import { AiOutlineSave } from "react-icons/ai";
 import { useRouter } from "next/navigation";
 import { formatToFixed } from "@/utils/format/numberFormat";
-import { CapitalizedInput } from "@/component/form/CapitalizedInput";
+import { CapitalizedInput } from "@/components/ui/CapitalizedInput";
 import { useAllMetals } from "@/hooks/metal/useMetals";
 import { SelectCombobox } from "@/components/ui/selectComboBox";
 import { safeValue } from "@/utils/comboBox/safeValue";
@@ -52,7 +52,7 @@ const initialFormState: pureGoldMastOpenForm = {
 
 export type TouchTableRow = {
     sno: number;
-    pureId?:string;
+    pureId?: string;
     pureGoldName: string;
     weight: number;
     actualTouch: number;
@@ -75,16 +75,16 @@ const PureGoldOpening = () => {
     const [metalData, setMetalData] = useState<{ label: string, value: string }[]>([]);
     const [pureGoldName, setPureGoldName] = useState<{ label: string, value: string }[]>([]);
 
-    const [filter,setFilter] = useState<string>('');
+    const [filter, setFilter] = useState<string>('');
     /* ---------------- Hooks ---------------- */
     const router = useRouter();
     const { theme } = useTheme();
-     const {setData ,setColumns ,title } = usePrint();
-  
+    const { setData, setColumns, title } = usePrint();
+
     const { data: pureGoldData = [], refetch } = usePureGoldData(filter);
     const { data: metalsData } = useAllMetals();
-   
-    const { data: allPureGoldNames = []} = usePureGoldNames();
+
+    const { data: allPureGoldNames = [] } = usePureGoldNames();
 
 
     const createMutation = useCreatePureGoldMast();
@@ -148,7 +148,7 @@ const PureGoldOpening = () => {
         setEditId(row.sno);
         scrollToTop();
 
-    
+
 
         setForm({
             pureId: String(row.pureId),
@@ -181,10 +181,10 @@ const PureGoldOpening = () => {
     const isDuplicatePureForMetal = (
         pureId: any,
         // metalId: any,
-        excludeSno?: number| null
+        excludeSno?: number | null
     ) => {
         return pureGoldData.some((p: any) => {
-          
+
             const samePure =
                 Number(p.pureId) === Number(pureId);
 
@@ -207,7 +207,7 @@ const PureGoldOpening = () => {
             pureId: Number(form.pureId),
             weight: Number(form.weight),
             actualTouch: Number(form.actualTouch),
-            // actualPure: Number(form.actualPure),
+            actualPure: Number(form.actualPure),
             // metalId: String(form.metalId),
         };
 
@@ -216,7 +216,7 @@ const PureGoldOpening = () => {
             const exists = isDuplicatePureForMetal(
                 form.pureId,
                 // form.metalId,
-                editId 
+                editId
             );
 
             if (exists) {
@@ -256,7 +256,7 @@ const PureGoldOpening = () => {
     const columns = [
         { key: "sno", label: "S.No" },
         { key: "pureGoldName", label: "Pure Gold Name" },
-        { key: "weight", label: "Weight" ,align : "end" as const },
+        { key: "weight", label: "Weight", align: "end" as const },
         { key: "actualTouch", label: "Actual Touch", align: "end" as const },
         { key: "actualPure", label: "Actual Pure", align: "end" as const },
         { key: "action", label: "Action", align: "center" as const },
@@ -289,7 +289,7 @@ const PureGoldOpening = () => {
     /* ---------------- UI ---------------- */
 
     return (
-        <Grid templateColumns={{ base: "1fr", lg: "1fr 2fr" }}  fontWeight='semibold' gap={2}>
+        <Grid templateColumns={{ base: "1fr", lg: "1fr 2fr" }} fontWeight='semibold' gap={2}>
             <Toaster />
 
             {/* -------- Form Section -------- */}
@@ -303,11 +303,11 @@ const PureGoldOpening = () => {
                         mb={2}
                     >
                         <Text fontSize="small" fontWeight='semibold'  >
-                       PURE GOLD OPENING
-                    
-                    </Text>
+                            PURE GOLD OPENING
+
+                        </Text>
                     </Heading>
-                    <Box display="grid"   gap={2}>
+                    <Box display="grid" gap={2}>
                         {/* PURE GOLD NAME */}
                         <Field.Root invalid={!!errors.pureId}>
                             <HStack>
@@ -368,7 +368,7 @@ const PureGoldOpening = () => {
                                         size="2xs"
                                         max={9999999999}
                                         decimalScale={3}
-                                    
+
                                     />
                                     <Field.ErrorText>{errors.weight}</Field.ErrorText>
                                 </Box>
@@ -419,8 +419,8 @@ const PureGoldOpening = () => {
                                 </Box>
                             </HStack>
                         </Field.Root>
-                       
-                       
+
+
                     </Box>
                     {/* ================= ACTION BUTTONS ================= */}
                     <Box mt={2}>
@@ -444,13 +444,13 @@ const PureGoldOpening = () => {
 
             {/* -------- Table Section -------- */}
             <GridItem minW={0}>
-                <Box  p={3} borderRadius="lg" bg={theme.colors.formColor} boxShadow="sm">
-                    
-                    <Box display="flex"  gap={2} alignItems="center" justifyContent="space-between">
-        
+                <Box p={3} borderRadius="lg" bg={theme.colors.formColor} boxShadow="sm">
+
+                    <Box display="flex" gap={2} alignItems="center" justifyContent="space-between">
+
                         <Heading fontSize="small" fontWeight='semibold' >
-                 PURE GOLD OPENING LIST 
-                    </Heading>
+                            PURE GOLD OPENING LIST
+                        </Heading>
                         <Box display='flex' gap={1}>
                             <Box >
                                 <SearchBar
@@ -462,30 +462,30 @@ const PureGoldOpening = () => {
                                 />
                             </Box>
                             <Flex>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="xs"
-                                                    color= {theme.colors.green}
-                                                    _hover={{ color: "black" }}
-                                                    onClick={() => handleExport("excel")}
-                                                    aria-label="Export Excel"
-                                                >
-                                                    <FaFileExcel />
-                                                </Button>
-                    
-                                                <Button
-                                                    variant="ghost"
-                                                    size="xs"
-                                                    color={theme.colors.primaryText}
-                                                    _hover={{ color: "black" }}
-                                                    onClick={() => handleExport("pdf")}
-                                                    aria-label="Export PDF"
-                                                >
-                                                    <FaPrint />
-                                                </Button>
-                                            </Flex>
-                                            </Box>
-                    
+                                <Button
+                                    variant="ghost"
+                                    size="xs"
+                                    color={theme.colors.green}
+                                    _hover={{ color: "black" }}
+                                    onClick={() => handleExport("excel")}
+                                    aria-label="Export Excel"
+                                >
+                                    <FaFileExcel />
+                                </Button>
+
+                                <Button
+                                    variant="ghost"
+                                    size="xs"
+                                    color={theme.colors.primaryText}
+                                    _hover={{ color: "black" }}
+                                    onClick={() => handleExport("pdf")}
+                                    aria-label="Export PDF"
+                                >
+                                    <FaPrint />
+                                </Button>
+                            </Flex>
+                        </Box>
+
                     </Box>
                     <CustomTable<TouchTableRow>
                         columns={columns}
@@ -500,10 +500,10 @@ const PureGoldOpening = () => {
                             <>
                                 <Table.Cell>{i + 1}</Table.Cell>
                                 <Table.Cell>{row.pureGoldName}</Table.Cell>
-                                <Table.Cell textAlign="end">{formatToFixed(row.weight ,2)} </Table.Cell>
-                                <Table.Cell textAlign="end" >{formatToFixed(row.actualTouch , 2) }</Table.Cell>
+                                <Table.Cell textAlign="end">{formatToFixed(row.weight, 2)} </Table.Cell>
+                                <Table.Cell textAlign="end" >{formatToFixed(row.actualTouch, 2)}</Table.Cell>
                                 <Table.Cell textAlign="end">
-                                    {formatToFixed(row.actualPure,2)}
+                                    {formatToFixed(row.actualPure, 2)}
                                 </Table.Cell>
                                 <Table.Cell align="center">
                                     <Box display="flex" justifyContent="center">
@@ -512,7 +512,7 @@ const PureGoldOpening = () => {
                                             onClick={() => handleEdit(row)}
                                         />
                                     </Box>
-                                  
+
                                 </Table.Cell>
                             </>
                         )}

@@ -1,6 +1,6 @@
 "use client";
 
-import React,{useState} from "react";
+import React, { useState } from "react";
 import {
     Box,
     Grid,
@@ -10,7 +10,7 @@ import {
     HStack,
     Checkbox,
 } from "@chakra-ui/react";
-import { CapitalizedInput } from "@/component/form/CapitalizedInput";
+import { CapitalizedInput } from "@/components/ui/CapitalizedInput";
 
 type DummyType = {
     pure: string;
@@ -19,9 +19,14 @@ type DummyType = {
 
 type BalanceSummaryProps = {
     theme: any;
+    openBalance:{openCash:number,openPure:number},
+
 };
 
-const BalanceSummary = ({ theme }: BalanceSummaryProps) => {
+const BalanceSummary = (
+    { theme,
+        openBalance
+     }: BalanceSummaryProps) => {
 
     const [conversionType, setConversionType] = useState<"pure" | "cash">("cash");
     const handleChange = () => { }; // replace with real handler
@@ -43,7 +48,7 @@ const BalanceSummary = ({ theme }: BalanceSummaryProps) => {
                     Total Balance
                 </Text>
                 <CapitalizedInput<DummyType>
-                    value="55.631"
+                    value={openBalance.openPure.toString()}
                     field="pure"
                     onChange={handleChange}
                     type="number"
@@ -53,7 +58,7 @@ const BalanceSummary = ({ theme }: BalanceSummaryProps) => {
                     rounded="sm"
                 />
                 <CapitalizedInput<DummyType>
-                    value="510"
+                    value={openBalance.openCash.toString()}
                     field="cash"
                     onChange={handleChange}
                     type="number"
@@ -62,7 +67,7 @@ const BalanceSummary = ({ theme }: BalanceSummaryProps) => {
                 />
                 {/* Conversion Input Row */}
                 <Text /> {/* empty label column */}
-               
+
 
                 {/* Pure Checkbox */}
                 <Checkbox.Root
@@ -90,7 +95,7 @@ const BalanceSummary = ({ theme }: BalanceSummaryProps) => {
                     <Checkbox.Label fontSize="2xs">Cash</Checkbox.Label>
                 </Checkbox.Root>
 
-            
+
                 {/* Conversion Label Row */}
                 <Text fontSize="xs" fontWeight="semibold">
                     Conversion
@@ -227,7 +232,7 @@ const BalanceSummary = ({ theme }: BalanceSummaryProps) => {
                 {/* Closing Balance */}
                 <Text fontWeight="semibold" fontSize='xs'>Closing Balance</Text>
                 <CapitalizedInput<DummyType>
-                    value="81.881"
+                    value=""
                     field="pure"
                     onChange={handleChange}
                     type="number"
@@ -236,13 +241,13 @@ const BalanceSummary = ({ theme }: BalanceSummaryProps) => {
                     rounded="sm"
                 />
                 <CapitalizedInput<DummyType>
-                    value="510"
+                    value=""
                     field="cash"
                     onChange={handleChange}
                     type="number"
                     size="xs"
                     rounded="sm"
-                    
+
                 />
             </Grid>
         </Box>

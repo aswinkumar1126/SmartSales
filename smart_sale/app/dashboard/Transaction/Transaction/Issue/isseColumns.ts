@@ -103,7 +103,7 @@ export const issueColumns = [
         width: "45px",
         type: "number" as const,
         align: "right" as const,
-        decimalScale: 3,
+        decimalScale: 2,
         dependsOn:"ITEMID"
 
     },
@@ -152,7 +152,7 @@ export const issueDataColumns = [
     {
         key: "SNO",
         label: "S.N0",
-        width: "10px",
+        width: "40px",
         align: "center" as const,
         editable: false,
 
@@ -160,7 +160,7 @@ export const issueDataColumns = [
     {
         key: "PUREID",
         label: "PURE GOLD NAME",
-        width: "50px",
+        width: "120px",
         align: "left" as const,
         type: "combobox" as const,
 
@@ -170,7 +170,7 @@ export const issueDataColumns = [
     {
         key: "WT",
         label: "WEIGHT",
-        width: "20px",
+        width: "40px",
         type: "number" as const,
         align: "right" as const,
         max: 9999999999,
@@ -190,7 +190,7 @@ export const issueDataColumns = [
     {
         key: "TOUCH",
         label: "TOUCH",
-        width: "25px",
+        width: "45px",
         type: "number" as const,
         align: "right" as const,
         max: 999,
@@ -208,9 +208,9 @@ export const issueDataColumns = [
 
     // },
     {
-        key: "PURE",
-        label: "PURE",
-        width: "25px",
+        key: "PUREWT",
+        label: "PURE WT",
+        width: "45px",
         type: "number" as const,
         align: "right" as const,
         editable: false,

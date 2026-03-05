@@ -30,7 +30,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { toastLoaded, toastCreated, toastUpdated, toastError } from "@/component/toast/toast";
 
 import { CustomTable } from "@/component/table/CustomTable";
-import { CapitalizedInput } from "@/component/form/CapitalizedInput";
+import { CapitalizedInput } from "@/components/ui/CapitalizedInput";
 import { usePrint } from "@/context/print/usePrintContext";
 import { useRouter } from "next/navigation";
 
@@ -56,7 +56,7 @@ function BankAccountMaster() {
     const { contains } = useFilter({ sensitivity: "base" });
     const { theme } = useTheme();
     const router = useRouter();
-    const { setData, setColumns, setShowSno ,title } = usePrint();
+    const { setData, setColumns, setShowSno, title } = usePrint();
     const [filter, setFilter] = useState<string>('');
 
     const [form, setForm] = useState<BankAccount>(EMPTY_FORM);
@@ -77,7 +77,7 @@ function BankAccountMaster() {
             setForm(EMPTY_FORM);
         }
     }, [editId]);
-  
+
 
     // Auto-clear highlight after 3 seconds
     useEffect(() => {
@@ -179,14 +179,14 @@ function BankAccountMaster() {
         { key: "ACCOUNTTYPE", label: "Account Type" },
         { key: "BANKNAME", label: "Bank Name" },
         { key: "BRANCHNAME", label: "Branch Name" },
-        { key: "actions", label: "Actions", align: "center" as const},
+        { key: "actions", label: "Actions", align: "center" as const },
     ];
 
     return (
         <Box bg={theme.colors.primary}>
             <Toaster />
 
-             <Grid templateColumns={{ base: "1fr", lg: "1fr 2fr" }} gap={2}>
+            <Grid templateColumns={{ base: "1fr", lg: "1fr 2fr" }} gap={2}>
                 {/* FORM */}
                 <GridItem>
                     <VStack
@@ -194,10 +194,10 @@ function BankAccountMaster() {
                         p={2}
                         borderRadius="xl"
                         border="1px solid #eef"
-                  
+
                     >
                         <Text fontSize="small" fontWeight='semibold' >
-                            BANK ACCOUNT MASTER 
+                            BANK ACCOUNT MASTER
                         </Text>
 
                         <Fieldset.Root width="100%" fontSize="small" fontWeight='semibold'>
@@ -324,7 +324,8 @@ function BankAccountMaster() {
                                 <AiOutlineSave /> {isEditing ? "Update" : "Save"}
                             </Button>
 
-                            <Button size="xs" colorPalette="blue" onClick={() => {setEditId(null)
+                            <Button size="xs" colorPalette="blue" onClick={() => {
+                                setEditId(null)
                                 setForm(EMPTY_FORM);
                             }}>
                                 <IoIosExit /> Exit
@@ -338,7 +339,7 @@ function BankAccountMaster() {
                     <Box bg={theme.colors.formColor} p={5} borderRadius="xl" border="1px solid #eef">
                         <Flex mb={2} justify="space-between" align="center" wrap="wrap" gap={3}>
                             <Text fontSize="small" fontWeight='semibold' >
-                               BANK ACCOUNT LIST
+                                BANK ACCOUNT LIST
                             </Text>
                             <Box display='flex' gap={1}>
                                 <Box >
@@ -351,25 +352,25 @@ function BankAccountMaster() {
                                     />
                                 </Box>
                                 <HStack>
-                                <Button
-                                    variant="ghost"
-                                    size="xs"
-                                    color={theme.colors.green}
-                                    _hover={{ color: "black" }}
-                                    onClick={() => handleExport("excel")}
-                                >
-                                    <FaFileExcel />
-                                </Button>
-                                <Button
-                                    variant="ghost"
-                                    size="xs"
-                                    color={theme.colors.primaryText}
-                                    _hover={{ color: "black" }}
-                                    onClick={() => handleExport("pdf")}
-                                >
-                                    <FaPrint />
-                                </Button>
-                            </HStack>
+                                    <Button
+                                        variant="ghost"
+                                        size="xs"
+                                        color={theme.colors.green}
+                                        _hover={{ color: "black" }}
+                                        onClick={() => handleExport("excel")}
+                                    >
+                                        <FaFileExcel />
+                                    </Button>
+                                    <Button
+                                        variant="ghost"
+                                        size="xs"
+                                        color={theme.colors.primaryText}
+                                        _hover={{ color: "black" }}
+                                        onClick={() => handleExport("pdf")}
+                                    >
+                                        <FaPrint />
+                                    </Button>
+                                </HStack>
                             </Box>
                         </Flex>
 
