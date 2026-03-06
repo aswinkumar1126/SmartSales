@@ -88,6 +88,7 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
             borderRadius="md"
             overflow="hidden"
             bg="white"
+            zIndex='0'
         >
             <Box overflowX="auto" style={{ maxHeight: "340px", overflowY: "auto" }}>
                 <table style={{
@@ -95,9 +96,10 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
                     borderCollapse: "collapse",
                     width: "max-content",
                     minWidth: "100%",
+
                 }}>
                     {/* HEADER */}
-                    <thead style={{ position: "sticky", top: 0, zIndex: 2 }}>
+                    <thead style={{ position: "sticky", top: 0, zIndex: 0 }}>
                         <tr style={{
                             backgroundColor: theme?.colors?.formColor || "#EDF2F7",
                             borderBottom: "2px solid #A0AEC0",
@@ -291,7 +293,7 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
 
                     {/* totals footer */}
                     {rows.length > 0 && (
-                        <tfoot style={{ position: "sticky", bottom: 0, zIndex: 1 }}>
+                        <tfoot style={{ position: "sticky", bottom: 0, zIndex: 0 }}>
                             
                             <tr style={{ backgroundColor: "#2a2a2a" }}>
                                 

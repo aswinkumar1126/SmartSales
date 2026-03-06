@@ -27,8 +27,10 @@ import { FloatingActionButton } from "@/components/ui/FloatingActionButton";
 import StockDrawer from "./DrawerTable/StockTable";
 import { useAllMetals } from "@/hooks/metal/useMetals";
 import Loader from "@/component/loader/Loader";
-import BalanceSummary from "./Balance/BalanceSummary";
 
+import BalanceSummary, { ClosingFormDetails } from "./Balance/BalanceSummary";
+//Key
+import { useGlobalKey } from "@/components/key/useGlobalKey";
 
 // Hooks
 import { useTransactions } from "@/hooks/transaction/useTransactions";
@@ -37,13 +39,15 @@ import { useItems, useStoneItems } from "@/hooks/item/useItems";
 import { useCreateTransactions, useUpdateTransaction, useTransactionByTransId } from "@/hooks/transaction/useTransactions";
 import { usePureGoldData, usePureGoldNames } from "@/hooks/pureGoldMast/usePureGoldMastData";
 import { useActiveOtherCharges } from "@/hooks/otherCharges/useOtherCharges";
-
+import { useRates } from "@/hooks/rate/useRate";
 
 // Types & Constants
-import { TransactionType, UpdateTransactionPayload, TransactionKey, CreateTransaction, TransactionItems, TRANSACTION_KEY_MAP } from "@/types/transcation/Transaction";
+import { TransactionType, UpdateTransactionPayload, TransactionKey, CreateTransaction, TransactionItems, TRANSACTION_KEY_MAP, ClosingDetails } from "@/types/transcation/Transaction";
 import { TRANSACTIONTYPES } from "@/data/Transaction/TransactionType";
 import { useOrnamentData } from "@/hooks/ornament/useOrnamentData";
 
+//Utilities
+import { formatToFixed} from '@/utils/format/numberFormat';
 
 
 //Icons
@@ -75,7 +79,25 @@ type TransactionRow ={
 
 export default function PurchasePage() {
 
-    const [accCode, setAccCode] = useState<number | undefined | null>();
+
+    /* ================================
+       Local Storage Keys
+    ================================ */
+    const DRAFT_KEY = "transaction_draft";
+    const HEADER_KEY = "transaction_header";
+    const TYPE_KEY = "transaction_type";
+    const DATE_RANGE_KEY = "transaction_date_range";
+    const ITEMID = "transaction_itemid";
+    const FILTER = "show_filter";
+    const EDITING = "isEditing";
+    const EDITING_SNO = "editing_sno";
+
+    const STONE_MASTER_KEY = "STONE_MASTER";
+    const CLOSING_DETAILS_KEY = "CLOSING_DETAILS";
+
+
+
+    const [accCode, setAccCode] = useState<number | undefined | null | string>();
     const [showFilter, setShowFilter] = useState<boolean>(false);
     const [loading, setLoading] = useState<boolean>(true);
     const [purchaserList, setPurchaserList] = useState<{ label: string, value: string }[]>([]);
@@ -108,7 +130,9 @@ export default function PurchasePage() {
         transactionType: string | null;
     }>({ rowId: null, transactionType: null });
 
+    const {data:metalRates ,isLoading:metalRatesLoading ,isError:metalRatesError} = useRates();
 
+    console.log(metalRates,'metalRates')
 
 
     /* ================================
@@ -126,9 +150,37 @@ export default function PurchasePage() {
         ENTRYNO: "",
         BILLNO: "",
         DATE: new Date().toISOString().split("T")[0],
-        RATEGM: "",
+        RATEGM: metalRates ? formatToFixed(metalRates["GOLD 916.00"] ,2) : "",
         CUSTOMER: "",
         CUSTOMER_NAME: "",
+    });
+
+    const [closingDetails, setClosingDetails] = useState<ClosingFormDetails>(() => {
+        // Load from localStorage on initial state only
+        const saved = localStorage.getItem(CLOSING_DETAILS_KEY);
+        if (saved) {
+            try {
+                return JSON.parse(saved) as ClosingFormDetails;
+            } catch (e) {
+                console.error("Failed to parse closing details:", e);
+                localStorage.removeItem(CLOSING_DETAILS_KEY);
+            }
+        }
+
+        // Default state if nothing in localStorage
+        return {
+            convType: "P",
+            convAmt: "",
+            convWt: "",
+            discAmt: "",
+            discWt: "",
+            cashPaid: "",
+            cashRcvd: "",
+            bankPaid: "",
+            bankRcvd: "",
+            bankPaidDetails: [],
+            bankRcvdDetails: [],
+        };
     });
 
     const [isEditing, setIsEditing] = useState(false);
@@ -152,19 +204,7 @@ export default function PurchasePage() {
     const [endDate, setEndDate] = useState<string | null>(null);
     const [itemCode, setItemCode] = useState<number | null>(null);
 
-    /* ================================
-       Local Storage Keys
-    ================================ */
-    const DRAFT_KEY = "transaction_draft";
-    const HEADER_KEY = "transaction_header";
-    const TYPE_KEY = "transaction_type";
-    const DATE_RANGE_KEY = "transaction_date_range";
-    const ITEMID = "transaction_itemid";
-    const FILTER = "show_filter";
-    const EDITING = "isEditing";
-    const EDITING_SNO = "editing_sno";
-
-    const STONE_MASTER_KEY = "STONE_MASTER";
+    
 
     const { theme } = useTheme();
     const { data: itemsData } = useItems();
@@ -207,12 +247,13 @@ export default function PurchasePage() {
     const updateTransaction = useUpdateTransaction();
     const { data: metalsData } = useAllMetals();
 
-    const { data: openingBalance ,refetch:openingBalanceRefetch } = useOpeningBalance(accCode);
+    const { data: openingBalance ,refetch:openingBalanceRefetch  } = useOpeningBalance(Number(accCode));
 
+    console.log(openingBalance,'openingBalance')
     // Note: This hook might need to be updated to handle multiple transaction types
     const { data: transactionList, isLoading, refetch: refetchTransactionList } = useTransactions(
         selectedTransactionTypes[0]?.value, // Using first type for now
-        accCode,
+        Number(accCode),
         startDate,
         endDate,
         itemCode
@@ -228,14 +269,19 @@ export default function PurchasePage() {
         openCash: 0
     });
 
+    console.log(openingBalances,'openingBalances')
+
     useEffect(() => {
-        if (openingBalance?.data) {
-            setApiBalanceOpening({
-                openPure: Number(openingBalance.data.openpure) || 0,
-                openCash: Number(openingBalance.data.opencash) || 0
-            });
-        }
-    }, [openingBalance, accCode]);
+
+        const openPure = Number(openingBalance?.data?.openpure ?? 0);
+        const openCash = Number(openingBalance?.data?.opencash ?? 0);
+
+        setApiBalanceOpening({
+            openPure,
+            openCash
+        });
+
+    }, [openingBalance]);
 
     const createTransaction = useCreateTransactions();
     const { contains } = useFilter({ sensitivity: "base" });
@@ -358,6 +404,11 @@ export default function PurchasePage() {
 
     console.log(selectedTransactionTypes,'selectedTransactionTypes')
 
+    // KEY TO ACCESS
+
+    useGlobalKey("F1" ,()=>openFilter() ,"openFilter");
+
+
 
     /* ================================
     Calculate Used Weight for Pure IDs
@@ -368,10 +419,15 @@ export default function PurchasePage() {
         // Sum up all WT values for this Pure ID across all issue-type rows
         const used = draftRows
             .filter(row => {
+                // Skip the excluded row
                 if (excludeRowId && row.__rowId === excludeRowId) return false;
+
+                // Find the transaction type object
                 const transactionType = TRANSACTIONTYPES.find(t => t.value === row.TRANSACTION_TYPE);
+
+                // Only count if the type exists, is ISP, and PUREID matches
                 return transactionType &&
-                    isIssueType(transactionType) &&
+                    transactionType.code === "ISP" &&
                     String(row.PUREID) === pureIdStr;
             })
             .reduce((sum, row) => sum + (Number(row.WT) || 0), 0);
@@ -402,7 +458,7 @@ export default function PurchasePage() {
         };
     }, [pureStockList, getUsedWeightByPureId]);
 
-    const getAvailableWeight = useCallback((pureId: string | number | null, excludeRowId?: string) => {
+    const getAvailableWeight = useCallback((pureId: string | number | null, excludeRowId?: string ) => {
         if (!pureId) return null;
         const availability = getStockAvailability(pureId, excludeRowId);
         return availability?.remaining ?? null;
@@ -464,6 +520,8 @@ export default function PurchasePage() {
             openCash: parseFloat(openCash.toFixed(2))
         };
     }
+    console.log(accCode, apiBalanceOpening,'apiBalanceOpening')
+
 
     // Single useEffect to calculate balances when either draftRows or API balances change
     useEffect(() => {
@@ -474,15 +532,12 @@ export default function PurchasePage() {
                 apiBalanceOpening.openCash  // ✅ Fixed: Now using openCash, not openPure
             );
 
-            console.log(balances, 'calculated balances');
+           
             setOpeningBalances(balances);
 
-            localStorage.setItem(
-                "OPENING_BALANCES",
-                JSON.stringify(balances)
-            );
+            // localStorage.setItem("OPENING_BALANCES",JSON.stringify(balances));
         }
-    }, [draftRows, apiBalanceOpening]); // ✅ Single dependency array
+    }, [accCode ,draftRows, apiBalanceOpening ]); // ✅ Single dependency array
 
     /* ================================
     Pure Gold Name Data
@@ -546,9 +601,9 @@ export default function PurchasePage() {
                 WT: "",
                 TOUCH: "",
                 PUREWT: "",
-                // AWT: "",
-                // ATOUCH: "",
-                // APUREWT: "",
+                AWT: "",
+                ATOUCH: "",
+                APUREWT: "",
             };
         }
 
@@ -661,6 +716,23 @@ export default function PurchasePage() {
     }, [])
 
     // Load from localStorage on mount
+    // useEffect(() => {
+    //     const savedClosing = localStorage.getItem(CLOSING_DETAILS_KEY);
+    //     console.log(savedClosing,'Loaded closing details from localStorage:');
+
+    //     if (savedClosing) {
+    //         try {
+    //             const parsed = JSON.parse(savedClosing);
+    //             setClosingDetails(parsed);
+    //             console.log('Loaded closing details from localStorage:', parsed);
+    //         } catch (e) {
+    //             console.error("Failed to parse closing details:", e);
+    //             // localStorage.removeItem(CLOSING_DETAILS_KEY);
+    //         }
+    //     }
+    // }, []);
+
+    // Load from localStorage on mount
     useEffect(() => {
         const savedDraft = localStorage.getItem(DRAFT_KEY);
         const savedHeader = localStorage.getItem(HEADER_KEY);
@@ -768,7 +840,37 @@ export default function PurchasePage() {
             localStorage.removeItem(EDITING);
             localStorage.removeItem(EDITING_SNO);
         }
-    }, [isEditing, editingSno])
+    }, [isEditing, editingSno]);
+
+    // useEffect(() => {
+    //     if (closingDetails) {
+    //         localStorage.setItem(CLOSING_DETAILS_KEY, JSON.stringify(closingDetails));
+    //     }
+    // }, [closingDetails]);
+
+
+    // useEffect(() => {
+    //     if (!accCode) {
+    //         // Customer deselected
+    //         setOpeningBalances({ openPure: 0, openCash: 0 });
+    //         setApiBalanceOpening({ openPure: 0, openCash: 0 });
+    //         setClosingDetails({
+    //             convType: "P",
+    //             convAmt: "",
+    //             convWt: "",
+    //             discAmt: "",
+    //             discWt: "",
+    //             cashPaid: "",
+    //             cashRcvd: "",
+    //             bankPaid: "",
+    //             bankRcvd: "",
+    //             bankPaidDetails: [],
+    //             bankRcvdDetails: [],
+    //         });
+    //         localStorage.removeItem(CLOSING_DETAILS_KEY);
+            
+    //     }
+    // }, [accCode]);
 
     /* ================================
        Load Transaction Data When Selected
@@ -972,9 +1074,9 @@ export default function PurchasePage() {
                         TOUCH: item.TOUCH || "",
                         PUREWT: item.PUREWT || "",
 
-                        // AWT: item.AWT || item.WT || "",
-                        // ATOUCH: item.ATOUCH || item.TOUCH || "",
-                        // APUREWT: item.APUREWT || item.PUREWT || "",
+                        AWT: item.AWT || item.WT || "",
+                        ATOUCH: item.ATOUCH || item.TOUCH || "",
+                        APUREWT: item.APUREWT || item.PUREWT || "",
 
                         BATCHNO: item.BATCHNO || "",
                     };
@@ -1090,6 +1192,9 @@ export default function PurchasePage() {
 
     }, []);
 
+
+
+
     /* ================================
        Header Form Handlers
     ================================ */
@@ -1098,6 +1203,9 @@ export default function PurchasePage() {
     };
 
     const handleShowFilter = { openFilter }
+
+
+
 
     const handleCustomerSelect = (customerValue: string, customerLabel: string) => {
         if (isEditing) {
@@ -1117,7 +1225,7 @@ export default function PurchasePage() {
             CUSTOMER_NAME: customerLabel || "", // clear name as well
         }));
 
-        setAccCode(customerValue ? Number(customerValue) : 0);
+        setAccCode(customerValue ? Number(customerValue) : "");
 
         // Add a small delay to ensure state is updated before refetching
         setTimeout(() => {
@@ -1169,9 +1277,95 @@ export default function PurchasePage() {
         setSelectedTransactionId(null);
     };
 
+
     /* ================================
-         Handle Stock Table Values
-      ================================ */
+          CLOSING DETAILS FORM
+       ================================ */
+    const handleClosingDetailsChange = (formState: ClosingFormDetails) => {
+        // Update the form state (with strings)
+    
+
+
+        // Convert to payload format (with numbers)
+        const payload: { CLOSING_DETAILS: ClosingDetails } = {
+            CLOSING_DETAILS: {
+                convType: formState.convType,
+                convAmt: formState.convAmt ? parseFloat(formState.convAmt) : 0,
+                convWt: formState.convWt ? parseFloat(formState.convWt) : 0,
+                discAmt: formState.discAmt ? parseFloat(formState.discAmt) : 0,
+                discWt: formState.discWt ? parseFloat(formState.discWt) : 0,
+                cashPaid: formState.cashPaid ? parseFloat(formState.cashPaid) : 0,
+                cashRcvd: formState.cashRcvd ? parseFloat(formState.cashRcvd) : 0,
+                bankPaid: formState.bankPaid ? parseFloat(formState.bankPaid) : 0,
+                bankRcvd: formState.bankRcvd ? parseFloat(formState.bankRcvd) : 0,
+                bankPaidDetails: formState.bankPaidDetails,
+                bankRcvdDetails: formState.bankRcvdDetails,
+            }
+        };
+
+        console.log("Final payload:", payload);
+
+
+    };
+
+    useEffect(() => {
+        localStorage.setItem(CLOSING_DETAILS_KEY, JSON.stringify(closingDetails));
+    }, [closingDetails]);
+
+    // Handle closing details change from BalanceSummary component
+    const getClosingDetailsPayload = (): ClosingDetails => {
+        return {
+            convType: closingDetails.convType,
+            convAmt: closingDetails.convAmt ? parseFloat(closingDetails.convAmt) : 0,
+            convWt: closingDetails.convWt ? parseFloat(closingDetails.convWt) : 0,
+            discAmt: closingDetails.discAmt ? parseFloat(closingDetails.discAmt) : 0,
+            discWt: closingDetails.discWt ? parseFloat(closingDetails.discWt) : 0,
+            cashPaid: closingDetails.cashPaid ? parseFloat(closingDetails.cashPaid) : 0,
+            cashRcvd: closingDetails.cashRcvd ? parseFloat(closingDetails.cashRcvd) : 0,
+            bankPaid: closingDetails.bankPaid ? parseFloat(closingDetails.bankPaid) : 0,
+            bankRcvd: closingDetails.bankRcvd ? parseFloat(closingDetails.bankRcvd) : 0,
+            bankPaidDetails: closingDetails.bankPaidDetails,
+            bankRcvdDetails: closingDetails.bankRcvdDetails,
+        };
+    };
+
+    // Clear localStorage when account changes or after save
+    // const handleAccountChange = (newAccCode: string) => {
+    //     // Clear closing details for new account
+    //     setClosingDetails({
+    //         convType: "P",
+    //         convAmt: "",
+    //         convWt: "",
+    //         discAmt: "",
+    //         discWt: "",
+    //         cashPaid: "",
+    //         cashRcvd: "",
+    //         bankPaid: "",
+    //         bankRcvd: "",
+    //         bankPaidDetails: [],
+    //         bankRcvdDetails: [],
+    //     });
+    //     localStorage.removeItem(CLOSING_DETAILS_KEY);
+
+    // };
+    // // After successful save to API, clear the localStorage
+    // const handleAfterSave = () => {
+    //     localStorage.removeItem(CLOSING_DETAILS_KEY);
+    //     setClosingDetails({
+    //         convType: "C",
+    //         convAmt: "",
+    //         convWt: "",
+    //         discAmt: "",
+    //         discWt: "",
+    //         cashPaid: "",
+    //         cashRcvd: "",
+    //         bankPaid: "",
+    //         bankRcvd: "",
+    //         bankPaidDetails: [],
+    //         bankRcvdDetails: [],
+    //     });
+    // };
+ 
 
     const handleLoadFromStock = (stockRow: any) => {
         // 1️⃣ Determine if this is issue-type stock
@@ -1281,8 +1475,8 @@ export default function PurchasePage() {
             TOUCH: stockRow.TOUCH || stockRow.actualTouch || stockRow.touch || "",
             ATOUCH: stockRow.ATOUCH || stockRow.actualTouch || stockRow.touch || "",
 
-            // PURE: stockRow.PURE || stockRow.actualPure || stockRow.pure || "",
-            // APURE: stockRow.APURE || stockRow.actualPure || stockRow.pure || "",
+            PURE: stockRow.PURE || stockRow.actualPure || stockRow.pure || "",
+            APUREWT: stockRow.APUREWT || stockRow.actualPure || stockRow.pure || "",
 
             // Item stock fields (for non-issue)
             PCS: stockRow.PCS || stockRow.pcs || 0,
@@ -1302,6 +1496,7 @@ export default function PurchasePage() {
             // Stone details (if any)
             stoneDetails: stockRow.stoneDetails || [],
             otherChargesDetails: stockRow.otherChargesDetails || [],
+
         };
 
         console.log('Created new row with NETWT:', newRow.NETWT);
@@ -1471,9 +1666,9 @@ console.log(typeRows,'typeRows')
                 WT: Number(rest.WT || 0),
                 TOUCH: Number(rest.TOUCH || 0),
                 PUREWT: Number(rest.PURE || 0),
-                // AWT: Number(rest.AWT || 0),
-                // ATOUCH: Number(rest.ATOUCH || 0),
-                // APUREWT: Number(rest.APUREWT || 0),
+                AWT: Number(rest.AWT || 0),
+                ATOUCH: Number(rest.ATOUCH || 0),
+                APUREWT: Number(rest.APUREWT || 0),
             };
         }
 
@@ -1775,6 +1970,7 @@ console.log(typeRows,'typeRows')
                     RATE: headerForm.RATEGM ? Number(headerForm.RATEGM) : undefined,
                 },
                 TRANSACTION_DETAILS: transactionDetails,
+                CLOSING_DETAILS: getClosingDetailsPayload() // 👈 Just call this function!
             };
 
             console.log('Transaction payload with stone details:', payload);
@@ -1889,6 +2085,8 @@ console.log(typeRows,'typeRows')
                     RATE: headerForm.RATEGM ? Number(headerForm.RATEGM) : undefined,
                 },
                 TRANSACTION_DETAILS: transactionDetails,
+                CLOSING_DETAILS: getClosingDetailsPayload() 
+                
             };
 
             console.log("Updating Transaction:", payload);
@@ -2111,9 +2309,10 @@ console.log(typeRows,'typeRows')
                                                 borderWidth="1px"
                                                 borderRadius="md"
                                                 borderColor={theme.colors.greyColor}
-                                                flex={isIssue ? 1 : '100%'} // Issue types share flex, others full width
-                                                minW={isIssue ? '300px' : '100%'} // Minimum width for side by side
-                                                mb={2}
+                                                flex={'100%'}
+                                                // flex={isIssue ? 1 : '100%'} // Issue types share flex, others full width
+                                                // minW={isIssue ? '300px' : '100%'} // Minimum width for side by side
+                                               
                                             >
                                                         <DraftTransactionTable
                                                             rows={typeRows}
@@ -2350,8 +2549,25 @@ console.log(typeRows,'typeRows')
     
                 {/* RIGHT SIDE - Summary Panel */}
                 <Box position="sticky">
-                    <BalanceSummary theme={theme} openBalance={openingBalances} />
+
+
+                    <BalanceSummary 
+
+                        theme={theme}
+                        openBalance={openingBalances}
+                        closingDetails={closingDetails}
+                        onClosingDetailsChange={handleClosingDetailsChange}
+                        storageKey={CLOSING_DETAILS_KEY}
+                        editingState={editingState}
+                        accCode={accCode}
+                        // transactionType={transactionType}
+
+                        />
+
+
                 </Box>
+
+                
             <StockDrawer
                 isIssue={selectedTransactionTypes.some(t => isIssueType(t))}
                 showStock={showStock}

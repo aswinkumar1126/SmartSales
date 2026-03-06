@@ -35,9 +35,9 @@ export interface WeightInfo {
     TOUCH?: number;
     PUREWT?: number;
 
-    // AWT?: number;
-    // ATOUCH?: number;
-    // APUREWT?: number;
+    AWT?: number;
+    ATOUCH?: number;
+    APUREWT?: number;
 }
 
 
@@ -116,6 +116,56 @@ export interface TransactionHeader {
     RATE?: number;
 }
 
+export interface BankTransactionDetails {
+    bankName: string,
+    tranMode: "C" | "F" | "I" | "N" |"R" | "U",
+    tranDate:string,
+    chqNo: string,
+    amount: number
+}
+
+export interface BankTransactionFormDetails {
+    id:string;
+    bankName: string,
+    tranMode: "C" | "F" | "I" | "N" | "R" | "U",
+    tranDate: string,
+    chqNo: string,
+    amount: string
+}
+
+export interface ClosingDetails {
+
+    convType: "P" | "C" | "";
+    convAmt: number;
+    convWt: number;
+    discAmt: number;
+    discWt: number;
+
+    cashPaid: number;
+    cashRcvd: number;
+
+    bankPaid: number;
+    bankRcvd: number;
+    bankPaidDetails: BankTransactionDetails[];
+    bankRcvdDetails: BankTransactionDetails[];
+
+}
+// export interface ClosingFormDetails {
+//     convType: "P" | "C";
+//     convAmt: string;
+//     convWt: string;
+//     discAmt: string;
+//     discWt: string;
+
+//     cashPaid: string;
+//     cashRcvd: string;
+
+//     bankPaid: string;
+//     bankRcvd: string;
+//     bankPaidDetails: BankTransactionFormDetails[];
+//     bankRcvdDetails: BankTransactionFormDetails[];
+// }
+
 
 /* =========================================================
    CREATE TRANSACTION PAYLOAD
@@ -124,6 +174,7 @@ export interface TransactionHeader {
 export interface CreateTransaction {
     TRANSACTION_HEADER: TransactionHeader;
     TRANSACTION_DETAILS: TransactionItems;
+    CLOSING_DETAILS: ClosingDetails;
 }
 
 

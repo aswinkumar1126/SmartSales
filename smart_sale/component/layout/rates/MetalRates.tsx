@@ -11,6 +11,7 @@ interface MetalRatesMenuProps {
     rates: Record<string, number>;
     isLoading: boolean;
     isError: boolean;
+    latestEntry?: string | null;
 }
 
 // Metal configuration with display names, priority, and icons
@@ -46,8 +47,9 @@ const METAL_CONFIG = {
 } as const;
 
 // Professional Metal Rates Menu Component
-export const MetalRatesMenu: React.FC<MetalRatesMenuProps> = ({ rates, isLoading, isError }) => {
+export const MetalRatesMenu: React.FC<MetalRatesMenuProps> = ({ rates, isLoading, isError ,latestEntry }) => {
     const { theme, mode } = useTheme();
+    console.log(rates ,'rates')
 
     // Format currency with Indian numbering system (₹)
     const formatCurrency = (value: number) => {
@@ -89,24 +91,25 @@ export const MetalRatesMenu: React.FC<MetalRatesMenuProps> = ({ rates, isLoading
 
     // Sort metals based on priority
     const sortMetals = (entries: [string, number][]) => {
-        return entries.sort(([keyA], [keyB]) => {
-            const upperA = keyA.toUpperCase();
-            const upperB = keyB.toUpperCase();
+        return entries
+            .filter(([key]) => key !== "LAST_UPDATED") // remove last array
+            .sort(([keyA], [keyB]) => {
+                const upperA = keyA.toUpperCase();
+                const upperB = keyB.toUpperCase();
 
-            // Find priority for keyA
-            const configA = Object.entries(METAL_CONFIG).find(([configKey]) =>
-                upperA.includes(configKey)
-            );
-            const priorityA = configA ? configA[1].priority : 999;
+                const configA = Object.entries(METAL_CONFIG).find(([configKey]) =>
+                    upperA.includes(configKey)
+                );
 
-            // Find priority for keyB
-            const configB = Object.entries(METAL_CONFIG).find(([configKey]) =>
-                upperB.includes(configKey)
-            );
-            const priorityB = configB ? configB[1].priority : 999;
+                const configB = Object.entries(METAL_CONFIG).find(([configKey]) =>
+                    upperB.includes(configKey)
+                );
 
-            return priorityA - priorityB;
-        });
+                const priorityA = configA ? configA[1].priority : 999;
+                const priorityB = configB ? configB[1].priority : 999;
+
+                return priorityA - priorityB;
+            });
     };
 
     // Loading state
@@ -137,6 +140,7 @@ export const MetalRatesMenu: React.FC<MetalRatesMenuProps> = ({ rates, isLoading
     const sortedEntries = sortMetals(metalEntries as [string, number][]);
     const totalMetals = metalEntries.length;
 
+
     return (
         <Menu.Root>
             <Menu.Trigger asChild>
@@ -150,7 +154,36 @@ export const MetalRatesMenu: React.FC<MetalRatesMenuProps> = ({ rates, isLoading
                 >
                     <HStack spaceX={2}>
                         <FaChartLine color={theme.colors.green} size="14px" />
-                        <Text fontWeight="medium" color={theme.colors.primaryText}>Live Metal Rates</Text>
+                        <Box display="flex" flexDirection="column" gap={1}>
+
+                            {/* <Text fontWeight="semibold" color={theme.colors.primaryText} fontSize="sm">
+                                Live Metal Rates
+                            </Text> */}
+
+                            <Box display="flex" gap={4}>
+
+                                <Box display="flex" flexDirection="column">
+                                    <Text fontSize="xs" color={theme.colors.secondaryText}>
+                                        Gold 24K
+                                    </Text>
+                                    <Text fontWeight="medium" color={theme.colors.primaryText}>
+                                        ₹ {rates["GOLD 100.00"]}
+                                    </Text>
+                                </Box>
+
+                                <Box display="flex" flexDirection="column">
+                                    <Text fontSize="xs" color={theme.colors.secondaryText}>
+                                        Gold 22K (916)
+                                    </Text>
+                                    <Text fontWeight="medium" color={theme.colors.primaryText}>
+                                        ₹ {rates["GOLD 916.00"]}
+                                    </Text>
+                                </Box>
+
+                            </Box>
+
+                        </Box>
+                      
                         <Badge
                             colorScheme="green"
                             variant="subtle"
@@ -226,7 +259,7 @@ export const MetalRatesMenu: React.FC<MetalRatesMenuProps> = ({ rates, isLoading
                         {/* Footer with timestamp */}
                         <Box py={2} bg="gray.50" borderTopWidth="1px" borderColor="gray.100" borderRadius="0 0 md md">
                             <Text fontSize="10px" color="gray.600" textAlign="center">
-                                Last updated: {new Date().toLocaleTimeString('en-IN')}
+                                Last updated: {latestEntry}
                             </Text>
                         </Box>
                     </Menu.Content>

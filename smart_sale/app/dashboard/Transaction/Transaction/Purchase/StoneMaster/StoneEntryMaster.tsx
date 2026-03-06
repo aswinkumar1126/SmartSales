@@ -14,6 +14,8 @@ import { CapitalizedInput } from "@/components/ui/CapitalizedInput";
 import { SelectCombobox, SelectItem } from "@/components/ui/selectComboBox";
 import TransactionTable from "@/component/table/TransactionTable";
 import { toaster } from "@/components/ui/toaster";
+import { useGlobalKey } from "@/components/key/useGlobalKey";
+
 
 type StoneRow = {
     id: string;
@@ -151,6 +153,7 @@ export default function StoneEnterMaster({
     };
 
     /* ---------------- LOAD FROM LOCALSTORAGE ---------------- */
+    
     useEffect(() => {
         if (!draftRowId) return;
 
@@ -187,17 +190,7 @@ export default function StoneEnterMaster({
     }, [draftRowId]);
 
     /* ---------------- ESC KEY — own effect, always active ---------------- */
-    useEffect(() => {
-        const handleEscKey = (e: KeyboardEvent) => {
-            if (e.key === "Escape") {
-                e.preventDefault();
-                e.stopPropagation();
-                onClose();
-            }
-        };
-        window.addEventListener("keydown", handleEscKey);
-        return () => window.removeEventListener("keydown", handleEscKey);
-    }, [onClose]);
+ 
 
     /* ---------------- AUTO CALCULATE AMOUNT ---------------- */
     useEffect(() => {
@@ -407,6 +400,12 @@ export default function StoneEnterMaster({
         onSave(rows);
         onClose();
     };
+
+      // In useGlobalKey
+        useGlobalKey('Escape', () => {
+            console.log('useGlobalKey ESC handler triggered');
+            handleSaveAndClose();
+        }, "stone-window");
 
     /* ---------------- RENDER FORM CELL ---------------- */
     const renderFormCell = (field: any) => {

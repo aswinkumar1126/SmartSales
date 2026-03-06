@@ -133,7 +133,7 @@ if(isError) return <div>Error fetching rates</div>
                     justify={{ base: "flex-end", sm: "flex-start" }}
                 >
                     <HStack>
-                        <MetalRatesMenu rates={metalRates} isLoading={isLoading} isError={isError}/>
+                        <MetalRatesMenu rates={metalRates} isLoading={isLoading} isError={isError} latestEntry={metalRates["LAST_UPDATED"]} />
                     </HStack>
                     {/* Date and Time - visible on all screens */}
                     <HStack

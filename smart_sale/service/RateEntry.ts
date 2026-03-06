@@ -7,7 +7,9 @@ export const RateEntryService = {
     getLatestRate: async ():Promise<ApiResponse> => {
         try {
             const response = await axiosInstance.get('/rate');
+            console.log(response.data, 'Rate Data' )
             return response.data;
+
         }
         catch (err) {
             console.log(err);

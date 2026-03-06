@@ -13,6 +13,7 @@ import { SelectCombobox, SelectItem } from "@/components/ui/selectComboBox";
 import TransactionTable from "@/component/table/TransactionTable";
 import { CapitalizedInput } from "@/components/ui/CapitalizedInput";
 import { toaster } from "@/components/ui/toaster";
+import { useGlobalKey } from "@/components/key/useGlobalKey";
 
 type MiscChargeRow = {
     id: string;
@@ -71,7 +72,7 @@ export default function OtherChargesWindow({
     otherChargesData
 }: Props) {
 
-    console.log(otherChargesData, 'otherChargesData');
+    // console.log(otherChargesData, 'otherChargesData');
 
     const tableCols = [
         { key: "chargeName", label: "MISCELLANEOUS", align: "left" as const },
@@ -112,13 +113,13 @@ export default function OtherChargesWindow({
     useEffect(() => {
         // Only auto-load if we're not in edit mode and amount hasn't been manually changed
         if (!editId && formData.chargeName && !isAmountManuallyChanged) {
-            console.log(formData.chargeName, 'checking')
+            // console.log(formData.chargeName, 'checking')
             // Try to find amount from otherChargesData first
             if (otherChargesData && Array.isArray(otherChargesData)) {
                 const selectedCharge = otherChargesData.find(
                     (item: any) => Number(item.chargeId) === Number(formData.chargeName)
                 );
-                console.log(selectedCharge, 'checking')
+                // console.log(selectedCharge, 'checking')
 
                 if (selectedCharge && selectedCharge.chargeAmount) {
                     setFormData(prev => ({
@@ -141,7 +142,7 @@ export default function OtherChargesWindow({
         if (!draftRowId) return;
 
         if (hasLoadedRef.current && rows.length > 0) {
-            console.log(`Already loaded charges for ${draftRowId}, skipping...`);
+            // console.log(`Already loaded charges for ${draftRowId}, skipping...`);
             return;
         }
 
@@ -168,18 +169,7 @@ export default function OtherChargesWindow({
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [draftRowId]);
 
-    /* ---------------- ESC KEY — attached to window, not inside load effect ---------------- */
-    useEffect(() => {
-        const handleEscKey = (e: KeyboardEvent) => {
-            if (e.key === "Escape") {
-                e.preventDefault();
-                e.stopPropagation();
-                onClose();
-            }
-        };
-        window.addEventListener("keydown", handleEscKey);
-        return () => window.removeEventListener("keydown", handleEscKey);
-    }, [onClose]);
+ 
 
     /* ---------------- SAVE TO LOCALSTORAGE ---------------- */
     useEffect(() => {
@@ -339,19 +329,24 @@ export default function OtherChargesWindow({
         onSave(nonEmptyRows);
         onClose();
     };
+   
+
+    // In useGlobalKey
+    useGlobalKey('Escape', () => {
+        console.log('useGlobalKey ESC handler triggered');
+        handleSaveAndClose();
+    }, "other-charges-window");
+    
 
     // Optional: Add a reset to default button functionality
     const handleResetToDefault = () => {
         if (formData.chargeName && otherChargesData) {
 
-            console.log('enters');
-            console.log(formData.chargeName, 'checking');
 
             const selectedCharge = otherChargesData.find(
                 (item: any) => Number(item.chargeId) === Number(formData.chargeName)
             );
-            console.log(selectedCharge, 'selectedCharge');
-            console.log(formData.chargeName, 'checking');
+    
 
             if (selectedCharge && selectedCharge.chargeAmount) {
                 setFormData(prev => ({
@@ -361,7 +356,6 @@ export default function OtherChargesWindow({
                 setIsAmountManuallyChanged(false);
             }
         }
-        console.log('not enters');
     };
 
     /* ---------------- RENDER FORM CELL ---------------- */
@@ -489,7 +483,7 @@ export default function OtherChargesWindow({
                 <Text m={2} fontSize="small" fontWeight="500">
                     Total: ₹{totals.amount.toFixed(2)}
                 </Text>
-                <Button variant="outline" size="xs" onClick={onClose} title="ESC">
+                <Button variant="outline" size="xs" onClick={onClose} >
                     Cancel
                 </Button>
                 <Button colorPalette="blue" size="xs" onClick={handleSaveAndClose}>

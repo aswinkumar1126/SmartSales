@@ -20,6 +20,7 @@ import TransactionTable from "@/component/table/TransactionTable";
 import { useStoneItems } from "@/hooks/item/useItems";
 import { SelectCombobox } from "@/components/ui/selectComboBox";
 import OtherChargesWindow from "../OtherCharges/OtherChargesWindow";
+import { useGlobalKey } from "@/components/key/useGlobalKey";
 
 type StoneRow = {
     id: string;
@@ -190,7 +191,9 @@ export default function DraftTransactionTable({
 
 
     // rowsRef so setTimeout closures always see latest rows
+    // console.log(rows, 'rows in draft table')
     const rowsRef = useRef(rows);
+    console.log(rowsRef.current, 'rows in draft table')
     useEffect(() => { rowsRef.current = rows; }, [rows]);
 
     useEffect(() => {
@@ -218,11 +221,11 @@ export default function DraftTransactionTable({
     const wastypecollection = { items: [{ label: "TOUCH", value: "TOUCH" }] };
     const numericFields = [
         "PCS", "GRSWT", "STNWT", "NETWT", "WASPER", "WASTAGE", "STNAMT", 
-        "PUREWT", "HMC", "MC", "WT",  "TOUCH",
+        "PUREWT", "HMC", "MC", "WT", "TOUCH", "AWT", "APUREWT"
     ];
 
     const orderedKeys = isIssue
-        ? ["PUREID", "WT",  "TOUCH",  "PUREWT"]
+        ? ["PUREID", "WT","AWT",  "TOUCH", "ATOUCH", "PUREWT" ,"APUREWT"]
         : ["ITEMID", "PCS", "GRSWT", "STNWT", "NETWT", "WASTYPE", "WASPER", "WASTAGE", "TOUCH", "PUREWT", "HMC", "MC", "STNAMT", "DESCRIPTION"];
 
     const baseColumns = isIssue ? issueDataColumns : issueColumns;
@@ -339,8 +342,8 @@ export default function DraftTransactionTable({
             if (col.key === "ITEMID" || col.key === "PUREID")
                 return { ...base, type: "combobox", collection: itemsCollection || { items: [] }, isRequired: true };
 
-            if (col.key === "ITEMCODE" || col.key === "HSNCODE")
-                return { ...base, type: "capitalized" };
+            // if (col.key === "ITEMCODE" || col.key === "HSNCODE")
+            //     return { ...base, type: "capitalized" };
 
             if (col.key === "WASTYPE")
                 return { ...base, type: "select", collection: wastypecollection, isRequired: true, dependsOn: "ITEMID", defaultValue: "TOUCH" };
@@ -348,8 +351,9 @@ export default function DraftTransactionTable({
             if (!isIssue && ["NETWT", "PUREWT"].includes(col.key))
                 return { ...base, type: "calculated", disabled: true };
 
-            if (isIssue && ["PUREWT"].includes(col.key))
+            if (isIssue && ["PUREWT","APUREWT"].includes(col.key))
                 return { ...base, type: "calculated", disabled: true };
+
 
             if (!isIssue && ["PCS", "GRSWT", "STNWT", "WASTYPE", "WASPER", "WASTAGE", "MC", "HMC", "TOUCH", "STNAMT", "DESCRIPTION"].includes(col.key))
                 return { ...base, dependsOn: "ITEMID" };
@@ -366,7 +370,7 @@ export default function DraftTransactionTable({
     }, [tableCols, itemsCollection, isIssue]);
 
     const visibleFormFields = useMemo(() =>
-        formFields.filter(f => !["NETWT", "PUREWT"].includes(f.key) && f.type !== "calculated"),
+        formFields.filter(f => !["NETWT", "PUREWT","APUREWT" ].includes(f.key) && f.type !== "calculated"),
         [formFields]
     );
 
@@ -394,11 +398,12 @@ export default function DraftTransactionTable({
             }
         });
     }, [visibleFormFields]);
+    
 
     const pureValue = useCalculatePure(formData.WT, formData.TOUCH);
 
     console.log(pureValue,'pureValue')
-    // const altPureValue = useCalculatePure(formData.AWT, formData.ATOUCH);
+    const altPureValue = useCalculatePure(formData.AWT, formData.ATOUCH);
 
     const calcNet = useCallback(() => {
         const g = parseFloat(formData.GRSWT) || 0;
@@ -423,7 +428,7 @@ export default function DraftTransactionTable({
 
     useEffect(() => {
         if (pureValue) setFormData(p => ({ ...p, PUREWT: pureValue }));
-        // if (altPureValue) setFormData(p => ({ ...p, APURE: altPureValue }));
+        if (altPureValue) setFormData(p => ({ ...p, APUREWT: altPureValue }));
     }, [pureValue]);
 
     useEffect(() => {
@@ -492,6 +497,8 @@ export default function DraftTransactionTable({
         (keyOrObject: string | Partial<FormData>, value?: any) => {
             let next = { ...formData };
 
+            console.log(next,'nextnext')
+
             if (typeof keyOrObject === "string") {
                 next[keyOrObject] = value;
             } else {
@@ -499,17 +506,33 @@ export default function DraftTransactionTable({
             }
 
             // Mirror logic
-            const mirror: Record<string, string> = { WT: "AWT", TOUCH: "ATOUCH" };
-            Object.keys(next).forEach(k => {
-                if (mirror[k]) next[mirror[k]] = next[k];
-            });
+            // const mirror: Record<string, string> = { AWT: "WT", ATOUCH: "TOUCH" };
+            // Object.keys(next).forEach(k => {
+            //     if (mirror[k]) next[mirror[k]] = next[k];
+            // });
+
+            //Calcualte the actual values
+            const wt = parseFloat(next.WT || 0);
+         
+            const awt = parseFloat(next.AWT || 0);
+            const atouch = parseFloat(next.ATOUCH || 0);
+
 
             // Recalculate NETWT / PUREWT if relevant
             const g = parseFloat(next.GRSWT || 0);
             const s = parseFloat(next.STNWT || 0);
             next.NETWT = (g - s).toFixed(3);
             const touch = parseFloat(next.TOUCH || 0);
-            next.PUREWT = ((g - s) * touch / 100).toFixed(3);
+
+            next.PUREWT = isIssue ? (wt * touch / 100).toFixed(3) : ((g - s) * touch / 100).toFixed(3);
+
+            next.APUREWT = (awt * atouch /100).toFixed(3);
+
+            // if (next.WT && next.TOUCH) {
+            //     const wt = parseFloat(next.WT) || 0;
+            //     const touch = parseFloat(next.TOUCH) || 0;
+            //     next.PUREWT = ((wt * touch) / 100).toFixed(3);
+            // }
 
             setFormData(next);
             // Mark touched fields
@@ -525,9 +548,10 @@ export default function DraftTransactionTable({
         },
         [formData]
     );
-
+    // console.log(visibleFormFields,'visibleFormFields');
     const focusIdx = useCallback((idx: number) => {
         const f = visibleFormFields[idx];
+        console.log(f, 'visibleFormFields');
         if (!f) return;
         const ref = fieldRefs.current[f.key];
         setTimeout(() => { ref?.current?.focus?.(); ref?.current?.select?.(); }, 60);
@@ -535,6 +559,7 @@ export default function DraftTransactionTable({
 
     const moveNext = useCallback((key: string) => {
         const idx = visibleFormFields.findIndex(f => f.key === key);
+        // console.log(idx,'idsx');
         let next = idx + 1;
         while (
             next < visibleFormFields.length &&
@@ -577,12 +602,14 @@ export default function DraftTransactionTable({
         setFormData(reset);
         setErrors({});
         setTouched({});
+
         // Reset both IDs independently
         resetStoneTempId();
         resetMiscTempId();
         setStoneDraftRowId("");
         setMiscDraftRowId("");
     }, [formFields]);
+
 
     const handleSubmit = useCallback(async () => {
         if (!validateForm()) return;
@@ -792,7 +819,7 @@ export default function DraftTransactionTable({
                         disabled={shouldDisable}
                         inputRef={ref}
                         onEnter={() =>
-                            moveNext(field.key)}
+                        moveNext(field.key)}
                         noBorder
                     />
                     <Button
@@ -839,7 +866,28 @@ export default function DraftTransactionTable({
                         decimalScale={field.decimalScale}
                         disabled={shouldDisable}
                         inputRef={ref}
-                        onEnter={() => handleSubmit()} noBorder
+                        onEnter={() => handleSubmit()} 
+                        noBorder
+                    />
+                </Box>
+            );
+        }
+        if (field.key === "ATOUCH") {
+            return (
+                <Box position="relative" width="100%">
+                    <CapitalizedInput
+                        field={field.key}
+                        value={formData[field.key] || ""}
+                        onChange={(_, v) => handleChange(field.key, v)}
+                        type="text"
+                        isCapitalized
+                        size="xs"
+                        rounded="sm"
+                        decimalScale={field.decimalScale}
+                        disabled={shouldDisable}
+                        inputRef={ref}
+                        onEnter={() => handleSubmit()}
+                        noBorder
                     />
                 </Box>
             );
@@ -964,6 +1012,9 @@ export default function DraftTransactionTable({
         fontSize: "10px",
         ...extra,
     });
+
+    useGlobalKey("Escape" , ()=>setIsMiscModalOpen(false) ,"close-modal");
+
 
     return (
         <Box display="flex" flexDirection="column" gap={1}>

@@ -68,7 +68,7 @@ export default function TransactionHeaderForm({
     console.log(openingBalance,'openingBalance')
 
     const openingCash = openingBalance.openCash ? formatToFixed(openingBalance.openCash, 2) : 0;
-    const openingPure = openingBalance.openPure ? formatToFixed(openingBalance.openPure, 2) : 0;
+    const openingPure = openingBalance.openPure ? formatToFixed(openingBalance.openPure, 3) : 0;
 
     return (
         <Box
