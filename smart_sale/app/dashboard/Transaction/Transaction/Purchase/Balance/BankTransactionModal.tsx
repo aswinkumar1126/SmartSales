@@ -102,7 +102,7 @@ export const BankTransactionModal = ({
     theme,
     initialTransactions = [],
     accCode,
-    escapeId = `bankTransactionModal${type}`
+    escapeId
 }: BankTransactionModalProps) => {
     const emptyForm = {
         bankName: "",
@@ -123,6 +123,9 @@ export const BankTransactionModal = ({
     const hasLoadedRef = useRef(false);
     const submitBtnRef = useRef<HTMLButtonElement>(null);
     const modalContentRef = useRef<HTMLDivElement>(null);
+
+   
+    
 
     // Refs for field navigation
     const fieldRefs = {
@@ -431,9 +434,9 @@ export const BankTransactionModal = ({
     const uniqueId = `${escapeId}-${Math.random().toString(36).slice(2)}`;
     useGlobalKey('Escape', () => {
         if (isOpen) handleSaveAndClose();
-    }, uniqueId);
-    console.log(escapeId,'escapeId')
+    }, `bank-${type}-${escapeId}-modal}`);
 
+    console.log(`bank-${type}-${escapeId}-modal`,'modals')
     // Render form cell
     const renderFormCell = (field: any) => {
         const ref = fieldRefs[field.key as FieldKey];
@@ -684,14 +687,11 @@ export const BankTransactionModal = ({
                     <Text fontSize="small" fontWeight="500">
                         Total: ₹{totals.amount.toFixed(2)}
                     </Text>
-                    <Button variant="outline" size="xs" onClick={handleCancel}>
-                        Cancel
-                    </Button>
                     <Button
                         size="xs"
                         colorPalette="blue"
                         onClick={handleSaveAndClose}
-                        disabled={transactions.length === 0}
+                        // disabled={transactions.length === 0}
                     >
                         Save & Close
                     </Button>

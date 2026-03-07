@@ -3,7 +3,7 @@ import { FormField } from "@/types/form/form";
 export const RateEntryForm = ():FormField[]  => [
     {
         name: "GOLD 100",
-        label: "GOLG 24K",
+        label: "GOLD 24K",
         type: "number",
         size: "sm",
         required: true,
@@ -13,7 +13,7 @@ export const RateEntryForm = ():FormField[]  => [
     },
     {
         name: "GOLD 916",
-        label: "GOLG 916",
+        label: "GOLD 916",
         type: "number",
         size: "sm",
         required: true,

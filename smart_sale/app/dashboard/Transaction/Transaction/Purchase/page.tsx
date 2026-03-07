@@ -79,6 +79,7 @@ type TransactionRow ={
 
 export default function PurchasePage() {
 
+    const isFirstRender = useRef(true);
 
     /* ================================
        Local Storage Keys
@@ -112,6 +113,11 @@ export default function PurchasePage() {
 
     const [metalId, setMetalId] = useState<string | undefined>();
 
+    const [metalRate, setMetalRate] = useState<number>();
+
+    
+
+
     const [selectedName, setSelectedName] = useState<string | undefined>();
     // const [itemsStockList, setItemsStockList] = useState<{ label: string, value: string }[]>([]);
 
@@ -132,7 +138,8 @@ export default function PurchasePage() {
 
     const {data:metalRates ,isLoading:metalRatesLoading ,isError:metalRatesError} = useRates();
 
-    console.log(metalRates,'metalRates')
+
+    // console.log(metalRate, 'metalRate');
 
 
     /* ================================
@@ -150,10 +157,19 @@ export default function PurchasePage() {
         ENTRYNO: "",
         BILLNO: "",
         DATE: new Date().toISOString().split("T")[0],
-        RATEGM: metalRates ? formatToFixed(metalRates["GOLD 916.00"] ,2) : "",
+        RATEGM: "", // start empty
         CUSTOMER: "",
         CUSTOMER_NAME: "",
     });
+
+
+
+    useEffect(() => {
+        const rate = metalRates ? formatToFixed(metalRates["GOLD 916.00"], 2) : "";
+        // setMetalRate(rate);
+        setHeaderForm(prev => ({ ...prev, RATEGM: rate })); // update headerForm too
+
+    }, [metalRates]);
 
     const [closingDetails, setClosingDetails] = useState<ClosingFormDetails>(() => {
         // Load from localStorage on initial state only
@@ -715,22 +731,6 @@ export default function PurchasePage() {
         }
     }, [])
 
-    // Load from localStorage on mount
-    // useEffect(() => {
-    //     const savedClosing = localStorage.getItem(CLOSING_DETAILS_KEY);
-    //     console.log(savedClosing,'Loaded closing details from localStorage:');
-
-    //     if (savedClosing) {
-    //         try {
-    //             const parsed = JSON.parse(savedClosing);
-    //             setClosingDetails(parsed);
-    //             console.log('Loaded closing details from localStorage:', parsed);
-    //         } catch (e) {
-    //             console.error("Failed to parse closing details:", e);
-    //             // localStorage.removeItem(CLOSING_DETAILS_KEY);
-    //         }
-    //     }
-    // }, []);
 
     // Load from localStorage on mount
     useEffect(() => {
@@ -842,35 +842,7 @@ export default function PurchasePage() {
         }
     }, [isEditing, editingSno]);
 
-    // useEffect(() => {
-    //     if (closingDetails) {
-    //         localStorage.setItem(CLOSING_DETAILS_KEY, JSON.stringify(closingDetails));
-    //     }
-    // }, [closingDetails]);
-
-
-    // useEffect(() => {
-    //     if (!accCode) {
-    //         // Customer deselected
-    //         setOpeningBalances({ openPure: 0, openCash: 0 });
-    //         setApiBalanceOpening({ openPure: 0, openCash: 0 });
-    //         setClosingDetails({
-    //             convType: "P",
-    //             convAmt: "",
-    //             convWt: "",
-    //             discAmt: "",
-    //             discWt: "",
-    //             cashPaid: "",
-    //             cashRcvd: "",
-    //             bankPaid: "",
-    //             bankRcvd: "",
-    //             bankPaidDetails: [],
-    //             bankRcvdDetails: [],
-    //         });
-    //         localStorage.removeItem(CLOSING_DETAILS_KEY);
-            
-    //     }
-    // }, [accCode]);
+ 
 
     /* ================================
        Load Transaction Data When Selected
@@ -1204,7 +1176,31 @@ export default function PurchasePage() {
 
     const handleShowFilter = { openFilter }
 
+    useEffect(() => {
+        if (isFirstRender.current) {
+            isFirstRender.current = false;
+            return; // Skip first render (important for refresh)
+        }
 
+        if (!accCode) {
+            localStorage.removeItem(CLOSING_DETAILS_KEY);
+
+            setClosingDetails({
+                convType: "P",
+                convAmt: "",
+                convWt: "",
+                discAmt: "",
+                discWt: "",
+                cashPaid: "",
+                cashRcvd: "",
+                bankPaid: "",
+                bankRcvd: "",
+                bankPaidDetails: [],
+                bankRcvdDetails: [],
+            });
+        }
+
+    }, [accCode]);
 
 
     const handleCustomerSelect = (customerValue: string, customerLabel: string) => {
@@ -1281,36 +1277,20 @@ export default function PurchasePage() {
     /* ================================
           CLOSING DETAILS FORM
        ================================ */
-    const handleClosingDetailsChange = (formState: ClosingFormDetails) => {
-        // Update the form state (with strings)
-    
 
-
-        // Convert to payload format (with numbers)
-        const payload: { CLOSING_DETAILS: ClosingDetails } = {
-            CLOSING_DETAILS: {
-                convType: formState.convType,
-                convAmt: formState.convAmt ? parseFloat(formState.convAmt) : 0,
-                convWt: formState.convWt ? parseFloat(formState.convWt) : 0,
-                discAmt: formState.discAmt ? parseFloat(formState.discAmt) : 0,
-                discWt: formState.discWt ? parseFloat(formState.discWt) : 0,
-                cashPaid: formState.cashPaid ? parseFloat(formState.cashPaid) : 0,
-                cashRcvd: formState.cashRcvd ? parseFloat(formState.cashRcvd) : 0,
-                bankPaid: formState.bankPaid ? parseFloat(formState.bankPaid) : 0,
-                bankRcvd: formState.bankRcvd ? parseFloat(formState.bankRcvd) : 0,
-                bankPaidDetails: formState.bankPaidDetails,
-                bankRcvdDetails: formState.bankRcvdDetails,
+    const handleClosingDetailsChange = useCallback((details:ClosingFormDetails) => {
+        // Only update if details actually changed
+        setClosingDetails(prev => {
+            if (JSON.stringify(prev) === JSON.stringify(details)) {
+                return prev; // No change
             }
-        };
+            return details;
+        });
+    }, []);
 
-        console.log("Final payload:", payload);
-
-
-    };
-
-    useEffect(() => {
-        localStorage.setItem(CLOSING_DETAILS_KEY, JSON.stringify(closingDetails));
-    }, [closingDetails]);
+    // useEffect(() => {
+    //     localStorage.setItem(CLOSING_DETAILS_KEY, JSON.stringify(closingDetails));
+    // }, [closingDetails]);
 
     // Handle closing details change from BalanceSummary component
     const getClosingDetailsPayload = (): ClosingDetails => {
@@ -1329,43 +1309,7 @@ export default function PurchasePage() {
         };
     };
 
-    // Clear localStorage when account changes or after save
-    // const handleAccountChange = (newAccCode: string) => {
-    //     // Clear closing details for new account
-    //     setClosingDetails({
-    //         convType: "P",
-    //         convAmt: "",
-    //         convWt: "",
-    //         discAmt: "",
-    //         discWt: "",
-    //         cashPaid: "",
-    //         cashRcvd: "",
-    //         bankPaid: "",
-    //         bankRcvd: "",
-    //         bankPaidDetails: [],
-    //         bankRcvdDetails: [],
-    //     });
-    //     localStorage.removeItem(CLOSING_DETAILS_KEY);
-
-    // };
-    // // After successful save to API, clear the localStorage
-    // const handleAfterSave = () => {
-    //     localStorage.removeItem(CLOSING_DETAILS_KEY);
-    //     setClosingDetails({
-    //         convType: "C",
-    //         convAmt: "",
-    //         convWt: "",
-    //         discAmt: "",
-    //         discWt: "",
-    //         cashPaid: "",
-    //         cashRcvd: "",
-    //         bankPaid: "",
-    //         bankRcvd: "",
-    //         bankPaidDetails: [],
-    //         bankRcvdDetails: [],
-    //     });
-    // };
- 
+    
 
     const handleLoadFromStock = (stockRow: any) => {
         // 1️⃣ Determine if this is issue-type stock
@@ -2559,7 +2503,8 @@ console.log(typeRows,'typeRows')
                         onClosingDetailsChange={handleClosingDetailsChange}
                         storageKey={CLOSING_DETAILS_KEY}
                         editingState={editingState}
-                        accCode={accCode}
+                        accCode={Number(accCode)}
+                        rate={Number(headerForm.RATEGM)}
                         // transactionType={transactionType}
 
                         />

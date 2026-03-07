@@ -48,7 +48,8 @@ type BalanceSummaryProps = {
     storageKey?: string;
     editingState?: { rowId: string | null; transactionType: string | null };
     transactionType?: string;
-    accCode: number | string | null | undefined;
+    accCode: number;
+    rate: number;
 };
 
 const BalanceSummary = ({
@@ -60,12 +61,16 @@ const BalanceSummary = ({
     storageKey = "CLOSING_DETAILS",
     editingState,
     transactionType,
-    accCode
+    accCode,
+    rate
 }: BalanceSummaryProps) => {
 
 
     // Initialize state from props or localStorage
     const [details, setDetails] = useState<ClosingFormDetails>(() => {
+
+
+
         if (closingDetails) return closingDetails;
 
         const saved = localStorage.getItem(storageKey);
@@ -91,11 +96,12 @@ const BalanceSummary = ({
             bankRcvdDetails: []
         };
     });
+    
 
     const [conversionType, setConversionType] = useState<"C" | "P" | "">(details.convType);
     const [closingCash, setClosingCash] = useState(0);
     const [closingPure, setClosingPure] = useState(0);
-    const rate =16000;
+  
 
     console.log(conversionType,'conversionType')
 
@@ -111,14 +117,17 @@ const BalanceSummary = ({
         return accCode ? `bank-rcvd-${accCode}` : "";
     });
 
-    console.log(bankPaidDraftRowId,'bankPaidDraftRowId')
+    console.log(bankPaidDraftRowId,'bankPaidDraftRowId');
+
+
 
     // Refs to prevent multiple modal openings
     const bankPaidModalOpenedRef = useRef(false);
     const bankRcvdModalOpenedRef = useRef(false);
+    console.log(openBalance.openPure,'openBalance.openPure')
 
-    const openingPure = openBalance.openPure ? formatToFixed(openBalance.openPure, 3) : "";
-    const openingCash = openBalance.openCash ? formatToFixed(openBalance.openCash, 2) : "";
+    const openingPure = openBalance.openPure ? formatToFixed(openBalance.openPure, 3) : "0.000";
+    const openingCash = openBalance.openCash ? formatToFixed(openBalance.openCash, 2) : "0.00";
 
     // Get current editing row info
     const currentEditingRowId = editingState?.rowId;
@@ -127,6 +136,7 @@ const BalanceSummary = ({
     // Load bank transactions from localStorage when accCode changes or component mounts
     useEffect(() => {
         if (!accCode) {
+            // When accCode is falsy, reset everything
             setDetails(prev => ({
                 ...prev,
                 bankPaid: "",
@@ -134,8 +144,14 @@ const BalanceSummary = ({
                 bankPaidDetails: [],
                 bankRcvdDetails: []
             }));
-            localStorage.removeItem(`BANK_PAID_${bankPaidDraftRowId}`);
-            localStorage.removeItem(`BANK_RECEIVED_${bankRcvdDraftRowId}`);
+
+            // Clear localStorage for this accCode
+            if (bankPaidDraftRowId || bankRcvdDraftRowId) {
+                localStorage.removeItem(`BANK_PAID_${bankPaidDraftRowId}`);
+                localStorage.removeItem(`BANK_RECEIVED_${bankRcvdDraftRowId}`);
+            }
+         
+
             setBankPaidDraftRowId("");
             setBankRcvdDraftRowId("");
             return;
@@ -147,7 +163,7 @@ const BalanceSummary = ({
         setBankPaidDraftRowId(paidId);
         setBankRcvdDraftRowId(rcvdId);
 
-        // ─────────────── Load paid ───────────────
+        // Load paid transactions
         const paidKey = `BANK_PAID_${paidId}`;
         const paidRaw = localStorage.getItem(paidKey);
         let paidTxs: BankTransaction[] = [];
@@ -157,7 +173,7 @@ const BalanceSummary = ({
             } catch { }
         }
 
-        // ─────────────── Load received ───────────────
+        // Load received transactions
         const rcvdKey = `BANK_RECEIVED_${rcvdId}`;
         const rcvdRaw = localStorage.getItem(rcvdKey);
         let rcvdTxs: BankTransaction[] = [];
@@ -167,6 +183,7 @@ const BalanceSummary = ({
             } catch { }
         }
 
+        // Update details with loaded transactions
         setDetails(prev => ({
             ...prev,
             bankPaid: paidTxs.reduce((sum, t) => sum + t.amount, 0).toString(),
@@ -175,40 +192,81 @@ const BalanceSummary = ({
             bankRcvdDetails: rcvdTxs,
         }));
 
-    }, [accCode]);
+    }, [accCode]); // Remove bankPaidDraftRowId and bankRcvdDraftRowId from dependencies
+
+ 
 
 
-    // Closing calculation effect
     useEffect(() => {
-        const cashRcvd = parseFloat(details.cashRcvd || "0");
-        const cashPaid = parseFloat(details.cashPaid || "0");
-        const bankRcvd = details.bankRcvdDetails.reduce((sum, t) => sum + t.amount, 0);
-        const bankPaid = details.bankPaidDetails.reduce((sum, t) => sum + t.amount, 0);
 
-        let convAmt = parseFloat(details.convAmt || "0");
-        let convWt = parseFloat(details.convWt || "0");
+        const cashRcvd = parseFloat(details.cashRcvd || "0") || 0;
+        const cashPaid = parseFloat(details.cashPaid || "0") || 0;
 
-        // Auto-calculate the other field for display only
-        if (conversionType === "P") {
-            convAmt = convWt * rate;  // just for display
-            setDetails(prev => ({ ...prev, convAmt: convAmt.toFixed(2) }));
-        } else if (conversionType === "C") {
-            convWt = convAmt / rate;  // just for display
-            setDetails(prev => ({ ...prev, convWt: convWt.toFixed(3) }));
+        const bankRcvd = details.bankRcvdDetails.reduce((sum, t) => sum + (t.amount || 0), 0);
+        const bankPaid = details.bankPaidDetails.reduce((sum, t) => sum + (t.amount || 0), 0);
+
+        let convAmt = parseFloat(details.convAmt || "0") || 0;
+        let convWt = parseFloat(details.convWt || "0") || 0;
+
+        /** -------------------------
+         * Conversion Auto Calculation
+         * ------------------------- */
+        if (rate > 0) {
+
+            if (conversionType === "P") {
+
+                const calculatedAmt = convWt * rate;
+
+                if (calculatedAmt.toFixed(2) !== details.convAmt) {
+                    setDetails(prev => ({
+                        ...prev,
+                        convAmt: calculatedAmt.toFixed(2)
+                    }));
+                }
+
+                convAmt = calculatedAmt;
+
+            } else if (conversionType === "C") {
+
+                const calculatedWt = convAmt / rate;
+
+                if (calculatedWt.toFixed(3) !== details.convWt) {
+                    setDetails(prev => ({
+                        ...prev,
+                        convWt: calculatedWt.toFixed(3)
+                    }));
+                }
+
+                convWt = calculatedWt;
+            }
         }
 
-        // Closing calculations
-        // Only opening balances + received - paid
+        /** -------------------------
+         * Closing Calculations
+         * ------------------------- */
 
-        // const newClosingCash = conversionType === "C" ? openBalance.openCash + cashRcvd + bankRcvd - ( cashPaid + bankPaid ) - convAmt: openBalance.openCash + cashRcvd + bankRcvd - cashPaid - bankPaid + convAmt;
-        // const newClosingPure = conversionType === "P" ? openBalance.openPure - convWt : openBalance.openPure + convWt; // don't add convWt or convAmt to opening
+        let newClosingCash = openBalance.openCash + cashRcvd + bankRcvd - cashPaid - bankPaid;
+        let newClosingPure = openBalance.openPure;
 
+        if (conversionType === "C") {
+            newClosingCash -= convAmt;
+            newClosingPure += convWt;
+        }
 
-        const newClosingCash = conversionType === "C" ? openBalance.openCash + (cashRcvd + bankRcvd) - (cashPaid + bankPaid) - convAmt : openBalance.openCash + cashRcvd + bankRcvd - cashPaid - bankPaid + convAmt;
-        const newClosingPure = conversionType === "P" ? ( ((cashRcvd + bankRcvd) - (cashPaid + bankPaid)) /rate ): openBalance.openPure + convWt; // don't add convWt or convAmt to opening
+        if (conversionType === "P") {
+            newClosingCash += convAmt;
+            newClosingPure -= convWt;
+        }
 
-        setClosingCash(parseFloat(newClosingCash.toFixed(2)));
-        setClosingPure(parseFloat(newClosingPure.toFixed(3)));
+        /** -------------------------
+         * Prevent invalid values
+         * ------------------------- */
+
+        if (!isFinite(newClosingCash)) newClosingCash = 0;
+        if (!isFinite(newClosingPure)) newClosingPure = 0;
+
+        setClosingCash(Number(newClosingCash.toFixed(2)));
+        setClosingPure(Number(newClosingPure.toFixed(3)));
 
     }, [
         details.cashRcvd,
@@ -222,24 +280,28 @@ const BalanceSummary = ({
         rate
     ]);
 
-    // Update parent when details change
-    // useEffect(() => {
-    //     // Save to localStorage
-    //     localStorage.setItem(storageKey, JSON.stringify(details));
-    // }, [details, storageKey]);
 
-    // Separate effect for notifying parent
+
+
     useEffect(() => {
-        onClosingDetailsChange?.(details);
-    }, [details]);
+      
+        if (!closingDetails) {
+            onClosingDetailsChange?.(details);
+        }
+    }, [details, closingDetails, onClosingDetailsChange]);
 
-    // Update internal state when parent props change
+    // Also fix the prop sync effect to prevent loops
     useEffect(() => {
         if (closingDetails) {
-            setDetails(closingDetails);
-            setConversionType(closingDetails.convType);
+            // Compare to avoid unnecessary updates
+            if (JSON.stringify(closingDetails) !== JSON.stringify(details)) {
+                setDetails(closingDetails);
+                setConversionType(closingDetails.convType);
+            }
         }
     }, [closingDetails]);
+
+
 
     const handleChange = (field: keyof ClosingFormDetails, value: string) => {
         setDetails(prev => ({
@@ -378,6 +440,7 @@ const BalanceSummary = ({
                 </Text>
                 <HStack>
                     <Checkbox.Root
+                        disabled={!accCode}
                         size="xs"
                         checked={conversionType === "P"}
                         onCheckedChange={() => handleConvTypeChange("P")}
@@ -391,6 +454,7 @@ const BalanceSummary = ({
                 </HStack>
                 <HStack>
                     <Checkbox.Root
+                        disabled={!accCode}
                         size="xs"
                         checked={conversionType === "C"}
                         onCheckedChange={() => handleConvTypeChange("C")}
@@ -416,7 +480,7 @@ const BalanceSummary = ({
                     decimalScale={3}
                     size="xs"
                     rounded="sm"
-                    disabled={!accCode || conversionType === "C"}
+                    disabled={!accCode || conversionType === "C" || conversionType === ""}
                 />
                 <CapitalizedInput
                     value={details.convAmt}
@@ -427,7 +491,7 @@ const BalanceSummary = ({
                     decimalScale={2}
                     size="xs"
                     rounded="sm"
-                    disabled={!accCode || conversionType === "P"}
+                    disabled={!accCode || conversionType === "P" || conversionType === ""}
                 />
 
                 <Box />

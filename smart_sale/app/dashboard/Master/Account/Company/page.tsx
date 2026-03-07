@@ -44,8 +44,6 @@ function CompanyMaster() {
     const router = useRouter();
     const { setData, setColumns, setShowSno, title } = usePrint();
 
-    
-
     /* -------------------- API HOOKS -------------------- */
     const { data, refetch: companyRefetch } = useAllCompanies();
     const companies = data?.data ?? [];

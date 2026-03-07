@@ -31,6 +31,7 @@ export const getActiveOtherCharges = async (filter?: string): Promise<ApiRespons
         const response = await axiosInstance.get('/otherchargesmast/active', {
             params: filter ? filter = filter : undefined
         });
+        console.log(response.data, 'active');
         return response.data;
     } catch (error) {
         console.error(error);
