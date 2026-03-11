@@ -1,10 +1,14 @@
 "use client";
 
 import React from "react";
-import { Button, Box, Text } from "@chakra-ui/react";
+import { Button, Box, Text, Flex } from "@chakra-ui/react";
 import { GiGoldBar } from "react-icons/gi";
 import { HiFilter, HiX } from "react-icons/hi";
-
+import { Save, RefreshCw } from "lucide-react";
+import Image from "next/image";
+import saveIcon from '@/asserts/icons/save.png';
+import clearIcon from '@/asserts/icons/clear.jpeg';
+import updateIcon from '@/asserts/icons/update.png';
 
 export default function TransactionTypeSelector({
     transactionTypes,
@@ -15,8 +19,14 @@ export default function TransactionTypeSelector({
     showFilter,
     handleShowFilter,
     setIsStockDrawerOpen,
-
     isEditing = false,
+    onSave,
+    onReset,
+    isSaving,
+    acCode,
+    draftRows,
+    setDraftRows
+    
 }: any) {
 
     /* ---------- ORDER BY CODE ---------- */
@@ -65,6 +75,21 @@ export default function TransactionTypeSelector({
         REC: { bg: "#ffe8fd", active: "#c729ba", text: "#8f1084" }   // Green
     };
 
+    const handleDeselectAll = () => {
+
+        if (draftRows && draftRows.length > 0) {
+
+            const confirmClear = window.confirm(
+                "Table contains rows. Clear table and deselect transaction types?"
+            );
+
+            if (!confirmClear) return;
+
+            setDraftRows([])
+        }
+
+        onSelectTypes([]); // clear selection
+    };
 
     return (
         <Box p={2}
@@ -124,6 +149,46 @@ export default function TransactionTypeSelector({
                     );
                 })}
             </Box>
+            {acCode && 
+                <Box gap={2}>
+                    <Button
+                        size="xs"
+                        fontSize='2xs'
+                        onClick={onReset}
+                        variant='ghost'
+                        bg={theme.colors.formColor}
+                        p={0}
+                    >
+                        <Image src={clearIcon} width={58} alt="save" />
+                    </Button>
+
+                    <Button
+                        size="xs"
+                        bg={theme.colors.formColor}
+                        onClick={onSave}
+                        loading={isSaving}
+                        loadingText="Saving..."
+                        variant='ghost'
+                        p={0}
+
+                    >
+                        <Image src={isEditing ? updateIcon : saveIcon} width={60} alt="save" />
+                    </Button>
+
+                    {draftRows.length > 0 &&
+                        <Button
+                            size="2xs"
+                            fontSize="2xs"
+                            onClick={handleDeselectAll}
+                            bg="red.600"
+                            color="white"
+                            rounded="full"
+                        >
+                            <HiX size={10} /> DESELECT
+                        </Button>
+                    }
+                </Box> }
+            
             <Box display='flex' gap={4}>
 
                 {/* ALL STOCK */}

@@ -40,11 +40,12 @@ import { useCreateTransactions, useUpdateTransaction, useTransactionByTransId } 
 import { usePureGoldData, usePureGoldNames } from "@/hooks/pureGoldMast/usePureGoldMastData";
 import { useActiveOtherCharges } from "@/hooks/otherCharges/useOtherCharges";
 import { useRates } from "@/hooks/rate/useRate";
+import { useOrnamentData } from "@/hooks/ornament/useOrnamentData";
 
 // Types & Constants
 import { TransactionType, UpdateTransactionPayload, TransactionKey, CreateTransaction, TransactionItems, TRANSACTION_KEY_MAP, ClosingDetails } from "@/types/transcation/Transaction";
 import { TRANSACTIONTYPES } from "@/data/Transaction/TransactionType";
-import { useOrnamentData } from "@/hooks/ornament/useOrnamentData";
+
 
 //Utilities
 import { formatToFixed} from '@/utils/format/numberFormat';
@@ -425,62 +426,250 @@ export default function PurchasePage() {
     useGlobalKey("F1" ,()=>openFilter() ,"openFilter");
 
 
-
-    /* ================================
-    Calculate Used Weight for Pure IDs
- ================================ */
-    const getUsedWeightByPureId = useCallback((pureId: string | number, excludeRowId?: string) => {
+    const getUsedQuantityByPureId = useCallback((pureId: string | number, options?: {
+        excludeRowId?: string,
+        transactionTypeCode?: string,
+        field?: 'WT' | 'PCS' | 'NETWT'
+    }) => {
         const pureIdStr = String(pureId);
+        const { excludeRowId, transactionTypeCode, field = 'WT' } = options || {};
 
-        // Sum up all WT values for this Pure ID across all issue-type rows
-        const used = draftRows
-            .filter(row => {
-                // Skip the excluded row
-                if (excludeRowId && row.__rowId === excludeRowId) return false;
+        console.log('getUsedQuantityByPureId called:', {
+            pureId: pureIdStr,
+            transactionTypeCode,
+            field,
+            excludeRowId,
+            draftRowsCount: draftRows.length
+        });
 
-                // Find the transaction type object
-                const transactionType = TRANSACTIONTYPES.find(t => t.value === row.TRANSACTION_TYPE);
+        const filteredRows = draftRows.filter(row => {
+            // Skip the excluded row
+            if (excludeRowId && row.__rowId === excludeRowId) {
+                console.log('Skipping excluded row:', row.__rowId);
+                return false;
+            }
 
-                // Only count if the type exists, is ISP, and PUREID matches
-                return transactionType &&
-                    transactionType.code === "ISP" &&
-                    String(row.PUREID) === pureIdStr;
-            })
-            .reduce((sum, row) => sum + (Number(row.WT) || 0), 0);
+            // Match PUREID
+            if (String(row.PUREID|| row.ITEMID )  !== pureIdStr) {
+                return false;
+            }
 
-        return used;
+            // Find the transaction type
+            const transactionType = TRANSACTIONTYPES.find(t => t.value === row.TRANSACTION_TYPE);
+            if (!transactionType) {
+                console.log('No transaction type found for:', row.TRANSACTION_TYPE);
+                return false;
+            }
+
+            // If transactionTypeCode is specified, filter by it
+            if (transactionTypeCode && transactionType.code !== transactionTypeCode) {
+                console.log('Transaction type mismatch:', {
+                    expected: transactionTypeCode,
+                    actual: transactionType.code
+                });
+                return false;
+            }
+
+            console.log('Row included:', {
+                rowId: row.__rowId,
+                PUREID: row.PUREID,
+                transactionType: transactionType.code,
+                [field]: row[field]
+            });
+            return true;
+        });
+
+        const sum = filteredRows.reduce((sum, row) => {
+            const value = Number(row[field]) || 0;
+            console.log(`Adding ${field}:`, value, 'from row:', row.__rowId);
+            return sum + value;
+        }, 0);
+
+        console.log('getUsedQuantityByPureId result:', {
+            pureId: pureIdStr,
+            transactionTypeCode,
+            field,
+            filteredRowsCount: filteredRows.length,
+            sum
+        });
+
+        return sum;
     }, [draftRows]);
 
-    /* ================================
-        Get Stock Availability with Used Weight
-     ================================ */
-    const getStockAvailability = useCallback((pureId: string | number | null, excludeRowId?: string) => {
+    const getStockAvailability = useCallback((pureId: string | number | null, options?: {
+        excludeRowId?: string,
+        transactionTypeCode?: string,
+        isEditing?: boolean,
+        originalValue?: number
+    }) => {
         if (!pureId) return undefined;
 
-        const stock = pureStockList.find(
-            (s: any) => String(s.pureId) === String(pureId)
-        );
+        const { excludeRowId, transactionTypeCode, originalValue } = options || {};
+        const isISP = transactionTypeCode === "ISP";
+        const isPR = transactionTypeCode === "PR";
 
-        if (!stock) return undefined;
+        let stock = null;
+        let totalAvailableWeight = 0;
+        let totalAvailablePieces = 0;
+        let stockSource = '';
 
-        const totalAvailable = Number(stock.weight || 0);
-        const used = getUsedWeightByPureId(pureId, excludeRowId);
-        const remaining = Math.max(totalAvailable - used, 0);
+        if (isISP) {
+            // ISP uses pureStockList
+            stock = pureStockList.find((s: any) => String(s.pureId) === String(pureId));
+            if (!stock) return undefined;
+
+            totalAvailableWeight = Number(stock.weight || 0);
+            stockSource = 'pure';
+        } else if (isPR) {
+            // PR uses itemsStockList
+            stock = itemsStockList.find((s: any) => {
+                return String(s.itemId) === String(pureId) || String(s.pureId) === String(pureId);
+            });
+            console.log(stock,'itemStock')
+
+            if (!stock) return undefined;
+
+            // FIXED: Map correct field names from your stock object
+            totalAvailablePieces = Number(stock.pcs || stock.pieces || stock.quantity || 0);
+
+            // For items, the available weight might be netwt or purewt
+            // Based on your data, grswt is gross weight, but you might need netwt
+            totalAvailableWeight = Number(stock.netwt || stock.netWeight || stock.purewt || 0);
+
+            // If you need to calculate netwt from grswt and stnwt:
+            // const grswt = Number(stock.grswt || 0);
+            // const stnwt = Number(stock.stnwt || 0);
+            // totalAvailableWeight = grswt - stnwt;
+
+            stockSource = 'items';
+        } else {
+            return undefined;
+        }
+
+        // Calculate used quantities based on transaction type
+        let usedWeight = 0;
+        let usedPieces = 0;
+
+        if (isISP) {
+            usedWeight = getUsedQuantityByPureId(pureId, {
+                excludeRowId,
+                transactionTypeCode: "ISP",
+                field: 'WT'
+            });
+
+            usedPieces = getUsedQuantityByPureId(pureId, {
+                excludeRowId,
+                transactionTypeCode: "ISP",
+                field: 'PCS'
+            });
+        } else if (isPR) {
+            usedWeight = getUsedQuantityByPureId(pureId, {
+                excludeRowId,
+                transactionTypeCode: "PR",
+                field: 'NETWT'
+            });
+
+            usedPieces = getUsedQuantityByPureId(pureId, {
+                excludeRowId,
+                transactionTypeCode: "PR",
+                field: 'PCS'
+            });
+        }
 
         return {
-            total: totalAvailable,
-            used: used,
-            remaining: remaining,
-        };
-    }, [pureStockList, getUsedWeightByPureId]);
+            stock,
+            stockSource,
+            transactionTypeCode,
+            isISP,
+            isPR,
 
-    const getAvailableWeight = useCallback((pureId: string | number | null, excludeRowId?: string ) => {
-        if (!pureId) return null;
-        const availability = getStockAvailability(pureId, excludeRowId);
-        return availability?.remaining ?? null;
+            weight: {
+                total: totalAvailableWeight,
+                used: usedWeight,
+                remaining: Math.max(totalAvailableWeight - usedWeight, 0)
+            },
+
+            pieces: {
+                total: totalAvailablePieces,
+                used: usedPieces,
+                remaining: Math.max(totalAvailablePieces - usedPieces, 0)
+            },
+
+            // For backward compatibility
+            total: totalAvailableWeight,
+            used: usedWeight,
+            remaining: Math.max(totalAvailableWeight - usedWeight, 0),
+            usedPieces,
+            remainingPieces: Math.max(totalAvailablePieces - usedPieces, 0)
+        };
+    }, [pureStockList, itemsStockList, getUsedQuantityByPureId]);
+
+    // Separate helper functions for specific use cases
+    const getAvailableWeight = useCallback((pureId: string | number | null, options?: {
+        excludeRowId?: string,
+        transactionTypeCode?: string
+    }) => {
+        const availability = getStockAvailability(pureId, options);
+        return availability?.weight.remaining ?? null;
     }, [getStockAvailability]);
 
+    const getAvailablePieces = useCallback((pureId: string | number | null, options?: {
+        excludeRowId?: string,
+        transactionTypeCode?: string
+    }) => {
+        const availability = getStockAvailability(pureId, options);
+        return availability?.pieces.remaining ?? null;
+    }, [getStockAvailability]);
 
+    // Validation function for forms
+    const validateQuantity = useCallback((pureId: string | number | null, value: number, options: {
+        transactionTypeCode: string,
+        field: 'WT' | 'PIECES' | 'NETWT',
+        excludeRowId?: string,
+        originalValue?: number
+    }) => {
+        if (!pureId) return true;
+
+        const availability = getStockAvailability(pureId, {
+            excludeRowId: options.excludeRowId,
+            transactionTypeCode: options.transactionTypeCode,
+            originalValue: options.originalValue
+        });
+
+        if (!availability) return true; // No stock record, assume valid
+
+        if (options.transactionTypeCode === "ISP") {
+            // ISP validation
+            if (options.field === 'WT') {
+                return value <= availability.weight.remaining;
+            } else if (options.field === 'PIECES') {
+                return value <= availability.pieces.remaining;
+            }
+        } else if (options.transactionTypeCode === "PR") {
+            // PR validation
+            if (options.field === 'NETWT') {
+                return value <= availability.weight.remaining;
+            } else if (options.field === 'PIECES') {
+                return value <= availability.pieces.remaining;
+            }
+        }
+
+        return false; // Unsupported transaction type or field
+    }, [getStockAvailability]);
+
+    // Helper to get stock based on transaction type
+    const getStockForTransaction = useCallback((pureId: string | number, transactionTypeCode: string) => {
+        if (transactionTypeCode === "ISP") {
+            return pureStockList.find((s: any) => String(s.pureId) === String(pureId));
+        } else if (transactionTypeCode === "PR") {
+            return itemsStockList.find((s: any) =>
+                String(s.itemId) === String(pureId) || String(s.pureId) === String(pureId)
+            );
+        }
+        return null;
+    }, [pureStockList, itemsStockList]);
+
+    
     // Main calculation function
     function calculateOpeningBalances(
         draftRows: TransactionRow[],
@@ -1356,7 +1545,7 @@ export default function PurchasePage() {
         let usedWeight = 0;
 
         if (isIssue && pureId) {
-            const availability = getStockAvailability(pureId);
+            const availability = getStockAvailability(pureId , {transactionTypeCode: targetType.code} );
 
             if (!availability) {
                 toaster.create({
@@ -1771,14 +1960,14 @@ console.log(typeRows,'typeRows')
     const handleSaveTransaction = async () => {
         setEditingState({rowId: null, transactionType: null });
 
-        if (selectedTransactionTypes.length === 0) {
-            toaster.create({
-                title: "Transaction Types Required",
-                description: "Please select at least one transaction type.",
-                type: "error",
-            });
-            return;
-        }
+        // if (selectedTransactionTypes.length === 0) {
+        //     toaster.create({
+        //         title: "Transaction Types Required",
+        //         description: "Please select at least one transaction type.",
+        //         type: "error",
+        //     });
+        //     return;
+        // }
 
         if (!headerForm.CUSTOMER) {
             toaster.create({
@@ -1789,14 +1978,14 @@ console.log(typeRows,'typeRows')
             return;
         }
 
-        if (draftRows.length === 0) {
-            toaster.create({
-                title: "No Items",
-                description: "Please add at least one item to the transaction.",
-                type: "error",
-            });
-            return;
-        }
+        // if (draftRows.length === 0) {
+        //     toaster.create({
+        //         title: "No Items",
+        //         description: "Please add at least one item to the transaction.",
+        //         type: "error",
+        //     });
+        //     return;
+        // }
 
         if (!validateDraftRows()) return;
 
@@ -1807,9 +1996,8 @@ console.log(typeRows,'typeRows')
             const allCharges = JSON.parse(localStorage.getItem("MISC_CHARGE_MASTER") || "[]");
 
 
-            console.log(allCharges,'allCharges');
+           // Create a map for quick lookup of stones by draftRowId
 
-            // Create a map for quick lookup of stones by draftRowId
             const stonesByDraftRowId = allStones.reduce((acc: Record<string, StoneRow[]>, stone: StoneRow) => {
                 if (!acc[stone.draftRowId]) {
                     acc[stone.draftRowId] = [];
@@ -1817,6 +2005,7 @@ console.log(typeRows,'typeRows')
                 acc[stone.draftRowId].push(stone);
                 return acc;
             }, {});
+
             // Create a map for quick lookup of charges by draftRowId
             const chargesByDraftRowId = allCharges.reduce(
                 (acc: Record<string, any[]>, charge: any) => {
@@ -1830,13 +2019,14 @@ console.log(typeRows,'typeRows')
             );
 
 
-
             /* -----------------------------------------
                STEP 1 — GROUP ROWS BY TYPE
                ----------------------------------------- */
+
+
             const transactionDetails: TransactionItems = {};
 
-            console.log("draftRows", draftRows);
+        
 
             // Process each draft row and include its stones
             draftRows.forEach(row => {
@@ -1914,7 +2104,7 @@ console.log(typeRows,'typeRows')
                     RATE: headerForm.RATEGM ? Number(headerForm.RATEGM) : undefined,
                 },
                 TRANSACTION_DETAILS: transactionDetails,
-                CLOSING_DETAILS: getClosingDetailsPayload() // 👈 Just call this function!
+                CLOSING_DETAILS: getClosingDetailsPayload()
             };
 
             console.log('Transaction payload with stone details:', payload);
@@ -2217,6 +2407,15 @@ console.log(typeRows,'typeRows')
                             showFilter={showFilter}
                             handleShowFilter={openFilter}
                             isEditing={isEditing}
+                            onSave={isEditing ? handleUpdateTransaction : handleSaveTransaction}
+                            onReset={handleResetDraft}
+                            isSaving={
+                                createTransaction.isPending || updateTransaction.isPending
+                            }
+                            acCode={headerForm.CUSTOMER}
+                            draftRows ={draftRows}
+                            setDraftRows={setDraftRows}
+
                         />
                 
 
@@ -2400,6 +2599,7 @@ console.log(typeRows,'typeRows')
                                                             getStockAvailability={getStockAvailability}
                                                             otherChargesList={otherCharges}
                                                             otherChargesData={otherChargesData?.data}
+                                                            getAvailablePieces={getAvailablePieces}
                                                         />
                                                     </Box>
                                                 );
@@ -2408,7 +2608,7 @@ console.log(typeRows,'typeRows')
                          
                         )}
                     {/* Save Transaction Bar - appears once for all tables */}
-                    {draftRows.length > 0 && (
+                    {/* {draftRows.length > 0 && (
                         <Box
                             position="sticky"
                             bottom="0"
@@ -2434,7 +2634,7 @@ console.log(typeRows,'typeRows')
                             </Flex>
                       </Box>    
                      
-                    )}
+                    )} */}
                 </VStack>
 
                    

@@ -69,14 +69,15 @@ interface DraftTransactionTableProps {
     theme: any;
     isEditing: boolean;
     isIssue?: boolean;
-    getAvailableWeight?: (id: string | number) => number | null;
+    getAvailableWeight?: (id: string | number, options?: { excludeRowId?: string, isEditing?: boolean, originalWeight?: number, transactionTypeCode ?:string}) => number | null;
     onClear?: () => void;
     transactionType?: string;
     initialFormData?: any;
     onFormDataChange?: (data: any) => void;
-    getStockAvailability?: (id: string, rowId?: string) => { remaining: number; used: number; total: number } | undefined;
+    getStockAvailability?: (id: string, options?: { excludeRowId?: string, transactionTypeCode:string, isEditing?: boolean, originalWeight?: number}) => any | undefined;
     otherChargesList: { label: string; value: string; }[];
     otherChargesData: any;
+    getAvailablePieces?: (id: string, options?: { excludeRowId?: string, transactionTypeCode:string, isEditing?: boolean, originalPieces?: number}) => any | undefined;
 }
 
 // const COL_WIDTHS: Record<string, string> = {
@@ -150,7 +151,8 @@ export default function DraftTransactionTable({
     onFormDataChange,
     getStockAvailability,
     otherChargesList,
-    otherChargesData
+    otherChargesData,
+    getAvailablePieces
 }: DraftTransactionTableProps) {
 
     console.log(totals,'totals')
@@ -497,26 +499,37 @@ export default function DraftTransactionTable({
         (keyOrObject: string | Partial<FormData>, value?: any) => {
             let next = { ...formData };
 
-            console.log(next,'nextnext')
-
             if (typeof keyOrObject === "string") {
                 next[keyOrObject] = value;
             } else {
                 next = { ...next, ...keyOrObject };
             }
 
-            // Mirror logic
-            // const mirror: Record<string, string> = { AWT: "WT", ATOUCH: "TOUCH" };
-            // Object.keys(next).forEach(k => {
-            //     if (mirror[k]) next[mirror[k]] = next[k];
-            // });
+            // Handle mirror logic for WT and TOUCH
+            if (typeof keyOrObject === "string") {
+                // Single field change
+                if (keyOrObject === "WT") {
+                    // When WT changes, update AWT to match
+                    next.AWT = value;
+                } else if (keyOrObject === "TOUCH") {
+                    // When TOUCH changes, update ATOUCH to match
+                    next.ATOUCH = value;
+                }
+                // If AWT or ATOUCH are changed directly, we don't mirror anything
+            } else {
+                // Multiple fields changed
+                if (keyOrObject.hasOwnProperty('WT')) {
+                    next.AWT = keyOrObject.WT;
+                }
+                if (keyOrObject.hasOwnProperty('TOUCH')) {
+                    next.ATOUCH = keyOrObject.TOUCH;
+                }
+            }
 
-            //Calcualte the actual values
+            // Calculate the actual values
             const wt = parseFloat(next.WT || 0);
-         
             const awt = parseFloat(next.AWT || 0);
             const atouch = parseFloat(next.ATOUCH || 0);
-
 
             // Recalculate NETWT / PUREWT if relevant
             const g = parseFloat(next.GRSWT || 0);
@@ -525,16 +538,10 @@ export default function DraftTransactionTable({
             const touch = parseFloat(next.TOUCH || 0);
 
             next.PUREWT = isIssue ? (wt * touch / 100).toFixed(3) : ((g - s) * touch / 100).toFixed(3);
-
-            next.APUREWT = (awt * atouch /100).toFixed(3);
-
-            // if (next.WT && next.TOUCH) {
-            //     const wt = parseFloat(next.WT) || 0;
-            //     const touch = parseFloat(next.TOUCH) || 0;
-            //     next.PUREWT = ((wt * touch) / 100).toFixed(3);
-            // }
+            next.APUREWT = (awt * atouch / 100).toFixed(3);
 
             setFormData(next);
+
             // Mark touched fields
             if (typeof keyOrObject === "string") {
                 setTouched(p => ({ ...p, [keyOrObject]: true }));
@@ -546,12 +553,16 @@ export default function DraftTransactionTable({
                 });
             }
         },
-        [formData]
+        [formData, isIssue]
     );
+
+
+
+
     // console.log(visibleFormFields,'visibleFormFields');
     const focusIdx = useCallback((idx: number) => {
         const f = visibleFormFields[idx];
-        console.log(f, 'visibleFormFields');
+      
         if (!f) return;
         const ref = fieldRefs.current[f.key];
         setTimeout(() => { ref?.current?.focus?.(); ref?.current?.select?.(); }, 60);
@@ -608,25 +619,119 @@ export default function DraftTransactionTable({
         resetMiscTempId();
         setStoneDraftRowId("");
         setMiscDraftRowId("");
+        focusIdx(0);
     }, [formFields]);
 
 
     const handleSubmit = useCallback(async () => {
         if (!validateForm()) return;
 
-        if (isIssue) {
+        // Common validation for both types
+        if (transactionType === "ISP") {
             if (Number(formData.WT) <= 0) {
-                toaster.create({ title: "Invalid Weight", description: "Weight must be greater than 0", type: "error" });
+                toaster.create({
+                    title: "Invalid Weight",
+                    description: "Weight must be greater than 0",
+                    type: "error"
+                });
                 return;
             }
-        } else {
-            if (Number(formData.GRSWT) <= 0) {
-                toaster.create({ title: "Invalid Gross Weight", description: "Gross weight must be greater than 0", type: "error" });
+        } else if (transactionType === "PR") {
+            if (Number(formData.PCS) <= 0) {
+                toaster.create({
+                    title: "Invalid Pieces",
+                    description: "Pieces must be greater than 0",
+                    type: "error"
+                });
                 return;
             }
-            if (Number(formData.TOUCH) <= 0) {
-                toaster.create({ title: "Invalid Touch", description: "Touch must be greater than 0", type: "error" });
+            if (Number(formData.NETWT) <= 0) {
+                toaster.create({
+                    title: "Invalid Net Weight",
+                    description: "Net weight must be greater than 0",
+                    type: "error"
+                });
                 return;
+            }
+        }
+
+        // Stock availability check for both ISP and PR
+        const stockId = transactionType === "ISP" ? formData.PUREID : formData.ITEMID;
+
+        if (stockId) {
+            const isEditing = !!(currentEditingRowId && currentEditingTransactionType === transactionType);
+
+            // Get the appropriate value based on transaction type
+            let requestedValue = 0;
+            let originalValue = 0;
+            let valueField = '';
+
+            if (transactionType === "ISP") {
+                requestedValue = Number(formData.WT) || 0;
+                originalValue = isEditing ? Number(formData._originalWeight) || 0 : 0;
+                valueField = 'WT';
+            } else if (transactionType === "PR") {
+                // For PR, we need to check both pieces and net weight
+                const requestedPieces = Number(formData.PCS) || 0;
+                const requestedNetwt = Number(formData.NETWT) || 0;
+
+                // Check pieces availability
+                const availablePieces = getAvailablePieces?.(stockId, {
+                    excludeRowId: isEditing ? currentEditingRowId : undefined,
+                    isEditing: isEditing,
+                    originalPieces: isEditing ? Number(formData._originalPieces) || 0 : 0,
+                    transactionTypeCode: transactionType,
+                }) ?? null;
+
+                if (availablePieces !== null && requestedPieces > availablePieces) {
+                    toaster.create({
+                        title: "Insufficient Stock",
+                        description: `Requested pieces ${requestedPieces} exceeds available stock ${availablePieces}`,
+                        type: "error"
+                    });
+                    return;
+                }
+
+                // Check net weight availability
+                const availableWeight = getAvailableWeight?.(stockId, {
+                    excludeRowId: isEditing ? currentEditingRowId : undefined,
+                    isEditing: isEditing,
+                    originalWeight: isEditing ? Number(formData._originalNetwt) || 0 : 0,
+                    transactionTypeCode: transactionType,
+                }) ?? null;
+
+                if (availableWeight !== null && requestedNetwt > availableWeight) {
+                    toaster.create({
+                        title: "Insufficient Stock",
+                        description: `Requested net weight ${requestedNetwt.toFixed(3)}g exceeds available stock ${availableWeight.toFixed(3)}g`,
+                        type: "error"
+                    });
+                    return;
+                }
+
+                // If both checks pass, continue
+            } else {
+                // For other transaction types (REC, PU) - skip stock check or handle differently
+                console.log('Skipping stock check for transaction type:', transactionType);
+            }
+
+            // For ISP weight check
+            if (transactionType === "ISP") {
+                const availableWeight = getAvailableWeight?.(stockId, {
+                    excludeRowId: isEditing ? currentEditingRowId : undefined,
+                    isEditing: isEditing,
+                    originalWeight: originalValue,
+                    transactionTypeCode: transactionType,
+                }) ?? null;
+
+                if (availableWeight !== null && requestedValue > availableWeight) {
+                    toaster.create({
+                        title: "Insufficient Stock",
+                        description: `Requested weight ${requestedValue.toFixed(3)}g exceeds available stock ${availableWeight.toFixed(3)}g`,
+                        type: "error"
+                    });
+                    return;
+                }
             }
         }
 
@@ -635,7 +740,7 @@ export default function DraftTransactionTable({
             const submitData: any = {
                 ...formData,
                 NETWT: calcNet(),
-                PUREWT: isIssue ? pureValue :calcPure(),
+                PUREWT: isIssue ? pureValue : calcPure(),
                 WASTYPE: formData.WASTYPE || "TOUCH",
             };
 
@@ -657,11 +762,15 @@ export default function DraftTransactionTable({
                 }
             }
 
-            // 🔥 FIX: Use currentEditingRowId instead of editingRowId
+            // Handle edit or new row
             if (currentEditingRowId && currentEditingTransactionType === transactionType) {
                 const rowIndex = rows.findIndex(r => r.__rowId === currentEditingRowId);
-                if (rowIndex === -1) { console.error("Row not found for update"); return; }
+                if (rowIndex === -1) {
+                    console.error("Row not found for update");
+                    return;
+                }
 
+                // Update only changed fields
                 Object.keys(submitData).forEach(key => {
                     const currentValue = rows[rowIndex][key];
                     const newValue = submitData[key];
@@ -670,17 +779,23 @@ export default function DraftTransactionTable({
                     }
                 });
 
-                toaster.create({ title: "Row Updated", description: "Row has been updated successfully", type: "success", duration: 2000 });
+                toaster.create({
+                    title: "Row Updated",
+                    description: "Row has been updated successfully",
+                    type: "success",
+                    duration: 2000
+                });
                 onCancelEdit?.();
                 resetForm();
             } else {
-                // NEW ROW — use miscDraftRowId (never touched by stone modal)
+                // NEW ROW
                 const capturedMiscTempId = miscDraftRowId || currentMiscData?.tempId;
                 const capturedMiscData = currentMiscData;
 
                 console.log("Submitting new row. Misc temp ID:", capturedMiscTempId);
                 onAddRow(submitData);
 
+                // Handle misc charges transfer if needed
                 if (capturedMiscTempId && capturedMiscData && capturedMiscData.charges.length > 0) {
                     const checkForNewRow = (attempts = 0) => {
                         setTimeout(() => {
@@ -726,11 +841,14 @@ export default function DraftTransactionTable({
         } finally {
             setIsSubmitting(false);
         }
-    }, [formData, calcNet, calcPure, validateForm, isIssue, onAddRow, onUpdateRow, onCancelEdit, currentEditingRowId, currentEditingTransactionType, transactionType, rows, miscDraftRowId, resetForm]);
+    }, [formData, calcNet, calcPure, validateForm, isIssue, onAddRow, onUpdateRow, onCancelEdit,
+        currentEditingRowId, currentEditingTransactionType, transactionType, rows, miscDraftRowId,
+        resetForm, getAvailableWeight, getAvailablePieces, toaster]);
 
     const handleEditRow = useCallback((row: any, tranType: string | undefined) => {
-
         const next: Record<string, any> = {};
+
+        // Map form fields
         formFields.forEach(f => {
             if (f.type === "number" && row[f.key] !== undefined) {
                 next[f.key] = row[f.key].toString();
@@ -739,32 +857,58 @@ export default function DraftTransactionTable({
             }
         });
 
-        if (isIssue && row.PUREID) {
-            const availability = getStockAvailability ? getStockAvailability(row.PUREID, row.__rowId) : undefined;
-            if (availability) {
-                next._availableStock = availability.remaining;
-                next._totalStock = availability.total;
-                next._originalWeight = Number(row.WT) || 0;
-                next._pureId = row.PUREID;
-                toaster.create({
-                    title: "Stock Info",
-                    description: `Total: ${availability.total.toFixed(3)}g | Used elsewhere: ${availability.used.toFixed(3)}g | Available: ${availability.remaining.toFixed(3)}g`,
-                    type: "info",
-                    duration: 4000,
+        // Stock availability check for editing
+        if (isIssue && (row.PUREID || row.ITEMID)) {
+            const stockId = tranType === "ISP" ? row.PUREID : row.ITEMID;
+
+            if (stockId && getStockAvailability) {
+                const availability = getStockAvailability(stockId, {
+                    excludeRowId: row.__rowId,
+                    isEditing: true,
+                    originalWeight: tranType === "ISP" ? Number(row.WT) || 0 : Number(row.NETWT) || 0,
+                    transactionTypeCode: tranType || "",
                 });
+
+                if (availability) {
+                    // Store original values for stock calculation during update
+                    if (tranType === "ISP") {
+                        next._originalWeight = Number(row.WT) || 0;
+                        next._pureId = row.PUREID;
+
+                        toaster.create({
+                            title: "Stock Info - ISP",
+                            description: `Total: ${availability.weight.total.toFixed(3)}g | Used elsewhere: ${availability.weight.used.toFixed(3)}g | Available: ${availability.weight.remaining.toFixed(3)}g`,
+                            type: "info",
+                            duration: 4000,
+                        });
+                    } else if (tranType === "PR") {
+                        next._originalPieces = Number(row.PCS) || 0;
+                        next._originalNetwt = Number(row.NETWT) || 0;
+                        next._itemId = row.ITEMID;
+
+                        toaster.create({
+                            title: "Stock Info - Item",
+                            description: `Pieces: ${availability.pieces.remaining} available (Total: ${availability.pieces.total}, Used: ${availability.pieces.used}) | Net Wt: ${availability.weight.remaining.toFixed(3)}g available`,
+                            type: "info",
+                            duration: 5000,
+                        });
+                    }
+
+                    // Store common stock info
+                    next._availableStock = tranType === "ISP" ? availability.weight.remaining : availability.pieces.remaining;
+                    next._totalStock = tranType === "ISP" ? availability.weight.total : availability.pieces.total;
+                    next._stockAvailability = availability;
+                }
             }
         }
 
         setFormData(next);
         setErrors({});
         setTouched({});
-        // Pass transaction type here
         onRowClick(row, tranType || "");
         pendingStoneData.current = null;
         setTimeout(() => focusIdx(0), 100);
-    }, [formFields, focusIdx, onRowClick, transactionType, isIssue, getStockAvailability]);
-
-
+    }, [formFields, focusIdx, onRowClick, isIssue, getStockAvailability, toaster]);
 
     const handleDeleteRow = useCallback((row: any) => {
         if (!window.confirm("Delete this row?")) return;

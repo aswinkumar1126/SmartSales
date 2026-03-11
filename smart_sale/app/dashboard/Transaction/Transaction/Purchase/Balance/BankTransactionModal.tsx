@@ -106,7 +106,7 @@ export const BankTransactionModal = ({
 }: BankTransactionModalProps) => {
     const emptyForm = {
         bankName: "",
-        tranMode: "C", // Default to Cheque
+        tranMode: "F", // Default to Cheque
         tranDate: new Date().toISOString().split('T')[0],
         chqNo: "",
         amount: ""
@@ -624,8 +624,8 @@ export const BankTransactionModal = ({
             <Box
                 ref={modalContentRef}
                 bg={theme?.colors?.formColor || "white"}
-                borderRadius="lg"
-                maxW="900px"
+                borderRadius="xl"
+                maxW="7xl"
                 width="100%"
                 maxH="90vh"
                 overflow="auto"

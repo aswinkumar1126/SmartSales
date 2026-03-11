@@ -61,10 +61,12 @@ import { useAllMetals } from "@/hooks/metal/useMetals";
 function OrnamentMaster() {
     /* -------------------- FORM STATE -------------------- */
     const [form, setForm] = useState<OrnamentFormData>({
-        stockType: "CY",
-        accode: "",
-        tranType: "IS",
-        metalId: "G",
+        // stockType: "CY",
+        // accode: "",
+        // tranType: "IS",
+        // metalId: "G",
+
+
         itemId: "",   // ✅ NOT null
         pcs: "",
         grswt: "",
@@ -73,7 +75,7 @@ function OrnamentMaster() {
         purewt: "",
         stnwt: "",
         openCash: "",
-        stoneCash: "",
+        stnAmt: "",
         // actualtouch: "",
 
 
@@ -90,14 +92,15 @@ function OrnamentMaster() {
     type OrnamentErrors = Partial<Record<keyof typeof form, string>>;
 
     const [errors, setErrors] = React.useState<OrnamentErrors>({});
-    const accountType = form.stockType?.trim().toUpperCase() || undefined;
+
+    // const accountType = form.stockType?.trim().toUpperCase() || undefined;
     /* -------------------- DATA -------------------- */
     const { data: itemsData } = useItems();
     const { setData, setColumns, setShowSno, title } = usePrint();
 
-    console.log(accountType, 'accountType')
+    // console.log(accountType, 'accountType')
 
-    const { data: allAccounts, refetch: accountRefetch } = useAllAccountHead(accountType);
+    // const { data: allAccounts, refetch: accountRefetch } = useAllAccountHead(accountType);
     const { data: metalData } = useAllMetals();
 
 
@@ -106,6 +109,8 @@ function OrnamentMaster() {
     const [filter, setFilter] = useState<string>('');
 
     const { data: ornamentList, isLoading } = useOrnamentData(filter);
+
+    console.log(ornamentList,'ornamentList')
 
 
     const ornaments = Array.isArray(ornamentList?.data)
@@ -117,13 +122,13 @@ function OrnamentMaster() {
     }, [itemsData?.items]);
 
 
-    const allAccountsList = useMemo(() => {
-        const accounts = Array.isArray(allAccounts?.data?.acheads) ? allAccounts.data.acheads : [];
-        return accounts.map((acc: any) => ({
-            label: acc.ACNAME,
-            value: String(acc.ACCODE),
-        }));
-    }, [allAccounts]);
+    // const allAccountsList = useMemo(() => {
+    //     const accounts = Array.isArray(allAccounts?.data?.acheads) ? allAccounts.data.acheads : [];
+    //     return accounts.map((acc: any) => ({
+    //         label: acc.ACNAME,
+    //         value: String(acc.ACCODE),
+    //     }));
+    // }, [allAccounts]);
 
     const allMetalList = useMemo(() => {
         const metalList = Array.isArray(metalData) ? metalData : [];
@@ -154,10 +159,10 @@ function OrnamentMaster() {
 
 
         setForm({
-            stockType: o.stockType ?? "CY",
-            accode: o.accode ? String(o.accode) : "",
-            tranType: o.tranType ?? "IS",
-            metalId: o.metalId ?? "G",
+            // stockType: o.stockType ?? "CY",
+            // accode: o.accode ? String(o.accode) : "",
+            // tranType: o.tranType ?? "IS",
+            // metalId: o.metalId ?? "G",
             itemId: o.itemId ? String(o.itemId) : "",
             pcs: o.pcs ? String(o.pcs) : "",
             grswt: o.grswt ? String(o.grswt) : "",
@@ -166,7 +171,7 @@ function OrnamentMaster() {
             purewt: o.purewt ? String(o.pure) : "",
             stnwt: o.stnwt ? String(o.stnwt) : "",
             openCash: o.openCash ? String(o.openCash) : "",
-            stoneCash: o.stoneCash ? String(o.stoneCash) : "",
+            stnAmt: o.stnAmt ? String(o.stnAmt) : "",
             // actualtouch: o.actualtouch ? String(o.actualtouch) :"",
         });
     }, [editResponse]);
@@ -210,10 +215,10 @@ function OrnamentMaster() {
     };
 
     const toPayload = (form: OrnamentFormData): OrnamentPayload => ({
-        stockType: form.stockType,
-        accode: Number(form.accode),
-        tranType: form.tranType,
-        metalId: form.metalId,
+        // stockType: form.stockType,
+        // accode: Number(form.accode),
+        // tranType: form.tranType,
+        // metalId: form.metalId,
         itemId: Number(form.itemId),
         pcs: Number(form.pcs),
         grswt: Number(form.grswt),
@@ -222,17 +227,17 @@ function OrnamentMaster() {
         purewt: Number(form.purewt),
         stnwt: Number(form.stnwt),
         openCash: Number(form.openCash),
-        stoneCash: Number(form.stoneCash),
+        stnAmt: Number(form.stnAmt),
         // actualtouch: Number(form.actualtouch),
     });
 
     const resetForm = () => {
         setEditId(null);
         setForm({
-            stockType: "CY",
-            accode: "",
-            tranType: "IS",
-            metalId: "G",
+            // stockType: "CY",
+            // accode: "",
+            // tranType: "IS",
+            // metalId: "G",
             itemId: "",
             pcs: "",
             grswt: "",
@@ -241,7 +246,7 @@ function OrnamentMaster() {
             purewt: "",
             stnwt: "",
             openCash: "",
-            stoneCash: "",
+            stnAmt: "",
             // actualtouch:"",
         });
     };
@@ -271,15 +276,15 @@ function OrnamentMaster() {
                 { field: "netwt", condition: () => !!form.netwt && Number(form.netwt) > 0, message: "Net weight must be greater than 0" },
                 { field: "purewt", condition: () => form.purewt === undefined || Number(form.purewt) >= 0, message: "Pure weight cannot be negative" },
                 { field: "touch", condition: () => form.touch === undefined || Number(form.touch) >= 0, message: "Touch cannot be negative" },
-                { field: "metalId", condition: () => !!form.metalId, message: "Metal is required" },
-                {
-                    field: "accode",
-                    condition: () => !(["CR", "PR"].includes(form.stockType) && !form.accode),
-                    message: "Account is required for CR or PR stock types"
-                },
+                // { field: "metalId", condition: () => !!form.metalId, message: "Metal is required" },
+                // {
+                //     field: "accode",
+                //     condition: () => !(["CR", "PR"].includes(form.stockType) && !form.accode),
+                //     message: "Account is required for CR or PR stock types"
+                // },
                 { field: "stnwt", condition: () => form.stnwt === undefined || Number(form.stnwt) >= 0, message: "Stone weight cannot be negative" },
-                { field: "stoneCash", condition: () => form.stoneCash === undefined || Number(form.stoneCash) >= 0, message: "Stone cash cannot be negative" },
-                { field: "openCash", condition: () => form.openCash === undefined || Number(form.openCash) >= 0, message: "Open cash cannot be negative" },
+                { field: "stnAmt", condition: () => form.stnAmt === undefined || Number(form.stnAmt) >= 0, message: "Stone cash cannot be negative" },
+                // { field: "openCash", condition: () => form.openCash === undefined || Number(form.openCash) >= 0, message: "Open cash cannot be negative" },
                 // Uncomment if actual touch validation is needed
                 // { field: "actualtouch", condition: () => form.actualtouch === undefined || Number(form.actualtouch) >= 0, message: "Actual touch cannot be negative" },
             ];
@@ -344,7 +349,7 @@ function OrnamentMaster() {
     ]
 
 
-    console.log(accountType, form.stockType, 'accountType')
+    // console.log(accountType, form.stockType, 'accountType')
 
     /*----------Print ---------- */
     const handleExport = (option: string) => {
@@ -389,7 +394,7 @@ function OrnamentMaster() {
                             <Fieldset.Content>
                                 <Grid gap={3}>
                                     {/* ITEM NAME */}
-                                    <Box display="flex" alignItems="center" gap={2}>
+                                    {/* <Box display="flex" alignItems="center" gap={2}>
                                         <Box minW="100px" fontSize="2xs">STOCK TYPE :</Box>
                                         <RadioButton
                                             collection={stockTypes}
@@ -399,9 +404,9 @@ function OrnamentMaster() {
                                             size="xs"
 
                                         />
-                                    </Box>
+                                    </Box> */}
                                     {/* Company */}
-                                    <Box>
+                                    {/* <Box>
 
                                         <Box display="flex" alignItems="center" gap={2}>
                                             <Box minW="100px" fontSize="2xs">
@@ -427,10 +432,10 @@ function OrnamentMaster() {
                                             defaultValue="IS"
                                             size="xs"
                                         />
-                                    </Box>
+                                    </Box> */}
 
                                     {/* METAL NAME */}
-                                    <Box display="flex" alignItems="center" gap={2}>
+                                    {/* <Box display="flex" alignItems="center" gap={2}>
                                         <Box minW="100px" fontSize="2xs">METAL TYPE :</Box>
                                         <SelectCombobox
                                             items={allMetalList}
@@ -439,7 +444,8 @@ function OrnamentMaster() {
                                             placeholder="select metal"
 
                                         />
-                                    </Box>
+                                    </Box> */}
+
                                     {/* METAL NAME */}
                                     <Box display="flex" alignItems="center" gap={2}>
                                         <Box minW="100px" fontSize="2xs">ITEM NAME :</Box>
@@ -461,6 +467,8 @@ function OrnamentMaster() {
                                             onChange={handleChange}
                                             type="number"
                                             size="2xs"
+                                            maxWidth="100px"
+                                            minWidth="80px"
                                         />
                                     </Box>
 
@@ -473,6 +481,8 @@ function OrnamentMaster() {
                                             onChange={handleChange}
                                             type="number"
                                             size="2xs"
+                                            maxWidth="100px"
+                                            minWidth="80px"
                                         />
                                     </Box>
 
@@ -487,6 +497,8 @@ function OrnamentMaster() {
                                             onChange={handleChange}
                                             type="number"
                                             size="2xs"
+                                            maxWidth="100px"
+                                            minWidth="80px"
                                         />
                                     </Box>
 
@@ -500,6 +512,8 @@ function OrnamentMaster() {
                                             type="number"
                                             size="2xs"
                                             disabled
+                                            maxWidth="100px"
+                                            minWidth="80px"
                                         />
                                     </Box>
 
@@ -512,6 +526,8 @@ function OrnamentMaster() {
                                             onChange={handleChange}
                                             type="number"
                                             size="2xs"
+                                            maxWidth="100px"
+                                            minWidth="80px"
                                         />
                                     </Box>
                                     {/* PURE */}
@@ -524,18 +540,22 @@ function OrnamentMaster() {
                                             type="number"
                                             size="2xs"
                                             disabled
+                                            maxWidth="100px"
+                                            minWidth="80px"
                                         />
                                     </Box>
 
                                     {/* STONE CASH */}
                                     <Box display="flex" alignItems="center" gap={2}>
-                                        <Box minW="100px" fontSize="2xs">STONE CASH :</Box>
+                                        <Box minW="100px" fontSize="2xs">STONE AMOUNT :</Box>
                                         <CapitalizedInput
                                             field="stoneCash"
-                                            value={form.stoneCash}
+                                            value={form.stnAmt}
                                             onChange={handleChange}
                                             type="number"
                                             size="2xs"
+                                            maxWidth="100px"
+                                            minWidth="80px"
                                         />
                                     </Box>
 
@@ -652,12 +672,12 @@ function OrnamentMaster() {
                                     <Table.Cell>{index + 1}</Table.Cell>
                                     <Table.Cell>{ornament.itemName}</Table.Cell>
                                     <Table.Cell textAlign='end'>{ornament.pcs}</Table.Cell>
-                                    <Table.Cell textAlign='end'>{ornament.grswt}</Table.Cell>
-                                    <Table.Cell textAlign='end'>{ornament.stnwt}</Table.Cell>
-                                    <Table.Cell textAlign='end'>{ornament.netwt}</Table.Cell>
-                                    <Table.Cell textAlign='end'>{ornament.touch}</Table.Cell>
-                                    <Table.Cell textAlign='end'>{ornament.purewt}</Table.Cell>
-                                    <Table.Cell textAlign='end'>{ornament.stoneCash}</Table.Cell>
+                                    <Table.Cell textAlign='end'>{formatToFixed(ornament.grswt,3)}</Table.Cell>
+                                    <Table.Cell textAlign='end'>{formatToFixed(ornament.stnwt,3)}</Table.Cell>
+                                    <Table.Cell textAlign='end'>{formatToFixed(ornament.netwt,3)}</Table.Cell>
+                                    <Table.Cell textAlign='end'>{formatToFixed(ornament.touch,1)}</Table.Cell>
+                                    <Table.Cell textAlign='end'>{formatToFixed(ornament.purewt,3)}</Table.Cell>
+                                    <Table.Cell textAlign='end'>{formatToFixed(ornament.stnAmt,2)}</Table.Cell>
                                     <Table.Cell>
                                         <Box display='flex' justifyContent='center'>
                                             <FaEdit

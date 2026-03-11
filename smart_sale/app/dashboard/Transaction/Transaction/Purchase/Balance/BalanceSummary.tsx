@@ -63,6 +63,7 @@ const BalanceSummary = ({
     transactionType,
     accCode,
     rate
+    
 }: BalanceSummaryProps) => {
 
 

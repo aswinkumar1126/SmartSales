@@ -8,13 +8,10 @@ import {
     Box,
     Stack,
     HStack,
-    Input,
-    Select,
     Text,
     IconButton,
-    List,
 } from "@chakra-ui/react";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { FaArrowUp } from "react-icons/fa";
 import { GiGoldBar } from "react-icons/gi";
 import { CustomTable } from "@/component/table/CustomTable";
@@ -31,6 +28,9 @@ type StockAvailable = {
     total: number;
     used: number;
     remaining: number;
+    totalPieces?: number;
+    usedPieces?: number;
+    remainingPieces?: number;
 }
 
 type StockDrawerProps = {
@@ -48,7 +48,12 @@ type StockDrawerProps = {
     setSelectedName: (val?: string) => void;
     pureGoldCollection?: any[];
     itemCollection?: any[];
-    getStockAvailability?: (id: string) => StockAvailable | undefined;
+    getStockAvailability?: (id: string, options?: {
+        excludeRowId?: string,
+        transactionTypeCode: string,
+        isEditing?: boolean,
+        originalValue?: number
+    }) => any;
 };
 
 export default function StockDrawer({
@@ -79,15 +84,17 @@ export default function StockDrawer({
                 { key: "weight", label: "Weight", align: "end" },
                 { key: "actualTouch", label: "Touch", align: "end" },
                 { key: "actualPure", label: "Pure", align: "end" },
+                { key: "stockStatus", label: "Stock Status", align: "end" },
                 { key: "action", label: "Action", align: "center" },
             ]
             : [
                 { key: "itemName", label: "Item" },
                 { key: "metalName", label: "Metal" },
-                { key: "pcs", label: "Pcs" },
+                { key: "pcs", label: "Pcs", align: "end" },
                 { key: "grswt", label: "Gross Wt", align: "end" },
                 { key: "stnwt", label: "Stone Wt", align: "end" },
                 { key: "netwt", label: "Net Wt", align: "end" },
+                { key: "stockStatus", label: "Stock Status", align: "end" },
                 { key: "touch", label: "Touch", align: "end" },
                 { key: "purewt", label: "Pure Wt", align: "end" },
                 { key: "action", label: "Action", align: "center" },
@@ -98,12 +105,12 @@ export default function StockDrawer({
         ? pureGoldCollection
         : itemCollection;
 
-    console.log(itemCollection, 'itemCollection');
-
     // Helper function to get stock status color
-    const getStockStatusColor = (remaining: number) => {
+    const getStockStatusColor = (remaining: number, total: number) => {
+        const percentage = (remaining / total) * 100;
         if (remaining <= 0) return "red.500";
-        if (remaining < 10) return "orange.500";
+        if (percentage < 20) return "orange.500";
+        if (percentage < 50) return "yellow.500";
         return "green.500";
     };
 
@@ -112,6 +119,15 @@ export default function StockDrawer({
         const grswt = Number(row.GRSWT || row.grswt || 0);
         const stnwt = Number(row.STNWT || row.stnwt || 0);
         return grswt - stnwt;
+    };
+
+    // Get the appropriate ID based on stock type
+    const getStockId = (row: any) => {
+        if (showStock === "PURE") {
+            return row.pureId || row.PUREID || row.id;
+        } else {
+            return row.ITEMID || row.itemId || row.id;
+        }
     };
 
     return (
@@ -181,12 +197,34 @@ export default function StockDrawer({
                                 headerBg={theme.colors.accient}
                                 headerColor={theme.colors.whiteColor}
                                 renderRow={(row) => {
-                                    // Get availability for this row if it's a pure gold item
-                                    const availability = showStock === "PURE" && getStockAvailability
-                                        ? getStockAvailability(row.pureId || row.PUREID)
+
+                                    const getStockId = (row: any) => {
+                                        if (showStock === "PURE") {
+                                            return row.pureId || row.PUREID || row.id;
+                                        } else {
+                                            // For items, make sure you're using the correct ID field
+                                            return row.itemId || row.ITEMID || row.id || row.ornamentId;
+                                        }
+                                    };
+
+                                    const stockId = getStockId(row);
+
+                                
+                                 
+                                    // Get availability for this row based on stock type
+                                    const availability = getStockAvailability && stockId
+                                        ? getStockAvailability(stockId, {
+                                            transactionTypeCode: showStock === "PURE" ? "ISP" : "PR",
+                                            isEditing: false,
+                                        })
                                         : undefined;
 
-                                    const isOutOfStock = (availability?.remaining ?? Infinity) <= 0;
+
+                                    console.log('availability in stock drawer:', availability, 'for', showStock, 'id:', stockId);
+
+                                    const isOutOfStock = showStock === "PURE"
+                                        ? (availability?.remaining ?? 0) <= 0
+                                        : (availability?.remainingPieces ?? 0) <= 0;
 
                                     if (showStock === "PURE") {
                                         return (
@@ -198,24 +236,31 @@ export default function StockDrawer({
                                                         <Text fontWeight="medium">
                                                             {Number(row.weight).toFixed(3)}g
                                                         </Text>
-                                                        {availability && (
-                                                            <Text
-                                                                fontSize="xs"
-                                                                color={getStockStatusColor(availability.remaining)}
-                                                            >
-                                                                Available: {availability.remaining.toFixed(3)}g
-                                                                {availability.used > 0 && (
-                                                                    <Text as="span" color="gray.500" ml={1}>
-                                                                        (Used: {availability.used.toFixed(3)}g)
-                                                                    </Text>
-                                                                )}
-                                                            </Text>
-                                                        )}
                                                     </Stack>
                                                 </Box>
                                                 <Box as="td" textAlign="end">{row.actualTouch}</Box>
                                                 <Box as="td" textAlign="end">
                                                     {Number(row.actualPure).toFixed(3)}
+                                                </Box>
+                                                <Box as="td" textAlign="end">
+                                                    {availability ? (
+                                                        <Stack gap={0} align="end">
+                                                            <Text
+                                                                fontSize="sm"
+                                                                fontWeight="bold"
+                                                                color={getStockStatusColor(availability.remaining, availability.total)}
+                                                            >
+                                                                Available: {availability.remaining.toFixed(3)}g
+                                                            </Text>
+                                                            <Text fontSize="xs" color="gray.500">
+                                                                Total: {availability.total.toFixed(3)}g | Used: {availability.used.toFixed(3)}g
+                                                            </Text>
+                                                        </Stack>
+                                                    ) : (
+                                                        <Text fontSize="sm" color="gray.500">
+                                                            {Number(row.weight).toFixed(3)}g available
+                                                        </Text>
+                                                    )}
                                                 </Box>
                                                 <Box as="td" textAlign="center">
                                                     <IconButton
@@ -236,33 +281,67 @@ export default function StockDrawer({
                                             <>
                                                 <Box as="td">{row.itemName}</Box>
                                                 <Box as="td">{row.metalName}</Box>
-                                                <Box as="td">{row.pcs}</Box>
-                                                <Box as="td" textAlign="end">
-                                                    {Number(row.grswt || 0).toFixed(3)}
-                                                </Box>
-                                                <Box as="td" textAlign="end">
-                                                    {Number(row.stnwt || 0).toFixed(3)}
-                                                </Box>
                                                 <Box as="td" textAlign="end">
                                                     <Stack gap={0}>
-                                                        <Text fontWeight="bold" color="blue.600">
-                                                            {row.netwt.toFixed(3)}g
+                                                        <Text fontWeight="medium">
+                                                            {row.pcs} pcs
                                                         </Text>
-                                                        
                                                     </Stack>
+                                                </Box>
+                                                <Box as="td" textAlign="end">
+                                                    {Number(row.grswt || 0).toFixed(3)}g
+                                                </Box>
+                                                <Box as="td" textAlign="end">
+                                                    {Number(row.stnwt || 0).toFixed(3)}g
+                                                </Box>
+                                                <Box as="td" textAlign="end">
+                                                    <Text fontWeight="bold" color="blue.600">
+                                                        {netwt.toFixed(3)}g
+                                                    </Text>
+                                                </Box>
+                                                <Box as="td" textAlign="end">
+                                                    {availability ? (
+                                                        <Stack gap={0} align="end">
+                                                            <Text
+                                                                fontSize="sm"
+                                                                fontWeight="bold"
+                                                                color={getStockStatusColor(availability.remainingPieces || 0, availability.totalPieces || 0)}
+                                                            >
+                                                                Available: {availability.remainingPieces || 0} pcs
+                                                            </Text>
+                                                            <Text fontSize="xs" color="gray.500">
+                                                                Total: {availability.pieces.total || 0} pcs | Used: {availability.pieces.used || 0} pcs
+                                                            </Text>
+                                                            {availability.remaining > 0 && (
+                                                                <Text fontSize="xs" color="green.500">
+                                                                    Net Wt Available: {availability.remaining.toFixed(3)}g
+                                                                </Text>
+                                                            )}
+                                                        </Stack>
+                                                    ) : (
+                                                        <Stack gap={0} align="end">
+                                                            <Text fontSize="sm" color="gray.500">
+                                                                {row.pcs} pcs available
+                                                            </Text>
+                                                            <Text fontSize="xs" color="gray.400">
+                                                                Net Wt: {netwt.toFixed(3)}g
+                                                            </Text>
+                                                        </Stack>
+                                                    )}
                                                 </Box>
                                                 <Box as="td" textAlign="end">
                                                     {row.TOUCH || row.touch || ""}
                                                 </Box>
                                                 <Box as="td" textAlign="end">
-                                                    {Number(row.PUREWT || row.purewt || 0).toFixed(3)}
+                                                    {Number(row.PUREWT || row.purewt || 0).toFixed(3)}g
                                                 </Box>
                                                 <Box as="td" textAlign="center">
                                                     <IconButton
                                                         size="2xs"
                                                         onClick={() => onIssue(row)}
-                                                        colorScheme="blue"
-                                                        title="Add to transaction"
+                                                        disabled={isOutOfStock}
+                                                        title={isOutOfStock ? "Out of stock" : "Add to transaction"}
+                                                        colorScheme={isOutOfStock ? "gray" : "blue"}
                                                     >
                                                         <FaArrowUp />
                                                     </IconButton>
