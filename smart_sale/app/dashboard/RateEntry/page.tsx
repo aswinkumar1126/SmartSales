@@ -21,7 +21,7 @@ import { toastError, toastLoaded } from "@/component/toast/toast";
 
 import { useEnterNavigation } from "@/component/form/useEnterNavigation";
 import { DynamicForm } from "@/component/form/DynamicForm";
-import { useCreateRate , useRates } from "@/hooks/rate/useRate";
+import { useCreateRate , useRates,useAllRates } from "@/hooks/rate/useRate";
 import { RateForm } from "@/types/rate/rate";
 import { RateEntryForm } from "@/config/master/RateEntry";
 
@@ -36,6 +36,7 @@ function RateEntry() {
 
     const {data:LatestRate } = useRates();
 
+    const {data:AllRate } = useAllRates();
     // const { mutate: updateCompany } = useUpdateCompany();
 
     /* -------------------- FORM STATE -------------------- */

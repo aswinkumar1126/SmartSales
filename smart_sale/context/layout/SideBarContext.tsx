@@ -181,6 +181,11 @@ export const SidebarProvider = ({ children }: { children: ReactNode }) => {
             route: "/dashboard/Transaction/Transaction/Sales",
             icon: AiOutlineDollar,
           },
+                    {
+            label: "Tagging",
+            route: "/dashboard/Transaction/Transaction/Tagging",
+            icon: BadgeCheck,
+          },
           {
             label: "Approval",
             route: "/dashboard/Transaction/Transaction/Approval",

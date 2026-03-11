@@ -12,6 +12,15 @@ export const useRates = () => {
     })
 }
 
+export const useAllRates = () => {
+    return useQuery({
+        queryKey:['rates'],
+        queryFn:RateEntryService.getAllRates,
+        select:(res)=>res.data
+        
+    })
+}
+
 export const useCreateRate = () => {
     const queryClient = useQueryClient();
 
