@@ -12,6 +12,7 @@ export const TransactionService = {
         try {
             console.log(payload ,'payloadfor create')
             const { data } = await axiosInstance.post(BASE_PATH ,payload);
+            console.log(data, 'datatransaction')
             return data;
         } catch (error: any) {
             throw error?.response?.data || error;

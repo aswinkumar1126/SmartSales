@@ -42,8 +42,8 @@ export interface FormField {
 
     // For date picker
     dateFormat?: string;
-    maxDate?: Date;
-    minDate?: Date;
+    maxDate?: Date|string;
+    minDate?: Date | string;
     showTimeSelect?: boolean;
 
     // For color picker
@@ -64,4 +64,7 @@ export interface FormField {
 
     // Validation
     validate?: (value: any) => string | undefined;
+
+    dependsOn?: string;
+    
 }

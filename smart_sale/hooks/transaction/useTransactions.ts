@@ -5,7 +5,7 @@ import {
 } from "@tanstack/react-query";
 
 import { TransactionService } from "@/service/TransactionService";
-import { CreateTransaction, TRANSACTION, UpdateTransactionPayload } from "@/types/transcation/Transaction";
+import { CreateTransaction,  UpdateTransactionPayload } from "@/types/transcation/Transaction";
 import { ApiResponse } from "@/types/api/apiResponse";
 
 /* -------------------- QUERY KEYS -------------------- */
@@ -17,6 +17,7 @@ export const transactionKeys = {
     byTransId: (transId: string|null) =>
         [...transactionKeys.all, "transId", transId] as const,
 };
+
 
 /* -------------------- QUERIES -------------------- */
 
@@ -62,7 +63,7 @@ export const useTransaction = (
     sno: number,
     TRANTYPE: string
 ) => {
-    return useQuery<ApiResponse<TRANSACTION>>({
+    return useQuery<ApiResponse<any>>({
         queryKey: transactionKeys.byId(sno, TRANTYPE),
         queryFn: () => TransactionService.getOne(sno, TRANTYPE),
         enabled: !!sno && !!TRANTYPE,
@@ -103,7 +104,7 @@ export const usePatchTransaction = (TRANTYPE: string) => {
             payload,
         }: {
             sno: number;
-            payload: Partial<TRANSACTION>;
+            payload: Partial<any>;
         }) => TransactionService.patch(sno, payload, TRANTYPE),
 
         onSuccess: () => {
@@ -145,5 +146,6 @@ export const useCreateTransactions = () => {
                 
             });
         },
+        
     });
 };

@@ -173,7 +173,7 @@ export const SidebarProvider = ({ children }: { children: ReactNode }) => {
         items:[
           {
             label: "Purchase",
-            route: "/dashboard/Transaction/Transaction/Purchase",
+            route: "/dashboard/Transaction/Purchase",
             icon: AiOutlineShoppingCart,
           },
           {
@@ -182,8 +182,8 @@ export const SidebarProvider = ({ children }: { children: ReactNode }) => {
             icon: AiOutlineDollar,
           },
                     {
-            label: "Tagging",
-            route: "/dashboard/Transaction/Transaction/Tagging",
+            label: "Barcode Generate",
+            route: "/dashboard/Transaction/BarCodeGenerate",
             icon: BadgeCheck,
           },
           {

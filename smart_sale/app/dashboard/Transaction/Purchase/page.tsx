@@ -12,6 +12,8 @@ import {
     Grid,
     GridItem
 } from "@chakra-ui/react";
+import lodash from "lodash";
+
 import { useTheme } from "@/context/theme/themeContext";
 import { toaster, Toaster } from "@/components/ui/toaster";
 import { useListCollection, useFilter } from "@chakra-ui/react";
@@ -27,12 +29,15 @@ import { FloatingActionButton } from "@/components/ui/FloatingActionButton";
 import StockDrawer from "./DrawerTable/StockTable";
 import { useAllMetals } from "@/hooks/metal/useMetals";
 import Loader from "@/component/loader/Loader";
-
 import BalanceSummary, { ClosingFormDetails } from "./Balance/BalanceSummary";
+
+
 //Key
 import { useGlobalKey } from "@/components/key/useGlobalKey";
 
+
 // Hooks
+
 import { useTransactions } from "@/hooks/transaction/useTransactions";
 import { useAllAccountHead } from "@/hooks/accountHead/useAccountHead";
 import { useItems, useStoneItems } from "@/hooks/item/useItems";
@@ -41,6 +46,7 @@ import { usePureGoldData, usePureGoldNames } from "@/hooks/pureGoldMast/usePureG
 import { useActiveOtherCharges } from "@/hooks/otherCharges/useOtherCharges";
 import { useRates } from "@/hooks/rate/useRate";
 import { useOrnamentData } from "@/hooks/ornament/useOrnamentData";
+
 
 // Types & Constants
 import { TransactionType, UpdateTransactionPayload, TransactionKey, CreateTransaction, TransactionItems, TRANSACTION_KEY_MAP, ClosingDetails } from "@/types/transcation/Transaction";
@@ -81,6 +87,9 @@ type TransactionRow ={
 export default function PurchasePage() {
 
     const isFirstRender = useRef(true);
+    const initialDraftRowsRef = useRef<any[]>([]);
+    const initialClosingRef = useRef<ClosingDetails>(null);
+    console.log(initialClosingRef,'initialClosingRef')
 
     /* ================================
        Local Storage Keys
@@ -113,8 +122,8 @@ export default function PurchasePage() {
     const [otherCharges, setOtherCharges] = useState<{ label: string, value: string }[]>([]);
 
     const [metalId, setMetalId] = useState<string | undefined>();
-
-    const [metalRate, setMetalRate] = useState<number>();
+    
+    const [transactionResetSignal, setTransactionResetSignal] = useState(false);
 
     
 
@@ -186,7 +195,7 @@ export default function PurchasePage() {
 
         // Default state if nothing in localStorage
         return {
-            convType: "P",
+            convType: "",
             convAmt: "",
             convWt: "",
             discAmt: "",
@@ -199,6 +208,7 @@ export default function PurchasePage() {
             bankRcvdDetails: [],
         };
     });
+    
 
     const [isEditing, setIsEditing] = useState(false);
     const [editingSno, setEditingSno] = useState<string | null>(null);
@@ -496,6 +506,8 @@ export default function PurchasePage() {
         return sum;
     }, [draftRows]);
 
+
+
     const getStockAvailability = useCallback((pureId: string | number | null, options?: {
         excludeRowId?: string,
         transactionTypeCode?: string,
@@ -603,6 +615,9 @@ export default function PurchasePage() {
             remainingPieces: Math.max(totalAvailablePieces - usedPieces, 0)
         };
     }, [pureStockList, itemsStockList, getUsedQuantityByPureId]);
+         
+
+
 
     // Separate helper functions for specific use cases
     const getAvailableWeight = useCallback((pureId: string | number | null, options?: {
@@ -1059,9 +1074,22 @@ export default function PurchasePage() {
                 DATE: transactionDetails.TRANDATE || new Date().toISOString().split("T")[0],
                 BILLNO: transactionDetails.BILLNO ,
                 ENTRYNO: transactionDetails.ENTRYNO ,
+                RATEGM: transactionDetails.RATEGM || prev.RATEGM,
             }));
         }
     }, [transactionList]);
+
+
+
+    //For Saving the Purchase with Ref
+    useEffect(() => {
+        initialDraftRowsRef.current = JSON.parse(JSON.stringify(draftRows));
+    }, []);
+
+
+    useEffect(() => {
+        initialClosingRef.current = JSON.parse(JSON.stringify(getClosingDetailsPayload()));
+    }, []);
 
 
     const handleRowClick = (row: any, clickedTransactionType: string) => {
@@ -1100,12 +1128,18 @@ export default function PurchasePage() {
         setEditingSno(sno);
         setSelectedTransactionId(sno);
 
+
+        // After setAccCode(transactionDetails.ACCODE);
+
         // Try different possible data structures
         const transactionDetails = transactionData.header;
 
         // Collect ALL transaction types that have data
         let transactionTypes: string[] = [];
         let allTransactionItems: any[] = [];
+
+        // ✅ Load closing details from transaction header
+      
 
         // Check if TRANSACTION_DETAILS exists and has data
         if (transactionData.TRANSACTION_DETAILS) {
@@ -1163,10 +1197,50 @@ export default function PurchasePage() {
                 DATE: transactionDetails.TRANDATE || new Date().toISOString().split("T")[0],
                 BILLNO: transactionDetails.BILLNO || "",
                 ENTRYNO: transactionDetails.ENTRYNO || "",
+                RATEGM: transactionDetails.RATE || transactionDetails.RATEGM || prev.RATEGM,
             }));
 
             setAccCode(transactionDetails.ACCODE);
+            
+            if (transactionDetails) {
+                const loadedClosingDetails: ClosingFormDetails = {
+                    convType: transactionDetails.CONVTYPE || "",
+                    convAmt: transactionDetails.CONVAMT ? String(transactionDetails.CONVAMT) : "",
+                    convWt: transactionDetails.CONVWT ? String(transactionDetails.CONVWT) : "",
+                    discAmt: transactionDetails.DISCAMT ? String(transactionDetails.DISCAMT) : "",
+                    discWt: transactionDetails.DISCWT ? String(transactionDetails.DISCWT) : "",
+                    cashPaid: transactionDetails.CASHPAID ? String(transactionDetails.CASHPAID) : "",
+                    cashRcvd: transactionDetails.CASHRCVD ? String(transactionDetails.CASHRCVD) : "",
+                    bankPaid: transactionDetails.BANKPAID ? String(transactionDetails.BANKPAID) : "",
+                    bankRcvd: transactionDetails.BANKRCVD ? String(transactionDetails.BANKRCVD) : "",
+                    bankPaidDetails: transactionDetails.bankPaidDetails || [],
+                    bankRcvdDetails: transactionDetails.bankRcvdDetails || [],
+                };
 
+                // ✅ Set in parent state
+                setClosingDetails(loadedClosingDetails);
+                closingDetailsRef.current = loadedClosingDetails;
+
+                // ✅ Persist to localStorage so refresh restores it
+                localStorage.setItem("CLOSING_DETAILS", JSON.stringify(loadedClosingDetails));
+
+                // ✅ Also persist bank details under their stable keys
+                const accCode = transactionDetails.ACCODE;
+                if (accCode) {
+                    if (loadedClosingDetails.bankPaidDetails.length > 0) {
+                        localStorage.setItem(
+                            `BANK_PAID_bank-paid-${accCode}`,
+                            JSON.stringify(loadedClosingDetails.bankPaidDetails)
+                        );
+                    }
+                    if (loadedClosingDetails.bankRcvdDetails.length > 0) {
+                        localStorage.setItem(
+                            `BANK_RECEIVED_bank-rcvd-${accCode}`,
+                            JSON.stringify(loadedClosingDetails.bankRcvdDetails)
+                        );
+                    }
+                }
+            }
             // Set ALL transaction types that are present
             if (uniqueTransactionTypes.length > 0) {
                 const foundTypes = TRANSACTIONTYPES.filter(t => uniqueTransactionTypes.includes(t.code));
@@ -1375,7 +1449,7 @@ export default function PurchasePage() {
             localStorage.removeItem(CLOSING_DETAILS_KEY);
 
             setClosingDetails({
-                convType: "P",
+                convType: "",
                 convAmt: "",
                 convWt: "",
                 discAmt: "",
@@ -1467,51 +1541,44 @@ export default function PurchasePage() {
           CLOSING DETAILS FORM
        ================================ */
 
-    const handleClosingDetailsChange = useCallback((details:ClosingFormDetails) => {
-        // Only update if details actually changed
-        setClosingDetails(prev => {
-            if (JSON.stringify(prev) === JSON.stringify(details)) {
-                return prev; // No change
-            }
-            return details;
-        });
+    // In parent — add this
+    const closingDetailsRef = useRef(closingDetails);
+    useEffect(() => { closingDetailsRef.current = closingDetails; }, [closingDetails]);
+
+    const handleClosingDetailsChange = useCallback((details: ClosingFormDetails) => {
+        closingDetailsRef.current = details; // ✅ immediately sync ref
+        setClosingDetails(details);
     }, []);
 
-    // useEffect(() => {
-    //     localStorage.setItem(CLOSING_DETAILS_KEY, JSON.stringify(closingDetails));
-    // }, [closingDetails]);
-
-    // Handle closing details change from BalanceSummary component
+    // ✅ Always reads latest — even before re-render
     const getClosingDetailsPayload = (): ClosingDetails => {
+        const d = closingDetailsRef.current; // ✅ use ref, not state
         return {
-            convType: closingDetails.convType,
-            convAmt: closingDetails.convAmt ? parseFloat(closingDetails.convAmt) : 0,
-            convWt: closingDetails.convWt ? parseFloat(closingDetails.convWt) : 0,
-            discAmt: closingDetails.discAmt ? parseFloat(closingDetails.discAmt) : 0,
-            discWt: closingDetails.discWt ? parseFloat(closingDetails.discWt) : 0,
-            cashPaid: closingDetails.cashPaid ? parseFloat(closingDetails.cashPaid) : 0,
-            cashRcvd: closingDetails.cashRcvd ? parseFloat(closingDetails.cashRcvd) : 0,
-            bankPaid: closingDetails.bankPaid ? parseFloat(closingDetails.bankPaid) : 0,
-            bankRcvd: closingDetails.bankRcvd ? parseFloat(closingDetails.bankRcvd) : 0,
-            bankPaidDetails: closingDetails.bankPaidDetails,
-            bankRcvdDetails: closingDetails.bankRcvdDetails,
+            convType: d.convType,
+            convAmt: d.convAmt ? parseFloat(d.convAmt) : 0,
+            convWt: d.convWt ? parseFloat(d.convWt) : 0,
+            discAmt: d.discAmt ? parseFloat(d.discAmt) : 0,
+            discWt: d.discWt ? parseFloat(d.discWt) : 0,
+            cashPaid: d.cashPaid ? parseFloat(d.cashPaid) : 0,
+            cashRcvd: d.cashRcvd ? parseFloat(d.cashRcvd) : 0,
+            bankPaid: d.bankPaid ? parseFloat(d.bankPaid) : 0,
+            bankRcvd: d.bankRcvd ? parseFloat(d.bankRcvd) : 0,
+            bankPaidDetails: d.bankPaidDetails,
+            bankRcvdDetails: d.bankRcvdDetails,
         };
     };
-
     
 
     const handleLoadFromStock = (stockRow: any) => {
         // 1️⃣ Determine if this is issue-type stock
         const issueStock = isIssueStock(stockRow);
 
-        console.log(stockRow, 'stockRow');
 
         // 2️⃣ Pick target type deterministically
         const targetType = issueStock
             ? TRANSACTIONTYPES.find(t => t.key === "issue")
             : TRANSACTIONTYPES.find(t => t.key === "purchase_return");
 
-        console.log(targetType, 'targetType');
 
         // 2a️⃣ Check if transaction type exists
         if (!targetType) {
@@ -1522,6 +1589,7 @@ export default function PurchasePage() {
             });
             return;
         }
+
 
         console.log(targetType, 'targetType');
 
@@ -1855,119 +1923,141 @@ console.log(typeRows,'typeRows')
             })
         };
     };
+
+
+    const isDraftRowsChanged = () => {
+        return !lodash.isEqual(initialDraftRowsRef.current || [], draftRows || []);
+    };
+
+    const isClosingChanged = () => {
+        return !lodash.isEqual(
+            initialClosingRef.current || {},
+            getClosingDetailsPayload() || {}
+        );
+    };
+
+
     /* ================================
          Validation Handler
       ================================ */
     const validateDraftRows = () => {
-        if (draftRows.length === 0) {
+
+        const draftChanged = isDraftRowsChanged();
+        const closingChanged = isClosingChanged();
+
+        if (!draftChanged && !closingChanged) {
             toaster.create({
-                title: "No Items",
-                description: "Please add at least one item.",
-                type: "error",
+                title: "No Changes",
+                description: "No changes detected to save.",
+                type: "warning",
             });
             return false;
         }
 
-        // Validate each row based on its transaction type
-        for (let i = 0; i < draftRows.length; i++) {
-            const row = draftRows[i];
-            const transactionType = TRANSACTIONTYPES.find(t => t.value === row.TRANSACTION_TYPE);
+        // If draft rows changed → run row validations
+        if (draftChanged) {
 
-            if (!transactionType) {
+            if (draftRows.length === 0) {
                 toaster.create({
-                    title: "Invalid Transaction Type",
-                    description: `Row ${i + 1}: Invalid transaction type.`,
+                    title: "No Items",
+                    description: "Please add at least one item.",
                     type: "error",
                 });
                 return false;
             }
 
-            const isIssue = isIssueType(transactionType);
+            for (let i = 0; i < draftRows.length; i++) {
+                const row = draftRows[i];
+                const transactionType = TRANSACTIONTYPES.find(t => t.value === row.TRANSACTION_TYPE);
 
-            if (isIssue) {
-                if (!row.PUREID || row.WT == null || row.TOUCH == null || row.PUREWT == null) {
+                if (!transactionType) {
                     toaster.create({
-                        title: "Incomplete Items",
-                        description: `Row ${i + 1}: Please fill PUREID, Weight, Touch, and Pure for all rows.`,
-                        type: "error",
-                    });
-                    return false;
-                }
-            } else {
-                if (!row.ITEMID) {
-                    toaster.create({
-                        title: "Incomplete Items",
-                        description: `Row ${i + 1}: Please select an item.`,
+                        title: "Invalid Transaction Type",
+                        description: `Row ${i + 1}: Invalid transaction type.`,
                         type: "error",
                     });
                     return false;
                 }
 
-                if (Number(row.GRSWT) <= 0) {
+                const isIssue = isIssueType(transactionType);
+
+                if (isIssue) {
+                    if (!row.PUREID || row.WT == null || row.TOUCH == null || row.PUREWT == null) {
+                        toaster.create({
+                            title: "Incomplete Items",
+                            description: `Row ${i + 1}: Please fill PUREID, Weight, Touch, and Pure.`,
+                            type: "error",
+                        });
+                        return false;
+                    }
+                } else {
+                    if (!row.ITEMID) {
+                        toaster.create({
+                            title: "Incomplete Items",
+                            description: `Row ${i + 1}: Please select an item.`,
+                            type: "error",
+                        });
+                        return false;
+                    }
+
+                    if (Number(row.GRSWT) <= 0) {
+                        toaster.create({
+                            title: "Invalid Gross Weight",
+                            description: `Row ${i + 1}: Gross weight must be greater than 0.`,
+                            type: "warning",
+                        });
+                        return false;
+                    }
+
+                    if (Number(row.TOUCH) <= 0) {
+                        toaster.create({
+                            title: "Invalid TOUCH",
+                            description: `Row ${i + 1}: TOUCH must be greater than 0.`,
+                            type: "warning",
+                        });
+                        return false;
+                    }
+                }
+            }
+
+            // Stock validation
+            const usedByPureId: Record<string, number> = {};
+
+            draftRows.forEach((row) => {
+                const transactionType = TRANSACTIONTYPES.find(t => t.value === row.TRANSACTION_TYPE);
+                if (!transactionType) return;
+
+                const isIssue = isIssueType(transactionType);
+
+                if (isIssue && row.PUREID) {
+                    const key = String(row.PUREID);
+                    usedByPureId[key] = (usedByPureId[key] || 0) + Number(row.WT || 0);
+                }
+            });
+
+            for (const pureId in usedByPureId) {
+                const availability = getStockAvailability(pureId);
+                if (availability && usedByPureId[pureId] > availability.total) {
                     toaster.create({
-                        title: "Invalid Gross Weight",
-                        description: `Row ${i + 1}: Gross weight must be greater than 0.`,
-                        type: "warning",
+                        title: "Stock Exceeded",
+                        description: `Pure ID ${pureId}: Total ${usedByPureId[pureId].toFixed(3)}g exceeds available stock (${availability.total.toFixed(3)}g)`,
+                        type: "error",
                     });
                     return false;
                 }
-
-                if (Number(row.TOUCH) <= 0) {
-                    toaster.create({
-                        title: "Invalid TOUCH",
-                        description: `Row ${i + 1}: TOUCH must be greater than 0.`,
-                        type: "warning",
-                    });
-                    return false;
-                }
-            }
-        }
-
-        // Check stock limits for issue-type rows
-        const usedByPureId: Record<string, number> = {};
-
-        draftRows.forEach((row) => {
-            const transactionType = TRANSACTIONTYPES.find(t => t.value === row.TRANSACTION_TYPE);
-            if (!transactionType) return;
-
-            const isIssue = isIssueType(transactionType);
-
-            if (isIssue && row.PUREID) {
-                const key = String(row.PUREID);
-                usedByPureId[key] = (usedByPureId[key] || 0) + Number(row.WT || 0);
-            }
-        });
-
-        for (const pureId in usedByPureId) {
-            const availability = getStockAvailability(pureId);
-            if (availability && usedByPureId[pureId] > availability.total) {
-                toaster.create({
-                    title: "Stock Exceeded",
-                    description: `Pure ID ${pureId}: Total ${usedByPureId[pureId].toFixed(3)}g exceeds available stock (${availability.total.toFixed(3)}g)`,
-                    type: "error",
-                });
-                return false;
             }
         }
 
         return true;
     };
 
-
     /* ================================
    Save Transaction Handler with Stone Details
 ================================ */
-    const handleSaveTransaction = async () => {
-        setEditingState({rowId: null, transactionType: null });
 
-        // if (selectedTransactionTypes.length === 0) {
-        //     toaster.create({
-        //         title: "Transaction Types Required",
-        //         description: "Please select at least one transaction type.",
-        //         type: "error",
-        //     });
-        //     return;
-        // }
+
+    const handleSaveTransaction = () => {
+        setEditingState({ rowId: null, transactionType: null });
 
         if (!headerForm.CUSTOMER) {
             toaster.create({
@@ -1978,171 +2068,143 @@ console.log(typeRows,'typeRows')
             return;
         }
 
-        // if (draftRows.length === 0) {
-        //     toaster.create({
-        //         title: "No Items",
-        //         description: "Please add at least one item to the transaction.",
-        //         type: "error",
-        //     });
-        //     return;
-        // }
-
         if (!validateDraftRows()) return;
 
-        try {
-            // Get all stones from localStorage
-            const allStones = JSON.parse(localStorage.getItem(STONE_MASTER_KEY) || "[]");
+        // Get stones
+        const allStones = JSON.parse(localStorage.getItem(STONE_MASTER_KEY) || "[]");
+        const allCharges = JSON.parse(localStorage.getItem("MISC_CHARGE_MASTER") || "[]");
 
-            const allCharges = JSON.parse(localStorage.getItem("MISC_CHARGE_MASTER") || "[]");
+        const stonesByDraftRowId = allStones.reduce((acc: Record<string, StoneRow[]>, stone: StoneRow) => {
+            if (!acc[stone.draftRowId]) acc[stone.draftRowId] = [];
+            acc[stone.draftRowId].push(stone);
+            return acc;
+        }, {});
 
+        const chargesByDraftRowId = allCharges.reduce((acc: Record<string, any[]>, charge: any) => {
+            if (!acc[charge.draftRowId]) acc[charge.draftRowId] = [];
+            acc[charge.draftRowId].push(charge);
+            return acc;
+        }, {});
 
-           // Create a map for quick lookup of stones by draftRowId
+        const transactionDetails: TransactionItems = {};
 
-            const stonesByDraftRowId = allStones.reduce((acc: Record<string, StoneRow[]>, stone: StoneRow) => {
-                if (!acc[stone.draftRowId]) {
-                    acc[stone.draftRowId] = [];
-                }
-                acc[stone.draftRowId].push(stone);
-                return acc;
-            }, {});
+        draftRows.forEach(row => {
+            const mappedType = TRANSACTION_KEY_MAP[row.TRANSACTION_TYPE];
+            if (!mappedType) return;
 
-            // Create a map for quick lookup of charges by draftRowId
-            const chargesByDraftRowId = allCharges.reduce(
-                (acc: Record<string, any[]>, charge: any) => {
-                    if (!acc[charge.draftRowId]) {
-                        acc[charge.draftRowId] = [];
-                    }
-                    acc[charge.draftRowId].push(charge);
-                    return acc;
-                },
-                {}
+            if (!transactionDetails[mappedType]) transactionDetails[mappedType] = [];
+
+            const rowStones = stonesByDraftRowId[row.__rowId] || [];
+
+            const validStones = rowStones.filter((stone: any) =>
+                stone.stoneId &&
+                stone.stonePcs > 0 &&
+                stone.stoneWeight > 0 &&
+                stone.stoneRate > 0
             );
 
+            const rowCharges = row._miscCharges || chargesByDraftRowId[row.__rowId] || [];
 
-            /* -----------------------------------------
-               STEP 1 — GROUP ROWS BY TYPE
-               ----------------------------------------- */
+            const validCharges = rowCharges.filter((charge: any) =>
+                charge.id &&
+                Number(charge.amount) > 0
+            );
 
+            const normalized = normalizeRowForApi(
+                row,
+                mappedType === "issue" || mappedType === "receipt"
+            );
 
-            const transactionDetails: TransactionItems = {};
-
-        
-
-            // Process each draft row and include its stones
-            draftRows.forEach(row => {
-                const mappedType = TRANSACTION_KEY_MAP[row.TRANSACTION_TYPE];
-                if (!mappedType) return;
-
-                if (!transactionDetails[mappedType]) {
-                    transactionDetails[mappedType] = [];
-                }
-
-                // Get stones for this row
-                const rowStones = stonesByDraftRowId[row.__rowId] || [];
-
-
-                // Filter out empty stones (only include stones with real data)
-                const validStones = rowStones.filter((stone:any) =>
-                    stone.stoneId &&
-                    stone.stoneId !== "" &&
-                    stone.stonePcs > 0 &&
-                    stone.stoneWeight > 0 &&
-                    stone.stoneRate > 0
-                );
-
-                // Get charges for this row - first check if attached directly to row, then fallback to localStorage
-                const rowCharges = row._miscCharges || chargesByDraftRowId[row.__rowId] || [];
-
-
-                // Filter valid charges
-                const validCharges = rowCharges.filter((charge: any) =>
-                    charge.id &&
-                    charge.id !== "" &&
-                    Number(charge.amount) > 0
-                );
-
-                // Normalize the main row data
-                const normalized = normalizeRowForApi(
-                    row,
-                    mappedType === "issue" || mappedType === "receipt"
-                );
-
-                // Add stones to the normalized row if they exist
-                const rowWithStones = {
-                    ...normalized,
-                    ...(validStones.length > 0 && {
-                        STONEDETAILS: validStones.map((stone:any) => ({
-                            stoneId: stone.stoneId,
-                            subStoneId: stone.subStoneId,
-                            stonePcs: stone.stonePcs,
-                            stoneWeight: stone.stoneWeight,
-                            stoneUnit: stone.stoneUnit,
-                            stoneCalculation: stone.stoneCalculation,
-                            stoneRate: stone.stoneRate,
-                            stoneAmount: stone.stoneAmount,
-                        }))
-                    }),
-                     ...(validCharges.length > 0 && {
-                        OTHERCHARGESDETAILS: validCharges.map((charge: any) => ({
-                            chargeId: Number(charge.chargeName),
-                            chargeAmount: charge.amount,
-                        }))
-                    })
-                };
-
-                (transactionDetails[mappedType] as any[]).push(rowWithStones);
-            });
-
-            /* -----------------------------------------
-               STEP 2 — BUILD HEADER
-               ----------------------------------------- */
-            const payload: CreateTransaction = {
-                TRANSACTION_HEADER: {
-                    ACCODE: Number(headerForm.CUSTOMER),
-                    TRANDATE: headerForm.DATE,
-                    BILLNO: headerForm.BILLNO ? Number(headerForm.BILLNO) : undefined,
-                    RATE: headerForm.RATEGM ? Number(headerForm.RATEGM) : undefined,
-                },
-                TRANSACTION_DETAILS: transactionDetails,
-                CLOSING_DETAILS: getClosingDetailsPayload()
+            const rowWithStones = {
+                ...normalized,
+                ...(validStones.length > 0 && {
+                    STONEDETAILS: validStones.map((stone: any) => ({
+                        stoneId: stone.stoneId,
+                        subStoneId: stone.subStoneId,
+                        stonePcs: stone.stonePcs,
+                        stoneWeight: stone.stoneWeight,
+                        stoneUnit: stone.stoneUnit,
+                        stoneCalculation: stone.stoneCalculation,
+                        stoneRate: stone.stoneRate,
+                        stoneAmount: stone.stoneAmount,
+                    }))
+                }),
+                ...(validCharges.length > 0 && {
+                    OTHERCHARGESDETAILS: validCharges.map((charge: any) => ({
+                        chargeId: Number(charge.chargeName),
+                        chargeAmount: charge.amount,
+                    }))
+                })
             };
 
-            console.log('Transaction payload with stone details:', payload);
+            (transactionDetails[mappedType] as any[]).push(rowWithStones);
+        });
 
-            /* -----------------------------------------
-               STEP 3 — SINGLE API CALL
-               ----------------------------------------- */
-            await createTransaction.mutateAsync(payload);
+        const payload: CreateTransaction = {
+            TRANSACTION_HEADER: {
+                ACCODE: Number(headerForm.CUSTOMER),
+                TRANDATE: headerForm.DATE,
+                BILLNO: headerForm.BILLNO ? Number(headerForm.BILLNO) : undefined,
+                RATE: headerForm.RATEGM ? Number(headerForm.RATEGM) : undefined,
+            },
+            TRANSACTION_DETAILS: transactionDetails,
+            CLOSING_DETAILS: getClosingDetailsPayload()
+        };
 
-            /* -----------------------------------------
-               STEP 4 — CLEANUP
-               ----------------------------------------- */
-            setDraftRows([]);
-          setEditingState({rowId: null, transactionType: null})
+        createTransaction.mutate(payload, {
+            onSuccess: () => {
 
-            // Clear stones from localStorage after successful save
-            localStorage.removeItem(STONE_MASTER_KEY);
-            localStorage.removeItem(DRAFT_KEY);
+                setDraftRows([]);
+                setEditingState({ rowId: null, transactionType: null });
 
-            toaster.create({
-                title: "Transaction Saved",
-                description: "Transaction saved successfully with stone details.",
-                type: "success",
-            });
+                localStorage.removeItem(STONE_MASTER_KEY);
+                localStorage.removeItem(DRAFT_KEY);
+                localStorage.removeItem(CLOSING_DETAILS_KEY);
+                
+                localStorage.removeItem(`BANK_PAID_bank-paid-${accCode}`);
+                localStorage.removeItem(`BANK_RECEIVED_bank-rcvd-${accCode}`);
 
-            goldStockRefetch();
-            itemStockRefetch();
-            openingBalanceRefetch();
+               toaster.create({
+                    title: "Transaction Saved",
+                    description: "Transaction saved successfully",
+                    type: "success",
+                });
 
-        } catch (error: any) {
-            console.error('Save error:', error);
-            toaster.create({
-                title: "Save Failed",
-                description: error.message || "Failed to save transaction.",
-                type: "error",
-            });
-            openingBalanceRefetch();
-        }
+                goldStockRefetch();
+                itemStockRefetch();
+                openingBalanceRefetch();
+                setSelectedTransactionId(null);
+                setSelectedTransactionTypes([]);
+                setClosingDetails({
+                    convType: "",
+                    convAmt: "",
+                    convWt: "",
+                    discAmt: "",
+                    discWt: "",
+                    cashPaid: "",
+                    cashRcvd: "",
+                    bankPaid: "",
+                    bankRcvd: "",
+                    bankPaidDetails: [],
+                    bankRcvdDetails: [],
+                });
+                setTransactionResetSignal((prev) => !prev)
+             
+            },
+
+            onError: (error: any) => {
+
+                console.error("Save error:", error);
+
+                toaster.create({
+                    title: "Save Failed",
+                    description: error?.message || "Failed to save transaction.",
+                    type: "error",
+                });
+
+                openingBalanceRefetch();
+            }
+        });
     };
 
     const handleUpdateTransaction = async () => {
@@ -2250,7 +2312,7 @@ console.log(typeRows,'typeRows')
                 CUSTOMER_NAME: "",
                 BILLNO: "",
                 DATE: new Date().toISOString().split("T")[0],
-                RATEGM: "",
+                RATEGM: metalRates ? formatToFixed(metalRates["GOLD 916.00"], 2) : "",
             });
 
             // Clear local storage keys
@@ -2299,9 +2361,8 @@ console.log(typeRows,'typeRows')
                 CUSTOMER_NAME: "",
                 BILLNO: "",
                 DATE: new Date().toISOString().split("T")[0],
-                RATEGM: ""
+                RATEGM: metalRates ? formatToFixed(metalRates["GOLD 916.00"], 2) : ""
             }));
-
             setIsEditing(false);
             setEditingSno(null);
             setSelectedTransactionId(null);
@@ -2361,6 +2422,8 @@ console.log(typeRows,'typeRows')
        Render
     ================================ */
     const pageLoading = isLoading || getbySnoLoading || createTransaction.isPending;
+
+    console.log(closingDetails,'parentclosingDetails')
 
     return (
         <>
@@ -2705,12 +2768,11 @@ console.log(typeRows,'typeRows')
                         editingState={editingState}
                         accCode={Number(accCode)}
                         rate={Number(headerForm.RATEGM)}
-                        // transactionType={transactionType}
+                        transactionResetSignal= {transactionResetSignal}
 
                         />
 
-
-                </Box>
+               </Box>
 
                 
             <StockDrawer

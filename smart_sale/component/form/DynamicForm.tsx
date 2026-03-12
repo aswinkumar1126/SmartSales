@@ -1,6 +1,6 @@
 // component/form/DynamicForm.tsx
 import React,{useState} from 'react';
-import { Box, Grid ,Text } from "@chakra-ui/react";
+import { Box, Grid ,Text ,Stack } from "@chakra-ui/react";
 
 
 import { CapitalizedInput } from '@/components/ui/CapitalizedInput';
@@ -27,7 +27,8 @@ interface DynamicFormProps {
     register: (name: string) => (el: any) => void;
     focusNext: (name: string) => void;
     disabled?: Record<string, boolean | undefined>;
-    errors?: Record<string, string>; // Add errors prop
+    errors?: Record<string, string>; 
+    layout?: "vertical" | "horizontal" | "grid"; 
 }
 
 export const DynamicForm: React.FC<DynamicFormProps> = ({
@@ -37,7 +38,8 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
     register,
     focusNext,
     disabled = {},
-    errors = {} // Default to empty object
+    errors = {}, // Default to empty object
+    layout
 }) => {
 
     const [touched, setTouched] = useState<Record<string, boolean>>({});
@@ -54,7 +56,26 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
     };
 
     const renderField = (field: FormField) => {
-        const isDisabled = disabled[field.name] || field.disabled;
+        // Base disabled state: either from props or field.disabled
+        let isDisabled = disabled[field.name] || field.disabled;
+
+        // -------------------------------
+        // Handle dependsOn logic
+        // -------------------------------
+        if (field.dependsOn) {
+            // Check if the dependsOn field exists in the fields array
+            const dependencyField = fields.find(f => f.name === field.dependsOn);
+
+            if (dependencyField) {
+                // Disable current field if dependsOn value is empty/null/undefined
+                const dependencyValue = formData[field.dependsOn];
+                if (dependencyValue === undefined || dependencyValue === null || dependencyValue === '') {
+                    isDisabled = true;
+                }
+            }
+            // If dependsOn field does NOT exist, ignore it (leave isDisabled as-is)
+        }
+
         const showError = touched[field.name] && errors[field.name];
 
         // Register ref function
@@ -63,6 +84,7 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
                 register(field.name)(el);
             }
         };
+
 
         const fieldComponent = () => {
             switch (field.type) {
@@ -98,7 +120,7 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
                         className={field.className}
                         css={field.css}
                         onChange={(e) => onChange(field.name, e.target.value)}
-                        items={field.options || field.options || []}
+                        items={field.items || field.options || []}
                         onEnter={() => focusNext(field.name)}
                         onBlur={() => handleBlur(field.name)}
                     />
@@ -117,7 +139,7 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
                         // className={field.className}
                         // css={field.css}
                         onChange={(val) => onChange(field.name, val)}
-                        items={field.options  || []}
+                        items={field.items || field.options || []}
                         disable={isDisabled}
                         onEnter={() => focusNext(field.name)}
                         onKeyDown={(e) => handleKeyDown(e, field.name)}
@@ -161,6 +183,8 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
                             showTimeSelect={field.showTimeSelect}
                             onBlur={() => handleBlur(field.name)}
                             onKeyDown={(e) => handleKeyDown(e, field.name)}
+                            defaultValue ={field.defaultValue}
+                            
                         />
                     );
 
@@ -280,24 +304,35 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
         );
     }
 
+
+    // Determine how many columns per row
+    const templateColumns =
+        layout === "vertical" ? "1fr" : // 1 field per row
+        layout === "horizontal" ? "1fr 1fr" : // 2 fields per row
+                "repeat(1, 1fr)"; // default 2 columns for grid
+
     return (
-        <Grid gap={2}>
+        <Grid gap={4} templateColumns={templateColumns}>
             {fields.map((field) => (
                 <Box
                     key={field.name}
                     display="flex"
-                    alignItems="flex-start"
+                    flexDirection="row"
+                    alignItems="center"
                     gap={2}
                     gridColumn={field.colSpan ? `span ${field.colSpan}` : undefined}
                 >
-                    <Box minW="120px" fontSize="xs" pt={2}>
-                        {field.label} {field.required && <span style={{ color: 'red'  ,fontSize:'14px'}}>*</span>} 
+                    <Box minW="120px" fontSize="x-small" fontWeight='semibold'>
+                        {field.label} {field.required && <span style={{ color: 'red', fontSize: '14px' }}>*</span>}
                     </Box>
                     <Box flex="1">
                         {renderField(field)}
+                        {errors?.[field.name] && (
+                            <Box fontSize="xs" color="red">{errors[field.name]}</Box>
+                        )}
                     </Box>
                 </Box>
             ))}
         </Grid>
     );
-};
+}

@@ -135,7 +135,7 @@ export interface BankTransactionFormDetails {
 
 export interface ClosingDetails {
 
-    convType: "P" | "C" | "";
+    convType: "" | "P" | "C" ;
     convAmt: number;
     convWt: number;
     discAmt: number;
@@ -173,8 +173,8 @@ export interface ClosingDetails {
 
 export interface CreateTransaction {
     TRANSACTION_HEADER: TransactionHeader;
-    TRANSACTION_DETAILS: TransactionItems;
-    CLOSING_DETAILS: ClosingDetails;
+    TRANSACTION_DETAILS?: TransactionItems;
+    CLOSING_DETAILS?: ClosingDetails;
 }
 
 

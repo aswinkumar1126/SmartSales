@@ -69,15 +69,15 @@ interface DraftTransactionTableProps {
     theme: any;
     isEditing: boolean;
     isIssue?: boolean;
-    getAvailableWeight?: (id: string | number, options?: { excludeRowId?: string, isEditing?: boolean, originalWeight?: number, transactionTypeCode ?:string}) => number | null;
+    getAvailableWeight?: (id: string | number, options?: { excludeRowId?: string, isEditing?: boolean, originalWeight?: number, transactionTypeCode?: string }) => number | null;
     onClear?: () => void;
     transactionType?: string;
     initialFormData?: any;
     onFormDataChange?: (data: any) => void;
-    getStockAvailability?: (id: string, options?: { excludeRowId?: string, transactionTypeCode:string, isEditing?: boolean, originalWeight?: number}) => any | undefined;
+    getStockAvailability?: (id: string, options?: { excludeRowId?: string, transactionTypeCode: string, isEditing?: boolean, originalWeight?: number }) => any | undefined;
     otherChargesList: { label: string; value: string; }[];
     otherChargesData: any;
-    getAvailablePieces?: (id: string, options?: { excludeRowId?: string, transactionTypeCode:string, isEditing?: boolean, originalPieces?: number}) => any | undefined;
+    getAvailablePieces?: (id: string, options?: { excludeRowId?: string, transactionTypeCode: string, isEditing?: boolean, originalPieces?: number }) => any | undefined;
 }
 
 // const COL_WIDTHS: Record<string, string> = {
@@ -155,7 +155,7 @@ export default function DraftTransactionTable({
     getAvailablePieces
 }: DraftTransactionTableProps) {
 
-    console.log(totals,'totals')
+    console.log(totals, 'totals')
 
     // 🔥 FIX: Get the current editing row ID and its transaction type
     const currentEditingRowId = editingState?.rowId;
@@ -222,12 +222,12 @@ export default function DraftTransactionTable({
 
     const wastypecollection = { items: [{ label: "TOUCH", value: "TOUCH" }] };
     const numericFields = [
-        "PCS", "GRSWT", "STNWT", "NETWT", "WASPER", "WASTAGE", "STNAMT", 
+        "PCS", "GRSWT", "STNWT", "NETWT", "WASPER", "WASTAGE", "STNAMT",
         "PUREWT", "HMC", "MC", "WT", "TOUCH", "AWT", "APUREWT"
     ];
 
     const orderedKeys = isIssue
-        ? ["PUREID", "WT","AWT",  "TOUCH", "ATOUCH", "PUREWT" ,"APUREWT"]
+        ? ["PUREID", "WT", "AWT", "TOUCH", "ATOUCH", "PUREWT", "APUREWT"]
         : ["ITEMID", "PCS", "GRSWT", "STNWT", "NETWT", "WASTYPE", "WASPER", "WASTAGE", "TOUCH", "PUREWT", "HMC", "MC", "STNAMT", "DESCRIPTION"];
 
     const baseColumns = isIssue ? issueDataColumns : issueColumns;
@@ -353,7 +353,7 @@ export default function DraftTransactionTable({
             if (!isIssue && ["NETWT", "PUREWT"].includes(col.key))
                 return { ...base, type: "calculated", disabled: true };
 
-            if (isIssue && ["PUREWT","APUREWT"].includes(col.key))
+            if (isIssue && ["PUREWT", "APUREWT"].includes(col.key))
                 return { ...base, type: "calculated", disabled: true };
 
 
@@ -372,7 +372,7 @@ export default function DraftTransactionTable({
     }, [tableCols, itemsCollection, isIssue]);
 
     const visibleFormFields = useMemo(() =>
-        formFields.filter(f => !["NETWT", "PUREWT","APUREWT" ].includes(f.key) && f.type !== "calculated"),
+        formFields.filter(f => !["NETWT", "PUREWT", "APUREWT"].includes(f.key) && f.type !== "calculated"),
         [formFields]
     );
 
@@ -400,11 +400,11 @@ export default function DraftTransactionTable({
             }
         });
     }, [visibleFormFields]);
-    
+
 
     const pureValue = useCalculatePure(formData.WT, formData.TOUCH);
 
-    console.log(pureValue,'pureValue')
+    console.log(pureValue, 'pureValue')
     const altPureValue = useCalculatePure(formData.AWT, formData.ATOUCH);
 
     const calcNet = useCallback(() => {
@@ -418,7 +418,7 @@ export default function DraftTransactionTable({
         const t = parseFloat(formData.TOUCH) || 0;
         return ((n * t) / 100).toFixed(3);
     }, [calcNet, formData.TOUCH]);
-    
+
 
     useEffect(() => {
         setFormData(p => ({ ...p, NETWT: calcNet() }));
@@ -562,7 +562,7 @@ export default function DraftTransactionTable({
     // console.log(visibleFormFields,'visibleFormFields');
     const focusIdx = useCallback((idx: number) => {
         const f = visibleFormFields[idx];
-      
+
         if (!f) return;
         const ref = fieldRefs.current[f.key];
         setTimeout(() => { ref?.current?.focus?.(); ref?.current?.select?.(); }, 60);
@@ -963,7 +963,7 @@ export default function DraftTransactionTable({
                         disabled={shouldDisable}
                         inputRef={ref}
                         onEnter={() =>
-                        moveNext(field.key)}
+                            moveNext(field.key)}
                         noBorder
                     />
                     <Button
@@ -1010,7 +1010,7 @@ export default function DraftTransactionTable({
                         decimalScale={field.decimalScale}
                         disabled={shouldDisable}
                         inputRef={ref}
-                        onEnter={() => handleSubmit()} 
+                        onEnter={() => handleSubmit()}
                         noBorder
                     />
                 </Box>
@@ -1157,7 +1157,7 @@ export default function DraftTransactionTable({
         ...extra,
     });
 
-    useGlobalKey("Escape" , ()=>setIsMiscModalOpen(false) ,"close-modal");
+    useGlobalKey("Escape", () => setIsMiscModalOpen(false), "close-modal");
 
 
     return (
