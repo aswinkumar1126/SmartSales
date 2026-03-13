@@ -8,7 +8,6 @@ import { formatToFixed } from "@/utils/format/numberFormat";
 import { SelectCombobox } from "@/components/ui/selectComboBox";
 
 
-
 interface TransactionHeaderFormProps {
     form: any;
     onFormChange: (field: string, value: any) => void;
@@ -20,8 +19,8 @@ interface TransactionHeaderFormProps {
     openingBalance: any;
     openingData: any;
     isEditing?: boolean;
-    entryNo?: string;
-    billNo?: string;
+    // entryNo?: string;
+    // billNo?: string;
 }
 
 export default function TransactionHeaderForm({
@@ -36,8 +35,8 @@ export default function TransactionHeaderForm({
     openingData,
 
     isEditing = false,
-    entryNo,
-    billNo,
+    // entryNo,
+    // billNo,
 
 
 }: TransactionHeaderFormProps) {
@@ -92,7 +91,7 @@ export default function TransactionHeaderForm({
                 <Box w={{ base: '100%', md: '60px' }} display={{ base: 'flex', md: 'block' }} alignItems={{ base: 'center' }}>
                     <Text fontSize="2xs" mb={1} minW={{ base: '100px' }}>ENTRY NO :</Text>
                     <CapitalizedInput
-                        value={entryNo || form.ENTRYNO}
+                        value={form.ENTRYNO}
                         field="ENTRYNO"
                         onChange={() => { }}
                         disabled
@@ -105,7 +104,7 @@ export default function TransactionHeaderForm({
                 <Box w={{ base: '100%', md: '70px' }} display={{ base: 'flex', md: 'block' }} alignItems={{ base: 'center' }}>
                     <Text fontSize="2xs" mb={1} minW={{ base: '100px' }}>BILL NO :</Text>
                     <CapitalizedInput
-                        value={billNo || form.BILLNO}
+                        value={form.BILLNO}
                         field="BILLNO"
                         onChange={() => { }}
                         disabled

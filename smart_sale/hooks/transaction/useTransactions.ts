@@ -27,8 +27,7 @@ export const useTransactions = (
     accode?: number | null,
     startdate?: string | null,
     enddate?: string | null,
-    itemid?:number | null,
-    
+    itemid?: number | null,
 ) => {
     return useQuery<ApiResponse<any>>({
         queryKey: [
@@ -40,9 +39,9 @@ export const useTransactions = (
             enddate ?? "all",
             itemid ?? "all",
         ],
-        queryFn: () => TransactionService.getAll(trantype, accode, startdate, enddate , itemid),
-        
-      
+        queryFn: () => TransactionService.getAll(trantype, accode, startdate, enddate, itemid),
+        // Only run the query if we have required parameters
+        enabled: !!accode, // Add this line
     });
 };
 

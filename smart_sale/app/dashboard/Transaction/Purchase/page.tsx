@@ -46,7 +46,8 @@ import { usePureGoldData, usePureGoldNames } from "@/hooks/pureGoldMast/usePureG
 import { useActiveOtherCharges } from "@/hooks/otherCharges/useOtherCharges";
 import { useRates } from "@/hooks/rate/useRate";
 import { useOrnamentData } from "@/hooks/ornament/useOrnamentData";
-
+/*-------------------  *STORAGE*  --------------------------*/
+import { useSessionStorage } from "@/hooks/storage/useSessionStorage";
 
 // Types & Constants
 import { TransactionType, UpdateTransactionPayload, TransactionKey, CreateTransaction, TransactionItems, TRANSACTION_KEY_MAP, ClosingDetails } from "@/types/transcation/Transaction";
@@ -89,13 +90,17 @@ export default function PurchasePage() {
     const isFirstRender = useRef(true);
     const initialDraftRowsRef = useRef<any[]>([]);
     const initialClosingRef = useRef<ClosingDetails>(null);
+
+    
     console.log(initialClosingRef,'initialClosingRef')
 
     /* ================================
        Local Storage Keys
     ================================ */
-    const DRAFT_KEY = "transaction_draft";
+
     const HEADER_KEY = "transaction_header";
+
+    const DRAFT_KEY = "transaction_draft";
     const TYPE_KEY = "transaction_type";
     const DATE_RANGE_KEY = "transaction_date_range";
     const ITEMID = "transaction_itemid";
@@ -162,24 +167,67 @@ export default function PurchasePage() {
         return () => clearTimeout(timer);
     }, []);
 
+    // const getStoredRate = () => {
+    //     const stored = localStorage.getItem(RATE_KEY);
+    //     return stored ? stored : "";
+    // };
+
     // Transaction header state
-    const [headerForm, setHeaderForm] = useState({
+    const [headerForm, setHeaderForm] = useSessionStorage( HEADER_KEY, {
         ENTRYNO: "",
         BILLNO: "",
         DATE: new Date().toISOString().split("T")[0],
-        RATEGM: "", // start empty
+        RATEGM: "", 
         CUSTOMER: "",
         CUSTOMER_NAME: "",
-    });
+    }  );
 
 
+
+    // useEffect(() => {
+    //     if (!metalRates) return;
+
+    //     const storedRate = localStorage.getItem(RATE_KEY);
+
+    //     // If rate already exists in headerForm, don't override
+    //     if (headerForm.RATEGM) return;
+
+    //     // Priority 1: localStorage rate
+    //     if (storedRate) {
+    //         setHeaderForm(prev => ({
+    //             ...prev,
+    //             RATEGM: storedRate
+    //         }));
+    //         return;
+    //     }
+
+    //     // Priority 2: API rate
+    //     const apiRate = formatToFixed(metalRates["GOLD 916.00"], 2);
+
+    //     setHeaderForm(prev => ({
+    //         ...prev,
+    //         RATEGM: apiRate
+    //     }));
+
+    // }, [metalRates, headerForm.RATEGM]);
 
     useEffect(() => {
-        const rate = metalRates ? formatToFixed(metalRates["GOLD 916.00"], 2) : "";
-        // setMetalRate(rate);
-        setHeaderForm(prev => ({ ...prev, RATEGM: rate })); // update headerForm too
+        if (!metalRates) return;
 
-    }, [metalRates]);
+        // Only set RATEGM if empty
+        if (!headerForm.RATEGM) {
+            const apiRate = formatToFixed(metalRates["GOLD 916.00"], 2);
+            setHeaderForm(prev => ({ ...prev, RATEGM: apiRate }));
+        }
+    }, [metalRates, headerForm.RATEGM]);
+
+    useEffect(() => {
+        // Get accCode from headerForm after session storage loads
+        if (headerForm.CUSTOMER && !accCode) {
+            setAccCode(Number(headerForm.CUSTOMER));
+        }
+    }, [headerForm.CUSTOMER]);
+
 
     const [closingDetails, setClosingDetails] = useState<ClosingFormDetails>(() => {
         // Load from localStorage on initial state only
@@ -277,14 +325,46 @@ export default function PurchasePage() {
     const { data: openingBalance ,refetch:openingBalanceRefetch  } = useOpeningBalance(Number(accCode));
 
     console.log(openingBalance,'openingBalance')
+
+
     // Note: This hook might need to be updated to handle multiple transaction types
     const { data: transactionList, isLoading, refetch: refetchTransactionList } = useTransactions(
-        selectedTransactionTypes[0]?.value, // Using first type for now
-        Number(accCode),
+        selectedTransactionTypes[0]?.value,
+        Number(accCode), // This will be 0 or NaN when not set
         startDate,
         endDate,
         itemCode
     );
+
+    console.log(transactionList,'transactionList');
+
+    useEffect(() => {
+        console.log('TransactionList changed:', {
+            transactionList: transactionList,
+            hasBillNo: transactionList?.data?.BILLNO,
+            billNo: transactionList?.data?.BILLNO,
+            currentBillNo: headerForm.BILLNO,
+            hasCustomer: headerForm.CUSTOMER
+        });
+
+        if (transactionList?.data?.BILLNO &&
+            headerForm.CUSTOMER &&
+            transactionList.data.BILLNO !== headerForm.BILLNO) {
+
+            console.log('Updating BILLNO to:', transactionList.data.BILLNO);
+            setHeaderForm(prev => ({
+                ...prev,
+                BILLNO: transactionList.data.BILLNO
+            }));
+        }
+    }, [transactionList, headerForm.CUSTOMER]);// Remove headerForm.BILLNO from dependencies
+
+    // Optional: Log to debug
+    useEffect(() => {
+        console.log('Current headerForm from session storage:', headerForm);
+    }, [headerForm]);
+
+
 
     const [apiBalanceOpening, setApiBalanceOpening] = useState({
         openPure: 0,
@@ -939,13 +1019,14 @@ export default function PurchasePage() {
     // Load from localStorage on mount
     useEffect(() => {
         const savedDraft = localStorage.getItem(DRAFT_KEY);
-        const savedHeader = localStorage.getItem(HEADER_KEY);
+        // const savedHeader = localStorage.getItem(HEADER_KEY);
+        // console.log(savedHeader,'savedHeader')
         const savedType = localStorage.getItem(TYPE_KEY);
 
-        if (savedHeader) {
-            const headerValues = JSON.parse(savedHeader);
-            setAccCode(Number(headerValues?.CUSTOMER));
-        }
+        // if (savedHeader) {
+        //     const headerValues = JSON.parse(savedHeader);
+        //     setAccCode(Number(headerValues?.CUSTOMER));
+        // }
 
         if (savedDraft) {
             try {
@@ -958,14 +1039,14 @@ export default function PurchasePage() {
             }
         }
 
-        if (savedHeader) {
-            try {
-                setHeaderForm(JSON.parse(savedHeader));
-            } catch (e) {
-                console.error("Failed to parse header:", e);
-                localStorage.removeItem(HEADER_KEY);
-            }
-        }
+        // if (savedHeader) {
+        //     try {
+        //         setHeaderForm(JSON.parse(savedHeader));
+        //     } catch (e) {
+        //         console.error("Failed to parse header:", e);
+        //         localStorage.removeItem(HEADER_KEY);
+        //     }
+        // }
 
         if (savedType) {
             try {
@@ -984,7 +1065,7 @@ export default function PurchasePage() {
 
         return () => {
             localStorage.removeItem(DRAFT_KEY);
-            localStorage.removeItem(HEADER_KEY);
+            // localStorage.removeItem(HEADER_KEY);
             localStorage.removeItem(TYPE_KEY);
             localStorage.removeItem(DATE_RANGE_KEY);
             localStorage.removeItem(ITEMID);
@@ -1004,9 +1085,9 @@ export default function PurchasePage() {
     }, [showFilter]);
 
    
-    useEffect(() => {
-        localStorage.setItem(HEADER_KEY, JSON.stringify(headerForm));
-    }, [headerForm]);
+    // useEffect(() => {
+    //     localStorage.setItem(HEADER_KEY, JSON.stringify(headerForm));
+    // }, [headerForm]);
 
     useEffect(() => {
         if (selectedTransactionTypes.length > 0) {
@@ -1433,9 +1514,11 @@ export default function PurchasePage() {
     /* ================================
        Header Form Handlers
     ================================ */
+
     const handleHeaderChange = (field: string, value: any) => {
         setHeaderForm(prev => ({ ...prev, [field]: value }));
     };
+
 
     const handleShowFilter = { openFilter }
 
@@ -1467,30 +1550,22 @@ export default function PurchasePage() {
 
 
     const handleCustomerSelect = (customerValue: string, customerLabel: string) => {
-        if (isEditing) {
-            toaster.create({
-                title: "Cannot Change Customer",
-                description: "Customer cannot be changed when editing a transaction.",
-                type: "warning",
-            });
-            return;
-        }
-
-        console.log('Selected customer:', customerValue, customerLabel); // Add this for debugging
+        if (isEditing) return; // skip if editing
 
         setHeaderForm(prev => ({
             ...prev,
-            CUSTOMER: customerValue || "",      // allow clearing
-            CUSTOMER_NAME: customerLabel || "", // clear name as well
+            CUSTOMER: customerValue || "",
+            CUSTOMER_NAME: customerLabel || "",
+            BILLNO: transactionList?.data?.BILLNO || prev.BILLNO, // keep prev if undefined
         }));
 
         setAccCode(customerValue ? Number(customerValue) : "");
 
-        // Add a small delay to ensure state is updated before refetching
         setTimeout(() => {
             refetchTransactionList();
         }, 100);
     };
+
     /* ================================
        Date Range Handlers
     ================================ */
@@ -1728,9 +1803,9 @@ export default function PurchasePage() {
                 const isIssue = transactionType ? isIssueType(transactionType) : false;
 
                 // Manual override tracking
-                // if (field === "AWT") row.__manual_AWT = true;
-                // if (field === "ATOUCH") row.__manual_ATOUCH = true;
-                // if (field === "APUREWT") row.__manual_APUREWT = true;
+                if (field === "AWT") row.__manual_AWT = true;
+                if (field === "ATOUCH") row.__manual_ATOUCH = true;
+                if (field === "APUREWT") row.__manual_APUREWT = true;
                 if (field === "WT") row.__manual_AWT = false;
                 if (field === "TOUCH") row.__manual_ATOUCH = false;
 
@@ -1801,13 +1876,13 @@ export default function PurchasePage() {
                         row.PURE = ((wt * touch) / 100).toFixed(3);
                     }
 
-                    // if (field === "AWT" || field === "ATOUCH") {
-                    //     const wt = Number(row.AWT) || 0;
-                    //     const touch = Number(row.ATOUCH) || 0;
-                    //     if (!row.__manual_APUREWT) {
-                    //         row.APUREWT = ((wt * touch) / 100).toFixed(3);
-                    //     }
-                    // }
+                    if (field === "AWT" || field === "ATOUCH") {
+                        const wt = Number(row.AWT) || 0;
+                        const touch = Number(row.ATOUCH) || 0;
+                        if (!row.__manual_APUREWT) {
+                            row.APUREWT = ((wt * touch) / 100).toFixed(3);
+                        }
+                    }
                 }
 
                 row.__previewSno = rowIndex + 1;
@@ -2318,7 +2393,7 @@ console.log(typeRows,'typeRows')
             // Clear local storage keys
             [
                 DRAFT_KEY,
-                HEADER_KEY,
+                // HEADER_KEY,
                 TYPE_KEY,
                 DATE_RANGE_KEY,
                 ITEMID,
@@ -2453,8 +2528,8 @@ console.log(typeRows,'typeRows')
                         openingBalance={apiBalanceOpening}
                         openingData={openingBalance}
                         isEditing={isEditing}
-                        entryNo={transactionList?.data?.ENTRYNO}
-                        billNo={transactionList?.data?.BILLNO}
+                        // entryNo={transactionList?.data?.ENTRYNO}
+                        // billNo={transactionList?.data?.BILLNO}
                    
                     />
 
@@ -2670,34 +2745,7 @@ console.log(typeRows,'typeRows')
                                     </Box>
                          
                         )}
-                    {/* Save Transaction Bar - appears once for all tables */}
-                    {/* {draftRows.length > 0 && (
-                        <Box
-                            position="sticky"
-                            bottom="0"
-                            left="0"
-                            right="0"
-                            zIndex="10"
-                            p={2} 
-                           
-                        >
-                            <Flex justify='start'>
-                                <Box w={'100%'} bg={theme.colors.formColor}  rounded='lg'>
-                                    <SaveTransactionBar
-                                        draftCount={draftRows.length}
-                                        onSave={isEditing ? handleUpdateTransaction : handleSaveTransaction}
-                                        onReset={handleResetDraft}
-                                        isSaving={
-                                            createTransaction.isPending || updateTransaction.isPending
-                                        }
-                                        isEditing={isEditing}
-                                        theme={theme}
-                                    />
-                                </Box>
-                            </Flex>
-                      </Box>    
-                     
-                    )} */}
+                   
                 </VStack>
 
                    
