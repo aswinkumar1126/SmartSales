@@ -80,6 +80,10 @@ type TransactionRow ={
     MC?:number;
 }
 
+interface DateRangeType {
+    startDate: string | null;
+    endDate: string | null;
+}
 
 /* ================================
    Main Component
@@ -91,56 +95,33 @@ export default function PurchasePage() {
     const initialDraftRowsRef = useRef<any[]>([]);
     const initialClosingRef = useRef<ClosingDetails>(null);
 
-    
-    console.log(initialClosingRef,'initialClosingRef')
-
     /* ================================
-       Local Storage Keys
+       Session Storage Keys (All in one place)
     ================================ */
 
     const HEADER_KEY = "transaction_header";
-
     const DRAFT_KEY = "transaction_draft";
     const TYPE_KEY = "transaction_type";
     const DATE_RANGE_KEY = "transaction_date_range";
-    const ITEMID = "transaction_itemid";
-    const FILTER = "show_filter";
-    const EDITING = "isEditing";
-    const EDITING_SNO = "editing_sno";
-
+    const ITEMID_KEY = "transaction_itemid";
+    const FILTER_KEY = "show_filter";
+    const EDITING_KEY = "isEditing";
+    const EDITING_SNO_KEY = "editing_sno";
     const STONE_MASTER_KEY = "STONE_MASTER";
     const CLOSING_DETAILS_KEY = "CLOSING_DETAILS";
+    const MISC_CHARGE_KEY = "MISC_CHARGE_MASTER";
+    const BANK_PAID_PREFIX = "BANK_PAID_bank-paid-";
+    const BANK_RCVD_PREFIX = "BANK_RECEIVED_bank-rcvd-";
 
 
-
-    const [accCode, setAccCode] = useState<number | undefined | null | string>();
-    const [showFilter, setShowFilter] = useState<boolean>(false);
-    const [loading, setLoading] = useState<boolean>(true);
-    const [purchaserList, setPurchaserList] = useState<{ label: string, value: string }[]>([]);
-
-    const [filter, setFilter] = useState<string>('');
-    const [isStockDrawerOpen, setIsStockDrawerOpen] = useState(false);
-
-    const [showStock, setShowStock] = useState<string>("PURE");
-    const [pureGoldList, setPureGoldList] = useState<{ label: string, value: string }[]>([]);
-    const [metalList, setMetalList] = useState<{ label: string, value: string }[]>([]);
-    const [otherCharges, setOtherCharges] = useState<{ label: string, value: string }[]>([]);
-
-    const [metalId, setMetalId] = useState<string | undefined>();
-    
-    const [transactionResetSignal, setTransactionResetSignal] = useState(false);
-
-    
-
-
-    const [selectedName, setSelectedName] = useState<string | undefined>();
+  
     // const [itemsStockList, setItemsStockList] = useState<{ label: string, value: string }[]>([]);
 
     const TRANSACTIONTYPES_ORDER = ["PU", "PR", "ISP", "REC"];
 
 
 
-    const [isFilterOpen, setIsFilterOpen] = useState(false);
+   
     const openFilter = () => setIsFilterOpen(true);
     const closeFilter = () => setIsFilterOpen(false);
 
@@ -151,15 +132,52 @@ export default function PurchasePage() {
         transactionType: string | null;
     }>({ rowId: null, transactionType: null });
 
+
+
+    /*------------------- LOCAL STATE NON-PERSISTENT -------------------------------*/
+    
+    // Regular state (non-persistent)
+    const [accCode, setAccCode] = useState<number | undefined | null | string>();
+    const [loading, setLoading] = useState<boolean>(true);
+    const [purchaserList, setPurchaserList] = useState<{ label: string, value: string }[]>([]);
+    const [filter, setFilter] = useState<string>('');
+    const [isStockDrawerOpen, setIsStockDrawerOpen] = useState(false);
+    const [showStock, setShowStock] = useState<string>("PURE");
+    const [pureGoldList, setPureGoldList] = useState<{ label: string, value: string }[]>([]);
+    const [metalList, setMetalList] = useState<{ label: string, value: string }[]>([]);
+    const [otherCharges, setOtherCharges] = useState<{ label: string, value: string }[]>([]);
+    const [metalId, setMetalId] = useState<string | undefined>();
+    const [transactionResetSignal, setTransactionResetSignal] = useState(false);
+    const [selectedName, setSelectedName] = useState<string | undefined>();
+    const [isFilterOpen, setIsFilterOpen] = useState(false);
+    const [selectedTransactionId, setSelectedTransactionId] = useState<string | null>(null);
+    const [apiBalanceOpening, setApiBalanceOpening] = useState({ openPure: 0, openCash: 0 });
+    const [openingBalances, setOpeningBalances] = useState({ openPure: 0, openCash: 0 });
+
+
+
     const {data:metalRates ,isLoading:metalRatesLoading ,isError:metalRatesError} = useRates();
 
+    /*-------------------PERSISTENT STATE-------------------------------*/
 
-    // console.log(metalRate, 'metalRate');
 
+    const [showFilter, setShowFilter] = useSessionStorage <boolean>(FILTER_KEY, false);
+
+    const [itemCode, setItemCode] = useSessionStorage<number|null> (ITEMID_KEY, null);
+
+    const [isEditing, setIsEditing] = useSessionStorage(EDITING_KEY, false);
+
+    const [editingSno, setEditingSno] = useSessionStorage<string|null>(EDITING_SNO_KEY, null);
+
+    const [dateRange, setDateRange] = useSessionStorage<DateRangeType>(DATE_RANGE_KEY, {
+        startDate: null,
+        endDate: null
+    });
 
     /* ================================
        State Management
     ================================ */
+
     useEffect(() => {
         const timer = setTimeout(() => {
             setLoading(false);
@@ -167,10 +185,7 @@ export default function PurchasePage() {
         return () => clearTimeout(timer);
     }, []);
 
-    // const getStoredRate = () => {
-    //     const stored = localStorage.getItem(RATE_KEY);
-    //     return stored ? stored : "";
-    // };
+
 
     // Transaction header state
     const [headerForm, setHeaderForm] = useSessionStorage( HEADER_KEY, {
@@ -181,35 +196,6 @@ export default function PurchasePage() {
         CUSTOMER: "",
         CUSTOMER_NAME: "",
     }  );
-
-
-
-    // useEffect(() => {
-    //     if (!metalRates) return;
-
-    //     const storedRate = localStorage.getItem(RATE_KEY);
-
-    //     // If rate already exists in headerForm, don't override
-    //     if (headerForm.RATEGM) return;
-
-    //     // Priority 1: localStorage rate
-    //     if (storedRate) {
-    //         setHeaderForm(prev => ({
-    //             ...prev,
-    //             RATEGM: storedRate
-    //         }));
-    //         return;
-    //     }
-
-    //     // Priority 2: API rate
-    //     const apiRate = formatToFixed(metalRates["GOLD 916.00"], 2);
-
-    //     setHeaderForm(prev => ({
-    //         ...prev,
-    //         RATEGM: apiRate
-    //     }));
-
-    // }, [metalRates, headerForm.RATEGM]);
 
     useEffect(() => {
         if (!metalRates) return;
@@ -258,27 +244,19 @@ export default function PurchasePage() {
     });
     
 
-    const [isEditing, setIsEditing] = useState(false);
-    const [editingSno, setEditingSno] = useState<string | null>(null);
 
     // Transaction type & draft state
-    const [selectedTransactionTypes, setSelectedTransactionTypes] = useState<TransactionType[]>([]);
+    const [selectedTransactionTypes, setSelectedTransactionTypes] = useSessionStorage<TransactionType[]>(TYPE_KEY, []);
 
 
     // Draft rows (local storage backed)
     const [draftRows, setDraftRows] = useState<any[]>([]);
 
-    // const [editingRowId, setEditingRowId] = useState<string | number | null>(null);
-
-    // History state
-
-    const [selectedTransactionId, setSelectedTransactionId] = useState<string | null>(null);
-
     // Date range state with localStorage persistence
-    const [startDate, setStartDate] = useState<string | null>(null);
-    const [endDate, setEndDate] = useState<string | null>(null);
-    const [itemCode, setItemCode] = useState<number | null>(null);
 
+    // You can still have individual variables if needed for existing code
+    const startDate = dateRange.startDate;
+    const endDate = dateRange.endDate;
     
 
     const { theme } = useTheme();
@@ -337,27 +315,23 @@ export default function PurchasePage() {
     );
 
     console.log(transactionList,'transactionList');
+    console.log(isEditing,'isEditing');
+    console.log(headerForm,'headerFormTransaction')
 
     useEffect(() => {
-        console.log('TransactionList changed:', {
-            transactionList: transactionList,
-            hasBillNo: transactionList?.data?.BILLNO,
-            billNo: transactionList?.data?.BILLNO,
-            currentBillNo: headerForm.BILLNO,
-            hasCustomer: headerForm.CUSTOMER
-        });
+        if (!headerForm.CUSTOMER) {
 
-        if (transactionList?.data?.BILLNO &&
-            headerForm.CUSTOMER &&
-            transactionList.data.BILLNO !== headerForm.BILLNO) {
+            setHeaderForm(prev => ({ ...prev, BILLNO: "" }));
 
-            console.log('Updating BILLNO to:', transactionList.data.BILLNO);
+        } else if (transactionList?.data?.BILLNO && !isEditing) {
+
             setHeaderForm(prev => ({
                 ...prev,
                 BILLNO: transactionList.data.BILLNO
             }));
         }
-    }, [transactionList, headerForm.CUSTOMER]);// Remove headerForm.BILLNO from dependencies
+    }, [transactionList?.data?.BILLNO, headerForm.CUSTOMER, isEditing]);
+
 
     // Optional: Log to debug
     useEffect(() => {
@@ -366,15 +340,6 @@ export default function PurchasePage() {
 
 
 
-    const [apiBalanceOpening, setApiBalanceOpening] = useState({
-        openPure: 0,
-        openCash: 0
-    });
-
-    const [openingBalances, setOpeningBalances] = useState({
-        openPure: 0,
-        openCash: 0
-    });
 
     console.log(openingBalances,'openingBalances')
 
@@ -961,73 +926,15 @@ export default function PurchasePage() {
     /* ================================
        Local Storage Persistence
     ================================ */
-    useEffect(() => {
-        const saved = localStorage.getItem(DATE_RANGE_KEY);
-        if (!saved) return;
-        try {
-            const parsed = JSON.parse(saved);
-            setStartDate(parsed.startDate ?? null);
-            setEndDate(parsed.endDate ?? null);
-        } catch {
-            localStorage.removeItem(DATE_RANGE_KEY);
-        }
-    }, []);
 
-    useEffect(() => {
-        const savedItemCode = localStorage.getItem(ITEMID);
-        if (!savedItemCode) return;
-        try {
-            const parsed = JSON.parse(savedItemCode);
-            setItemCode(Number(parsed));
-        } catch {
-            localStorage.removeItem(ITEMID);
-        }
-    }, []);
-
-    useEffect(() => {
-        const filter = localStorage.getItem(FILTER);
-        if (!filter) return;
-        try {
-            const parsed = JSON.parse(filter);
-            setShowFilter(parsed);
-        } catch {
-            localStorage.removeItem(FILTER);
-        }
-    }, []);
-
-    useEffect(() => {
-        const editing = localStorage.getItem(EDITING);
-        const sno = localStorage.getItem(EDITING_SNO);
-        if (!editing) return;
-        try {
-            const parsedEditing = JSON.parse(editing);
-            setIsEditing(parsedEditing);
-
-            if (sno) {
-                const parsedSno = JSON.parse(sno);
-                setEditingSno(parsedSno);
-            }
-
-        }
-        catch {
-            localStorage.removeItem(EDITING);
-            localStorage.removeItem(EDITING_SNO);
-        }
-    }, [])
 
 
     // Load from localStorage on mount
     useEffect(() => {
         const savedDraft = localStorage.getItem(DRAFT_KEY);
-        // const savedHeader = localStorage.getItem(HEADER_KEY);
-        // console.log(savedHeader,'savedHeader')
         const savedType = localStorage.getItem(TYPE_KEY);
 
-        // if (savedHeader) {
-        //     const headerValues = JSON.parse(savedHeader);
-        //     setAccCode(Number(headerValues?.CUSTOMER));
-        // }
-
+      
         if (savedDraft) {
             try {
                 const parsed = JSON.parse(savedDraft);
@@ -1039,14 +946,7 @@ export default function PurchasePage() {
             }
         }
 
-        // if (savedHeader) {
-        //     try {
-        //         setHeaderForm(JSON.parse(savedHeader));
-        //     } catch (e) {
-        //         console.error("Failed to parse header:", e);
-        //         localStorage.removeItem(HEADER_KEY);
-        //     }
-        // }
+     
 
         if (savedType) {
             try {
@@ -1068,10 +968,6 @@ export default function PurchasePage() {
             // localStorage.removeItem(HEADER_KEY);
             localStorage.removeItem(TYPE_KEY);
             localStorage.removeItem(DATE_RANGE_KEY);
-            localStorage.removeItem(ITEMID);
-            localStorage.removeItem(FILTER);
-            localStorage.removeItem(EDITING);
-            localStorage.removeItem(EDITING_SNO);
         };
     }, []);
 
@@ -1080,14 +976,7 @@ export default function PurchasePage() {
         localStorage.setItem(DRAFT_KEY, JSON.stringify(draftRows));
     }, [draftRows]);
 
-    useEffect(() => {
-        localStorage.setItem(FILTER, JSON.stringify(showFilter));
-    }, [showFilter]);
 
-   
-    // useEffect(() => {
-    //     localStorage.setItem(HEADER_KEY, JSON.stringify(headerForm));
-    // }, [headerForm]);
 
     useEffect(() => {
         if (selectedTransactionTypes.length > 0) {
@@ -1097,38 +986,8 @@ export default function PurchasePage() {
         }
     }, [selectedTransactionTypes]);
 
-    useEffect(() => {
-        if (itemCode !== null) {
-            localStorage.setItem(ITEMID, JSON.stringify(itemCode));
-        }
-    }, [itemCode]);
-
-    useEffect(() => {
-        if (startDate || endDate) {
-            localStorage.setItem(
-                DATE_RANGE_KEY,
-                JSON.stringify({ startDate, endDate })
-            );
-        } else {
-            localStorage.removeItem(DATE_RANGE_KEY);
-        }
-    }, [startDate, endDate]);
-
-    useEffect(() => {
-        if (isEditing) {
-            localStorage.setItem(EDITING, JSON.stringify(isEditing));
-            if (editingSno) {
-                localStorage.setItem(EDITING_SNO, JSON.stringify(editingSno));
-            }
-        }
-        else {
-            localStorage.removeItem(EDITING);
-            localStorage.removeItem(EDITING_SNO);
-        }
-    }, [isEditing, editingSno]);
 
  
-
     /* ================================
        Load Transaction Data When Selected
     ================================ */
@@ -1139,26 +998,6 @@ export default function PurchasePage() {
             handleEditTransaction(transactionsById, selectedTransactionId);
         }
     }, [transactionsById, selectedTransactionId]);
-
-    useEffect(() => {
-        const transactionDetails = transactionList?.data;
-
-        console.log(transactionDetails,'transactionDetails')
-
-        if (transactionDetails) {
-            console.log('Transaction details updated:', transactionDetails);
-
-            setHeaderForm(prev => ({
-                ...prev,
-                CUSTOMER: transactionDetails.ACCODE ? String(transactionDetails.ACCODE) : prev.CUSTOMER,
-                CUSTOMER_NAME: transactionDetails.ACNAME ,
-                DATE: transactionDetails.TRANDATE || new Date().toISOString().split("T")[0],
-                BILLNO: transactionDetails.BILLNO ,
-                ENTRYNO: transactionDetails.ENTRYNO ,
-                RATEGM: transactionDetails.RATEGM || prev.RATEGM,
-            }));
-        }
-    }, [transactionList]);
 
 
 
@@ -1213,7 +1052,8 @@ export default function PurchasePage() {
         // After setAccCode(transactionDetails.ACCODE);
 
         // Try different possible data structures
-        const transactionDetails = transactionData.header;
+        const transactionHeaderDetails = transactionData.TRANSACTION_HEADER;
+        const transactionClosingDetails = transactionData.CLOSING_DETAILS;
 
         // Collect ALL transaction types that have data
         let transactionTypes: string[] = [];
@@ -1270,32 +1110,32 @@ export default function PurchasePage() {
         console.log('Total transaction items:', allTransactionItems.length);
 
         // 1. Load transaction details into header form
-        if (transactionDetails) {
+        if (transactionHeaderDetails) {
             setHeaderForm(prev => ({
                 ...prev,
-                CUSTOMER: transactionDetails.ACCODE ? String(transactionDetails.ACCODE) : "",
-                CUSTOMER_NAME: transactionDetails.ACNAME || "",
-                DATE: transactionDetails.TRANDATE || new Date().toISOString().split("T")[0],
-                BILLNO: transactionDetails.BILLNO || "",
-                ENTRYNO: transactionDetails.ENTRYNO || "",
-                RATEGM: transactionDetails.RATE || transactionDetails.RATEGM || prev.RATEGM,
+                CUSTOMER: transactionHeaderDetails.ACCODE ? String(transactionHeaderDetails.ACCODE) : "",
+                CUSTOMER_NAME: transactionHeaderDetails.ACNAME || "",
+                DATE: transactionHeaderDetails.TRANDATE || new Date().toISOString().split("T")[0],
+                BILLNO: transactionHeaderDetails.BILLNO || "",
+                ENTRYNO: transactionHeaderDetails.ENTRYNO || "",
+                RATEGM: transactionHeaderDetails.RATE || transactionHeaderDetails.RATEGM || prev.RATEGM,
             }));
 
-            setAccCode(transactionDetails.ACCODE);
+            setAccCode(transactionHeaderDetails.ACCODE);
             
-            if (transactionDetails) {
+            if (transactionClosingDetails) {
                 const loadedClosingDetails: ClosingFormDetails = {
-                    convType: transactionDetails.CONVTYPE || "",
-                    convAmt: transactionDetails.CONVAMT ? String(transactionDetails.CONVAMT) : "",
-                    convWt: transactionDetails.CONVWT ? String(transactionDetails.CONVWT) : "",
-                    discAmt: transactionDetails.DISCAMT ? String(transactionDetails.DISCAMT) : "",
-                    discWt: transactionDetails.DISCWT ? String(transactionDetails.DISCWT) : "",
-                    cashPaid: transactionDetails.CASHPAID ? String(transactionDetails.CASHPAID) : "",
-                    cashRcvd: transactionDetails.CASHRCVD ? String(transactionDetails.CASHRCVD) : "",
-                    bankPaid: transactionDetails.BANKPAID ? String(transactionDetails.BANKPAID) : "",
-                    bankRcvd: transactionDetails.BANKRCVD ? String(transactionDetails.BANKRCVD) : "",
-                    bankPaidDetails: transactionDetails.bankPaidDetails || [],
-                    bankRcvdDetails: transactionDetails.bankRcvdDetails || [],
+                    convType: transactionClosingDetails.CONVTYPE || "",
+                    convAmt: transactionClosingDetails.CONVAMT ? String(transactionClosingDetails.CONVAMT) : "",
+                    convWt: transactionClosingDetails.CONVWT ? String(transactionClosingDetails.CONVWT) : "",
+                    discAmt: transactionClosingDetails.DISCAMT ? String(transactionClosingDetails.DISCAMT) : "",
+                    discWt: transactionClosingDetails.DISCWT ? String(transactionClosingDetails.DISCWT) : "",
+                    cashPaid: transactionClosingDetails.CASHPAID ? String(transactionClosingDetails.CASHPAID) : "",
+                    cashRcvd: transactionClosingDetails.CASHRCVD ? String(transactionClosingDetails.CASHRCVD) : "",
+                    bankPaid: transactionClosingDetails.BANKPAID ? String(transactionClosingDetails.BANKPAID) : "",
+                    bankRcvd: transactionClosingDetails.BANKRCVD ? String(transactionClosingDetails.BANKRCVD) : "",
+                    bankPaidDetails: transactionClosingDetails.bankPaidDetails || [],
+                    bankRcvdDetails: transactionClosingDetails.bankRcvdDetails || [],
                 };
 
                 // ✅ Set in parent state
@@ -1306,7 +1146,7 @@ export default function PurchasePage() {
                 localStorage.setItem("CLOSING_DETAILS", JSON.stringify(loadedClosingDetails));
 
                 // ✅ Also persist bank details under their stable keys
-                const accCode = transactionDetails.ACCODE;
+                const accCode = transactionHeaderDetails.ACCODE;
                 if (accCode) {
                     if (loadedClosingDetails.bankPaidDetails.length > 0) {
                         localStorage.setItem(
@@ -1520,6 +1360,8 @@ export default function PurchasePage() {
     };
 
 
+
+
     const handleShowFilter = { openFilter }
 
     useEffect(() => {
@@ -1556,7 +1398,7 @@ export default function PurchasePage() {
             ...prev,
             CUSTOMER: customerValue || "",
             CUSTOMER_NAME: customerLabel || "",
-            BILLNO: transactionList?.data?.BILLNO || prev.BILLNO, // keep prev if undefined
+            // BILLNO: transactionList?.data?.BILLNO || "", // keep prev if undefined
         }));
 
         setAccCode(customerValue ? Number(customerValue) : "");
@@ -1569,16 +1411,23 @@ export default function PurchasePage() {
     /* ================================
        Date Range Handlers
     ================================ */
-    const handleStartDateChange = (val?: string) => {
-        setStartDate(val || null);
-        localStorage.setItem(DATE_RANGE_KEY, JSON.stringify({ startDate: val || null, endDate }));
-    };
 
-    const handleEndDateChange = (val?: string) => {
-        setEndDate(val || null);
-        localStorage.setItem(DATE_RANGE_KEY, JSON.stringify({ startDate, endDate: val || null }));
-    };
 
+
+// Update handlers - NO localStorage calls needed!
+const handleStartDateChange = (val?: string) => {
+    setDateRange(prev => ({ 
+        ...prev, 
+        startDate: val || null 
+    }));
+};
+
+const handleEndDateChange = (val?: string) => {
+    setDateRange(prev => ({ 
+        ...prev, 
+        endDate: val || null 
+    }));
+};
     /* ================================
        Transaction Type Handlers
     ================================ */
@@ -2396,10 +2245,10 @@ console.log(typeRows,'typeRows')
                 // HEADER_KEY,
                 TYPE_KEY,
                 DATE_RANGE_KEY,
-                ITEMID,
-                FILTER,
-                EDITING,
-                EDITING_SNO,
+                // ITEMID,
+                // FILTER,
+                // EDITING,
+                // EDITING_SNO,
             ].forEach(key => localStorage.removeItem(key));
 
             toaster.create({
@@ -2464,6 +2313,7 @@ console.log(typeRows,'typeRows')
         setDraftRows([]);
         setIsEditing(false);
     }, []);
+
 
     const handleSelectItemCode = useCallback((id: number | null) => {
         setItemCode(id);
