@@ -52,7 +52,7 @@ import { useSessionStorage } from "@/hooks/storage/useSessionStorage";
 // Types & Constants
 import { TransactionType, UpdateTransactionPayload, TransactionKey, CreateTransaction, TransactionItems, TRANSACTION_KEY_MAP, ClosingDetails } from "@/types/transcation/Transaction";
 import { TRANSACTIONTYPES } from "@/data/Transaction/TransactionType";
-
+import { BankTransaction } from "./Balance/BankTransactionModal";
 
 //Utilities
 import { formatToFixed} from '@/utils/format/numberFormat';
@@ -108,8 +108,9 @@ export default function PurchasePage() {
     const EDITING_KEY = "isEditing";
     const EDITING_SNO_KEY = "editing_sno";
     const STONE_MASTER_KEY = "STONE_MASTER";
-    const CLOSING_DETAILS_KEY = "CLOSING_DETAILS";
     const MISC_CHARGE_KEY = "MISC_CHARGE_MASTER";
+    const CLOSING_DETAILS_KEY = "CLOSING_DETAILS";
+  
     const BANK_PAID_PREFIX = "BANK_PAID_bank-paid-";
     const BANK_RCVD_PREFIX = "BANK_RECEIVED_bank-rcvd-";
 
@@ -153,6 +154,9 @@ export default function PurchasePage() {
     const [selectedTransactionId, setSelectedTransactionId] = useState<string | null>(null);
     const [apiBalanceOpening, setApiBalanceOpening] = useState({ openPure: 0, openCash: 0 });
     const [openingBalances, setOpeningBalances] = useState({ openPure: 0, openCash: 0 });
+
+    const [closingCash, setClosingCash] = useState(0);
+    const [closingPure, setClosingPure] = useState(0);
 
 
 
@@ -215,20 +219,9 @@ export default function PurchasePage() {
     }, [headerForm.CUSTOMER]);
 
 
-    const [closingDetails, setClosingDetails] = useState<ClosingFormDetails>(() => {
-        // Load from localStorage on initial state only
-        const saved = localStorage.getItem(CLOSING_DETAILS_KEY);
-        if (saved) {
-            try {
-                return JSON.parse(saved) as ClosingFormDetails;
-            } catch (e) {
-                console.error("Failed to parse closing details:", e);
-                localStorage.removeItem(CLOSING_DETAILS_KEY);
-            }
-        }
-
-        // Default state if nothing in localStorage
-        return {
+    const [closingDetails, setClosingDetails] = useSessionStorage<ClosingFormDetails>(
+        CLOSING_DETAILS_KEY,
+        {
             convType: "",
             convAmt: "",
             convWt: "",
@@ -240,9 +233,8 @@ export default function PurchasePage() {
             bankRcvd: "",
             bankPaidDetails: [],
             bankRcvdDetails: [],
-        };
-    });
-    
+        }
+    );
 
 
     // Transaction type & draft state
@@ -320,28 +312,22 @@ export default function PurchasePage() {
 
     useEffect(() => {
         if (!headerForm.CUSTOMER) {
-
-            setHeaderForm(prev => ({ ...prev, BILLNO: "" }));
-
-        } else if (transactionList?.data?.BILLNO && !isEditing) {
-
+            // Clear both BILLNO and ENTRYNO when no customer is selected
             setHeaderForm(prev => ({
                 ...prev,
-                BILLNO: transactionList.data.BILLNO
+                BILLNO: "",
+                ENTRYNO: ""
+            }));
+        } else if (transactionList?.data?.BILLNO && !isEditing) {
+            // Set both BILLNO and ENTRYNO when transaction data is available
+            setHeaderForm(prev => ({
+                ...prev,
+                BILLNO: transactionList.data.BILLNO,
+                ENTRYNO: transactionList.data.ENTRYNO
             }));
         }
-    }, [transactionList?.data?.BILLNO, headerForm.CUSTOMER, isEditing]);
-
-
-    // Optional: Log to debug
-    useEffect(() => {
-        console.log('Current headerForm from session storage:', headerForm);
-    }, [headerForm]);
-
-
-
-
-    console.log(openingBalances,'openingBalances')
+    }, [transactionList?.data, headerForm.CUSTOMER, isEditing]);
+    // Note: Using transactionList?.data as dependency instead of just BILLNO
 
     useEffect(() => {
 
@@ -1364,31 +1350,7 @@ export default function PurchasePage() {
 
     const handleShowFilter = { openFilter }
 
-    useEffect(() => {
-        if (isFirstRender.current) {
-            isFirstRender.current = false;
-            return; // Skip first render (important for refresh)
-        }
-
-        if (!accCode) {
-            localStorage.removeItem(CLOSING_DETAILS_KEY);
-
-            setClosingDetails({
-                convType: "",
-                convAmt: "",
-                convWt: "",
-                discAmt: "",
-                discWt: "",
-                cashPaid: "",
-                cashRcvd: "",
-                bankPaid: "",
-                bankRcvd: "",
-                bankPaidDetails: [],
-                bankRcvdDetails: [],
-            });
-        }
-
-    }, [accCode]);
+   
 
 
     const handleCustomerSelect = (customerValue: string, customerLabel: string) => {
@@ -1398,7 +1360,6 @@ export default function PurchasePage() {
             ...prev,
             CUSTOMER: customerValue || "",
             CUSTOMER_NAME: customerLabel || "",
-            // BILLNO: transactionList?.data?.BILLNO || "", // keep prev if undefined
         }));
 
         setAccCode(customerValue ? Number(customerValue) : "");
@@ -1464,19 +1425,131 @@ const handleEndDateChange = (val?: string) => {
     /* ================================
           CLOSING DETAILS FORM
        ================================ */
+   
 
-    // In parent — add this
     const closingDetailsRef = useRef(closingDetails);
-    useEffect(() => { closingDetailsRef.current = closingDetails; }, [closingDetails]);
 
-    const handleClosingDetailsChange = useCallback((details: ClosingFormDetails) => {
-        closingDetailsRef.current = details; // ✅ immediately sync ref
-        setClosingDetails(details);
-    }, []);
+    useEffect(() => {
+        closingDetailsRef.current = closingDetails;
+    }, [closingDetails]);
 
+    const handleClosingDetailsChange = (field: string, value: any) => {
+        setClosingDetails(prev => ({
+            ...prev,
+            [field]: value
+        }));
+    };
+
+    // Calculate closing balances whenever relevant data changes
+useEffect(() => {
+    if (!openingBalances) return;
+
+    const cashRcvd = parseFloat(closingDetails.cashRcvd || "0") || 0;
+    const cashPaid = parseFloat(closingDetails.cashPaid || "0") || 0;
+    const bankRcvd = closingDetails.bankRcvdDetails.reduce((sum, t) => sum + (t.amount || 0), 0);
+    const bankPaid = closingDetails.bankPaidDetails.reduce((sum, t) => sum + (t.amount || 0), 0);
+
+    let convAmt = parseFloat(closingDetails.convAmt || "") || 0;
+    let convWt = parseFloat(closingDetails.convWt || "") || 0;
+    const conversionType = closingDetails.convType;
+    const rate = Number(headerForm.RATEGM) || 0;
+
+    // Auto-calculate based on conversion type
+    if (rate > 0) {
+        if (conversionType === "P" && convWt > 0) {
+            const calculatedAmt = convWt * rate;
+            if (calculatedAmt.toFixed(2) !== closingDetails.convAmt) {
+                // Update the field with calculated value
+                handleClosingDetailsChange("convAmt", calculatedAmt.toFixed(2));
+            }
+            convAmt = calculatedAmt;
+        } else if (conversionType === "C" && convAmt > 0) {
+            const calculatedWt = convAmt / rate;
+            if (calculatedWt.toFixed(3) !== closingDetails.convWt) {
+                // Update the field with calculated value
+                handleClosingDetailsChange("convWt", calculatedWt.toFixed(3));
+            }
+            convWt = calculatedWt;
+        }
+    }
+
+    let newClosingCash = (openingBalances.openCash || 0) + cashRcvd + bankRcvd - cashPaid - bankPaid;
+    let newClosingPure = (openingBalances.openPure || 0);
+
+    if (conversionType === "C") {
+        newClosingCash -= convAmt;
+        newClosingPure += convWt;
+    }
+    if (conversionType === "P") {
+        newClosingCash += convAmt;
+        newClosingPure -= convWt;
+    }
+
+    if (!isFinite(newClosingCash)) newClosingCash = 0;
+    if (!isFinite(newClosingPure)) newClosingPure = 0;
+
+    setClosingCash(Number(newClosingCash.toFixed(2)));
+    setClosingPure(Number(newClosingPure.toFixed(3)));
+
+}, [closingDetails, openingBalances, headerForm.RATEGM]);
+
+    // Handle bank paid save (from modal)
+    const handleBankPaidSave = (transactions: BankTransaction[], total: number) => {
+        setClosingDetails(prev => ({
+            ...prev,
+            bankPaid: total.toString(),
+            bankPaidDetails: transactions
+        }));
+    };
+
+    // Handle bank received save (from modal)
+    const handleBankRcvdSave = (transactions: BankTransaction[], total: number) => {
+        setClosingDetails(prev => ({
+            ...prev,
+            bankRcvd: total.toString(),
+            bankRcvdDetails: transactions
+        }));
+    };
+
+    // Fix the accCode reset effect
+    useEffect(() => {
+        
+        if (isFirstRender.current) {
+            isFirstRender.current = false;
+            return;
+        }
+
+        // Only reset if accCode is explicitly null/undefined AND we have no stored data
+        if (!accCode) {
+            // Check if we have stored data first
+            const storedData = sessionStorage.getItem(CLOSING_DETAILS_KEY);
+
+            if (!storedData) {
+                const resetDetails = {
+                    convType: "",
+                    convAmt: "",
+                    convWt: "",
+                    discAmt: "",
+                    discWt: "",
+                    cashPaid: "",
+                    cashRcvd: "",
+                    bankPaid: "",
+                    bankRcvd: "",
+                    bankPaidDetails: [],
+                    bankRcvdDetails: [],
+                };
+                setClosingDetails(resetDetails);
+                closingDetailsRef.current = resetDetails;
+                setClosingCash(0);
+                setClosingPure(0);
+            }
+        }
+    }, [accCode, setClosingDetails]);
+
+  
     // ✅ Always reads latest — even before re-render
-    const getClosingDetailsPayload = (): ClosingDetails => {
-        const d = closingDetailsRef.current; // ✅ use ref, not state
+    const getClosingDetailsPayload = useCallback((): ClosingDetails => {
+        const d = closingDetailsRef.current;
         return {
             convType: d.convType,
             convAmt: d.convAmt ? parseFloat(d.convAmt) : 0,
@@ -1490,7 +1563,7 @@ const handleEndDateChange = (val?: string) => {
             bankPaidDetails: d.bankPaidDetails,
             bankRcvdDetails: d.bankRcvdDetails,
         };
-    };
+    }, []);
     
 
     const handleLoadFromStock = (stockRow: any) => {
@@ -2378,8 +2451,6 @@ console.log(typeRows,'typeRows')
                         openingBalance={apiBalanceOpening}
                         openingData={openingBalance}
                         isEditing={isEditing}
-                        // entryNo={transactionList?.data?.ENTRYNO}
-                        // billNo={transactionList?.data?.BILLNO}
                    
                     />
 
@@ -2656,19 +2727,19 @@ console.log(typeRows,'typeRows')
                 <Box position="sticky">
 
 
-                    <BalanceSummary 
-
+                    <BalanceSummary
                         theme={theme}
                         openBalance={openingBalances}
                         closingDetails={closingDetails}
                         onClosingDetailsChange={handleClosingDetailsChange}
-                        storageKey={CLOSING_DETAILS_KEY}
-                        editingState={editingState}
                         accCode={Number(accCode)}
                         rate={Number(headerForm.RATEGM)}
-                        transactionResetSignal= {transactionResetSignal}
-
-                        />
+                        closingCash={closingCash}      // Pass calculated closing cash
+                        closingPure={closingPure}      // Pass calculated closing pure
+                        transactionResetSignal={transactionResetSignal}
+                        onBankPaidSave={handleBankPaidSave}
+                        onBankRcvdSave={handleBankRcvdSave}
+                    />
 
                </Box>
 

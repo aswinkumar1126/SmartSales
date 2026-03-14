@@ -18,7 +18,7 @@ import { toaster } from "@/components/ui/toaster";
 import { useGlobalKey } from "@/components/key/useGlobalKey";
 import { PaymentModes } from "@/data/bankDetails/BankDetailsData";
 
-interface BankTransaction {
+export interface BankTransaction {
     id: string;
     draftRowId: string;
     bankName: string;
@@ -39,6 +39,22 @@ interface BankTransactionModalProps {
     accCode?: number | string | null;
     escapeId?: string;
 }
+
+// Bank names collection
+const bankCollection = {
+    items: [
+        { label: "State Bank of India", value: "SBI" },
+        { label: "HDFC Bank", value: "HDFC" },
+        { label: "ICICI Bank", value: "ICICI" },
+        { label: "Axis Bank", value: "AXIS" },
+        { label: "Punjab National Bank", value: "PNB" },
+        { label: "Bank of Baroda", value: "BOB" },
+        { label: "Canara Bank", value: "CANARA" },
+        { label: "Union Bank", value: "UNION" },
+        { label: "Indian Bank", value: "INDIAN" },
+        { label: "Other", value: "OTHER" },
+    ]
+};
 
 // Define table columns for bank transactions
 const bankTableCols = [
@@ -75,22 +91,6 @@ const getCellStyle = (col: any, extra?: React.CSSProperties): React.CSSPropertie
     ...extra,
 });
 
-// Bank names collection
-const bankCollection = {
-    items: [
-        { label: "State Bank of India", value: "SBI" },
-        { label: "HDFC Bank", value: "HDFC" },
-        { label: "ICICI Bank", value: "ICICI" },
-        { label: "Axis Bank", value: "AXIS" },
-        { label: "Punjab National Bank", value: "PNB" },
-        { label: "Bank of Baroda", value: "BOB" },
-        { label: "Canara Bank", value: "CANARA" },
-        { label: "Union Bank", value: "UNION" },
-        { label: "Indian Bank", value: "INDIAN" },
-        { label: "Other", value: "OTHER" },
-    ]
-};
-
 export const BankTransactionModal = ({
     draftRowId,
     isOpen,
@@ -110,16 +110,14 @@ export const BankTransactionModal = ({
         amount: ""
     };
 
-    const [transactions, setTransactions] = useState<BankTransaction[]>([]);
+    // Local state only - no localStorage
+    const [transactions, setTransactions] = useState<BankTransaction[]>(initialTransactions);
     const [formData, setFormData] = useState(emptyForm);
     const [editId, setEditId] = useState<string | null>(null);
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [touched, setTouched] = useState<Record<string, boolean>>({});
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [isInitialized, setIsInitialized] = useState(false);
 
-    // ✅ hasLoadedRef tracks per-open session, reset when modal closes
-    const hasLoadedRef = useRef(false);
     const submitBtnRef = useRef<HTMLButtonElement>(null);
     const modalContentRef = useRef<HTMLDivElement>(null);
 
@@ -152,72 +150,15 @@ export const BankTransactionModal = ({
         { key: "__actions", label: "ACTION", align: "center" as const },
     ];
 
-    // ✅ FIXED: Single effect handles both open and close
-    // When modal closes → reset everything so next open starts fresh
-    // When modal opens → load from localStorage or initialTransactions
+    // Reset when modal opens with new initialTransactions
     useEffect(() => {
-        if (!isOpen) {
-            // ✅ Reset all state when modal closes so stale data never leaks
-            hasLoadedRef.current = false;
-            setTransactions([]);
-            setIsInitialized(false);
-            setFormData(emptyForm);
-            setErrors({});
-            setTouched({});
-            setEditId(null);
-            return;
-        }
-
-        // Modal just opened
-        if (!draftRowId || !accCode) {
-            // No valid context — show empty
-            setTransactions([]);
-            setIsInitialized(true);
-            return;
-        }
-
-        // Prevent double-load within same open session
-        if (hasLoadedRef.current) return;
-        hasLoadedRef.current = true;
-
-        const storageKey = `BANK_${type.toUpperCase()}_${draftRowId}`;
-        const saved = localStorage.getItem(storageKey);
-
-        if (saved) {
-            try {
-                const parsed = JSON.parse(saved);
-                setTransactions(parsed);
-            } catch (e) {
-                console.error("Failed to parse bank transactions:", e);
-                setTransactions([]);
-            }
-        } else if (initialTransactions.length > 0) {
-            // Fallback to prop data if no localStorage
+        if (isOpen) {
             setTransactions(initialTransactions);
-        } else {
-            setTransactions([]);
+            setTimeout(() => { fieldRefs.bankName.current?.focus?.(); }, 100);
         }
+    }, [isOpen, initialTransactions]);
 
-        setIsInitialized(true);
-        setTimeout(() => { fieldRefs.bankName.current?.focus?.(); }, 100);
-
-    }, [isOpen, draftRowId, accCode, type]);
-    // ✅ NOTE: initialTransactions intentionally excluded from deps
-    // to prevent re-triggering when parent re-renders
-
-    // Save to localStorage whenever transactions change (only when open and initialized)
-    useEffect(() => {
-        if (!isInitialized || !draftRowId || !isOpen || !accCode) return;
-
-        const storageKey = `BANK_${type.toUpperCase()}_${draftRowId}`;
-        const nonEmptyRows = transactions.filter(t =>
-            t.bankName && t.bankName !== "" && t.amount > 0
-        );
-        localStorage.setItem(storageKey, JSON.stringify(nonEmptyRows));
-    }, [transactions, draftRowId, isInitialized, type, isOpen, accCode]);
-
-    // ✅ FIXED: Escape key only fires when THIS modal is open
-    // Using escapeId + type makes the key unique per modal instance
+    // Escape key handler
     useGlobalKey('Escape', () => {
         if (isOpen) handleSaveAndClose();
     }, `bank-${type}-${escapeId}`);
@@ -246,6 +187,7 @@ export const BankTransactionModal = ({
         const newTouched: Record<string, boolean> = {};
 
         fieldOrder.forEach(k => { newTouched[k] = true; });
+        console.log(formData ,'bankFormData')
 
         if (!formData.bankName || formData.bankName.trim() === "") {
             newErrors.bankName = "Bank name is required";
@@ -285,16 +227,7 @@ export const BankTransactionModal = ({
     }, [formData, focusField]);
 
     // Move to next field on Enter
-    const moveToNext = useCallback((currentKey: FieldKey) => {
-        const idx = fieldOrder.indexOf(currentKey);
-        const nextIdx = idx + 1;
-
-        if (nextIdx < fieldOrder.length) {
-            focusField(fieldOrder[nextIdx]);
-        } else {
-            handleSubmit();
-        }
-    }, [focusField, formData]);
+    
 
     // Submit handler
     const handleSubmit = () => {
@@ -325,7 +258,22 @@ export const BankTransactionModal = ({
         }
     };
 
-    // Reset form fields only (not transactions list)
+    // Move to next field on Enter
+    const moveToNext = useCallback((currentKey: FieldKey) => {
+        const idx = fieldOrder.indexOf(currentKey);
+        const nextIdx = idx + 1;
+
+        if (nextIdx < fieldOrder.length) {
+            focusField(fieldOrder[nextIdx]);
+        } else {
+            // Small delay to ensure the last field's state is updated
+            setTimeout(() => {
+                handleSubmit();
+            }, 50);
+        }
+    }, [focusField, handleSubmit]); // Add handleSubmit to dependencies
+
+    // Reset form
     const resetForm = () => {
         setFormData(emptyForm);
         setErrors({});
@@ -357,24 +305,22 @@ export const BankTransactionModal = ({
         }
     };
 
-    // Save and close — persist to localStorage and notify parent
+    // Save and close — notify parent
     const handleSaveAndClose = () => {
-        const storageKey = `BANK_${type.toUpperCase()}_${draftRowId}`;
         const nonEmptyRows = transactions.filter(t =>
             t.bankName && t.bankName !== "" && t.amount > 0
         );
-        localStorage.setItem(storageKey, JSON.stringify(nonEmptyRows));
         const total = nonEmptyRows.reduce((sum, t) => sum + t.amount, 0);
         onSave(nonEmptyRows, total);
         onClose();
     };
 
-    // Cancel — close without saving
+    // Cancel
     const handleCancel = () => {
         onClose();
     };
 
-    // Render form cell per field type
+    // Render form cell
     const renderFormCell = (field: any) => {
         const ref = fieldRefs[field.key as FieldKey];
         const value = formData[field.key as keyof typeof formData]?.toString() || "";
@@ -484,7 +430,7 @@ export const BankTransactionModal = ({
         return null;
     };
 
-    // Get display value for table cell
+    // Get cell value
     const getCellValue = (col: any, row: BankTransaction) => {
         if (col.key === "tranMode") {
             const mode = PaymentModes.find(m => m.value === row.tranMode);
@@ -509,7 +455,6 @@ export const BankTransactionModal = ({
         amount: transactions.reduce((sum, t) => sum + t.amount, 0),
     };
 
-    // ✅ Don't render DOM at all when closed — prevents stale UI flicker
     if (!isOpen) return null;
 
     return (
