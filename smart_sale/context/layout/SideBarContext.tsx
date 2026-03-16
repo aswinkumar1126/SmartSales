@@ -17,7 +17,8 @@ import {
   BadgeCheck,
   Landmark,
   TrendingDown,
-  PlusCircle
+  PlusCircle,
+  Settings
 } from "lucide-react";
 import { HiArrowDownCircle, HiArrowUpCircle } from "react-icons/hi2";
 import { AiOutlineShoppingCart } from "react-icons/ai";
@@ -95,11 +96,7 @@ export const SidebarProvider = ({ children }: { children: ReactNode }) => {
             route: "/dashboard/Master/Item/ItemMaster",
             icon: Boxes,
           },
-          // {
-          //   label: "Party Master",
-          //   route: "/dashboard/Master/Item/party",
-          //   icon: Users,
-          // },
+         
           {
             label: "Touch Master",
             route: "/dashboard/Master/Item/touch",
@@ -115,12 +112,24 @@ export const SidebarProvider = ({ children }: { children: ReactNode }) => {
             route: "/dashboard/Master/Item/OtherCharges",
             icon: PlusCircle,
           },
+          {
+            label: "Size Master",
+            route: "/dashboard/Master/Item/size",
+            icon: Users,
+          },
          
         ],
       },
       Users: {
         icon: Users,
-        items: [],
+        items: [
+          {
+            label: "Soft Control",
+            route: "/dashboard/Master/Users/SoftControl",
+            icon: Settings,
+          },
+
+        ],
       },
       Role: {
         icon: Shield,

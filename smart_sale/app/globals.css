@@ -70,14 +70,15 @@ body {
 }
 
 .date-input {
+
   width: 100%;
-  margin-top: 0.35rem;
-  padding: 0.25rem;
+  margin-top: 0.30rem;
+  padding: 0.15rem;
   font-size: 12px;
   font-weight: 500;
-  border: 1px solid #d1d5db;
-  border-radius: 0.25rem;
-  height: 32px;
+  border: 1px solid #ebe9e8;
+  border-radius: 0.15rem;
+  height: 30px;
 }
 .chakra-datepicker-popper {
   z-index: 999999 !important;

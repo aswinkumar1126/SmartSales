@@ -10,9 +10,11 @@ export interface BarcodeDetailsPayload{
 }
 
 export interface BarCodeFilter{
-    ACCODE?:number|string;
-    ENTRYNO?:string|number |null;
-    SNO?:number|string|null;
+
+    ACCODE?:number;
+    PURCHASE_ENTRYNO?:number;
+    SNO?:string;
+
 }
 
 export interface SELECTED_BARCODE_ITEM {
@@ -54,16 +56,13 @@ export interface SELECTED_BARCODE_ITEM {
 
 export interface BarcodeDetails{
 
-    NEXT_ENTRY_NO:number;
-    ENTRY_NO:number[];
-    
-    PURCHASE_ITEMS:{
-            ITEM_NAME:string,
-            ITEM_CODE:number,
-            BARCODE_NO:number,
-            QTY:number,
-            RATE:number,
-            AMOUNT:number
+    ENTRY_NO:number;
+    PURCHASE_ENTRY_NO:number[];
+
+    ITEMLIST:{
+            ITEMID:string,
+            ITEMNAME:number,
+            SNO:number,
         }[];
-    SELECTED_ITEM: SELECTED_BARCODE_ITEM |null ;
+    SELECTED_ITEM: SELECTED_BARCODE_ITEM | {};
 }

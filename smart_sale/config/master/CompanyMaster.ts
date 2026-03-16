@@ -31,7 +31,9 @@ export const getCompanyFormFields = (stateOptions: any[], editId: string | null)
         required: true,
         options: stateOptions,
         placeholder: 'Select State',
-        size: 'xs'
+        size: 'xs',
+
+        
     },
     {
         name: 'GSTNO',

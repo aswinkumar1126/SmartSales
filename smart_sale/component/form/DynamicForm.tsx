@@ -23,12 +23,13 @@ import { FormField } from '@/types/form/form';
 interface DynamicFormProps {
     fields: FormField[];
     formData: Record<string, any>;
-    onChange: (field: string | number, value: any) => void;
+    onChange: (field: any, value: any) => void;
     register: (name: string) => (el: any) => void;
     focusNext: (name: string) => void;
     disabled?: Record<string, boolean | undefined>;
     errors?: Record<string, string>; 
-    layout?: "vertical" | "horizontal" | "grid"; 
+    layout?: "vertical" | "horizontal" | "grid" | "verticalCombine" | "horizontalCombine"; 
+    minLabelWidth?:string;
 }
 
 export const DynamicForm: React.FC<DynamicFormProps> = ({
@@ -39,7 +40,8 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
     focusNext,
     disabled = {},
     errors = {}, // Default to empty object
-    layout
+    layout,
+    minLabelWidth = "100px"
 }) => {
 
     const [touched, setTouched] = useState<Record<string, boolean>>({});
@@ -144,6 +146,7 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
                         onEnter={() => focusNext(field.name)}
                         onKeyDown={(e) => handleKeyDown(e, field.name)}
                         onBlur={() => handleBlur(field.name)}
+                        maxWidth={field.maxWidth || field.maxW || field.width}
                     />
                 );
                 case 'password':
@@ -184,6 +187,7 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
                             onBlur={() => handleBlur(field.name)}
                             onKeyDown={(e) => handleKeyDown(e, field.name)}
                             defaultValue ={field.defaultValue}
+                            maxWidth={field.maxWidth || field.maxW || field.width}
                             
                         />
                     );
@@ -305,34 +309,92 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
     }
 
 
-    // Determine how many columns per row
-    const templateColumns =
-        layout === "vertical" ? "1fr" : // 1 field per row
-        layout === "horizontal" ? "1fr 1fr" : // 2 fields per row
-                "repeat(1, 1fr)"; // default 2 columns for grid
+    // Determine grid template columns
+    const getGridTemplateColumns = () => {
+        if (layout === "vertical" || layout === "verticalCombine") return "1fr"; // 1 column
+        if (layout === "horizontal" || layout === "horizontalCombine") return "1fr 1fr"; // 2 equal columns
+        if (layout === "grid") return "repeat(2, 1fr)"; // Default grid - 2 columns
+        return "1fr"; // Fallback
+    };
 
     return (
-        <Grid gap={4} templateColumns={templateColumns}>
+        <Box
+            display={layout === "grid" ? "grid" : "flex"}
+            flexDirection={
+                layout === "vertical" || layout === "verticalCombine"
+                    ? "column"
+                    : "row"
+            }
+            flexWrap={
+                layout === "horizontal" || layout === "horizontalCombine"
+                    ? "wrap"
+                    : "nowrap"
+            }
+            gridTemplateColumns={layout === "grid" ? getGridTemplateColumns() : undefined}
+            gap={4}
+         
+            width="100%"
+        >
             {fields.map((field) => (
                 <Box
                     key={field.name}
                     display="flex"
-                    flexDirection="row"
-                    alignItems="center"
-                    gap={2}
-                    gridColumn={field.colSpan ? `span ${field.colSpan}` : undefined}
+                    flexDirection={
+                        layout === "verticalCombine" || layout === "horizontalCombine"
+                            ? "column"  // Stack label above input for Combine layouts
+                            : "row"      // Label beside input for other layouts
+                    }
+                    alignItems={layout === "verticalCombine" || layout === "horizontalCombine"
+                        ? "center"
+                        : "center"
+                    }
+                    gap={layout === "verticalCombine" || layout === "horizontalCombine" ? 1 : 2}
+                    flex={layout === "horizontal" || layout === "horizontalCombine" ? "0 0 auto" : "1"}
+                    // width={
+                    //     layout === "horizontal" || layout === "horizontalCombine"
+                    //         ? "calc(50% - 8px)"
+                    //         : "100%"
+                    // }
+                    gridColumn={field.colSpan && layout === "grid" ? `span ${field.colSpan}` : undefined}
+                    
                 >
-                    <Box minW="120px" fontSize="x-small" fontWeight='semibold'>
-                        {field.label} {field.required && <span style={{ color: 'red', fontSize: '14px' }}>*</span>}
-                    </Box>
-                    <Box flex="1">
-                        {renderField(field)}
-                        {errors?.[field.name] && (
-                            <Box fontSize="xs" color="red">{errors[field.name]}</Box>
+                    {/* Label */}
+                    <Box
+                        minW={layout === "verticalCombine" || layout === "horizontalCombine"
+                            ? "100%"  // Full width when stacked
+                            : minLabelWidth || "100px"  // Fixed width when beside
+                        }
+                        fontSize="x-small"
+                        fontWeight="semibold"
+                        whiteSpace={layout === "verticalCombine" || layout === "horizontalCombine"
+                            ? "normal"
+                            : "nowrap"
+                        }
+                    >
+                        {field.label}
+                        {field.required && (
+                            <span style={{ color: 'red', fontSize: '14px' }}>*</span>
                         )}
+
+                    </Box>
+
+                    {/* Input field */}
+                    <Box
+                        width={layout === "verticalCombine" || layout === "horizontalCombine"
+                            ? "100%"
+                            : "auto"
+                        }
+                        flex={layout !== "verticalCombine" && layout !== "horizontalCombine" ? "1" : undefined}
+                    >
+                        {renderField(field)}
+                        {/* {errors?.[field.name] && (
+                            <Box fontSize="xs" color="red" mt={1}>
+                                {errors[field.name]}
+                            </Box>
+                        )} */}
                     </Box>
                 </Box>
             ))}
-        </Grid>
+        </Box>
     );
 }

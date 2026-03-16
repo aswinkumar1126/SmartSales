@@ -131,7 +131,7 @@ console.log(transactionList?.data?.snoList,"list of transaction")
                             className="date-input"
                         />
                     </Box>
-                    <Box flex={1}>
+                    <Box flex={1} >
                         <Text fontSize='2xs' fontWeight='medium'>END DATE</Text>
                         <DatePicker
                             selected={fromStoreFormat(endDate) || undefined}

@@ -530,21 +530,21 @@ export default function StoneEnterMaster({
     /* ---------------- UI ---------------- */
     return (
         <Box p={2}>
-            <HStack justify="space-between" mb={2}>
-                <HStack gap={3}>
-                    <Text fontSize="small" fontWeight="semibold">
+            <HStack justify="center" mb={2}>
+                <HStack gap={3} display='flex' alignItems='center'>
+                    <Text fontSize="base" fontWeight="semibold">
                         Stone Entry
                     </Text>
-                    <Text fontSize="xs" color="gray.500">
+                    <Text fontSize="2xs" color="gray.500">
                         Available: <Text as="span" fontWeight="semibold" color={isOverWeight ? "red.500" : "green.600"}>
                             {remainingWeight.toFixed(3)}g
                         </Text>
                         {" / "}{Number(grsWeight).toFixed(3)}g
                     </Text>
                 </HStack>
-                <IconButton aria-label="Close (ESC)" onClick={onClose} size="xs" variant="ghost" title="Close (ESC)">
+                {/* <IconButton aria-label="Close (ESC)" onClick={onClose} size="xs" variant="ghost" title="Close (ESC)">
                     <LuX size={14} />
-                </IconButton>
+                </IconButton> */}
             </HStack>
 
             <TransactionTable
@@ -575,9 +575,9 @@ export default function StoneEnterMaster({
                     Used: {Number(totalUsedWeight).toFixed(3)} / {Number(grsWeight).toFixed(3)} g
                     {isOverWeight && " ⚠ Over limit!"}
                 </Text>
-                <Button variant="outline" size="xs" onClick={onClose} title="ESC">
+                {/* <Button variant="outline" size="xs" onClick={onClose} title="ESC">
                     Cancel (ESC)
-                </Button>
+                </Button> */}
                 <Button colorPalette="blue" size="xs" onClick={handleSaveAndClose}>
                     Save & Close
                 </Button>

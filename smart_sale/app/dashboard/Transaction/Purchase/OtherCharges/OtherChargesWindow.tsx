@@ -427,12 +427,12 @@ export default function OtherChargesWindow({
 
     /* ---------------- UI ---------------- */
     return (
-        <Box p={2} minW="450px">
-            <HStack justify="space-between" mb={2}>
+        <Box p={2} minW="600px">
+            <HStack justify="center" mb={2}>
                 <Text fontSize="smaller" fontWeight="semibold">
                     OTHER CHARGES DETAILS
                 </Text>
-                <HStack gap={1}>
+                {/* <HStack gap={1}>
                     <IconButton
                         aria-label="Close"
                         onClick={onClose}
@@ -442,7 +442,7 @@ export default function OtherChargesWindow({
                     >
                         <LuX size={14} />
                     </IconButton>
-                </HStack>
+                </HStack> */}
             </HStack>
 
             <TransactionTable
@@ -483,9 +483,9 @@ export default function OtherChargesWindow({
                 <Text m={2} fontSize="small" fontWeight="500">
                     Total: ₹{totals.amount.toFixed(2)}
                 </Text>
-                <Button variant="outline" size="xs" onClick={onClose} >
+                {/* <Button variant="outline" size="xs" onClick={onClose} >
                     Cancel
-                </Button>
+                </Button> */}
                 <Button colorPalette="blue" size="xs" onClick={handleSaveAndClose}>
                     Save & Close
                 </Button>

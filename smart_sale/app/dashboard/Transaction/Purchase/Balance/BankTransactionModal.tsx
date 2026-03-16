@@ -485,18 +485,18 @@ export const BankTransactionModal = ({
                 position="relative"
                 boxShadow="xl"
             >
-                <HStack justify="space-between" mb={2}>
-                    <Text fontSize="lg" fontWeight="bold">
+                <HStack justify="center" mb={2}>
+                    <Text fontSize="base" fontWeight="semibold">
                         Bank {type === "paid" ? "Paid" : "Received"} Details
                     </Text>
-                    <IconButton
+                    {/* <IconButton
                         aria-label="Close"
                         onClick={handleCancel}
                         size="sm"
                         variant="ghost"
                     >
-                        <LuX size={16} />
-                    </IconButton>
+                        {/* <LuX size={16} />
+                    </IconButton> */}
                 </HStack>
 
                 {/* Hidden submit button */}

@@ -11,16 +11,21 @@ import {
     Icon,
 } from "@chakra-ui/react";
 import { LuX } from "react-icons/lu";
-import { CapitalizedInput } from "@/components/ui/CapitalizedInput";
+
 import { issueColumns, issueDataColumns } from "../../Issue/isseColumns";
-import { useCalculatePure } from "@/hooks/pure/useCalculatePure";
-import { toaster } from "@/components/ui/toaster";
-import StoneEnterMaster from "../StoneMaster/StoneEntryMaster";
-import TransactionTable from "@/component/table/TransactionTable";
+
+
 import { useStoneItems } from "@/hooks/item/useItems";
-import { SelectCombobox } from "@/components/ui/selectComboBox";
+import { useCalculatePure } from "@/hooks/pure/useCalculatePure";
+
+import StoneEnterMaster from "../StoneMaster/StoneEntryMaster";
 import OtherChargesWindow from "../OtherCharges/OtherChargesWindow";
+
+import { SelectCombobox } from "@/components/ui/selectComboBox";
 import { useGlobalKey } from "@/components/key/useGlobalKey";
+import TransactionTable from "@/component/table/TransactionTable";
+import { toaster } from "@/components/ui/toaster";
+import { CapitalizedInput } from "@/components/ui/CapitalizedInput";
 
 type StoneRow = {
     id: string;
@@ -193,7 +198,7 @@ export default function DraftTransactionTable({
 
 
     // rowsRef so setTimeout closures always see latest rows
-    // console.log(rows, 'rows in draft table')
+    console.log(rows, 'rows in draft table')
     const rowsRef = useRef(rows);
     console.log(rowsRef.current, 'rows in draft table')
     useEffect(() => { rowsRef.current = rows; }, [rows]);
@@ -1231,7 +1236,7 @@ export default function DraftTransactionTable({
                 >
                     <Box
                         bg={theme?.colors?.formColor || "white"} borderRadius="lg"
-                        maxW="500px" width="100%" maxH="90vh" overflow="auto"
+                        maxW="600px" width="100%" maxH="90vh" overflow="auto"
                         onClick={e => e.stopPropagation()}
                     >
                         <OtherChargesWindow

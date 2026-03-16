@@ -24,9 +24,10 @@ type CustomTableProps<T> = {
     bodyBg?: string;
     headerColor?: string;
     borderColor?: string;
-    size?: "sm" | "md" | "lg";
+    size?:"sm" | "md" | "lg";
     emptyText?: string;
     showTotal?: boolean;
+    maxWidth?: string | number;
 };
 
 
@@ -42,6 +43,7 @@ export function CustomTable<T extends Record<string, any>>({
     emptyText = "No records found",
     highlightRowId = null,
     rowIdKey,
+    maxWidth = "100%",
 }: CustomTableProps<T>) {
 
    const enableScroll = data.length > 10;
@@ -51,7 +53,7 @@ export function CustomTable<T extends Record<string, any>>({
 
 
     return (
-        <Box w="100%" overflowX="auto">
+        <Box w={maxWidth} overflowX="auto">
             <Box
                 maxH={enableScroll ? `${maxBodyHeight}px` : "auto"}
                 overflowY={enableScroll ? "auto" : "visible"}
@@ -73,6 +75,7 @@ export function CustomTable<T extends Record<string, any>>({
                                     color={headerColor}
                                     borderColor={borderColor}
                                     whiteSpace="nowrap"
+                                    fontSize="xs"
                                 >
                                     {col.label}
                                 </Table.ColumnHeader>
@@ -92,15 +95,23 @@ export function CustomTable<T extends Record<string, any>>({
                             data.map((row, index) => {
                                 const rowId = rowIdKey ? row[rowIdKey] : null;
                                 const isHighlighted =
-                                    highlightRowId != null && rowId === highlightRowId;
+                                    highlightRowId != null &&
+                                    String(rowId) === String(highlightRowId); // ensure string comparison
 
+                              
                                 return (
                                     <Table.Row
                                         key={rowId ?? index}
-                                        bg={isHighlighted ? "blue.100" : bodyBg}
-                                        transition="background-color 0.3s ease"
-                                        fontSize='xs'
-                                        fontWeight='400'
+                                        fontSize="xs"
+                                        fontWeight="400"
+                                        style={
+                                            isHighlighted
+                                                ? {
+                                                    backgroundColor: "#bee3f8", // initial highlight
+                                                    animation: "blink 1s 3", // 0.5s per cycle × 6 = 3s total
+                                                }
+                                                : { backgroundColor: bodyBg }
+                                        }
                                     >
                                         {renderRow(row, index)}
                                     </Table.Row>

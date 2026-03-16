@@ -243,7 +243,7 @@ function CompanyMaster() {
     return (
         <Box fontWeight="semibold" bg={theme.colors.primary} color={theme.colors.secondary}>
             <Toaster />
-            <Grid templateColumns={{ base: "1fr", lg: "1fr 1.5fr" }} gap={2}>
+            <Grid templateColumns={{ base: "1fr", lg: "1fr 2fr" }} gap={2}>
                 {/* FORM SECTION */}
                 <GridItem>
                     <VStack bg={theme.colors.formColor} p={4} borderRadius="xl" border="1px solid #eef">
@@ -259,6 +259,8 @@ function CompanyMaster() {
                                     focusNext={focusNext}
                                     disabled={{ COMPANYID: !!editId }}
                                     errors={errors}
+                                    layout="vertical"
+                                    
                                 />
                             </Fieldset.Content>
                         </Fieldset.Root>

@@ -16,7 +16,10 @@ export const barcodeHeaderFields = (  options :{vendorCollection?: {
     {   
         name: "ENTRYNO", 
         label: "ENTRY NO", 
-        type: "text" 
+        type: "text" ,
+        rounded:'sm',
+        maxWidth:'80px',
+        disabled:true,
     },
 
     { 
@@ -25,6 +28,8 @@ export const barcodeHeaderFields = (  options :{vendorCollection?: {
         type: "date",
         defaultValue: new Date().toISOString().split("T")[0],
         maxDate:new Date().toISOString().split("T")[0],
+        rounded:'sm',
+        maxWidth: '100px'
 
 
     },
@@ -37,7 +42,7 @@ export const barcodeHeaderFields = (  options :{vendorCollection?: {
         ], 
         defaultValue:'PR',
         css:
-        { width: "180px"  , background:'#FAE4BC' }
+        { width: "180px"  , background:'#faf1e0'  ,borderRadius:'4px'}
 
     },
     { 
@@ -45,22 +50,26 @@ export const barcodeHeaderFields = (  options :{vendorCollection?: {
         label: "COMPANY NAME", 
         type: "combobox" ,
         items: options.vendorCollection || [],
-        dependsOn: "COMPANYTYPE"
+        dependsOn: "COMPANYTYPE",
+        rounded:'sm',
     },
     { 
         name: "INWARDNO", 
         label: "INWARD NO", 
         type: "combobox",
         items:options.inwardCollection || [], 
-        dependsOn:"COMPANYNAME"
+        dependsOn:"COMPANYNAME",
+        rounded: 'sm',
     },
     { 
         name: "ITEMNAME", 
         label: "ITEM NAME", 
         type:"combobox",
         items:options.itemCollection || [], 
-        dependsOn:"INWARDNO"
-        
+        dependsOn:"INWARDNO",
+        rounded: 'sm',
+
+                
     },
 
 

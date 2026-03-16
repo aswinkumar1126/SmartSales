@@ -10,7 +10,7 @@ interface Column {
     decimalScale?: number;
 }
 
-interface FormField {
+export interface FormField {
     key: string;
     type: string;
     isRequired?: boolean;
@@ -32,7 +32,7 @@ interface TransactionTableProps {
     tableCols: Column[];
     formFields: FormField[];
     rows: any[];
-    formData: Record<string, any>;
+    formData?: Record<string, any>;
     errors: Record<string, string>;
     touched: Record<string, boolean>;
     localEditId: string | null;
@@ -60,7 +60,7 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
     tableCols,
     formFields,
     rows,
-    formData,
+    // formData,
     errors,
     touched,
     localEditId,
@@ -68,7 +68,7 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
     totals,
     stripedBg = '#F7FAFC',
     allDisplayCols,
-    isIssue,
+    // isIssue,
     resetForm,
     handleSubmit,
     handleEditRow,
@@ -103,6 +103,7 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
                         <tr style={{
                             backgroundColor: theme?.colors?.formColor || "#EDF2F7",
                             borderBottom: "2px solid #A0AEC0",
+                            
                            
                         }}>
                             <th style={getCellStyle({ key: "__sno", label: "#", align: "center" }, { fontSize: 11, fontWeight: 700, color: "#4A5568", padding: "5px 3px" })}>
@@ -120,6 +121,7 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
                                             color: "#4A5568",
                                             padding: "5px 3px",
                                             textAlign: "center",   // 👈 add this
+                                         
                                         })}
                                     >
                                         {col.label}
@@ -129,7 +131,7 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
                                     </th>
                                 );
                             })}
-                            <th style={getCellStyle({ key: "__actions", label: "ACT", align: "center" }, { fontSize: 11, fontWeight: 700, color: "#4A5568", padding: "5px 3px" })}>
+                            <th style={getCellStyle({ key: "__actions", label: "ACT", align: "center" }, { fontSize: 11, fontWeight: 700, color: "#4A5568", padding: "5px 3px" ,width:'50px' })}>
                                 {localEditId ? (
                                     <button
                                         onClick={resetForm}
@@ -140,7 +142,8 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
                                             background: "none",
                                             border: "none",
                                             cursor: "pointer",
-                                            fontWeight: 700
+                                            fontWeight: 700,
+                                        
                                         }}
                                     >
                                        <XCircle size={14}/>

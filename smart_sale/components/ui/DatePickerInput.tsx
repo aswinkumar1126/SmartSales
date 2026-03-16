@@ -15,6 +15,7 @@ interface DatePickerInputProps {
     onBlur?: () => void;
     onKeyDown?: (e: React.KeyboardEvent<HTMLInputElement>) => void;
     defaultValue?: string;
+    maxWidth?: string;
 }
 
 const parseISOToDate = (iso?: string | null) => {
@@ -47,7 +48,8 @@ export const DatePickerInput = React.forwardRef<
     showTimeSelect = false,
     onBlur,
     onKeyDown,
-    defaultValue
+    defaultValue,
+    maxWidth = "200px",
 }, ref) => {
 
     const [isOpen, setIsOpen] = useState(false);
@@ -73,6 +75,7 @@ export const DatePickerInput = React.forwardRef<
                 onClick={(e) => { setIsOpen(true); onClick?.(e); }}
                 onFocus={(e) => { setIsOpen(true); onClick?.(e); }}
                 onChange={dpOnChange}
+
                 onBlur={(e) => { dpBlur?.(e); onBlur?.(); }}
                 onKeyDown={(e) => {
                     if (e.key === "Enter") {
@@ -86,19 +89,21 @@ export const DatePickerInput = React.forwardRef<
                     }
                     dpKeyDown?.(e);
                 }}
+
             />
         )
     );
     CustomInput.displayName = "CustomDateInput";
 
     return (
-        <Box w="full">
+        <Box w="full" maxW={maxWidth}>
             <DatePicker
                 selected={selected}
                 onChange={(date: Date | null) => {
                     if (!date) return;
                     setSelected(date);
                     onChange(formatDateToISO(date));
+                    
                 }}
                 open={isOpen}
                 onClickOutside={() => setIsOpen(false)}

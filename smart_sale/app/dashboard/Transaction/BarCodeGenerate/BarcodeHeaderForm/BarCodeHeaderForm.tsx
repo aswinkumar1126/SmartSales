@@ -1,9 +1,10 @@
 "use client";
+import { Box } from "@chakra-ui/react";
 
 
 //Hooks
 import { useEnterNavigation } from "@/component/form/useEnterNavigation";
-
+import { useTheme } from "@/context/theme/themeContext";
 
 //Components
 import { DynamicForm } from "@/component/form/DynamicForm";
@@ -19,13 +20,17 @@ interface BarcodeHeaderFormProps {
     form: Record<string, any>;
     onChange: (field: string, value: any) => void;
     purchaserCollection?: { label: string; value: string; }[];
+    inwardCollection?: { label: string; value: string; }[];
+    itemCollection?: { label: string; value: string; }[];
+    
 }
 
 
-function BarcodeHeaderForm({ form, onChange, purchaserCollection }: BarcodeHeaderFormProps) {
+function BarcodeHeaderForm({ form, onChange, purchaserCollection ,inwardCollection , itemCollection  }: BarcodeHeaderFormProps) {
 
+    const { theme } = useTheme();
 
-   const barcodeHeaderField = barcodeHeaderFields({ vendorCollection: purchaserCollection });
+   const barcodeHeaderField = barcodeHeaderFields({ vendorCollection: purchaserCollection , inwardCollection:inwardCollection , itemCollection:itemCollection });
 
     console.log(barcodeHeaderField,'barcodeHeaderField')
 
@@ -38,17 +43,21 @@ function BarcodeHeaderForm({ form, onChange, purchaserCollection }: BarcodeHeade
     };
 
     return (
-        <div>
-            <DynamicForm
-            
-                fields={barcodeHeaderField}
-                formData={form}
-                onChange={handleChange}
-                register={register}
-                focusNext={focusNext}
-            />
-        </div>
+            <Box >
+                <DynamicForm
+
+                    fields={barcodeHeaderField}
+                    formData={form}
+                    onChange={onChange}
+                    register={register}
+                    focusNext={focusNext}
+                    layout="horizontalCombine"
+                    minLabelWidth="70px"
+                />
+            </Box>
+         
+   
     );
 }
 
-export default BarcodeHeaderForm;
+export default BarcodeHeaderForm;       
