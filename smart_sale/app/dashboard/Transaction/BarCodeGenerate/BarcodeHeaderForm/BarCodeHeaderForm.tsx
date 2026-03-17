@@ -22,11 +22,12 @@ interface BarcodeHeaderFormProps {
     purchaserCollection?: { label: string; value: string; }[];
     inwardCollection?: { label: string; value: string; }[];
     itemCollection?: { label: string; value: string; }[];
+    isDisabled?: boolean;
     
 }
 
 
-function BarcodeHeaderForm({ form, onChange, purchaserCollection ,inwardCollection , itemCollection  }: BarcodeHeaderFormProps) {
+function BarcodeHeaderForm({ form, onChange, purchaserCollection ,inwardCollection , itemCollection  ,isDisabled =false }: BarcodeHeaderFormProps) {
 
     const { theme } = useTheme();
 
@@ -37,10 +38,6 @@ function BarcodeHeaderForm({ form, onChange, purchaserCollection ,inwardCollecti
     const { register, focusNext } = useEnterNavigation(barcodeHeaderField.map(f => f.name), () => {
         console.log("Form Submitted");
     });
-
-    const handleChange = ( field: any , value: any) => {
-        onChange(field, value);
-    };
 
     return (
             <Box >
@@ -53,6 +50,8 @@ function BarcodeHeaderForm({ form, onChange, purchaserCollection ,inwardCollecti
                     focusNext={focusNext}
                     layout="horizontalCombine"
                     minLabelWidth="70px"
+                    disabled={{ ENTRYNO: isDisabled, DATE: isDisabled, COMPANYTYPE: isDisabled, COMPANYNAME: isDisabled, ITEMNAME: isDisabled, INWARDNO: isDisabled}}
+                    
                 />
             </Box>
          

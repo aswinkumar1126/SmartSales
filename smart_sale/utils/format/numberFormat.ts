@@ -1,5 +1,5 @@
 export const formatToFixed = (
-    value: string | number | null,
+    value: string | number | null | undefined,
     decimals: number = 2
 ): string => {
     if (value === "" || value === null || value === undefined) return "";

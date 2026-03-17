@@ -41,7 +41,7 @@ export default function SummaryTable({
     size = "sm",
     headerBg = "gray.100",
     rowLabelWidth = "120px",
-    headerFontSize = "sm",
+    headerFontSize = "12px",
     numberFormat = (num: number) => num.toLocaleString("en-IN"),
     ...tableProps
 }: SummaryTableProps) {
@@ -68,7 +68,7 @@ export default function SummaryTable({
             )} */}
 
             <Table.Header>
-                <Table.Row bg={headerBg} >
+                <Table.Row bg={headerBg} py={0.1}>
                     {/* Empty cell for row labels column */}
                     <Table.ColumnHeader width={rowLabelWidth} />
 
@@ -78,6 +78,8 @@ export default function SummaryTable({
                             textAlign={col.align === "end" ? "right" : col.align || "center"}
                             fontWeight="semibold"
                             fontSize={headerFontSize}
+                            py={1}
+
                         >
                             {col.label}
                         </Table.ColumnHeader>
@@ -85,12 +87,12 @@ export default function SummaryTable({
                 </Table.Row>
             </Table.Header>
 
-            <Table.Body>
+            <Table.Body >
                 {hasData ? (
                     rowLabels.map((row) => (
-                        <Table.Row key={row.key}>
+                        <Table.Row key={row.key} >
                             {/* Row label */}
-                            <Table.Cell fontWeight="semibold"  fontSize={headerFontSize}>
+                            <Table.Cell fontWeight="semibold" fontSize={headerFontSize} px={2} py={1}>
                                 {row.label}
                             </Table.Cell>
 
@@ -104,6 +106,7 @@ export default function SummaryTable({
                                         <Table.Cell
                                             key={`${row.key}-${col.key}`}
                                             textAlign={col.align === "end" ? "right" : col.align || "center"}
+                                           
                                         >
                                             {renderCell(value, row, col)}
                                         </Table.Cell>
@@ -129,6 +132,7 @@ export default function SummaryTable({
                                         textAlign={col.align === "end" ? "right" : col.align || "center"}
                                         fontWeight={col.isBold ? "semibold" : undefined}
                                         color={col.color}
+                                        py={1}
                                     >
                                         {displayValue}
                                     </Table.Cell>

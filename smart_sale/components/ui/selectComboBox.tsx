@@ -62,11 +62,11 @@ export const SelectCombobox = forwardRef<HTMLInputElement, SelectComboboxProps>(
     }, [editId, applyFilter]);
 
     // Clear value when disabled
-    useEffect(() => {
-        if (disable) {
-            onChange("");
-        }
-    }, [disable]);
+    // useEffect(() => {
+    //     if (disable) {
+    //         onChange("");
+    //     }
+    // }, [disable]);
 
     // Reset filter when value becomes empty
     useEffect(() => {
@@ -171,6 +171,7 @@ export const SelectCombobox = forwardRef<HTMLInputElement, SelectComboboxProps>(
                     setHighlightedValue(e.highlightedValue);
                 }}
                 openOnClick={!disable}
+                disabled={disable}
            
             >
                 <Combobox.Control rounded='full'>
@@ -180,7 +181,7 @@ export const SelectCombobox = forwardRef<HTMLInputElement, SelectComboboxProps>(
                         fontSize="2xs"
                         textTransform="uppercase"
                         rounded={rounded}
-                        disabled={disable}
+                
                         onKeyDown={handleKeyDown} // Use our combined handler
                         onFocus={() => {
                             if (typedInput.length > 0) {

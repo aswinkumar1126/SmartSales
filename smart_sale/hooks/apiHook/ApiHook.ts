@@ -45,12 +45,16 @@ export const useApiQuery = <
     onError,
     onSettled,
 }: ApiHookOptions<TData, TParams, any> & { select?: (data: ApiResponse<TData>) => TSelected }) => {
-
+    
+    console.log(url,'urlurl')
     return useQuery<ApiResponse<TData>, Error, TSelected>({
         queryKey: queryKey || [url, params],
         queryFn: async () => {
             // Resolve dynamic URL if it's a function
+      
             const resolvedUrl = typeof url === "function" ? url(params as any) : url;
+            console.log(resolvedUrl,'resolvedUrl')
+               
             const res = await axiosInstance.get<ApiResponse<TData>>(resolvedUrl, { params });
             return res.data;
         },

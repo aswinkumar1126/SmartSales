@@ -42,7 +42,7 @@ export const authService = {
         try {
             const response = await axiosInstance.post("/user/login", payload);
 
-            console.log("Login successful:", response);
+    
             return response.data;
         } catch (error: any) {
          

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect ,useRef } from "react";
 import {
     Box,
     Button,
@@ -64,6 +64,9 @@ function ItemSizeMaster() {
     const [editId, setEditId] = useState< string | null>(null);
     const [errors, setErrors] = useState<Record<string, string>>({});
 
+    /* -------------------- REF HANDLERS -------------------- */
+    const isSaving = useRef(false);
+
     /* -------------------- FORM HANDLERS -------------------- */
     const handleChange = (field: keyof ItemSizePayload, value: any) => {
         setForm((prev) => ({ ...prev, [field]: value }));
@@ -105,12 +108,13 @@ function ItemSizeMaster() {
             if (field.name === "SIZENAME" && value) {
                 const duplicate = existingSizes.find(
                     (size) =>
-                        size.SIZENAME.toLowerCase() === value.toLowerCase() && // same name
-                        size.SIZEID !== currentId // ignore itself when updating
+                        Number(size.ITEMID) === Number(form.ITEMID) && // ✅ same item
+                        size.SIZENAME.toLowerCase() === value.toLowerCase() && // same size name
+                        Number(size.SIZEID) !== Number(currentId) // ignore current row (update)
                 );
-                console.log(duplicate,'duplicate')
+
                 if (duplicate) {
-                    newErrors[field.name] = "Size name already exists";
+                    newErrors[field.name] = "Size already exists for this item";
                 }
             }
         });
@@ -120,40 +124,50 @@ function ItemSizeMaster() {
     };
 
     const handleSave = () => {
-
+        if (isSaving.current) return;
         const existingSizes = Array.isArray(itemSizeData) ? itemSizeData : [];
- 
-
         const payload = {
             ITEMID: Number(form.ITEMID),
             SIZENAME: form.SIZENAME,
         };
 
+        isSaving.current = true;
+
+        const onDone = () => {
+            isSaving.current = false;
+        };
         if (editId) {
             // For update:
             if (!validateForm(existingSizes,Number(editId))) return;
             // pass id separately for path variable
             updateItemSize({ ...payload, id: editId }, {
                 onSuccess: () => {
-                    itemSizeRefetch();
                     resetForm();
+                    itemSizeRefetch();
+                    onDone();
                     setHighlightedId(editId);
                 },
+                onError: onDone
             });
         } else {
             if (!validateForm(existingSizes)) {
-                toastError("Please fix the errors in the form");
+                // toastError("Please fix the errors in the form");
                 return;
             }
             createItemSize(payload, {
                 onSuccess: () => {
-                    itemSizeRefetch();
                     resetForm();
+                    itemSizeRefetch();
+                    onDone();
+                  
                 },
-                onError: (error) => toastError(error.message),
+                onError: (error) => {toastError(error.message);
+                    onDone
+                }
             });
         }
     };
+
     const handleEdit = (size: ItemSize) => {
 
         setEditId( String(size.SIZEID) ?? null);
@@ -195,6 +209,7 @@ function ItemSizeMaster() {
     const { register, focusNext, focusFirst } = useEnterNavigation(fieldSequence, () => {
         handleSave();
     });
+
     useEffect(() => {
         focusFirst();
     }, []);

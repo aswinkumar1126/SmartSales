@@ -16,6 +16,23 @@ export interface BarCodeFilter{
     SNO?:string;
 
 }
+export interface BarcodeItemList {
+    
+    ITEMID?:number;
+    ITEMNAME?:string;
+    REORDPCS?:null
+    REORDWT?:null
+    SHORTNAME?:null
+    SIZEID:number
+    SIZENAME:string
+    TAGNO:null
+  
+}
+
+export interface barcodeTagNumber {
+    PREFIX : string;
+    TAGNO : number
+}
 
 export interface SELECTED_BARCODE_ITEM {
 
@@ -28,7 +45,7 @@ export interface SELECTED_BARCODE_ITEM {
     BILLNO: number | null;
     DESCRIPTION: string | null;
     ENTRY_NO: number | null;
-    GRSWT: number | null;
+    GRSWT: number;
     HMC: number | null;
     ITEMID: number | null;
     MC: number | null;
@@ -64,5 +81,9 @@ export interface BarcodeDetails{
             ITEMNAME:number,
             SNO:number,
         }[];
-    SELECTED_ITEM: SELECTED_BARCODE_ITEM | {};
+    SELECTED_ITEM : SELECTED_BARCODE_ITEM | null;
+    SIZELIST: BarcodeItemList[] | [];
+    TAGNO: barcodeTagNumber | null  ;
+
 }
+

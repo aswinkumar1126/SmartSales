@@ -7,10 +7,21 @@ export const useSoftControls = () => {
     return useApiQuery<SoftControl[]>({
         url: "/softcontrol",
         queryKey: ["softcontrol"],
+        params:{ },
         select: (response) => response.data,
     });
 };
 
+// Fetch SoftControl by ID
+export const useSoftControlById = (id: string) => {
+    return useApiQuery<SoftControl & { id: string }>({
+        url: (params) => `/softcontrol/${params.id}`,
+        params: { id },
+        queryKey: ["softcontrol", id],
+        select: (res) => res.data,
+        enabled: !!id,
+    });
+};
 // Create a new SoftControl
 export const useCreateSoftControl = () => {
     return useApiMutation<SoftControl, SoftControl>({

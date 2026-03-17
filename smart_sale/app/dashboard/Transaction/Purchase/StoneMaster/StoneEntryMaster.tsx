@@ -125,6 +125,8 @@ export default function StoneEnterMaster({
         stoneAmount: number;
     }>(emptyForm);
 
+    console.log(formData,'stoneFormData')
+
     const [rows, setRows] = useState<StoneRow[]>([]);
     const [editId, setEditId] = useState<string | null>(null);
     const [errors, setErrors] = useState<Record<string, string>>({});
@@ -552,7 +554,7 @@ export default function StoneEnterMaster({
                 tableCols={tableCols}
                 formFields={formFields}
                 rows={rows}
-                formData={formData}
+                // formData={formData}
                 errors={errors}
                 touched={touched}
                 localEditId={editId}

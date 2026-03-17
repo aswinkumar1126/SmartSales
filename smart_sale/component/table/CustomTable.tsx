@@ -76,6 +76,7 @@ export function CustomTable<T extends Record<string, any>>({
                                     borderColor={borderColor}
                                     whiteSpace="nowrap"
                                     fontSize="xs"
+                                    py={1}
                                 >
                                     {col.label}
                                 </Table.ColumnHeader>
@@ -86,8 +87,8 @@ export function CustomTable<T extends Record<string, any>>({
                     {/* BODY */}
                     <Table.Body>
                         {data.length === 0 ? (
-                            <Table.Row bg={bodyBg}>
-                                <Table.Cell colSpan={columns.length} textAlign="center">
+                            <Table.Row bg={bodyBg} py={0.5}>
+                                <Table.Cell colSpan={columns.length} textAlign="center" py={0.5}>
                                     {emptyText}
                                 </Table.Cell>
                             </Table.Row>
@@ -104,6 +105,7 @@ export function CustomTable<T extends Record<string, any>>({
                                         key={rowId ?? index}
                                         fontSize="xs"
                                         fontWeight="400"
+                                        py={0.5}
                                         style={
                                             isHighlighted
                                                 ? {

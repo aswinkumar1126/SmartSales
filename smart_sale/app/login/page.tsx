@@ -34,6 +34,7 @@ export default function LoginPage() {
     const { theme } = useTheme();
     const { login } = useAuth();
     const router =useRouter();
+    
       const carouselImages = [
         "https://www.canadianminingjournal.com/wp-content/uploads/2021/09/Polyus_Olympiada_20180915_img_7698.jpg",
         "https://cdn1.matadornetwork.com/blogs/1/2022/11/alaska-gold-pan-close-up.jpg",
@@ -70,9 +71,12 @@ export default function LoginPage() {
         toaster.create({
             type: "success",
             title: "Login successful",
+            duration: 1200,
         });
 
-        router.replace("/");
+        setTimeout(() => {
+            router.replace("/");
+        }, 1500);
     };
 
 

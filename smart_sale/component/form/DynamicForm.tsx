@@ -97,7 +97,7 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
                         key={field.name}
                         ref={setRef}
                         collection={field.options || []}
-                        value={formData[field.name] || ''}
+                        value={formData[field.name] ?? ''} // controlled
                         onChange={(val) => onChange(field.name, val)}
                         isDisabled={isDisabled}
                         size={field.size as any}
@@ -112,7 +112,7 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
                     <NativeSelectWrapper
                         key={field.name}
                         ref={setRef}
-                        value={formData[field.name] || ''}
+                        value={formData[field.name] ?? ''} // controlled
                         disabled={isDisabled}
                         size={field.size || "xs"}
                         placeholder={field.placeholder || `Select ${field.label}`}
@@ -133,7 +133,7 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
                     <SelectCombobox
                         key={field.name}
                         ref={setRef}
-                        value={formData[field.name] || ''}
+                        value={formData[field.name] ?? ''} // controlled
                  
                         // size={field.size || "xs"}
                         placeholder={field.placeholder || `Select ${field.label}`}
@@ -155,7 +155,7 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
                             <PasswordInput
                                 key={field.name}
                                 ref={setRef}
-                                value={formData[field.name] || ''}
+                                value={formData[field.name] ?? ''} // controlled
                                 onChange={(e) => onChange(field.name, e.target.value)}
                                 disabled={isDisabled}
                                 size={field.size || "sm"}
@@ -176,7 +176,7 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
                         <DatePickerInput
                             key={field.name}
                             ref={setRef}
-                            value={formData[field.name]}
+                            value={formData[field.name] ?? ''} // controlled
                             onChange={(val) => onChange(field.name, val)}
                             disabled={isDisabled}
                             placeholder={field.placeholder || "dd-mm-yyyy"}
@@ -197,7 +197,7 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
                         <ColorPickerInput
                             key={field.name}
                             ref={setRef}
-                            value={formData[field.name] || '#000000'}
+                            value={formData[field.name] ?? '#000000'}
                             onChange={(val) => onChange(field.name, val)}
                             disabled={isDisabled}
                             placeholder={field.placeholder || "Pick a color"}
@@ -211,7 +211,7 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
                         <CurrencyInput
                             key={field.name}
                             ref={setRef}
-                            value={formData[field.name] || ''}
+                            value={formData[field.name] ?? ''} // controlled
                             onChange={(val) => onChange(field.name, val)}
                             disabled={isDisabled}
                             size={field.size || "sm"}
@@ -229,7 +229,7 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
                         <BarcodeInput
                             key={field.name}
                             ref={setRef}
-                            value={formData[field.name] || ''}
+                            value={formData[field.name] ?? ''} // controlled
                             onChange={(val) => onChange(field.name, val)}
                             disabled={isDisabled}
                             size={field.size || "sm"}
@@ -246,7 +246,7 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
                         <SwitchInput
                             key={field.name}
                             ref={setRef}
-                            value={formData[field.name]}
+                            value={formData[field.name] ?? false} // controlled
                             onChange={(val) => onChange(field.name, val)}
                             disabled={isDisabled}
                             trueValue={field.trueValue !== undefined ? field.trueValue : true}
@@ -266,7 +266,7 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
                         key={field.name}
                         inputRef={setRef}
                         field={field.name}
-                        value={formData[field.name] || ''}
+                        value={formData[field.name] ?? ''} // controlled
                         onChange={onChange} // Pass the original onChange that expects (field, value)
                         disabled={isDisabled}
                         size={field.size || "xs"}

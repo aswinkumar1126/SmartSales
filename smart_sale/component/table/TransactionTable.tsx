@@ -52,6 +52,8 @@ interface TransactionTableProps {
     getCellValue: (col: Column, row: any) => React.ReactNode;
     formatTotal: (value: number | undefined, decimals?: number) => string;
     transactionType?:string;
+    showTotal?:boolean;
+    showTableForm?:boolean;
 }
 
 
@@ -77,10 +79,17 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
     getCellValue,
     formatTotal,
     getCellStyle,
-    transactionType
+    transactionType,
+    showTotal = true,
+    showTableForm=true,
+
 }) => {
+
     const submitBtnRef = useRef<HTMLButtonElement>(null);
 
+    const enableScroll = rows.length > 10;
+    const rowHeight = 40; // approx for size="sm"
+    const maxBodyHeight = rowHeight * 4;
     return (
         <Box
             borderWidth="1px"
@@ -89,20 +98,26 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
             overflow="hidden"
             bg="white"
             zIndex='0'
+
+
         >
-            <Box overflowX="auto" style={{ maxHeight: "340px", overflowY: "auto" }}>
+            <Box overflowX="auto" 
+                 position="relative" 
+                 maxH={enableScroll ? `${maxBodyHeight}px` : "auto"}
+                 overflowY={enableScroll ? "auto" : "visible"}>
                 <table style={{
                     tableLayout: "fixed",
                     borderCollapse: "collapse",
                     width: "max-content",
                     minWidth: "100%",
+                
 
                 }}>
                     {/* HEADER */}
-                    <thead style={{ position: "sticky", top: 0, zIndex: 0 }}>
+                    <thead style={{ position: "sticky", top: 0, zIndex: 10 }}>
                         <tr style={{
                             backgroundColor: theme?.colors?.formColor || "#EDF2F7",
-                            borderBottom: "2px solid #A0AEC0",
+                            borderBottom: "1px solid #DEDEDE",
                             
                            
                         }}>
@@ -155,65 +170,68 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
 
                     <tbody>
                         {/* FORM ROW */}
-                        <tr style={{
-                            backgroundColor: localEditId ? "#EBF8FF" : "#FAFAFA",
-                            borderBottom: "2px solid #CBD5E0",
-                        }}>
-                            <td style={getCellStyle({ key: "__sno", label: "#", align: "center" }, { fontSize: 11 })}>
-                                {localEditId ? (
-                                    <span style={{ color: "#3182CE", fontWeight: 900, fontSize: 13 }}>✎</span>
-                                ) : (
-                                    <span style={{ color: "#A0AEC0", fontSize: 11 }}>{rows.length + 1}</span>
-                                )}
-                            </td>
+                        {showTableForm && (
+                            <tr style={{
+                                backgroundColor: localEditId ? "#EBF8FF" : "#FAFAFA",
+                                borderBottom: "2px solid #CBD5E0",
+                            }}>
+                                <td style={getCellStyle({ key: "__sno", label: "#", align: "center" }, { fontSize: 11 })}>
+                                    {localEditId ? (
+                                        <span style={{ color: "#3182CE", fontWeight: 900, fontSize: 13 }}>✎</span>
+                                    ) : (
+                                        <span style={{ color: "#A0AEC0", fontSize: 11 }}>{rows.length + 1}</span>
+                                    )}
+                                </td>
 
-                            {tableCols.map(col => {
-                                const field = formFields.find(f => f.key === col.key);
-                                const hasErr = !!errors[col.key] && !!touched[col.key];
-                                return (
-                                    <td
-                                        key={col.key}
+                                {tableCols.map(col => {
+                                    const field = formFields.find(f => f.key === col.key);
+                                    const hasErr = !!errors[col.key] && !!touched[col.key];
+                                    return (
+                                        <td
+                                            key={col.key}
+                                            style={{
+                                                ...getCellStyle(col),
+                                                backgroundColor: hasErr ? "#FFF5F5" : undefined,
+                                                outline: hasErr ? "1px solid #FC8181" : undefined,
+                                                position: "relative",
+                                            }}
+                                            title={hasErr ? errors[col.key] : undefined}
+                                        >
+                                            {field ? renderFormCell(field) : null}
+                                        </td>
+                                    );
+                                })}
+
+                                <td style={getCellStyle({ key: "__actions", label: "ACT", align: "center" }, { padding: "2px" })}>
+                                    <button
+                                        ref={submitBtnRef}
+                                        onClick={handleSubmit}
+                                        disabled={isSubmitting}
+                                        title={localEditId ? "Update Row" : "Add Row"}
+
                                         style={{
-                                            ...getCellStyle(col),
-                                            backgroundColor: hasErr ? "#FFF5F5" : undefined,
-                                            outline: hasErr ? "1px solid #FC8181" : undefined,
-                                            position: "relative",
-                                        }}
-                                        title={hasErr ? errors[col.key] : undefined}
-                                    >
-                                        {field ? renderFormCell(field) : null}
-                                    </td>
-                                );
-                            })}
+                                            width: "100%",
+                                            height: 22,
+                                            background: localEditId ? "#3182CE" : "#38A169",
+                                            color: "white",
+                                            border: "none",
+                                            borderRadius: 4,
+                                            cursor: isSubmitting ? "not-allowed" : "pointer",
+                                            fontSize: 12,
+                                            fontWeight: 700,
+                                            display: "flex",
+                                            alignItems: "center",
+                                            justifyContent: "center",
+                                            opacity: isSubmitting ? 0.7 : 1,
 
-                            <td style={getCellStyle({ key: "__actions", label: "ACT", align: "center" }, { padding: "2px" })}>
-                                <button
-                                    ref={submitBtnRef}
-                                    onClick={handleSubmit}
-                                    disabled={isSubmitting}
-                                    title={localEditId ? "Update Row" : "Add Row"}
-                                    
-                                    style={{
-                                        width: "100%",
-                                        height: 22,
-                                        background: localEditId ? "#3182CE" : "#38A169",
-                                        color: "white",
-                                        border: "none",
-                                        borderRadius: 4,
-                                        cursor: isSubmitting ? "not-allowed" : "pointer",
-                                        fontSize: 12,
-                                        fontWeight: 700,
-                                        display: "flex",
-                                        alignItems: "center",
-                                        justifyContent: "center",
-                                        opacity: isSubmitting ? 0.7 : 1,
-                                        
-                                    }}
-                                >
-                                    {isSubmitting ? "..." : localEditId ? <Save size={14} /> : <Save size={14} />}
-                                </button>
-                            </td>
-                        </tr>
+                                        }}
+                                    >
+                                        {isSubmitting ? "..." : localEditId ? <Save size={14} /> : <Save size={14} />}
+                                    </button>
+                                </td>
+                            </tr>
+                        )}
+                       
 
                       
 
@@ -295,16 +313,16 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
                     </tbody>
 
                     {/* totals footer */}
-                    {rows.length > 0 && (
-                        <tfoot style={{ position: "sticky", bottom: 0, zIndex: 0 }}>
+                    {rows.length > 0 && showTotal && (
+                        <tfoot style={{ position: "sticky", bottom: 0, zIndex: 10 }}>
                             
-                            <tr style={{ backgroundColor: "#2a2a2a" }}>
+                            <tr style={{ backgroundColor: "#A0AEC0" }}>
                                 
-                                <td style={getCellStyle({ key: "__sno", label: "#", align: "left" }, { fontSize: 13, fontWeight: 600, color: "white" })}>
+                                <td style={getCellStyle({ key: "__sno", label: "#", align: "left" }, { fontSize: 13, fontWeight: 600, color: "black" })}>
                                     TOTAL
                                 </td>
                                 {tableCols.map(col => (
-                                    <td key={col.key} style={getCellStyle(col, { fontSize: 13, fontWeight: 600, color: "white" })}>
+                                    <td key={col.key} style={getCellStyle(col, { fontSize: 13, fontWeight: 600, color: "black" })}>
                                         {formatTotal(totals?.[col.key], col.decimalScale)}
                                     </td>
                                 ))}

@@ -28,12 +28,19 @@ import { useAllAccountHead } from "@/hooks/accountHead/useAccountHead";
 import { useBarcodeItems } from "@/hooks/barcode/useBarcodeItems";
 import { useSessionStorage } from "@/hooks/storage/useSessionStorage";
 import { useTheme } from "@/context/theme/themeContext";
+import { useSoftControlById } from "@/hooks/softControl/useSoftControl";
 
 /*-------------- CONSTANTS & DATA's --------------*/
 import { transactionTableCols } from "@/data/barcodeGenerate/barcodeFormFields";
 
 /*-------------- UTILITIES  -------------------*/
 import { formatToFixed } from "@/utils/format/numberFormat";
+
+
+import Image from "next/image";
+import saveIcon from '@/asserts/icons/save.png';
+import clearIcon from '@/asserts/icons/clear.jpeg';
+import updateIcon from '@/asserts/icons/update.png';
 
 /*-------------- STORAGE KEYS -------------------*/
 const BARCODE_HEADER_KEY = 'barcode_header_form';
@@ -48,6 +55,7 @@ const safeNum = (val: any): number => {
 
 // Transaction item interface
 interface BarcodeTransactionItem {
+    
     id: string;
     draftRowId: string;
     grsweight: number;
@@ -160,6 +168,9 @@ function BarCodeGenerate() {
         SNO: String(barcodeHeaderForm.ITEMNAME),
     });
 
+      const { data: softControlDataById, isLoading, error } = useSoftControlById('LOT_TAG_CONTROL')
+      console.log(softControlDataById,'softControlDataById')
+    console.log(barcodeItems,'barcodeItems')
     /**
      * Effects
      */
@@ -212,6 +223,26 @@ function BarCodeGenerate() {
         }))
         : [];
 
+    const itemSizeCollection = Array.isArray(barcodeItems?.SIZELIST)
+        ? barcodeItems.SIZELIST.map((item: any) => ({
+            label: item.SIZENAME,
+            value: String(item.SIZEID),
+        }))
+        : [];
+    
+    const baseBarcodePrefix = barcodeItems?.TAGNO?.PREFIX || "";
+    console.log(baseBarcodePrefix,'baseBarcodePrefix')
+    const startBarcodeNumber = Number(barcodeItems?.TAGNO?.TAGNO || 0);
+
+    const rebuildBarcodes = (rows: BarcodeTransactionItem[]) => {
+        return rows.map((row, index) => {
+            // Always regenerate barcode based on position in the array
+            return {
+                ...row,
+                barcode: `${baseBarcodePrefix}${startBarcodeNumber + index + 1}`
+            };
+        });
+    };
     /* ==================== TRANSACTION TABLE CONFIGURATION ==================== */
 
     // Table columns definition
@@ -244,7 +275,7 @@ function BarCodeGenerate() {
 
             // Special field types
             if (col.key === "size") {
-                return { ...base, type: "combobox", align: "left", collection:[{ label: "Small", value: "S" }, { label: "Medium", value: "M" }, { label: "Large", value: "L" }] };
+                return { ...base, type: "combobox" as const, align: "left", collection: itemSizeCollection   };
             }
 
             if (col.key === "wastePercent") {
@@ -257,7 +288,7 @@ function BarCodeGenerate() {
 
             return base;
         });
-    }, [transactionTableCols]);
+    }, [transactionTableCols, itemSizeCollection]);
 
     // Filter visible form fields (exclude any calculated fields if needed)
     const visibleFormFields = useMemo(() => {
@@ -331,31 +362,60 @@ function BarCodeGenerate() {
         setIsSubmitting(true);
 
         try {
-            const newTransaction: BarcodeTransactionItem = {
-                id: editId || `barcode-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
-                draftRowId: barcodeHeaderForm.ENTRYNO || Date.now().toString(),
-                grsweight: Number(transactionFormData.grsweight),
-                stoneWt: Number(transactionFormData.stoneWt),
-                salesStoneWt: Number(transactionFormData.salesStoneWt),
-                wastePercent: Number(transactionFormData.wastePercent || 0),
-                size: transactionFormData.size,
-                diamondWt: Number(transactionFormData.diamondWt),
-                mc: Number(transactionFormData.mc),
-                touch: Number(transactionFormData.touch),
-                barcode: transactionFormData.barcode,
-            };
+            let newTransaction: BarcodeTransactionItem;
 
             if (editId) {
-                setTransactionRows(prev => prev.map(t => t.id === editId ? newTransaction : t));
+                // 🖊️ Editing → update but don't change barcode
+                const existingRow = transactionRows.find(t => t.id === editId);
+                if (!existingRow) return;
+
+                newTransaction = {
+                    ...existingRow,
+                    grsweight: Number(transactionFormData.grsweight),
+                    stoneWt: Number(transactionFormData.stoneWt),
+                    salesStoneWt: Number(transactionFormData.salesStoneWt),
+                    wastePercent: Number(transactionFormData.wastePercent || 0),
+                    size: transactionFormData.size,
+                    diamondWt: Number(transactionFormData.diamondWt),
+                    mc: Number(transactionFormData.mc),
+                    touch: Number(transactionFormData.touch),
+                    // Keep existing barcode
+                };
+
+                const updatedRows = transactionRows.map(t => t.id === editId ? newTransaction : t);
+                // Rebuild barcodes to maintain sequence
+                const rebuiltRows = rebuildBarcodes(updatedRows);
+                setTransactionRows(rebuiltRows);
                 setEditId(null);
+
                 toaster.create({
                     title: "Row Updated",
                     description: "Row has been updated successfully",
                     type: "success",
                     duration: 2000,
                 });
+
             } else {
-                setTransactionRows(prev => [...prev, newTransaction]);
+                // ➕ New row → add at the end
+                newTransaction = {
+                    id: `barcode-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+                    draftRowId: barcodeHeaderForm.ENTRYNO || Date.now().toString(),
+                    grsweight: Number(transactionFormData.grsweight),
+                    stoneWt: Number(transactionFormData.stoneWt),
+                    salesStoneWt: Number(transactionFormData.salesStoneWt),
+                    wastePercent: Number(transactionFormData.wastePercent || 0),
+                    size: transactionFormData.size,
+                    diamondWt: Number(transactionFormData.diamondWt),
+                    mc: Number(transactionFormData.mc),
+                    touch: Number(transactionFormData.touch),
+                    barcode: '', // Will be set by rebuildBarcodes
+                };
+
+                const updatedRows = [...transactionRows, newTransaction];
+                // Rebuild barcodes to assign sequential numbers
+                const rebuiltRows = rebuildBarcodes(updatedRows);
+                setTransactionRows(rebuiltRows);
+
                 toaster.create({
                     title: "Row Added",
                     description: "New row has been added successfully",
@@ -365,19 +425,27 @@ function BarCodeGenerate() {
             }
 
             resetTransactionForm();
-            // Focus first field after successful submission
             setTimeout(() => focusField(FIELD_ORDER[0]), 100);
+
         } finally {
             setIsSubmitting(false);
         }
-    }, [transactionFormData, editId, barcodeHeaderForm.ENTRYNO, validateTransactionForm, focusField]);
-
+    }, [
+        transactionFormData,
+        editId,
+        barcodeHeaderForm.ENTRYNO,
+        transactionRows,
+        validateTransactionForm,
+        focusField,
+        baseBarcodePrefix,
+        startBarcodeNumber
+    ]);
     /**
      * Focus management functions
      */
     const moveToNext = useCallback((currentKey: FieldKey) => {
         const idx = FIELD_ORDER.indexOf(currentKey);
-        if (idx < FIELD_ORDER.length - 1) {
+        if (idx < FIELD_ORDER.length - 2) {
             focusField(FIELD_ORDER[idx + 1]);
         } else {
             handleTransactionSubmit();
@@ -427,13 +495,18 @@ function BarCodeGenerate() {
 
     const handleDeleteRow = (row: BarcodeTransactionItem) => {
         if (window.confirm("Delete this item?")) {
-            setTransactionRows(prev => prev.filter(t => t.id !== row.id));
+            const filteredRows = transactionRows.filter(t => t.id !== row.id);
+            // Rebuild barcodes to resequence them
+            const rebuiltRows = rebuildBarcodes(filteredRows);
+            setTransactionRows(rebuiltRows);
+
             if (editId === row.id) resetTransactionForm();
+
             toaster.create({
                 title: "Row Deleted",
                 description: "Row has been deleted successfully",
                 type: "info",
-                duration: 2000,
+                duration: 1000,
             });
         }
     };
@@ -479,6 +552,13 @@ function BarCodeGenerate() {
                 return formatToFixed(value, 1);
             }
         }
+        if (col.key === "size" && value) {
+            const item = itemSizeCollection?.find((i: any) => i.value === value);
+            return item ? item.label : value;
+        }
+        if (col.key === "barcode" && value) {
+            return value; // just display the stored barcode
+        }
 
         return value.toString();
     }, []);
@@ -522,9 +602,9 @@ function BarCodeGenerate() {
         const key = field.key as FieldKey;
         const ref = fieldRefs[key];
         const isInvalid = !!errors[key] && !!touched[key];
-        const value = transactionFormData[key]?.toString() || "";
+        const value = transactionFormData[field.key as keyof typeof transactionFormData]?.toString() || "";
         const shouldDisable = field.disabled || false;
-
+        // const value = formData[field.key as keyof typeof formData]?.toString() || "";
         // For number fields
         if (field.type === "number") {
             return (
@@ -570,14 +650,16 @@ function BarCodeGenerate() {
             return (
                 <Box>
                     <SelectCombobox
-                       value={transactionFormData.size|| ""}
+                       value={value}
                         onChange={(v) => { handleTransactionChange(field.key, v); if (v) moveToNext(field.key); }}
-                        items={field?.collection || []}
+                        items={field.collection || []}
                         placeholder={field.placeholder || `Select ${field.label}`}
                         ref={ref as React.RefObject<HTMLInputElement>}
                         rounded="sm" 
                         disable={shouldDisable} 
                         onEnter={() => moveToNext(field.key)}
+
+                       
                         />
                 </Box>
             )
@@ -587,7 +669,7 @@ function BarCodeGenerate() {
         // Default for text fields
         return (
             <Box position="relative">
-                {/* <CapitalizedInput
+                <CapitalizedInput
                     field={key}
                     value={value}
                     onChange={(_, v) => handleTransactionChange(key, v)}
@@ -598,7 +680,7 @@ function BarCodeGenerate() {
                     inputRef={ref}
                     onEnter={() => moveToNext(key)}
                     noBorder
-                /> */}
+                />
             </Box>
         );
     }, [transactionFormData, errors, touched, moveToNext, handleTransactionSubmit]);
@@ -616,6 +698,17 @@ function BarCodeGenerate() {
     ];
 
     const selectedItem = barcodeItems?.SELECTED_ITEM;
+
+    const totalPieces = selectedItem?.PCS ?? 0;
+    const totalGrossWeight = formatToFixed(selectedItem?.GRSWT , 3) ?? 0;
+
+    const totalSelectedPieces = transactionRows?.length ;
+
+    const showTableForm = Boolean(
+        totalSelectedPieces < totalPieces ||
+        Boolean(editId)
+    );
+
     const stockTableData = Array.isArray(selectedItem)
         ? selectedItem
         : selectedItem && typeof selectedItem === 'object'
@@ -732,34 +825,27 @@ function BarCodeGenerate() {
      * Main Render
      */
     return (
-        <Box bg={theme.colors.formColor} p={2}>
-            <Box display={'flex'} justifyContent={'center'} alignItems={'center'} mb={2}>
-                <Text fontSize={'base'} fontWeight={'semibold'} textAlign={'center'}>
-                    BARCODE GENERATION
-                </Text>
-            </Box>
-
-            <Box display='flex' gap={2} flexDirection='row' justifyContent='space-between'>
+        <Box display={'flex'} flexDirection={'column'} gap={2}>
+            <Box bg={theme.colors.formColor} p={2} rounded={'xl'} >
+                <Box display={'flex'} justifyContent={'center'} alignItems={'center'} >
+                    <Text fontSize={'base'} fontWeight={'semibold'} textAlign={'center'}>
+                        BARCODE GENERATION
+                    </Text>
+                </Box>
+                <Box display='flex' gap={2} flexDirection='row' justifyContent='space-between'>
                 <BarcodeHeaderForm
                     form={barcodeHeaderForm}
                     onChange={handleHeaderChange}
                     purchaserCollection={purchaserCollection || []}
                     inwardCollection={inwardCollection || []}
                     itemCollection={itemCollection || []}
+                    isDisabled={transactionRows?.length > 0}
                 />
-                <Box w={'30%'}>
-                    <SummaryTable
-                        title="STOCK SUMMARY"
-                        rowLabels={summaryRowData}
-                        columnLabels={summaryColData}
-                        data={tableData}
-                        headerFontSize="xs"
-                        headerBg="#fdf0ff"
-                    />
                 </Box>
+              
             </Box>
 
-            <Box display='flex' flexDirection={{ sm: 'column', md: 'row' }} gap={2} mt={4}>
+            <Box display='flex' flexDirection={{ sm: 'column', md: 'row' }} gap={2} bg={theme.colors.formColor} p={2} rounded={'xl'} >
                 <CustomTable
                     columns={stockTableHeader}
                     data={stockTableData}
@@ -770,9 +856,48 @@ function BarCodeGenerate() {
                     borderColor="black"
                     maxWidth="40%"
                 />
+                <Box w={'30%'}>
+                    <SummaryTable
+                        title="STOCK SUMMARY"
+                        rowLabels={summaryRowData}
+                        columnLabels={summaryColData}
+                        data={tableData}
+                        headerFontSize="xs"
+                        headerBg="#fdf0ff"
+                        size="sm"
+                    />
+                </Box>
             </Box>
 
-            <Box>
+            <Box display='flex' flexDirection={{ sm: 'column', md: 'column' }} gap={2} bg={theme.colors.formColor} p={2} rounded={'xl'} >
+
+                <Box display='flex' gap={2} justifyContent='end'>
+
+                    <Button
+                        size="xs"
+                        fontSize='2xs'
+                        // onClick={onReset}
+                        variant='ghost'
+                        bg={theme.colors.formColor}
+                        p={0}
+                    >
+                        <Image src={clearIcon} width={58} alt="save" />
+                    </Button>
+
+                    <Button
+                        size="xs"
+                        bg={theme.colors.formColor}
+                        // onClick={onSave}
+                        // loading={isSaving}
+                        loadingText="Saving..."
+                        variant='ghost'
+                        p={0}
+                    >
+                        <Image src={saveIcon} width={60} alt="save" />
+                    </Button>
+
+                </Box>
+
                 <TransactionTable
                     theme={theme}
                     tableCols={transactionTableCols}
@@ -793,6 +918,9 @@ function BarCodeGenerate() {
                     formatTotal={formatTotal}
                     getCellStyle={getCellStyle}
                     transactionType="barcode"
+                    showTotal
+                    showTableForm={showTableForm}
+                    
                 />
             </Box>
         </Box>

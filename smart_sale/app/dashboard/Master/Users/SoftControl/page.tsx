@@ -22,6 +22,7 @@ import {
   useSoftControls,
   useCreateSoftControl,
   useUpdateSoftControl,
+  useSoftControlById,
 } from '@/hooks/softControl/useSoftControl';
 import { useEnterNavigation } from "@/component/form/useEnterNavigation";
 import { DynamicForm } from "@/component/form/DynamicForm";
@@ -32,9 +33,13 @@ import { usePrint } from "@/context/print/usePrintContext";
 import { useRouter } from "next/navigation";
 import { FaPrint, FaFileExcel } from "react-icons/fa";
 import { getSoftControlFormFields } from "@/config/user/SoftControlMaster";
+import SearchBar from "@/component/search/SearchBar";
+
 
 // TypeScript interface for SoftControl (matching hooks)
 import { SoftControl } from "@/types/softcontrol/SoftControl";
+
+
 
 function SoftControlMaster() {
   const { theme } = useTheme();
@@ -44,6 +49,9 @@ function SoftControlMaster() {
   /* -------------------- API HOOKS -------------------- */
   const { data, refetch: softControlRefetch } = useSoftControls();
   const softControls = data ?? [];
+
+  const { data: softControlDataById, isLoading, error } = useSoftControlById('LOT_TAG_CONTROL')
+  console.log(softControlDataById,'softControlDataById')
 
   const { mutate: createSoftControl, isPending: isCreating } = useCreateSoftControl();
   const { mutate: updateSoftControl } = useUpdateSoftControl();
@@ -87,18 +95,36 @@ function SoftControlMaster() {
     return undefined;
   };
 
-  const validateForm = (): boolean => {
-
+  const validateForm = (editId?: string): boolean => {
     const newErrors: Record<string, string> = {};
+
     softControlFormFields.forEach((field) => {
+      const value = form[field.name as keyof SoftControl];
+
+      // Required validation
       if (field.required) {
         const error = validateField(
           field.name as keyof SoftControl,
-          form[field.name as keyof SoftControl]
+          value
         );
         if (error) newErrors[field.name] = error;
       }
+
+      // ✅ Duplicate ID check (assuming field name is "id")
+      if (field.name === "CTLID" && value) {
+        const duplicate = softControls?.find((item) => {
+          return (
+            String(item.CTLID) === String(value) && // same id
+            String(item.CTLID) !== String(editId)   // exclude current edit row
+          );
+        });
+
+        if (duplicate) {
+          newErrors[field.name] = "ID already exists";
+        }
+      }
     });
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -106,8 +132,8 @@ function SoftControlMaster() {
   const handleSave = () => {
 
    
-    if (!validateForm()) {
-      toastError("Please fix the errors in the form");
+    if (!validateForm(String(editId))) {
+      // toastError("Please fix the errors in the form");
       return;
     }
 
@@ -124,6 +150,7 @@ function SoftControlMaster() {
       );
     } else {
       createSoftControl(
+
         { ...form },
         {
           onSuccess: () => {
@@ -222,6 +249,7 @@ function SoftControlMaster() {
             <Box display="flex" mb={2} gap={2} justifyContent="space-between" alignItems="center">
               <Text fontWeight="semibold" fontSize="small">SOFTCONTROL DETAILS</Text>
               <Flex>
+                <SearchBar size="xs" placeholder="search by id" />
                 <Button variant="ghost" size="xs" color={theme.colors.green} onClick={() => handleExport("excel")}>
                   <FaFileExcel />
                 </Button>
