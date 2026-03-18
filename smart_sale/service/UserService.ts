@@ -7,6 +7,7 @@ export const registerUser = async (
     image?: File
 ): Promise<ApiResponse<UserMaster>> => {
     try {
+        console.log("UserService - Register User:", user);
       
         const formData = new FormData();
 

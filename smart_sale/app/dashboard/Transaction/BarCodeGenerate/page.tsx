@@ -1,65 +1,90 @@
 "use client";
 
-/**
- * BARCODE GENERATION COMPONENT
- * @component
- */
+/*-------------- REACT & STATE --------------*/
+import React, {
+    useEffect,
+    useRef,
+    useState,
+    useMemo,
+    useCallback,
+} from "react";
+import { Box, Table, Text, Button, Portal, Drawer } from "@chakra-ui/react";
 
-/*--------------STATES--------------------*/
-import React, { useEffect, useRef, useState, useMemo, useCallback } from "react";
-import { Box, Table, Text, Button, HStack, Drawer, Portal } from '@chakra-ui/react';
-
-/*--------------COMPONENTS------------------*/
-import BarcodeHeaderForm from "./BarcodeHeaderForm/BarCodeHeaderForm";
+/*-------------- COMPONENTS -----------------*/
 import { CustomTable } from "@/component/table/CustomTable";
 import SummaryTable from "@/component/table/SummaryTable";
 import TransactionTable from "@/component/table/TransactionTable";
-
 import { SelectCombobox } from "@/components/ui/selectComboBox";
 import { CapitalizedInput } from "@/components/ui/CapitalizedInput";
-import { NativeSelectWrapper } from "@/components/ui/NativeSelectWrapper";
 import { toaster } from "@/components/ui/toaster";
+import { SingleCheckbox } from "@/components/ui/CheckBox";
 
-/*--------------TYPES----------------------*/
+/*-------------- TYPES ----------------------*/
 import { BarcodeHeaderFormInterface } from "@/types/barcode/HeaderForm";
+import type { CellChange, ChangeSource } from "handsontable/common";
 
-/*--------------HOOKS---------------------*/
+/*-------------- HOOKS ----------------------*/
 import { useAllAccountHead } from "@/hooks/accountHead/useAccountHead";
-import { useBarcodeItems } from "@/hooks/barcode/useBarcodeItems";
+import { useBarcodeItems, useCreateTag } from "@/hooks/barcode/useBarcodeItems";
 import { useSessionStorage } from "@/hooks/storage/useSessionStorage";
 import { useTheme } from "@/context/theme/themeContext";
 import { useSoftControlById } from "@/hooks/softControl/useSoftControl";
 
-/*-------------- CONSTANTS & DATA's --------------*/
+/*-------------- CONSTANTS ------------------*/
 import { transactionTableCols } from "@/data/barcodeGenerate/barcodeFormFields";
 
-/*-------------- UTILITIES  -------------------*/
+/*-------------- UTILITIES ------------------*/
 import { formatToFixed } from "@/utils/format/numberFormat";
 
-
+/*-------------- ASSETS ---------------------*/
 import Image from "next/image";
-import saveIcon from '@/asserts/icons/save.png';
-import clearIcon from '@/asserts/icons/clear.jpeg';
-import updateIcon from '@/asserts/icons/update.png';
-import { HiFilter } from "react-icons/hi";
+import saveIcon from "@/asserts/icons/save.png";
+import clearIcon from "@/asserts/icons/clear.jpeg";
 
-/*-------------- STORAGE KEYS -------------------*/
-const BARCODE_HEADER_KEY = 'barcode_header_form';
-const BARCODE_TRANSACTIONS_KEY = 'barcode_transactions';
+/*-------------- PAGE COMPONENTS ------------*/
+import BarcodeHeaderForm from "./BarcodeHeaderForm/BarCodeHeaderForm";
+import BarCodeExcel, { type ExcelRowData, type ExcelData } from "./excel/BarCodeExcel";
 
-const safeNum = (val: any): number => {
+/* ============================================================
+   CONSTANTS
+   ============================================================ */
+
+const BARCODE_HEADER_KEY = "barcode_header_form";
+const BARCODE_TRANSACTIONS_KEY = "barcode_transactions";
+
+const FIELD_ORDER = [
+    "grsweight", "stoneWt", "salesStoneWt", "wastePercent",
+    "size", "diamondWt", "mc", "touch", "barcode",
+] as const;
+
+type FieldKey = (typeof FIELD_ORDER)[number];
+
+const NUMERIC_FIELDS = new Set([
+    "grsweight", "stoneWt", "salesStoneWt", "wastePercent", "diamondWt", "mc", "touch",
+]);
+const REQUIRED_FIELDS = new Set(["grsweight", "stoneWt", "salesStoneWt"]);
+
+const EMPTY_HEADER: BarcodeHeaderFormInterface = {
+    ENTRYNO: "", DATE: "", COMPANYTYPE: "PR", COMPANYNAME: "", INWARDNO: "", ITEMNAME: "",
+};
+const EMPTY_TRANSACTION_FORM = {
+    grsweight: "", stoneWt: "", salesStoneWt: "", wastePercent: "",
+    size: "", diamondWt: "", mc: "", touch: "", barcode: "",
+};
+const EMPTY_ARRAY: never[] = [];
+
+/* ============================================================
+   UTILITIES
+   ============================================================ */
+const safeNum = (val: unknown): number => {
     const n = Number(val);
     return isNaN(n) ? 0 : n;
 };
 
-
-
-
-
-
-// Transaction item interface
+/* ============================================================
+   TYPES
+   ============================================================ */
 interface BarcodeTransactionItem {
-    
     id: string;
     draftRowId: string;
     grsweight: number;
@@ -74,25 +99,22 @@ interface BarcodeTransactionItem {
     print?: boolean;
 }
 
-// Define field order for focus traversal (excluding any calculated/disabled fields)
-const FIELD_ORDER = [
-    "grsweight", "stoneWt", "salesStoneWt", "wastePercent",
-    "size", "diamondWt", "mc", "touch", "barcode"
-] as const;
+type TaggingErrors = Record<string, string>;
 
-type FieldKey = typeof FIELD_ORDER[number];
+interface ValidateRowsParams {
+    transactionRows: BarcodeTransactionItem[];
+    limitations: { PCS: number; STNWT: number };
+}
 
+/* ============================================================
+   COMPONENT
+   ============================================================ */
 function BarCodeGenerate() {
     const { theme } = useTheme();
 
-    /**
-     * Refs
-     */
+    /* -------- Refs -------- */
     const isFirstRender = useRef(true);
-    const submitBtnRef = useRef<HTMLButtonElement>(null);
     const rowsRef = useRef<BarcodeTransactionItem[]>([]);
-
-    // Individual refs for each field
     const weightRef = useRef<HTMLInputElement>(null);
     const stoneWtRef = useRef<HTMLInputElement>(null);
     const salesStoneWtRef = useRef<HTMLInputElement>(null);
@@ -103,397 +125,419 @@ function BarCodeGenerate() {
     const touchRef = useRef<HTMLInputElement>(null);
     const barcodeRef = useRef<HTMLInputElement>(null);
 
-    //overlay requirements
-      const [isFilterOpen, setIsFilterOpen] = useState<boolean>(false);
+    const fieldRefs = useRef<Record<FieldKey, React.RefObject<HTMLInputElement | null>>>({
+        grsweight: weightRef, stoneWt: stoneWtRef, salesStoneWt: salesStoneWtRef,
+        wastePercent: wastePercentRef, size: sizeRef, diamondWt: diamondWtRef,
+        mc: mcRef, touch: touchRef, barcode: barcodeRef,
+    });
 
-  const handleShowFilter = () => {
-    setIsFilterOpen(prev => !prev);
-  };
+    /* -------- Mutation -------- */
+    const { mutate: createTag } = useCreateTag();
 
-  const closeFilter=()=>{
-    setIsFilterOpen(prev => !prev);
-  }
-
-    const fieldRefs: Record<FieldKey, React.RefObject<any>> = {
-        grsweight: weightRef,
-        stoneWt: stoneWtRef,
-        salesStoneWt: salesStoneWtRef,
-        wastePercent: wastePercentRef,
-        size: sizeRef,
-        diamondWt: diamondWtRef,
-        mc: mcRef,
-        touch: touchRef,
-        barcode: barcodeRef,
-    };
-    
-
-    /**
-     * State Management with Session Storage
-     */
-    const [barcodeHeaderForm, setBarcodeHeaderForm] = useSessionStorage<BarcodeHeaderFormInterface>(
-        BARCODE_HEADER_KEY,
-        {
-            ENTRYNO: "",
-            DATE: "",
-            COMPANYTYPE: "PR",
-            COMPANYNAME: "",
-            INWARDNO: "",
-            ITEMNAME: ""
-        }
-    );
+    /* -------- Session-persisted State -------- */
+    const [barcodeHeaderForm, setBarcodeHeaderForm] =
+        useSessionStorage<BarcodeHeaderFormInterface>(BARCODE_HEADER_KEY, EMPTY_HEADER);
 
     const [transactionRows, setTransactionRows] = useSessionStorage<BarcodeTransactionItem[]>(
-        BARCODE_TRANSACTIONS_KEY,
-        []
+        BARCODE_TRANSACTIONS_KEY, EMPTY_ARRAY
     );
-//clear ALL 
-    const  handleClear=()=>{
-        setTransactionRows([])
-    }
 
-    // Update rowsRef whenever transactionRows changes
-    useEffect(() => {
-        rowsRef.current = transactionRows;
-    }, [transactionRows]);
-
-    const emptyTransactionForm = {
-        grsweight: "",
-        stoneWt: "",
-        salesStoneWt: "",
-        wastePercent: "",
-        size: "",
-        diamondWt: "",
-        mc: "",
-        touch: "",
-        barcode: "",
-    };
-
-    const [transactionFormData, setTransactionFormData] = useState(emptyTransactionForm);
+    /* -------- Local State -------- */
+    const [transactionFormData, setTransactionFormData] = useState(EMPTY_TRANSACTION_FORM);
     const [editId, setEditId] = useState<string | null>(null);
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [touched, setTouched] = useState<Record<string, boolean>>({});
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [taggingErrors, setTaggingErrors] = useState<TaggingErrors>({});
+    const [excelImport, setExcelImport] = useState(false);
 
     /**
-     * Data Fetching Hooks
+     * Raw grid data lives in the parent so it survives Drawer close/open cycles.
+     * Starts empty — populated either by typing or by FileUploader parsing.
      */
+    const [excelData, setExcelData] = useState<ExcelData>([]);
+
+    /* -------- Data Fetching -------- */
     const { data: allPurchaseAccount } = useAllAccountHead("", {
-        accountType: barcodeHeaderForm.COMPANYTYPE || "PR"
+        accountType: barcodeHeaderForm.COMPANYTYPE || "PR",
     });
 
-    const { data: barcodeItems } = useBarcodeItems({
+    const barcodeQueryParams = useMemo(() => ({
         ACCODE: Number(barcodeHeaderForm.COMPANYNAME),
         PURCHASE_ENTRYNO: Number(barcodeHeaderForm.INWARDNO),
         SNO: String(barcodeHeaderForm.ITEMNAME),
-    });
+    }), [barcodeHeaderForm.COMPANYNAME, barcodeHeaderForm.INWARDNO, barcodeHeaderForm.ITEMNAME]);
 
-      const { data: softControlDataById, isLoading, error } = useSoftControlById('LOT_TAG_CONTROL')
-      console.log(softControlDataById,'softControlDataById')
-    console.log(barcodeItems,'barcodeItems')
-    /**
-     * Effects
-     */
+    const { data: barcodeItems } = useBarcodeItems(barcodeQueryParams);
+    const { data: softControlDataById } = useSoftControlById("LOT_TAG_CONTROL");
+
+    /* ============================================================
+       EFFECTS
+       ============================================================ */
+
+    // Keep rowsRef in sync with transactionRows
+    useEffect(() => { rowsRef.current = transactionRows; }, [transactionRows]);
+
+    // Sync ENTRY_NO from API into header form (skip first render)
     useEffect(() => {
-        if (isFirstRender.current) {
-            isFirstRender.current = false;
-            return;
-        }
-
+        if (isFirstRender.current) { isFirstRender.current = false; return; }
         if (barcodeItems?.ENTRY_NO) {
-            setBarcodeHeaderForm((prev) => ({
-                ...prev,
-                ENTRYNO: String(barcodeItems.ENTRY_NO),
-            }));
+            setBarcodeHeaderForm((prev) => ({ ...prev, ENTRYNO: String(barcodeItems.ENTRY_NO) }));
         }
-    }, [barcodeItems, setBarcodeHeaderForm]);
+    }, [barcodeItems?.ENTRY_NO, setBarcodeHeaderForm]);
 
-    // Focus first field when component mounts or when editId changes
+    // Focus first field when editId changes or on mount
     useEffect(() => {
-        setTimeout(() => {
-            if (editId) {
-                fieldRefs[FIELD_ORDER[0]]?.current?.focus();
-            } else {
-                fieldRefs[FIELD_ORDER[0]]?.current?.focus();
-            }
-        }, 100);
+        const t = setTimeout(() => fieldRefs.current[FIELD_ORDER[0]]?.current?.focus(), 100);
+        return () => clearTimeout(t);
     }, [editId]);
 
-    /**
-     * Data Transformations
-     */
-    const purchaserCollection = Array.isArray(allPurchaseAccount?.data?.acheads)
-        ? allPurchaseAccount.data.acheads.map((item: any) => ({
-            label: item.ACNAME,
-            value: item.ACCODE,
-        }))
-        : [];
+    /* ============================================================
+       DERIVED DATA
+       ============================================================ */
 
-    const inwardCollection = Array.isArray(barcodeItems?.PURCHASE_ENTRY_NO)
-        ? barcodeItems.PURCHASE_ENTRY_NO.map((item: number) => ({
-            label: String(`INWARD NO ${item}`),
-            value: String(item),
-        }))
-        : [];
+    const purchaserCollection = useMemo(() =>
+        Array.isArray(allPurchaseAccount?.data?.acheads)
+            ? allPurchaseAccount.data.acheads.map((i: any) => ({ label: i.ACNAME, value: i.ACCODE }))
+            : EMPTY_ARRAY,
+        [allPurchaseAccount?.data?.acheads]);
 
-    const itemCollection = Array.isArray(barcodeItems?.ITEMLIST)
-        ? barcodeItems.ITEMLIST.map((item: any) => ({
-            label: item.ITEMNAME,
-            value: item.SNO,
-        }))
-        : [];
+    const inwardCollection = useMemo(() =>
+        Array.isArray(barcodeItems?.PURCHASE_ENTRY_NO)
+            ? barcodeItems.PURCHASE_ENTRY_NO.map((i: number) => ({ label: `INWARD NO ${i}`, value: String(i) }))
+            : EMPTY_ARRAY,
+        [barcodeItems?.PURCHASE_ENTRY_NO]);
 
-    const itemSizeCollection = Array.isArray(barcodeItems?.SIZELIST)
-        ? barcodeItems.SIZELIST.map((item: any) => ({
-            label: item.SIZENAME,
-            value: String(item.SIZEID),
-        }))
-        : [];
-    
-    const baseBarcodePrefix = barcodeItems?.TAGNO?.PREFIX || "";
-    console.log(baseBarcodePrefix,'baseBarcodePrefix')
-    const startBarcodeNumber = Number(barcodeItems?.TAGNO?.TAGNO || 0);
+    const itemCollection = useMemo(() =>
+        Array.isArray(barcodeItems?.ITEMLIST)
+            ? barcodeItems.ITEMLIST.map((i: any) => ({ label: i.ITEMNAME, value: i.SNO, itemId: i.ITEMID }))
+            : EMPTY_ARRAY,
+        [barcodeItems?.ITEMLIST]);
 
-    const rebuildBarcodes = (rows: BarcodeTransactionItem[]) => {
-        return rows.map((row, index) => {
-            // Always regenerate barcode based on position in the array
-            return {
-                ...row,
-                barcode: `${baseBarcodePrefix}${startBarcodeNumber + index + 1}`
-            };
-        });
-    };
-    /* ==================== TRANSACTION TABLE CONFIGURATION ==================== */
+    const itemSizeCollection = useMemo(() =>
+        Array.isArray(barcodeItems?.SIZELIST)
+            ? barcodeItems.SIZELIST.map((i: any) => ({ label: i.SIZENAME, value: String(i.SIZEID) }))
+            : EMPTY_ARRAY,
+        [barcodeItems?.SIZELIST]);
 
-    // Table columns definition
-    const getWidth = (width: string | number) => width || "50px";
+    const baseBarcodePrefix = useMemo(() => barcodeItems?.TAGNO?.PREFIX ?? "", [barcodeItems?.TAGNO?.PREFIX]);
+    const startBarcodeNumber = useMemo(() => Number(barcodeItems?.TAGNO?.TAGNO ?? 0), [barcodeItems?.TAGNO?.TAGNO]);
 
-    // Fields that should be treated as numbers
-    const numericFields = ["grsweight", "stoneWt", "salesStoneWt", "wastePercent", "diamondWt", "mc", "touch"];
+    const itemId = useMemo(
+        () => itemCollection.find((i: any) => i.value === barcodeHeaderForm.ITEMNAME)?.itemId ?? null,
+        [barcodeHeaderForm.ITEMNAME, itemCollection]);
 
+    const selectedItem = useMemo(() => barcodeItems?.SELECTED_ITEM ?? null, [barcodeItems?.SELECTED_ITEM]);
+    const stockTableData = useMemo(() =>
+        Array.isArray(selectedItem) ? selectedItem
+            : selectedItem && typeof selectedItem === "object" ? [selectedItem]
+                : EMPTY_ARRAY,
+        [selectedItem]);
 
-    // Generate form fields from table columns using useMemo
-    const transactionFormFields = useMemo(() => {
-        return transactionTableCols.map((col): any => {
-            const isNum = numericFields.includes(col.key );
-            const isRequired = ["grsweight", "stoneWt", "salesStoneWt"].includes(col.key);
+    /* ============================================================
+       BARCODE REBUILD
+       ============================================================ */
+    const rebuildBarcodes = useCallback(
+        (rows: BarcodeTransactionItem[]): BarcodeTransactionItem[] =>
+            rows.map((row, i) => ({ ...row, barcode: `${baseBarcodePrefix}${startBarcodeNumber + i + 1}` })),
+        [baseBarcodePrefix, startBarcodeNumber]);
 
+    /* ============================================================
+       TABLE CONFIG
+       ============================================================ */
+    const transactionFormFields = useMemo(() =>
+        transactionTableCols.map((col): any => {
+            const isNum = NUMERIC_FIELDS.has(col.key);
+            const isRequired = REQUIRED_FIELDS.has(col.key);
             const base: any = {
-                key: col.key,
-                label: col.label || col.key,
-                placeholder: col.label || col.key,
-                type: isNum ? "number" : "text",
-                isRequired,
-                size: "xs",
-                align: "right", // Right align numbers
+                key: col.key, label: col.label || col.key, placeholder: col.label || col.key,
+                type: isNum ? "number" : "text", isRequired, size: "xs", align: isNum ? "right" : "left"
             };
-
-            // Add decimal scale if specified in column
-            if (col.decimalScale) {
-                base.decimalScale = col.decimalScale;
-            }
-
-            // Special field types
-            if (col.key === "size") {
-                return { ...base, type: "combobox" as const, align: "left", collection: itemSizeCollection   };
-            }
-
-            if (col.key === "wastePercent") {
-                return { ...base, type: "number", decimalScale: 2 };
-            }
-
-            if (col.key === "barcode") {
-                return { ...base, type: "text", align: "left" ,disabled:true };
-            }
-
+            if (col.decimalScale) base.decimalScale = col.decimalScale;
+            if (col.key === "size") return { ...base, type: "combobox" as const, align: "left", collection: itemSizeCollection };
+            if (col.key === "wastePercent") return { ...base, type: "number", decimalScale: 2 };
+            if (col.key === "barcode") return { ...base, type: "text", align: "left", disabled: true };
             return base;
-        });
-    }, [transactionTableCols, itemSizeCollection]);
+        }),
+        [itemSizeCollection]);
 
-    // Filter visible form fields (exclude any calculated fields if needed)
-    const visibleFormFields = useMemo(() => {
-        return transactionFormFields.filter(f => f.type !== "calculated");
-    }, [transactionFormFields]);
+    const visibleFormFields = useMemo(
+        () => transactionFormFields.filter((f: any) => f.type !== "calculated"),
+        [transactionFormFields]);
 
-    // All display columns including S.No, actions, and print
-    const allDisplayCols = [
-        { key: "__sno", label: "#", align: "center" as const, width: '50px' },
-        ...transactionTableCols.map(col => ({
+    const allDisplayCols = useMemo(() => [
+        { key: "__sno", label: "#", align: "center" as const, width: "50px" },
+        ...transactionTableCols.map((col) => ({
             ...col,
-            align: col.key === "size" || col.key === "barcode" ? "left" as const : "right" as const
+            align: col.key === "size" || col.key === "barcode" ? "left" as const : "right" as const,
         })),
-        { key: "__actions", label: "ACTIONS", align: "center" as const, width: '50px' },
-        { key: "__print", label: "PRINT", align: "center" as const, width: '50px' },
-    ];
+        { key: "__actions", label: "ACTIONS", align: "center" as const, width: "50px" },
+        { key: "__print", label: "PRINT", align: "center" as const, width: "50px" },
+    ], []);
 
-    const validateTransactionForm = (): boolean => {
-        const newErrors: Record<string, string> = {};
-        const newTouched: Record<string, boolean> = {};
+    const stockTableHeader = useMemo(() => [
+        { key: "ITEMID", label: "ITEM ID", align: "start" as const },
+        { key: "GRSWT", label: "GROSS WT", align: "end" as const, decimalScale: 3 },
+        { key: "STNWT", label: "STONE WT", align: "end" as const, decimalScale: 3 },
+        { key: "NETWT", label: "NET WT", align: "end" as const, decimalScale: 3 },
+        { key: "WASTYPE", label: "WASTE TYPE", align: "center" as const },
+        { key: "TOUCH", label: "TOUCH", align: "center" as const, decimalScale: 1 },
+    ], []);
 
-        // Mark all fields as touched
-        FIELD_ORDER.forEach(k => {
-            newTouched[k] = true;
+    const summaryRowData = useMemo(() => [
+        { key: "PCS", label: "Pieces" },
+        { key: "GRSWT", label: "Gross Wt" },
+        { key: "STNWT", label: "Stone Wt" },
+    ], []);
+
+    const summaryColData = useMemo(() => [
+        { key: "total", label: "LOT", align: "end" as const },
+        { key: "completed", label: "COMPLETED", align: "end" as const },
+        { key: "balance", label: "BALANCE", align: "end" as const },
+    ], []);
+
+    /* ============================================================
+       TRANSACTION TOTALS
+       ============================================================ */
+    const transactionTotals = useMemo(() => ({
+        grsweight: transactionRows.reduce((s, t) => s + t.grsweight, 0),
+        stoneWt: transactionRows.reduce((s, t) => s + t.stoneWt, 0),
+        salesStoneWt: transactionRows.reduce((s, t) => s + t.salesStoneWt, 0),
+        diamondWt: transactionRows.reduce((s, t) => s + t.diamondWt, 0),
+        mc: transactionRows.reduce((s, t) => s + t.mc, 0),
+    }), [transactionRows]);
+
+    /* ============================================================
+       SUMMARY TABLE DATA
+       ============================================================ */
+    const tableData = useMemo(() => {
+        const itemList = Array.isArray(selectedItem) ? selectedItem
+            : selectedItem && typeof selectedItem === "object" ? [selectedItem] : [];
+        const lot: Record<string, string> = {
+            PCS: itemList.reduce((s, i) => s + safeNum(i?.PCS), 0).toString(),
+            GRSWT: formatToFixed(itemList.reduce((s, i) => s + safeNum(i?.GRSWT), 0), 3),
+            STNWT: formatToFixed(itemList.reduce((s, i) => s + safeNum(i?.STNWT), 0), 3),
+            NETWT: formatToFixed(itemList.reduce((s, i) => s + safeNum(i?.NETWT), 0), 3),
+        };
+        const done: Record<string, string> = {
+            PCS: transactionRows.length.toString(),
+            GRSWT: formatToFixed(transactionRows.reduce((s, t) => s + t.grsweight, 0), 3),
+            STNWT: formatToFixed(transactionRows.reduce((s, t) => s + t.stoneWt, 0), 3),
+            NETWT: formatToFixed(transactionRows.reduce((s, t) => s + (t.grsweight - t.stoneWt), 0), 3),
+        };
+
+        const is3Dec = new Set(["GRSWT", "STNWT", "NETWT"]);
+        const result: Record<string, { total: string; completed: string; balance: string }> = {};
+        summaryRowData.forEach(({ key }) => {
+            const t = Number(lot[key] ?? 0);
+            const c = Number(done[key] ?? 0);
+            const b = Math.max(0, t - c);
+            const isPCS = key === "PCS";
+            const sc = is3Dec.has(key) ? 3 : 2;
+            result[key] = {
+                total: isPCS ? Math.round(t).toString() : formatToFixed(t, sc),
+                completed: isPCS ? Math.round(c).toString() : formatToFixed(c, sc),
+                balance: isPCS ? Math.round(b).toString() : formatToFixed(b, sc),
+            };
         });
+        return result;
+    }, [selectedItem, transactionRows, summaryRowData]);
 
-        // Validation rules
-        if (!transactionFormData.grsweight || Number(transactionFormData.grsweight) <= 0) {
-            newErrors.grsweight = "Weight must be greater than 0";
-        }
-        if (!transactionFormData.stoneWt || Number(transactionFormData.stoneWt) < 0) {
-            newErrors.stoneWt = "Stone weight must be 0 or greater";
-        }
-        if (!transactionFormData.salesStoneWt || Number(transactionFormData.salesStoneWt) < 0) {
-            newErrors.salesStoneWt = "Sales stone weight must be 0 or greater";
-        }
-       
-        setErrors(newErrors);
-        setTouched(newTouched);
+    /* ============================================================
+       SHOW/HIDE FORM ROW
+       ============================================================ */
+    const showTableForm = useMemo(
+        () => transactionRows.length < safeNum(selectedItem?.PCS) || Boolean(editId),
+        [selectedItem?.PCS, transactionRows.length, editId]);
 
-        if (Object.keys(newErrors).length > 0) {
-            // Focus the first errored field
-            const firstError = FIELD_ORDER.find(k => newErrors[k]);
-            if (firstError) {
-                focusField(firstError);
-                toaster.create({
-                    title: "Validation Error",
-                    description: newErrors[firstError],
-                    type: "error",
-                    duration: 2000,
-                });
-            }
-            return false;
-        }
-        return true;
-    };
+    /* ============================================================
+       CALLBACKS — EXCEL
+       ============================================================ */
 
     /**
-     * Focus management functions
+     * HotTable afterChange handler.
+     * Immutably updates excelData without rebuilding the entire array every keystroke.
      */
+    const handleExcelChange = useCallback(
+        (changes: CellChange[] | null, _source: ChangeSource) => {
+            if (!changes) return;
+            setExcelData((prev) => {
+                const next = prev.map((row) => [...row]);        // shallow-clone each row
+                changes.forEach(([row, col, , newVal]) => {
+                    while (next.length <= row) next.push([]);    // grow if HOT added a spare row
+                    next[row][col as number] = newVal as string | number | null;
+                });
+                return next;
+            });
+        },
+        []
+    );
+
+    /**
+     * Called by BarCodeExcel's "Load into Table" button.
+     * Converts ExcelRowData[] → BarcodeTransactionItem[], appends to existing rows,
+     * rebuilds barcodes, persists to session storage, and closes the drawer.
+     */
+    const handleExcelLoad = useCallback(
+        (parsedRows: ExcelRowData[]) => {
+            if (!parsedRows.length) return;
+
+            const draftRowId = barcodeHeaderForm.ENTRYNO || String(Date.now());
+
+            const newItems: BarcodeTransactionItem[] = parsedRows.map((r) => ({
+                id: `excel-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+                draftRowId,
+                grsweight: r.grsweight,
+                stoneWt: r.stoneWt,
+                salesStoneWt: r.salesStoneWt,
+                wastePercent: r.wastePercent,
+                size: r.size,
+                diamondWt: r.diamondWt,
+                mc: r.mc,
+                touch: r.touch,
+                barcode: "",   // rebuildBarcodes assigns the real value
+            }));
+
+            // Merge with any manually-entered rows, then resequence barcodes
+            setTransactionRows(rebuildBarcodes([...rowsRef.current, ...newItems]));
+
+            toaster.create({
+                title: "Excel Imported",
+                description: `${newItems.length} row(s) added from Excel`,
+                type: "success",
+                duration: 2500,
+            });
+
+            setExcelImport(false);   // close the drawer after a successful load
+        },
+        [barcodeHeaderForm.ENTRYNO, rebuildBarcodes, setTransactionRows]
+    );
+
+    /* ============================================================
+       CALLBACKS — TRANSACTION FORM
+       ============================================================ */
+
     const focusField = useCallback((key: FieldKey) => {
-        setTimeout(() => {
-            const ref = fieldRefs[key];
-            ref?.current?.focus?.();
-            ref?.current?.select?.();
+        const t = setTimeout(() => {
+            fieldRefs.current[key]?.current?.focus?.();
+            fieldRefs.current[key]?.current?.select?.();
         }, 50);
+        return () => clearTimeout(t);
     }, []);
 
-    const handleTransactionSubmit = useCallback(() => {
-        if (!validateTransactionForm()) return;
-        setIsSubmitting(true);
+    const handleHeaderChange = useCallback(
+        (field: string, value: unknown) => setBarcodeHeaderForm((p) => ({ ...p, [field]: value })),
+        [setBarcodeHeaderForm]);
 
-        try {
-            let newTransaction: BarcodeTransactionItem;
+    const handleTransactionChange = useCallback((key: string, value: unknown) => {
+        setTransactionFormData((p) => ({ ...p, [key]: value }));
+        setTouched((p) => ({ ...p, [key]: true }));
+        setErrors((p) => { if (!p[key]) return p; const n = { ...p }; delete n[key]; return n; });
+    }, []);
 
-            if (editId) {
-                // 🖊️ Editing → update but don't change barcode
-                const existingRow = transactionRows.find(t => t.id === editId);
-                if (!existingRow) return;
-
-                newTransaction = {
-                    ...existingRow,
-                    grsweight: Number(transactionFormData.grsweight),
-                    stoneWt: Number(transactionFormData.stoneWt),
-                    salesStoneWt: Number(transactionFormData.salesStoneWt),
-                    wastePercent: Number(transactionFormData.wastePercent || 0),
-                    size: transactionFormData.size,
-                    diamondWt: Number(transactionFormData.diamondWt),
-                    mc: Number(transactionFormData.mc),
-                    touch: Number(transactionFormData.touch),
-                    // Keep existing barcode
-                };
-
-                const updatedRows = transactionRows.map(t => t.id === editId ? newTransaction : t);
-                // Rebuild barcodes to maintain sequence
-                const rebuiltRows = rebuildBarcodes(updatedRows);
-                setTransactionRows(rebuiltRows);
-                setEditId(null);
-
-                toaster.create({
-                    title: "Row Updated",
-                    description: "Row has been updated successfully",
-                    type: "success",
-                    duration: 2000,
-                });
-
-            } else {
-                // ➕ New row → add at the end
-                newTransaction = {
-                    id: `barcode-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
-                    draftRowId: barcodeHeaderForm.ENTRYNO || Date.now().toString(),
-                    grsweight: Number(transactionFormData.grsweight),
-                    stoneWt: Number(transactionFormData.stoneWt),
-                    salesStoneWt: Number(transactionFormData.salesStoneWt),
-                    wastePercent: Number(transactionFormData.wastePercent || 0),
-                    size: transactionFormData.size,
-                    diamondWt: Number(transactionFormData.diamondWt),
-                    mc: Number(transactionFormData.mc),
-                    touch: Number(transactionFormData.touch),
-                    barcode: '', // Will be set by rebuildBarcodes
-                };
-
-                const updatedRows = [...transactionRows, newTransaction];
-                // Rebuild barcodes to assign sequential numbers
-                const rebuiltRows = rebuildBarcodes(updatedRows);
-                setTransactionRows(rebuiltRows);
-
-                toaster.create({
-                    title: "Row Added",
-                    description: "New row has been added successfully",
-                    type: "success",
-                    duration: 2000,
-                });
-            }
-
-            resetTransactionForm();
-            setTimeout(() => focusField(FIELD_ORDER[0]), 100);
-
-        } finally {
-            setIsSubmitting(false);
-        }
-    }, [
-        transactionFormData,
-        editId,
-        barcodeHeaderForm.ENTRYNO,
-        transactionRows,
-        validateTransactionForm,
-        focusField,
-        baseBarcodePrefix,
-        startBarcodeNumber
-    ]);
-    /**
-     * Focus management functions
-     */
-    const moveToNext = useCallback((currentKey: FieldKey) => {
-        const idx = FIELD_ORDER.indexOf(currentKey);
-        if (idx < FIELD_ORDER.length - 2) {
-            focusField(FIELD_ORDER[idx + 1]);
-        } else {
-            handleTransactionSubmit();
-        }
-    }, [handleTransactionSubmit, focusField]);
-
-    const handleHeaderChange = (field: any, value: any) => {
-        setBarcodeHeaderForm((prev) => ({ ...prev, [field]: value }));
-    };
-
-    /**
-     * Transaction Table Handlers
-     */
-    const handleTransactionChange = (key: string, value: any) => {
-        setTransactionFormData(prev => ({ ...prev, [key]: value }));
-        setTouched(prev => ({ ...prev, [key]: true }));
-        if (errors[key]) {
-            setErrors(prev => ({ ...prev, [key]: "" }));
-        }
-    };
-
-    const resetTransactionForm = () => {
-        setTransactionFormData(emptyTransactionForm);
+    const resetTransactionForm = useCallback(() => {
+        setTransactionFormData(EMPTY_TRANSACTION_FORM);
         setErrors({});
         setTouched({});
         setEditId(null);
-    };
+    }, []);
 
-    const handleEditRow = (row: BarcodeTransactionItem) => {
+    const validateTransactionForm = useCallback((): Record<string, string> => {
+        const e: Record<string, string> = {};
+        if (!transactionFormData.grsweight || Number(transactionFormData.grsweight) <= 0) e.grsweight = "Weight must be greater than 0";
+        if (!transactionFormData.stoneWt || Number(transactionFormData.stoneWt) < 0) e.stoneWt = "Stone weight must be 0 or greater";
+        if (!transactionFormData.salesStoneWt || Number(transactionFormData.salesStoneWt) < 0) e.salesStoneWt = "Sales stone weight must be 0 or greater";
+        return e;
+    }, [transactionFormData.grsweight, transactionFormData.stoneWt, transactionFormData.salesStoneWt]);
+
+    const validateTaggingHeaders = useCallback((): boolean => {
+        const e: TaggingErrors = {};
+        if (!barcodeHeaderForm.COMPANYNAME) e.COMPANYNAME = "Purchaser is required";
+        if (!barcodeHeaderForm.INWARDNO) e.INWARDNO = "Inward is required";
+        if (!barcodeHeaderForm.ITEMNAME) e.ITEMNAME = "Item is required";
+        setTaggingErrors(e);
+        return !Object.keys(e).length;
+    }, [barcodeHeaderForm.COMPANYNAME, barcodeHeaderForm.INWARDNO, barcodeHeaderForm.ITEMNAME]);
+
+    const validateTaggingRows = useCallback(({ transactionRows, limitations }: ValidateRowsParams): boolean => {
+        if (!transactionRows.length) {
+            toaster.create({ title: "Validation Error", description: "At least one transaction row is required", type: "error", duration: 2000 });
+            return false;
+        }
+        let totalPCS = 0, totalStoneWt = 0, hasError = false;
+        transactionRows.forEach((row, idx) => {
+            const n = idx + 1;
+            if (!row.grsweight || row.grsweight <= 0) { hasError = true; toaster.create({ title: `Row ${n} Error`, description: "GRSWT must be greater than 0", type: "error", duration: 2000 }); }
+            if (row.stoneWt < 0) { hasError = true; toaster.create({ title: `Row ${n} Error`, description: "Stone Wt must be ≥ 0", type: "error", duration: 2000 }); }
+            if (row.salesStoneWt > row.stoneWt) { hasError = true; toaster.create({ title: `Row ${n} Error`, description: "Sales Stone Wt cannot exceed Stone Wt", type: "error", duration: 2000 }); }
+            totalPCS++; totalStoneWt += row.stoneWt;
+        });
+        if (limitations.PCS && totalPCS > limitations.PCS) { hasError = true; toaster.create({ title: "Lot PCS Error", description: `Total pieces ${totalPCS} exceed allowed PCS ${limitations.PCS}`, type: "error", duration: 2000 }); }
+        if (limitations.STNWT && totalStoneWt > limitations.STNWT) { hasError = true; toaster.create({ title: "Lot Stone Wt Error", description: `Total stone weight ${totalStoneWt.toFixed(3)} exceeds allowed STNWT ${limitations.STNWT}`, type: "error", duration: 2000 }); }
+        return !hasError;
+    }, []);
+
+    const handleTransactionSubmit = useCallback(() => {
+        const newErrors = validateTransactionForm();
+        if (Object.keys(newErrors).length) {
+            setTouched(FIELD_ORDER.reduce((a, k) => ({ ...a, [k]: true }), {} as Record<string, boolean>));
+            setErrors(newErrors);
+            const first = FIELD_ORDER.find((k) => newErrors[k]);
+            if (first) { focusField(first); toaster.create({ title: "Validation Error", description: newErrors[first], type: "error", duration: 2000 }); }
+            return;
+        }
+        setIsSubmitting(true);
+        try {
+            const current = rowsRef.current;
+            if (editId) {
+                const existing = current.find((t) => t.id === editId);
+                if (!existing) return;
+                const updated = current.map((t) => t.id !== editId ? t : {
+                    ...existing,
+                    grsweight: Number(transactionFormData.grsweight),
+                    stoneWt: Number(transactionFormData.stoneWt),
+                    salesStoneWt: Number(transactionFormData.salesStoneWt),
+                    wastePercent: Number(transactionFormData.wastePercent || 0),
+                    size: transactionFormData.size,
+                    diamondWt: Number(transactionFormData.diamondWt),
+                    mc: Number(transactionFormData.mc),
+                    touch: Number(transactionFormData.touch),
+                });
+                setTransactionRows(rebuildBarcodes(updated));
+                setEditId(null);
+                toaster.create({ title: "Row Updated", description: "Row has been updated successfully", type: "success", duration: 2000 });
+            } else {
+                const newRow: BarcodeTransactionItem = {
+                    id: `barcode-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+                    draftRowId: barcodeHeaderForm.ENTRYNO || String(Date.now()),
+                    grsweight: Number(transactionFormData.grsweight),
+                    stoneWt: Number(transactionFormData.stoneWt),
+                    salesStoneWt: Number(transactionFormData.salesStoneWt),
+                    wastePercent: Number(transactionFormData.wastePercent || 0),
+                    size: transactionFormData.size,
+                    diamondWt: Number(transactionFormData.diamondWt),
+                    mc: Number(transactionFormData.mc),
+                    touch: Number(transactionFormData.touch),
+                    barcode: "",
+                };
+                setTransactionRows(rebuildBarcodes([...current, newRow]));
+                toaster.create({ title: "Row Added", description: "New row has been added successfully", type: "success", duration: 2000 });
+            }
+            resetTransactionForm();
+            setTimeout(() => focusField(FIELD_ORDER[0]), 100);
+        } finally {
+            setIsSubmitting(false);
+        }
+    }, [validateTransactionForm, editId, transactionFormData, barcodeHeaderForm.ENTRYNO, rebuildBarcodes, setTransactionRows, resetTransactionForm, focusField]);
+
+    const moveToNext = useCallback((currentKey: FieldKey) => {
+        const idx = FIELD_ORDER.indexOf(currentKey);
+        idx < FIELD_ORDER.length - 2 ? focusField(FIELD_ORDER[idx + 1]) : handleTransactionSubmit();
+    }, [handleTransactionSubmit, focusField]);
+
+    const handleClear = useCallback(() => setTransactionRows([]), [setTransactionRows]);
+
+    const handleEditRow = useCallback((row: BarcodeTransactionItem) => {
         setTransactionFormData({
             grsweight: row.grsweight.toString(),
             stoneWt: row.stoneWt.toString(),
@@ -508,503 +552,237 @@ function BarCodeGenerate() {
         setEditId(row.id);
         setErrors({});
         setTouched({});
-        // Focus first field when editing
         setTimeout(() => focusField(FIELD_ORDER[0]), 100);
-    };
+    }, [focusField]);
 
-    const handleDeleteRow = (row: BarcodeTransactionItem) => {
-        if (window.confirm("Delete this item?")) {
-            const filteredRows = transactionRows.filter(t => t.id !== row.id);
-            // Rebuild barcodes to resequence them
-            const rebuiltRows = rebuildBarcodes(filteredRows);
-            setTransactionRows(rebuiltRows);
+    const handleDeleteRow = useCallback((row: BarcodeTransactionItem) => {
+        if (!window.confirm("Delete this item?")) return;
+        setTransactionRows(rebuildBarcodes(rowsRef.current.filter((t) => t.id !== row.id)));
+        if (editId === row.id) resetTransactionForm();
+        toaster.create({ title: "Row Deleted", description: "Row has been deleted successfully", type: "info", duration: 1000 });
+    }, [editId, rebuildBarcodes, setTransactionRows, resetTransactionForm]);
 
-            if (editId === row.id) resetTransactionForm();
-
-            toaster.create({
-                title: "Row Deleted",
-                description: "Row has been deleted successfully",
-                type: "info",
-                duration: 1000,
-            });
-        }
-    };
-
-    const handlePrint = (row: BarcodeTransactionItem) => {
-        console.log("Print barcode for:", row);
+    const handlePrint = useCallback((row: BarcodeTransactionItem) => {
         alert(`Printing barcode for item: ${row.barcode}`);
-    };
+    }, []);
 
-    // Custom cell rendering for print button and formatted values
+    const handleSaveTransaction = useCallback(() => {
+        if (!validateTaggingHeaders()) {
+            toaster.create({ title: "Validation Error", description: "Please fill all required header fields", type: "error", duration: 2000 });
+            return;
+        }
+        const limits = { PCS: safeNum(selectedItem?.PCS), STNWT: safeNum(selectedItem?.STNWT) };
+        if (!validateTaggingRows({ transactionRows, limitations: limits })) return;
+
+        const purchaseDetails = {
+            TOTALPCS: transactionRows.length,
+            ENTRYNO: Number(barcodeHeaderForm.ENTRYNO),
+            PUENTRYNO: Number(barcodeHeaderForm.INWARDNO),
+            ITEMID: itemId,
+            ACCODE: Number(barcodeHeaderForm.COMPANYNAME),
+            PUSNO: barcodeHeaderForm.ITEMNAME,
+            TAGDATE: barcodeHeaderForm.DATE || new Date().toISOString().split("T")[0],
+        };
+        const taggingDetails = transactionRows.map((row) => ({
+            TAGNO: row.barcode, GRSWT: row.grsweight, STNWT: row.stoneWt,
+            WASPER: row.wastePercent, DIAWT: row.diamondWt, MC: row.mc,
+            TOUCH: row.touch, SALESSTNWT: row.salesStoneWt,
+            NETWT: row.grsweight - row.stoneWt, SIZEID: Number(row.size),
+        }));
+        createTag({ PURCHASEDETAILS: purchaseDetails, TAGGINGDETAILS: taggingDetails }, {
+            onSuccess: () => { toaster.create({ title: "Success", description: "Tagging created successfully", type: "success", duration: 2000 }); setTransactionRows([]); },
+            onError: () => { toaster.create({ title: "Error", description: "Failed to create tagging", type: "error", duration: 2000 }); },
+        });
+    }, [validateTaggingHeaders, validateTaggingRows, selectedItem, transactionRows, barcodeHeaderForm, itemId, createTag, setTransactionRows]);
+
+    /* ============================================================
+       CELL RENDERERS
+       ============================================================ */
+
     const getCellValue = useCallback((col: any, row: BarcodeTransactionItem) => {
         if (col.key === "__print") {
             return (
-                <button
-                    onClick={() => handlePrint(row)}
-                    style={{
-                        padding: "2px 8px",
-                        background: "#3182CE",
-                        color: "white",
-                        border: "none",
-                        borderRadius: "4px",
-                        cursor: "pointer",
-                        fontSize: "11px"
-                    }}
-                >
+                <button onClick={() => handlePrint(row)} style={{ padding: "2px 8px", background: "#3182CE", color: "white", border: "none", borderRadius: "4px", cursor: "pointer", fontSize: "11px" }}>
                     PRINT
                 </button>
             );
         }
-
         const value = row[col.key as keyof BarcodeTransactionItem];
-
         if (value === undefined || value === null) return "-";
-
         if (typeof value === "number") {
-            if (col.key === "grsweight" || col.key === "stoneWt" || col.key === "salesStoneWt" || col.key === "diamondWt") {
-                return formatToFixed(value, 3);
-            }
-            if (col.key === "wastePercent" || col.key === "mc") {
-                return formatToFixed(value, 2);
-            }
-            if (col.key === "touch") {
-                return formatToFixed(value, 1);
-            }
+            if (["grsweight", "stoneWt", "salesStoneWt", "diamondWt"].includes(col.key)) return formatToFixed(value, 3);
+            if (["wastePercent", "mc"].includes(col.key)) return formatToFixed(value, 2);
+            if (col.key === "touch") return formatToFixed(value, 1);
         }
-        if (col.key === "size" && value) {
-            const item = itemSizeCollection?.find((i: any) => i.value === value);
-            return item ? item.label : value;
-        }
-        if (col.key === "barcode" && value) {
-            return value; // just display the stored barcode
-        }
-
+        if (col.key === "size" && value)
+            return itemSizeCollection.find((i: any) => i.value === value)?.label ?? value;
         return value.toString();
-    }, []);
+    }, [handlePrint, itemSizeCollection]);
 
-    const getCellStyle = useCallback((col: any, extra?: any) => {
-        const baseStyle = {
-            padding: "4px 6px",
-            borderRight: "1px solid #E2E8F0",
-            textAlign: col.align || (col.key === "size" || col.key === "barcode" ? "left" : "right"),
-            fontSize: "12px",
-            width: getWidth(col.width),
-            minWidth: getWidth(col.width),
-            maxWidth: getWidth(col.width),
-            ...extra
-        };
-        return baseStyle;
-    }, []);
+    const getCellStyle = useCallback((col: any, extra?: React.CSSProperties): React.CSSProperties => ({
+        padding: "4px 6px", borderRight: "1px solid #E2E8F0",
+        textAlign: col.align ?? (col.key === "size" || col.key === "barcode" ? "left" : "right"),
+        fontSize: "12px",
+        width: col.width || "50px", minWidth: col.width || "50px", maxWidth: col.width || "50px",
+        ...extra,
+    }), []);
 
-    const formatTotal = useCallback((value: any, decimalScale?: number, key?: string) => {
+    const formatTotal = useCallback((value: unknown, decimalScale?: number, key?: string): string => {
         if (value == null || value === "") return "";
-
-        // For PCS totals, show as integer
-        if (key === "PCS") {
-            return Math.round(Number(value)).toString();
-        }
-
-        return Number(value).toFixed(decimalScale || 2);
+        if (key === "PCS") return Math.round(Number(value)).toString();
+        return Number(value).toFixed(decimalScale ?? 2);
     }, []);
 
-    // Calculate totals for transaction table
-    const transactionTotals = {
-        grsweight: transactionRows.reduce((sum, t) => sum + t.grsweight, 0),
-        stoneWt: transactionRows.reduce((sum, t) => sum + t.stoneWt, 0),
-        salesStoneWt: transactionRows.reduce((sum, t) => sum + t.salesStoneWt, 0),
-        diamondWt: transactionRows.reduce((sum, t) => sum + t.diamondWt, 0),
-        mc: transactionRows.reduce((sum, t) => sum + t.mc, 0),
-    };
-
-    // Render form cell for transaction table - matching StoneEnterMaster pattern
-    const renderFormCell = useCallback((field: any) => {
-        const key = field.key as FieldKey;
-        const ref = fieldRefs[key];
-        const isInvalid = !!errors[key] && !!touched[key];
-        const value = transactionFormData[field.key as keyof typeof transactionFormData]?.toString() || "";
-        const shouldDisable = field.disabled || false;
-        // const value = formData[field.key as keyof typeof formData]?.toString() || "";
-        // For number fields
-        if (field.type === "number") {
-            return (
-                <Box position="relative">
-                    <CapitalizedInput
-                        field={key}
-                        value={value}
-                        onChange={(_, v) => handleTransactionChange(key, v)}
-                        type="number"
-                        isCapitalized={false}
-                        size="xs"
-                        rounded="sm"
-                        decimalScale={field.decimalScale || 3}
-                        inputRef={ref}
-                        onEnter={() => moveToNext(key)}
-                        noBorder
-                    />
-                </Box>
-            );
-        }
-
-        // For text fields (size, barcode)
-        if (field.key === "barcode") {
-            return (
-                <Box position="relative">
-                    <CapitalizedInput
-                        field={key}
-                        value={value}
-                        onChange={(_, v) => handleTransactionChange(key, v)}
-                        type="text"
-                        isCapitalized={false}
-                        size="xs"
-                        rounded="sm"
-                        inputRef={ref}
-                        onEnter={() => handleTransactionSubmit()}
-                        noBorder
-                        disabled={shouldDisable}
-                    />
-                </Box>
-            );
-        }
-        if(field.type === "combobox"){
-            return (
-                <Box>
-                    <SelectCombobox
-                       value={value}
-                        onChange={(v) => { handleTransactionChange(field.key, v); if (v) moveToNext(field.key); }}
-                        items={field.collection || []}
-                        placeholder={field.placeholder || `Select ${field.label}`}
-                        ref={ref as React.RefObject<HTMLInputElement>}
-                        rounded="sm" 
-                        disable={shouldDisable} 
-                        onEnter={() => moveToNext(field.key)}
-
-                       
-                        />
-                </Box>
-            )
-
-        }
-
-        // Default for text fields
-        return (
-            <Box position="relative">
-                <CapitalizedInput
-                    field={key}
-                    value={value}
-                    onChange={(_, v) => handleTransactionChange(key, v)}
-                    type="text"
-                    isCapitalized={false}
-                    size="xs"
-                    rounded="sm"
-                    inputRef={ref}
-                    onEnter={() => moveToNext(key)}
-                    noBorder
-                />
-            </Box>
-        );
-    }, [transactionFormData, errors, touched, moveToNext, handleTransactionSubmit]);
-
-    /**
-     * Stock Table Configuration
-     */
-    const stockTableHeader = [
-        { key: 'ITEMID', label: 'ITEM ID', align: 'start' as const },
-        { key: 'GRSWT', label: 'GROSS WT', align: 'end' as const, decimalScale: 3 },
-        { key: 'STNWT', label: 'STONE WT', align: 'end' as const, decimalScale: 3 },
-        { key: 'NETWT', label: 'NET WT', align: 'end' as const, decimalScale: 3 },
-        { key: 'WASTYPE', label: 'WASTE TYPE', align: 'center' as const },
-        { key: 'TOUCH', label: 'TOUCH', align: 'center' as const, decimalScale: 1 },
-    ];
-
-    const selectedItem = barcodeItems?.SELECTED_ITEM;
-
-    const totalPieces = selectedItem?.PCS ?? 0;
-    const totalGrossWeight = formatToFixed(selectedItem?.GRSWT , 3) ?? 0;
-
-    const totalSelectedPieces = transactionRows?.length ;
-
-    const showTableForm = Boolean(
-        totalSelectedPieces < totalPieces ||
-        Boolean(editId)
-    );
-
-    const stockTableData = Array.isArray(selectedItem)
-        ? selectedItem
-        : selectedItem && typeof selectedItem === 'object'
-            ? [selectedItem]
-            : [];
-
-    const handleStockRender = (row: any, index: number) => {
-        if (!row) {
-            return (
-                <Table.Cell colSpan={7} textAlign="center" color="gray.500">
-                    Invalid row
-                </Table.Cell>
-            );
-        }
-
+    const handleStockRender = useCallback((row: any) => {
+        if (!row) return <Table.Cell colSpan={7} textAlign="center" color="gray.500">Invalid row</Table.Cell>;
         return (
             <>
-                <Table.Cell textAlign="start">{row.ITEMID || '-'} - {row.ITEMNAME || row.item_name || '-'}</Table.Cell>
-                <Table.Cell textAlign="right">{formatToFixed(row.GRSWT, 3) ?? '0.000'}</Table.Cell>
-                <Table.Cell textAlign="right">{formatToFixed(row.STNWT, 3) ?? '0.000'}</Table.Cell>
-                <Table.Cell textAlign="right">{formatToFixed(row.NETWT, 3) ?? '0.000'}</Table.Cell>
-                <Table.Cell textAlign='center'>{row.WASTYPE || '-'}</Table.Cell>
-                <Table.Cell textAlign='center'>{formatToFixed(row.TOUCH, 1) || '-'}</Table.Cell>
+                <Table.Cell textAlign="start">{row.ITEMID || "-"} - {row.ITEMNAME || row.item_name || "-"}</Table.Cell>
+                <Table.Cell textAlign="right">{formatToFixed(row.GRSWT, 3) ?? "0.000"}</Table.Cell>
+                <Table.Cell textAlign="right">{formatToFixed(row.STNWT, 3) ?? "0.000"}</Table.Cell>
+                <Table.Cell textAlign="right">{formatToFixed(row.NETWT, 3) ?? "0.000"}</Table.Cell>
+                <Table.Cell textAlign="center">{row.WASTYPE || "-"}</Table.Cell>
+                <Table.Cell textAlign="center">{formatToFixed(row.TOUCH, 1) || "-"}</Table.Cell>
             </>
         );
-    };
+    }, []);
 
-    /**
-     * Summary Table Configuration
-     */
-    const summaryRowData = [
-        { key: "PCS", label: "Pieces" },
-        { key: "GRSWT", label: "Gross Wt" },
-        { key: "STNWT", label: "Stone Wt" },
-    ];
+    const renderFormCell = useCallback((field: any) => {
+        const key = field.key as FieldKey;
+        const ref = fieldRefs.current[key];
+        const value = transactionFormData[field.key as keyof typeof transactionFormData]?.toString() ?? "";
+        const disabled = field.disabled ?? false;
 
-    const summaryColData = [
-        { key: "total", label: "LOT" ,align:'end'as const},
-        { key: "completed", label: "COMPLETED", align: 'end'as const},
-        { key: "balance", label: "BALANCE", align: 'end' as const},
-    ];
+        if (field.type === "number") return (
+            <Box position="relative">
+                <CapitalizedInput field={key} value={value} onChange={(_: unknown, v: unknown) => handleTransactionChange(key, v)}
+                    type="number" isCapitalized={false} size="xs" rounded="sm" decimalScale={field.decimalScale ?? 3}
+                    inputRef={ref} onEnter={() => moveToNext(key)} noBorder />
+            </Box>
+        );
+        if (field.key === "barcode") return (
+            <Box position="relative">
+                <CapitalizedInput field={key} value={value} onChange={(_: unknown, v: unknown) => handleTransactionChange(key, v)}
+                    type="text" isCapitalized={false} size="xs" rounded="sm"
+                    inputRef={ref} onEnter={handleTransactionSubmit} noBorder disabled={disabled} />
+            </Box>
+        );
+        if (field.type === "combobox") return (
+            <Box>
+                <SelectCombobox value={value}
+                    onChange={(v: string) => { handleTransactionChange(field.key, v); if (v) moveToNext(field.key); }}
+                    items={field.collection ?? EMPTY_ARRAY}
+                    placeholder={field.placeholder ?? `Select ${field.label}`}
+                    ref={ref as React.RefObject<HTMLInputElement>}
+                    rounded="sm" disable={disabled} onEnter={() => moveToNext(field.key)} />
+            </Box>
+        );
+        return (
+            <Box position="relative">
+                <CapitalizedInput field={key} value={value} onChange={(_: unknown, v: unknown) => handleTransactionChange(key, v)}
+                    type="text" isCapitalized={false} size="xs" rounded="sm"
+                    inputRef={ref} onEnter={() => moveToNext(key)} noBorder />
+            </Box>
+        );
+    }, [transactionFormData, handleTransactionChange, moveToNext, handleTransactionSubmit]);
 
-    // Calculate LOT totals from selected item
-    const computeLotTotals = (items: any): Record<string, string> => {
-        let itemList: any[] = [];
-
-        if (Array.isArray(items)) {
-            itemList = items;
-        } else if (items && typeof items === "object") {
-            itemList = [items];
-        }
-
-        return {
-            PCS: itemList.reduce((sum, item) => sum + safeNum(item?.PCS), 0).toString(),
-            GRSWT: formatToFixed(
-                itemList.reduce((sum, item) => sum + safeNum(item?.GRSWT), 0), 3
-            ),
-            STNWT: formatToFixed(
-                itemList.reduce((sum, item) => sum + safeNum(item?.STNWT), 0), 3
-            ),
-            NETWT: formatToFixed(
-                itemList.reduce((sum, item) => sum + safeNum(item?.NETWT), 0), 3
-            ),
-        };
-    };
-
-    // Calculate COMPLETED totals from transaction rows
-    const computeCompletedTotals = (): Record<string, string> => {
-        // Note: Transaction rows don't have PCS, so we need to calculate based on available data
-        // You might need to adjust this based on your actual business logic
-        return {
-            PCS: transactionRows.length.toString(), // Or calculate based on some logic
-            GRSWT: formatToFixed(
-                transactionRows.reduce((sum, t) => sum + t.grsweight, 0), 3
-            ),
-            STNWT: formatToFixed(
-                transactionRows.reduce((sum, t) => sum + t.stoneWt, 0), 3
-            ),
-            NETWT: formatToFixed(
-                transactionRows.reduce((sum, t) => sum + (t.grsweight - t.stoneWt), 0), 3
-            ),
-        };
-    };
-
-    const buildSummaryTableData = (): Record<string, { total: string; completed: string; balance: string }> => {
-        const lotTotals = computeLotTotals(selectedItem);
-        const completedTotals = computeCompletedTotals();
-        const result: Record<string, { total: string; completed: string; balance: string }> = {};
-
-        summaryRowData.forEach((row) => {
-            const totalVal = Number(lotTotals[row.key] ?? 0);
-            const completedVal = Number(completedTotals[row.key] ?? 0);
-            const balanceVal = totalVal - completedVal;
-
-            result[row.key] = {
-                total: row.key === "PCS"
-                    ? Math.round(totalVal).toString()
-                    : formatToFixed(totalVal, row.key === "GRSWT" || row.key === "STNWT" || row.key === "NETWT" ? 3 : 2),
-                completed: row.key === "PCS"
-                    ? Math.round(completedVal).toString()
-                    : formatToFixed(completedVal, row.key === "GRSWT" || row.key === "STNWT" || row.key === "NETWT" ? 3 : 2),
-                balance: row.key === "PCS"
-                    ? Math.max(0, Math.round(balanceVal)).toString()
-                    : formatToFixed(Math.max(0, balanceVal), row.key === "GRSWT" || row.key === "STNWT" || row.key === "NETWT" ? 3 : 2),
-            };
-        });
-
-        return result;
-    };
-
-    const tableData = buildSummaryTableData();
-
-    /**
-     * Main Render
-     */
+    /* ============================================================
+       RENDER
+       ============================================================ */
     return (
-        <Box display={'flex'} flexDirection={'column'} gap={2}>
-            <Box bg={theme.colors.formColor} p={2} rounded={'xl'} display={'flex'} flexDirection={'column'} gap={4} >
-                <Box display={'flex'} justifyContent={'center'} alignItems={'center'} >
-                    <Text fontSize={'base'} fontWeight={'semibold'} textAlign={'center'}>
-                        BARCODE GENERATION
-                    </Text>
-                </Box>
-                <Box display='flex' gap={2} flexDirection='row' justifyContent='space-between'>
-                <BarcodeHeaderForm
-                    form={barcodeHeaderForm}
-                    onChange={handleHeaderChange}
-                    purchaserCollection={purchaserCollection || []}
-                    inwardCollection={inwardCollection || []}
-                    itemCollection={itemCollection || []}
-                    isDisabled={transactionRows?.length > 0}
-                />
-                    <Box className="flex flex-col items-center cursor-pointer animate__animated animate__fadeInUp gap-1  "
-                    onClick={handleShowFilter}>
-                                 <HiFilter size={20} className="text-blue-500 " />
-                                  <Text fontSize="x-small" fontWeight="semibold">
-                                      { "VIEW REPORT"}
-                                  </Text>
-                              </Box>
-                </Box>
-              
-                              
-            </Box>
-                            {isFilterOpen && (
-                                <Drawer.Root open={isFilterOpen} //onOpenChange={(e) => closeFilter()}
-                                >
-                                    <Portal>
-                                        <Drawer.Backdrop />
-                                        <Drawer.Positioner>
-                                            <Drawer.Content maxW="480px">
-                                                <Drawer.Header borderBottomWidth="1px" bg='cyan.50' fontSize='md'>
-                                                    Transaction Filters
-                                                    <Drawer.CloseTrigger asChild>
-                                                        <Button variant="ghost" size="sm" onClick={closeFilter}>×</Button>
-                                                    </Drawer.CloseTrigger>
-                                                </Drawer.Header>
-            
-                                                <Drawer.Body p={0}>
-                                                     {/* <RightSideDetailsPanel
-                                                        selectedTransactionId={selectedTransactionId}
-                                                        onTransactionClick={(id: any) => {
-                                                            handleTransactionClick(id);
-                                                            closeFilter(); // auto close after select
-                                                        }}
-                                                        transactionList={transactionList}
-                                                        isLoadingTransactions={isLoading}
-                                                        draftTotals={totals}
-                                                        headerForm={headerForm}
-                                                        selectedTransactionType={selectedTransactionTypes}
-                                                        theme={theme}
-                                                        startDate={startDate}
-                                                        endDate={endDate}
-                                                        onStartDateChange={handleStartDateChange}
-                                                        onEndDateChange={handleEndDateChange}
-                                                        onSelectItem={handleSelectItemCode}
-                                                        selectedItemCode={itemCode}
-                                                        itemsCollection={itemsCollection}
-                                                        itemsFilter={itemsFilter}
-                                                        getLabelByValue={getLabelByValue}
-                                                    />  */}
-                                                </Drawer.Body>
-            
-                                                <Drawer.Footer borderTopWidth="1px">
-                                                    <Button variant="outline" size="sm" 
-                            onClick={closeFilter}
-                                                    >
-                                                        Close
-                                                    </Button>
-                                                </Drawer.Footer>
-                                            </Drawer.Content>
-                                        </Drawer.Positioner>
-                                    </Portal>
-                                </Drawer.Root>
-                            )}
+        <Box display="flex" flexDirection="column" gap={2}>
 
-            <Box display='flex' flexDirection={{ sm: 'column', md: 'row' }} gap={2} bg={theme.colors.formColor} p={2} rounded={'xl'} >
-                <CustomTable
-                    columns={stockTableHeader}
-                    data={stockTableData}
-                    renderRow={handleStockRender}
-                    headerBg={theme.colors.accient}
-                    headerColor="white"
-                    bodyBg={theme.colors.formColor}
-                    borderColor="white"
-                    maxWidth="40%"
-                />
-                <Box w={'30%'}>
-                    <SummaryTable
-                        title="STOCK SUMMARY"
-                        rowLabels={summaryRowData}
-                        columnLabels={summaryColData}
-                        data={tableData}
-                        headerFontSize="xs"
-                        headerBg={theme.colors.accient}
-                        
-                        size="sm"
-                    
-                        
-                    />
+            {/* ── Header ── */}
+            <Box bg={theme.colors.formColor} p={2} rounded="xl" display="flex" flexDirection="row" justifyContent="space-between" gap={4}>
+                <Box display="flex" flexDirection="column" gap={4}>
+                    <Text fontSize="base" fontWeight="semibold" textAlign="center">BARCODE GENERATION</Text>
+                    <Box display="flex" gap={2} flexDirection="row" justifyContent="space-between">
+                        <BarcodeHeaderForm
+                            form={barcodeHeaderForm} onChange={handleHeaderChange}
+                            purchaserCollection={purchaserCollection} inwardCollection={inwardCollection}
+                            itemCollection={itemCollection} isDisabled={transactionRows.length > 0}
+                            validationError={taggingErrors}
+                        />
+                    </Box>
+                </Box>
+                <Box>
+                    <SingleCheckbox label="EXCEL IMPORT" checked={excelImport}
+                        onChange={() => setExcelImport((p) => !p)} size="sm" fontSize="xs" />
                 </Box>
             </Box>
 
-            <Box display='flex' flexDirection={{ sm: 'column', md: 'column' }} gap={2} bg={theme.colors.formColor} p={2} rounded={'xl'} >
+            {/* ── Stock + Summary ── */}
+            <Box display="flex" flexDirection={{ sm: "column", md: "row" }} gap={2} bg={theme.colors.formColor} p={2} rounded="xl">
+                <CustomTable columns={stockTableHeader} data={stockTableData} renderRow={handleStockRender}
+                    headerBg={theme.colors.accient} headerColor="white" bodyBg={theme.colors.formColor}
+                    borderColor="white" maxWidth="40%" />
+                <Box w="30%">
+                    <SummaryTable title="STOCK SUMMARY" rowLabels={summaryRowData} columnLabels={summaryColData}
+                        data={tableData} headerFontSize="xs" headerBg={theme.colors.accient} size="sm" />
+                </Box>
+            </Box>
 
-                <Box display='flex' gap={2} justifyContent='end'>
-
-                    <Button
-                        size="xs"
-                        fontSize='2xs'
-                        onClick={handleClear}
-                        variant='ghost'
-                        bg={theme.colors.formColor}
-                        p={0}
-                    >
+            {/* ── Transaction Table ── */}
+            <Box display="flex" flexDirection="column" gap={2} bg={theme.colors.formColor} p={2} rounded="xl">
+                <Box display="flex" gap={2} justifyContent="end">
+                    <Button size="xs" fontSize="2xs" onClick={handleClear} variant="ghost" bg={theme.colors.formColor} p={0}>
                         <Image src={clearIcon} width={58} alt="CLEAR" />
                     </Button>
-
-                    <Button
-                        size="xs"
-                        bg={theme.colors.formColor}
-                        // onClick={onSave}
-                        // loading={isSaving}
-                        loadingText="Saving..."
-                        variant='ghost'
-                        
-                        p={0}
-                    >
+                    <Button size="xs" bg={theme.colors.formColor} onClick={handleSaveTransaction} loadingText="Saving..." variant="ghost" p={0}>
                         <Image src={saveIcon} width={60} alt="save" />
                     </Button>
-
                 </Box>
-
                 <TransactionTable
-                    theme={theme}
-                    tableCols={transactionTableCols}
-                    formFields={visibleFormFields}
-                    rows={transactionRows}
-                    errors={errors}
-                    touched={touched}
-                    localEditId={editId}
-                    isSubmitting={isSubmitting}
-                    totals={transactionTotals}
-                    allDisplayCols={allDisplayCols}
-                    resetForm={resetTransactionForm}
-                    handleSubmit={handleTransactionSubmit}
-                    handleEditRow={handleEditRow}
-                    handleDeleteRow={handleDeleteRow}
-                    renderFormCell={renderFormCell}
-                    getCellValue={getCellValue}
-                    formatTotal={formatTotal}
-                    getCellStyle={getCellStyle}
-                    transactionType="barcode"
-                    showTotal
-                    showTableForm={showTableForm}
-                    
+                    theme={theme} tableCols={transactionTableCols} formFields={visibleFormFields}
+                    rows={transactionRows} errors={errors} touched={touched} localEditId={editId}
+                    isSubmitting={isSubmitting} totals={transactionTotals} allDisplayCols={allDisplayCols}
+                    resetForm={resetTransactionForm} handleSubmit={handleTransactionSubmit}
+                    handleEditRow={handleEditRow} handleDeleteRow={handleDeleteRow}
+                    renderFormCell={renderFormCell} getCellValue={getCellValue}
+                    formatTotal={formatTotal} getCellStyle={getCellStyle}
+                    transactionType="barcode" showTotal showTableForm={showTableForm}
                 />
             </Box>
+
+            {/* ── Excel Import Drawer ── */}
+            {excelImport && (
+                <Drawer.Root open={excelImport} onOpenChange={() => setExcelImport(false)}>
+                    <Portal>
+                        <Drawer.Backdrop />
+                        <Drawer.Positioner>
+                            <Drawer.Content maxWidth="4xl">
+                                <Drawer.Header borderBottomWidth="1px" bg="cyan.50" fontSize="md">
+                                    Excel Import
+                                    <Drawer.CloseTrigger asChild>
+                                        <Button variant="ghost" size="sm" onClick={() => setExcelImport(false)}>×</Button>
+                                    </Drawer.CloseTrigger>
+                                </Drawer.Header>
+
+                                <Drawer.Body p={0}>
+                                    {/*
+                                        BarCodeExcel owns the drop zone and xlsx parsing internally.
+                                        onFileParsed sets excelData in the parent so the grid
+                                        re-renders with the file rows, and the user can review/edit
+                                        before clicking "Load into Table".
+                                    */}
+                                    <BarCodeExcel
+                                        data={excelData}
+                                        onChange={handleExcelChange}
+                                        onLoad={handleExcelLoad}
+                                        onFileParsed={setExcelData}
+                                    />
+                                </Drawer.Body>
+
+                                <Drawer.Footer borderTopWidth="1px">
+                                    <Button variant="outline" size="sm" onClick={() => setExcelImport(false)}>
+                                        Close
+                                    </Button>
+                                </Drawer.Footer>
+                            </Drawer.Content>
+                        </Drawer.Positioner>
+                    </Portal>
+                </Drawer.Root>
+            )}
         </Box>
     );
 }

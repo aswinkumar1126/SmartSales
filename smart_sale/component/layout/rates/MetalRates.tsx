@@ -49,7 +49,7 @@ const METAL_CONFIG = {
 // Professional Metal Rates Menu Component
 export const MetalRatesMenu: React.FC<MetalRatesMenuProps> = ({ rates, isLoading, isError ,latestEntry }) => {
     const { theme, mode } = useTheme();
-    console.log(rates ,'rates')
+
 
     // Format currency with Indian numbering system (₹)
     const formatCurrency = (value: number) => {

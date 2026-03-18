@@ -50,6 +50,7 @@ import { FaPrint, FaFileExcel } from "react-icons/fa";
 
 
 export default function UserMasters() {
+
     const { theme } = useTheme();
     const { user } = useAuth();
     const router = useRouter();
@@ -62,6 +63,7 @@ export default function UserMasters() {
 
 
     const [form, setForm] = useState<UserMaster>({
+        
         username: "",
         pwd: "",
         active: "Y",

@@ -7,19 +7,20 @@ import { SidebarProvider } from "@/context/layout/SideBarContext";
 import DashboardLayout from "@/component/layout/DashBoardLayout";
 import QueryProvider from "@/context/query/providers";
 import { PrintProvider } from "@/context/print/usePrintContext";
-
+import { Toaster } from "@/components/ui/toaster";
 export function AllProviders({ children }: { children: React.ReactNode }) {
 
   return (
     <ThemeProvider>
       <Provider >
+
         <QueryProvider>
           <AuthProvider>
             <PrintProvider>
               <SidebarProvider>
             
                   <DashboardLayout>
-                   
+                    <Toaster />
                     {children}
                     
                   </DashboardLayout>

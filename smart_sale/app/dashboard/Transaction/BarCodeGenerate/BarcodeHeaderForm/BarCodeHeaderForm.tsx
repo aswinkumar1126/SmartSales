@@ -23,11 +23,12 @@ interface BarcodeHeaderFormProps {
     inwardCollection?: { label: string; value: string; }[];
     itemCollection?: { label: string; value: string; }[];
     isDisabled?: boolean;
+    validationError?: Record<string, string>;
     
 }
 
 
-function BarcodeHeaderForm({ form, onChange, purchaserCollection ,inwardCollection , itemCollection  ,isDisabled =false }: BarcodeHeaderFormProps) {
+function BarcodeHeaderForm({ form, onChange, purchaserCollection ,inwardCollection , itemCollection  ,isDisabled =false ,validationError }: BarcodeHeaderFormProps) {
 
     const { theme } = useTheme();
 
@@ -50,6 +51,7 @@ function BarcodeHeaderForm({ form, onChange, purchaserCollection ,inwardCollecti
                     focusNext={focusNext}
                     layout="horizontalCombine"
                     minLabelWidth="70px"
+                    errors={validationError}
                     disabled={{ ENTRYNO: isDisabled, DATE: isDisabled, COMPANYTYPE: isDisabled, COMPANYNAME: isDisabled, ITEMNAME: isDisabled, INWARDNO: isDisabled}}
                     
                 />

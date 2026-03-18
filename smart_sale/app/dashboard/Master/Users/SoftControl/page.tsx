@@ -249,7 +249,7 @@ function SoftControlMaster() {
             <Box display="flex" mb={2} gap={2} justifyContent="space-between" alignItems="center">
               <Text fontWeight="semibold" fontSize="small">SOFTCONTROL DETAILS</Text>
               <Flex>
-                <SearchBar size="xs" placeholder="search by id" />
+                {/* <SearchBar size="xs" placeholder="search by id" /> */}
                 <Button variant="ghost" size="xs" color={theme.colors.green} onClick={() => handleExport("excel")}>
                   <FaFileExcel />
                 </Button>
