@@ -42,6 +42,7 @@ export default function SummaryTable({
     headerBg = "gray.100",
     rowLabelWidth = "120px",
     headerFontSize = "12px",
+    
     numberFormat = (num: number) => num.toLocaleString("en-IN"),
     ...tableProps
 }: SummaryTableProps) {
@@ -79,6 +80,7 @@ export default function SummaryTable({
                             fontWeight="semibold"
                             fontSize={headerFontSize}
                             py={1}
+                            color={"#ffffff"}
 
                         >
                             {col.label}

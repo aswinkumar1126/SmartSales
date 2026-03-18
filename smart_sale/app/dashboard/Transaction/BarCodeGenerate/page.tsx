@@ -7,7 +7,7 @@
 
 /*--------------STATES--------------------*/
 import React, { useEffect, useRef, useState, useMemo, useCallback } from "react";
-import { Box, Table, Text, Button, HStack } from '@chakra-ui/react';
+import { Box, Table, Text, Button, HStack, Drawer, Portal } from '@chakra-ui/react';
 
 /*--------------COMPONENTS------------------*/
 import BarcodeHeaderForm from "./BarcodeHeaderForm/BarCodeHeaderForm";
@@ -41,6 +41,7 @@ import Image from "next/image";
 import saveIcon from '@/asserts/icons/save.png';
 import clearIcon from '@/asserts/icons/clear.jpeg';
 import updateIcon from '@/asserts/icons/update.png';
+import { HiFilter } from "react-icons/hi";
 
 /*-------------- STORAGE KEYS -------------------*/
 const BARCODE_HEADER_KEY = 'barcode_header_form';
@@ -50,6 +51,9 @@ const safeNum = (val: any): number => {
     const n = Number(val);
     return isNaN(n) ? 0 : n;
 };
+
+
+
 
 
 
@@ -99,6 +103,17 @@ function BarCodeGenerate() {
     const touchRef = useRef<HTMLInputElement>(null);
     const barcodeRef = useRef<HTMLInputElement>(null);
 
+    //overlay requirements
+      const [isFilterOpen, setIsFilterOpen] = useState<boolean>(false);
+
+  const handleShowFilter = () => {
+    setIsFilterOpen(prev => !prev);
+  };
+
+  const closeFilter=()=>{
+    setIsFilterOpen(prev => !prev);
+  }
+
     const fieldRefs: Record<FieldKey, React.RefObject<any>> = {
         grsweight: weightRef,
         stoneWt: stoneWtRef,
@@ -131,6 +146,10 @@ function BarCodeGenerate() {
         BARCODE_TRANSACTIONS_KEY,
         []
     );
+//clear ALL 
+    const  handleClear=()=>{
+        setTransactionRows([])
+    }
 
     // Update rowsRef whenever transactionRows changes
     useEffect(() => {
@@ -826,7 +845,7 @@ function BarCodeGenerate() {
      */
     return (
         <Box display={'flex'} flexDirection={'column'} gap={2}>
-            <Box bg={theme.colors.formColor} p={2} rounded={'xl'} >
+            <Box bg={theme.colors.formColor} p={2} rounded={'xl'} display={'flex'} flexDirection={'column'} gap={4} >
                 <Box display={'flex'} justifyContent={'center'} alignItems={'center'} >
                     <Text fontSize={'base'} fontWeight={'semibold'} textAlign={'center'}>
                         BARCODE GENERATION
@@ -841,9 +860,68 @@ function BarCodeGenerate() {
                     itemCollection={itemCollection || []}
                     isDisabled={transactionRows?.length > 0}
                 />
+                    <Box className="flex flex-col items-center cursor-pointer animate__animated animate__fadeInUp gap-1  "
+                    onClick={handleShowFilter}>
+                                 <HiFilter size={20} className="text-blue-500 " />
+                                  <Text fontSize="x-small" fontWeight="semibold">
+                                      { "VIEW REPORT"}
+                                  </Text>
+                              </Box>
                 </Box>
               
+                              
             </Box>
+                            {isFilterOpen && (
+                                <Drawer.Root open={isFilterOpen} //onOpenChange={(e) => closeFilter()}
+                                >
+                                    <Portal>
+                                        <Drawer.Backdrop />
+                                        <Drawer.Positioner>
+                                            <Drawer.Content maxW="480px">
+                                                <Drawer.Header borderBottomWidth="1px" bg='cyan.50' fontSize='md'>
+                                                    Transaction Filters
+                                                    <Drawer.CloseTrigger asChild>
+                                                        <Button variant="ghost" size="sm" onClick={closeFilter}>×</Button>
+                                                    </Drawer.CloseTrigger>
+                                                </Drawer.Header>
+            
+                                                <Drawer.Body p={0}>
+                                                     {/* <RightSideDetailsPanel
+                                                        selectedTransactionId={selectedTransactionId}
+                                                        onTransactionClick={(id: any) => {
+                                                            handleTransactionClick(id);
+                                                            closeFilter(); // auto close after select
+                                                        }}
+                                                        transactionList={transactionList}
+                                                        isLoadingTransactions={isLoading}
+                                                        draftTotals={totals}
+                                                        headerForm={headerForm}
+                                                        selectedTransactionType={selectedTransactionTypes}
+                                                        theme={theme}
+                                                        startDate={startDate}
+                                                        endDate={endDate}
+                                                        onStartDateChange={handleStartDateChange}
+                                                        onEndDateChange={handleEndDateChange}
+                                                        onSelectItem={handleSelectItemCode}
+                                                        selectedItemCode={itemCode}
+                                                        itemsCollection={itemsCollection}
+                                                        itemsFilter={itemsFilter}
+                                                        getLabelByValue={getLabelByValue}
+                                                    />  */}
+                                                </Drawer.Body>
+            
+                                                <Drawer.Footer borderTopWidth="1px">
+                                                    <Button variant="outline" size="sm" 
+                            onClick={closeFilter}
+                                                    >
+                                                        Close
+                                                    </Button>
+                                                </Drawer.Footer>
+                                            </Drawer.Content>
+                                        </Drawer.Positioner>
+                                    </Portal>
+                                </Drawer.Root>
+                            )}
 
             <Box display='flex' flexDirection={{ sm: 'column', md: 'row' }} gap={2} bg={theme.colors.formColor} p={2} rounded={'xl'} >
                 <CustomTable
@@ -853,7 +931,7 @@ function BarCodeGenerate() {
                     headerBg={theme.colors.accient}
                     headerColor="white"
                     bodyBg={theme.colors.formColor}
-                    borderColor="black"
+                    borderColor="white"
                     maxWidth="40%"
                 />
                 <Box w={'30%'}>
@@ -863,8 +941,11 @@ function BarCodeGenerate() {
                         columnLabels={summaryColData}
                         data={tableData}
                         headerFontSize="xs"
-                        headerBg="#fdf0ff"
+                        headerBg={theme.colors.accient}
+                        
                         size="sm"
+                    
+                        
                     />
                 </Box>
             </Box>
@@ -876,12 +957,12 @@ function BarCodeGenerate() {
                     <Button
                         size="xs"
                         fontSize='2xs'
-                        // onClick={onReset}
+                        onClick={handleClear}
                         variant='ghost'
                         bg={theme.colors.formColor}
                         p={0}
                     >
-                        <Image src={clearIcon} width={58} alt="save" />
+                        <Image src={clearIcon} width={58} alt="CLEAR" />
                     </Button>
 
                     <Button
@@ -891,6 +972,7 @@ function BarCodeGenerate() {
                         // loading={isSaving}
                         loadingText="Saving..."
                         variant='ghost'
+                        
                         p={0}
                     >
                         <Image src={saveIcon} width={60} alt="save" />

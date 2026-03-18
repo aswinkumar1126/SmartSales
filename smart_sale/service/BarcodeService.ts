@@ -24,3 +24,18 @@ export const getBarcodeItemsDetails = async (
         throw error;
     }
 };
+
+export const getBarcodeFilters = async (
+    params: any
+): Promise<ApiResponse<any>> => {
+    try {
+
+        console.log(params, 'filtered service params');
+
+        const response = await axiosInstance.get('/tagged', { params });
+        return response.data;
+    } catch (error) {
+        console.error(error);
+        throw error;
+    }
+};

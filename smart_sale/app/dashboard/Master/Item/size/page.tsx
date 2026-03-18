@@ -32,7 +32,7 @@ import { useItems } from "@/hooks/item/useItems";
 import { getItemSizeFields } from "@/config/master/itemSize";
 
 import { ItemSize, ItemSizePayload } from "@/types/size/Size";
-
+import SearchBar from "@/component/search/SearchBar";
 function ItemSizeMaster() {
 
     const { theme } = useTheme();
@@ -40,11 +40,13 @@ function ItemSizeMaster() {
     const { setData, setColumns, setShowSno, title } = usePrint();
 
     /* -------------------- API HOOKS -------------------- */
-    const { data: itemSizeData, refetch: itemSizeRefetch } = useSize();
+   
 
-    console.log(itemSizeData,'itemSizeData')
+    
+    
+    const [filter, setFilter] = useState<string>('');
     const { data: itemCollection } = useItems();
-
+     const { data: itemSizeData, refetch: itemSizeRefetch } = useSize(filter);
     const { mutate: createItemSize, isPending } = useCreateSize();
     const { mutate: updateItemSize } = useUpdateSize();
     const { mutate: deleteItemSize } = useDeleteSize();
@@ -252,10 +254,20 @@ function ItemSizeMaster() {
 
                 {/* TABLE SECTION */}
                 <GridItem minW={0}>
+
                     <Box bg={theme.colors.formColor} p={2} borderRadius="xl" border="1px solid #eef">
                         <Box display='flex' mb={2} gap={2} justifyContent='space-between' alignItems='center'>
                             <Text fontWeight="semibold" fontSize="small">ITEM SIZE DETAILS</Text>
                             <Flex>
+                                                                
+                                    <SearchBar
+                                        searchTerm={filter}
+                                        onChange={setFilter}
+                                        placeholder="Search Size"
+                                        size="2xs"
+
+                                    />
+                                
                                 <Button variant="ghost" size="xs" color={theme.colors.green} onClick={() => handleExport("excel")}>
                                     <FaFileExcel />
                                 </Button>

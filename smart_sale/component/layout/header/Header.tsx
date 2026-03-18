@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { useRates } from "@/hooks/rate/useRate";
 import { MetalRatesMenu } from "../rates/MetalRates";
+import { useEffect, useState } from "react";
 
 const Header = ({ onOpenMenu }: any) => {
     const { theme, mode, toggleTheme } = useTheme();
@@ -29,6 +30,7 @@ const Header = ({ onOpenMenu }: any) => {
     const [isDesktop] = useMediaQuery(["(min-width: 768px)"]);
     const now = new Date();
 
+    
     const formatDate = (date: Date) => {
         const dd = String(date.getDate()).padStart(2, "0");
         const mm = String(date.getMonth() + 1).padStart(2, "0");
@@ -36,11 +38,25 @@ const Header = ({ onOpenMenu }: any) => {
         return `${dd}-${mm}-${yyyy}`;
     };
 
-    const timeNow = new Date().toLocaleTimeString("en-US", {
+
+  const [timeNow, setTimeNow] = useState("");
+
+  useEffect(() => {
+
+    const interval = setInterval(() => {
+      const currentTime = new Date().toLocaleTimeString("en-US", {
         hour: "2-digit",
         minute: "2-digit",
+        second: "2-digit",
         hour12: true,
-    });
+      });
+
+      setTimeNow(currentTime);
+    }, 1000);
+
+    return () => clearInterval(interval);
+
+  }, []);
 
     {
 if(isError) return <div>Error fetching rates</div>
@@ -149,7 +165,7 @@ if(isError) return <div>Error fetching rates</div>
                             📅 {formatDate(now)}
                         </Text>
                         <Text fontSize="xs" fontWeight="bold" color="gray.700">
-                            ⏰ {timeNow}
+                            🕗 {timeNow}
                         </Text>
                     </HStack>
                     <Tooltip content={mode === "light" ? "Switch to Dark Mode" : "Switch to Light Mode"} showArrow>

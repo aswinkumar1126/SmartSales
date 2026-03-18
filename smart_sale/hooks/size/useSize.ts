@@ -4,10 +4,12 @@ import { ItemSize, ItemSizePayload } from "@/types/size/Size";
 import { axiosInstance } from "@/api/axiosInstance";
 
 /* -------------------- FETCH ALL SIZES -------------------- */
-export const useSize = () => {
+
+export const useSize = (filter?: string) => {
     return useApiQuery<ItemSize[]>({
         url: "/itemsize",
         queryKey: ["size"],
+        params: filter ? { filter } : undefined,
         select: (response: { data: ItemSize[] }) => response.data, // Type the API response
     });
 };
