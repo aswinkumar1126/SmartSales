@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { getBarcodeFilters, getBarcodeItemsDetails } from "@/service/BarcodeService";
 import { BarCodeFilter } from "@/types/barcode/BarcodeDetails";
 import { useApiQuery ,useApiMutation } from "../apiHook/ApiHook";
-import { CreateTag } from "@/types/tagging/Tagging";
+import { CreateTag, CreateTagResponse } from "@/types/tagging/Tagging";
 
 export const useBarcodeItems = (data:BarCodeFilter) => {
   return useQuery({
@@ -23,7 +23,7 @@ export const getBarcodeFilter = (param:any) => {
 };
 
 export const useCreateTag = () =>{
-  return useApiMutation<CreateTag,CreateTag>(
+  return useApiMutation<CreateTagResponse,CreateTag>(
     {
       url:"/tagged",
       method:"POST",

@@ -167,6 +167,7 @@ function RateEntry() {
                                     focusNext={focusNext}
                                     // disabled={{ COMPANYID: !!editId }}
                                     errors={errors}
+                                    layout="vertical"
                                 />
                             </Fieldset.Content>
                         </Fieldset.Root>

@@ -183,7 +183,7 @@ export function CapitalizedInput<T>({
 
         onChange(
             field,
-            isCapitalized && type === "text"
+            isCapitalized && type !== "number" 
                 ? capitalizeText(inputValue)
                 : inputValue
         );

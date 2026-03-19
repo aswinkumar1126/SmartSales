@@ -10,16 +10,19 @@ export interface PURCHASE_DETAILS{
 }
 
 export interface TAGGING_DETAILS{
-   TAGNO:string;
-    GRSWT:number;
-    STNWT:number;
-    WASPER:number;
-    DIAWT:number;
-    MC:number;
-    TOUCH:number;
-    SALESSTNWT:number;
-    NETWT:number;
-    SIZEID:number;
+    
+    TAGNO: string;
+    GRSWT: number;
+    STNWT: number;
+    WASPER: number;
+    DIAWT: number;
+    MC: number;
+    TOUCH: number;
+    SALESSTNWT: number;
+    NETWT: number;
+    SIZEID: number;
+    UPTIME?: string;
+    USERID?: number;
 }
 
 export interface CreateTag{
@@ -27,4 +30,10 @@ export interface CreateTag{
     PURCHASEDETAILS : PURCHASE_DETAILS;
     TAGGINGDETAILS: TAGGING_DETAILS[];
     
+}
+export interface CreateTagResponse {
+
+    TAGDETAILS: TAGGING_DETAILS[];
+    ENTRYNO: number;
+
 }

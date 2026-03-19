@@ -8,7 +8,7 @@ import React, {
     useMemo,
     useCallback,
 } from "react";
-import { Box, Table, Text, Button, Portal, Drawer } from "@chakra-ui/react";
+import { Box, Table, Text, Button, Portal, Drawer, Icon } from "@chakra-ui/react";
 
 /*-------------- COMPONENTS -----------------*/
 import { CustomTable } from "@/component/table/CustomTable";
@@ -45,12 +45,20 @@ import clearIcon from "@/asserts/icons/clear.jpeg";
 import BarcodeHeaderForm from "./BarcodeHeaderForm/BarCodeHeaderForm";
 import BarCodeExcel, { type ExcelRowData, type ExcelData } from "./excel/BarCodeExcel";
 
+
+/*----------------- IMAGE -------------------*/
+import { Printer } from "lucide-react";
+
 /* ============================================================
    CONSTANTS
    ============================================================ */
 
 const BARCODE_HEADER_KEY = "barcode_header_form";
 const BARCODE_TRANSACTIONS_KEY = "barcode_transactions";
+
+const BARCODE_PRINT_KEY = "barcode_print_key";
+
+const BARCODE_PRINT_DETAILS = "barcode_print_details"
 
 const FIELD_ORDER = [
     "grsweight", "stoneWt", "salesStoneWt", "wastePercent",
@@ -99,17 +107,36 @@ interface BarcodeTransactionItem {
     print?: boolean;
 }
 
+interface BarcodePrintingDetails {
+
+    TAGNO: string;
+    GRSWT: number;
+    STNWT: number;
+    WASPER: number;
+    DIAWT: number;
+    MC: number;
+    TOUCH: number;
+    SALESSTNWT: number;
+    NETWT: number;
+    SIZEID: number;
+    UPTIME?: string;
+    USERID?: number;
+}
+
 type TaggingErrors = Record<string, string>;
 
 interface ValidateRowsParams {
-    transactionRows: BarcodeTransactionItem[];
+    transactionRows?: BarcodeTransactionItem[];
     limitations: { PCS: number; STNWT: number };
+    excelRows?: ExcelRowData[];
+    isLoad?: boolean;
 }
 
 /* ============================================================
    COMPONENT
    ============================================================ */
 function BarCodeGenerate() {
+
     const { theme } = useTheme();
 
     /* -------- Refs -------- */
@@ -141,6 +168,12 @@ function BarCodeGenerate() {
     const [transactionRows, setTransactionRows] = useSessionStorage<BarcodeTransactionItem[]>(
         BARCODE_TRANSACTIONS_KEY, EMPTY_ARRAY
     );
+
+    const [printId, setPrintId] = useSessionStorage<number | null>(BARCODE_PRINT_KEY, null);
+    const [printDetails, setPrintDetails] = useSessionStorage<BarcodePrintingDetails[] | [] >(BARCODE_PRINT_DETAILS, []);
+
+    const [printIsEnable, setPrintIsEnable] = useState<boolean>(false);
+
 
     /* -------- Local State -------- */
     const [transactionFormData, setTransactionFormData] = useState(EMPTY_TRANSACTION_FORM);
@@ -192,6 +225,13 @@ function BarCodeGenerate() {
         return () => clearTimeout(t);
     }, [editId]);
 
+    useEffect(() => {
+        if (printDetails) {
+            setPrintIsEnable(true);
+        } else {
+            setPrintIsEnable(false);
+        }
+    }, [])
     /* ============================================================
        DERIVED DATA
        ============================================================ */
@@ -242,6 +282,78 @@ function BarCodeGenerate() {
             rows.map((row, i) => ({ ...row, barcode: `${baseBarcodePrefix}${startBarcodeNumber + i + 1}` })),
         [baseBarcodePrefix, startBarcodeNumber]);
 
+    /* ============================================================
+         PRINT CONFING
+          ============================================================ */
+    const TSPL_HEADER = `
+SIZE 97.5 mm, 25 mm
+DIRECTION 0,0
+REFERENCE 0,0
+OFFSET 0 mm
+SET PEEL OFF
+SET CUTTER OFF
+SET PARTIAL_CUTTER OFF
+SET TEAR ON
+CLS
+`;
+    const generateLabelTSPL = (data: BarcodePrintingDetails) => {
+        return `
+QRCODE 766,166,L,3,A,180,M2,S7,"${data.TAGNO}"
+CODEPAGE 1252
+TEXT 691,161,"0",180,11,9,"size:${data.SIZEID}"
+TEXT 766,98,"0",180,10,7,"DONE_BY_SUGI"
+TEXT 766,75,"0",180,7,6,"Mc:${data.MC}"
+TEXT 766,56,"0",180,7,6,"GrsWt:${data.GRSWT}"
+TEXT 762,35,"0",180,9,10,"Wt:${data.STNWT}"
+TEXT 624,116,"0",90,8,6,"ASWIN"
+PRINT 1,1
+`;
+    };
+
+    const generateAllLabels = (dataArray: BarcodePrintingDetails[]) => {
+        const labels = dataArray
+            .map(item => generateLabelTSPL(item))
+            .join("\n");
+
+        return TSPL_HEADER + "\n" + labels;
+    };
+
+    const downloadTxt = (content: string, callback?: () => void) => {
+        const blob = new Blob([content], { type: "text/plain" });
+        const link = document.createElement("a");
+
+        link.href = URL.createObjectURL(blob);
+        link.download = "barcode.txt"; // ✅ fixed name
+
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        // ✅ small delay but controlled
+        setTimeout(() => {
+            callback && callback();
+        }, 500);
+    };
+
+    const handlePrintTagDetails = () => {
+        console.log("triggering the print");
+
+        if (!printDetails?.length) {
+            console.warn("No print data available");
+            return;
+        }
+
+        const content = generateAllLabels(printDetails);
+        console.log("Generated TSPL Content:", content);    
+
+        downloadTxt(content, () => {
+            console.log("Download triggered → calling protocol");
+
+            setTimeout(()=>{
+                window.location.href = "SmartSale://launch"
+            },800);
+        });
+    };
     /* ============================================================
        TABLE CONFIG
        ============================================================ */
@@ -378,10 +490,26 @@ function BarCodeGenerate() {
      * Converts ExcelRowData[] → BarcodeTransactionItem[], appends to existing rows,
      * rebuilds barcodes, persists to session storage, and closes the drawer.
      */
+
+
     const handleExcelLoad = useCallback(
+
         (parsedRows: ExcelRowData[]) => {
             if (!parsedRows.length) return;
+            if (!validateTaggingHeaders()) {
+                toaster.create({ title: "Validation Error", description: "Please fill all required header fields", type: "error", duration: 2000 });
+                return;
+            }
+            const limits = { PCS: safeNum(selectedItem?.PCS), STNWT: safeNum(selectedItem?.STNWT) };
 
+            console.log(parsedRows, 'parsedRows')
+
+            if (!validateTaggingRows({
+                transactionRows: rowsRef.current,   // ✅ FIXED
+                excelRows: parsedRows,
+                limitations: limits,
+                isLoad: true
+            })) return;
             const draftRowId = barcodeHeaderForm.ENTRYNO || String(Date.now());
 
             const newItems: BarcodeTransactionItem[] = parsedRows.map((r) => ({
@@ -408,6 +536,7 @@ function BarCodeGenerate() {
                 duration: 2500,
             });
 
+            setExcelData([]);
             setExcelImport(false);   // close the drawer after a successful load
         },
         [barcodeHeaderForm.ENTRYNO, rebuildBarcodes, setTransactionRows]
@@ -426,8 +555,11 @@ function BarCodeGenerate() {
     }, []);
 
     const handleHeaderChange = useCallback(
-        (field: string, value: unknown) => setBarcodeHeaderForm((p) => ({ ...p, [field]: value })),
-        [setBarcodeHeaderForm]);
+        (field: string, value: unknown) => {
+            setBarcodeHeaderForm((p) => ({ ...p, [field]: value }));
+            setTaggingErrors({})
+        }
+        , [setBarcodeHeaderForm, taggingErrors]);
 
     const handleTransactionChange = useCallback((key: string, value: unknown) => {
         setTransactionFormData((p) => ({ ...p, [key]: value }));
@@ -459,23 +591,85 @@ function BarCodeGenerate() {
         return !Object.keys(e).length;
     }, [barcodeHeaderForm.COMPANYNAME, barcodeHeaderForm.INWARDNO, barcodeHeaderForm.ITEMNAME]);
 
-    const validateTaggingRows = useCallback(({ transactionRows, limitations }: ValidateRowsParams): boolean => {
-        if (!transactionRows.length) {
-            toaster.create({ title: "Validation Error", description: "At least one transaction row is required", type: "error", duration: 2000 });
+    const validateTaggingRows = ({
+        transactionRows = [],
+        limitations,
+        excelRows = [],
+        isLoad
+    }: ValidateRowsParams): boolean => {
+
+        const rowsToValidate = isLoad
+            ? [...transactionRows, ...excelRows]
+            : transactionRows;
+
+        console.log("Validating rows:", rowsToValidate);
+
+        if (!rowsToValidate.length) {
+            toaster.create({
+                title: "Validation Error",
+                description: "At least one transaction row is required",
+                type: "error",
+                duration: 2000,
+            });
             return false;
         }
-        let totalPCS = 0, totalStoneWt = 0, hasError = false;
-        transactionRows.forEach((row, idx) => {
+
+        let totalPCS = 0;
+        let totalStoneWt = 0;
+        let hasError = false;
+
+        rowsToValidate.forEach((row, idx) => {
             const n = idx + 1;
-            if (!row.grsweight || row.grsweight <= 0) { hasError = true; toaster.create({ title: `Row ${n} Error`, description: "GRSWT must be greater than 0", type: "error", duration: 2000 }); }
-            if (row.stoneWt < 0) { hasError = true; toaster.create({ title: `Row ${n} Error`, description: "Stone Wt must be ≥ 0", type: "error", duration: 2000 }); }
-            if (row.salesStoneWt > row.stoneWt) { hasError = true; toaster.create({ title: `Row ${n} Error`, description: "Sales Stone Wt cannot exceed Stone Wt", type: "error", duration: 2000 }); }
-            totalPCS++; totalStoneWt += row.stoneWt;
+
+            if (!row.grsweight || row.grsweight <= 0) {
+                hasError = true;
+                toaster.create({ title: `Row ${n} Error`, description: "GRSWT must be greater than 0", type: "error", duration: 2000 });
+            }
+
+
+            if (row.stoneWt < 0) {
+                hasError = true;
+                toaster.create({ title: `Row ${n} Error`, description: "Stone Wt must be ≥ 0", type: "error", duration: 2000 });
+            }
+
+            if (
+                row.stoneWt > row.grsweight
+            ) {
+                hasError = true;
+                toaster.create({ title: `Row ${n} Error`, description: "Stone Wt cannot exceed  Gross Weight ", type: "error", duration: 2000 });
+            }
+            if (row.salesStoneWt > row.stoneWt) {
+                hasError = true;
+                toaster.create({ title: `Row ${n} Error`, description: "Sales Stone Wt cannot exceed Stone Wt", type: "error", duration: 2000 });
+            }
+
+            totalPCS++;
+            totalStoneWt += row.stoneWt;
         });
-        if (limitations.PCS && totalPCS > limitations.PCS) { hasError = true; toaster.create({ title: "Lot PCS Error", description: `Total pieces ${totalPCS} exceed allowed PCS ${limitations.PCS}`, type: "error", duration: 2000 }); }
-        if (limitations.STNWT && totalStoneWt > limitations.STNWT) { hasError = true; toaster.create({ title: "Lot Stone Wt Error", description: `Total stone weight ${totalStoneWt.toFixed(3)} exceeds allowed STNWT ${limitations.STNWT}`, type: "error", duration: 2000 }); }
+
+        if (limitations.PCS && totalPCS > limitations.PCS) {
+            toaster.create({
+                title: "Lot PCS Error",
+                description: `Total pieces ${totalPCS} exceed allowed PCS ${limitations.PCS}`,
+                type: "error",
+                duration: 2000,
+            });
+            return false;
+        }
+
+        if (limitations.STNWT && totalStoneWt > limitations.STNWT) {
+            toaster.create({
+                title: "Lot Stone Wt Error",
+                description: `Total stone weight ${totalStoneWt.toFixed(3)} exceeds allowed STNWT ${limitations.STNWT}`,
+                type: "error",
+                duration: 2000,
+            });
+            return false;
+        }
+
         return !hasError;
-    }, []);
+    };
+
 
     const handleTransactionSubmit = useCallback(() => {
         const newErrors = validateTransactionForm();
@@ -589,8 +783,27 @@ function BarCodeGenerate() {
             TOUCH: row.touch, SALESSTNWT: row.salesStoneWt,
             NETWT: row.grsweight - row.stoneWt, SIZEID: Number(row.size),
         }));
+
         createTag({ PURCHASEDETAILS: purchaseDetails, TAGGINGDETAILS: taggingDetails }, {
-            onSuccess: () => { toaster.create({ title: "Success", description: "Tagging created successfully", type: "success", duration: 2000 }); setTransactionRows([]); },
+            onSuccess: (res) => {
+                toaster.create({
+                    title: "Success",
+                    description: "Tagging created successfully",
+                    type: "success",
+                    duration: 2000
+                });
+
+                setBarcodeHeaderForm(EMPTY_HEADER);
+                setTransactionRows([]);
+
+                console.log("API Response:", res);
+
+                // ✅ get printId from response
+                setPrintId(res?.data?.ENTRYNO);
+
+                setPrintDetails(res?.data?.TAGDETAILS)
+
+            },
             onError: () => { toaster.create({ title: "Error", description: "Failed to create tagging", type: "error", duration: 2000 }); },
         });
     }, [validateTaggingHeaders, validateTaggingRows, selectedItem, transactionRows, barcodeHeaderForm, itemId, createTag, setTransactionRows]);
@@ -698,9 +911,12 @@ function BarCodeGenerate() {
                     <Text fontSize="base" fontWeight="semibold" textAlign="center">BARCODE GENERATION</Text>
                     <Box display="flex" gap={2} flexDirection="row" justifyContent="space-between">
                         <BarcodeHeaderForm
-                            form={barcodeHeaderForm} onChange={handleHeaderChange}
-                            purchaserCollection={purchaserCollection} inwardCollection={inwardCollection}
-                            itemCollection={itemCollection} isDisabled={transactionRows.length > 0}
+                            form={barcodeHeaderForm}
+                            onChange={handleHeaderChange}
+                            purchaserCollection={purchaserCollection}
+                            inwardCollection={inwardCollection}
+                            itemCollection={itemCollection}
+                            isDisabled={transactionRows.length > 0}
                             validationError={taggingErrors}
                         />
                     </Box>
@@ -723,8 +939,17 @@ function BarCodeGenerate() {
             </Box>
 
             {/* ── Transaction Table ── */}
-            <Box display="flex" flexDirection="column" gap={2} bg={theme.colors.formColor} p={2} rounded="xl">
-                <Box display="flex" gap={2} justifyContent="end">
+            <Box display="flex" flexDirection="row" gap={2} bg={theme.colors.formColor} p={2} rounded="xl">
+
+                <Box fontSize='xs' display={'flex'} alignItems={'center'} gap={2} onClick={handlePrintTagDetails} >
+
+                    <Printer width={20} height={20}/>
+                    <Text>Print All</Text>
+
+                </Box>
+
+
+                <Box ml="auto" display="flex" alignItems="center">
                     <Button size="xs" fontSize="2xs" onClick={handleClear} variant="ghost" bg={theme.colors.formColor} p={0}>
                         <Image src={clearIcon} width={58} alt="CLEAR" />
                     </Button>
@@ -732,17 +957,20 @@ function BarCodeGenerate() {
                         <Image src={saveIcon} width={60} alt="save" />
                     </Button>
                 </Box>
-                <TransactionTable
-                    theme={theme} tableCols={transactionTableCols} formFields={visibleFormFields}
-                    rows={transactionRows} errors={errors} touched={touched} localEditId={editId}
-                    isSubmitting={isSubmitting} totals={transactionTotals} allDisplayCols={allDisplayCols}
-                    resetForm={resetTransactionForm} handleSubmit={handleTransactionSubmit}
-                    handleEditRow={handleEditRow} handleDeleteRow={handleDeleteRow}
-                    renderFormCell={renderFormCell} getCellValue={getCellValue}
-                    formatTotal={formatTotal} getCellStyle={getCellStyle}
-                    transactionType="barcode" showTotal showTableForm={showTableForm}
-                />
+
+
+
             </Box>
+            <TransactionTable
+                theme={theme} tableCols={transactionTableCols} formFields={visibleFormFields}
+                rows={transactionRows} errors={errors} touched={touched} localEditId={editId}
+                isSubmitting={isSubmitting} totals={transactionTotals} allDisplayCols={allDisplayCols}
+                resetForm={resetTransactionForm} handleSubmit={handleTransactionSubmit}
+                handleEditRow={handleEditRow} handleDeleteRow={handleDeleteRow}
+                renderFormCell={renderFormCell} getCellValue={getCellValue}
+                formatTotal={formatTotal} getCellStyle={getCellStyle}
+                transactionType="barcode" showTotal showTableForm={showTableForm}
+            />
 
             {/* ── Excel Import Drawer ── */}
             {excelImport && (
@@ -773,11 +1001,7 @@ function BarCodeGenerate() {
                                     />
                                 </Drawer.Body>
 
-                                <Drawer.Footer borderTopWidth="1px">
-                                    <Button variant="outline" size="sm" onClick={() => setExcelImport(false)}>
-                                        Close
-                                    </Button>
-                                </Drawer.Footer>
+
                             </Drawer.Content>
                         </Drawer.Positioner>
                     </Portal>

@@ -34,7 +34,6 @@ function BarcodeHeaderForm({ form, onChange, purchaserCollection ,inwardCollecti
 
    const barcodeHeaderField = barcodeHeaderFields({ vendorCollection: purchaserCollection , inwardCollection:inwardCollection , itemCollection:itemCollection });
 
-    console.log(barcodeHeaderField,'barcodeHeaderField')
 
     const { register, focusNext } = useEnterNavigation(barcodeHeaderField.map(f => f.name), () => {
         console.log("Form Submitted");

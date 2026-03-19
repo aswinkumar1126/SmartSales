@@ -2,11 +2,10 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { HotTable } from "@handsontable/react";
-import type { HotTableClass } from "@handsontable/react";
 import type { CellChange, ChangeSource } from "handsontable/common";
+import { HotTableClass } from "@handsontable/react";
 import { registerAllModules } from "handsontable/registry";
-import { Box, Button, Text, Badge } from "@chakra-ui/react";
-import { toaster } from "@/components/ui/toaster";
+import { Box, Button, Text } from "@chakra-ui/react";
 import * as XLSX from "xlsx";
 
 registerAllModules();
@@ -29,7 +28,7 @@ export interface ExcelRowData {
 export type ExcelData = (string | number | null)[][];
 
 /* ============================================================
-   COLUMN DEFINITIONS
+   CONSTANTS — column definitions
    ============================================================ */
 
 export const EXCEL_COLUMNS: {
@@ -37,80 +36,126 @@ export const EXCEL_COLUMNS: {
     header: string;
     type: "numeric" | "text";
     numericFormat?: { pattern: string };
+    decimalScale?: number;
     width: number;
-    validator?: "positive" | "nonNegative";
 }[] = [
-        { key: "grsweight", header: "GRS WT", type: "numeric", numericFormat: { pattern: "0.000" }, width: 90, validator: "positive" },
-        { key: "stoneWt", header: "STONE WT", type: "numeric", numericFormat: { pattern: "0.000" }, width: 90, validator: "nonNegative" },
-        { key: "salesStoneWt", header: "SALES STN WT", type: "numeric", numericFormat: { pattern: "0.000" }, width: 110, validator: "nonNegative" },
-        { key: "wastePercent", header: "WASTE %", type: "numeric", numericFormat: { pattern: "0.00" }, width: 80 },
-        { key: "size", header: "SIZE", type: "text", width: 80 },
-        { key: "diamondWt", header: "DIAMOND WT", type: "numeric", numericFormat: { pattern: "0.000" }, width: 100, validator: "nonNegative" },
-        { key: "mc", header: "MC", type: "numeric", numericFormat: { pattern: "0.00" }, width: 70 },
-        { key: "touch", header: "TOUCH", type: "numeric", numericFormat: { pattern: "0.0" }, width: 70 },
+        { key: "grsweight", header: "GRS WT", type: "numeric", numericFormat: { pattern: "0.000" }, decimalScale: 3, width: 90 },
+        { key: "stoneWt", header: "STONE WT", type: "numeric", numericFormat: { pattern: "0.000" }, decimalScale: 3, width: 90 },
+        { key: "salesStoneWt", header: "SALES STN WT", type: "numeric", numericFormat: { pattern: "0.000" }, decimalScale: 3, width: 110 },
+        { key: "wastePercent", header: "WASTE %", type: "numeric", numericFormat: { pattern: "0.00" }, decimalScale: 2, width: 80 },
+        { key: "size", header: "SIZE", type: "text", width: 70 },
+        { key: "diamondWt", header: "DIAMOND WT", type: "numeric", numericFormat: { pattern: "0.000" }, decimalScale: 3, width: 100 },
+        { key: "mc", header: "MC", type: "numeric", numericFormat: { pattern: "0.00" }, decimalScale: 2, width: 70 },
+        { key: "touch", header: "TOUCH", type: "numeric", numericFormat: { pattern: "0.0" }, decimalScale: 1, width: 70 },
     ];
 
-const LAST_COL_IDX = EXCEL_COLUMNS.length - 1;
+/**
+ * Header aliases: keys are lowercase-trimmed variants the uploaded Excel
+ * file might use; values map to EXCEL_COLUMNS indices (0-based).
+ */
+const HEADER_ALIAS_MAP: Record<string, number> = {
+    "grs wt": 0, grsweight: 0, "grs weight": 0,
+    "stone wt": 1, stonewt: 1, "stone weight": 1,
+    "sales stn wt": 2, salesstonewt: 2, "sales stone wt": 2,
+    "waste %": 3, wastepercent: 3, waste: 3,
+    size: 4,
+    "diamond wt": 5, diamondwt: 5, "diamond weight": 5,
+    mc: 6,
+    touch: 7,
+};
+
+const EMPTY_ROW: (string | number | null)[] = EXCEL_COLUMNS.map(() => null);
+const makeEmptyRows = (n = 10): ExcelData =>
+    Array.from({ length: n }, () => [...EMPTY_ROW]);
 
 /* ============================================================
    HELPERS
    ============================================================ */
 
-const safeNum = (val: unknown): number => {
+const safeNum = (val: unknown, decimals = 3): number => {
     const n = Number(val);
-    return isNaN(n) ? 0 : n;
+    if (isNaN(n)) return 0;
+    return parseFloat(n.toFixed(decimals));
 };
 
-const makeEmptyRows = (n = 15): ExcelData =>
-    Array.from({ length: n }, () => EXCEL_COLUMNS.map(() => null));
-
 const parseGridRow = (row: (string | number | null)[]): ExcelRowData | null => {
-    if (row.every((c) => c === null || c === "")) return null;
+    if (row.every((cell) => cell === null || cell === "")) return null;
     return {
-        grsweight: safeNum(row[0]),
-        stoneWt: safeNum(row[1]),
-        salesStoneWt: safeNum(row[2]),
-        wastePercent: safeNum(row[3]),
+        grsweight: safeNum(row[0], 3),
+        stoneWt: safeNum(row[1], 3),
+        salesStoneWt: safeNum(row[2], 3),
+        wastePercent: safeNum(row[3], 2),
         size: String(row[4] ?? ""),
-        diamondWt: safeNum(row[5]),
-        mc: safeNum(row[6]),
-        touch: safeNum(row[7]),
+        diamondWt: safeNum(row[5], 3),
+        mc: safeNum(row[6], 2),
+        touch: safeNum(row[7], 1),
     };
 };
 
-const parseXlsxFile = (file: File): Promise<ExcelData> =>
-    new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onerror = () => reject(new Error("File read failed"));
-        reader.onload = (e) => {
-            try {
-                const buf = new Uint8Array(e.target!.result as ArrayBuffer);
-                const wb = XLSX.read(buf, { type: "array" });
-                const ws = wb.Sheets[wb.SheetNames[0]];
-                const rows = XLSX.utils.sheet_to_json<(string | number | null)[]>(ws, {
-                    header: 1, defval: null, raw: false,
-                }) as (string | number | null)[][];
-                const colCount = EXCEL_COLUMNS.length;
-                const parsed: ExcelData = rows
-                    .slice(1)
-                    .filter((r) => r.some((c) => c !== null && c !== ""))
-                    .map((r) => Array.from({ length: colCount }, (_, i) => r[i] ?? null));
-                resolve(parsed);
-            } catch (err) {
-                reject(err);
-            }
-        };
-        reader.readAsArrayBuffer(file);
+/**
+ * Convert a raw XLSX worksheet into ExcelData aligned with EXCEL_COLUMNS order.
+ * Handles:
+ *  - Sheets with no header row (columns assumed to match EXCEL_COLUMNS order)
+ *  - Sheets with a header row  → auto-mapped via HEADER_ALIAS_MAP
+ */
+const sheetToExcelData = (worksheet: XLSX.WorkSheet): ExcelData => {
+    const rawRows: (string | number | null)[][] = XLSX.utils.sheet_to_json(worksheet, {
+        header: 1,
+        defval: null,
+        raw: true,
     });
+
+    if (rawRows.length === 0) return makeEmptyRows();
+
+    const colCount = EXCEL_COLUMNS.length;
+    const firstRow = rawRows[0];
+
+    // Detect header row: at least one cell is a non-numeric string
+    const looksLikeHeader = firstRow.some(
+        (cell) => typeof cell === "string" && isNaN(Number(cell)) && cell.trim() !== ""
+    );
+
+    // Build remap: destColIndex → srcColIndex
+    let colRemap: number[] | null = null;
+    if (looksLikeHeader) {
+        const remap: number[] = new Array(colCount).fill(-1);
+        firstRow.forEach((cell, srcIdx) => {
+            const key = String(cell ?? "").toLowerCase().trim();
+            const destIdx = HEADER_ALIAS_MAP[key];
+            if (destIdx !== undefined) remap[destIdx] = srcIdx;
+        });
+        colRemap = remap;
+    }
+
+    const dataRows = looksLikeHeader ? rawRows.slice(1) : rawRows;
+
+    const mapped: ExcelData = dataRows.map((row) => {
+        if (colRemap) {
+            return colRemap.map((srcIdx) => (srcIdx >= 0 ? (row[srcIdx] ?? null) : null));
+        }
+        return EXCEL_COLUMNS.map((_, i) => row[i] ?? null);
+    });
+
+    return mapped.length > 0 ? mapped : makeEmptyRows();
+};
 
 /* ============================================================
    PROPS
    ============================================================ */
 
 type BarCodeExcelProps = {
+    /** Raw grid data (rows × cols). Parent owns this state. */
     data: ExcelData;
+    /** Called whenever a cell is edited by the user. */
     onChange: (changes: CellChange[] | null, source: ChangeSource) => void;
+    /** Called when "Load into Table" is clicked — receives parsed non-empty rows. */
     onLoad: (rows: ExcelRowData[]) => void;
+    /**
+     * Called after the grid data changes (user edit OR file upload).
+     * Use this to keep parent state in sync.
+     * NOTE: Do NOT update `data` prop from this in a way that causes a
+     * re-render loop — store in a separate ref or debounce if needed.
+     */
     onFileParsed?: (data: ExcelData) => void;
 };
 
@@ -118,381 +163,240 @@ type BarCodeExcelProps = {
    COMPONENT
    ============================================================ */
 
-const BarCodeExcel: React.FC<BarCodeExcelProps> = ({ data, onChange, onLoad, onFileParsed }) => {
+const BarCodeExcel: React.FC<BarCodeExcelProps> = ({
+    data,
+    onChange,
+    onLoad,
+    onFileParsed,
+}) => {
     const hotRef = useRef<HotTableClass>(null);
+    const fileRef = useRef<HTMLInputElement>(null);
 
-    const [rowCount, setRowCount] = useState(0);
-    const [isDragging, setIsDragging] = useState(false);
-    const [isParsing, setIsParsing] = useState(false);
+    // ── FIX FOR INFINITE LOOP ────────────────────────────────────────────────
+    // The loop was: edit → afterChange → onFileParsed → parent setState →
+    // new `data` prop → HotTable re-render → afterChange("loadData") →
+    // onFileParsed again → ...
+    //
+    // Solution: keep an INTERNAL copy of grid data in local state.
+    // We only sync FROM the parent `data` prop on mount and on explicit
+    // file-driven updates. User edits mutate internalData directly via
+    // afterChange, and we notify the parent WITHOUT feeding data back in.
+    // ─────────────────────────────────────────────────────────────────────────
 
-    /**
-     * When we call hot.selectCell() programmatically (inside Enter handler),
-     * afterSelection fires again. This flag tells afterSelection to skip
-     * opening the editor for that one synthetic selection event, because
-     * the Enter handler will open it manually after its own setTimeout.
-     */
-    const suppressNextOpen = useRef(false);
+    const [internalData, setInternalData] = useState<ExcelData>(() =>
+        data.length > 0 ? data : makeEmptyRows()
+    );
 
-    /* ── Badge: count filled rows ── */
+    // Track whether the parent passed in brand-new data from outside
+    // (e.g. clearing / resetting), so we can sync once without looping.
+    const prevDataRef = useRef<ExcelData>(data);
     useEffect(() => {
-        const filled = data.filter((r) => r.some((c) => c !== null && c !== "")).length;
-        setRowCount(filled);
+        // Only sync if the parent reference actually changed AND it's
+        // not the same object we just sent up via onFileParsed.
+        if (data !== prevDataRef.current) {
+            prevDataRef.current = data;
+            setInternalData(data.length > 0 ? data : makeEmptyRows());
+            // Do NOT call onFileParsed here — parent already owns this data.
+        }
     }, [data]);
 
-    /* ──────────────────────────────────────────────────────────
-       COLUMN CONFIG
-    ────────────────────────────────────────────────────────── */
-    const columns = useMemo(
-        () =>
-            EXCEL_COLUMNS.map((col) => {
-                const cfg: Record<string, unknown> = {
-                    type: col.type,
-                    allowEmpty: true,
-                };
-                if (col.type === "numeric" && col.numericFormat) {
-                    cfg.numericFormat = col.numericFormat;
-                }
-                if (col.validator === "positive") {
-                    cfg.validator = (value: unknown, cb: (v: boolean) => void) => {
-                        if (value === null || value === "") { cb(true); return; }
-                        cb(Number(value) > 0);
-                    };
-                } else if (col.validator === "nonNegative") {
-                    cfg.validator = (value: unknown, cb: (v: boolean) => void) => {
-                        if (value === null || value === "") { cb(true); return; }
-                        cb(Number(value) >= 0);
-                    };
-                }
-                return cfg;
-            }),
-        []
-    );
+    // ── Upload state ──────────────────────────────────────────────────────────
+    const [fileName, setFileName] = useState<string>("");
+    const [uploadError, setUploadError] = useState<string>("");
 
-    const colHeaders = useMemo(() => EXCEL_COLUMNS.map((c) => c.header), []);
+    // ── Column settings ───────────────────────────────────────────────────────
+    const columns = useMemo(() =>
+        EXCEL_COLUMNS.map((col) =>
+            col.type === "numeric"
+                ? { type: "numeric" as const, numericFormat: col.numericFormat ?? { pattern: "0.000" } }
+                : { type: "text" as const }
+        ), []);
+
     const colWidths = useMemo(() => EXCEL_COLUMNS.map((c) => c.width), []);
-    const gridData = useMemo(() => (data.length > 0 ? data : makeEmptyRows()), [data]);
+    const colHeaders = useMemo(() => EXCEL_COLUMNS.map((c) => c.header), []);
 
-    /* ──────────────────────────────────────────────────────────
-       HOOK 1 — afterSelection → open editor on single click / focus
-       ──────────────────────────────────────────────────────────
-       KEY INSIGHT (why doc 7 worked):
-         • Use beginEditing() not openEditor().
-           beginEditing() is the public API that also positions the
-           editor textarea correctly for numeric cells.
-           openEditor() is lower-level and skips some setup steps.
-         • Use setTimeout(..., 10) not requestAnimationFrame.
-           rAF fires before the browser has processed the mouse-up
-           event in some browsers, causing the editor to open then
-           immediately close. A 10 ms delay clears that race.
-    ────────────────────────────────────────────────────────── */
-    const handleAfterSelection = useCallback(
-        (r: number, c: number, r2: number, c2: number) => {
-            // Multi-cell selection — leave it alone
-            if (r !== r2 || c !== c2) return;
+    // ── afterChange: user edits only (skip programmatic "loadData" events) ───
+    const handleAfterChange = useCallback(
+        (changes: CellChange[] | null, source: ChangeSource) => {
+            // "loadData" fires when HotTable receives a new `data` prop — not a user action
+            if (source === "loadData") return;
 
-            // Programmatic move from Enter handler — skip this cycle
-            if (suppressNextOpen.current) {
-                suppressNextOpen.current = false;
-                return;
-            }
+            onChange(changes, source);
 
-            const hot = hotRef.current?.hotInstance;
-            if (!hot) return;
-
-            // Already editing — nothing to do
-            if (hot.getActiveEditor()?.isOpened()) return;
-
-            setTimeout(() => {
-                const instance = hotRef.current?.hotInstance;
-                if (!instance) return;
-                // Re-check: another event may have opened the editor in the gap
-                if (instance.getActiveEditor()?.isOpened()) return;
-                if (suppressNextOpen.current) return;
-
-                // beginEditing() is the correct API for opening + positioning
-                instance.getActiveEditor()?.beginEditing();
-            }, 10);
+            // Notify parent with latest snapshot — but this must NOT cause
+            // parent to immediately set the `data` prop back (would loop).
+            // if (onFileParsed && hotRef.current?.hotInstance) {
+            //     const snapshot = hotRef.current.hotInstance.getData() as ExcelData;
+            //     // Update our own ref so the useEffect above doesn't re-sync
+            //     prevDataRef.current = snapshot;
+            //     onFileParsed(snapshot);
+            // }
         },
-        []
+        [onChange, onFileParsed]
     );
 
-    /* ──────────────────────────────────────────────────────────
-       HOOK 2 — beforeKeyDown → Enter moves to next field
-       ──────────────────────────────────────────────────────────
-       KEY INSIGHTS (why doc 7 worked):
-         • e.stopPropagation() (not stopImmediatePropagation).
-           stopImmediatePropagation also blocks our own setTimeout
-           callback in some HOT versions.
-         • finishEditing(true, false) — first arg `true` = save the
-           value. false = do not revert. Doc 6 used (false, false)
-           which discards the typed value.
-         • enterMoves={{ row:0, col:0 }} disables HOT's own cursor
-           move after Enter. Without this, HOT moves AND our handler
-           moves — resulting in a double-jump.
-         • setTimeout 50 ms for the beginEditing() call after
-           selectCell. 10 ms is sometimes not enough for HOT to
-           complete its internal state reset after finishEditing.
-    ────────────────────────────────────────────────────────── */
-    const handleBeforeKeyDown = useCallback((e: KeyboardEvent) => {
-        if (e.key !== "Enter") return;
+    // ── File upload ───────────────────────────────────────────────────────────
+    const handleFileChange = useCallback(
+        (e: React.ChangeEvent<HTMLInputElement>) => {
+            const file = e.target.files?.[0];
+            if (!file) return;
 
-        const hot = hotRef.current?.hotInstance;
-        if (!hot) return;
+            setUploadError("");
+            setFileName(file.name);
 
-        const selected = hot.getSelectedLast();
-        if (!selected) return;
+            const reader = new FileReader();
+            reader.onload = (evt) => {
+                try {
+                    const buf = evt.target?.result as ArrayBuffer;
+                    const workbook = XLSX.read(buf, { type: "array" });
+                    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+                    const parsed = sheetToExcelData(sheet);
 
-        const [row, col] = selected;
-        const totalRows = hot.countRows();
+                    // Update internal grid directly (no parent round-trip)
+                    prevDataRef.current = parsed; // suppress useEffect sync
+                    setInternalData(parsed);
 
-        // Block HOT's default Enter handling (cursor move + editor open)
-        e.preventDefault();
-        e.stopPropagation();
+                    // Let parent know the new raw data
+                    onFileParsed?.(parsed);
+                } catch {
+                    setUploadError(
+                        "Failed to parse file. Please upload a valid .xlsx / .xls / .csv file."
+                    );
+                }
+            };
+            reader.onerror = () => setUploadError("Could not read the file.");
+            reader.readAsArrayBuffer(file);
 
-        // Save the current value — true = commit, false = don't revert
-        hot.getActiveEditor()?.finishEditing(true, false);
+            // Allow re-uploading the same file
+            e.target.value = "";
+        },
+        [onFileParsed]
+    );
 
-        // Calculate destination: next column, or col 0 of next row at end
-        let nextRow = row;
-        let nextCol = col + 1;
+    // ── Clear ─────────────────────────────────────────────────────────────────
+    const handleClear = useCallback(() => {
+        setFileName("");
+        setUploadError("");
+        const blank = makeEmptyRows();
+        prevDataRef.current = blank;
+        setInternalData(blank);
+        onFileParsed?.(blank);
+    }, [onFileParsed]);
 
-        if (nextCol > LAST_COL_IDX) {
-            nextCol = 0;
-            nextRow = row + 1 < totalRows ? row + 1 : row;
-        }
-
-        // Tell afterSelection to skip the synthetic selection event
-        suppressNextOpen.current = true;
-
-        hot.selectCell(nextRow, nextCol);
-
-        // Open editor on the destination cell.
-        // 50 ms gives HOT time to finish finishEditing + selectCell internally.
-        setTimeout(() => {
-            const instance = hotRef.current?.hotInstance;
-            if (!instance) return;
-            suppressNextOpen.current = false;
-            instance.getActiveEditor()?.beginEditing();
-        }, 50);
-    }, []);
-
-    /* ──────────────────────────────────────────────────────────
-       LOAD
-    ────────────────────────────────────────────────────────── */
+    // ── Load button ───────────────────────────────────────────────────────────
     const handleLoad = useCallback(() => {
-        const hot = hotRef.current?.hotInstance;
-        if (!hot) {
-            toaster.create({ title: "Error", description: "Grid is not ready", type: "error", duration: 2000 });
-            return;
-        }
-        // Commit any open editor before reading source data
-        hot.getActiveEditor()?.finishEditing(true, false);
+        const sourceData: ExcelData =
+            hotRef.current?.hotInstance
+                ? (hotRef.current.hotInstance.getData() as ExcelData)
+                : internalData;
 
-        const sourceRows = hot.getSourceData() as (string | number | null)[][];
-        const parsed = sourceRows
-            .map(parseGridRow)
-            .filter((r): r is ExcelRowData => r !== null);
+        const parsed = sourceData.reduce<ExcelRowData[]>((acc, row) => {
+            const item = parseGridRow(row);
+            if (item) acc.push(item);
+            return acc;
+        }, []);
 
-        if (!parsed.length) {
-            toaster.create({ title: "Nothing to load", description: "Fill in at least one row before loading.", type: "warning", duration: 2000 });
+        if (parsed.length === 0) {
+            alert("No valid rows found in the grid.");
             return;
         }
         onLoad(parsed);
-    }, [onLoad]);
+    }, [internalData, onLoad]);
 
-    /* ──────────────────────────────────────────────────────────
-       CLEAR
-    ────────────────────────────────────────────────────────── */
-    const handleClear = useCallback(() => {
-        const hot = hotRef.current?.hotInstance;
-        if (!hot) return;
-        hot.loadData(makeEmptyRows());
-        onFileParsed?.([]);
-    }, [onFileParsed]);
+    /* ======================================================================== */
 
-    /* ──────────────────────────────────────────────────────────
-       FILE PROCESSING
-    ────────────────────────────────────────────────────────── */
-    const processFile = useCallback(async (file: File) => {
-        const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
-        const validTypes = [
-            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            "application/vnd.ms-excel",
-            "text/csv",
-        ];
-        if (!validTypes.includes(file.type) && !["xlsx", "xls", "csv"].includes(ext)) {
-            toaster.create({ title: "Invalid file", description: "Please upload an .xlsx, .xls, or .csv file", type: "error", duration: 2500 });
-            return;
-        }
-        setIsParsing(true);
-        try {
-            const parsed = await parseXlsxFile(file);
-            if (!parsed.length) {
-                toaster.create({ title: "Empty file", description: "No data rows found.", type: "warning", duration: 2000 });
-                return;
-            }
-            onFileParsed?.(parsed);
-            toaster.create({ title: "File loaded", description: `${parsed.length} row(s) imported into the grid`, type: "success", duration: 2000 });
-        } catch {
-            toaster.create({ title: "Parse error", description: "Could not read the file. Check the format.", type: "error", duration: 2500 });
-        } finally {
-            setIsParsing(false);
-        }
-    }, [onFileParsed]);
-
-    const handleFileInput = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (file) processFile(file);
-        e.target.value = "";
-    }, [processFile]);
-
-    const handleDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
-        e.preventDefault();
-        setIsDragging(false);
-        const file = e.dataTransfer.files?.[0];
-        if (file) processFile(file);
-    }, [processFile]);
-
-    const handleDragOver = useCallback((e: React.DragEvent) => { e.preventDefault(); setIsDragging(true); }, []);
-    const handleDragLeave = useCallback(() => setIsDragging(false), []);
-
-    const styleColHeader = useCallback((_col: number, TH: HTMLTableCellElement) => {
-        TH.style.fontSize = "11px";
-        TH.style.fontWeight = "600";
-        TH.style.background = "#EBF8FF";
-        TH.style.color = "#2B6CB0";
-        TH.style.textAlign = "center";
-        TH.style.padding = "4px 6px";
-        TH.style.whiteSpace = "nowrap";
-    }, []);
-
-    /* ──────────────────────────────────────────────────────────
-       RENDER
-    ────────────────────────────────────────────────────────── */
     return (
         <Box display="flex" flexDirection="column" gap={3} p={2}>
 
-            {/* ── Drop zone ── */}
+            {/* ── File upload strip ── */}
             <Box
-                onDrop={handleDrop}
-                onDragOver={handleDragOver}
-                onDragLeave={handleDragLeave}
-                position="relative"
-                border="2px dashed"
-                borderColor={isDragging ? "teal.400" : "gray.200"}
-                bg={isDragging ? "teal.50" : "gray.50"}
-                rounded="lg"
+                display="flex"
+                alignItems="center"
+                gap={3}
                 p={3}
-                textAlign="center"
-                transition="all 0.15s ease"
-                cursor="pointer"
+                border="1px dashed"
+                borderColor="gray.300"
+                rounded="md"
+                bg="gray.50"
+                flexWrap="wrap"
             >
                 <input
+                    ref={fileRef}
                     type="file"
                     accept=".xlsx,.xls,.csv"
-                    onChange={handleFileInput}
-                    style={{ position: "absolute", inset: 0, opacity: 0, cursor: "pointer", width: "100%", height: "100%" }}
+                    style={{ display: "none" }}
+                    onChange={handleFileChange}
                 />
-                <Text fontSize="xs" color="gray.500" pointerEvents="none">
-                    {isParsing ? "⏳ Parsing file…" : "📂 Drop an .xlsx / .xls / .csv here, or click to browse"}
-                </Text>
-                <Text fontSize="2xs" color="gray.400" mt={1} pointerEvents="none">
-                    First row is treated as header and skipped automatically
-                </Text>
+
+                <Button
+                    size="sm"
+                    variant="outline"
+                    colorPalette="blue"
+                    onClick={() => fileRef.current?.click()}
+                >
+                    📂 Upload Excel / CSV
+                </Button>
+
+                {fileName ? (
+                    <>
+                        <Text fontSize="sm" color="gray.700" flex={1}>
+                            {fileName}
+                        </Text>
+                        <Button
+                            size="xs"
+                            variant="ghost"
+                            colorPalette="red"
+                            onClick={handleClear}
+                        >
+                            ✕ Clear
+                        </Button>
+                    </>
+                ) : (
+                    <Text fontSize="sm" color="gray.400">
+                        No file selected — or fill the grid manually below
+                    </Text>
+                )}
+
+                {uploadError && (
+                    <Text fontSize="xs" color="red.500" w="full">
+                        {uploadError}
+                    </Text>
+                )}
             </Box>
 
-            {/* ── Badge + hint ── */}
-            <Box display="flex" alignItems="center" gap={2}>
-                <Badge colorPalette={rowCount > 0 ? "teal" : "gray"} size="sm">
-                    {rowCount} filled row{rowCount !== 1 ? "s" : ""}
-                </Badge>
-                <Text fontSize="2xs" color="gray.400">
-                    Click any cell to edit · Enter moves to next field · Tab moves right · Ctrl+Z to undo
-                </Text>
-            </Box>
+            <Text fontSize="xs" color="gray.500">
+                Press <Text as="kbd" fontFamily="mono">Enter</Text> to move down a cell.
+                Drag column borders to resize. Blank rows are ignored on load.
+            </Text>
 
-            {/* ── Grid ── */}
-            <Box
-                overflowX="auto"
-                border="1px solid"
-                borderColor="gray.200"
-                rounded="md"
-                onKeyDown={(e) => e.stopPropagation()}
-            >
+            {/* ── Spreadsheet grid ── */}
+            <Box overflowX="auto" border="1px solid" borderColor="gray.200" rounded="md">
                 <HotTable
                     ref={hotRef}
-                    data={gridData}
-
-                    /* ── Columns ── */
+                    data={internalData}
                     colHeaders={colHeaders}
                     columns={columns}
                     colWidths={colWidths}
                     rowHeaders={true}
-
-                    /* ── Dimensions ── */
                     width="100%"
-                    height="400px"
-                    stretchH="last"
-                    rowHeights={24}
-
+                    height="420px"
+                    enterMoves={{ row: 1, col: 0 }}
                     licenseKey="non-commercial-and-evaluation"
-
-                    /* ── Callbacks ── */
-                    afterChange={onChange}
-                    afterSelection={handleAfterSelection}
-                    beforeKeyDown={handleBeforeKeyDown}
-
-                    /* ── Enter behaviour ──
-                         enterBeginsEditing : Enter on a selected-but-closed
-                                              cell opens the editor immediately.
-                         enterMoves {0,0}   : Disables HOT's built-in cursor
-                                              move after Enter so our handler
-                                              is the only thing that moves.    */
-                    enterBeginsEditing={true}
-                    enterMoves={{ row: 0, col: 0 }}
-
-                    /* ── Tab moves right in same row ── */
-                    tabMoves={{ row: 0, col: 1 }}
-
-                    /* ── Navigation ── */
-                    autoWrapRow={true}
-                    autoWrapCol={true}
-                    outsideClickDeselects={false}
-
-                    /* ── Editing UX ── */
-                    allowRemoveRow={true}
-                    minSpareRows={3}
-
-                    /* ── Features ── */
+                    afterChange={handleAfterChange}
                     contextMenu={true}
-                    copyPaste={true}
-                    undo={true}
                     manualColumnResize={true}
                     manualRowResize={true}
-                    manualColumnMove={false}
-
-                    /* ── Validation ── */
-                    invalidCellClassName="htInvalid"
-
-                    /* ── Visual ── */
+                    allowRemoveRow={true}
+                    minSpareRows={3}
                     wordWrap={false}
-                    afterGetColHeader={styleColHeader}
+                    stretchH="last"
                 />
             </Box>
 
-            {/* ── Action bar ── */}
-            <Box display="flex" justifyContent="space-between" alignItems="center" gap={2}>
-                <Button size="xs" variant="ghost" colorPalette="red" fontSize="xs" onClick={handleClear}>
-                    Clear Grid
-                </Button>
-                <Button
-                    size="sm"
-                    colorPalette="teal"
-                    fontSize="xs"
-                    onClick={handleLoad}
-                    disabled={rowCount === 0}
-                >
-                    Load {rowCount > 0 ? `${rowCount} row${rowCount !== 1 ? "s" : ""}` : ""} into Table
+            {/* ── Actions ── */}
+            <Box display="flex" justifyContent="flex-end" gap={2}>
+                <Button size="sm" colorPalette="teal" onClick={handleLoad}>
+                    Load into Table
                 </Button>
             </Box>
         </Box>

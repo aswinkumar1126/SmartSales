@@ -23,27 +23,31 @@ import {
 } from "@chakra-ui/react";
 import { } from "@chakra-ui/react";
 import { Table } from "@chakra-ui/react/table";
-import { FormControl, FormLabel } from "@chakra-ui/form-control";
-import { PasswordInput } from "@/components/ui/password-input";
+
 import Image from "next/image";
 import { useTheme } from "@/context/theme/themeContext";
-import { fontVariables } from "@/context/theme/font";
+
 import { AiOutlineSave } from "react-icons/ai";
 import { IoIosExit } from "react-icons/io";
+
 import { LuUser } from "react-icons/lu";
 import { RiLockPasswordLine } from 'react-icons/ri'
+
 import { useAuth } from "@/hooks/auth/useAuth";
 import { useUsers } from "@/hooks/user/useUsers";
 import { useCreateUser } from "@/hooks/user/useCreateUser";
 import { usePatchUser } from "@/hooks/user/usePatchUser";
+
 import { UserMaster } from "@/types/user/user";
 import { FiEdit } from "react-icons/fi";
 import { useUserById } from "@/hooks/user/useUserById";
+
 import { toastLoaded } from "@/component/toast/toast";
-import { Toaster } from "@/components/ui/toaster";
 import { CustomTable } from "@/component/table/CustomTable";
-import { getImage } from "@/utils/image/getImage";
 import { CapitalizedInput } from "@/components/ui/CapitalizedInput";
+
+import { getImage } from "@/utils/image/getImage";
+
 import { usePrint } from "@/context/print/usePrintContext";
 import { useRouter } from "next/navigation";
 import { FaPrint, FaFileExcel } from "react-icons/fa";
@@ -78,11 +82,11 @@ export default function UserMasters() {
     const { data, isLoading } = useUsers();
 
 
-    const costCenters = [
-        { id: 1, value: "SJ", label: "Head Office" },
-        { id: 2, value: "DG", label: "Showroom 1" },
-        { id: 3, value: "SM", label: "Showroom 2" },
-    ];
+    // const costCenters = [
+    //     { id: 1, value: "SJ", label: "Head Office" },
+    //     { id: 2, value: "DG", label: "Showroom 1" },
+    //     { id: 3, value: "SM", label: "Showroom 2" },
+    // ];
 
 
     const normalizeUser = (u: any): UserMaster => ({
@@ -109,6 +113,7 @@ export default function UserMasters() {
             [field]: value,
         }));
     };
+
     const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
@@ -141,46 +146,57 @@ export default function UserMasters() {
     const handleSave = () => {
         setError(null);
 
-        if (!form.username.trim()) {
+        const username = form.username?.trim();
+
+        if (!username) {
             setError("Username is required");
             return;
         }
 
         // CREATE MODE → password mandatory
         if (!editingUserId) {
-            if (!form.pwd?.toLowerCase() || !confirmPwd.toLowerCase()) {
+            if (!form.pwd || !confirmPwd) {
                 setError("Password and Confirm Password are required");
                 return;
             }
 
-            if (form.pwd.toLowerCase() !== confirmPwd.toLowerCase()) {
+            if (form.pwd !== confirmPwd) {   // ✅ case-sensitive
                 setError("Password and Confirm Password do not match");
                 return;
             }
         }
 
-        // EDIT MODE → password optional, but must match if entered
+        // EDIT MODE → password optional
         if (editingUserId && form.pwd) {
-            if (form.pwd.toLowerCase() !== confirmPwd.toLowerCase()) {
+            if (form.pwd !== confirmPwd) {   // ✅ case-sensitive
                 setError("Password and Confirm Password do not match");
                 return;
             }
         }
 
-        if (form.username) {
-            const isDuplicate = users.some((u) => u.username.toUpperCase() === form.username.toUpperCase());
-            if (isDuplicate) {
-                setError("Username already exists");
-                return;
-            }
+        // ✅ Username duplicate check (case-insensitive)
+        const isDuplicate = users.some(
+            (u) =>
+                u.username?.toUpperCase() === username.toUpperCase() &&
+                u.userId !== editingUserId
+        );
+
+        if (isDuplicate) {
+            setError("Username already exists");
+            return;
         }
 
-        const payload: any = { ...form };
+        const payload: any = {
+            ...form,
+            username: username, // trimmed
+        };
 
         // Remove empty password on edit
         if (editingUserId && !payload.pwd) {
             delete payload.pwd;
         }
+
+        console.log(payload, 'payload');
 
         if (editingUserId) {
             const formData = new FormData();
@@ -205,21 +221,17 @@ export default function UserMasters() {
                     },
                 }
             );
-        }
-        else {
+        } else {
             createUser(
-
                 { user: payload, image: selectedImage },
                 {
                     onSuccess: () => {
-                        resetForm;
-                        setEditingUserId(payload.USERID)
-                    }
+                        resetForm(); // ❗ you missed ()
+                    },
                 }
             );
         }
     };
-
     const resetForm = () => {
         setEditingUserId(null);
         setForm({
@@ -300,7 +312,7 @@ export default function UserMasters() {
             color={theme.colors.secondary}
 
         >
-            <Toaster />
+        
             <Grid templateColumns={{ base: "1fr", lg: "1fr 1.5fr" }} gap={2}>
 
                 {/* LEFT SECTION – USER FORM */}
@@ -366,6 +378,7 @@ export default function UserMasters() {
                                                 type="password"
                                                 icon
                                                 size="2xs"
+                                                isCapitalized
                                             />
                                         </InputGroup>
                                     </Box>
