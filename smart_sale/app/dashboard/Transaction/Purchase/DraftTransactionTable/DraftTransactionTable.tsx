@@ -26,6 +26,7 @@ import { useGlobalKey } from "@/components/key/useGlobalKey";
 import TransactionTable from "@/component/table/TransactionTable";
 import { toaster } from "@/components/ui/toaster";
 import { CapitalizedInput } from "@/components/ui/CapitalizedInput";
+import { SwitchInput } from "@/components/ui/SwitchInput";
 
 type StoneRow = {
     id: string;
@@ -83,6 +84,21 @@ interface DraftTransactionTableProps {
     otherChargesList: { label: string; value: string; }[];
     otherChargesData: any;
     getAvailablePieces?: (id: string, options?: { excludeRowId?: string, transactionTypeCode: string, isEditing?: boolean, originalPieces?: number }) => any | undefined;
+    handleTagChange : () => void ;
+    isTag :boolean;
+    onTagNoLookup?: (tagNo: string) => Promise<{
+        GRSWT: number;
+        STNWT: number;
+        NETWT: number;
+        WASPER: number;
+        DIAWT: number;
+        MC: number;
+        TOUCH: number;
+        SALESSTNWT: number;
+        SIZEID: number;
+        ITEMID?: string;
+        PCS?: number;
+    } | null>;
 }
 
 // const COL_WIDTHS: Record<string, string> = {
@@ -157,7 +173,10 @@ export default function DraftTransactionTable({
     getStockAvailability,
     otherChargesList,
     otherChargesData,
-    getAvailablePieces
+    getAvailablePieces,
+    isTag,
+    handleTagChange,
+    onTagNoLookup
 }: DraftTransactionTableProps) {
 
     console.log(totals, 'totals')
@@ -225,22 +244,37 @@ export default function DraftTransactionTable({
     const fieldRefs = useRef<Record<string, React.RefObject<any>>>({});
     const submitBtnRef = useRef<HTMLButtonElement>(null);
 
-    const wastypecollection = { items: [{ label: "TOUCH", value: "TOUCH" }] };
-    const numericFields = [
+    const wastypecollection = useMemo(
+        () => ({ items: [{ label: "TOUCH", value: "TOUCH" }] }),
+        []
+    );
+
+    const numericFields = useMemo(() => [
         "PCS", "GRSWT", "STNWT", "NETWT", "WASPER", "WASTAGE", "STNAMT",
         "PUREWT", "HMC", "MC", "WT", "TOUCH", "AWT", "APUREWT"
-    ];
+    ], []);
 
-    const orderedKeys = isIssue
-        ? ["PUREID", "WT", "AWT", "TOUCH", "ATOUCH", "PUREWT", "APUREWT"]
-        : ["ITEMID", "PCS", "GRSWT", "STNWT", "NETWT", "WASTYPE", "WASPER", "WASTAGE", "TOUCH", "PUREWT", "HMC", "MC", "STNAMT", "DESCRIPTION"];
 
-    const baseColumns = isIssue ? issueDataColumns : issueColumns;
+    const orderedKeys = useMemo(() => {
+        if (isIssue) return ["PUREID", "WT", "AWT", "TOUCH", "ATOUCH", "PUREWT", "APUREWT"];
+
+        const isReturn = transactionTitle?.toLowerCase() === "return";
+        const showTag = isReturn && isTag;
+
+        return showTag
+            ? ["TAGNO", "ITEMID", "PCS", "GRSWT", "STNWT", "NETWT", "WASTYPE", "WASPER", "WASTAGE", "TOUCH", "PUREWT", "HMC", "MC", "STNAMT", "DESCRIPTION"]
+            : ["ITEMID", "PCS", "GRSWT", "STNWT", "NETWT", "WASTYPE", "WASPER", "WASTAGE", "TOUCH", "PUREWT", "HMC", "MC", "STNAMT", "DESCRIPTION"];
+    }, [isIssue, isTag, transactionTitle]);  // ✅ add transactionTitle to deps
+
+
+    const baseColumns = isIssue ? issueDataColumns : issueColumns(isTag);
     const colMap = useMemo(() => new Map(baseColumns.map(c => [c.key, c])), [baseColumns]);
     const tableCols = useMemo(() =>
         orderedKeys.map(k => colMap.get(k)).filter(Boolean) as any[],
         [isIssue, colMap]
     );
+
+    console.log(tableCols,'tableCols')
 
     // Separate temp ID getters/resetters
     const getStoneTempId = () => {
@@ -362,9 +396,11 @@ export default function DraftTransactionTable({
                 return { ...base, type: "calculated", disabled: true };
 
 
-            if (!isIssue && ["PCS", "GRSWT", "STNWT", "WASTYPE", "WASPER", "WASTAGE", "MC", "HMC", "TOUCH", "STNAMT", "DESCRIPTION"].includes(col.key))
-                return { ...base, dependsOn: "ITEMID" };
-
+            // In formFields useMemo:
+            if (!isIssue && ["PCS", "GRSWT", "STNWT", "WASTYPE", "WASPER", "WASTAGE", "MC", "HMC", "TOUCH", "STNAMT", "DESCRIPTION"].includes(col.key)) {
+                // ✅ When isTag, these fields get filled by TAGNO lookup — no dependsOn lock needed
+                return { ...base, dependsOn: isTag ? undefined : "ITEMID" };
+            }
 
             if (isIssue && ["WT", "AWT", "TOUCH", "ATOUCH"].includes(col.key))
                 return { ...base, dependsOn: "PUREID" };
@@ -372,9 +408,19 @@ export default function DraftTransactionTable({
             if (!isIssue && ["STNAMT"].includes(col.key))
                 return { ...base, type: "calculated", disabled: true };
 
+            if (col.key === "TAGNO") {
+                const isReturn = transactionTitle?.toLowerCase() === "return";
+                return {
+                    ...base,
+                    type: "text",
+                    isRequired: isReturn && isTag,
+                    disabled: false,
+                };
+            }
+
             return base;
         });
-    }, [tableCols, itemsCollection, isIssue]);
+    }, [tableCols, itemsCollection, isIssue ,isTag ,transactionTitle]);
 
     const visibleFormFields = useMemo(() =>
         formFields.filter(f => !["NETWT", "PUREWT", "APUREWT"].includes(f.key) && f.type !== "calculated"),
@@ -442,8 +488,9 @@ export default function DraftTransactionTable({
         const init: Record<string, any> = {};
         formFields.forEach(f => { init[f.key] = f.defaultValue ?? ""; });
         setFormData(init);
-    }, [formFields]);
+    }, []); // ✅ empty — only on mount
 
+    // 🔥 FIX: Populate form + load stones/misc when currentEditingRowId changes
     // 🔥 FIX: Populate form + load stones/misc when currentEditingRowId changes
     useEffect(() => {
         if (currentEditingRowId && currentEditingTransactionType === transactionType) {
@@ -487,14 +534,14 @@ export default function DraftTransactionTable({
                 setTouched({});
             }
         } else {
-            const init: Record<string, any> = {};
-            formFields.forEach(f => { init[f.key] = f.defaultValue ?? ""; });
-            setFormData(init);
-            setErrors({});
-            setTouched({});
-            // Reset both IDs independently when editing is cancelled
-            setStoneDraftRowId("");
-            setMiscDraftRowId("");
+            // const init: Record<string, any> = {};
+            // formFields.forEach(f => { init[f.key] = f.defaultValue ?? ""; });
+            // setFormData(init);
+            // setErrors({});
+            // setTouched({});
+            // // Reset both IDs independently when editing is cancelled
+            // setStoneDraftRowId("");
+            // setMiscDraftRowId("");
         }
     }, [currentEditingRowId, currentEditingTransactionType, transactionType, rows, formFields]);
 
@@ -946,6 +993,64 @@ export default function DraftTransactionTable({
         const shouldDisable = field.disabled || (!!field.dependsOn && !formData[field.dependsOn]);
 
 
+        if (field.key === "TAGNO") {
+            return (
+                <Box position="relative" width="100%">
+                    <CapitalizedInput
+                        field={field.key}
+                        value={formData[field.key] || ""}
+                        onChange={(_, v) => handleChange(field.key, v)}
+                        type="text"
+                        isCapitalized={true}
+                        size="xs"
+                        rounded="sm"
+                        inputRef={ref}
+                        // In renderFormCell TAGNO onEnter, after handleChange set ITEMID,
+                        // add a small delay before moveNext so state has settled:
+
+                        onKeyDown={async () => {
+                            const tagNo = formData.TAGNO?.trim();
+                            if (!tagNo) { moveNext(field.key); return; }
+
+                            const tagData = await onTagNoLookup?.(tagNo);
+                            if (!tagData) {
+                                toaster.create({
+                                    title: "Tag Not Found",
+                                    description: `No tag found for: ${tagNo}`,
+                                    type: "error",
+                                    duration: 2000,
+                                });
+                                return;
+                            }
+
+                            handleChange({
+                                GRSWT: tagData.GRSWT?.toString() || "0",
+                                STNWT: tagData.STNWT?.toString() || "0",
+                                NETWT: tagData.NETWT?.toString() || "0",
+                                WASPER: tagData.WASPER?.toString() || "0",
+                                MC: tagData.MC?.toString() || "0",
+                                TOUCH: tagData.TOUCH?.toString() || "0",
+                                SALESSTNWT: tagData.SALESSTNWT?.toString() || "0",
+                                PCS: (tagData.PCS ?? 1).toString(),
+                                ...(tagData.ITEMID ? { ITEMID: tagData.ITEMID.toString() } : {}),
+                            });
+
+                            toaster.create({
+                                title: "Tag Loaded",
+                                description: `Details filled for tag: ${tagNo}`,
+                                type: "success",
+                                duration: 1500,
+                            });
+
+                            // ✅ Delay moveNext so formData state settles before dependsOn check runs
+                            setTimeout(() => moveNext(field.key), 100);
+                        }}
+                        noBorder
+                    />
+                </Box>
+            );
+        }
+
 
         if (field.key === "STNWT") {
             return (
@@ -1083,15 +1188,21 @@ export default function DraftTransactionTable({
                         items={field.collection?.items || []}
                         placeholder={field.placeholder || `Select ${field.label}`}
                         ref={ref as React.RefObject<HTMLInputElement>}
-                        rounded="sm" disable={shouldDisable} onEnter={() => moveNext(field.key)}
+                        rounded="sm" 
+                        disable={shouldDisable} 
+                        onEnter={() => moveNext(field.key)}
                     />
                 );
             case "select":
                 return (
                     <InlineSelect
-                        value={formData[field.key] || ""} onChange={v => handleChange(field.key, v)}
-                        collection={field.collection} isInvalid={isInvalid}
-                        inputRef={ref as any} onEnter={() => moveNext(field.key)} disabled={shouldDisable}
+                        value={formData[field.key] || ""} 
+                        onChange={v => handleChange(field.key, v)}
+                        collection={field.collection} 
+                        isInvalid={isInvalid}
+                        inputRef={ref as any} 
+                        onEnter={() => moveNext(field.key)} 
+                        disabled={shouldDisable}
                     />
                 );
             case "number":
@@ -1100,12 +1211,13 @@ export default function DraftTransactionTable({
                         field={field.key}
                         value={formData[field.key] || ""}
                         onChange={(_, v) => handleChange(field.key, v)}
-                        type="text"
+                        type="number"
                         isCapitalized
                         size="sm"
                         rounded="sm"
-                        inputRef={ref} onEnter={() => moveNext(field.key)}
-                        disabled={shouldDisable} noBorder
+                        inputRef={ref} 
+                        onEnter={() => moveNext(field.key)}
+                        disabled={shouldDisable}
                     />
                 );
             case "capitalized":
@@ -1118,8 +1230,9 @@ export default function DraftTransactionTable({
                         isCapitalized
                         size="sm"
                         rounded="sm"
-                        inputRef={ref} onEnter={() => moveNext(field.key)}
-                        disabled={shouldDisable} noBorder
+                        inputRef={ref} 
+                        onEnter={() => moveNext(field.key)}
+                        disabled={shouldDisable}
                     />
                 );
             default:
@@ -1127,10 +1240,13 @@ export default function DraftTransactionTable({
                     <CapitalizedInput
                         field={field.key} value={formData[field.key] || ""}
                         onChange={(_, v) => handleChange(field.key, v)}
-                        type="number" isCapitalized={false} size="sm" rounded="sm"
-                        decimalScale={field.decimalScale} disabled={shouldDisable}
-                        inputRef={ref} onEnter={() => moveNext(field.key)} noBorder
-
+                        type="number"  
+                        size="sm" 
+                        rounded="sm"
+                        decimalScale={field.decimalScale} 
+                        disabled={shouldDisable}
+                        inputRef={ref} 
+                        onEnter={() => moveNext(field.key)} 
                     />
                 );
         }
@@ -1163,7 +1279,9 @@ export default function DraftTransactionTable({
     });
 
     useGlobalKey("Escape", () => setIsMiscModalOpen(false), "close-modal");
+    console.log(transactionTitle,'transactionTitle')
 
+    console.log(isTag,'isTag')
 
     return (
         <Box display="flex" flexDirection="column" gap={1}>
@@ -1174,6 +1292,7 @@ export default function DraftTransactionTable({
                 rounded="md" borderWidth="1px"
                 borderColor={theme?.colors?.borderColor || "#CBD5E0"}
             >
+
                 <HStack gap={2}>
                     <Text fontSize="xs" fontWeight="semibold" color={theme?.colors?.primaryText || "#1a202c"}>
                         {transactionTitle || "Transaction"} Items
@@ -1182,10 +1301,18 @@ export default function DraftTransactionTable({
                             <Text as="span" color="blue.500" ml={1} fontSize="2xs"> ✎ Editing</Text>
                         )}
                     </Text>
+                    {transactionTitle?.toLowerCase() === "return" && 
+                        <Button size="2xs" bg="yellow.fg" onClick={handleTagChange}>
+                            Switch {isTag ? "Non Tag" : "Tag"}
+                        </Button>
+                    }
+            
                     <Badge colorPalette={rows.length > 0 ? "green" : "gray"} variant="subtle" fontSize="2xs" px={2}>
                         {rows.length} item{rows.length !== 1 ? "s" : ""}
                     </Badge>
                 </HStack>
+
+
                 {!isEditing && (
                     <Button size="2xs" colorPalette="red" variant="outline"
                         onClick={() => { onClear?.(); resetForm(); }} fontSize="2xs">

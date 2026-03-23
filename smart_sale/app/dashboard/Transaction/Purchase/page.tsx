@@ -116,8 +116,8 @@ export default function PurchasePage() {
     const MISC_CHARGE_KEY = "MISC_CHARGE_MASTER";
     const CLOSING_DETAILS_KEY = "CLOSING_DETAILS";
   
-    const BANK_PAID_PREFIX = "BANK_PAID_bank-paid-";
-    const BANK_RCVD_PREFIX = "BANK_RECEIVED_bank-rcvd-";
+
+    const ISTAG = 'is_tag';
 
 
   
@@ -182,6 +182,10 @@ export default function PurchasePage() {
         startDate: null,
         endDate: null
     });
+
+    const [isTag ,setIsTag] = useSessionStorage<boolean>(ISTAG , true);
+
+
 
     /* ================================
        State Management
@@ -2445,7 +2449,22 @@ console.log(typeRows,'typeRows')
     ================================ */
     const pageLoading = isLoading || getbySnoLoading || createTransaction.isPending;
 
-    console.log(closingDetails,'parentclosingDetails')
+    console.log(closingDetails,'parentclosingDetails');
+
+
+    const handleTagChange = () => setIsTag(prev => !prev);
+
+    const handleTagNoLookup = async (tagNo: string) => {
+        try {
+            const res = await fetch(`/api/tag/${tagNo}`); // your API endpoint
+            if (!res.ok) return null;
+            const data = await res.json();
+            return data?.TAGGINGDETAILS?.[0] ?? null;
+        } catch {
+            return null;
+        }
+    };
+    
 
     return (
         <>
@@ -2683,6 +2702,9 @@ console.log(typeRows,'typeRows')
                                                             otherChargesList={otherCharges}
                                                             otherChargesData={otherChargesData?.data}
                                                             getAvailablePieces={getAvailablePieces}
+                                                            handleTagChange={handleTagChange}
+                                                            isTag={isTag} 
+                                                            onTagNoLookup={handleTagNoLookup}
                                                         />
                                                     </Box>
                                                 );
@@ -2731,6 +2753,7 @@ console.log(typeRows,'typeRows')
                                             itemsCollection={itemsCollection}
                                             itemsFilter={itemsFilter}
                                             getLabelByValue={getLabelByValue}
+                                            
                                         />
                                     </Drawer.Body>
 

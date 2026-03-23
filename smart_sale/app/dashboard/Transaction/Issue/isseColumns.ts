@@ -1,12 +1,14 @@
-export const issueColumns = [
-    {
-        key: "SNO",
-        label: "S.N0",
-        width: "25px",
-        align: "left" as const,
-        editable: false,
+export const issueColumns = (isTag: boolean) => [
 
-    },
+
+    ...(isTag ? [{
+        key: "TAGNO",
+        label: "TAGNO",
+        width: "65px",
+        align: "left" as const,
+        editable: true,
+    }] : []),
+    
     {
         key: "ITEMID",
         label: "ITEM",
@@ -147,7 +149,7 @@ export const issueColumns = [
         type: "text" as const,
 
     },
-];
+].filter(Boolean);
 export const issueDataColumns = [
     {
         key: "SNO",

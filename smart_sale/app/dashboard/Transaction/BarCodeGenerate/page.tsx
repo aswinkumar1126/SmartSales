@@ -70,8 +70,8 @@ const BARCODE_EDITING_KEY = "barcode_editing_key";
 const BARCODE_EDITING_ENTRY_NO ="barcode_editing_entry_no";
 
 const FIELD_ORDER = [
-    "grsweight", "stoneWt", "salesStoneWt", "wastePercent",
-    "size", "diamondWt", "mc", "touch", "barcode",
+   "barcode",  "grsweight", "stoneWt", "salesStoneWt", "wastePercent",
+    "size", "diamondWt", "mc", "touch",
 ] as const;
 
 type FieldKey = (typeof FIELD_ORDER)[number];
@@ -85,8 +85,8 @@ const EMPTY_HEADER: BarcodeHeaderFormInterface = {
     ENTRYNO: "", DATE: "", COMPANYTYPE: "PR", COMPANYNAME: "", INWARDNO: "", ITEMNAME: "",
 };
 const EMPTY_TRANSACTION_FORM = {
-    grsweight: "", stoneWt: "", salesStoneWt: "", wastePercent: "",
-    size: "", diamondWt: "", mc: "", touch: "", barcode: "",
+    barcode: "", grsweight: "", stoneWt: "", salesStoneWt: "", wastePercent: "",
+    size: "", diamondWt: "", mc: "", touch: "",
 };
 const EMPTY_ARRAY: never[] = [];
 
@@ -149,6 +149,7 @@ function BarCodeGenerate() {
     const { theme } = useTheme();
 
     /* -------- Refs -------- */
+
     const isFirstRender = useRef(true);
     const rowsRef = useRef<BarcodeTransactionItem[]>([]);
     const weightRef = useRef<HTMLInputElement>(null);
@@ -162,9 +163,10 @@ function BarCodeGenerate() {
     const barcodeRef = useRef<HTMLInputElement>(null);
 
     const fieldRefs = useRef<Record<FieldKey, React.RefObject<HTMLInputElement | null>>>({
+        barcode: barcodeRef,
         grsweight: weightRef, stoneWt: stoneWtRef, salesStoneWt: salesStoneWtRef,
         wastePercent: wastePercentRef, size: sizeRef, diamondWt: diamondWtRef,
-        mc: mcRef, touch: touchRef, barcode: barcodeRef,
+        mc: mcRef, touch: touchRef, 
     });
 
     /* -------- Mutation -------- */
@@ -391,13 +393,18 @@ function BarCodeGenerate() {
             const isNum = NUMERIC_FIELDS.has(col.key);
             const isRequired = REQUIRED_FIELDS.has(col.key);
             const base: any = {
-                key: col.key, label: col.label || col.key, placeholder: col.label || col.key,
-                type: isNum ? "number" : "text", isRequired, size: "xs", align: isNum ? "right" : "left"
+                key: col.key, 
+                label: col.label || col.key, 
+                placeholder: col.label || col.key,
+                type: isNum ? "number" : "text", isRequired, size: "xs", align: isNum ? "right" : "left",
+
             };
             if (col.decimalScale) base.decimalScale = col.decimalScale;
+          
             if (col.key === "size") return { ...base, type: "combobox" as const, align: "left", collection: itemSizeCollection };
             if (col.key === "wastePercent") return { ...base, type: "number", decimalScale: 2 };
             if (col.key === "barcode") return { ...base, type: "text", align: "left", disabled: true };
+            if (col.key === "item") return { ...base, type: "text", align: "left", disabled: true, width: '80px' };
             return base;
         }),
         [itemSizeCollection]);
@@ -1010,9 +1017,19 @@ function BarCodeGenerate() {
         );
         return (
             <Box position="relative">
-                <CapitalizedInput field={key} value={value} onChange={(_: unknown, v: unknown) => handleTransactionChange(key, v)}
-                    type="text" isCapitalized={false} size="xs" rounded="sm"
-                    inputRef={ref} onEnter={() => moveToNext(key)} noBorder />
+                <CapitalizedInput 
+                field={key} 
+                value={value} 
+                onChange={(_: unknown, v: unknown) => handleTransactionChange(key, v)} 
+                type="text" 
+                isCapitalized={false} 
+                size="xs" 
+                rounded="sm"
+                inputRef={ref}
+                onEnter={() => moveToNext(key)} 
+                noBorder 
+                disabled={disabled}
+                />
             </Box>
         );
     }, [transactionFormData, handleTransactionChange, moveToNext, handleTransactionSubmit]);

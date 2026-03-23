@@ -1,6 +1,14 @@
 
 export const transactionTableCols =   [
 
+ 
+    {
+        key: "barcode",
+        label: "BARCODE",
+        align: "left" as const,
+        disabled: true,
+        width: '120px'
+    },
 
         {   
             key: "grsweight", 
@@ -73,13 +81,7 @@ export const transactionTableCols =   [
             type: "number" as const,
         
         },
-        { 
-            key: "barcode", 
-            label: "BARCODE", 
-            align: "left" as const,
-            disabled:true ,
-            width: '120px'
-        },
+       
         {
             key:'__print',
             label:'PRINT',
