@@ -70,7 +70,7 @@ export const DatePickerInput = React.forwardRef<
                 }}
                 value={value}
                 size="sm"
-                autoComplete="off"
+                autoComplete="on"
                 {...rest}
                 onClick={(e) => { setIsOpen(true); onClick?.(e); }}
                 onFocus={(e) => { setIsOpen(true); onClick?.(e); }}

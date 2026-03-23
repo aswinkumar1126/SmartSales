@@ -22,7 +22,7 @@ const useProtected = () => {
         //✅ Allow public routes
         if (publicRoutes.includes(cleanPath)) return;
 
-        // 🔄 Redirect unauthenticated users
+        //🔄 Redirect unauthenticated users
         if (!user) {
             router.replace("/login/");
         }

@@ -80,4 +80,10 @@ export const transactionTableCols =   [
             disabled:true ,
             width: '120px'
         },
+        {
+            key:'__print',
+            label:'PRINT',
+            align:'center'as const,
+            width:'100px'
+        }
     ];

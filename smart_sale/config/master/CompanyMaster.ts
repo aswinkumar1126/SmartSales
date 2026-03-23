@@ -11,7 +11,6 @@ export const getCompanyFormFields = (stateOptions: any[], editId: string | null)
         width: '110px',
         maxWidth: '110px',
         size: 'xs',
-        rounded: 'full',
         disabled: !!editId,
         autoFocus: true,
 

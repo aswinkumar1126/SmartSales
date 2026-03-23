@@ -51,6 +51,7 @@ type BalanceSummaryProps = {
     transactionResetSignal?: boolean;
     onBankPaidSave: (transactions: BankTransaction[], total: number) => void; 
     onBankRcvdSave: (transactions: BankTransaction[], total: number) => void;  
+    bankAccList?:{label:string,value:string}[]
 };
 
 const BalanceSummary = ({
@@ -64,6 +65,7 @@ const BalanceSummary = ({
     closingPure,
     onBankPaidSave,
     onBankRcvdSave,
+    bankAccList
 }: BalanceSummaryProps) => {
 
     const [conversionType, setConversionType] = useState<"" | "C" | "P"|string>(closingDetails.convType);
@@ -328,6 +330,7 @@ const BalanceSummary = ({
                 }
                 accCode={accCode}
                 escapeId="bankModal"
+                bankAccList={bankAccList}
             />
         </Box>
     );

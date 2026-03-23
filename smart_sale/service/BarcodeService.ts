@@ -39,3 +39,5 @@ export const getBarcodeFilters = async (
         throw error;
     }
 };
+
+

@@ -48,6 +48,12 @@ import { AccountHead } from "@/types/accountHead/AccountHead";
 import { SelectCombobox } from "@/components/ui/selectComboBox";
 import SearchBar from "@/component/search/SearchBar";
 
+import { getAccountHeadFields } from "@/config/master/AccountHeadMaster";
+
+import { useEnterNavigation } from "@/component/form/useEnterNavigation";
+
+import { DynamicForm } from "@/component/form/DynamicForm";
+
 
 function AccountHeadMaster() {
     const { theme } = useTheme();
@@ -133,12 +139,19 @@ function AccountHeadMaster() {
         return collection.some(item => item.value === value) ? value : "";
     };
 
-    const activeStatus = createListCollection({
-        items: [
+    const activeStatus = [
+   
             { label: "YES", value: "Y" },
             { label: "NO", value: "N" },
-        ],
-    });
+
+    ];
+
+    const getAccountHeaderForm = getAccountHeadFields({
+        accountTypeCollection: AccountTypeList,
+        stateOptions: stateCollection,
+        activeOptions: activeStatus,
+    })
+    console.log(getAccountHeaderForm,'getAccountHeaderForm')
 
     /* -------------------- EFFECTS -------------------- */
 
@@ -438,7 +451,9 @@ function AccountHeadMaster() {
         title?.("Account Master")
         router.push(`/print?export=${option}`);
     };
+    const formfields = getAccountHeaderForm.map(f => f.name);
 
+    const { register, focusFirst, focusNext } = useEnterNavigation(formfields ,handleSave);
 
     /* -------------------- UI -------------------- */
     return (
@@ -449,7 +464,7 @@ function AccountHeadMaster() {
 
         >
             <Toaster />
-            <Grid templateColumns={{ base: "1fr", lg: "1fr 2fr" }} gap={2}>
+            <Grid templateColumns={{ base: "1fr", sm: "1fr 2fr" }} gap={2}>
                 {/* ---------------- FORM ---------------- */}
                 <GridItem>
                     <VStack bg={theme.colors.formColor} p={2} borderRadius="xl" border="1px solid #eef">
@@ -459,256 +474,15 @@ function AccountHeadMaster() {
 
                         <Fieldset.Root size="sm" width="100%">
                             <Fieldset.Content>
-                                <Grid css={{ gridTemplateColumns: "repeat(1, 1fr)" }} gap={3}>
+                                <DynamicForm 
+                                    fields={getAccountHeaderForm}
+                                    formData={form}
+                                    onChange={handleChange}
+                                    register={register}
+                                    focusNext={focusNext}
+                                    layout="vertical"
 
-                                    {/* ENTRY ID */}
-                                    <Box display="flex" alignItems="center" gap={2}>
-                                        <Box minW="100px" fontSize="2xs">ACCOUNT ID :</Box>
-                                        <CapitalizedInput
-                                            field="ACCODE"
-                                            value={form.ACCODE}
-                                            onChange={handleChange}
-                                            size="2xs"
-                                            maxWidth="100px"
-                                            disabled
-                                        />
-                                    </Box>
-
-                                    {/* CUSTOMER NAME */}
-                                    <Box display="flex" alignItems="center" gap={2}>
-                                        <Box minW="100px" fontSize="2xs">CUSTOMER NAME :</Box>
-                                        <CapitalizedInput
-                                            field="ACNAME"
-                                            value={form.ACNAME}
-                                            onChange={handleChange}
-                                            size="2xs"
-                                        />
-                                    </Box>
-
-                                    {/* CUSTOMER TYPE */}
-                                    <Box display="flex" alignItems="center" gap={2}>
-                                        <Box minW="100px" fontSize="2xs">CUSTOMER TYPE :</Box>
-                                        <SelectCombobox
-                                            // label="ACTYPE"
-                                            value={safeValue(form.ACTYPE, AccountTypeList)}
-                                            onChange={(val) => handleChange("ACTYPE", val)}
-                                            editId={Number(editId)}
-                                            items={AccountTypeList}
-                                            placeholder="Select Type"
-                                        />
-                                    </Box>
-
-                                    {/* ADDRESS (span 2) */}
-                                    {/* <Box display="flex" alignItems="center" gap={2} >
-                                        <Box minW="100px" fontSize="2xs">ADDRESS :</Box>
-                                        <CapitalizedInput
-                                            field="ADDRESS1"
-                                            value={form.ADDRESS1}
-                                            onChange={handleChange}
-                                            size="2xs"
-                                            allowSpecial
-                                        />
-                                    </Box> */}
-
-                                    {/* AREA */}
-                                    {/* <Box display="flex" alignItems="center" gap={2}>
-                                        <Box minW="100px" fontSize="2xs">AREA :</Box>
-                                        <CapitalizedInput
-                                            field="AREA"
-                                            value={form.AREA}
-                                            onChange={handleChange}
-                                            size="2xs"
-                                        />
-                                    </Box> */}
-
-                                    {/* CITY */}
-                                    {/* <Box display="flex" alignItems="center" gap={2}>
-                                        <Box minW="100px" fontSize="2xs">CITY :</Box>
-                                        <CapitalizedInput
-                                            field="CITY"
-                                            value={form.CITY}
-                                            onChange={handleChange}
-                                            size="2xs"
-                                        />
-                                    </Box> */}
-
-                                    {/* STATE */}
-                                    <Box display="flex" alignItems="center" gap={2}>
-                                        <Box minW="100px" fontSize="2xs">STATE :</Box>
-                                        <SelectCombobox
-                                            // label="STATEID"
-                                            value={safeValue(form.STATEID, stateCollection)}
-                                            onChange={(val) => handleChange("STATEID", val)}
-                                            editId={Number(editId)}
-                                            items={stateCollection}
-                                            placeholder="Select State"
-                                        />
-                                    </Box>
-
-                                    {/* PINCODE */}
-                                    {/* <Box display="flex" alignItems="center" gap={2}>
-                                        <Box minW="100px" fontSize="2xs">PINCODE :</Box>
-                                        <CapitalizedInput
-                                            field="PINCODE"
-                                            value={form.PINCODE}
-                                            onChange={handleChange}
-                                            size="2xs"
-                                            type="number"
-                                            inputModeType="pincode"
-                                        />
-                                    </Box> */}
-
-                                    {/* MOBILE */}
-                                    {/* <Box display="flex" alignItems="center" gap={2}>
-                                        <Box minW="100px" fontSize="2xs">MOBILE :</Box>
-                                        <CapitalizedInput
-                                            field="MOBILE"
-                                            value={form.MOBILE}
-                                            onChange={handleChange}
-                                            size="2xs"
-                                            type="number"
-                                            inputModeType="mobile"
-                                            allowDecimal={false}
-                                        />
-                                    </Box> */}
-
-                                    {/* EMAIL */}
-                                    {/* <Box display="flex" alignItems="center" gap={2}>
-                                        <Box minW="100px" fontSize="2xs">EMAIL :</Box>
-                                        <CapitalizedInput
-                                            field="EMAILID"
-                                            size="2xs"
-                                            value={form.EMAILID}
-                                            onChange={handleChange}
-                                            inputModeType="email"
-                                        />
-                                    </Box> */}
-
-                                    {/* GSTIN */}
-                                    {/* <Box display="flex" alignItems="center" gap={2}>
-                                        <Box minW="100px" fontSize="2xs">GSTIN :</Box>
-                                        <CapitalizedInput
-                                            field="GSTNO"
-                                            value={form.GSTNO}
-                                            onChange={handleChange}
-                                            size="2xs"
-                                            inputModeType="gst"
-                                        />
-                                    </Box> */}
-
-                                    {/* OPENING WEIGHT */}
-                                    {/* <Box display="flex" alignItems="center" gap={2}>
-                                        <Box minW="100px" fontSize="2xs">OPENING WEIGHT :</Box>
-                                        <CapitalizedInput
-                                            field="OPENING_WEIGHT"
-                                            value={form.OPENING_WEIGHT}
-                                            onChange={handleChange}
-                                            size="2xs"
-                                            type="number"
-                                            max={999}
-                                            allowDecimal
-                                        />
-                                    </Box> */}
-
-                                    {/* OPENING PURE */}
-                                    <Box display="flex" alignItems="center" gap={2}>
-                                        <Box minW="100px" fontSize="2xs">OPENING PURE :</Box>
-                                        <CapitalizedInput
-                                            field="OPENING_PURE"
-                                            value={form.OPENING_PURE}
-                                            onChange={handleChange}
-                                            size="2xs"
-                                            type="number"
-                                            max={999}
-                                            allowDecimal
-                                            allowNegative
-                                        />
-                                    </Box>
-
-                                    {/* OPENING CASH */}
-                                    <Box display="flex" alignItems="center" gap={2}>
-                                        <Box minW="100px" fontSize="2xs">OPENING CASH :</Box>
-                                        <CapitalizedInput
-                                            field="OPENING_CASH"
-                                            value={form.OPENING_CASH}
-                                            onChange={handleChange}
-                                            size="2xs"
-                                            type="number"
-                                            allowDecimal={true}
-                                            decimalScale={2}
-
-                                        />
-                                    </Box>
-
-                                    {/* AADHAR NO*/}
-                                    {/* <Box display="flex" alignItems="center" gap={2}>
-                                        <Box minW="100px" fontSize="2xs">AADHAR NO :</Box>
-                                        <CapitalizedInput
-                                            field="AADHARNO"
-                                            value={form.AADHARNO}
-                                            onChange={handleChange}
-                                            size="2xs"
-                                            type="number"
-                                            inputModeType="aadhaar"
-                                            allowDecimal={false}   // 🚫 no dot
-                                        />
-                                    </Box> */}
-
-                                    {/* PAN NO */}
-                                    {/* <Box display="flex" alignItems="center" gap={2}>
-                                        <Box minW="100px" fontSize="2xs">PAN NO :</Box>
-                                        <CapitalizedInput
-                                            field="PAN"
-                                            value={form.PAN}
-                                            onChange={handleChange}
-                                            size="2xs"
-                                            max={10}
-                                            allowDecimal={false}
-                                            inputModeType="pan"
-                                        />
-                                    </Box> */}
-
-                                    {/* WEBSITE*/}
-                                    {/* <Box display="flex" alignItems="center" gap={2}>
-                                        <Box minW="100px" fontSize="2xs">WEBSITE :</Box>
-                                        <CapitalizedInput
-                                            field="WEBSITE"
-                                            value={form.WEBSITE}
-                                            onChange={handleChange}
-                                            size="2xs"
-                                            allowDecimal={true}
-                                        />
-                                    </Box> */}
-
-                                    {/* ACTIVE */}
-                                    <Box display="flex" alignItems="center" gap={2}>
-                                        <Box minW="100px" fontSize="2xs">ACTIVE :</Box>
-                                        <NativeSelect.Root size="xs" maxW="80px" fontSize='2xs' >
-                                            <NativeSelect.Field
-                                                value={form.ACTIVE || "Y"}
-                                                onChange={(e) => handleChange("ACTIVE", e.target.value)}
-                                                css={{
-                                                    backgroundColor: "#eee",
-                                                    color: "#111827",
-                                                    border: "1px solid #e5e7eb",
-                                                    borderRadius: "20px",
-                                                    height: "30px",
-                                                    fontSize: "10px",
-                                                }}
-                                            >
-                                                <For each={activeStatus.items} >
-                                                    {(item) => (
-                                                        <option key={item.value} value={item.value} className="text-xs ">
-                                                            {item.label}
-                                                        </option>
-                                                    )}
-                                                </For>
-                                            </NativeSelect.Field>
-                                            <NativeSelect.Indicator />
-                                        </NativeSelect.Root>
-                                    </Box>
-
-                                </Grid>
+                                    />
                             </Fieldset.Content>
                         </Fieldset.Root>
 

@@ -109,23 +109,26 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
 
             case 'select':
                 return (
-                    <NativeSelectWrapper
-                        key={field.name}
-                        ref={setRef}
-                        value={formData[field.name] ?? ''} // controlled
-                        disabled={isDisabled}
-                        size={field.size || "xs"}
-                        placeholder={field.placeholder || `Select ${field.label}`}
-                        maxW={field.maxW || field.maxWidth || field.width}
-                        // rounded={field.rounded}
-                        fontSize={field.fontSize || "10px"}
-                        className={field.className}
-                        css={field.css}
-                        onChange={(e) => onChange(field.name, e.target.value)}
-                        items={field.items || field.options || []}
-                        onEnter={() => focusNext(field.name)}
-                        onBlur={() => handleBlur(field.name)}
-                    />
+                  
+                        <NativeSelectWrapper
+                            key={field.name}
+                            ref={setRef}
+                            value={formData[field.name] ?? ''} // controlled
+                            disabled={isDisabled}
+                            size={field.size || "xs"}
+                            placeholder={field.placeholder || `Select ${field.label}`}
+                            maxW={field.maxW || field.maxWidth || field.width}
+                            // rounded={field.rounded}
+                            fontSize={field.fontSize || "10px"}
+                            className={field.className}
+                            css={field.css}
+                            onChange={(e) => onChange(field.name, e.target.value)}
+                            items={field.items || field.options || []}
+                            onEnter={() => focusNext(field.name)}
+                            onBlur={() => handleBlur(field.name)}
+                        />
+               
+                
                 );
 
             case 'combobox':
@@ -147,6 +150,8 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
                         onKeyDown={(e) => handleKeyDown(e, field.name)}
                         onBlur={() => handleBlur(field.name)}
                         maxWidth={field.maxWidth || field.maxW || field.width}
+                        size={field.size || "xs"}
+                        fontSize={field.fontSize || "2xs"}
                     />
                 );
                 case 'password':

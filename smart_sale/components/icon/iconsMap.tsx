@@ -14,7 +14,8 @@ import {
     Home,
     Settings,
     ShoppingCart,
-    IndianRupee
+    IndianRupee,
+
  
 } from "lucide-react";
 
@@ -37,5 +38,6 @@ Home: <Home size={ 16 } />,
 Settings: <Settings size={ 16 } />,
 Cart: <ShoppingCart size={ 16 } />,
 Rupee: <IndianRupee size={16} />,
+Password : <Lock size={ 16 } />,
 
 };

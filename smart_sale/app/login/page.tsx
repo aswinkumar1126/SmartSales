@@ -1,41 +1,40 @@
 "use client";
-
-import React from "react";
+import React, { useRef, useEffect } from "react";
 import {
     Box,
     Button,
-    Input,
     VStack,
     Text,
-    Grid,
-    GridItem,
-    InputGroup,
-    HStack
+    HStack,
+
 } from "@chakra-ui/react";
 
 import { useTheme } from "@/context/theme/themeContext";
-import { fontVariables } from "@/context/theme/font";
-import { Carousel } from "@chakra-ui/react";
-import { PasswordInput } from "@/components/ui/password-input";
 
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { loginSchema } from "@/utils/validation/authSchema";
 
 import { useAuth } from "@/hooks/auth/useAuth";
 
 import { Toaster, toaster } from "@/components/ui/toaster";
-import { LuUser } from "react-icons/lu";
 import { RiLockPasswordLine } from 'react-icons/ri'
 import { useRouter } from "next/navigation";
-
+import { CapitalizedInput } from "@/components/ui/CapitalizedInput";
 
 export default function LoginPage() {
     const { theme } = useTheme();
     const { login } = useAuth();
-    const router =useRouter();
-    
-      const carouselImages = [
+    const router = useRouter();
+
+    const usernameRef = useRef<HTMLInputElement>(null);
+    const passwordRef = useRef<HTMLInputElement>(null);
+
+    useEffect(() => {
+        usernameRef.current?.focus();
+    }, []);
+
+    const carouselImages = [
         "https://www.canadianminingjournal.com/wp-content/uploads/2021/09/Polyus_Olympiada_20180915_img_7698.jpg",
         "https://cdn1.matadornetwork.com/blogs/1/2022/11/alaska-gold-pan-close-up.jpg",
         "https://www.goldmarket.fr/wp-content/uploads/2025/09/44dd529dthumbnail-1110x550.jpeg.webp",
@@ -45,7 +44,8 @@ export default function LoginPage() {
 
     // React Hook Form
     const {
-        register,
+
+        control,
         handleSubmit,
         formState: { errors, isSubmitting },
     } = useForm({
@@ -58,7 +58,7 @@ export default function LoginPage() {
             username: formData.username,
             password: formData.password,
         });
-        console.log(success,'success');
+        console.log(success, 'success');
 
         if (!success?.success) {
             toaster.create({
@@ -79,6 +79,21 @@ export default function LoginPage() {
         }, 1500);
     };
 
+    const handleKeyDown = (
+        e: React.KeyboardEvent,
+        nextRef?: React.RefObject<HTMLInputElement | null>
+    ) => {
+        if (e.key === "Enter") {
+            e.preventDefault();
+
+            if (nextRef?.current) {
+                nextRef.current.focus(); // move to next
+            } else {
+                handleSubmit(onSubmit)(); // submit if no next
+            }
+        }
+    };
+
 
     return (
         <>
@@ -91,30 +106,30 @@ export default function LoginPage() {
                 bgRepeat="no-repeat"
                 display="flex"
                 alignItems="center"
-              
+
             >
                 {/* Optional Dark Overlay */}
                 <Box
                     position="absolute"
-                
-                   
+
+
                 />
 
                 {/* Carousel */}
-               
+
 
                 {/* Login Card */}
                 <VStack
                     zIndex={1}
                     w="full"
                     maxW="420px"
-                    
+
                     bg="whiteAlpha.900"
                     p={8}
                     borderRadius="xl"
                     boxShadow="0 0 40px rgba(15, 187, 255, 0.3)"
                     gap={4}
-                    css={{ xs: { marginLeft: '0px' }, sm:{marginLeft:'80px'}}}
+                    css={{ xs: { marginLeft: '0px' }, sm: { marginLeft: '80px' } }}
                 >
                     {/* Title */}
                     <HStack>
@@ -140,33 +155,67 @@ export default function LoginPage() {
                         {/* Username */}
                         <Box w="full">
                             <Text fontSize="sm" mb={1}>Username</Text>
-                            <InputGroup startElement={<LuUser />}>
-                                <Input
-                                    placeholder="ENTER USERNAME"
-                                    size="lg"
-                                    bg="white"
-                                    {...register("username", {
-                                        onChange: (e) => {
-                                            e.target.value = e.target.value.toUpperCase();
-                                        },
-                                    })}
-                                />
-                            </InputGroup>
+                            <Controller
+                                name="username"
+                                control={control}
+                                render={({ field }) => (
+                                    <>
+
+                                        <Controller
+                                            name="username"
+                                            control={control}
+                                            render={({ field }) => (
+                                                <CapitalizedInput
+                                                    field="username"
+                                                    value={field.value}
+                                                    inputRef={usernameRef}
+                                                    onKeyDown={(e: any) => handleKeyDown(e, passwordRef)}
+                                                    onChange={(fieldName, value) => {
+                                                        field.onChange(value.toUpperCase());
+                                                    }}
+                                                    rounded="sm"
+                                                    icon
+                                                    iconElement="User"
+                                                    placeholder="enter username"
+                                                />
+                                            )}
+                                        />
+                                    </>
+                                )}
+                            />
                         </Box>
 
                         {/* Password */}
                         <Box w="full">
                             <Text fontSize="sm" mb={1}>Password</Text>
-                            <InputGroup startElement={<RiLockPasswordLine />}>
-                                <PasswordInput
-                                    placeholder="ENTER PASSWORD"
-                                    size="lg"
-                                    bg="white"
-                                    {...register("password", {
-                                        setValueAs: (value) => value?.toUpperCase(),
-                                    })}
-                                />
-                            </InputGroup>
+                            <Controller
+                                name="password"
+                                control={control}
+                                render={({ field }) => (
+                                    <>
+
+                                        <Controller
+                                            name="password"
+                                            control={control}
+                                            render={({ field }) => (
+                                                <CapitalizedInput
+                                                    field="password"
+                                                    value={field.value}
+                                                    inputRef={passwordRef}
+                                                    onKeyDown={(e: any) => handleKeyDown(e)} // no next → submit
+                                                    onChange={(fieldName, value) => {
+                                                        field.onChange(value.toUpperCase());
+                                                    }}
+                                                    rounded="sm"
+                                                    icon
+                                                    iconElement="Password"
+                                                    placeholder="enter password"
+                                                />
+                                            )}
+                                        />
+                                    </>
+                                )}
+                            />
                         </Box>
 
                         {/* Button */}

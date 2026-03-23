@@ -22,6 +22,8 @@ type SelectComboboxProps = {
     ref?: React.Ref<HTMLInputElement>;
     onBlur?:()=>void,
     maxWidth?: string;
+    fontSize?:string;
+    size?:"xs"|"sm"|"md"|"lg"
 };
 
 export const SelectCombobox = forwardRef<HTMLInputElement, SelectComboboxProps>(({
@@ -36,7 +38,9 @@ export const SelectCombobox = forwardRef<HTMLInputElement, SelectComboboxProps>(
     onEnter,
     onKeyDown, // Receive the onKeyDown from EnterWrapperon
     onBlur,
-    maxWidth
+    maxWidth,
+    size="xs",
+    fontSize="2xs"
 
 }, ref) => {
     const { contains } = useFilter({ sensitivity: "base" });
@@ -144,7 +148,7 @@ export const SelectCombobox = forwardRef<HTMLInputElement, SelectComboboxProps>(
 
     return (
         <Field.Root maxW={maxWidth}>
-            {label && <Field.Label fontSize="2xs">{label}</Field.Label>}
+            {label && <Field.Label fontSize={fontSize} >{label}</Field.Label>}
 
             <Combobox.Root
                 key={`${editId ?? "null"}-${value ?? ""}`}
@@ -163,15 +167,16 @@ export const SelectCombobox = forwardRef<HTMLInputElement, SelectComboboxProps>(
                         setIsOpen(true);
                     } else {
                         setIsOpen(false);
-                    }
+                    } 
                 }}
                 onBlur={onBlur}
-                size="xs"
+                size={size}
                 onHighlightChange={(e) => {
                     setHighlightedValue(e.highlightedValue);
                 }}
                 openOnClick={!disable}
                 disabled={disable}
+                fontSize={fontSize}
            
             >
                 <Combobox.Control rounded='full'>
@@ -201,14 +206,14 @@ export const SelectCombobox = forwardRef<HTMLInputElement, SelectComboboxProps>(
                     <Portal>
                         <Combobox.Positioner mt={-1.5}>
                             <Combobox.Content>
-                                <Combobox.Empty fontSize="2xs">
+                                <Combobox.Empty fontSize={fontSize}>
                                     No items found
                                 </Combobox.Empty>
                                 {collection.items.map((item) => (
                                     <Combobox.Item
                                         key={item.value}
                                         item={item}
-                                        fontSize="2xs"
+                                        fontSize={fontSize}
                                         textTransform="uppercase"
                                     >
                                         {String(item.label).toUpperCase()}

@@ -14,6 +14,8 @@ import {
 } from "@chakra-ui/react";
 import lodash from "lodash";
 
+
+
 import { useTheme } from "@/context/theme/themeContext";
 import { toaster, Toaster } from "@/components/ui/toaster";
 import { useListCollection, useFilter } from "@chakra-ui/react";
@@ -46,6 +48,9 @@ import { usePureGoldData, usePureGoldNames } from "@/hooks/pureGoldMast/usePureG
 import { useActiveOtherCharges } from "@/hooks/otherCharges/useOtherCharges";
 import { useRates } from "@/hooks/rate/useRate";
 import { useOrnamentData } from "@/hooks/ornament/useOrnamentData";
+import { useTagEntryNos, useTagedDetailsBySno } from "@/hooks/tag/useTag";
+import { useAllBankAccounts, useBankAccount } from "@/hooks/bankAccount/useBankAccount";
+
 /*-------------------  *STORAGE*  --------------------------*/
 import { useSessionStorage } from "@/hooks/storage/useSessionStorage";
 
@@ -288,6 +293,23 @@ export default function PurchasePage() {
 
     const { data: otherChargesData } = useActiveOtherCharges();
 
+    const { data: bankAccounts } = useAllBankAccounts();
+    
+    
+    const allBankAccounts = useMemo(() => {
+        if (!bankAccounts) return [];
+        if (Array.isArray(bankAccounts.data)) {
+            return bankAccounts.data.map((b) => {
+                return {
+                    label: b.BANKNAME, // fix typo
+                    value: b.ENTRYNO,
+                };
+            });
+        }
+        return [];
+    }, [bankAccounts]);
+    console.log(allBankAccounts,'allBankAccounts')
+
 
     const updateTransaction = useUpdateTransaction();
     const { data: metalsData } = useAllMetals();
@@ -305,6 +327,7 @@ export default function PurchasePage() {
         endDate,
         itemCode
     );
+    
 
     console.log(transactionList,'transactionList');
     console.log(isEditing,'isEditing');
@@ -349,6 +372,7 @@ export default function PurchasePage() {
        Selected Collection For Stock List
     ================================ */
     const itemsStockList = itemsStock?.data || [] ;
+
 
     const selectedStockData = useMemo(() => {
         return showStock === "PURE"
@@ -2739,6 +2763,7 @@ console.log(typeRows,'typeRows')
                         transactionResetSignal={transactionResetSignal}
                         onBankPaidSave={handleBankPaidSave}
                         onBankRcvdSave={handleBankRcvdSave}
+                        bankAccList={allBankAccounts}
                     />
 
                </Box>

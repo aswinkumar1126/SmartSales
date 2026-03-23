@@ -37,3 +37,9 @@ export interface CreateTagResponse {
     ENTRYNO: number;
 
 }
+
+export interface getTagedEntryNo{
+    ENTRYNO:number,
+    ITEMNAME:string;
+}
+

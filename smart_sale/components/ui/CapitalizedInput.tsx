@@ -73,7 +73,7 @@ export function CapitalizedInput<T>({
     allowSpecial = false,
     decimalScale = 3,
     inputModeType,
-    rounded = "full",
+    rounded = "sm",
     minWidth,
     noBorder,
     onBlur,

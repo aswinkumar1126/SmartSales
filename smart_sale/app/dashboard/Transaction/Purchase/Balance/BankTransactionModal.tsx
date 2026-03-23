@@ -38,23 +38,24 @@ interface BankTransactionModalProps {
     initialTransactions?: BankTransaction[];
     accCode?: number | string | null;
     escapeId?: string;
+    bankAccList?:{label:string ,value:string}[]
 }
 
 // Bank names collection
-const bankCollection = {
-    items: [
-        { label: "State Bank of India", value: "SBI" },
-        { label: "HDFC Bank", value: "HDFC" },
-        { label: "ICICI Bank", value: "ICICI" },
-        { label: "Axis Bank", value: "AXIS" },
-        { label: "Punjab National Bank", value: "PNB" },
-        { label: "Bank of Baroda", value: "BOB" },
-        { label: "Canara Bank", value: "CANARA" },
-        { label: "Union Bank", value: "UNION" },
-        { label: "Indian Bank", value: "INDIAN" },
-        { label: "Other", value: "OTHER" },
-    ]
-};
+// const bankCollection = {
+//     items: [
+//         { label: "State Bank of India", value: "SBI" },
+//         { label: "HDFC Bank", value: "HDFC" },
+//         { label: "ICICI Bank", value: "ICICI" },
+//         { label: "Axis Bank", value: "AXIS" },
+//         { label: "Punjab National Bank", value: "PNB" },
+//         { label: "Bank of Baroda", value: "BOB" },
+//         { label: "Canara Bank", value: "CANARA" },
+//         { label: "Union Bank", value: "UNION" },
+//         { label: "Indian Bank", value: "INDIAN" },
+//         { label: "Other", value: "OTHER" },
+//     ]
+// };
 
 // Define table columns for bank transactions
 const bankTableCols = [
@@ -100,7 +101,8 @@ export const BankTransactionModal = ({
     theme,
     initialTransactions = [],
     accCode,
-    escapeId
+    escapeId,
+    bankAccList
 }: BankTransactionModalProps) => {
     const emptyForm = {
         bankName: "",
@@ -136,7 +138,7 @@ export const BankTransactionModal = ({
 
     // Form fields definition
     const formFields = [
-        { key: "bankName", label: "Bank Name", type: "combobox", isRequired: true, collection: bankCollection },
+        { key: "bankName", label: "Bank Name", type: "combobox", isRequired: true, collection: bankAccList || [] },
         { key: "tranMode", label: "Mode", type: "select", isRequired: true },
         { key: "tranDate", label: "Date", type: "date", isRequired: true },
         { key: "chqNo", label: "Cheque No.", type: "text", isRequired: false, dependsOn: "tranMode" },
@@ -189,7 +191,7 @@ export const BankTransactionModal = ({
         fieldOrder.forEach(k => { newTouched[k] = true; });
         console.log(formData ,'bankFormData')
 
-        if (!formData.bankName || formData.bankName.trim() === "") {
+        if (!formData.bankName) {
             newErrors.bankName = "Bank name is required";
         }
         if (!formData.tranMode) {
@@ -331,7 +333,7 @@ export const BankTransactionModal = ({
                     <SelectCombobox
                         ref={ref as React.RefObject<HTMLInputElement>}
                         value={value}
-                        items={bankCollection.items}
+                        items={bankAccList || []}
                         onChange={val => {
                             handleChange(field.key, val);
                             if (val) moveToNext(field.key);
@@ -440,12 +442,11 @@ export const BankTransactionModal = ({
             return `₹${row.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
         }
         if (col.key === "bankName") {
-            const item = bankCollection.items.find(i => i.value === row.bankName);
+            const item = bankAccList?.find(i => i.value === row.bankName);
             return item?.label || row.bankName || "-";
         }
         return row[col.key as keyof BankTransaction] || "-";
     };
-
     const formatTotal = (value: any, decimalScale?: number) => {
         if (value == null) return "";
         return Number(value).toFixed(decimalScale || 0);
