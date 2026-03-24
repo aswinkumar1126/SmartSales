@@ -48,7 +48,7 @@ import { usePureGoldData, usePureGoldNames } from "@/hooks/pureGoldMast/usePureG
 import { useActiveOtherCharges } from "@/hooks/otherCharges/useOtherCharges";
 import { useRates } from "@/hooks/rate/useRate";
 import { useOrnamentData } from "@/hooks/ornament/useOrnamentData";
-import { useTagEntryNos, useTagedDetailsBySno } from "@/hooks/tag/useTag";
+import { useTagEntryNos, useTagedDetailsByTagNo } from "@/hooks/tag/useTag";
 import { useAllBankAccounts, useBankAccount } from "@/hooks/bankAccount/useBankAccount";
 
 /*-------------------  *STORAGE*  --------------------------*/
@@ -61,7 +61,6 @@ import { BankTransaction } from "./Balance/BankTransactionModal";
 
 //Utilities
 import { formatToFixed} from '@/utils/format/numberFormat';
-
 
 //Icons
 type StoneRow = {
@@ -163,6 +162,8 @@ export default function PurchasePage() {
     const [closingCash, setClosingCash] = useState(0);
     const [closingPure, setClosingPure] = useState(0);
 
+    const [pendingTagNo, setPendingTagNo] = useState<string>("");
+
 
 
     const {data:metalRates ,isLoading:metalRatesLoading ,isError:metalRatesError} = useRates();
@@ -262,6 +263,8 @@ export default function PurchasePage() {
 
     const { theme } = useTheme();
     const { data: itemsData } = useItems();
+
+    const { data: tagData, isLoading: isTagLoading } = useTagedDetailsByTagNo(pendingTagNo);
    
 
     const filters = {
@@ -2704,6 +2707,7 @@ console.log(typeRows,'typeRows')
                                                             getAvailablePieces={getAvailablePieces}
                                                             handleTagChange={handleTagChange}
                                                             isTag={isTag} 
+                                                            
                                                             onTagNoLookup={handleTagNoLookup}
                                                         />
                                                     </Box>

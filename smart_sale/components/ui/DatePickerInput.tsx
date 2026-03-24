@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState ,useEffect } from "react";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { Box, Input } from "@chakra-ui/react";
@@ -34,6 +34,7 @@ const parseDate = (date?: string | Date | null) => {
     return date instanceof Date ? date : new Date(date);
 };
 
+
 export const DatePickerInput = React.forwardRef<
     HTMLInputElement,
     DatePickerInputProps
@@ -56,6 +57,12 @@ export const DatePickerInput = React.forwardRef<
     const [selected, setSelected] = useState<Date>(
         parseISOToDate(value) || parseISOToDate(defaultValue) || new Date()
     );
+    useEffect(() => {
+        const parsed = parseISOToDate(value);
+        if (parsed) {
+            setSelected(parsed);
+        }
+    }, [value]);
 
     const CustomInput = React.forwardRef<HTMLInputElement, any>(
         ({ value, onClick, onChange: dpOnChange, onBlur: dpBlur, onKeyDown: dpKeyDown, ...rest }, forwardRef) => (

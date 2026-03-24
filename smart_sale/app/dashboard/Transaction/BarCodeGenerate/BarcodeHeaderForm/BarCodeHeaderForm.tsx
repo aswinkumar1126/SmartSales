@@ -39,6 +39,8 @@ function BarcodeHeaderForm({ form, onChange, purchaserCollection ,inwardCollecti
         console.log("Form Submitted");
     });
 
+    console.log(form,'formValues')
+
     return (
             <Box >
                 <DynamicForm

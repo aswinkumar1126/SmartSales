@@ -15,7 +15,7 @@ export const useTagEntryNos = () =>{
     )
 } 
 
-export const useTagedDetailsBySno = (id: string) => {
+export const useTagedDetailsByTagNo = (id: string) => {
     return useApiQuery<CreateTag & { id: string }>({
         url: `/tagged/${id}`,   // direct usage
         method: 'GET',

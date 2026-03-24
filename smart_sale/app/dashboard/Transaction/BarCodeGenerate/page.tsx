@@ -30,7 +30,7 @@ import { useBarcodeItems, useCreateTag } from "@/hooks/barcode/useBarcodeItems";
 import { useSessionStorage } from "@/hooks/storage/useSessionStorage";
 import { useTheme } from "@/context/theme/themeContext";
 import { useSoftControlById } from "@/hooks/softControl/useSoftControl";
-import { useTagEntryNos, useTagedDetailsBySno } from "@/hooks/tag/useTag";
+import { useTagEntryNos, useTagedDetailsByTagNo } from "@/hooks/tag/useTag";
 
 
 /*-------------- CONSTANTS ------------------*/
@@ -48,6 +48,8 @@ import clearIcon from "@/asserts/icons/clear.jpeg";
 /*-------------- PAGE COMPONENTS ------------*/
 import BarcodeHeaderForm from "./BarcodeHeaderForm/BarCodeHeaderForm";
 import BarCodeExcel, { type ExcelRowData, type ExcelData } from "./excel/BarCodeExcel";
+import { BarcodeSearch } from "./BarcodeSearch/BarcodeSearch";
+import { BarcodeTagListing } from "./BarcodeTagListing/BarcodeTagList";
 
 
 /*----------------- IMAGE -------------------*/
@@ -66,8 +68,9 @@ const BARCODE_PRINT_DETAILS = "barcode_print_details";
 
 const BARCODE_EDITING_KEY = "barcode_editing_key";
 
-
 const BARCODE_EDITING_ENTRY_NO ="barcode_editing_entry_no";
+
+const BARCODE_ENTRY_LIST_SINGLE_SEARCH = "tag_items_single_search"
 
 const FIELD_ORDER = [
    "barcode",  "grsweight", "stoneWt", "salesStoneWt", "wastePercent",
@@ -81,8 +84,12 @@ const NUMERIC_FIELDS = new Set([
 ]);
 const REQUIRED_FIELDS = new Set(["grsweight", "stoneWt", "salesStoneWt"]);
 
+
+const today = new Date().toISOString().split("T")[0];
+
+
 const EMPTY_HEADER: BarcodeHeaderFormInterface = {
-    ENTRYNO: "", DATE: "", COMPANYTYPE: "PR", COMPANYNAME: "", INWARDNO: "", ITEMNAME: "",
+    ENTRYNO: "", DATE: today , COMPANYTYPE: "PR", COMPANYNAME: "", INWARDNO: "", ITEMNAME: "",
 };
 const EMPTY_TRANSACTION_FORM = {
     barcode: "", grsweight: "", stoneWt: "", salesStoneWt: "", wastePercent: "",
@@ -187,7 +194,9 @@ function BarCodeGenerate() {
 
     const [printIsEnable, setPrintIsEnable] = useState<boolean>(false);
 
-    const [selectedEntryNo, setSelectedEntryNo] = useSessionStorage<string>(BARCODE_EDITING_ENTRY_NO, '36');
+    const [selectedEntryNo, setSelectedEntryNo] = useSessionStorage<string>(BARCODE_EDITING_ENTRY_NO, '');
+
+    const [singleSearch, setSingleSearch] = useSessionStorage<string>(BARCODE_ENTRY_LIST_SINGLE_SEARCH,'')
 
 
     /* -------- Local State -------- */
@@ -199,7 +208,8 @@ function BarCodeGenerate() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [taggingErrors, setTaggingErrors] = useState<TaggingErrors>({});
     const [excelImport, setExcelImport] = useState(false);
-    const [showEntryNo ,setShowEntryNo] = useState(false);
+    // Flag to tell child to deselect
+    const [deselectFlag, setDeselectFlag] = useState(false);
 
 
 
@@ -227,10 +237,10 @@ function BarCodeGenerate() {
 
     const { data: softControlDataById } = useSoftControlById("LOT_TAG_CONTROL");
 
-    const { data: tagEntryNos, isLoading: tagEntryNosLoading, isError: tagEntryNosError } = useTagEntryNos();
-    console.log(selectedEntryNo,'selectedEntryNo')
+    const { data: tagEntryNos, isLoading: tagEntryNosLoading, isError: tagEntryNosError ,refetch : tagEntryNoRefetch} = useTagEntryNos();
+    console.log(tagEntryNos,'tagEntryNos')
   
-    const { data: tagedDetails, isLoading: tagedDetailsLoading, isError: tagedDetailsError } = useTagedDetailsBySno(selectedEntryNo);
+    const { data: tagedDetails, isLoading: tagedDetailsLoading, isError: tagedDetailsError } = useTagedDetailsByTagNo(selectedEntryNo);
     console.log(tagedDetails ,'tagDetailsBySno');
 
     /* ============================================================
@@ -303,6 +313,13 @@ function BarCodeGenerate() {
             : selectedItem && typeof selectedItem === "object" ? [selectedItem]
                 : EMPTY_ARRAY,
         [selectedItem]);
+
+
+    const tagItemList = useMemo(()=>{
+        return Array.isArray(tagEntryNos) ? tagEntryNos : [] ;
+    }, [tagEntryNos]);
+
+    console.log(tagItemList,'tagItemList')
 
     /* ============================================================
        BARCODE REBUILD
@@ -777,10 +794,14 @@ function BarCodeGenerate() {
     }, [handleTransactionSubmit, focusField]);
 
     const handleClear = useCallback(() => {
+        setBarcodeHeaderForm({ ...EMPTY_HEADER, DATE: new Date().toISOString().split("T")[0] });
         setTransactionRows([]);
         setIsEditing(false);
         setSelectedEntryNo('');
-     }, [setTransactionRows]);
+        setSingleSearch("");
+        setDeselectFlag(true);
+        setTimeout(() => setDeselectFlag(false), 50);
+    }, [setBarcodeHeaderForm, setTransactionRows, setIsEditing, setSelectedEntryNo, setSingleSearch]);
 
     const handleEditRow = useCallback((row: BarcodeTransactionItem) => {
         setTransactionFormData({
@@ -844,7 +865,7 @@ function BarCodeGenerate() {
                     duration: 2000
                 });
 
-                setBarcodeHeaderForm(EMPTY_HEADER);
+                setBarcodeHeaderForm({ ...EMPTY_HEADER, DATE: new Date().toISOString().split("T")[0] });
                 setTransactionRows([]);
 
                 console.log("API Response:", res);
@@ -885,9 +906,18 @@ function BarCodeGenerate() {
     };
 
     const handleEditTagTransaction = (entryNo: string) => {
-        setTransactionRows([]);
+        if (selectedEntryNo === String(entryNo)) {
+            // Same ID clicked again — force re-fetch by resetting first
+            setSelectedEntryNo('');
+            setTimeout(() => setSelectedEntryNo(String(entryNo)), 0);
+            return;
+        }
         setSelectedEntryNo(String(entryNo));
-        setShowEntryNo(false); // close the drawer
+    };
+
+    const handleSingleSearch = (term: string) => {
+        setSingleSearch(term);
+        setDeselectFlag(false); // reset deselect flag whenever typing
     };
 
     // Then in the useEffect that watches tagedDetails:
@@ -896,20 +926,20 @@ function BarCodeGenerate() {
 
         const purchase = tagedDetails.PURCHASEDETAILS;
         const apiRows = tagedDetails.TAGGINGDETAILS || [];
-
         console.log(purchase,'purchase')
-        // ✅ Populate header form from API
-        setBarcodeHeaderForm((prev) => ({
-            ...prev,
+
+        // ✅ Reset header completely instead of merging with prev
+        setBarcodeHeaderForm({
             ENTRYNO: String(purchase.ENTRYNO ?? ""),
             COMPANYNAME: String(purchase.ACCODE ?? ""),
             INWARDNO: String(purchase.PUENTRYNO ?? ""),
             ITEMNAME: String(purchase.PUSNO ?? ""),
-            DATE: purchase.TAGDATE ?? prev.DATE,
-        }));
+            DATE: purchase.TAGDATE ?? "",
+            COMPANYTYPE: "PR",
+        });
 
         const mappedRows = mapApiToTransactionRows(apiRows, String(purchase.ENTRYNO));
-        setTransactionRows(mappedRows); // no rebuildBarcodes — barcodes come from API (TAGNO)
+        setTransactionRows(mappedRows);
         setIsEditing(true);
         setPrintDetails(apiRows);
 
@@ -1034,39 +1064,42 @@ function BarCodeGenerate() {
         );
     }, [transactionFormData, handleTransactionChange, moveToNext, handleTransactionSubmit]);
 
+    console.log(singleSearch,'singleSearch')
+
     /* ============================================================
        RENDER
        ============================================================ */
     return (
-        <Box display="flex" flexDirection="column" gap={2}>
+        <Box display="flex" flexDirection="row" width={"100%"} gap={2}>
+            <Box display="flex" flexDirection="column" gap={2} width={'100%'}>
 
-            {/* ── Header ── */}
-            <Box bg={theme.colors.formColor} p={2} rounded="xl" display="flex" flexDirection="row" justifyContent="space-between" gap={4}>
-                <Box display="flex" flexDirection="column" gap={4}>
-                    <Text fontSize="base" fontWeight="semibold" textAlign="center">BARCODE GENERATION</Text>
-                    <Box display="flex" gap={2} flexDirection="row" justifyContent="space-between">
-                        <BarcodeHeaderForm
-                            form={barcodeHeaderForm}
-                            onChange={handleHeaderChange}
-                            purchaserCollection={purchaserCollection}
-                            inwardCollection={inwardCollection}
-                            itemCollection={itemCollection}
-                            isDisabled={transactionRows.length > 0}
-                            validationError={taggingErrors}
-                        />
+                {/* ── Header ── */}
+                <Box bg={theme.colors.formColor} p={2} rounded="xl" display="flex" flexDirection="row" justifyContent="space-between" gap={4}>
+                    <Box display="flex" flexDirection="column" gap={4}>
+                        <Text fontSize="base" fontWeight="semibold" textAlign="center">BARCODE GENERATION</Text>
+                        <Box display="flex" gap={2} flexDirection="row" justifyContent="space-between">
+                            <BarcodeHeaderForm
+                                form={barcodeHeaderForm}
+                                onChange={handleHeaderChange}
+                                purchaserCollection={purchaserCollection}
+                                inwardCollection={inwardCollection}
+                                itemCollection={itemCollection}
+                                isDisabled={transactionRows.length > 0}
+                                validationError={taggingErrors}
+                            />
+                        </Box>
                     </Box>
-                </Box>
-                {/* {!isEditing && barcodeHeaderForm.ITEMNAME && */}
+                    {/* {!isEditing && barcodeHeaderForm.ITEMNAME && */}
                     <Box className="flex items-start flex-col gap-2">
 
-                        <SingleCheckbox 
-                        label="EXCEL IMPORT" 
-                        checked={excelImport}
-                        onChange={() => setExcelImport((p) => !p)} 
-                        size="sm" 
-                        fontSize="xs" 
-                        />
                         <SingleCheckbox
+                            label="EXCEL IMPORT"
+                            checked={excelImport}
+                            onChange={() => setExcelImport((p) => !p)}
+                            size="sm"
+                            fontSize="xs"
+                        />
+                        {/* <SingleCheckbox
                             label="DUPLICATE PRINT"
                             checked={showEntryNo}
                             onChange={() => setShowEntryNo((p) => !p)}
@@ -1074,171 +1107,120 @@ function BarCodeGenerate() {
                             fontSize="xs"
 
 
-                        />
+                        /> */}
                     </Box>
-                {/* } */}
-              
-               
-            </Box>
+                    {/* } */}
 
-            {/* ── Stock + Summary ── */}
-            <Box display="flex" flexDirection={{ sm: "column", md: "row" }} gap={2} bg={theme.colors.formColor} p={2} justifyContent={'space-between'} rounded="xl">
-                <CustomTable columns={stockTableHeader} data={stockTableData} renderRow={handleStockRender}
-                    headerBg={theme.colors.accient} headerColor="white" bodyBg={theme.colors.formColor}
-                    borderColor="white" maxWidth="40%" />
-                <Box w="30%">
-                    <SummaryTable title="STOCK SUMMARY" rowLabels={summaryRowData} columnLabels={summaryColData}
-                        data={tableData} headerFontSize="xs" headerBg={theme.colors.accient} size="sm" />
+
                 </Box>
-            </Box>
 
-            {/* ── Transaction Table ── */}
-            <Box display="flex" flexDirection="row" gap={2} bg={theme.colors.formColor}  rounded="xl">
-                {isEditing && printDetails && 
-                    <Box fontSize='xs' display={'flex'} alignItems={'center'} justifyContent={'center'} gap={2} onClick={handlePrintTagDetails} p={2}>
-
-                        <Printer width={20} height={20} />
-                        <Text>Print All</Text>
-
+                {/* ── Stock + Summary ── */}
+                <Box display="flex" flexDirection={{ sm: "column", md: "row" }} gap={2} bg={theme.colors.formColor} p={2} justifyContent={'space-between'} rounded="xl">
+                    <CustomTable columns={stockTableHeader} data={stockTableData} renderRow={handleStockRender}
+                        headerBg={theme.colors.accient} headerColor="white" bodyBg={theme.colors.formColor}
+                        borderColor="white" maxWidth="40%" />
+                    <Box w="30%">
+                        <SummaryTable title="STOCK SUMMARY" rowLabels={summaryRowData} columnLabels={summaryColData}
+                            data={tableData} headerFontSize="xs" headerBg={theme.colors.accient} size="sm" />
                     </Box>
-                }
-               
-               {/* {!isEditing && transactionRows.length > 0 && */}
+                </Box>
+
+                {/* ── Transaction Table ── */}
+                <Box display="flex" flexDirection="row" gap={2} bg={theme.colors.formColor} rounded="xl">
+                    {isEditing && printDetails &&
+                        <Box fontSize='xs' display={'flex'} alignItems={'center'} justifyContent={'center'} gap={2} onClick={handlePrintTagDetails} p={2}>
+
+                            <Printer width={20} height={20} />
+                            <Text>Print All</Text>
+
+                        </Box>
+                    }
+
+                    {/* {!isEditing && transactionRows.length > 0 && */}
                     {transactionRows.length > 0 &&
-                    <Box ml="auto" display="flex" alignItems="center" p={2}>
-                        <Button size="xs" fontSize="2xs" onClick={handleClear} variant="ghost" bg={theme.colors.formColor} p={0}>
-                            <Image src={clearIcon} width={58} alt="CLEAR" />
-                        </Button>
-                        <Button size="xs" bg={theme.colors.formColor} onClick={handleSaveTransaction} loadingText="Saving..." variant="ghost" p={0}>
-                            <Image src={isEditing ? updateIcon : saveIcon} width={60} alt="save" />
-                        </Button>
-                    </Box>
-               }     
-               
+                        <Box ml="auto" display="flex" alignItems="center" p={2}>
+                            <Button size="xs" fontSize="2xs" onClick={handleClear} variant="ghost" bg={theme.colors.formColor} p={0}>
+                                <Image src={clearIcon} width={58} alt="CLEAR" />
+                            </Button>
+                            <Button size="xs" bg={theme.colors.formColor} onClick={handleSaveTransaction} loadingText="Saving..." variant="ghost" p={0}>
+                                <Image src={isEditing ? updateIcon : saveIcon} width={60} alt="save" />
+                            </Button>
+                        </Box>
+                    }
 
+
+                </Box>
+                <TransactionTable
+                    theme={theme}
+                    tableCols={allDisplayCols}
+                    formFields={visibleFormFields}
+                    rows={transactionRows}
+                    errors={errors}
+                    touched={touched}
+                    localEditId={editId}
+                    isSubmitting={isSubmitting}
+                    totals={transactionTotals}
+                    allDisplayCols={allDisplayCols}
+                    resetForm={resetTransactionForm}
+                    handleSubmit={handleTransactionSubmit}
+                    handleEditRow={handleEditRow}
+                    handleDeleteRow={handleDeleteRow}
+                    renderFormCell={renderFormCell}
+                    getCellValue={getCellValue}
+                    formatTotal={formatTotal}
+                    getCellStyle={getCellStyle}
+                    transactionType="barcode"
+                    showTotal
+                    showTableForm={showTableForm}
+                />
+
+                {/* ── Excel Import Drawer ── */}
+                {excelImport && (
+                    <Drawer.Root open={excelImport} onOpenChange={() => setExcelImport(false)}>
+                        <Portal>
+                            <Drawer.Backdrop />
+                            <Drawer.Positioner>
+                                <Drawer.Content maxWidth="4xl">
+                                    <Drawer.Header borderBottomWidth="1px" bg="cyan.50" fontSize="md">
+                                        Excel Import
+                                        <Drawer.CloseTrigger asChild>
+                                            <Button variant="ghost" size="sm" onClick={() => setExcelImport(false)}>×</Button>
+                                        </Drawer.CloseTrigger>
+                                    </Drawer.Header>
+
+                                    <Drawer.Body p={0}>
+
+                                        <BarCodeExcel
+                                            data={excelData}
+                                            onChange={handleExcelChange}
+                                            onLoad={handleExcelLoad}
+                                            onFileParsed={setExcelData}
+                                        />
+                                    </Drawer.Body>
+
+
+                                </Drawer.Content>
+                            </Drawer.Positioner>
+                        </Portal>
+                    </Drawer.Root>
+                )}
+              
             </Box>
-            <TransactionTable
-                theme={theme}
-                tableCols={allDisplayCols} 
-                formFields={visibleFormFields}
-                rows={transactionRows} 
-                errors={errors} 
-                touched={touched} 
-                localEditId={editId}
-                isSubmitting={isSubmitting} 
-                totals={transactionTotals} 
-                allDisplayCols={allDisplayCols}
-                resetForm={resetTransactionForm}
-                 handleSubmit={handleTransactionSubmit}
-                handleEditRow={handleEditRow}
-                 handleDeleteRow={handleDeleteRow}
-                renderFormCell={renderFormCell} 
-                getCellValue={getCellValue}
-                formatTotal={formatTotal}
-                 getCellStyle={getCellStyle}
-                transactionType="barcode" 
-                showTotal 
-                showTableForm={showTableForm}
-            />
+            <Box width={'20%'}>
+                <BarcodeSearch />
 
-            {/* ── Excel Import Drawer ── */}
-            {excelImport && (
-                <Drawer.Root open={excelImport} onOpenChange={() => setExcelImport(false)}>
-                    <Portal>
-                        <Drawer.Backdrop />
-                        <Drawer.Positioner>
-                            <Drawer.Content maxWidth="4xl">
-                                <Drawer.Header borderBottomWidth="1px" bg="cyan.50" fontSize="md">
-                                    Excel Import
-                                    <Drawer.CloseTrigger asChild>
-                                        <Button variant="ghost" size="sm" onClick={() => setExcelImport(false)}>×</Button>
-                                    </Drawer.CloseTrigger>
-                                </Drawer.Header>
+                <BarcodeTagListing 
 
-                                <Drawer.Body p={0}>
-                                  
-                                    <BarCodeExcel
-                                        data={excelData}
-                                        onChange={handleExcelChange}
-                                        onLoad={handleExcelLoad}
-                                        onFileParsed={setExcelData}
-                                    />
-                                </Drawer.Body>
-
-
-                            </Drawer.Content>
-                        </Drawer.Positioner>
-                    </Portal>
-                </Drawer.Root>
-            )}
-            {showEntryNo && (
-                <Drawer.Root open={showEntryNo} onOpenChange={() => setShowEntryNo(false)}>
-                    <Portal>
-                        <Drawer.Backdrop className="bg-black/30" />
-
-                        <Drawer.Positioner>
-                            <Drawer.Content maxWidth="sm" borderRadius="lg" overflow="hidden">
-                                {/* Header */}
-                                <Drawer.Header
-                                    borderBottomWidth="1px"
-                                    bg="cyan.50"
-                                    display="flex"
-                                    alignItems="center"
-                                    justifyContent="space-between"
-                                    fontWeight="semibold"
-                                >
-                                    RECENT TAGGED LIST
-                                    <Drawer.CloseTrigger asChild>
-                                        <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            fontSize="xl"
-                                            lineHeight="0"
-                                            onClick={() => setShowEntryNo(false)}
-                                        >
-                                            ×
-                                        </Button>
-                                    </Drawer.CloseTrigger>
-                                </Drawer.Header>
-
-                                {/* Body */}
-                                <Drawer.Body p={4} bg="white">
-                                    {Array.isArray(tagEntryNos) && tagEntryNos.length > 0 ? (
-                                        <VStack  align="stretch" display={'flex'} flexDirection={'column'} gap={4}>
-                                            {tagEntryNos.map((item) => (
-                                                <HStack
-                                                    key={item.ENTRYNO}
-                                                    justify="space-between"
-                                                    p={2}
-                                                    bg="gray.50"
-                                                    borderRadius="md"
-                                                    border="1px solid"
-                                                    borderColor="gray.200"
-                                                    _hover={{ bg: "cyan.50" }}
-                                                    onClick={() => handleEditTagTransaction(item.ENTRYNO)}
-
-                                                >
-                                                    <Text fontWeight="semibold" color="gray.700">
-                                                        {item.ENTRYNO}
-                                                    </Text>
-                                                    <Text color="gray.600">{item.ITEMNAME}</Text>
-                                                </HStack>
-                                            ))}
-                                        </VStack>
-                                    ) : (
-                                        <Box textAlign="center" py={10}>
-                                            <Text fontSize="md" color="gray.500">
-                                                No entries found
-                                            </Text>
-                                        </Box>
-                                    )}
-                                </Drawer.Body>
-                            </Drawer.Content>
-                        </Drawer.Positioner>
-                    </Portal>
-                </Drawer.Root>
-            )}
+                    tagListItems={tagItemList} 
+                    searchTerm={singleSearch} 
+                    handleSearchChange={handleSingleSearch} 
+                    handleEditTagTransaction={handleEditTagTransaction} 
+                    handleDeselect={handleClear} 
+                    deselectFlag={deselectFlag} 
+                />
+            </Box>
         </Box>
+    
     );
 }
 

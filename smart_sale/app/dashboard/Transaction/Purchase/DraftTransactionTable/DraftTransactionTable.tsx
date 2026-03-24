@@ -17,6 +17,7 @@ import { issueColumns, issueDataColumns } from "../../Issue/isseColumns";
 
 import { useStoneItems } from "@/hooks/item/useItems";
 import { useCalculatePure } from "@/hooks/pure/useCalculatePure";
+import { useTagedDetailsByTagNo } from "@/hooks/tag/useTag";
 
 import StoneEnterMaster from "../StoneMaster/StoneEntryMaster";
 import OtherChargesWindow from "../OtherCharges/OtherChargesWindow";
@@ -101,17 +102,7 @@ interface DraftTransactionTableProps {
     } | null>;
 }
 
-// const COL_WIDTHS: Record<string, string> = {
-//     __sno: "26px", ITEMID: "120px", PUREID: "110px",
-//     PCS: "25px", GRSWT: "40px", STNWT: "52px",HMC:"52px", NETWT: "40px",
-//     WASTYPE: "52px", WASPER: "30px", WASTAGE: "35px",
-//     TOUCH: "35px", PUREWT: "40px", MC: "40px", ATOUCH: "44px",
-//     DESCRIPTION: "80px",
 
-
-//     WT: "60px", AWT: "60px",
-//     PURE: "60px", APURE: "60px", __actions: "60px",
-// };
 
 const getWidth = (width: string | number) => width || "30px";
 
@@ -202,6 +193,12 @@ export default function DraftTransactionTable({
 
     const { data: stoneItemsData } = useStoneItems();
     const [stoneItemsCollection, setStoneItemCollection] = useState<{ label: string; value: string }[]>([]);
+    // 2. Add state + hook at component level
+    const [pendingTagNo, setPendingTagNo] = useState<string>("");
+    const { data: tagData, isLoading: isTagLoading } = useTagedDetailsByTagNo(pendingTagNo);
+
+    console.log(tagData,'tagData');
+
 
     const pendingStoneData = useRef<{
         tempId: string;
@@ -214,6 +211,7 @@ export default function DraftTransactionTable({
         charges: any[];
         totalAmount: number;
     } | null>(null);
+
 
 
     // rowsRef so setTimeout closures always see latest rows
@@ -231,6 +229,8 @@ export default function DraftTransactionTable({
             }))
         );
     }, [stoneItemsData]);
+
+    
 
     const [formData, setFormData] = useState<Record<string, any>>({});
     const [errors, setErrors] = useState<Record<string, string>>({});
@@ -427,22 +427,29 @@ export default function DraftTransactionTable({
         [formFields]
     );
 
+    const formFieldsRef = useRef(formFields);
+    useEffect(() => { formFieldsRef.current = formFields; }, [formFields]);
+
+
+    const onRowClickRef = useRef(onRowClick);
+    useEffect(() => { onRowClickRef.current = onRowClick; }, [onRowClick]);
+
     useEffect(() => {
-        if (initialFormData) {
-            const next: Record<string, any> = {};
-            formFields.forEach(f => {
-                if (f.type === "number" && initialFormData[f.key] !== undefined) {
-                    next[f.key] = initialFormData[f.key].toString();
-                } else {
-                    next[f.key] = initialFormData[f.key] ?? f.defaultValue ?? "";
-                }
-            });
-            setFormData(next);
-            if (initialFormData.__rowId) {
-                onRowClick(initialFormData, transactionType || "");
+        if (!initialFormData) return;
+        const next: Record<string, any> = {};
+        formFieldsRef.current.forEach(f => {   // ✅ use ref
+            if (f.type === "number" && initialFormData[f.key] !== undefined) {
+                next[f.key] = initialFormData[f.key].toString();
+            } else {
+                next[f.key] = initialFormData[f.key] ?? f.defaultValue ?? "";
             }
+        });
+        setFormData(next);
+        if (initialFormData.__rowId) {
+            onRowClickRef.current(initialFormData, transactionType || "");  // ✅ use ref
         }
-    }, [initialFormData, formFields, onRowClick, transactionType]);
+    }, [initialFormData, transactionType]);
+
 
     useEffect(() => {
         visibleFormFields.forEach(f => {
@@ -472,12 +479,18 @@ export default function DraftTransactionTable({
 
 
     useEffect(() => {
-        setFormData(p => ({ ...p, NETWT: calcNet() }));
-    }, [formData.GRSWT, formData.STNWT, calcNet]);
+        const g = parseFloat(formData.GRSWT) || 0;
+        const s = parseFloat(formData.STNWT) || 0;
+        const t = parseFloat(formData.TOUCH) || 0;
+        const netwt = (g - s).toFixed(3);
+        const purewt = ((g - s) * t / 100).toFixed(3);
 
-    useEffect(() => {
-        setFormData(p => ({ ...p, PUREWT: calcPure() }));
-    }, [formData.GRSWT, formData.STNWT, formData.TOUCH, calcPure]);
+        setFormData(prev => {
+            // ✅ Only update if values actually changed — prevents infinite loop
+            if (prev.NETWT === netwt && prev.PUREWT === purewt) return prev;
+            return { ...prev, NETWT: netwt, PUREWT: purewt };
+        });
+    }, [formData.GRSWT, formData.STNWT, formData.TOUCH]);
 
     useEffect(() => {
         if (pureValue) setFormData(p => ({ ...p, PUREWT: pureValue }));
@@ -491,13 +504,12 @@ export default function DraftTransactionTable({
     }, []); // ✅ empty — only on mount
 
     // 🔥 FIX: Populate form + load stones/misc when currentEditingRowId changes
-    // 🔥 FIX: Populate form + load stones/misc when currentEditingRowId changes
     useEffect(() => {
         if (currentEditingRowId && currentEditingTransactionType === transactionType) {
             const rowToEdit = rows.find(r => r.__rowId === currentEditingRowId);
             if (rowToEdit) {
                 const next: Record<string, any> = {};
-                formFields.forEach(f => {
+                formFieldsRef.current.forEach(f => {   // ✅ use ref, not formFields
                     if (f.type === "number" && rowToEdit[f.key] !== undefined) {
                         next[f.key] = rowToEdit[f.key].toString();
                     } else {
@@ -533,17 +545,35 @@ export default function DraftTransactionTable({
                 setErrors({});
                 setTouched({});
             }
-        } else {
-            // const init: Record<string, any> = {};
-            // formFields.forEach(f => { init[f.key] = f.defaultValue ?? ""; });
-            // setFormData(init);
-            // setErrors({});
-            // setTouched({});
-            // // Reset both IDs independently when editing is cancelled
-            // setStoneDraftRowId("");
-            // setMiscDraftRowId("");
         }
-    }, [currentEditingRowId, currentEditingTransactionType, transactionType, rows, formFields]);
+    }, [currentEditingRowId, currentEditingTransactionType, transactionType, rows]);
+
+    // 3. React to the result
+    useEffect(() => {
+        if (!pendingTagNo || !tagData) return;
+
+        // handleChange({
+        //     GRSWT: tagData.GRSWT?.toString() || "0",
+        //     STNWT: tagData.STNWT?.toString() || "0",
+        //     NETWT: tagData.NETWT?.toString() || "0",
+        //     WASPER: tagData.WASPER?.toString() || "0",
+        //     MC: tagData.MC?.toString() || "0",
+        //     TOUCH: tagData.TOUCH?.toString() || "0",
+        //     SALESSTNWT: tagData.SALESSTNWT?.toString() || "0",
+        //     PCS: (tagData.PCS ?? 1).toString(),
+        //     ...(tagData.ITEMID ? { ITEMID: tagData.ITEMID.toString() } : {}),
+        // });
+
+        toaster.create({
+            title: "Tag Loaded",
+            description: `Details filled for tag: ${pendingTagNo}`,
+            type: "success",
+            duration: 1500,
+        });
+
+        setPendingTagNo(""); // ✅ resets → hook disables (enabled: !!id = false)
+        setTimeout(() => moveNext("TAGNO"), 100);
+    }, [tagData]);
 
     type FormData = typeof formData;
 
@@ -1008,43 +1038,12 @@ export default function DraftTransactionTable({
                         // In renderFormCell TAGNO onEnter, after handleChange set ITEMID,
                         // add a small delay before moveNext so state has settled:
 
-                        onKeyDown={async () => {
+                        onKeyDown={() => {
                             const tagNo = formData.TAGNO?.trim();
                             if (!tagNo) { moveNext(field.key); return; }
-
-                            const tagData = await onTagNoLookup?.(tagNo);
-                            if (!tagData) {
-                                toaster.create({
-                                    title: "Tag Not Found",
-                                    description: `No tag found for: ${tagNo}`,
-                                    type: "error",
-                                    duration: 2000,
-                                });
-                                return;
-                            }
-
-                            handleChange({
-                                GRSWT: tagData.GRSWT?.toString() || "0",
-                                STNWT: tagData.STNWT?.toString() || "0",
-                                NETWT: tagData.NETWT?.toString() || "0",
-                                WASPER: tagData.WASPER?.toString() || "0",
-                                MC: tagData.MC?.toString() || "0",
-                                TOUCH: tagData.TOUCH?.toString() || "0",
-                                SALESSTNWT: tagData.SALESSTNWT?.toString() || "0",
-                                PCS: (tagData.PCS ?? 1).toString(),
-                                ...(tagData.ITEMID ? { ITEMID: tagData.ITEMID.toString() } : {}),
-                            });
-
-                            toaster.create({
-                                title: "Tag Loaded",
-                                description: `Details filled for tag: ${tagNo}`,
-                                type: "success",
-                                duration: 1500,
-                            });
-
-                            // ✅ Delay moveNext so formData state settles before dependsOn check runs
-                            setTimeout(() => moveNext(field.key), 100);
+                            setPendingTagNo(tagNo); // ✅ triggers hook → useEffect fills form
                         }}
+
                         noBorder
                     />
                 </Box>

@@ -41,7 +41,7 @@ export const useTransactions = (
         ],
         queryFn: () => TransactionService.getAll(trantype, accode, startdate, enddate, itemid),
         // Only run the query if we have required parameters
-        enabled: !!accode, // Add this line
+        // enabled: !!accode, // Add this line
     });
 };
 

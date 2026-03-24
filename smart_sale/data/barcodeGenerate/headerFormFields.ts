@@ -26,8 +26,6 @@ export const barcodeHeaderFields = (  options :{vendorCollection?: {
         name: "DATE", 
         label: "DATE", 
         type: "date",
-        defaultValue: new Date().toISOString().split("T")[0],
-        maxDate:new Date().toISOString().split("T")[0],
         rounded:'sm',
         maxWidth: '100px'
 
