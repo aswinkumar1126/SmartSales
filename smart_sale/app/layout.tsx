@@ -7,7 +7,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" className={fontVariables} suppressHydrationWarning>
       <body>
         <AllProviders>
-            {children}
+          {children}
         </AllProviders>
       </body>
     </html>

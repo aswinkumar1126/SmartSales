@@ -22,7 +22,7 @@ type CapitalizedInputProps<T> = {
     onChange: (field: keyof T, value: any) => void;
     placeholder?: string;
     isCapitalized?: boolean;
-    type?: "text" | "number" | "password";
+    type?: "text" | "number" | "password" |"capitalized";
     disabled?: boolean;
     max?: number;
     icon?: boolean;
@@ -46,7 +46,8 @@ type CapitalizedInputProps<T> = {
     minWidth?: string;
     noBorder?:boolean;
     onBlur?:()=>void;
-    iconElement?: string
+    iconElement?: string;
+    allowFocus?:boolean
 };
 
 export function CapitalizedInput<T>({
@@ -77,7 +78,8 @@ export function CapitalizedInput<T>({
     minWidth,
     noBorder,
     onBlur,
-    iconElement=""
+    iconElement="",
+    allowFocus=false
 }: CapitalizedInputProps<T>) {
     const { theme } = useTheme();
 
@@ -260,6 +262,21 @@ export function CapitalizedInput<T>({
 
         onKeyDown?.(e);
     };
+    const formatDecimalOnBlur = (val: string, scale: number) => {
+        if (!val || isNaN(Number(val))) return val;
+        if (!allowFocus) return val;
+
+        let num = Number(val);
+
+        // Limit decimals WITHOUT forcing trailing zeros
+        let formatted = num.toFixed(scale);
+        console.log(formatted, 'formatted')
+
+        // 🔥 Remove trailing zeros
+        // formatted = formatted.replace(/\.?0+$/, "");
+
+        return formatted;
+    };
 
     return (
         // In CapitalizedInput component, update the ref handling:
@@ -278,7 +295,14 @@ export function CapitalizedInput<T>({
             size={size}
             autoFocus={autoFocus}
             onKeyDown={handleKeyDown}
-            onBlur={onBlur}
+            onBlur={(e) => {
+                if (type === "number" && allowDecimal) {
+                    const formatted = formatDecimalOnBlur(e.target.value, decimalScale);
+                    onChange(field, formatted);
+                }
+
+                onBlur?.();
+            }}
             ref={(el) => {
                 if (inputRef) {
                     if (typeof inputRef === 'function') {

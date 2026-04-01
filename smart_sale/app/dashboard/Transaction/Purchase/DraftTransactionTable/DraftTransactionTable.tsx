@@ -17,7 +17,6 @@ import { issueColumns, issueDataColumns } from "../../Issue/isseColumns";
 
 import { useStoneItems } from "@/hooks/item/useItems";
 import { useCalculatePure } from "@/hooks/pure/useCalculatePure";
-import { useTagedDetailsByTagNo } from "@/hooks/tag/useTag";
 
 import StoneEnterMaster from "../StoneMaster/StoneEntryMaster";
 import OtherChargesWindow from "../OtherCharges/OtherChargesWindow";
@@ -194,10 +193,10 @@ export default function DraftTransactionTable({
     const { data: stoneItemsData } = useStoneItems();
     const [stoneItemsCollection, setStoneItemCollection] = useState<{ label: string; value: string }[]>([]);
     // 2. Add state + hook at component level
-    const [pendingTagNo, setPendingTagNo] = useState<string>("");
-    const { data: tagData, isLoading: isTagLoading } = useTagedDetailsByTagNo(pendingTagNo);
+  
+    const [isLookingUp, setIsLookingUp] = useState(false);
 
-    console.log(tagData,'tagData');
+
 
 
     const pendingStoneData = useRef<{
@@ -549,31 +548,31 @@ export default function DraftTransactionTable({
     }, [currentEditingRowId, currentEditingTransactionType, transactionType, rows]);
 
     // 3. React to the result
-    useEffect(() => {
-        if (!pendingTagNo || !tagData) return;
+    // useEffect(() => {
+    //     if (!pendingTagNo || !tagData) return;
 
-        // handleChange({
-        //     GRSWT: tagData.GRSWT?.toString() || "0",
-        //     STNWT: tagData.STNWT?.toString() || "0",
-        //     NETWT: tagData.NETWT?.toString() || "0",
-        //     WASPER: tagData.WASPER?.toString() || "0",
-        //     MC: tagData.MC?.toString() || "0",
-        //     TOUCH: tagData.TOUCH?.toString() || "0",
-        //     SALESSTNWT: tagData.SALESSTNWT?.toString() || "0",
-        //     PCS: (tagData.PCS ?? 1).toString(),
-        //     ...(tagData.ITEMID ? { ITEMID: tagData.ITEMID.toString() } : {}),
-        // });
+    //     // handleChange({
+    //     //     GRSWT: tagData.GRSWT?.toString() || "0",
+    //     //     STNWT: tagData.STNWT?.toString() || "0",
+    //     //     NETWT: tagData.NETWT?.toString() || "0",
+    //     //     WASPER: tagData.WASPER?.toString() || "0",
+    //     //     MC: tagData.MC?.toString() || "0",
+    //     //     TOUCH: tagData.TOUCH?.toString() || "0",
+    //     //     SALESSTNWT: tagData.SALESSTNWT?.toString() || "0",
+    //     //     PCS: (tagData.PCS ?? 1).toString(),
+    //     //     ...(tagData.ITEMID ? { ITEMID: tagData.ITEMID.toString() } : {}),
+    //     // });
 
-        toaster.create({
-            title: "Tag Loaded",
-            description: `Details filled for tag: ${pendingTagNo}`,
-            type: "success",
-            duration: 1500,
-        });
+    //     toaster.create({
+    //         title: "Tag Loaded",
+    //         description: `Details filled for tag: ${pendingTagNo}`,
+    //         type: "success",
+    //         duration: 1500,
+    //     });
 
-        setPendingTagNo(""); // ✅ resets → hook disables (enabled: !!id = false)
-        setTimeout(() => moveNext("TAGNO"), 100);
-    }, [tagData]);
+    //     setPendingTagNo(""); // ✅ resets → hook disables (enabled: !!id = false)
+    //     setTimeout(() => moveNext("TAGNO"), 100);
+    // }, [tagData]);
 
     type FormData = typeof formData;
 
@@ -1017,6 +1016,43 @@ export default function DraftTransactionTable({
         return Number(decimalScale) >= 1 ? Number(value).toFixed(decimalScale) : Number(value).toString();
     };
 
+    const handleTagNoKeyDown = async (field?: any) => {
+        const tagNo = formData.TAGNO?.trim();
+        if (!tagNo) return;
+
+        setIsLookingUp(true);
+
+        try {
+            // Call parent's lookup function and get data
+            const result = await onTagNoLookup?.(tagNo);
+            console.log(result ,'resultData')
+            if (result) {
+                // Directly populate form with the returned data
+                setFormData(prev => ({
+                    ...prev,
+                    GRSWT: result.GRSWT,
+                    STNWT: result.STNWT,
+                    NETWT: result.NETWT,
+                    WASPER: result.WASPER,
+                    DIAWT: result.DIAWT,
+                    MC: result.MC,
+                    TOUCH: result.TOUCH,
+                    // SALESSTNWT: result.SALESSTNWT,
+                    // sizeId: result.SIZEID,
+                    ITEMID: result.ITEMID,
+                    PCS: result.PCS
+                }));
+                console.log('Tag data received:', result);
+            } else {
+                console.log('No data found for tag:', tagNo);
+            }
+        } catch (error) {
+            console.error('Tag lookup failed:', error);
+        } finally {
+            setIsLookingUp(false);
+        }
+    };
+
     const renderFormCell = (field: FormField) => {
         const ref = fieldRefs.current[field.key];
         const isInvalid = !!errors[field.key] && !!touched[field.key];
@@ -1038,11 +1074,7 @@ export default function DraftTransactionTable({
                         // In renderFormCell TAGNO onEnter, after handleChange set ITEMID,
                         // add a small delay before moveNext so state has settled:
 
-                        onKeyDown={() => {
-                            const tagNo = formData.TAGNO?.trim();
-                            if (!tagNo) { moveNext(field.key); return; }
-                            setPendingTagNo(tagNo); // ✅ triggers hook → useEffect fills form
-                        }}
+                        onKeyDown={() => handleTagNoKeyDown()}
 
                         noBorder
                     />

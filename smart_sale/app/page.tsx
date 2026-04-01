@@ -1,23 +1,23 @@
 "use client";
 
 import { Box, Text } from "@chakra-ui/react";
-import useProtected from "@/hooks/auth/useProtected";
-import Loader from "@/component/loader/Loader";
+// import useProtected from "@/hooks/auth/useProtected";
+// import Loader from "@/component/loader/Loader";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import EditableTable from "@/component/table/EditableTable";
 import EditableCell from "@/component/table/EditableCell";
 
 export default function Home() {
-  const { user, loading } = useProtected();
+  // const { user, loading } = useProtected();
   const router = useRouter();
 
-  useEffect(() => {
-    if (loading) return;
-    if (!user) router.replace("/login/");
-  }, [loading, user, router]);
+  // useEffect(() => {
+  //   if (loading) return;
+  //   if (!user) router.replace("/login/");
+  // }, [loading, user, router]);
 
-  if (loading) return <Loader isLoading fullscreen />;
+  // if (loading) return <Loader isLoading fullscreen />;
 
   const handleCashSave = async (row: any, key: string, value: any) => {
   

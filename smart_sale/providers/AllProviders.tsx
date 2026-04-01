@@ -8,6 +8,8 @@ import DashboardLayout from "@/component/layout/DashBoardLayout";
 import QueryProvider from "@/context/query/providers";
 import { PrintProvider } from "@/context/print/usePrintContext";
 import { Toaster } from "@/components/ui/toaster";
+import ProtectedRoute from "@/route/protected/ProtectedRoute";
+
 export function AllProviders({ children }: { children: React.ReactNode }) {
 
   return (
@@ -18,12 +20,13 @@ export function AllProviders({ children }: { children: React.ReactNode }) {
           <AuthProvider>
             <PrintProvider>
               <SidebarProvider>
-            
+                <ProtectedRoute>
                   <DashboardLayout>
                     <Toaster />
                     {children}
                     
                   </DashboardLayout>
+                </ProtectedRoute>
               </SidebarProvider>
             </PrintProvider>
 

@@ -32,7 +32,7 @@ import StockDrawer from "./DrawerTable/StockTable";
 import { useAllMetals } from "@/hooks/metal/useMetals";
 import Loader from "@/component/loader/Loader";
 import BalanceSummary, { ClosingFormDetails } from "./Balance/BalanceSummary";
-
+import { TransactionListing } from "./TransactionList/TransactionIdsListing";
 
 //Key
 import { useGlobalKey } from "@/components/key/useGlobalKey";
@@ -115,7 +115,7 @@ export default function PurchasePage() {
     const MISC_CHARGE_KEY = "MISC_CHARGE_MASTER";
     const CLOSING_DETAILS_KEY = "CLOSING_DETAILS";
   
-
+    const TRANSACTION_LIST_SEARCH = "transaction_list_search";
     const ISTAG = 'is_tag';
 
 
@@ -163,6 +163,10 @@ export default function PurchasePage() {
     const [closingPure, setClosingPure] = useState(0);
 
     const [pendingTagNo, setPendingTagNo] = useState<string>("");
+
+
+    const [singleSearch, setSingleSearch] = useSessionStorage<string>(TRANSACTION_LIST_SEARCH,'');
+      const [deselectFlag, setDeselectFlag] = useState(false);
 
 
 
@@ -264,8 +268,10 @@ export default function PurchasePage() {
     const { theme } = useTheme();
     const { data: itemsData } = useItems();
 
-    const { data: tagData, isLoading: isTagLoading } = useTagedDetailsByTagNo(pendingTagNo);
+    const { data: tagData, isLoading: isTagLoading, refetch: tagDetailRefetch } = useTagedDetailsByTagNo(pendingTagNo);
    
+    console.log(tagData ,'tagData');
+
 
     const filters = {
         accountType: "PR"
@@ -338,8 +344,20 @@ export default function PurchasePage() {
 
     console.log(transactionList,'transactionList');
     console.log(isEditing,'isEditing');
-    console.log(headerForm,'headerFormTransaction')
+    console.log(headerForm,'headerFormTransaction');
 
+
+    const transactionIdsList = useMemo(() => {
+        const list = transactionList?.data?.snoList;
+        if (!list || !Array.isArray(list)) return [];
+
+        return list.map((item: any) => ({
+            label: item,
+            value: item,
+        }));
+    }, [transactionList]);
+
+    console.log(transactionIdsList, 'transactionIdsList')
     useEffect(() => {
         if (!headerForm.CUSTOMER) {
             // Clear both BILLNO and ENTRYNO when no customer is selected
@@ -348,12 +366,14 @@ export default function PurchasePage() {
                 BILLNO: "",
                 ENTRYNO: ""
             }));
-        } else if (transactionList?.data?.BILLNO && !isEditing) {
+        }
+        
+        else if (transactionList?.data?.BILLNO && !isEditing) {
             // Set both BILLNO and ENTRYNO when transaction data is available
             setHeaderForm(prev => ({
                 ...prev,
+                ENTRYNO: transactionList.data.ENTRYNO,
                 BILLNO: transactionList.data.BILLNO,
-                ENTRYNO: transactionList.data.ENTRYNO
             }));
         }
     }, [transactionList?.data, headerForm.CUSTOMER, isEditing]);
@@ -387,7 +407,6 @@ export default function PurchasePage() {
             : itemsStockList;
     }, [showStock, pureStockList, itemsStockList]);
 
-    console.log(selectedStockData, 'selectedStockData')
 
     /* ================================
        Customer Data
@@ -517,7 +536,6 @@ export default function PurchasePage() {
         const filteredRows = draftRows.filter(row => {
             // Skip the excluded row
             if (excludeRowId && row.__rowId === excludeRowId) {
-                console.log('Skipping excluded row:', row.__rowId);
                 return false;
             }
 
@@ -529,7 +547,6 @@ export default function PurchasePage() {
             // Find the transaction type
             const transactionType = TRANSACTIONTYPES.find(t => t.value === row.TRANSACTION_TYPE);
             if (!transactionType) {
-                console.log('No transaction type found for:', row.TRANSACTION_TYPE);
                 return false;
             }
 
@@ -599,7 +616,6 @@ export default function PurchasePage() {
             stock = itemsStockList.find((s: any) => {
                 return String(s.itemId) === String(pureId) || String(s.pureId) === String(pureId);
             });
-            console.log(stock,'itemStock')
 
             if (!stock) return undefined;
 
@@ -765,7 +781,7 @@ export default function PurchasePage() {
                 (Number(row.STNAMT) || 0) +
                 (Number(row.MC) || 0);
 
-            console.log(cash, 'cashamount for row', row.TRANSACTION_TYPE);
+      
 
             switch (type) {
                 case "purchase":
@@ -1051,10 +1067,13 @@ export default function PurchasePage() {
         // Clear editing state
         setEditingState({ rowId: null, transactionType: null });
         resetDraftRowTempId();
+        setSingleSearch("");
+        setDeselectFlag(true);
+        setTimeout(() => setDeselectFlag(false), 50);
     }, [editingState]);
 
     const handleEditTransaction = useCallback((transactionData: any, sno: string) => {
-        console.log(transactionData, sno, 'transactionData');
+   
 
         if (!transactionData) {
             return;
@@ -1325,13 +1344,13 @@ export default function PurchasePage() {
 
             setDraftRows(newDraftRows);
 
-            if (newDraftRows.length > 0) {
-                const firstRow = newDraftRows[0];
-                setEditingState({
-                    rowId: firstRow.__rowId,
-                    transactionType: firstRow.TRANSACTION_TYPE // Use the row's transaction type
-                });
-            }
+            // if (newDraftRows.length > 0) {
+            //     const firstRow = newDraftRows[0];
+            //     setEditingState({
+            //         rowId: firstRow.__rowId,
+            //         transactionType: firstRow.TRANSACTION_TYPE // Use the row's transaction type
+            //     });
+            // }
             // Show appropriate message
             setTimeout(() => {
                 const stoneCount = allStones.length;
@@ -1875,7 +1894,7 @@ console.log(typeRows,'typeRows')
 
     const normalizeRowForApi = (row: any, isIssue: boolean ,editTransaction?:boolean) => {
 
-        console.log(row,'row')
+     
         const {
             __rowId,
             __isNew,
@@ -2222,7 +2241,6 @@ console.log(typeRows,'typeRows')
 
             onError: (error: any) => {
 
-                console.error("Save error:", error);
 
                 toaster.create({
                     title: "Save Failed",
@@ -2381,6 +2399,9 @@ console.log(typeRows,'typeRows')
         setEditingState({rowId:null , transactionType:null});
         resetDraftRowTempId(); // Reset temp ID
    
+        setSingleSearch("");
+        setDeselectFlag(true);
+        setTimeout(() => setDeselectFlag(false), 50);
 
         if (isEditing) {
             setHeaderForm(prev => ({
@@ -2394,6 +2415,10 @@ console.log(typeRows,'typeRows')
             setIsEditing(false);
             setEditingSno(null);
             setSelectedTransactionId(null);
+            setSelectedTransactionTypes([]);
+            setAccCode(null);
+            refetchTransactionList();
+
 
             toaster.create({
                 title: "Edit Cancelled",
@@ -2412,12 +2437,23 @@ console.log(typeRows,'typeRows')
 
 
     const handleTransactionClick = useCallback((transactionId: string) => {
+        if (transactionId === String(transactionId)) {
+            // Same ID clicked again — force re-fetch by resetting first
+            setSelectedTransactionId('');
+            setTimeout(() => setSelectedTransactionId(String(transactionId)), 0);
+            return;
+        }
         setSelectedTransactionId(transactionId);
         // Clear any existing draft first
         setDraftRows([]);
         setIsEditing(false);
+
     }, []);
 
+    const handleSingleSearch = (term: string) => {
+        setSingleSearch(term);
+        setDeselectFlag(false); // reset deselect flag whenever typing
+    };
 
     const handleSelectItemCode = useCallback((id: number | null) => {
         setItemCode(id);
@@ -2457,21 +2493,51 @@ console.log(typeRows,'typeRows')
 
     const handleTagChange = () => setIsTag(prev => !prev);
 
-    const handleTagNoLookup = async (tagNo: string) => {
+    const handleTagNoLookup = async (tagNo: string): Promise<{
+        GRSWT: number; STNWT: number; NETWT: number; WASPER: number;
+        DIAWT: number; MC: number; TOUCH: number; SALESSTNWT: number;
+        SIZEID: number; ITEMID?: string; PCS?: number;
+    } | null> => {
+        if (!tagNo?.trim()) return null;
+
         try {
-            const res = await fetch(`/api/tag/${tagNo}`); // your API endpoint
-            if (!res.ok) return null;
-            const data = await res.json();
-            return data?.TAGGINGDETAILS?.[0] ?? null;
-        } catch {
+            setPendingTagNo(tagNo);
+            const result = await tagDetailRefetch();
+            const data = result.data;
+            if (!data) return null;
+            console.log(data,'tagDetails')
+            return {
+                GRSWT: Number(data.GRSWT) || 0,
+                STNWT: Number(data.STNWT) || 0,
+                NETWT: Number(data.NETWT) || 0,
+                WASPER: Number(data.WASPER) || 0,
+                DIAWT: Number(data.DIAWT) || 0,
+                MC: Number(data.MC) || 0,
+                TOUCH: Number(data.TOUCH) || 0,
+                SALESSTNWT: Number(data.SALESSTNWT) || 0,
+                SIZEID: Number(data.SIZEID) || 0,
+                ITEMID: data.ITEMID ? String(data.ITEMID) : undefined,
+                PCS: 1,
+            };
+        } catch (error) {
+            console.error('Tag lookup failed:', error);
             return null;
         }
     };
+
+    useEffect(() => {
+        if (pendingTagNo) {
+            tagDetailRefetch();
+        }
+    }, [pendingTagNo, tagDetailRefetch]);
+
+    console.log(pendingTagNo, 'pendingTagNo');
+    console.log(tagData,'tag details')
     
 
     return (
         <>
-        <Flex gap={2} >
+        <Flex gap={1} >
             <Toaster />
 
             {/* Loading indicator for transaction data */}
@@ -2482,7 +2548,7 @@ console.log(typeRows,'typeRows')
             )}
 
             {/* LEFT – 70% */}
-                <Box display='flex' gap={1} w='100%' >
+                <Box display='flex' gap={1} w='80%' >
                     <VStack align="stretch" gap={1} w='100%'> 
 
                     {/* 1. Transaction Header Form */}
@@ -2707,7 +2773,6 @@ console.log(typeRows,'typeRows')
                                                             getAvailablePieces={getAvailablePieces}
                                                             handleTagChange={handleTagChange}
                                                             isTag={isTag} 
-                                                            
                                                             onTagNoLookup={handleTagNoLookup}
                                                         />
                                                     </Box>
@@ -2773,9 +2838,9 @@ console.log(typeRows,'typeRows')
                 )}
                
             </Box>    
-    
+              
                 {/* RIGHT SIDE - Summary Panel */}
-                <Box position="sticky">
+                <Box width={'22%'}>
 
 
                     <BalanceSummary
@@ -2793,8 +2858,18 @@ console.log(typeRows,'typeRows')
                         bankAccList={allBankAccounts}
                     />
 
-               </Box>
-
+                </Box>
+               
+                <Box width={'15%'}>
+                    <TransactionListing
+                        transactionIdsList={transactionIdsList}
+                        handleEditTransaction={handleTransactionClick}
+                        searchTerm={singleSearch}
+                        handleSearchChange={handleSingleSearch}
+                        deselectFlag={deselectFlag}
+                        handleDeselect={handleResetDraft}
+                    />
+                </Box>
                 
             <StockDrawer
                 isIssue={selectedTransactionTypes.some(t => isIssueType(t))}
@@ -2813,6 +2888,7 @@ console.log(typeRows,'typeRows')
                 onIssue={handleLoadFromStock}
                 getStockAvailability={getStockAvailability}
             />
+               
         </Flex>
      
         </>

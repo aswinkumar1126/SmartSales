@@ -66,5 +66,6 @@ export interface FormField {
     validate?: (value: any) => string | undefined;
 
     dependsOn?: string;
+    allowFocus?:boolean
     
 }

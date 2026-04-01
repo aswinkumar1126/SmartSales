@@ -114,8 +114,8 @@ const BalanceSummary = ({
     const closeActiveModal = () => setActiveBankModal(null);
 
     return (
-        <Box p={2} bg={theme.colors.formColor} borderRadius="md">
-            <Grid templateColumns="100px 1fr 1fr" gap={2} alignItems="center">
+        <Box p={1} bg={theme.colors.formColor} borderRadius="md">
+            <Grid templateColumns="50px 1fr 1fr" gap={2} alignItems="center">
                 <GridItem />
                 <Text textAlign="center" fontSize="xs" fontWeight="semibold">Pure</Text>
                 <Text textAlign="center" fontSize="xs" fontWeight="semibold">Cash</Text>
@@ -144,7 +144,7 @@ const BalanceSummary = ({
                 />
 
                 {/* Conversion Type */}
-                <Text fontSize="xs" fontWeight="semibold">Convert By</Text>
+                <Text fontSize="xs" fontWeight="semibold">Conv By</Text>
                 <HStack>
                     <Checkbox.Root
                         disabled={!accCode} size="xs"
@@ -169,7 +169,7 @@ const BalanceSummary = ({
                 </HStack>
 
                 {/* Conversion Values */}
-                <Text fontSize="xs" fontWeight="semibold">Conversion</Text>
+                <Text fontSize="xs" fontWeight="semibold">Conv</Text>
                 <CapitalizedInput
                     value={closingDetails.convWt}
                     field="convWt"

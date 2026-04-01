@@ -22,6 +22,7 @@ import { SingleCheckbox } from "@/components/ui/CheckBox";
 /*-------------- TYPES ----------------------*/
 import { BarcodeHeaderFormInterface } from "@/types/barcode/HeaderForm";
 import type { CellChange, ChangeSource } from "handsontable/common";
+import { getTagedEntryNoParams, getTagedEntryNoParamsForApi } from "@/types/tagging/Tag";
 
 /*-------------- HOOKS ----------------------*/
 
@@ -30,7 +31,7 @@ import { useBarcodeItems, useCreateTag } from "@/hooks/barcode/useBarcodeItems";
 import { useSessionStorage } from "@/hooks/storage/useSessionStorage";
 import { useTheme } from "@/context/theme/themeContext";
 import { useSoftControlById } from "@/hooks/softControl/useSoftControl";
-import { useTagEntryNos, useTagedDetailsByTagNo } from "@/hooks/tag/useTag";
+import { useTagEntryNos, useTagedDetailsByEntryNo } from "@/hooks/tag/useTag";
 
 
 /*-------------- CONSTANTS ------------------*/
@@ -211,12 +212,34 @@ function BarCodeGenerate() {
     // Flag to tell child to deselect
     const [deselectFlag, setDeselectFlag] = useState(false);
 
+    const [tagNumberParams, setTagNumberParams] = useState<getTagedEntryNoParams>({
+
+        FROMDATE:'',
+        TODATE: '',
+        ITEMID: '',
+        ACCODE: '',
+        ENTRYNO: '',
+        WEIGHT: '',
+        PUENTRYNO: '',
+        TAGNO: '',
+        SEARCH: '',
+
+    });
+
+    const handleFilterChange = useCallback((field: string, value: any) => {
+        setTagNumberParams((prev) => ({
+            ...prev,
+            [field]: value
+        }));
+    }, []);
+// Auto-refetch when filters change
+    useEffect(() => {
+        if (tagNumberParams) {
+            tagEntryNoRefetch();
+        }
+    }, [tagNumberParams]);
 
 
-    /**
-     * Raw grid data lives in the parent so it survives Drawer close/open cycles.
-     * Starts empty — populated either by typing or by FileUploader parsing.
-     */
     const [excelData, setExcelData] = useState<ExcelData>([]);
 
 
@@ -236,11 +259,27 @@ function BarCodeGenerate() {
     const { data: barcodeItems } = useBarcodeItems(barcodeQueryParams);
 
     const { data: softControlDataById } = useSoftControlById("LOT_TAG_CONTROL");
+ 
+   
+    // To this:
+    const getFilteredParams = useCallback((): Partial<getTagedEntryNoParams> => {
+        const filteredParams: Partial<getTagedEntryNoParams> = {};
 
-    const { data: tagEntryNos, isLoading: tagEntryNosLoading, isError: tagEntryNosError ,refetch : tagEntryNoRefetch} = useTagEntryNos();
-    console.log(tagEntryNos,'tagEntryNos')
-  
-    const { data: tagedDetails, isLoading: tagedDetailsLoading, isError: tagedDetailsError } = useTagedDetailsByTagNo(selectedEntryNo);
+        Object.entries(tagNumberParams).forEach(([key, value]) => {
+            if (typeof value === 'string' && value.trim() !== '') {
+                filteredParams[key as keyof getTagedEntryNoParams] = value;
+            }
+        });
+
+        return filteredParams;
+    }, [tagNumberParams]);
+    console.log(getFilteredParams(),'filterParas')
+
+    // Use filtered params for API call
+    const { data: tagEntryNos, isLoading: tagEntryNosLoading, isError: tagEntryNosError, refetch: tagEntryNoRefetch } = useTagEntryNos(getFilteredParams());
+
+    console.log(tagEntryNos, 'tagEntryNos');
+    const { data: tagedDetails, isLoading: tagedDetailsLoading, isError: tagedDetailsError } = useTagedDetailsByEntryNo(selectedEntryNo);
     console.log(tagedDetails ,'tagDetailsBySno');
 
     /* ============================================================
@@ -1207,7 +1246,7 @@ function BarCodeGenerate() {
               
             </Box>
             <Box width={'20%'}>
-                <BarcodeSearch />
+        
 
                 <BarcodeTagListing 
 
@@ -1217,6 +1256,9 @@ function BarCodeGenerate() {
                     handleEditTagTransaction={handleEditTagTransaction} 
                     handleDeselect={handleClear} 
                     deselectFlag={deselectFlag} 
+                    onFilterChange={handleFilterChange}
+                    filterParams={tagNumberParams}
+                    collections={{ acCodeCollection: purchaserCollection }}
                 />
             </Box>
         </Box>

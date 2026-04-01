@@ -30,6 +30,7 @@ interface DynamicFormProps {
     errors?: Record<string, string>; 
     layout?: "vertical" | "horizontal" | "grid" | "verticalCombine" | "horizontalCombine"; 
     minLabelWidth?:string;
+    labelFontSize?:string;
 }
 
 export const DynamicForm: React.FC<DynamicFormProps> = ({
@@ -41,7 +42,8 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
     disabled = {},
     errors = {}, // Default to empty object
     layout,
-    minLabelWidth = "100px"
+    minLabelWidth = "100px",
+    labelFontSize = "x-small"
 }) => {
 
     const [touched, setTouched] = useState<Record<string, boolean>>({});
@@ -264,40 +266,78 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
 
          
             case 'number':
+                    return (
+                        <CapitalizedInput
+                            key={field.name}
+                            inputRef={setRef}
+                            field={field.name}
+                            value={formData[field.name] ?? ''} // controlled
+                            onChange={onChange} // Pass the original onChange that expects (field, value)
+                            disabled={isDisabled}
+                            size={field.size || "xs"}
+                            placeholder={field.placeholder}
+                            maxWidth={field.maxWidth || field.maxW || field.width}
+                            minWidth={field.minWidth}
+                            rounded={field.rounded}
+                            // fontSize={field.fontSize}
+                            // className={field.className}
+                            // css={field.css}
+                            max={field.maxLength}
+                            isCapitalized={field.isCapitalized}
+                            inputModeType={field.inputModeType}
+                            allowNegative={field.allowNegative}
+                            allowDecimal={field.allowDecimal}
+                            allowSpecial={field.allowSpecial}
+                            decimalScale={field.decimalScale}
+                            icon={field.icon}
+                            noBorder={field.noBorder}
+                            autoFocus={field.autoFocus}
+                            onEnter={() => focusNext(field.name)}
+                            onKeyDown={(e: any) => handleKeyDown(e, field.name)}
+                            onBlur={() => handleBlur(field.name)}
+                            iconElement={field.iconElement}
+                            type='number'
+                            allowFocus={field.allowFocus}
+                        />
+                    );
             case 'text':
-            default:
-                return (
-                    <CapitalizedInput
-                        key={field.name}
-                        inputRef={setRef}
-                        field={field.name}
-                        value={formData[field.name] ?? ''} // controlled
-                        onChange={onChange} // Pass the original onChange that expects (field, value)
-                        disabled={isDisabled}
-                        size={field.size || "xs"}
-                        placeholder={field.placeholder}
-                        maxWidth={field.maxWidth || field.maxW || field.width}
-                        minWidth={field.minWidth}
-                        rounded={field.rounded}
-                        // fontSize={field.fontSize}
-                        // className={field.className}
-                        // css={field.css}
-                        max={field.maxLength}
-                        isCapitalized={field.isCapitalized}
-                        inputModeType={field.inputModeType}
-                        allowNegative={field.allowNegative}
-                        allowDecimal={field.allowDecimal}
-                        allowSpecial={field.allowSpecial}
-                        decimalScale={field.decimalScale}
-                        icon={field.icon}
-                        noBorder={field.noBorder}
-                        autoFocus={field.autoFocus}
-                        onEnter={() => focusNext(field.name)}
-                        onKeyDown={(e:any) => handleKeyDown(e, field.name)}
-                        onBlur={() => handleBlur(field.name)}
-                        iconElement={field.iconElement}
-                    />
-                );
+                default:
+                    return (
+                        <CapitalizedInput
+                            key={field.name}
+                            inputRef={setRef}
+                            field={field.name}
+                            value={formData[field.name] ?? ''} // controlled
+                            onChange={onChange} // Pass the original onChange that expects (field, value)
+                            disabled={isDisabled}
+                            size={field.size || "xs"}
+                            placeholder={field.placeholder}
+                            maxWidth={field.maxWidth || field.maxW || field.width}
+                            minWidth={field.minWidth}
+                            rounded={field.rounded}
+                            // fontSize={field.fontSize}
+                            // className={field.className}
+                            // css={field.css}
+                            max={field.maxLength}
+                            isCapitalized={field.isCapitalized}
+                            inputModeType={field.inputModeType}
+                            allowNegative={field.allowNegative}
+                            allowDecimal={field.allowDecimal}
+                            allowSpecial={field.allowSpecial}
+                            decimalScale={field.decimalScale}
+                            icon={field.icon}
+                            noBorder={field.noBorder}
+                            autoFocus={field.autoFocus}
+                            onEnter={() => focusNext(field.name)}
+                            onKeyDown={(e: any) => handleKeyDown(e, field.name)}
+                            onBlur={() => handleBlur(field.name)}
+                            iconElement={field.iconElement}
+                            type='text'
+                            
+                        />
+                    );
+           
+               
         };
       
     };
@@ -369,7 +409,7 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
                             ? "100%"  // Full width when stacked
                             : minLabelWidth || "100px"  // Fixed width when beside
                         }
-                        fontSize="x-small"
+                        fontSize={labelFontSize}
                         fontWeight="semibold"
                         whiteSpace={layout === "verticalCombine" || layout === "horizontalCombine"
                             ? "normal"
