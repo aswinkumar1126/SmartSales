@@ -38,6 +38,11 @@ import { useAllMetals } from "@/hooks/metal/useMetals";
 import { SelectCombobox } from "@/components/ui/selectComboBox";
 import { safeValue } from "@/utils/comboBox/safeValue";
 import SearchBar from "@/component/search/SearchBar";
+
+import { PureGoldMastForm } from "@/config/opening/pureGoldOpening";
+import { useEnterNavigation } from "@/component/form/useEnterNavigation";
+import { DynamicForm } from "@/component/form/DynamicForm";
+
 /* ---------------- Initial Form State ---------------- */
 
 const initialFormState: pureGoldMastOpenForm = {
@@ -90,6 +95,8 @@ const PureGoldOpening = () => {
     const createMutation = useCreatePureGoldMast();
     const updateMutation = useUpdatePureGoldMast();
 
+
+    const PureGoldOpeningFields = PureGoldMastForm(pureGoldName);
 
     /* --------------- ComboBox Data ------------- */
     // useEffect(() => {
@@ -285,7 +292,13 @@ const PureGoldOpening = () => {
         router.push(`/print?export=${option}`);
     }
 
+    const pureGoldFieldsName =  PureGoldOpeningFields.map(f=>f.name);
 
+    const {register , focusFirst ,focusNext}= useEnterNavigation(pureGoldFieldsName,handleSubmit)
+
+    useEffect(()=>{
+       focusFirst()
+    },[focusFirst])
     /* ---------------- UI ---------------- */
 
     return (
@@ -307,121 +320,18 @@ const PureGoldOpening = () => {
 
                         </Text>
                     </Heading>
-                    <Box display="grid" gap={2}>
-                        {/* PURE GOLD NAME */}
-                        <Field.Root invalid={!!errors.pureId}>
-                            <HStack>
-                                <Box minW="100px">
-                                    <Field.Label fontSize="2xs">PURE GOLD NAME :</Field.Label>
-                                </Box>
-                                <Box flex={1}>
-                                    <SelectCombobox
-                                        value={safeValue(form.pureId, pureGoldName)}
-                                        onChange={(val) => {
-                                            handleChange("pureId", val);
-                                        }}
-                                        editId={Number(editId)}
-                                        items={pureGoldName}
-                                        placeholder="SELECT NAME"
 
-                                    />
-                                    <Field.ErrorText>{errors.pureId}</Field.ErrorText>
-                                </Box>
-                            </HStack>
-                        </Field.Root>
+                    <DynamicForm 
+                        fields={PureGoldOpeningFields}
+                        formData={form}
+                        register={register}
+                        onChange={handleChange}
+                        minLabelWidth="100px"
+                        layout="vertical"
+                        focusNext={focusNext}
+                        errors={errors}
+                        />
 
-                        {/* METAL NAME */}
-                        {/* <Field.Root invalid={!!errors.metalId}>
-                            <HStack>
-                                <Box minW="100px">
-                                    <Field.Label fontSize="2xs">METAL :</Field.Label>
-                                </Box>
-                                <Box flex={1}>
-                                    <SelectCombobox
-                                        value={safeValue(form.metalId, metalData)}
-                                        onChange={(val) => handleChange("metalId", val)}
-                                        editId={Number(editId)}
-                                        items={metalData}
-                                        placeholder="SELECT METAL"
-
-
-                                    />
-                                    <Field.ErrorText>{errors.metalId}</Field.ErrorText>
-                                </Box>
-                            </HStack>
-                        </Field.Root> */}
-
-
-                        {/* WEIGHT */}
-                        <Field.Root invalid={!!errors.weight}>
-                            <HStack>
-                                <Box minW="100px">
-                                    <Field.Label fontSize="2xs">WEIGHT :</Field.Label>
-                                </Box>
-                                <Box flex={1}>
-                                    <CapitalizedInput
-                                        field="weight"
-                                        type="number"
-                                        value={form.weight}
-                                        onChange={handleChange}
-                                        placeholder="Enter weight"
-                                        size="2xs"
-                                        max={9999999999}
-                                        decimalScale={3}
-
-                                    />
-                                    <Field.ErrorText>{errors.weight}</Field.ErrorText>
-                                </Box>
-                            </HStack>
-                        </Field.Root>
-
-                        {/* ACTUAL TOUCH */}
-                        <Field.Root invalid={!!errors.actualTouch}>
-                            <HStack>
-                                <Box minW="100px">
-                                    <Field.Label fontSize="2xs">TOUCH :</Field.Label>
-                                </Box>
-                                <Box flex={1}>
-                                    <CapitalizedInput
-                                        field="actualTouch"
-                                        type="number"
-                                        value={form.actualTouch}
-                                        onChange={handleChange}
-                                        placeholder="Enter actual touch"
-                                        size="2xs"
-                                        max={999}
-                                        decimalScale={2}
-                                    />
-                                    <Field.ErrorText>{errors.actualTouch}</Field.ErrorText>
-                                </Box>
-                            </HStack>
-                        </Field.Root>
-
-                        {/* ACTUAL PURE */}
-                        <Field.Root invalid={!!errors.actualPure}>
-                            <HStack>
-                                <Box minW="100px">
-                                    <Field.Label fontSize="2xs">PURE :</Field.Label>
-                                </Box>
-                                <Box flex={1}>
-                                    <CapitalizedInput
-                                        field="actualPure"
-                                        type="number"
-                                        value={form.actualPure}
-                                        onChange={handleChange}
-                                        placeholder="see actual pure"
-                                        size="2xs"
-                                        max={999}
-                                        decimalScale={3}
-                                        disabled
-                                    />
-                                    <Field.ErrorText>{errors.actualPure}</Field.ErrorText>
-                                </Box>
-                            </HStack>
-                        </Field.Root>
-
-
-                    </Box>
                     {/* ================= ACTION BUTTONS ================= */}
                     <Box mt={2}>
                         <HStack pt={2} justifyContent="center" gap={2}>

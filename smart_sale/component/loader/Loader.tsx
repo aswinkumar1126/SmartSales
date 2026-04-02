@@ -1,13 +1,14 @@
 "use client";
 
-import { Flex, Image } from "@chakra-ui/react";
+import { Flex, Image ,VStack ,Text} from "@chakra-ui/react";
 
 interface LoaderProps {
     isLoading: boolean;
     fullscreen?: boolean;
+    content?:string
 }
 
-const Loader = ({ isLoading, fullscreen = false }: LoaderProps) => {
+const Loader = ({ isLoading, fullscreen = false , content   }: LoaderProps) => {
     if (!isLoading) return null;
 
     if (fullscreen) {
@@ -26,12 +27,23 @@ const Loader = ({ isLoading, fullscreen = false }: LoaderProps) => {
                 pointerEvents="all"       // ✅ block clicks behind
                 transition="all 0.2s ease-in-out"
             >
-                <Image
-                    src="/loader.svg"
-                    alt="Loading..."
-                    boxSize="90px"
-                    draggable={false}
-                />
+                <VStack spaceX={3}>
+                    <Image
+                        src="/loader.svg"
+                        alt="Loading..."
+                        boxSize="90px"
+                        draggable={false}
+                    />
+
+                    <Text
+                        fontSize="sm"
+                        color="gray.600"
+                        textAlign="center"
+                        fontWeight="medium"
+                    >
+                        {content}
+                    </Text>
+                </VStack>
             </Flex>
         );
     }
@@ -45,12 +57,23 @@ const Loader = ({ isLoading, fullscreen = false }: LoaderProps) => {
             h="100%"
             minH="150px"
         >
-            <Image
-                src="/loader.svg"
-                alt="Loading..."
-                boxSize="70px"
-                draggable={false}
-            />
+            <VStack spaceY={3}>
+                <Image
+                    src="/loader.svg"
+                    alt="Loading..."
+                    boxSize="90px"
+                    draggable={false}
+                />
+
+                <Text
+                    fontSize="sm"
+                    color="gray.600"
+                    textAlign="center"
+                    fontWeight="medium"
+                >
+                    {content}
+                </Text>
+            </VStack>
         </Flex>
     );
 };

@@ -54,7 +54,7 @@ export interface MetalTransactionRow extends WeightInfo {
    ITEM TRANSACTION (Purchase / Return / Sales)
    ========================================================= */
 
-export interface ItemTransactionRow extends WeightInfo {
+export interface purchasePayload {
 
 
     ITEMID: number | null;
@@ -84,11 +84,30 @@ export interface ItemTransactionRow extends WeightInfo {
 }
 
 
+export interface purchasereturnPayload {
+
+    ITEMID: number | null;
+    SNO?: string;
+    TAGNO?:string;
+    PCS: number;
+    GRSWT: number;
+    STNWT: number;
+    NETWT: number;
+    WASTYPE: string;
+    TOUCH: number;
+    PUREWT: number;
+    HMC: number;
+    STNAMT: number;
+    MC: number;
+    DESCRIPTION?: string;
+    
+}
+
 /* =========================================================
    UNION ROW TYPE (Used in Tables & Draft Rows)
    ========================================================= */
 
-export type TransactionRow = MetalTransactionRow | ItemTransactionRow;
+export type TransactionRow = MetalTransactionRow;
 
 
 /* =========================================================
@@ -98,8 +117,8 @@ export type TransactionRow = MetalTransactionRow | ItemTransactionRow;
 export type TransactionItems = Partial<{
     issue: MetalTransactionRow[];
     receipt: MetalTransactionRow[];
-    purchase: ItemTransactionRow[];
-    purchase_return: ItemTransactionRow[];
+    purchase: purchasePayload[];
+    purchase_return: purchasereturnPayload[];
 }>;
 
 
@@ -150,21 +169,6 @@ export interface ClosingDetails {
     bankRcvdDetails: BankTransactionDetails[];
 
 }
-// export interface ClosingFormDetails {
-//     convType: "P" | "C";
-//     convAmt: string;
-//     convWt: string;
-//     discAmt: string;
-//     discWt: string;
-
-//     cashPaid: string;
-//     cashRcvd: string;
-
-//     bankPaid: string;
-//     bankRcvd: string;
-//     bankPaidDetails: BankTransactionFormDetails[];
-//     bankRcvdDetails: BankTransactionFormDetails[];
-// }
 
 
 /* =========================================================
@@ -193,14 +197,6 @@ export interface UpdateTransactionPayload {
 }
 
 
-/* =========================================================
-   TABLE DISPLAY TYPE
-   ========================================================= */
-
-export interface TransactionTableRow extends ItemTransactionRow {
-    SNO?: string  ;
-    NEXTID?: number;
-}
 
 
 /* =========================================================
@@ -222,19 +218,3 @@ export const TRANSACTION_KEY_MAP: Record<string, TransactionKey> = {
     PR: "purchase_return",
 };
 
-
-/* =========================================================
-   TYPE GUARDS (IMPORTANT — prevents runtime bugs)
-   ========================================================= */
-
-export const isMetalTransaction = (
-    row: TransactionRow
-): row is MetalTransactionRow => {
-    return "PUREID" in row && !("ITEMID" in row);
-};
-
-export const isItemTransaction = (
-    row: TransactionRow
-): row is ItemTransactionRow => {
-    return "ITEMID" in row;
-};

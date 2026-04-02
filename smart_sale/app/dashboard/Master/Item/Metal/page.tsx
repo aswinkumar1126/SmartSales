@@ -38,6 +38,11 @@ import { useRouter } from "next/navigation";
 import { FaPrint, FaFileExcel } from "react-icons/fa";
 import { usePureGoldData } from "@/hooks/pureGoldMast/usePureGoldMastData";
 
+import { metalMasterFields } from "@/config/master/MetalMaster";
+import { useEnterNavigation } from "@/component/form/useEnterNavigation";
+import { DynamicForm } from "@/component/form/DynamicForm";
+
+
 function MetalMaster() {
     const { theme } = useTheme();
     const router = useRouter();
@@ -60,6 +65,13 @@ function MetalMaster() {
         touch: "",
         pure: ""
     });
+
+    const activeStatus = [
+
+        { label: "YES", value: "Y" },
+        { label: "NO", value: "N" },
+    ]
+    const getFormFields = metalMasterFields({ active: activeStatus })
     const [metalIdManuallyChanged, setMetalIdManuallyChanged] = useState(false);
 
     const [isEdit, setIsEdit] = useState(false);
@@ -108,12 +120,8 @@ function MetalMaster() {
     const createMutation = useCreateMetal();
     const updateMutation = useUpdateMetal();
 
-    const activeStatus = createListCollection({
-        items: [
-            { label: "YES", value: "Y" },
-            { label: "NO", value: "N" },
-        ],
-    });
+   
+   
 
     const handleChange = (field: keyof Metal, value: any) => {
         setForm((prev) => {
@@ -236,6 +244,15 @@ function MetalMaster() {
         title?.("Metal List")
     };
 
+    const formFieldName = getFormFields.map(f=>f.name);
+
+    const {register ,focusFirst ,focusNext } = useEnterNavigation(formFieldName,()=>{
+        handleSave
+    });
+    useEffect(()=>{
+        focusFirst()
+    },[])
+
     return (
         <Box
             className={fontVariables}
@@ -259,91 +276,15 @@ function MetalMaster() {
 
                         <Fieldset.Root size="sm" width="100%">
                             <Fieldset.Content>
-                                <Grid gap={2}>
-                                    {/* METAL ID */}
-                                    <Box display="flex" alignItems="center" gap={2}>
-                                        <Box minW="80px" fontSize="2xs">METAL ID :</Box>
-                                        <CapitalizedInput
-                                            type="text"
-                                            field="metalId"
-                                            placeholder="Enter Id"
-                                            value={form.metalId || ""}
-                                            onChange={handleChange}
-                                            disabled={isEdit}
-                                            max={1}
-                                            size="2xs"
-                                            maxWidth="120px"
-                                            inputRef={metalIdRef}
-                                            onEnter={() => moveToNextField(metalNameRef)}
-                                        />
-                                    </Box>
-
-                                    {/* METAL NAME */}
-                                    <Box display="flex" alignItems="center" gap={2}>
-                                        <Box minW="80px" fontSize="2xs">METAL NAME :</Box>
-                                        <CapitalizedInput
-                                            field="metalName"
-                                            placeholder="Enter Metal Name"
-                                            value={form.metalName || ""}
-                                            onChange={handleChange}
-                                            size="2xs"
-                                            maxWidth="100%"
-                                            inputRef={metalNameRef}
-                                            onEnter={() => moveToNextField(displayOrderRef)}
-                                        />
-                                    </Box>
-
-                                    {/* DISPLAY ORDER */}
-                                    <Box display="flex" alignItems="center" gap={2}>
-                                        <Box minW="80px" fontSize="2xs">DISPLAY ORDER :</Box>
-                                        <CapitalizedInput
-                                            field="displayOrder"
-                                            placeholder="Enter displayOrder"
-                                            value={String(form.displayOrder || "")}
-                                            onChange={handleChange}
-                                            size="2xs"
-                                            type="number"
-                                            maxWidth="100%"
-                                            inputRef={displayOrderRef}
-                                            onEnter={() => moveToNextField(activeRef)}
-                                        />
-                                    </Box>
-
-                                    {/* ACTIVE */}
-                                    <Box display="flex" alignItems="center" gap={2}>
-                                        <Box minW="80px" fontSize="2xs">ACTIVE :</Box>
-                                        <NativeSelect.Root size="xs" minW="50px" fontSize="2xs">
-                                            <NativeSelect.Field
-                                                ref={activeRef}
-                                                value={form.active || "Y"}
-                                                onChange={(e) => handleChange("active", e.target.value)}
-                                                onKeyDown={(e) => {
-                                                    if (e.key === "Enter") {
-                                                        e.preventDefault();
-                                                        moveToNextField(saveButtonRef);
-                                                    }
-                                                }}
-                                                css={{
-                                                    backgroundColor: "#eee",
-                                                    color: "#111827",
-                                                    border: "1px solid #e5e7eb",
-                                                    borderRadius: "20px",
-                                                    height: "30px",
-                                                    fontSize: "10px",
-                                                }}
-                                            >
-                                                <For each={activeStatus.items}>
-                                                    {(item) => (
-                                                        <option key={item.value} value={item.value}>
-                                                            {item.label}
-                                                        </option>
-                                                    )}
-                                                </For>
-                                            </NativeSelect.Field>
-                                            <NativeSelect.Indicator />
-                                        </NativeSelect.Root>
-                                    </Box>
-                                </Grid>
+                                <DynamicForm 
+                                    fields={getFormFields}
+                                    formData={form}
+                                    onChange={handleChange}
+                                    register={register}
+                                    focusNext={focusNext}
+                                    minLabelWidth="80px"    
+                                    layout="vertical"
+                                />
 
                                 {/* BUTTONS */}
                                 <HStack pt={4} justifyContent="center">

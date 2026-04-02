@@ -56,6 +56,7 @@ export const ItemService = {
     update: async (payload: ItemMast) => {
         try {
             const response = await axiosInstance.put(`${BASE}/update`, payload);
+            console.log(response ,'response from api')
             return response.data;
         } catch (error: any) {
             console.error('Error updating item:', error?.response?.data || error.message);

@@ -187,7 +187,7 @@ export const SidebarProvider = ({ children }: { children: ReactNode }) => {
           },
           {
             label: "Sales",
-            route: "/dashboard/Transaction/Transaction/Sales",
+            route: "/dashboard/Transaction/Sales",
             icon: AiOutlineDollar,
           },
                     {

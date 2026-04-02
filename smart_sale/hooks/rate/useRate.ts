@@ -5,7 +5,7 @@ import { RatePayload } from "@/types/rate/rate";
 
 export const useRates = () => {
     return useQuery({
-        queryKey:['rates'],
+        queryKey:['latest-rates'],
         queryFn:RateEntryService.getLatestRate,
         select:(res)=>res.data
         
@@ -27,7 +27,8 @@ export const useCreateRate = () => {
     return useMutation({
         mutationFn: (payload: RatePayload) => RateEntryService.createRate(payload),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['rates'] });
+            queryClient.invalidateQueries({ queryKey: ['latest-rates'] });
+            
         }
     })
 }

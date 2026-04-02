@@ -40,6 +40,12 @@ import { bankAccountType } from "@/data/bankAccount/bankAccountTypes";
 import { SelectCombobox } from "@/components/ui/selectComboBox";
 import SearchBar from "@/component/search/SearchBar";
 
+import { BankAccountForm } from "@/config/master/BankAccountMaster";
+import { useEnterNavigation } from "@/component/form/useEnterNavigation";
+import { DynamicForm } from "@/component/form/DynamicForm";
+
+
+
 const EMPTY_FORM: BankAccount = {
     ACCOUNTNO: "",
     ACCOUNTTYPE: "",
@@ -68,6 +74,9 @@ function BankAccountMaster() {
     const updateMutation = useUpdatebankAccount();
 
     const bankAccountList = Array.isArray(allBankAccountsData?.data) ? allBankAccountsData.data : [];
+
+    const getFormFields = BankAccountForm(bankAccountType);
+
 
     const isEditing = !!editId;
 
@@ -182,6 +191,12 @@ function BankAccountMaster() {
         { key: "actions", label: "Actions", align: "center" as const },
     ];
 
+    const fieldName = getFormFields.map(f=>f.name);
+    const {register ,focusFirst ,focusNext } = useEnterNavigation(fieldName,handleSave)
+
+    useEffect(()=>{
+        focusFirst()
+    },[])
     return (
         <Box bg={theme.colors.primary}>
             <Toaster />
@@ -200,117 +215,16 @@ function BankAccountMaster() {
                             BANK ACCOUNT MASTER
                         </Text>
 
-                        <Fieldset.Root width="100%" fontSize="small" fontWeight='semibold'>
-                            <Fieldset.Content>
-                                <Grid gap={2}>
+                      <DynamicForm 
+                        fields={getFormFields}
+                        formData={form}
+                        onChange={handleChange}
+                        focusNext={focusNext}
+                        register={register}
+                        minLabelWidth="100px"
+                        layout="vertical"
 
-                                    {/* BANK A/C */}
-                                    <Box display="flex" alignItems="center" gap={2}>
-                                        <Box minW="110px" fontSize="2xs">BANK A/C * :</Box>
-                                        <CapitalizedInput
-                                            field="BANKAC"
-                                            value={form.BANKAC}
-                                            onChange={handleChange}
-                                            size="2xs"
-                                        />
-                                    </Box>
-
-                                    {/* ACCOUNT NUMBER */}
-                                    <Box display="flex" alignItems="center" gap={2}>
-                                        <Box minW="110px" fontSize="2xs">ACCOUNT NUMBER * :</Box>
-                                        <CapitalizedInput
-                                            field="ACCOUNTNO"
-                                            value={form.ACCOUNTNO}
-                                            onChange={handleChange}
-                                            size="2xs"
-                                            type="number"
-                                            max={99999999999999999999}
-
-                                        />
-                                    </Box>
-
-                                    {/* ACCOUNT HOLDER NAME */}
-                                    <Box display="flex" alignItems="center" gap={2}>
-                                        <Box minW="110px" fontSize="2xs">ACCOUNT HOLDER NAME * :</Box>
-                                        <CapitalizedInput
-                                            field="ACHOLDERNAME"
-                                            value={form.ACHOLDERNAME}
-                                            onChange={handleChange}
-                                            size="2xs"
-                                        />
-                                    </Box>
-
-                                    {/* ACCOUNT TYPE */}
-                                    <Box display="flex" alignItems="center" gap={2}>
-                                        <Box minW="110px" fontSize="2xs">ACCOUNT TYPE * :</Box>
-                                        <SelectCombobox
-                                            value={form.ACCOUNTTYPE}
-                                            onChange={(val) => handleChange("ACCOUNTTYPE", val)}
-                                            editId={editId}
-                                            items={bankAccountType}
-                                            placeholder="Select Type"
-                                        />
-                                    </Box>
-
-                                    {/* BANK NAME */}
-                                    <Box display="flex" alignItems="center" gap={2}>
-                                        <Box minW="110px" fontSize="2xs">BANK NAME * :</Box>
-                                        <CapitalizedInput
-                                            field="BANKNAME"
-                                            value={form.BANKNAME}
-                                            onChange={handleChange}
-                                            size="2xs"
-                                        />
-                                    </Box>
-
-                                    {/* BRANCH NAME */}
-                                    <Box display="flex" alignItems="center" gap={2}>
-                                        <Box minW="110px" fontSize="2xs">BRANCH NAME * :</Box>
-                                        <CapitalizedInput
-                                            field="BRANCHNAME"
-                                            value={form.BRANCHNAME}
-                                            onChange={handleChange}
-                                            size="2xs"
-                                        />
-                                    </Box>
-
-                                    {/* ADDRESS - span 2 */}
-                                    <Box display="flex" alignItems="center" gap={2} >
-                                        <Box minW="110px" fontSize="2xs">ADDRESS :</Box>
-                                        <Textarea
-                                            value={form.ADDRESS}
-                                            onChange={(e) => handleChange("ADDRESS", e.target.value.toUpperCase())}
-                                            fontSize="2xs"
-                                            textTransform="uppercase" // optional: visual only
-                                        />
-                                    </Box>
-
-                                    {/* OPENING BALANCE */}
-                                    <Box display="flex" alignItems="center" gap={2}>
-                                        <Box minW="110px" fontSize="2xs">OPENING BALANCE :</Box>
-                                        <CapitalizedInput
-                                            field="OPENINGBALANCE"
-                                            value={form.OPENINGBALANCE}
-                                            onChange={handleChange}
-                                            size="2xs"
-                                            type="number"
-                                        />
-                                    </Box>
-
-                                    {/* REMARKS */}
-                                    <Box display="flex" alignItems="center" gap={2}>
-                                        <Box minW="110px" fontSize="2xs">REMARKS :</Box>
-                                        <CapitalizedInput
-                                            field="REMARKS"
-                                            value={form.REMARKS}
-                                            onChange={handleChange}
-                                            size="2xs"
-                                        />
-                                    </Box>
-
-                                </Grid>
-                            </Fieldset.Content>
-                        </Fieldset.Root>
+                      />
 
 
 

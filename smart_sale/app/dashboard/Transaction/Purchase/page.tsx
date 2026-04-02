@@ -17,7 +17,7 @@ import lodash from "lodash";
 
 
 import { useTheme } from "@/context/theme/themeContext";
-import { toaster, Toaster } from "@/components/ui/toaster";
+import { toaster } from "@/components/ui/toaster";
 import { useListCollection, useFilter } from "@chakra-ui/react";
 import { useOpeningBalance } from "@/hooks/balance/useOpeningBalance";
 
@@ -25,9 +25,7 @@ import { useOpeningBalance } from "@/hooks/balance/useOpeningBalance";
 import TransactionHeaderForm from "./TransactionHeaderForm/TransactionHeaderForm";
 import TransactionTypeSelector from "./TransactionTypeSelector/TransactionTypeSelector";
 import DraftTransactionTable from "./DraftTransactionTable/DraftTransactionTable";
-import SaveTransactionBar from "./SaveTransactionBar/TransactionBar";
 import RightSideDetailsPanel from "./RightSideDetailsPanel/RightSideDetailsPanel";
-import { FloatingActionButton } from "@/components/ui/FloatingActionButton";
 import StockDrawer from "./DrawerTable/StockTable";
 import { useAllMetals } from "@/hooks/metal/useMetals";
 import Loader from "@/component/loader/Loader";
@@ -55,12 +53,17 @@ import { useAllBankAccounts, useBankAccount } from "@/hooks/bankAccount/useBankA
 import { useSessionStorage } from "@/hooks/storage/useSessionStorage";
 
 // Types & Constants
-import { TransactionType, UpdateTransactionPayload, TransactionKey, CreateTransaction, TransactionItems, TRANSACTION_KEY_MAP, ClosingDetails } from "@/types/transcation/Transaction";
+import { TransactionType, UpdateTransactionPayload, TransactionKey, CreateTransaction, TransactionItems, TRANSACTION_KEY_MAP, ClosingDetails ,WeightInfo , purchasereturnPayload ,purchasePayload} from "@/types/transcation/Transaction";
 import { TRANSACTIONTYPES } from "@/data/Transaction/TransactionType";
 import { BankTransaction } from "./Balance/BankTransactionModal";
 
+
+
 //Utilities
 import { formatToFixed} from '@/utils/format/numberFormat';
+
+import { getTagDetails } from "@/service/TagedService";
+
 
 //Icons
 type StoneRow = {
@@ -172,6 +175,7 @@ export default function PurchasePage() {
 
     const {data:metalRates ,isLoading:metalRatesLoading ,isError:metalRatesError} = useRates();
 
+
     /*-------------------PERSISTENT STATE-------------------------------*/
 
 
@@ -202,7 +206,6 @@ export default function PurchasePage() {
         }, 1000);
         return () => clearTimeout(timer);
     }, []);
-
 
 
     // Transaction header state
@@ -268,11 +271,11 @@ export default function PurchasePage() {
     const { theme } = useTheme();
     const { data: itemsData } = useItems();
 
-    const { data: tagData, isLoading: isTagLoading, refetch: tagDetailRefetch } = useTagedDetailsByTagNo(pendingTagNo);
-   
-    console.log(tagData ,'tagData');
+    const { data: tagData, refetch: tagDetailRefetch } =useTagedDetailsByTagNo(pendingTagNo, Number(headerForm.CUSTOMER));
 
 
+
+  
     const filters = {
         accountType: "PR"
     }
@@ -291,7 +294,6 @@ export default function PurchasePage() {
             ([_, value]) => value !== undefined && value !== ""
         )
     );
-    console.log(filter, cleanedFilters,'cleanedFilters')
 
 
 
@@ -321,7 +323,6 @@ export default function PurchasePage() {
         }
         return [];
     }, [bankAccounts]);
-    console.log(allBankAccounts,'allBankAccounts')
 
 
     const updateTransaction = useUpdateTransaction();
@@ -329,7 +330,6 @@ export default function PurchasePage() {
 
     const { data: openingBalance ,refetch:openingBalanceRefetch  } = useOpeningBalance(Number(accCode));
 
-    console.log(openingBalance,'openingBalance')
 
 
     // Note: This hook might need to be updated to handle multiple transaction types
@@ -342,9 +342,6 @@ export default function PurchasePage() {
     );
     
 
-    console.log(transactionList,'transactionList');
-    console.log(isEditing,'isEditing');
-    console.log(headerForm,'headerFormTransaction');
 
 
     const transactionIdsList = useMemo(() => {
@@ -357,7 +354,6 @@ export default function PurchasePage() {
         }));
     }, [transactionList]);
 
-    console.log(transactionIdsList, 'transactionIdsList')
     useEffect(() => {
         if (!headerForm.CUSTOMER) {
             // Clear both BILLNO and ENTRYNO when no customer is selected
@@ -448,7 +444,6 @@ export default function PurchasePage() {
 
         setMetalList(fetchedData);
     }, [metalsData]);
-    console.log(otherChargesData,'otherChargers')
 
     useEffect(() => {
         if (!otherChargesData) return;
@@ -500,7 +495,7 @@ export default function PurchasePage() {
     const getDraftRowTempId = () => {
         if (!draftRowTempId.current) {
             draftRowTempId.current = `draft-form-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
-            console.log(`Created new draft row temp ID: ${draftRowTempId.current}`);
+       
         }
         return draftRowTempId.current;
     };
@@ -510,7 +505,6 @@ export default function PurchasePage() {
         draftRowTempId.current = null;
     };
 
-    console.log(selectedTransactionTypes,'selectedTransactionTypes')
 
     // KEY TO ACCESS
 
@@ -525,13 +519,13 @@ export default function PurchasePage() {
         const pureIdStr = String(pureId);
         const { excludeRowId, transactionTypeCode, field = 'WT' } = options || {};
 
-        console.log('getUsedQuantityByPureId called:', {
-            pureId: pureIdStr,
-            transactionTypeCode,
-            field,
-            excludeRowId,
-            draftRowsCount: draftRows.length
-        });
+        // console.log('getUsedQuantityByPureId called:', {
+        //     pureId: pureIdStr,
+        //     transactionTypeCode,
+        //     field,
+        //     excludeRowId,
+        //     draftRowsCount: draftRows.length
+        // });
 
         const filteredRows = draftRows.filter(row => {
             // Skip the excluded row
@@ -552,35 +546,35 @@ export default function PurchasePage() {
 
             // If transactionTypeCode is specified, filter by it
             if (transactionTypeCode && transactionType.code !== transactionTypeCode) {
-                console.log('Transaction type mismatch:', {
-                    expected: transactionTypeCode,
-                    actual: transactionType.code
-                });
+                // console.log('Transaction type mismatch:', {
+                //     expected: transactionTypeCode,
+                //     actual: transactionType.code
+                // });
                 return false;
             }
 
-            console.log('Row included:', {
-                rowId: row.__rowId,
-                PUREID: row.PUREID,
-                transactionType: transactionType.code,
-                [field]: row[field]
-            });
+            // console.log('Row included:', {
+            //     rowId: row.__rowId,
+            //     PUREID: row.PUREID,
+            //     transactionType: transactionType.code,
+            //     [field]: row[field]
+            // });
             return true;
         });
 
         const sum = filteredRows.reduce((sum, row) => {
             const value = Number(row[field]) || 0;
-            console.log(`Adding ${field}:`, value, 'from row:', row.__rowId);
+            // console.log(`Adding ${field}:`, value, 'from row:', row.__rowId);
             return sum + value;
         }, 0);
 
-        console.log('getUsedQuantityByPureId result:', {
-            pureId: pureIdStr,
-            transactionTypeCode,
-            field,
-            filteredRowsCount: filteredRows.length,
-            sum
-        });
+        // console.log('getUsedQuantityByPureId result:', {
+        //     pureId: pureIdStr,
+        //     transactionTypeCode,
+        //     field,
+        //     filteredRowsCount: filteredRows.length,
+        //     sum
+        // });
 
         return sum;
     }, [draftRows]);
@@ -808,17 +802,17 @@ export default function PurchasePage() {
             }
         });
 
-        console.log({
-            openPure: parseFloat(openPure.toFixed(3)),
-            openCash: parseFloat(openCash.toFixed(2))
-        }, 'final opening balances');
+        // console.log({
+        //     openPure: parseFloat(openPure.toFixed(3)),
+        //     openCash: parseFloat(openCash.toFixed(2))
+        // }, 'final opening balances');
 
         return {
             openPure: parseFloat(openPure.toFixed(3)),
             openCash: parseFloat(openCash.toFixed(2))
         };
     }
-    console.log(accCode, apiBalanceOpening,'apiBalanceOpening')
+    // console.log(accCode, apiBalanceOpening,'apiBalanceOpening')
 
 
     // Single useEffect to calculate balances when either draftRows or API balances change
@@ -972,7 +966,7 @@ export default function PurchasePage() {
             try {
                 const parsed = JSON.parse(savedDraft);
                 setDraftRows(parsed);
-                console.log('parsed')
+                // console.log('parsed')
             } catch (e) {
                 console.error("Failed to parse draft:", e);
                 localStorage.removeItem(DRAFT_KEY);
@@ -1046,7 +1040,7 @@ export default function PurchasePage() {
 
 
     const handleRowClick = (row: any, clickedTransactionType: string) => {
-        console.log('Row clicked:', row, 'Type:', clickedTransactionType);
+        // console.log('Row clicked:', row, 'Type:', clickedTransactionType);
         setEditingState({
             rowId: row.__rowId,
             transactionType: clickedTransactionType
@@ -1055,7 +1049,7 @@ export default function PurchasePage() {
     
     };
     const handleCancelEdit = useCallback(() => {
-        console.log('Cancelling edit, editingState:', editingState);
+        // console.log('Cancelling edit, editingState:', editingState);
 
         // Remove temp row ONLY for the current transaction type
         if (editingState.rowId?.toString().startsWith('draft-form-') && editingState.transactionType) {
@@ -1142,8 +1136,8 @@ export default function PurchasePage() {
         // Remove duplicate transaction types
         const uniqueTransactionTypes = [...new Set(transactionTypes)];
 
-        console.log('Detected transaction types:', uniqueTransactionTypes);
-        console.log('Total transaction items:', allTransactionItems.length);
+        // console.log('Detected transaction types:', uniqueTransactionTypes);
+        // console.log('Total transaction items:', allTransactionItems.length);
 
         // 1. Load transaction details into header form
         if (transactionHeaderDetails) {
@@ -1203,7 +1197,7 @@ export default function PurchasePage() {
                 const foundTypes = TRANSACTIONTYPES.filter(t => uniqueTransactionTypes.includes(t.code));
                 if (foundTypes.length > 0) {
                     setSelectedTransactionTypes(foundTypes);
-                    console.log('Set transaction types to:', foundTypes);
+                    // console.log('Set transaction types to:', foundTypes);
                 }
             }
         }
@@ -1329,7 +1323,7 @@ export default function PurchasePage() {
             // Save stones to localStorage
             if (allStones.length > 0) {
                 localStorage.setItem(STONE_MASTER_KEY, JSON.stringify(allStones));
-                console.log('Loaded stones to localStorage:', allStones);
+                // console.log('Loaded stones to localStorage:', allStones);
             } else {
                 localStorage.removeItem(STONE_MASTER_KEY);
             }
@@ -1337,7 +1331,7 @@ export default function PurchasePage() {
             // Save charges to localStorage
             if (allCharges.length > 0) {
                 localStorage.setItem("MISC_CHARGE_MASTER", JSON.stringify(allCharges));
-                console.log('Loaded charges to localStorage:', allCharges);
+                // console.log('Loaded charges to localStorage:', allCharges);
             } else {
                 localStorage.removeItem("MISC_CHARGE_MASTER");
             }
@@ -1892,9 +1886,11 @@ console.log(typeRows,'typeRows')
      Normalize Handler with Stone Details Support
   ================================ */
 
-    const normalizeRowForApi = (row: any, isIssue: boolean ,editTransaction?:boolean) => {
-
-     
+     const normalizeRowForApi = (
+        row: any,
+        tranType: TransactionKey,
+        editTransaction?: boolean
+    ): any => {
         const {
             __rowId,
             __isNew,
@@ -1902,73 +1898,82 @@ console.log(typeRows,'typeRows')
             __manual_AWT,
             __manual_ATOUCH,
             __manual_APUREWT,
-            // Don't destructure these - we want to keep them
-            // _stoneTempId, _stones, _stoneTotalWeight,
-            // _miscTempId, _miscCharges, _miscTotalAmount,
+            _stones,
+            _miscCharges,
             ...rest
         } = row;
 
-        if (isIssue) {
+        if (tranType === "issue" || tranType === "receipt") {
+            // Generic weight-based transaction
             return {
                 PUREID: rest.PUREID ? Number(rest.PUREID) : undefined,
                 WT: Number(rest.WT || 0),
                 TOUCH: Number(rest.TOUCH || 0),
-                PUREWT: Number(rest.PURE || 0),
+                PUREWT: Number(rest.PUREWT || 0),
                 AWT: Number(rest.AWT || 0),
                 ATOUCH: Number(rest.ATOUCH || 0),
                 APUREWT: Number(rest.APUREWT || 0),
-            };
+            } as WeightInfo;
         }
 
-        return {
-            ITEMID: rest.ITEMID ? String(rest.ITEMID) : undefined,
-            PCS: Number(rest.PCS || 0),
+        if (tranType === "purchase") {
+            const payload: purchasePayload = {
+                ITEMID: rest.ITEMID ? Number(rest.ITEMID) : null,
+                PCS: Number(rest.PCS || 0),
+                GRSWT: Number(rest.GRSWT || 0),
+                STNWT: Number(rest.STNWT || 0),
+                NETWT: Number(rest.NETWT || 0),
+                WASTYPE: String(rest.WASTYPE || "TOUCH"),
+                TOUCH: Number(rest.TOUCH || 0),
+                PUREWT: Number(rest.PUREWT || 0),
+                HMC: Number(rest.HMC || 0),
+                STNAMT: Number(rest.STNAMT || 0),
+                MC: Number(rest.MC || 0),
+                ...(editTransaction && { SNO: String(rest.SNO || "") }),
+                ...(rest.DESCRIPTION && { DESCRIPTION: rest.DESCRIPTION }),
+                ...(_stones && _stones.length > 0 && {
+                    STONEDETAILS: _stones.map((stone: any) => ({
+                        stoneId: stone.stoneId,
+                        subStoneId: stone.subStoneId,
+                        stonePcs: stone.stonePcs,
+                        stoneWeight: stone.stoneWeight,
+                        stoneUnit: stone.stoneUnit,
+                        stoneCalculation: stone.stoneCalculation,
+                        stoneRate: stone.stoneRate,
+                        stoneAmount: stone.stoneAmount,
+                    })),
+                }),
+                ...(_miscCharges && _miscCharges.length > 0 && {
+                    OTHERCHARGESDETAILS: _miscCharges.map((charge: any) => ({
+                        chargeId: Number(charge.chargeName),
+                        chargeAmount: Number(charge.amount),
+                    })),
+                }),
+            };
+            return payload;
+        }
 
-            // ✅ Only add SNO when editing
-            ...(editTransaction && {
-                SNO: String(rest.SNO || ""),
-            }),
+        if (tranType === "purchase_return") {
+            const payload: purchasereturnPayload = {
+                ITEMID: rest.ITEMID ? Number(rest.ITEMID) : null,
+                TAGNO: rest.TAGNO || "",
+                PCS: Number(rest.PCS || 0),
+                GRSWT: Number(rest.GRSWT || 0),
+                STNWT: Number(rest.STNWT || 0),
+                NETWT: Number(rest.NETWT || 0),
+                WASTYPE: String(rest.WASTYPE || "TOUCH"),
+                TOUCH: Number(rest.TOUCH || 0),
+                PUREWT: Number(rest.PUREWT || 0),
+                HMC: Number(rest.HMC || 0),
+                STNAMT: Number(rest.STNAMT || 0),
+                MC: Number(rest.MC || 0),
+                ...(editTransaction && { SNO: String(rest.SNO || "") }),
+                ...(rest.DESCRIPTION && { DESCRIPTION: rest.DESCRIPTION }),
+            };
+            return payload;
+        }
 
-            GRSWT: Number(rest.GRSWT || 0),
-            STNWT: Number(rest.STNWT || 0),
-            NETWT: Number(rest.NETWT || 0),
-
-
-            WASTYPE: String(rest.WASTYPE || 'TOUCH'),
-
-            // WASPER: Number(rest.WASPER || 0),
-            // WASTAGE: Number(rest.WASTAGE || 0),
-            TOUCH: Number(rest.TOUCH || 0),
-            // ATOUCH: Number(rest.ATOUCH || 0),
-            PUREWT: Number(rest.PUREWT || 0),
-
-            
-            HMC:Number(rest.HMC || 0),
-            MC: Number(rest.MC || 0),
-            STNAMT:Number(rest.STNAMT || 0),
-
-            // Include stone details if they exist
-            ...(row._stones && row._stones.length > 0 && {
-                STONEDETAILS: row._stones.map((stone: any) => ({
-                    stoneId: stone.stoneId,
-                    subStoneId: stone.subStoneId,
-                    stonePcs: stone.stonePcs,
-                    stoneWeight: stone.stoneWeight,
-                    stoneUnit: stone.stoneUnit,
-                    stoneCalculation: stone.stoneCalculation,
-                    stoneRate: stone.stoneRate,
-                    stoneAmount: stone.stoneAmount,
-                }))
-            }),
-
-            // Include other charges if they exist
-            ...(row._miscCharges && row._miscCharges.length > 0 && {
-                OTHERCHARGESDETAILS: row._miscCharges.map((charge: any) => ({
-                    chargeId: Number(charge.chargeName),
-                    chargeAmount: charge.amount,
-                }))
-            })
-        };
+        return null;
     };
 
 
@@ -2137,6 +2142,7 @@ console.log(typeRows,'typeRows')
 
         draftRows.forEach(row => {
             const mappedType = TRANSACTION_KEY_MAP[row.TRANSACTION_TYPE];
+            console.log(mappedType ,'mappedTypeAtsave')
             if (!mappedType) return;
 
             if (!transactionDetails[mappedType]) transactionDetails[mappedType] = [];
@@ -2159,7 +2165,7 @@ console.log(typeRows,'typeRows')
 
             const normalized = normalizeRowForApi(
                 row,
-                mappedType === "issue" || mappedType === "receipt"
+                mappedType 
             );
 
             const rowWithStones = {
@@ -2197,6 +2203,8 @@ console.log(typeRows,'typeRows')
             TRANSACTION_DETAILS: transactionDetails,
             CLOSING_DETAILS: getClosingDetailsPayload()
         };
+console.log('createTransactionPayload',payload)
+        return;
 
         createTransaction.mutate(payload, {
             onSuccess: () => {
@@ -2308,8 +2316,8 @@ console.log(typeRows,'typeRows')
 
                 if (!transactionDetails[mappedType]) transactionDetails[mappedType] = [];
 
-                const isIssue = mappedType === "issue" || mappedType === "receipt";
-                const normalized = normalizeRowForApi(row, isIssue , true);
+            
+                const normalized = normalizeRowForApi(row, mappedType, true);
 
           
                 (transactionDetails[mappedType] as any[]).push(normalized);
@@ -2486,27 +2494,23 @@ console.log(typeRows,'typeRows')
     /* ================================
        Render
     ================================ */
-    const pageLoading = isLoading || getbySnoLoading || createTransaction.isPending;
+    const pageLoading = false;
 
     console.log(closingDetails,'parentclosingDetails');
 
 
     const handleTagChange = () => setIsTag(prev => !prev);
 
-    const handleTagNoLookup = async (tagNo: string): Promise<{
-        GRSWT: number; STNWT: number; NETWT: number; WASPER: number;
-        DIAWT: number; MC: number; TOUCH: number; SALESSTNWT: number;
-        SIZEID: number; ITEMID?: string; PCS?: number;
-    } | null> => {
-        if (!tagNo?.trim()) return null;
+const handleTagNoLookup = useCallback(
+    async (id: string) => {
 
-        try {
-            setPendingTagNo(tagNo);
-            const result = await tagDetailRefetch();
-            const data = result.data;
-            if (!data) return null;
-            console.log(data,'tagDetails')
-            return {
+        if (!id?.trim()) return null;
+        const response = await getTagDetails(id, Number(headerForm.CUSTOMER));
+        const data=response.data ;
+
+        if (!data) return null;
+
+        return {
                 GRSWT: Number(data.GRSWT) || 0,
                 STNWT: Number(data.STNWT) || 0,
                 NETWT: Number(data.NETWT) || 0,
@@ -2518,34 +2522,25 @@ console.log(typeRows,'typeRows')
                 SIZEID: Number(data.SIZEID) || 0,
                 ITEMID: data.ITEMID ? String(data.ITEMID) : undefined,
                 PCS: 1,
+                TAGNO:String(data.TAGNO)
             };
-        } catch (error) {
-            console.error('Tag lookup failed:', error);
-            return null;
-        }
-    };
-
-    useEffect(() => {
-        if (pendingTagNo) {
-            tagDetailRefetch();
-        }
-    }, [pendingTagNo, tagDetailRefetch]);
-
-    console.log(pendingTagNo, 'pendingTagNo');
-    console.log(tagData,'tag details')
-    
-
+        }    
+  ,
+    [headerForm.CUSTOMER] // ✅ IMPORTANT
+);
     return (
         <>
+        <Box display={'flex'} bg={theme.colors.formColor} fontSize={'md'} fontWeight={'bold'} justifyContent={'center'} p={1} mb={1} rounded={'xl'}>
+                        PURCHASE
+            </Box>
         <Flex gap={1} >
-            <Toaster />
 
             {/* Loading indicator for transaction data */}
-            {getbySnoLoading && (
+            {/* { pageLoading && (
                 <Box position="fixed" top="50%" left="50%" transform="translate(-50%, -50%)" zIndex={1000}>
-                    <Loader isLoading={true} />
+                    <Loader isLoading={true} fullscreen={true} content="Waiting for the response" />
                 </Box>
-            )}
+            )} */}
 
             {/* LEFT – 70% */}
                 <Box display='flex' gap={1} w='80%' >

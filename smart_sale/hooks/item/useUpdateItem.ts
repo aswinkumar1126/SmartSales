@@ -15,7 +15,7 @@ export const useUpdateItem = () => {
         },
         onError: () => {
             console.error("Error updating item");
-            toastError("Item")
+            toastError("Item");
         }
     });
 };

@@ -87,9 +87,12 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
 
     const submitBtnRef = useRef<HTMLButtonElement>(null);
 
+
+
     const enableScroll = rows.length > 10;
     const rowHeight = 40; // approx for size="sm"
     const maxBodyHeight = rowHeight * 4;
+    
     return (
         <Box
             borderWidth="1px"

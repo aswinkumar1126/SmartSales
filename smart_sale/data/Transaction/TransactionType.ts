@@ -5,6 +5,7 @@ import {
     RotateCcw,
 } from "lucide-react";
 import { TransactionType } from "@/types/transcation/Transaction";
+import { SaleTransactionType } from "@/types/transcation/SaleTransaction";
 
 export const TRANSACTIONTYPES: TransactionType[] = [
     {
@@ -38,24 +39,32 @@ export const TRANSACTIONTYPES: TransactionType[] = [
     
 ];
 
-export const SALETRANSACTIONTYPES = [
+export const SALETRANSACTIONTYPES: SaleTransactionType[] = [
     {
-        label: "ISSUE",
+        code: "IS",
+        key: "issue",
+        label: "ADD ISSUE",
         value: "IS",
         icon: ArrowUpRight,
     },
     {
-        label: "SALES",
+        code: "SA",
+        key: "sales",
+        label: "ADD SALES",
         value: "SA",
         icon: ShoppingCart,
     },
     {
-        label: "RECEIPT",
+        code: "RE",
+        key: "receipt",
+        label: "ADD RECEIPT",
         value: "RE",
         icon: Wallet,
     },
     {
-        label: "SALES RETURN",
+        code: "SR",
+        key: "sales_return",
+        label: "ADD SALES RETURN",
         value: "SR",
         icon: RotateCcw,
     },

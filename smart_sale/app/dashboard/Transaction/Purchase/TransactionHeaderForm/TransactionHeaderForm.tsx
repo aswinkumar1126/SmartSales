@@ -19,8 +19,6 @@ interface TransactionHeaderFormProps {
     openingBalance: any;
     openingData: any;
     isEditing?: boolean;
-    // entryNo?: string;
-    // billNo?: string;
 }
 
 export default function TransactionHeaderForm({
@@ -64,7 +62,7 @@ export default function TransactionHeaderForm({
         if (!date) return "";
         return date.toISOString().split("T")[0];
     };
-    console.log(openingBalance,'openingBalance')
+    
 
     const openingCash = openingBalance.openCash ? formatToFixed(openingBalance.openCash, 2) : 0;
     const openingPure = openingBalance.openPure ? formatToFixed(openingBalance.openPure, 3) : 0;

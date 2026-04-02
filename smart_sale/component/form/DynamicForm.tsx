@@ -119,7 +119,7 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
                             disabled={isDisabled}
                             size={field.size || "xs"}
                             placeholder={field.placeholder || `Select ${field.label}`}
-                            maxW={field.maxW || field.maxWidth || field.width}
+                            minW={field.minWidth || field.width}
                             // rounded={field.rounded}
                             fontSize={field.fontSize || "10px"}
                             className={field.className}
@@ -128,6 +128,7 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
                             items={field.items || field.options || []}
                             onEnter={() => focusNext(field.name)}
                             onBlur={() => handleBlur(field.name)}
+                            maxWidth={field.width || field.maxW || field.maxWidth}
                         />
                
                 

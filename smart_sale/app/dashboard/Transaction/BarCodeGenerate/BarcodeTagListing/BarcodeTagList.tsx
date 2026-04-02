@@ -43,6 +43,7 @@ export const BarcodeTagListing: React.FC<TagListProps> = ({
     collections,
     onFilterChange, // Make sure this is received
 }) => {
+    const today =new Date().toISOString().split('T')[0]
     const { theme } = useTheme();
     const { data: items, isLoading, isError } = useItems();
 
@@ -83,9 +84,9 @@ export const BarcodeTagListing: React.FC<TagListProps> = ({
             handleEditTagTransaction?.(String(tagListItems[next].ENTRYNO));
         }
 
-        if (e.key === "Enter" && selectedIndex >= 0) {
-            handleEditTagTransaction?.(String(tagListItems[selectedIndex].ENTRYNO));
-        }
+        // if (e.key === "Enter" && selectedIndex >= 0) {
+        //     handleEditTagTransaction?.(String(tagListItems[selectedIndex].ENTRYNO));
+        // }
     };
 
     // Auto-scroll active item into view
@@ -128,8 +129,8 @@ export const BarcodeTagListing: React.FC<TagListProps> = ({
         console.log("Clearing all filters");
 
         const emptyFilters = {
-            FROMDATE: '',
-            TODATE: '',
+            FROMDATE: today,
+            TODATE: today,
             ITEMID: '',
             ACCODE: '',
             ENTRYNO: '',
@@ -166,8 +167,8 @@ export const BarcodeTagListing: React.FC<TagListProps> = ({
                 itemOptions={itemOptions}
                 accodeOptions={collections?.acCodeCollection || []}
                 initialFilters={{
-                    fromDate: filterParams.FROMDATE || "",
-                    toDate: filterParams.TODATE || "",
+                    fromDate: filterParams.FROMDATE || today||"",
+                    toDate: filterParams.TODATE || today|| "",
                     entryNo: filterParams.ENTRYNO || "",
                     lotNumber: filterParams.PUENTRYNO || "",
                     tagNumber: filterParams.TAGNO || "",

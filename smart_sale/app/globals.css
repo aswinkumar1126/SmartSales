@@ -81,13 +81,13 @@ body {
   height: 30px;
 }
 .chakra-datepicker-popper {
-  z-index: 999999 !important;
+  z-index: 9999 !important;
 }
 
 .react-datepicker-popper {
-  z-index: 999999 !important;
+  z-index: 9999 !important;
 }
 
 .react-datepicker {
-  z-index: 999999 !important;
+  z-index: 9999 !important;
 }

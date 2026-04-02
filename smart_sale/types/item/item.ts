@@ -48,7 +48,7 @@ export interface ItemMast {
     sizeStock: "Y" | "N" | null;
     stockReport: "Y" | "N" | null;
     studded: "Y" | "N" | null;
-    studdedStone: "Y" | "N" | null;
+    studdedStone: "T" | "D" | null;
     subItem: "Y" | "N" | null;
     tagImage: "Y" | "N" | null;
     tagLock: "Y" | "N" | null;

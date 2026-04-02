@@ -80,8 +80,6 @@ export const SearchDrawer: React.FC<SearchDrawerProps> = ({
             name: "fromDate",
             label: "From Date",
             type: "date",
-            placeholder: "From Date",
-            dateFormat: "dd-MM-yyyy",
             maxWidth: "100%",
             colSpan: 2,
             size: 'xs'
@@ -91,11 +89,8 @@ export const SearchDrawer: React.FC<SearchDrawerProps> = ({
             name: "toDate",
             label: "To Date",
             type: "date",
-            placeholder: "To Date",
-            dateFormat: "dd-MM-yyyy",
             maxWidth: "100%",
             size: 'xs',
-            fontSize: 'xs',
             colSpan: 2,
         },
         {
@@ -200,10 +195,8 @@ export const SearchDrawer: React.FC<SearchDrawerProps> = ({
 
     const searchFieldsNames = searchFields.map(f => f.name);
 
-    const { register, focusFirst, focusNext } = useEnterNavigation(searchFieldsNames, () => {
-        handleSearch();
-        setTimeout(() => focusFirst(), 100);
-    });
+    const { register, focusFirst, focusNext } = useEnterNavigation(searchFieldsNames);
+
 
     return (
         <>
@@ -219,11 +212,11 @@ export const SearchDrawer: React.FC<SearchDrawerProps> = ({
                 </Tooltip>
             )}
 
-            <Drawer.Root open={isOpen} onOpenChange={handleClose}>
+            <Drawer.Root open={isOpen} onOpenChange={handleClose} size={'sm'}>
                 <Portal>
-                    <Drawer.Backdrop />
+                    <Drawer.Backdrop pointerEvents="none" />  {/* 🔥 FIX */}
                     <Drawer.Positioner>
-                        <Drawer.Content>
+                        <Drawer.Content pointerEvents="auto"> {/* 🔥 FIX */}
                             <Drawer.Header>
                                 <Drawer.Title>Search Filters</Drawer.Title>
                             </Drawer.Header>

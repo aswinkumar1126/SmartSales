@@ -19,5 +19,6 @@ export const getItemSizeFields = (collection: { itemCollection?: { label: string
         size: "xs",
         rounded: "sm",
         required: true,
+      
     },
 ];

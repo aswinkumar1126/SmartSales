@@ -1,14 +1,19 @@
 "use client";
 import { useApiQuery ,useApiMutation } from "../apiHook/ApiHook";
-import { CreateTag, getTagedEntryNo, getSingleTagDetail, getTagedEntryNoParams } from "@/types/tagging/Tag";
+import { CreateTag, getTagedEntryNo, getSingleTagDetail, getTagedEntryNoParams, getTagedEntryNoParamsForApi } from "@/types/tagging/Tag";
 import { ApiResponse } from "@/types/api/apiResponse";
 
-export const useTagEntryNos = (params:getTagedEntryNoParams | undefined) => {
-    return useApiQuery<ApiResponse<getTagedEntryNo> ,getTagedEntryNoParams>(
+export const useTagEntryNos = (params:getTagedEntryNoParamsForApi) => {
+    return useApiQuery<ApiResponse<getTagedEntryNo> ,getTagedEntryNoParamsForApi>(
+
         {
             url: '/tagged',
             method: 'GET',
-            queryKey: ['tag-details'],
+            queryKey: [
+                'tag-details',
+                JSON.stringify(params)
+            ],
+
             select: (data) => data.data,
             params:params
         }
@@ -26,12 +31,14 @@ export const useTagedDetailsByEntryNo = (id: string) => {
 };
 
 
-export const useTagedDetailsByTagNo = (id: string) => {
+export const useTagedDetailsByTagNo = (id: string, ACCODE: number) => {
     return useApiQuery<getSingleTagDetail & { id: string }>({
-        url: `/tagged/singleTag/${id}`,   // direct usage
+        url: `/tagged/singleTag/${id}`,
         method: 'GET',
         queryKey: ['tag-detail', id],
         select: (res) => res.data,
-        enabled: !!id,
+        enabled: false,
+        params: { ACCODE }
+        
     });
 };

@@ -57,6 +57,9 @@ import { transactionTypes } from "@/data/stock/TransactionTypeData";
 import { useAllAccountHead } from "@/hooks/accountHead/useAccountHead";
 import { useAllMetals } from "@/hooks/metal/useMetals";
 
+import { OrnamentOpeningFields } from "@/config/opening/ornamentOpening";
+import { DynamicForm } from "@/component/form/DynamicForm";
+import { useEnterNavigation } from "@/component/form/useEnterNavigation";
 
 function OrnamentMaster() {
     /* -------------------- FORM STATE -------------------- */
@@ -93,14 +96,14 @@ function OrnamentMaster() {
 
     const [errors, setErrors] = React.useState<OrnamentErrors>({});
 
-    // const accountType = form.stockType?.trim().toUpperCase() || undefined;
+
+    const ornamentFields = OrnamentOpeningFields(itemCollection);
+
     /* -------------------- DATA -------------------- */
     const { data: itemsData } = useItems();
     const { setData, setColumns, setShowSno, title } = usePrint();
 
-    // console.log(accountType, 'accountType')
-
-    // const { data: allAccounts, refetch: accountRefetch } = useAllAccountHead(accountType);
+    //
     const { data: metalData } = useAllMetals();
 
 
@@ -122,21 +125,6 @@ function OrnamentMaster() {
     }, [itemsData?.items]);
 
 
-    // const allAccountsList = useMemo(() => {
-    //     const accounts = Array.isArray(allAccounts?.data?.acheads) ? allAccounts.data.acheads : [];
-    //     return accounts.map((acc: any) => ({
-    //         label: acc.ACNAME,
-    //         value: String(acc.ACCODE),
-    //     }));
-    // }, [allAccounts]);
-
-    const allMetalList = useMemo(() => {
-        const metalList = Array.isArray(metalData) ? metalData : [];
-        return metalList.map((acc: any) => ({
-            label: acc.metalName,
-            value: acc.metalId,
-        }));
-    }, [metalData]);
 
 
     /* -------------------- EDIT FETCH -------------------- */
@@ -159,10 +147,7 @@ function OrnamentMaster() {
 
 
         setForm({
-            // stockType: o.stockType ?? "CY",
-            // accode: o.accode ? String(o.accode) : "",
-            // tranType: o.tranType ?? "IS",
-            // metalId: o.metalId ?? "G",
+
             itemId: o.itemId ? String(o.itemId) : "",
             pcs: o.pcs ? String(o.pcs) : "",
             grswt: o.grswt ? String(o.grswt) : "",
@@ -172,7 +157,6 @@ function OrnamentMaster() {
             stnwt: o.stnwt ? String(o.stnwt) : "",
             openCash: o.openCash ? String(o.openCash) : "",
             stnAmt: o.stnAmt ? String(o.stnAmt) : "",
-            // actualtouch: o.actualtouch ? String(o.actualtouch) :"",
         });
     }, [editResponse]);
 
@@ -215,10 +199,7 @@ function OrnamentMaster() {
     };
 
     const toPayload = (form: OrnamentFormData): OrnamentPayload => ({
-        // stockType: form.stockType,
-        // accode: Number(form.accode),
-        // tranType: form.tranType,
-        // metalId: form.metalId,
+       
         itemId: Number(form.itemId),
         pcs: Number(form.pcs),
         grswt: Number(form.grswt),
@@ -234,10 +215,7 @@ function OrnamentMaster() {
     const resetForm = () => {
         setEditId(null);
         setForm({
-            // stockType: "CY",
-            // accode: "",
-            // tranType: "IS",
-            // metalId: "G",
+           
             itemId: "",
             pcs: "",
             grswt: "",
@@ -247,7 +225,6 @@ function OrnamentMaster() {
             stnwt: "",
             openCash: "",
             stnAmt: "",
-            // actualtouch:"",
         });
     };
 
@@ -276,17 +253,10 @@ function OrnamentMaster() {
                 { field: "netwt", condition: () => !!form.netwt && Number(form.netwt) > 0, message: "Net weight must be greater than 0" },
                 { field: "purewt", condition: () => form.purewt === undefined || Number(form.purewt) >= 0, message: "Pure weight cannot be negative" },
                 { field: "touch", condition: () => form.touch === undefined || Number(form.touch) >= 0, message: "Touch cannot be negative" },
-                // { field: "metalId", condition: () => !!form.metalId, message: "Metal is required" },
-                // {
-                //     field: "accode",
-                //     condition: () => !(["CR", "PR"].includes(form.stockType) && !form.accode),
-                //     message: "Account is required for CR or PR stock types"
-                // },
+              
                 { field: "stnwt", condition: () => form.stnwt === undefined || Number(form.stnwt) >= 0, message: "Stone weight cannot be negative" },
                 { field: "stnAmt", condition: () => form.stnAmt === undefined || Number(form.stnAmt) >= 0, message: "Stone cash cannot be negative" },
-                // { field: "openCash", condition: () => form.openCash === undefined || Number(form.openCash) >= 0, message: "Open cash cannot be negative" },
-                // Uncomment if actual touch validation is needed
-                // { field: "actualtouch", condition: () => form.actualtouch === undefined || Number(form.actualtouch) >= 0, message: "Actual touch cannot be negative" },
+           
             ];
 
         // Run through rules
@@ -349,7 +319,6 @@ function OrnamentMaster() {
     ]
 
 
-    // console.log(accountType, form.stockType, 'accountType')
 
     /*----------Print ---------- */
     const handleExport = (option: string) => {
@@ -365,8 +334,13 @@ function OrnamentMaster() {
         router.push(`/print?export=${option}`);
     }
 
+    const getFormNames = ornamentFields.map(f=>f.name);
 
+    const {register ,focusFirst ,focusNext } = useEnterNavigation(getFormNames , handleSave);
 
+    useEffect(()=>{
+        focusFirst();
+    },[])
 
     /* -------------------- UI -------------------- */
     return (
@@ -392,200 +366,16 @@ function OrnamentMaster() {
 
                         <Fieldset.Root size="sm" width="100%">
                             <Fieldset.Content>
-                                <Grid gap={3}>
-                                    {/* ITEM NAME */}
-                                    {/* <Box display="flex" alignItems="center" gap={2}>
-                                        <Box minW="100px" fontSize="2xs">STOCK TYPE :</Box>
-                                        <RadioButton
-                                            collection={stockTypes}
-                                            value={form.stockType}
-                                            onChange={(value) => handleChange("stockType", value)}
-                                            defaultValue="CY"
-                                            size="xs"
-
-                                        />
-                                    </Box> */}
-                                    {/* Company */}
-                                    {/* <Box>
-
-                                        <Box display="flex" alignItems="center" gap={2}>
-                                            <Box minW="100px" fontSize="2xs">
-                                                PARTY NAME :
-                                            </Box>
-                                            <SelectCombobox
-                                                value={form.accode ? String(form.accode) : ""}
-                                                onChange={(val) => handleChange("accode", val)}
-                                                items={allAccountsList}
-                                                rounded="full"
-                                                disable={!form.stockType || String(form.stockType) == "CY"}
-                                                placeholder={!form.stockType ? "Select Company Type First" : `select ${form.stockType}`}
-                                            />
-                                        </Box>
-
-                                    </Box>
-                                    <Box display="flex" alignItems="center" gap={2}>
-                                        <Box minW="100px" fontSize="2xs">TRAN TYPE :</Box>
-                                        <RadioButton
-                                            collection={transactionTypes}
-                                            value={form.tranType}
-                                            onChange={(value) => handleChange("tranType", value)}
-                                            defaultValue="IS"
-                                            size="xs"
-                                        />
-                                    </Box> */}
-
-                                    {/* METAL NAME */}
-                                    {/* <Box display="flex" alignItems="center" gap={2}>
-                                        <Box minW="100px" fontSize="2xs">METAL TYPE :</Box>
-                                        <SelectCombobox
-                                            items={allMetalList}
-                                            value={form.metalId}
-                                            onChange={(value) => handleChange("metalId", value)}
-                                            placeholder="select metal"
-
-                                        />
-                                    </Box> */}
-
-                                    {/* METAL NAME */}
-                                    <Box display="flex" alignItems="center" gap={2}>
-                                        <Box minW="100px" fontSize="2xs">ITEM NAME :</Box>
-                                        <SelectCombobox
-                                            items={itemCollection}
-                                            value={form.itemId}
-                                            onChange={(value) => handleChange("itemId", value)}
-                                            placeholder="select item"
-
-                                        />
-                                    </Box>
-
-                                    {/* PIECES */}
-                                    <Box display="flex" alignItems="center" gap={2}>
-                                        <Box minW="100px" fontSize="2xs">PIECES :</Box>
-                                        <CapitalizedInput
-                                            field="pcs"
-                                            value={form.pcs}
-                                            onChange={handleChange}
-                                            type="number"
-                                            size="2xs"
-                                            maxWidth="100px"
-                                            minWidth="80px"
-                                        />
-                                    </Box>
-
-                                    {/* GROSS WT */}
-                                    <Box display="flex" alignItems="center" gap={2}>
-                                        <Box minW="100px" fontSize="2xs">GROSS WT :</Box>
-                                        <CapitalizedInput
-                                            field="grswt"
-                                            value={form.grswt}
-                                            onChange={handleChange}
-                                            type="number"
-                                            size="2xs"
-                                            maxWidth="100px"
-                                            minWidth="80px"
-                                        />
-                                    </Box>
-
-
-
-                                    {/* STONE WT */}
-                                    <Box display="flex" alignItems="center" gap={2}>
-                                        <Box minW="100px" fontSize="2xs">STONE WT :</Box>
-                                        <CapitalizedInput
-                                            field="stnwt"
-                                            value={form.stnwt}
-                                            onChange={handleChange}
-                                            type="number"
-                                            size="2xs"
-                                            maxWidth="100px"
-                                            minWidth="80px"
-                                        />
-                                    </Box>
-
-                                    {/* NET WT */}
-                                    <Box display="flex" alignItems="center" gap={2}>
-                                        <Box minW="100px" fontSize="2xs">NET WT :</Box>
-                                        <CapitalizedInput
-                                            field="netwt"
-                                            value={form.netwt}
-                                            onChange={handleChange}
-                                            type="number"
-                                            size="2xs"
-                                            disabled
-                                            maxWidth="100px"
-                                            minWidth="80px"
-                                        />
-                                    </Box>
-
-                                    {/* TOUCH */}
-                                    <Box display="flex" alignItems="center" gap={2}>
-                                        <Box minW="100px" fontSize="2xs">TOUCH :</Box>
-                                        <CapitalizedInput
-                                            field="touch"
-                                            value={form.touch}
-                                            onChange={handleChange}
-                                            type="number"
-                                            size="2xs"
-                                            maxWidth="100px"
-                                            minWidth="80px"
-                                        />
-                                    </Box>
-                                    {/* PURE */}
-                                    <Box display="flex" alignItems="center" gap={2}>
-                                        <Box minW="100px" fontSize="2xs">PURE :</Box>
-                                        <CapitalizedInput
-                                            field="pure"
-                                            value={form.purewt}
-                                            onChange={handleChange}
-                                            type="number"
-                                            size="2xs"
-                                            disabled
-                                            maxWidth="100px"
-                                            minWidth="80px"
-                                        />
-                                    </Box>
-
-                                    {/* STONE CASH */}
-                                    <Box display="flex" alignItems="center" gap={2}>
-                                        <Box minW="100px" fontSize="2xs">STONE AMOUNT :</Box>
-                                        <CapitalizedInput
-                                            field="stoneCash"
-                                            value={form.stnAmt}
-                                            onChange={handleChange}
-                                            type="number"
-                                            size="2xs"
-                                            maxWidth="100px"
-                                            minWidth="80px"
-                                        />
-                                    </Box>
-
-                                    {/* OPEN CASH */}
-                                    {/* <Box display="flex" alignItems="center" gap={2}>
-                                        <Box minW="100px" fontSize="2xs">OPEN CASH :</Box>
-                                        <CapitalizedInput
-                                            field="openCash"
-                                            value={form.openCash}
-                                            onChange={handleChange}
-                                            type="number"
-                                            size="2xs"
-                                        />
-                                    </Box> */}
-
-
-                                    {/* ACTUAL TOUCH */}
-                                    {/* <Box display="flex" alignItems="center" gap={2}>
-                                        <Box minW="100px" fontSize="2xs">ACTUAL TOUCH :</Box>
-                                        <CapitalizedInput
-                                            field="actualtouch"
-                                            value={form.actualtouch}
-                                            onChange={handleChange}
-                                            type="number"
-                                            size="2xs"
-
-                                        />
-                                    </Box> */}
-
-                                </Grid>
+                                <DynamicForm
+                                    fields={ornamentFields}
+                                    formData={form}
+                                    onChange={handleChange}
+                                    register={register}
+                                    minLabelWidth="100px"
+                                    focusNext={focusNext}
+                                    layout="vertical" 
+                                />
+                                   
 
                                 {/* ACTION BUTTONS */}
 
@@ -670,14 +460,14 @@ function OrnamentMaster() {
                             renderRow={(ornament: any, index: number) => (
                                 <>
                                     <Table.Cell>{index + 1}</Table.Cell>
-                                    <Table.Cell>{ornament.itemName}</Table.Cell>
-                                    <Table.Cell textAlign='end'>{ornament.pcs}</Table.Cell>
-                                    <Table.Cell textAlign='end'>{formatToFixed(ornament.grswt,3)}</Table.Cell>
-                                    <Table.Cell textAlign='end'>{formatToFixed(ornament.stnwt,3)}</Table.Cell>
-                                    <Table.Cell textAlign='end'>{formatToFixed(ornament.netwt,3)}</Table.Cell>
-                                    <Table.Cell textAlign='end'>{formatToFixed(ornament.touch,1)}</Table.Cell>
-                                    <Table.Cell textAlign='end'>{formatToFixed(ornament.purewt,3)}</Table.Cell>
-                                    <Table.Cell textAlign='end'>{formatToFixed(ornament.stnAmt,2)}</Table.Cell>
+                                    <Table.Cell>{ornament.ITEMNAME}</Table.Cell>
+                                    <Table.Cell textAlign='end'>{ornament.PCS}</Table.Cell>
+                                    <Table.Cell textAlign='end'>{formatToFixed(ornament.GRSWT,3)}</Table.Cell>
+                                    <Table.Cell textAlign='end'>{formatToFixed(ornament.STNWT,3)}</Table.Cell>
+                                    <Table.Cell textAlign='end'>{formatToFixed(ornament.NETWT,3)}</Table.Cell>
+                                    <Table.Cell textAlign='end'>{formatToFixed(ornament.TOUCH,1)}</Table.Cell>
+                                    <Table.Cell textAlign='end'>{formatToFixed(ornament.PUREWT,3)}</Table.Cell>
+                                    <Table.Cell textAlign='end'>{formatToFixed(ornament.STNAMT,2)}</Table.Cell>
                                     <Table.Cell>
                                         <Box display='flex' justifyContent='center'>
                                             <FaEdit

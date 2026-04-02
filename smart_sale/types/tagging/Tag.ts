@@ -69,39 +69,27 @@ export interface getTagedEntryNoParams {
     TAGNO?: string,
     SEARCH?: string;
 }
+
+
 export interface getSingleTagDetail {
+
     ACCODE: number;
-
     BILLNO: number | null;
-
     DIAWT: number;
-
     ENTRYNO: number;
-
-
     GRSWT: number;
-
     ISSDATE: string | null
-
     ITEMID: number;
-
     MC: number;
-
     NETWT: number;
-
     PUENTRYNO: number;
-
     PUSNO: string;
-
     SALESSTNWT: number;
-
     SIZEID: number;
-
     STNWT: number;
     TAGDATE: string;
     TAGNO: string;
     TOUCH: number;
     TRANTYPE?: string | null;
-
     WASPER: number
 }

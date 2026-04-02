@@ -15,13 +15,15 @@ type NativeSelectWrapperProps = {
     items: SelectItem[];
     placeholder?: string;
     size?: "xs" | "sm" | "md" | "lg";
-    maxW?: string;
+    minW?: string;
+    maxWidth?:string;
     fontSize?: string;
     disabled?: boolean;
     onEnter?: () => void; // <-- add this
     className?: string;
     css?: any;
     onBlur?:()=>void;
+
 };
 
 export const NativeSelectWrapper = forwardRef<HTMLSelectElement, NativeSelectWrapperProps>(({
@@ -30,13 +32,14 @@ export const NativeSelectWrapper = forwardRef<HTMLSelectElement, NativeSelectWra
     items,
     placeholder = "Select",
     size = "xs",
-    maxW = "90px",
+    minW = "90px",
     fontSize = "10px",
     disabled = false,
     onEnter,
     className,
     css,
-    onBlur
+    onBlur,
+    maxWidth = "90px"
 }, ref) => {
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLSelectElement>) => {
@@ -48,7 +51,7 @@ export const NativeSelectWrapper = forwardRef<HTMLSelectElement, NativeSelectWra
     };
 
     return (
-        <NativeSelect.Root size={size} maxW={maxW} fontSize={fontSize} disabled={disabled} onBlur={onBlur}>
+        <NativeSelect.Root size={size} minW={minW} maxW={maxWidth} fontSize={fontSize} disabled={disabled} onBlur={onBlur}>
             <NativeSelect.Field
                 ref={ref}
                 value={value}

@@ -49,7 +49,6 @@ import clearIcon from "@/asserts/icons/clear.jpeg";
 /*-------------- PAGE COMPONENTS ------------*/
 import BarcodeHeaderForm from "./BarcodeHeaderForm/BarCodeHeaderForm";
 import BarCodeExcel, { type ExcelRowData, type ExcelData } from "./excel/BarCodeExcel";
-import { BarcodeSearch } from "./BarcodeSearch/BarcodeSearch";
 import { BarcodeTagListing } from "./BarcodeTagListing/BarcodeTagList";
 
 
@@ -212,6 +211,9 @@ function BarCodeGenerate() {
     // Flag to tell child to deselect
     const [deselectFlag, setDeselectFlag] = useState(false);
 
+
+    
+
     const [tagNumberParams, setTagNumberParams] = useState<getTagedEntryNoParams>({
 
         FROMDATE:'',
@@ -225,6 +227,7 @@ function BarCodeGenerate() {
         SEARCH: '',
 
     });
+    console.log(tagNumberParams, 'tagNumberParams')
 
     const handleFilterChange = useCallback((field: string, value: any) => {
         setTagNumberParams((prev) => ({
@@ -262,18 +265,26 @@ function BarCodeGenerate() {
  
    
     // To this:
-    const getFilteredParams = useCallback((): Partial<getTagedEntryNoParams> => {
-        const filteredParams: Partial<getTagedEntryNoParams> = {};
+    const getFilteredParams = useCallback((): Partial<getTagedEntryNoParamsForApi> => {
+        const filteredParams: Partial<getTagedEntryNoParamsForApi> = {};
 
         Object.entries(tagNumberParams).forEach(([key, value]) => {
-            if (typeof value === 'string' && value.trim() !== '') {
-                filteredParams[key as keyof getTagedEntryNoParams] = value;
+            if (value === null || value === undefined) return;
+
+            if (typeof value === 'string') {
+                const trimmed = value.trim();
+                if (!trimmed) return;
+
+                (filteredParams as any)[key] = trimmed;
+            } else if (typeof value === 'number') {
+                (filteredParams as any)[key] = value;
             }
         });
 
         return filteredParams;
     }, [tagNumberParams]);
-    console.log(getFilteredParams(),'filterParas')
+
+    console.log(getFilteredParams(),'filterParams')
 
     // Use filtered params for API call
     const { data: tagEntryNos, isLoading: tagEntryNosLoading, isError: tagEntryNosError, refetch: tagEntryNoRefetch } = useTagEntryNos(getFilteredParams());
@@ -452,7 +463,11 @@ function BarCodeGenerate() {
                 key: col.key, 
                 label: col.label || col.key, 
                 placeholder: col.label || col.key,
-                type: isNum ? "number" : "text", isRequired, size: "xs", align: isNum ? "right" : "left",
+                type: isNum ? "number" : "text", 
+                isRequired, 
+                size: "xs", 
+                align: isNum ? "right" : "left",
+                allowFocus:col.allowFocus
 
             };
             if (col.decimalScale) base.decimalScale = col.decimalScale;
@@ -466,11 +481,11 @@ function BarCodeGenerate() {
         [itemSizeCollection]);
 
     const visibleFormFields = useMemo(
-        () => transactionFormFields.filter((f: any) => f.type !== "calculated"),
+        () => transactionFormFields.filter((f: any) => f),
         [transactionFormFields]);
 
+    console.log(visibleFormFields,'visibleFormFields')
     const allDisplayCols = useMemo(() => [
-        // { key: "__sno", label: "#", align: "center" as const, width: "50px" },
 
         ...transactionTableCols
             .filter(col => isEditing || col.key !== "__print")
@@ -484,7 +499,6 @@ function BarCodeGenerate() {
                             : "right" as const,
             })),
 
-        // { key: "__actions", label: "ACTIONS", align: "center" as const, width: "50px" },
 
     ], [isEditing]);
 
@@ -829,7 +843,7 @@ function BarCodeGenerate() {
 
     const moveToNext = useCallback((currentKey: FieldKey) => {
         const idx = FIELD_ORDER.indexOf(currentKey);
-        idx < FIELD_ORDER.length - 2 ? focusField(FIELD_ORDER[idx + 1]) : handleTransactionSubmit();
+        idx < FIELD_ORDER.length - 1 ? focusField(FIELD_ORDER[idx + 1]) : handleTransactionSubmit();
     }, [handleTransactionSubmit, focusField]);
 
     const handleClear = useCallback(() => {
@@ -1062,9 +1076,20 @@ function BarCodeGenerate() {
 
         if (field.type === "number") return (
             <Box position="relative">
-                <CapitalizedInput field={key} value={value} onChange={(_: unknown, v: unknown) => handleTransactionChange(key, v)}
-                    type="number" isCapitalized={false} size="xs" rounded="sm" decimalScale={field.decimalScale ?? 3}
-                    inputRef={ref} onEnter={() => moveToNext(key)} noBorder />
+                <CapitalizedInput 
+                field={key} 
+                value={value} 
+                onChange={(_: unknown, v: unknown) => handleTransactionChange(key, v)}
+                type="number" 
+                isCapitalized={false} 
+                size="xs" 
+                rounded="sm" 
+                decimalScale={field.decimalScale ?? 3}
+                inputRef={ref} 
+                onEnter={() => moveToNext(key)} 
+                noBorder
+                allowFocus={field.allowFocus || false}
+                 />
             </Box>
         );
         if (field.key === "barcode") return (
@@ -1215,7 +1240,7 @@ function BarCodeGenerate() {
 
                 {/* ── Excel Import Drawer ── */}
                 {excelImport && (
-                    <Drawer.Root open={excelImport} onOpenChange={() => setExcelImport(false)}>
+                    <Drawer.Root open={excelImport} onOpenChange={() => setExcelImport(false)} >
                         <Portal>
                             <Drawer.Backdrop />
                             <Drawer.Positioner>

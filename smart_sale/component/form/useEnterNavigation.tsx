@@ -1,7 +1,10 @@
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useCallback } from 'react';
 
 type FieldName = string;
 type InputElement = HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement | null;
+
+const isReadOnly = (el: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement): boolean =>
+    'readOnly' in el ? (el as HTMLInputElement | HTMLTextAreaElement).readOnly : false;
 
 interface UseEnterNavigationReturn {
     register: (fieldName: FieldName) => (el: InputElement) => void;
@@ -15,72 +18,90 @@ export const useEnterNavigation = (
 ): UseEnterNavigationReturn => {
 
     const inputRefs = useRef<Record<FieldName, InputElement>>({});
+    const listenersRef = useRef<Record<FieldName, (e: KeyboardEvent) => void>>({});
     const hasMounted = useRef(false);
     const isSubmitting = useRef(false);
+    const fieldsRef = useRef(fields);
+    fieldsRef.current = fields;
+    const onSubmitRef = useRef(onSubmit);
+    onSubmitRef.current = onSubmit;
 
-    // ✅ Helper: check if element is focusable
-    const isFocusable = (el: any) => {
-        if (!el) return false;
-
-        return !(
-            el.disabled ||
-            el.getAttribute?.("disabled") !== null ||
-            el.getAttribute?.("aria-disabled") === "true"
-        );
-    };
-
-    const register = (fieldName: FieldName) => (el: InputElement) => {
-        inputRefs.current[fieldName] = el;
-    };
-
-    // ✅ Focus FIRST valid input (skip disabled)
-    const focusFirst = () => {
-        for (const field of fields) {
-            const el = inputRefs.current[field];
-            if (isFocusable(el)) {
-                el?.focus();
-                break;
-            }
-        }
-    };
-
-    // ✅ Focus NEXT valid input (skip disabled)
-    const focusNext = (currentField: FieldName) => {
-        const currentIndex = fields.indexOf(currentField);
+    const focusNext = useCallback((currentField: FieldName) => {
+        const currentIndex = fieldsRef.current.indexOf(currentField);
         if (currentIndex === -1) return;
 
-        // Try finding next focusable field
-        for (let i = currentIndex + 1; i < fields.length; i++) {
-            const el = inputRefs.current[fields[i]];
-            if (isFocusable(el)) {
-                el?.focus();
+        for (let i = currentIndex + 1; i < fieldsRef.current.length; i++) {
+            const nextEl = inputRefs.current[fieldsRef.current[i]];
+            if (nextEl && !nextEl.disabled && !isReadOnly(nextEl)) {
+                nextEl.focus();
                 return;
             }
         }
 
-        // ✅ If no next field → submit
-        if (onSubmit && !isSubmitting.current) {
+        if (onSubmitRef.current && !isSubmitting.current) {
             isSubmitting.current = true;
-
-            onSubmit();
-
-            setTimeout(() => {
-                isSubmitting.current = false;
-            }, 500);
+            onSubmitRef.current();
+            setTimeout(() => { isSubmitting.current = false; }, 500);
         }
-    };
+    }, []);
+
+    const register = useCallback((fieldName: FieldName) => (el: InputElement) => {
+        const prev = inputRefs.current[fieldName];
+        if (prev && prev !== el && listenersRef.current[fieldName]) {
+            prev.removeEventListener('keydown', listenersRef.current[fieldName] as EventListener);
+            delete listenersRef.current[fieldName];
+        }
+        inputRefs.current[fieldName] = el;
+        if (el && (el.disabled || isReadOnly(el))) {
+            const handler = (e: KeyboardEvent) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    focusNext(fieldName);
+                }
+            };
+            listenersRef.current[fieldName] = handler;
+            el.addEventListener('keydown', handler as EventListener);
+        }
+    }, [focusNext]);
+
+    const focusFirst = useCallback(() => {
+        for (let i = 0; i < fieldsRef.current.length; i++) {
+            const el = inputRefs.current[fieldsRef.current[i]];
+            if (el && !el.disabled && !isReadOnly(el)) {
+                el.focus();
+                return;
+            }
+        }
+    }, []);
 
     useEffect(() => {
         if (!hasMounted.current) {
             hasMounted.current = true;
-
-            const timer = setTimeout(() => {
-                focusFirst();
-            }, 100);
-
+            const timer = setTimeout(() => focusFirst(), 100);
             return () => clearTimeout(timer);
         }
     }, []);
+
+    useEffect(() => {
+        fields.forEach((fieldName) => {
+            const el = inputRefs.current[fieldName];
+            if (!el) return;
+            if (listenersRef.current[fieldName]) {
+                el.removeEventListener('keydown', listenersRef.current[fieldName] as EventListener);
+                delete listenersRef.current[fieldName];
+            }
+            if (el.disabled || isReadOnly(el)) {
+                const handler = (e: KeyboardEvent) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        focusNext(fieldName);
+                    }
+                };
+                listenersRef.current[fieldName] = handler;
+                el.addEventListener('keydown', handler as EventListener);
+            }
+        });
+    }, [fields, focusNext]);
 
     return { register, focusNext, focusFirst };
 };

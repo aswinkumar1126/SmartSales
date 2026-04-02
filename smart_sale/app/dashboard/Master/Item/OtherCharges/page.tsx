@@ -36,6 +36,11 @@ import { CapitalizedInput } from "@/components/ui/CapitalizedInput";
 import { useAllMetals } from "@/hooks/metal/useMetals";
 import SearchBar from "@/component/search/SearchBar";
 
+import { DynamicForm } from "@/component/form/DynamicForm";
+import { OtherMasterFields } from "@/config/master/OtherChargesMaster";
+import { useEnterNavigation } from "@/component/form/useEnterNavigation";
+
+
 /* ---------------- Initial Form State ---------------- */
 
 const initialFormState: OtherChargeStateForm = {
@@ -47,7 +52,7 @@ const initialFormState: OtherChargeStateForm = {
 /* ---------------- Table Row Type ---------------- */
 
 export type TouchTableRow = {
-    sno: number,
+    chargeId: number,
     chargeName: "",
     chargeAmount: "",
     active: "Y",
@@ -64,7 +69,6 @@ const OtherCharges = () => {
     const [originalName, setOriginalName] = useState<string | null>(null);
     type FormErrors = Partial<Record<keyof OtherChargeForm, string>>;
     const [errors, setErrors] = useState<FormErrors>({});
-    const [metalData, setMetalData] = useState<{ label: string, value: string }[]>([])
 
     const [filter, setFilter] = useState<string>('')
     /* ---------------- Hooks ---------------- */
@@ -79,12 +83,12 @@ const OtherCharges = () => {
     const otherChargesData = otherCharges?.data ?? [];
 
 
-    const activeStatus = createListCollection({
-        items: [
+    const activeStatus =[
             { label: "YES", value: "Y" },
             { label: "NO", value: "N" },
-        ],
-    });
+        ]
+
+    const getOtherChargesFields = OtherMasterFields({ active: activeStatus })
 
 
     const { data: metalsData } = useAllMetals();
@@ -94,22 +98,8 @@ const OtherCharges = () => {
     const updateMutation = useUpdateOtherCharges();
 
 
-    /* --------------- ComboBox Data ------------- */
-    useEffect(() => {
-        if (!Array.isArray(metalsData)) return;
-        if (!metalsData.length) return;
-
-        const fetchedData = metalsData.map((m: any) => ({
-            label: m.metalName,
-            value: m.metalId,
-        }));
-
-        setMetalData(fetchedData);
-    }, [metalsData]);
-
 
     /* ---------------- Helpers ---------------- */
-
 
 
     const handleChange = (key: keyof OtherChargeForm, value: string) => {
@@ -125,7 +115,8 @@ const OtherCharges = () => {
     /* ---------------- Edit Handler ---------------- */
 
     const handleEdit = (row: TouchTableRow) => {
-        setEditId(row.sno ?? null);
+        console.log(row,'row')
+        setEditId(row.chargeId ?? null);
         scrollToTop();
         setOriginalName(row.chargeName); // store original
 
@@ -147,6 +138,7 @@ const OtherCharges = () => {
         originalName?: string
     ): FormErrors => {
 
+        console.log(editId,'editId')
         const errors: FormErrors = {};
 
         const normalize = (v?: string) => v?.trim().toLowerCase();
@@ -256,6 +248,15 @@ const OtherCharges = () => {
         title?.("Other Charges List")
     }
 
+    const otherChargesFields = getOtherChargesFields.map(f => f.name);
+
+    const { register, focusNext, focusFirst } = useEnterNavigation(
+        otherChargesFields,
+        handleSubmit
+    );
+    useEffect(()=>{
+        focusFirst()
+    },[])
 
     /* ---------------- UI ---------------- */
 
@@ -278,82 +279,16 @@ const OtherCharges = () => {
 
                         </Text>
                     </Heading>
-                    <Grid gap={2}>
-
-                        {/* CHARGE NAME */}
-                        <Field.Root invalid={!!errors.chargeName}>
-                            <HStack>
-                                <Box minW="100px">
-                                    <Field.Label fontSize="2xs">CHARGE NAME :</Field.Label>
-                                </Box>
-                                <Box >
-                                    <CapitalizedInput
-                                        field="chargeName"
-                                        value={form.chargeName}
-                                        onChange={handleChange}
-                                        placeholder="Enter charge Name"
-                                        size="2xs"
-                                        maxWidth="100%"
-
-                                    />
-                                    <Field.ErrorText>{errors.chargeName}</Field.ErrorText>
-                                </Box>
-                            </HStack>
-                        </Field.Root>
-
-                        {/* AMOUNT */}
-                        <Field.Root invalid={!!errors.chargeName}>
-                            <HStack>
-                                <Box minW="100px">
-                                    <Field.Label fontSize="2xs">AMOUNT :</Field.Label>
-                                </Box>
-                                <Box >
-                                    <CapitalizedInput
-                                        field="chargeAmount"
-                                        value={form.chargeAmount}
-                                        onChange={handleChange}
-                                        placeholder="Enter Amount"
-                                        size="2xs"
-                                        type="number"
-
-                                    />
-                                    <Field.ErrorText>{errors.chargeAmount}</Field.ErrorText>
-                                </Box>
-                            </HStack>
-                        </Field.Root>
-
-                        {/* ACTIVE */}
-                        <Box display="flex" alignItems="center" gap={2}>
-                            <Box minW="100px" fontSize="2xs">ACTIVE :</Box>
-                            <NativeSelect.Root size="xs" maxW="80px" fontSize="2xs" >
-                                <NativeSelect.Field
-                                    value={form.active || "Y"}
-                                    onChange={(e) => handleChange("active", e.target.value)}
-                                    css={{
-                                        backgroundColor: "#eee",
-                                        color: "#111827",
-                                        border: "1px solid #e5e7eb",
-                                        borderRadius: "20px",
-                                        height: "30px",
-                                        fontSize: "10px",
-
-                                    }}
-                                >
-                                    <For each={activeStatus.items}>
-                                        {(item) => (
-                                            <option key={item.value} value={item.value}>
-                                                {item.label}
-                                            </option>
-                                        )}
-                                    </For>
-                                </NativeSelect.Field>
-                                <NativeSelect.Indicator />
-                            </NativeSelect.Root>
-                        </Box>
-
-
-                    </Grid>
-
+                    <DynamicForm 
+                        fields={getOtherChargesFields}
+                        formData={form}
+                        focusNext={focusNext}
+                        register={register}
+                        minLabelWidth="100px"
+                        onChange={handleChange}
+                        layout="vertical"
+                        errors={errors}
+                    />
 
 
                     {/* ================= ACTION BUTTONS ================= */}

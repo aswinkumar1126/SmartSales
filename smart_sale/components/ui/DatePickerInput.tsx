@@ -122,8 +122,9 @@ export const DatePickerInput = React.forwardRef<
                 placeholderText={placeholder}
                 customInput={<CustomInput />}
                 popperPlacement="bottom-start"
-                portalId="root"
+                // portalId="root"
                 popperClassName="chakra-datepicker-popper"
+                popperContainer={({ children }) => children}
             />
         </Box>
     );

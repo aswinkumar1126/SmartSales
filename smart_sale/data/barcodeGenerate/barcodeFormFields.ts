@@ -1,5 +1,5 @@
 
-export const transactionTableCols =   [
+export const transactionTableCols = [
 
  
     {
@@ -18,6 +18,7 @@ export const transactionTableCols =   [
             width:'80px',
             type: "number" as const,
             max: 9999999999,
+            allowFocus:true
  
     
         },
@@ -27,14 +28,16 @@ export const transactionTableCols =   [
             align: "right" as const, 
             decimalScale: 3 ,
             type: "number" as const,
-            width: '100px'
+            width: '100px',
+            allowFocus: true
         },
         {   
             key: "salesStoneWt", 
             label: "SALES STN WT", 
             align: "right" as const, 
             decimalScale: 3 ,
-            width: '100px'
+            width: '100px',
+            allowFocus: true
      
         },
         {   
@@ -44,6 +47,7 @@ export const transactionTableCols =   [
             decimalScale: 2 ,
             width: '70px',
             type: "number" as const,
+            allowFocus: true
         
         },
         { 
@@ -61,6 +65,7 @@ export const transactionTableCols =   [
             decimalScale: 3 ,
             width: '90px',
             type: "number" as const,
+            allowFocus: true
       
         },
         { 
@@ -70,6 +75,7 @@ export const transactionTableCols =   [
             decimalScale: 2 ,
             width: '120px',
             type: "number" as const,
+            allowFocus: true
        
         },
         { 
@@ -79,6 +85,7 @@ export const transactionTableCols =   [
             decimalScale: 1 ,
             width: '120px',
             type: "number" as const,
+            allowFocus: true
         
         },
        

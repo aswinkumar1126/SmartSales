@@ -38,6 +38,10 @@ import { SelectCombobox } from "@/components/ui/selectComboBox";
 import { safeValue } from "@/utils/comboBox/safeValue";
 import SearchBar from "@/component/search/SearchBar";
 
+import { useEnterNavigation } from "@/component/form/useEnterNavigation";
+import { DynamicForm } from "@/component/form/DynamicForm";
+import { pureGoldNameFields } from "@/config/master/PureGoldMaster";
+
 /* ---------------- Initial Form State ---------------- */
 
 const initialFormState: pureGoldMastForm = {
@@ -75,7 +79,11 @@ const PureGoldMaster = () => {
     const [errors, setErrors] = useState<FormErrors>({});
     const [metalData, setMetalData] = useState<{ label: string, value: string }[]>([])
 
-    const [filter, setFilter] = useState<string>('')
+    const [filter, setFilter] = useState<string>('');
+
+
+    const getPureGoldFields = pureGoldNameFields({ metal :metalData});
+
     /* ---------------- Hooks ---------------- */
     const router = useRouter();
     const { theme } = useTheme();
@@ -103,7 +111,16 @@ const PureGoldMaster = () => {
 
         setMetalData(fetchedData);
     }, [metalsData]);
-    console.log(metalData, 'metalDAta')
+
+    useEffect(()=>{
+        setForm((prev)=>({
+            ...prev ,
+            metalId : metalData[0]?.value || ''
+
+        }))
+    }, [metalData]);
+    console.log(form,'formtoupdate')
+
 
     /* ---------------- Helpers ---------------- */
 
@@ -114,7 +131,7 @@ const PureGoldMaster = () => {
     };
 
     const resetForm = () => {
-        setForm(initialFormState);
+        setForm({...initialFormState , metalId: metalData[0]?.value || ''});
         setEditId(null);
 
         setErrors({});
@@ -182,19 +199,20 @@ const PureGoldMaster = () => {
     /* ---------------- Submit Handler ---------------- */
 
     const handleSubmit = () => {
-
+console.log('triggers')
         const validationErrors = validateForm(
             form,
             pureGoldData,
             editId,
             originalName ?? undefined
         );
+        console.log(validationErrors, 'validationErrors')
 
         if (Object.keys(validationErrors).length > 0) {
             setErrors(validationErrors);
             return;
         }
-
+    
         const payload = {
             pureGoldName: form.pureGoldName,
             metalId: form.metalId,
@@ -202,6 +220,7 @@ const PureGoldMaster = () => {
             // actualPure: form.actualPure ? parseFloat(form.actualPure) : undefined,
             // actualTouch: form.actualTouch ? parseFloat(form.actualTouch) : undefined,
         };
+        console.log(payload, 'payload')
 
         if (editId) {
             updateMutation.mutate(
@@ -262,7 +281,12 @@ const PureGoldMaster = () => {
         title?.("Pure Gold Opening Master")
     }
 
+    const formFieldName = getPureGoldFields.map(f=>f.name);
+    const {register ,focusFirst ,focusNext } = useEnterNavigation(formFieldName,()=>handleSubmit())
 
+    useEffect(()=>{
+        focusFirst();
+    },[])
     /* ---------------- UI ---------------- */
 
     return (
@@ -285,115 +309,15 @@ const PureGoldMaster = () => {
                         </Text>
                     </Heading>
                     <Box display="grid" gap={2}>
-                        {/* METAL NAME */}
-                        <Field.Root invalid={!!errors.metalId}>
-                            <HStack>
-                                <Box minW="100px">
-                                    <Field.Label fontSize="2xs">METAL :</Field.Label>
-                                </Box>
-                                <Box flex={1}>
-                                    <SelectCombobox
-                                        value={safeValue(form.metalId, metalData)}
-                                        onChange={(val) => handleChange("metalId", val)}
-                                        editId={Number(editId)}
-                                        items={metalData}
-                                        placeholder="SELECT METAL"
-
-                                    />
-                                    <Field.ErrorText>{errors.metalId}</Field.ErrorText>
-                                </Box>
-                            </HStack>
-                        </Field.Root>
-                        {/* PURE GOLD NAME */}
-                        <Field.Root invalid={!!errors.pureGoldName}>
-                            <HStack>
-                                <Box minW="100px">
-                                    <Field.Label fontSize="2xs">PURE GOLD NAME :</Field.Label>
-                                </Box>
-                                <Box >
-                                    <CapitalizedInput
-                                        field="pureGoldName"
-                                        value={form.pureGoldName}
-                                        onChange={handleChange}
-                                        placeholder="Enter pure gold name"
-                                        size="2xs"
-                                        minWidth="100%"
-
-                                    />
-                                    <Field.ErrorText>{errors.pureGoldName}</Field.ErrorText>
-                                </Box>
-                            </HStack>
-                        </Field.Root>
-
-                        {/* WEIGHT */}
-                        {/* <Field.Root invalid={!!errors.weight}>
-                            <HStack>
-                                <Box minW="100px">
-                                    <Field.Label fontSize="2xs">WEIGHT :</Field.Label>
-                                </Box>
-                                <Box flex={1}>
-                                    <CapitalizedInput
-                                        field="weight"
-                                        type="number"
-                                        value={form.weight}
-                                        onChange={handleChange}
-                                        placeholder="Enter weight"
-                                        size="2xs"
-                                        max={999}
-                                        decimalScale={3}
-                                    
-                                    />
-                                    <Field.ErrorText>{errors.weight}</Field.ErrorText>
-                                </Box>
-                            </HStack>
-                        </Field.Root> */}
-
-                        {/* ACTUAL TOUCH */}
-                        {/* <Field.Root invalid={!!errors.actualTouch}>
-                            <HStack>
-                                <Box minW="100px">
-                                    <Field.Label fontSize="2xs">TOUCH :</Field.Label>
-                                </Box>
-                                <Box flex={1}>
-                                    <CapitalizedInput
-                                        field="actualTouch"
-                                        type="number"
-                                        value={form.actualTouch}
-                                        onChange={handleChange}
-                                        placeholder="Enter actual touch"
-                                        size="2xs"
-                                        max={999}
-                                        decimalScale={2}
-                                    />
-                                    <Field.ErrorText>{errors.actualTouch}</Field.ErrorText>
-                                </Box>
-                            </HStack>
-                        </Field.Root> */}
-
-                        {/* ACTUAL PURE */}
-                        {/* <Field.Root invalid={!!errors.actualPure}>
-                            <HStack>
-                                <Box minW="100px">
-                                    <Field.Label fontSize="2xs">PURE :</Field.Label>
-                                </Box>
-                                <Box flex={1}>
-                                    <CapitalizedInput
-                                        field="actualPure"
-                                        type="number"
-                                        value={form.actualPure}
-                                        onChange={handleChange}
-                                        placeholder="Enter actual pure"
-                                        size="2xs"
-                                        max={999}
-                                        decimalScale={3}
-                                    />
-                                    <Field.ErrorText>{errors.actualPure}</Field.ErrorText>
-                                </Box>
-                            </HStack>
-                        </Field.Root> */}
-
-
-
+                      <DynamicForm 
+                        fields={getPureGoldFields}
+                        formData={form}
+                        register={register}
+                        onChange={handleChange}
+                        focusNext={focusNext}
+                        layout="vertical"
+                        errors={errors}
+                      />
                     </Box>
                     {/* ================= ACTION BUTTONS ================= */}
                     <Box mt={2}>

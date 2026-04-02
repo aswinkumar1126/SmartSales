@@ -150,6 +150,7 @@ export const issueColumns = (isTag: boolean) => [
 
     },
 ].filter(Boolean);
+
 export const issueDataColumns = [
     {
         key: "SNO",
