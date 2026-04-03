@@ -91,5 +91,13 @@ export interface getSingleTagDetail {
     TAGNO: string;
     TOUCH: number;
     TRANTYPE?: string | null;
-    WASPER: number
+    WASPER: number;
+    STNDETAILS:
+    {
+        STNWT: number;
+        STNAMT: number;
+        STNID: number;
+        STNDESC: string;
+    }[]
+
 }

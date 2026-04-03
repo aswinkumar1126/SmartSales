@@ -26,6 +26,7 @@ import { useGlobalKey } from "@/components/key/useGlobalKey";
 import TransactionTable from "@/component/table/TransactionTable";
 import { toaster } from "@/components/ui/toaster";
 import { CapitalizedInput } from "@/components/ui/CapitalizedInput";
+
 import { SwitchInput } from "@/components/ui/SwitchInput";
 import { SearchIcon } from "lucide-react";
 
@@ -100,6 +101,7 @@ interface DraftTransactionTableProps {
         ITEMID?: string;
         PCS?: number;
         TAGNO: string;
+        stoneDetails: [];
     } | null>;
 }
 
@@ -192,7 +194,10 @@ export default function DraftTransactionTable({
     const stoneTempId = useRef<string | null>(null);
     const miscTempId = useRef<string | null>(null);
 
-    const { data: stoneItemsData } = useStoneItems();
+
+    const { data: stoneItemsData } = useStoneItems({STUDDED:"Y"});
+
+    console.log(stoneItemsData,'stoneItemsData')
     const [stoneItemsCollection, setStoneItemCollection] = useState<{ label: string; value: string }[]>([]);
     // 2. Add state + hook at component level
   
@@ -249,6 +254,8 @@ export default function DraftTransactionTable({
         () => ({ items: [{ label: "TOUCH", value: "TOUCH" }] }),
         []
     );
+
+    console.log(formData,'purchaseformData')
 
     const numericFields = useMemo(() => [
         "PCS", "GRSWT", "STNWT", "NETWT", "WASPER", "WASTAGE", "STNAMT",
@@ -415,7 +422,7 @@ export default function DraftTransactionTable({
                     ...base,
                     type: "text",
                     isRequired: isReturn && isTag,
-                    disabled: false,
+                    disabled: true,
                 };
             }
 
@@ -549,33 +556,7 @@ export default function DraftTransactionTable({
         }
     }, [currentEditingRowId, currentEditingTransactionType, transactionType, rows]);
 
-    // 3. React to the result
-    // useEffect(() => {
-    //     if (!pendingTagNo || !tagData) return;
-
-    //     // handleChange({
-    //     //     GRSWT: tagData.GRSWT?.toString() || "0",
-    //     //     STNWT: tagData.STNWT?.toString() || "0",
-    //     //     NETWT: tagData.NETWT?.toString() || "0",
-    //     //     WASPER: tagData.WASPER?.toString() || "0",
-    //     //     MC: tagData.MC?.toString() || "0",
-    //     //     TOUCH: tagData.TOUCH?.toString() || "0",
-    //     //     SALESSTNWT: tagData.SALESSTNWT?.toString() || "0",
-    //     //     PCS: (tagData.PCS ?? 1).toString(),
-    //     //     ...(tagData.ITEMID ? { ITEMID: tagData.ITEMID.toString() } : {}),
-    //     // });
-
-    //     toaster.create({
-    //         title: "Tag Loaded",
-    //         description: `Details filled for tag: ${pendingTagNo}`,
-    //         type: "success",
-    //         duration: 1500,
-    //     });
-
-    //     setPendingTagNo(""); // ✅ resets → hook disables (enabled: !!id = false)
-    //     setTimeout(() => moveNext("TAGNO"), 100);
-    // }, [tagData]);
-
+ 
     type FormData = typeof formData;
 
     const handleChange = useCallback(
@@ -736,6 +717,25 @@ export default function DraftTransactionTable({
                 });
                 return;
             }
+
+            if (formData.TAGNO) {
+                const isEditing = !!(currentEditingRowId && currentEditingTransactionType === transactionType);
+               
+                const isExists = rows.some(r =>
+                    r.TAGNO.toLowerCase() === formData.TAGNO.toLowerCase() &&
+                    (!isEditing || r.__rowId !== currentEditingRowId) // ignore the current row if editing
+                );
+          
+                if (isExists) {
+                    toaster.create({
+                        title: "Tag No Already Exists",
+                        description: "Please enter a unique tag number",
+                        type: "error",
+                    });
+                    return;
+                }
+            }
+
         }
 
         // Stock availability check for both ISP and PR
@@ -1017,40 +1017,106 @@ export default function DraftTransactionTable({
         if (value == null) return "";
         return Number(decimalScale) >= 1 ? Number(value).toFixed(decimalScale) : Number(value).toString();
     };
-
+    
     const handleTagNoKeyDown = async () => {
-        console.log(tagNo,'dataGetByRefetchtagNo')
+
         if (!tagNo) return;
 
-
         try {
-            // Call parent's lookup function and get data
             const result = await onTagNoLookup?.(tagNo);
-            console.log(result ,'resultData')
+        
+
             if (result) {
-                // Directly populate form with the returned data
+                // Generate a temporary ID for this tag lookup
+                const tempStoneId = `tag-lookup-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
+
+                // ✅ FIX: Check for STNDETAILS (not stoneDetails) from API response
+                const stoneDetails = result.stoneDetails || [];
+
+                if (stoneDetails.length > 0) {
+                    const allStones = JSON.parse(localStorage.getItem("STONE_MASTER") || "[]");
+
+                    // Remove any existing stones with this temp ID (cleanup)
+                    const filtered = allStones.filter((s: any) => s.draftRowId !== tempStoneId);
+
+                    // Transform STNDETAILS to match StoneRow format
+                    const stonesWithId = stoneDetails.map((stone: any, index: number) => ({
+                        id: stone.id || `stone-${Date.now()}-${index}-${Math.random().toString(36).substr(2, 5)}`,
+                        draftRowId: tempStoneId,
+                        // Map from API field names to your StoneRow format
+                        stoneId: String(stone.STNITEMID || stone.stoneId || stone.STNSUBITEMID || ""),
+                        subStoneId: String(stone.STNSUBITEMID || stone.subStoneId || ""),
+                        stonePcs: stone.STNPCS || stone.stonePcs || stone.PCS || 1,  // Default to 1 if not provided
+                        stoneWeight: stone.STNWT || stone.stoneWeight || 0,
+                        stoneUnit: stone.STONEUNIT || stone.stoneUnit || "g",  // Default to grams
+                        stoneCalculation: stone.CALCMODE || stone.stoneCalculation || "w",  // Default to weight
+                        stoneRate: stone.STNRATE || stone.stoneRate || 0,
+                        stoneAmount: stone.STNAMT || stone.stoneAmount || 0,
+                    }));
+
+                    console.log("Transformed stones for localStorage:", stonesWithId);
+
+                    // Save to localStorage (replace any existing stones with same temp ID)
+                    const finalStones = [...filtered, ...stonesWithId];
+                    localStorage.setItem("STONE_MASTER", JSON.stringify(finalStones));
+
+                    // Store the temp ID so modal can load it
+                    setStoneDraftRowId(tempStoneId);
+
+                    // Calculate total stone weight for STNWT
+                    const totalStoneWeight = stonesWithId.reduce((sum, stone) => {
+                        const weight = stone.stoneUnit === "c" ? stone.stoneWeight / 5 : stone.stoneWeight;
+                        return sum + weight;
+                    }, 0);
+
+                    console.log(`Saved ${stonesWithId.length} stones with total weight: ${totalStoneWeight}`);
+                } else {
+                    console.log('No stone details found in tag data');
+                    // Clear any existing stone draft row ID
+                    setStoneDraftRowId("");
+                }
+
+                // Populate the form with tag data
                 setFormData(prev => ({
                     ...prev,
-                    GRSWT: result.GRSWT,
-                    STNWT: result.STNWT,
-                    NETWT: result.NETWT,
-                    WASPER: result.WASPER,
-                    DIAWT: result.DIAWT,
-                    MC: result.MC,
-                    TOUCH: result.TOUCH,
-                    // SALESSTNWT: result.SALESSTNWT,
-                    // sizeId: result.SIZEID,
-                    ITEMID: result.ITEMID,
-                    PCS: result.PCS,
-                    TAGNO:result.TAGNO,
+                    GRSWT: result.GRSWT || "",
+                    STNWT: result.STNWT || "",
+                    NETWT: result.NETWT || "",
+                    WASPER: result.WASPER || "",
+                    DIAWT: result.DIAWT || "",
+                    MC: result.MC || "",
+                    TOUCH: result.TOUCH || "",
+                    ITEMID: result.ITEMID ? String(result.ITEMID) : "",
+                    PCS: result.PCS || "1",  // Default to 1 if not provided
+                    TAGNO: result.TAGNO || tagNo,
                 }));
-                console.log('Tag data received:', result);
+
+                // Show success message
+                toaster.create({
+                    title: "Tag Loaded",
+                    description: `Tag ${tagNo} loaded with ${stoneDetails.length} stone(s)`,
+                    type: "success",
+                    duration: 1000,
+                });
+
             } else {
                 console.log('No data found for tag:', tagNo);
+                toaster.create({
+                    title: "Tag Not Found",
+                    description: `No data found for tag number: ${tagNo}`,
+                    type: "error",
+                    duration: 3000,
+                });
             }
         } catch (error) {
             console.error('Tag lookup failed:', error);
-        } 
+            toaster.create({
+                title: "Error",
+                description: "Failed to load tag data. Please try again.",
+                type: "error",
+                duration: 3000,
+            });
+        }
     };
 
     const renderFormCell = (field: FormField) => {
@@ -1072,6 +1138,7 @@ export default function DraftTransactionTable({
                         rounded="sm"
                         inputRef={ref}
                         noBorder
+                        disabled
                     />
                 </Box>
             );
@@ -1308,6 +1375,7 @@ export default function DraftTransactionTable({
     console.log(transactionTitle,'transactionTitle')
 
     console.log(isTag,'isTag')
+    console.log(formData.stoneDetails,'stneDetailsForWindow')
 
     return (
         <Box display="flex" flexDirection="column" gap={1}>
@@ -1340,7 +1408,7 @@ export default function DraftTransactionTable({
                                         value={tagNo}
                                         onChange={(_, value) => setTagNo(value)}
                                         size="xs"
-                                        onKeyDown={handleTagNoKeyDown}
+                                        onEnter={handleTagNoKeyDown}
                                         
                                     />
                             </Box>
@@ -1477,8 +1545,12 @@ export default function DraftTransactionTable({
                                 // Get existing stones from localStorage
                                 const allStones = JSON.parse(localStorage.getItem("STONE_MASTER") || "[]");
 
+                           
+
                                 // Remove stones for the current draft row
                                 const filtered = allStones.filter((s: any) => s.draftRowId !== stoneDraftRowId);
+
+                                console.log(filtered,allStones, 'allStonesfiltered')
 
                                 // Attach draftRowId to new stones
                                 const updatedStones = stoneRows.map(s => ({ ...s, draftRowId: stoneDraftRowId }));

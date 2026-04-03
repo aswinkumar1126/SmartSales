@@ -41,21 +41,6 @@ interface BankTransactionModalProps {
     bankAccList?:{label:string ,value:string}[]
 }
 
-// Bank names collection
-// const bankCollection = {
-//     items: [
-//         { label: "State Bank of India", value: "SBI" },
-//         { label: "HDFC Bank", value: "HDFC" },
-//         { label: "ICICI Bank", value: "ICICI" },
-//         { label: "Axis Bank", value: "AXIS" },
-//         { label: "Punjab National Bank", value: "PNB" },
-//         { label: "Bank of Baroda", value: "BOB" },
-//         { label: "Canara Bank", value: "CANARA" },
-//         { label: "Union Bank", value: "UNION" },
-//         { label: "Indian Bank", value: "INDIAN" },
-//         { label: "Other", value: "OTHER" },
-//     ]
-// };
 
 // Define table columns for bank transactions
 const bankTableCols = [
@@ -71,9 +56,9 @@ const COL_WIDTHS: Record<string, string> = {
     __sno: "40px",
     bankName: "140px",
     tranMode: "70px",
-    tranDate: "100px",
+    tranDate: "80px",
     chqNo: "120px",
-    amount: "120px",
+    amount: "100px",
     __actions: "60px",
 };
 
@@ -329,15 +314,12 @@ export const BankTransactionModal = ({
 
         if (field.key === "bankName") {
             return (
-                <Box position="relative">
+                <Box position="relative" key={`bank-select-${editId || 'new'}`}>
                     <SelectCombobox
                         ref={ref as React.RefObject<HTMLInputElement>}
-                        value={value}
+                        value={formData.bankName}
                         items={bankAccList || []}
-                        onChange={val => {
-                            handleChange(field.key, val);
-                            if (val) moveToNext(field.key);
-                        }}
+                        onChange={val => handleChange(field.key, val)}
                         placeholder="Select Bank"
                         rounded="sm"
                         onEnter={() => moveToNext(field.key)}
@@ -345,7 +327,6 @@ export const BankTransactionModal = ({
                 </Box>
             );
         }
-
         if (field.key === "tranMode") {
             return (
                 <Box position="relative">
@@ -354,7 +335,6 @@ export const BankTransactionModal = ({
                         value={value || "C"}
                         onChange={(e) => {
                             handleChange(field.key, e.target.value);
-                            moveToNext(field.key);
                         }}
                         items={PaymentModes}
                         size="xs"
@@ -374,7 +354,7 @@ export const BankTransactionModal = ({
                         value={value}
                         onChange={(date) => {
                             handleChange(field.key, date);
-                            moveToNext(field.key);
+                       
                         }}
                         placeholder="dd-mm-yyyy"
                         dateFormat="dd-MM-yyyy"
@@ -385,6 +365,7 @@ export const BankTransactionModal = ({
                             }
                         }}
                         maxDate={new Date()}
+                        isRoot
                     />
                 </Box>
             );
@@ -404,6 +385,7 @@ export const BankTransactionModal = ({
                         inputRef={ref}
                         onEnter={() => moveToNext(field.key)}
                         noBorder
+                        
                     />
                 </Box>
             );
@@ -466,7 +448,7 @@ export const BankTransactionModal = ({
             right={0}
             bottom={0}
             bg="rgba(0,0,0,0.5)"
-            zIndex={9998}
+            zIndex={10}
             display="flex"
             alignItems="center"
             justifyContent="center"
@@ -476,13 +458,12 @@ export const BankTransactionModal = ({
                 ref={modalContentRef}
                 bg={theme?.colors?.formColor || "white"}
                 borderRadius="xl"
-                maxW="7xl"
+                maxW="6xl"
                 width="100%"
                 maxH="90vh"
                 overflow="auto"
                 onClick={e => e.stopPropagation()}
-                p={4}
-                zIndex={9999}
+                p={2}
                 position="relative"
                 boxShadow="xl"
             >
@@ -490,14 +471,7 @@ export const BankTransactionModal = ({
                     <Text fontSize="base" fontWeight="semibold">
                         Bank {type === "paid" ? "Paid" : "Received"} Details
                     </Text>
-                    {/* <IconButton
-                        aria-label="Close"
-                        onClick={handleCancel}
-                        size="sm"
-                        variant="ghost"
-                    >
-                        {/* <LuX size={16} />
-                    </IconButton> */}
+                   
                 </HStack>
 
                 {/* Hidden submit button */}
@@ -508,7 +482,7 @@ export const BankTransactionModal = ({
                 />
 
                 {/* Transaction Table */}
-                <Box position="relative" zIndex={1}>
+                <Box position="relative" >
                     <TransactionTable
                         theme={theme}
                         tableCols={bankTableCols}

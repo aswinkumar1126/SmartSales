@@ -16,6 +16,7 @@ interface DatePickerInputProps {
     onKeyDown?: (e: React.KeyboardEvent<HTMLInputElement>) => void;
     defaultValue?: string;
     maxWidth?: string;
+    isRoot?:boolean
 }
 
 const parseISOToDate = (iso?: string | null) => {
@@ -51,6 +52,7 @@ export const DatePickerInput = React.forwardRef<
     onKeyDown,
     defaultValue,
     maxWidth = "200px",
+    isRoot=false,
 }, ref) => {
 
     const [isOpen, setIsOpen] = useState(false);
@@ -96,6 +98,7 @@ export const DatePickerInput = React.forwardRef<
                     }
                     dpKeyDown?.(e);
                 }}
+        
 
             />
         )
@@ -103,7 +106,7 @@ export const DatePickerInput = React.forwardRef<
     CustomInput.displayName = "CustomDateInput";
 
     return (
-        <Box w="full" maxW={maxWidth}>
+        <Box w="full" maxW={maxWidth} >
             <DatePicker
                 selected={selected}
                 onChange={(date: Date | null) => {
@@ -122,9 +125,10 @@ export const DatePickerInput = React.forwardRef<
                 placeholderText={placeholder}
                 customInput={<CustomInput />}
                 popperPlacement="bottom-start"
-                // portalId="root"
+                portalId={isRoot ? "root" :''}
                 popperClassName="chakra-datepicker-popper"
                 popperContainer={({ children }) => children}
+                
             />
         </Box>
     );

@@ -30,8 +30,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
     // Calculate the margin-left based on sidebar state
     const getMainContentMargin = () => {
         if (!isDesktop) return "0";
-        // When sidebar is collapsed, use collapsed width
-        // When sidebar is expanded, use expanded width
+    
         return sidebarCollapsed ? sidebarConfig.collapsedWidth : sidebarConfig.expandedWidth;
     };
 
@@ -41,7 +40,6 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
             <Sidebar
                 isOpen={isOpen}
                 onClose={() => setIsOpen(false)}
-
             />
 
             

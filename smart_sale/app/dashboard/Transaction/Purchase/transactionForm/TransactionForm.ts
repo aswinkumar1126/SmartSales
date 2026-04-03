@@ -6,7 +6,8 @@ export const issueColumns = (isTag: boolean) => [
         label: "TAGNO",
         width: "65px",
         align: "left" as const,
-        editable: true,
+        editable: false
+
     }] : []),
     
     {
@@ -143,7 +144,7 @@ export const issueColumns = (isTag: boolean) => [
   
     {
         key: "DESCRIPTION",
-        label: "DESCRIPTION",
+        label: "DESC",
         width: "50px",
         align: "left" as const,
         type: "text" as const,

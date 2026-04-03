@@ -1,6 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { ItemService } from "@/service/ItemService";
 
+type stoneItemsParam = {
+    STUDDED?:"Y"|"N"
+}
+
 export const useItems = (filter?: string) => {
     return useQuery({
         queryKey: ["items", filter],
@@ -11,7 +15,7 @@ export const useItems = (filter?: string) => {
     });
 };
 
-export const useStoneItems = (filter?:string) =>{
+export const useStoneItems = (filter?:stoneItemsParam) =>{
     return useQuery({
         queryKey: ["stoneItems", filter],
         queryFn: async () => {

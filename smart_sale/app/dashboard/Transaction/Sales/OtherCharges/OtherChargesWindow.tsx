@@ -50,18 +50,10 @@ const getCellStyle = (col: any, extra?: React.CSSProperties): React.CSSPropertie
     overflow: "hidden",
     boxSizing: "border-box",
     fontSize: "12px",
+    
     ...extra,
 });
 
-// const DEFAULT_CHARGE_ITEMS: SelectItem[] = [
-//     { label: "HALLMARK CHARGES", value: "HALLMARK CHARGES" },
-//     { label: "MAKING CHARGES", value: "MAKING CHARGES" },
-//     { label: "WASTAGE CHARGES", value: "WASTAGE CHARGES" },
-//     { label: "POLISHING CHARGES", value: "POLISHING CHARGES" },
-//     { label: "RHODIUM CHARGES", value: "RHODIUM CHARGES" },
-//     { label: "STONE SETTING CHARGES", value: "STONE SETTING CHARGES" },
-//     { label: "OTHER CHARGES", value: "OTHER CHARGES" },
-// ];
 
 export default function OtherChargesWindow({
     draftRowId,
@@ -72,11 +64,9 @@ export default function OtherChargesWindow({
     otherChargesData
 }: Props) {
 
-    // console.log(otherChargesData, 'otherChargesData');
-
     const tableCols = [
         { key: "chargeName", label: "MISCELLANEOUS", align: "left" as const },
-        { key: "amount", label: "AMOUNT", align: "right" as const, decimalScale: 2 },
+        { key: "amount", label: "AMOUNT", align: "right" as const, decimalScale: 2 ,allowFocus:true },
     ];
 
     const allDisplayCols = [
@@ -109,17 +99,17 @@ export default function OtherChargesWindow({
     // Field order for focus traversal
     const fieldOrder = ["chargeName", "amount"] as const;
 
+
     // useEffect to load amount when charge name changes
     useEffect(() => {
-        // Only auto-load if we're not in edit mode and amount hasn't been manually changed
+
         if (!editId && formData.chargeName && !isAmountManuallyChanged) {
-            // console.log(formData.chargeName, 'checking')
-            // Try to find amount from otherChargesData first
+           
             if (otherChargesData && Array.isArray(otherChargesData)) {
                 const selectedCharge = otherChargesData.find(
                     (item: any) => Number(item.chargeId) === Number(formData.chargeName)
                 );
-                // console.log(selectedCharge, 'checking')
+       
 
                 if (selectedCharge && selectedCharge.chargeAmount) {
                     setFormData(prev => ({
@@ -142,7 +132,7 @@ export default function OtherChargesWindow({
         if (!draftRowId) return;
 
         if (hasLoadedRef.current && rows.length > 0) {
-            // console.log(`Already loaded charges for ${draftRowId}, skipping...`);
+        
             return;
         }
 
@@ -202,6 +192,7 @@ export default function OtherChargesWindow({
             decimalScale: 2,
             placeholder: "0.00",
             ref: amountRef,
+            allowFocus:true
         },
     ];
 
@@ -261,9 +252,9 @@ export default function OtherChargesWindow({
         setErrors(prev => ({ ...prev, [key]: "" }));
 
         // If user manually changes amount, set the flag
-        if (key === 'amount') {
-            setIsAmountManuallyChanged(true);
-        }
+        // if (key === 'amount') {
+        //     setIsAmountManuallyChanged(true);
+        // }
     };
 
     const handleSubmit = useCallback(() => {
@@ -396,6 +387,7 @@ export default function OtherChargesWindow({
                     size="xs"
                     rounded="sm"
                     noBorder
+                    allowFocus={true}
                 />
 
             </Box>
@@ -407,7 +399,7 @@ export default function OtherChargesWindow({
 
         if (col.key === "amount") {
 
-            return `${row.amount.toLocaleString()}`;
+            return `${formatTotal(row.amount, 2).toLocaleString()}`;
         }
         if (col.key === "chargeName") {
             const item = chargeItems?.find(i => i.value === row.chargeName);
@@ -432,17 +424,6 @@ export default function OtherChargesWindow({
                 <Text fontSize="smaller" fontWeight="semibold">
                     OTHER CHARGES DETAILS
                 </Text>
-                {/* <HStack gap={1}>
-                    <IconButton
-                        aria-label="Close"
-                        onClick={onClose}
-                        size="xs"
-                        variant="ghost"
-                        title="Close"
-                    >
-                        <LuX size={14} />
-                    </IconButton>
-                </HStack> */}
             </HStack>
 
             <TransactionTable
@@ -483,9 +464,7 @@ export default function OtherChargesWindow({
                 <Text m={2} fontSize="small" fontWeight="500">
                     Total: ₹{totals.amount.toFixed(2)}
                 </Text>
-                {/* <Button variant="outline" size="xs" onClick={onClose} >
-                    Cancel
-                </Button> */}
+               
                 <Button colorPalette="blue" size="xs" onClick={handleSaveAndClose}>
                     Save & Close
                 </Button>

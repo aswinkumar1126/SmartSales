@@ -88,7 +88,7 @@ export default function TransactionHeaderForm({
                 w={{ base: '100%', md: 'fit-content' }}
             >
                 {/* ENTRY NO */}
-                <Box w={{ base: '100%', md: '60px' }} display={{ base: 'flex', md: 'block' }} alignItems={{ base: 'center' }}>
+                <Box w={{ base: '100%', md: '70px' }} display={{ base: 'flex', md: 'block' }} alignItems={{ base: 'center' }}>
                     <Text fontSize="2xs" mb={1} minW={{ base: '100px' }}>ENTRY NO :</Text>
                     <CapitalizedInput
                         value={form.ENTRYNO}
@@ -101,7 +101,7 @@ export default function TransactionHeaderForm({
                 </Box>
 
                 {/* BILL NO */}
-                <Box w={{ base: '100%', md: '70px' }} display={{ base: 'flex', md: 'block' }} alignItems={{ base: 'center' }}>
+                <Box w={{ base: '100%', md: '80px' }} display={{ base: 'flex', md: 'block' }} alignItems={{ base: 'center' }}>
                     <Text fontSize="2xs" mb={1} minW={{ base: '100px' }}>BILL NO :</Text>
                     <CapitalizedInput
                         value={form.BILLNO}
@@ -114,7 +114,7 @@ export default function TransactionHeaderForm({
                 </Box>
 
                 {/* DATE */}
-                <Box w={{ base: '100%', md: '150px' }} display={{ base: 'flex', md: 'block' }} alignItems='center'>
+                <Box w={{ base: '100%', md: '110px' }} display={{ base: 'flex', md: 'block' }} alignItems='center'>
                     <Text fontSize="2xs" mb={1} minW={{ base: '100px' }}>DATE :</Text>
                     <DatePicker
                         selected={parseISOToDate(form.DATE)}
@@ -127,11 +127,12 @@ export default function TransactionHeaderForm({
                         placeholderText="dd-mm-yyyy"
                         className="w-full px-2 py-1 text-xs border border-gray-400 rounded input-date"
                         disabled={isEditing}
+                        
                     />
                 </Box>
 
                 {/* RATE / GM */}
-                <Box w={{ base: '100%', md: '150px' }} display={{ base: 'flex', md: 'block' }} alignItems='center'>
+                <Box w={{ base: '100%', md: '80px' }} display={{ base: 'flex', md: 'block' }} alignItems='center'>
                     <Text fontSize="2xs" mb={1} minW={{ base: '100px' }}>RATE / GM :</Text>
                     <CapitalizedInput
                         value={form.RATEGM}
@@ -144,8 +145,8 @@ export default function TransactionHeaderForm({
                 </Box>
 
                 {/* CUSTOMER */}
-                <Box w={{ base: '100%', md: '150px' }} display={{ base: 'flex', md: 'block' }} alignItems='center'>
-                    <Text fontSize="2xs" mb={1} minW={{ base: '100px' }}>PURCHASER :</Text>
+                <Box w={{ base: '100%', md: '200px' }} display={{ base: 'flex', md: 'block' }} alignItems='center'>
+                    <Text fontSize="2xs" mb={1} minW={{ base: '100px' }}>CUSTOMER :</Text>
                     <SelectCombobox
                         items={customerCollection}
                         value={form.CUSTOMER}

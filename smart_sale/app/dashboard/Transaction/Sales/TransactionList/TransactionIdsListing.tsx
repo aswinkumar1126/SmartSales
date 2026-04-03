@@ -77,19 +77,8 @@ export const TransactionListing: React.FC<TransactionListingProps> = ({
     }, [selectedIndex]);
 
     return (
-        <Box
-            ref={containerRef}
-            tabIndex={0}
-            onKeyDown={handleKeyDown}
-            maxHeight="300px"
-            overflowY="auto"
-            outline="none"
-            _focus={{ outline: "none" }}
-            bg={theme.colors.formColor}
-            p={2}
-            rounded="xl"
-        >
-            <Box display="flex" alignItems="center" justifyContent="space-between" gap={1} mb={2}>
+        <>
+         <Box display="flex" alignItems="center" justifyContent="space-between" gap={1} >
                 <SearchBar
                     placeholder="Search Item..."
                     searchTerm={searchTerm}
@@ -105,38 +94,68 @@ export const TransactionListing: React.FC<TransactionListingProps> = ({
                     onClick={handleDeselect} // parent handles deselect
                 >
                     Clear
-                </Button> }
-               
-            </Box>
+                </Button>}
 
-            {transactionIdsList.length > 0 ? (
-                transactionIdsList.map((item, index) => (
-                    <HStack
-                        key={item.value}
-                        data-index={index}
-                        justify="space-between"
-                        p={1.5}
-                        bg={selectedIndex === index ? "cyan.100" : "gray.50"}
-                        border="1px solid"
-                        borderColor={selectedIndex === index ? "cyan.400" : "gray.200"}
-                        _hover={{ bg: "cyan.50" }}
-                        cursor="pointer"
-                        onClick={() => {
-                            setSelectedIndex(index);
-                            handleEditTransaction?.(String(item.value)); // ✅ call directly here
-                        }}
-                    >
-                        <Text fontWeight="semibold" color="black" fontSize="2xs">
-                            {item.value}
-                        </Text>
-                        {/* <Text fontWeight="semibold" color="gray.600" fontSize="xs">
+            </Box>
+            <Box
+                ref={containerRef}
+                tabIndex={0}
+                onKeyDown={handleKeyDown}
+                minHeight="auto"
+                overflowY="auto"
+                outline="none"
+                _focus={{ outline: "none" }}
+                bg={theme.colors.formColor}
+                p={2}
+                css={{
+                    "&::-webkit-scrollbar": {
+                        width: "2px",
+                        rounded: '2xl'// ✅ minimal width
+                    },
+                    "&::-webkit-scrollbar-track": {
+                        background: "transparent",
+                    },
+                    "&::-webkit-scrollbar-thumb": {
+                        background: "rgba(0,0,0,0.2)", // ✅ subtle thumb
+                        borderRadius: "8px",
+                    },
+                    "&::-webkit-scrollbar-thumb:hover": {
+                        background: "rgba(0,0,0,0.3)",
+                    },
+                }}
+            >
+
+
+                {transactionIdsList.length > 0 ? (
+                    transactionIdsList.map((item, index) => (
+                        <HStack
+                            key={item.value}
+                            data-index={index}
+                            justify="space-between"
+                            p={1.5}
+                            bg={selectedIndex === index ? "cyan.100" : "gray.50"}
+                            border="1px solid"
+                            borderColor={selectedIndex === index ? "cyan.400" : "gray.200"}
+                            _hover={{ bg: "cyan.50" }}
+                            cursor="pointer"
+                            onClick={() => {
+                                setSelectedIndex(index);
+                                handleEditTransaction?.(String(item.value)); // ✅ call directly here
+                            }}
+                        >
+                            <Text fontWeight="semibold" color="black" fontSize="2xs">
+                                {item.value}
+                            </Text>
+                            {/* <Text fontWeight="semibold" color="gray.600" fontSize="xs">
                             {item.ITEMNAME}
                         </Text> */}
-                    </HStack>
-                ))
-            ) : (
-                <Text p={2} fontSize={'2xs'}>No Entries Available</Text>
-            )}
-        </Box>
+                        </HStack>
+                    ))
+                ) : (
+                    <Text p={2} fontSize={'2xs'}>No Entries Available</Text>
+                )}
+            </Box>
+        </>
+       
     );
 };

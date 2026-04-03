@@ -85,6 +85,7 @@ export default function StoneEnterMaster({
     subStoneItems = [],
     draftRowId
 }: Props) {
+    console.log(initialRows,'initialRowsForStone')
 
     const tableCols = [
         { key: "stoneId", label: "STONE", align: "left" as const },
@@ -125,7 +126,6 @@ export default function StoneEnterMaster({
         stoneAmount: number;
     }>(emptyForm);
 
-    console.log(formData,'stoneFormData')
 
     const [rows, setRows] = useState<StoneRow[]>([]);
     const [editId, setEditId] = useState<string | null>(null);

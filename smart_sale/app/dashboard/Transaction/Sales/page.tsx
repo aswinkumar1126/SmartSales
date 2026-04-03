@@ -14,8 +14,6 @@ import {
 } from "@chakra-ui/react";
 import lodash from "lodash";
 
-
-
 import { useTheme } from "@/context/theme/themeContext";
 import { toaster } from "@/components/ui/toaster";
 import { useListCollection, useFilter } from "@chakra-ui/react";
@@ -31,10 +29,10 @@ import { useAllMetals } from "@/hooks/metal/useMetals";
 import Loader from "@/component/loader/Loader";
 import BalanceSummary, { ClosingFormDetails } from "./Balance/BalanceSummary";
 import { TransactionListing } from "./TransactionList/TransactionIdsListing";
+import { SalesSearch } from "./Search/SalesSearch";
 
-//Key
+//Key Management
 import { useGlobalKey } from "@/components/key/useGlobalKey";
-
 
 // Hooks
 
@@ -49,22 +47,23 @@ import { useOrnamentData } from "@/hooks/ornament/useOrnamentData";
 import { useTagEntryNos, useTagedDetailsByTagNo } from "@/hooks/tag/useTag";
 import { useAllBankAccounts, useBankAccount } from "@/hooks/bankAccount/useBankAccount";
 
+
 /*-------------------  *STORAGE*  --------------------------*/
 import { useSessionStorage } from "@/hooks/storage/useSessionStorage";
+
 
 // Types & Constants
 import { TransactionType, UpdateTransactionPayload, TransactionKey, CreateTransaction, TransactionItems, TRANSACTION_KEY_MAP, ClosingDetails ,WeightInfo , purchasereturnPayload ,purchasePayload} from "@/types/transcation/Transaction";
 import { SALETRANSACTIONTYPES } from "@/data/Transaction/TransactionType";
 import { BankTransaction } from "./Balance/BankTransactionModal";
-
-
-
+import { SaleTransactionType } from "@/types/transcation/SaleTransaction";
+import { SaleTransactionKey, SaleTransactionItems, SALE_TRANSACTION_KEY_MAP, SALESTRANSACTIONITEMS } from "@/types/transcation/SaleTransaction";
 
 //Utilities
 import { formatToFixed} from '@/utils/format/numberFormat';
 
 import { getTagDetails } from "@/service/TagedService";
-import { SaleTransactionType } from "@/types/transcation/SaleTransaction";
+
 
 
 //Icons
@@ -93,12 +92,21 @@ interface DateRangeType {
     startDate: string | null;
     endDate: string | null;
 }
+interface SalesFilter {
+    fromDate: string;
+    toDate: string;
+    weight: string;
+    pureId: string;
+    itemId: string;
+    accode: string;
+}
 
 /* ================================
    Main Component
 ================================ */
 
 export default function SalesPage() {
+    const today = new Date().toISOString().split("T")[0];
 
     const isFirstRender = useRef(true);
     const initialDraftRowsRef = useRef<any[]>([]);
@@ -130,8 +138,6 @@ export default function SalesPage() {
     const TRANSACTIONTYPES_ORDER = ["SA" ,"SR","IS" ,"RE"];
 
 
-
-   
     const openFilter = () => setIsFilterOpen(true);
     const closeFilter = () => setIsFilterOpen(false);
 
@@ -168,7 +174,17 @@ export default function SalesPage() {
     const [closingPure, setClosingPure] = useState(0);
 
     const [singleSearch, setSingleSearch] = useSessionStorage<string>(TRANSACTION_LIST_SEARCH,'');
-      const [deselectFlag, setDeselectFlag] = useState(false);
+    const [deselectFlag, setDeselectFlag] = useState(false);
+
+    const [saleFilter, setSaleFilter] = useState<SalesFilter>({
+            fromDate:today,
+            toDate: today,
+            weight:'',
+            pureId:'',
+            itemId:'',
+            accode:''
+        })
+    
 
 
 
@@ -268,7 +284,7 @@ export default function SalesPage() {
     
 
     const { theme } = useTheme();
-    const { data: itemsData } = useItems();
+    const { data: itemsData } = useStoneItems();
 
 
     const filters = {
@@ -299,7 +315,7 @@ export default function SalesPage() {
 
     const { data: allPureGoldNames } = usePureGoldNames();
 
-    const { data: transactionsById, isLoading: getbySnoLoading } = useTransactionByTransId(selectedTransactionId);
+    const { data: transactionsById, isLoading: getbySnoLoading } = useTransactionByTransId(selectedTransactionId,"sales");
 
     const { data: otherChargesData } = useActiveOtherCharges();
 
@@ -328,15 +344,19 @@ export default function SalesPage() {
 
 
     // Note: This hook might need to be updated to handle multiple transaction types
-    const { data: transactionList, isLoading, refetch: refetchTransactionList } = useTransactions(
-        selectedTransactionTypes[0]?.value,
-        Number(accCode), // This will be 0 or NaN when not set
-        startDate,
-        endDate,
-        itemCode
-    );
-    
+    const { data: transactionList, isLoading, refetch: refetchTransactionList } = useTransactions({
+        TRANTYPE: "sales",
+        trantype: null,
+        accode: saleFilter.accode ? Number(saleFilter.accode) : null,
+        startdate: saleFilter.fromDate || null,
+        enddate: saleFilter.toDate || null,
+        itemid: saleFilter.itemId ? Number(saleFilter.itemId) : null,
+    });
 
+  const { data: transactionHeaderDetail, isLoading: transactionHeaderLoading, refetch: refetchTransactionHeaderDetail } = useTransactions({
+        TRANTYPE: "purchase",
+        accode:headerForm.CUSTOMER ? Number(headerForm.CUSTOMER) : null
+    })
 
 
     const transactionIdsList = useMemo(() => {
@@ -359,15 +379,15 @@ export default function SalesPage() {
             }));
         }
         
-        else if (transactionList?.data?.BILLNO && !isEditing) {
+        else if (transactionHeaderDetail?.data?.BILLNO && !isEditing) {
             // Set both BILLNO and ENTRYNO when transaction data is available
             setHeaderForm(prev => ({
                 ...prev,
-                ENTRYNO: transactionList.data.ENTRYNO,
-                BILLNO: transactionList.data.BILLNO,
+                ENTRYNO: transactionHeaderDetail.data.ENTRYNO,
+                BILLNO: transactionHeaderDetail.data.BILLNO,
             }));
         }
-    }, [transactionList?.data, headerForm.CUSTOMER, isEditing]);
+    }, [transactionHeaderDetail?.data, headerForm.CUSTOMER, isEditing]);
     // Note: Using transactionList?.data as dependency instead of just BILLNO
 
     useEffect(() => {
@@ -469,7 +489,7 @@ export default function SalesPage() {
     ================================ */
     const mappedItems = useMemo(
         () =>
-            itemsData?.items?.map((item: any) => ({
+            itemsData?.map((item: any) => ({
                 label: item.itemName,
                 value: item.itemId.toString(),
             })) ?? [],
@@ -501,6 +521,35 @@ export default function SalesPage() {
     };
 
 
+
+      /* ================================
+          Search Management
+       ================================ */
+    
+        // This only gets called when user clicks "Apply Filters"
+        const handleSearchFilter = useCallback((filters: SalesFilter) => {
+            setSaleFilter({
+                fromDate: filters.fromDate,
+                toDate: filters.toDate,
+                weight: filters.weight,
+                pureId: filters.pureId,
+                itemId: filters.itemId,
+                accode: filters.accode
+            });
+        }, []);
+    
+        const handleSearchFilterClear = useCallback(() => {
+            setSaleFilter({
+                fromDate: today,
+                toDate: today,
+                weight: '',
+                pureId: '',
+                itemId: '',
+                accode: ''
+            });
+        }, [today]);
+
+
     // KEY TO ACCESS
 
     useGlobalKey("F1" ,()=>openFilter() ,"openFilter");
@@ -514,13 +563,6 @@ export default function SalesPage() {
         const pureIdStr = String(pureId);
         const { excludeRowId, transactionTypeCode, field = 'WT' } = options || {};
 
-        // console.log('getUsedQuantityByPureId called:', {
-        //     pureId: pureIdStr,
-        //     transactionTypeCode,
-        //     field,
-        //     excludeRowId,
-        //     draftRowsCount: draftRows.length
-        // });
 
         const filteredRows = draftRows.filter(row => {
             // Skip the excluded row
@@ -538,22 +580,12 @@ export default function SalesPage() {
             if (!transactionType) {
                 return false;
             }
-
-            // If transactionTypeCode is specified, filter by it
             if (transactionTypeCode && transactionType.value !== transactionTypeCode) {
-                // console.log('Transaction type mismatch:', {
-                //     expected: transactionTypeCode,
-                //     actual: transactionType.code
-                // });
+              
                 return false;
             }
 
-            // console.log('Row included:', {
-            //     rowId: row.__rowId,
-            //     PUREID: row.PUREID,
-            //     transactionType: transactionType.code,
-            //     [field]: row[field]
-            // });
+          
             return true;
         });
 
@@ -563,13 +595,7 @@ export default function SalesPage() {
             return sum + value;
         }, 0);
 
-        // console.log('getUsedQuantityByPureId result:', {
-        //     pureId: pureIdStr,
-        //     transactionTypeCode,
-        //     field,
-        //     filteredRowsCount: filteredRows.length,
-        //     sum
-        // });
+        
 
         return sum;
     }, [draftRows]);
@@ -845,7 +871,7 @@ export default function SalesPage() {
     ================================ */
     const isIssueType = (transactionType: SaleTransactionType) => {
         console.log(transactionType,'transactionTypetransactionType')
-        return transactionType.label.toUpperCase() === "ADD ISSUE" || transactionType.label.toUpperCase() === "ADD RECEIPT";
+        return transactionType.code.toUpperCase() === "IS" || transactionType.code.toUpperCase() === "RE";
     };
 
     // Determines if a stock row should be treated as an Issue-type (ISSUE / RECEIPT)
@@ -864,19 +890,19 @@ export default function SalesPage() {
     /* ================================
          ADD NEW ROW IN DRAFT TABLE FOR SPECIFIC TYPE
       ================================ */
+
     const createEmptyRowForType = (transactionType: SaleTransactionType) => {
         const base = {
             // Make sure this ID is unique and consistent
             __rowId: `row-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
             __isNew: true,
-            __previewSno: draftRows.filter(r => r.TRANSACTION_TYPE === transactionType.value).length + 1,
-            TRANSACTION_TYPE: transactionType.value,
+            __previewSno: draftRows.filter(r => r.TRANSACTION_TYPE === transactionType.code).length + 1,
+            TRANSACTION_TYPE: transactionType.code,
         };
         if (isIssueType(transactionType)) {
             return {
                 ...base,
                 PUREID: "",
-
                 WT: "",
                 TOUCH: "",
                 PUREWT: "",
@@ -899,6 +925,8 @@ export default function SalesPage() {
             RATE:  "",
             MCHARGE: "",
             WASTAGE: "",
+            DESCRIPTION:"",
+            TAGNO:"",
         };
     };
   
@@ -1325,14 +1353,7 @@ export default function SalesPage() {
 
             setDraftRows(newDraftRows);
 
-            // if (newDraftRows.length > 0) {
-            //     const firstRow = newDraftRows[0];
-            //     setEditingState({
-            //         rowId: firstRow.__rowId,
-            //         transactionType: firstRow.TRANSACTION_TYPE // Use the row's transaction type
-            //     });
-            // }
-            // Show appropriate message
+           
             setTimeout(() => {
                 const stoneCount = allStones.length;
                 const chargeCount = allCharges.length;
@@ -1396,7 +1417,7 @@ export default function SalesPage() {
         setAccCode(customerValue ? Number(customerValue) : "");
 
         setTimeout(() => {
-            refetchTransactionList();
+            refetchTransactionHeaderDetail();
         }, 100);
     };
 
@@ -1866,7 +1887,7 @@ useEffect(() => {
 
      const normalizeRowForApi = (
         row: any,
-        tranType: TransactionKey,
+        tranType: SaleTransactionKey,
         editTransaction?: boolean
     ): any => {
         const {
@@ -1894,8 +1915,8 @@ useEffect(() => {
             } as WeightInfo;
         }
 
-        if (tranType === "purchase") {
-            const payload: purchasePayload = {
+        if (tranType === "sales") {
+            const payload: SALESTRANSACTIONITEMS = {
                 ITEMID: rest.ITEMID ? Number(rest.ITEMID) : null,
                 PCS: Number(rest.PCS || 0),
                 GRSWT: Number(rest.GRSWT || 0),
@@ -1931,8 +1952,8 @@ useEffect(() => {
             return payload;
         }
 
-        if (tranType === "purchase_return") {
-            const payload: purchasereturnPayload = {
+        if (tranType === "sales_return") {
+            const payload: SALESTRANSACTIONITEMS = {
                 ITEMID: rest.ITEMID ? Number(rest.ITEMID) : null,
                 TAGNO: rest.TAGNO || "",
                 PCS: Number(rest.PCS || 0),
@@ -1998,9 +2019,9 @@ useEffect(() => {
 
             for (let i = 0; i < draftRows.length; i++) {
                 const row = draftRows[i];
-                const transactionType = SALETRANSACTIONTYPES.find(t => t.value === row.TRANSACTION_TYPE);
+                const transactionType = SALETRANSACTIONTYPES.find(t => t.code === row.TRANSACTION_TYPE);
 
-                console.log(transactionType,'transactionTypetransactionType');
+            
                 if (!transactionType) {
                     toaster.create({
                         title: "Invalid Transaction Type",
@@ -2117,10 +2138,10 @@ useEffect(() => {
             return acc;
         }, {});
 
-        const transactionDetails: TransactionItems = {};
+        const transactionDetails: SaleTransactionItems = {};
 
         draftRows.forEach(row => {
-            const mappedType = TRANSACTION_KEY_MAP[row.TRANSACTION_TYPE];
+            const mappedType = SALE_TRANSACTION_KEY_MAP[row.TRANSACTION_TYPE];
             console.log(mappedType ,'mappedTypeAtsave')
             if (!mappedType) return;
 
@@ -2183,8 +2204,9 @@ useEffect(() => {
             CLOSING_DETAILS: getClosingDetailsPayload()
         };
 
+        console.log(payload ,'createTransactionPayload')
 
-        createTransaction.mutate(payload, {
+        createTransaction.mutate({payload:payload , TRANTYPE:"sales"}, {
             onSuccess: () => {
 
                 setDraftRows([]);
@@ -2326,6 +2348,7 @@ useEffect(() => {
             await updateTransaction.mutateAsync({
                 entryNo: Number(headerForm.ENTRYNO),
                 payload,
+                TRANTYPE: "sales"
             });
 
             /* -----------------------------------------
@@ -2403,7 +2426,7 @@ useEffect(() => {
             setSelectedTransactionId(null);
             setSelectedTransactionTypes([]);
             setAccCode(null);
-            refetchTransactionList();
+            refetchTransactionHeaderDetail();
 
 
             toaster.create({
@@ -2472,19 +2495,18 @@ useEffect(() => {
     /* ================================
        Render
     ================================ */
-    const pageLoading = false;
-
-    console.log(closingDetails,'parentclosingDetails');
 
 
     const handleTagChange = () => setIsTag(prev => !prev);
 
-const handleTagNoLookup = useCallback(
-    async (id: string) => {
+    const handleTagNoLookup = useCallback(
+        async (id: string) => {
 
         if (!id?.trim()) return null;
         const response = await getTagDetails(id, Number(headerForm.CUSTOMER));
         const data=response.data ;
+
+        console.log(data,'tagResponse')
 
         if (!data) return null;
 
@@ -2500,26 +2522,22 @@ const handleTagNoLookup = useCallback(
                 SIZEID: Number(data.SIZEID) || 0,
                 ITEMID: data.ITEMID ? String(data.ITEMID) : undefined,
                 PCS: 1,
-                TAGNO:String(data.TAGNO)
+                TAGNO:String(data.TAGNO),
+                stoneDetails: data.STNDETAILS || [],
+                // otherChargesDetails: stockRow.otherChargesDetails || [],
             };
         }    
   ,
     [headerForm.CUSTOMER] // ✅ IMPORTANT
 );
+
+    console.log(draftRows,'draftRowsdraftRows')
     return (
         <>
-            <Box display={'flex'} bg={theme.colors.formColor} fontSize={'md'} fontWeight={'bold'} justifyContent={'center'} p={1} mb={1} rounded={'xl'}>
+            <Box display={'flex'} bg={theme.colors.formColor} fontSize={'md'} fontWeight={'bold'} justifyContent={'center'} p={1} mb={1} rounded={'xl'} >
                 SALES
             </Box>
         <Flex gap={1} >
-
-            {/* Loading indicator for transaction data */}
-            {/* { pageLoading && (
-                <Box position="fixed" top="50%" left="50%" transform="translate(-50%, -50%)" zIndex={1000}>
-                    <Loader isLoading={true} fullscreen={true} content="Waiting for the response" />
-                </Box>
-            )} */}
-           
 
             {/* LEFT – 70% */}
                 <Box display='flex' gap={1} w='80%' >
@@ -2585,12 +2603,12 @@ const handleTagNoLookup = useCallback(
                                     .filter((t): t is SaleTransactionType => !!t)
                                     .map(transactionType => {
                                         const typeRows = draftRows.filter(
-                                            row => row.TRANSACTION_TYPE === transactionType.value
+                                            row => row.TRANSACTION_TYPE === transactionType.code
                                         );
                                         const typeTotals = calculateTotalsForType(transactionType);
                                         const activeCollection = getActiveCollectionForType(transactionType);
                                         const isIssue = isIssueType(transactionType);
-                                        console.log(isIssue,'isIssueisIssue')
+                                
 
                                         return (
                                             <Box
@@ -2604,6 +2622,7 @@ const handleTagNoLookup = useCallback(
                                                
                                             >
                                                         <DraftTransactionTable
+                                                        
                                                             rows={typeRows}
                                                             editingState={editingState}
                                                             isEditing={isEditing}
@@ -2737,15 +2756,17 @@ const handleTagNoLookup = useCallback(
                                                             // itemsFilter={activeFilter}
                                                             totals={typeTotals}
                                                             transactionTitle={transactionType?.label}
-                                                            transactionType={transactionType?.key}
+                                                            transactionType={transactionType?.code}
                                                             theme={theme}
                                                             isIssue={isIssue}
                                                             getAvailableWeight={getAvailableWeight}
                                                             onClear={() => handleClearRowsForType(transactionType)}
                                                             getStockAvailability={getStockAvailability}
+
                                                             otherChargesList={otherCharges}
                                                             otherChargesData={otherChargesData?.data}
                                                             getAvailablePieces={getAvailablePieces}
+
                                                             handleTagChange={handleTagChange}
                                                             isTag={isTag} 
                                                             onTagNoLookup={handleTagNoLookup}
@@ -2762,55 +2783,16 @@ const handleTagNoLookup = useCallback(
                    
 
                 {/* RIGHT – 30% */}
-                {isFilterOpen && (
-                    <Drawer.Root open={isFilterOpen} onOpenChange={(e) => closeFilter()}>
-                        <Portal>
-                            <Drawer.Backdrop />
-                            <Drawer.Positioner>
-                                <Drawer.Content maxW="480px">
-                                    <Drawer.Header borderBottomWidth="1px" bg='cyan.50' fontSize='md'>
-                                        Transaction Filters
-                                        <Drawer.CloseTrigger asChild>
-                                            <Button variant="ghost" size="sm" onClick={closeFilter}>×</Button>
-                                        </Drawer.CloseTrigger>
-                                    </Drawer.Header>
-
-                                    <Drawer.Body p={0}>
-                                        <RightSideDetailsPanel
-                                            selectedTransactionId={selectedTransactionId}
-                                            onTransactionClick={(id: any) => {
-                                                handleTransactionClick(id);
-                                                closeFilter(); // auto close after select
-                                            }}
-                                            transactionList={transactionList}
-                                            isLoadingTransactions={isLoading}
-                                            draftTotals={totals}
-                                            headerForm={headerForm}
-                                            selectedTransactionType={selectedTransactionTypes}
-                                            theme={theme}
-                                            startDate={startDate}
-                                            endDate={endDate}
-                                            onStartDateChange={handleStartDateChange}
-                                            onEndDateChange={handleEndDateChange}
-                                            onSelectItem={handleSelectItemCode}
-                                            selectedItemCode={itemCode}
-                                            itemsCollection={itemsCollection}
-                                            itemsFilter={itemsFilter}
-                                            getLabelByValue={getLabelByValue}
-                                            
-                                        />
-                                    </Drawer.Body>
-
-                                    <Drawer.Footer borderTopWidth="1px">
-                                        <Button variant="outline" size="sm" onClick={closeFilter}>
-                                            Close
-                                        </Button>
-                                    </Drawer.Footer>
-                                </Drawer.Content>
-                            </Drawer.Positioner>
-                        </Portal>
-                    </Drawer.Root>
-                )}
+                    <SalesSearch
+                        onSearch={handleSearchFilter}           // For final submit
+                        onClear={handleSearchFilterClear}
+                        isOpen={isFilterOpen}
+                        onClose={()=>setIsFilterOpen(false)}
+                        itemOptions={mappedItems}
+                        accodeOptions={saleCustomerList}
+                        pureGoldOptions={pureGoldList}
+                        initialFilters={saleFilter}
+                    />
                
             </Box>    
               

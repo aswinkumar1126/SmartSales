@@ -29,6 +29,8 @@ import { CapitalizedInput } from "@/components/ui/CapitalizedInput";
 import { SwitchInput } from "@/components/ui/SwitchInput";
 import { SearchIcon } from "lucide-react";
 
+import { getIsTagEnabled } from "@/config/transaction/SalesConfig";
+
 type StoneRow = {
     id: string;
     draftRowId: string;
@@ -80,7 +82,6 @@ interface DraftTransactionTableProps {
     onClear?: () => void;
     transactionType?: string;
     initialFormData?: any;
-    onFormDataChange?: (data: any) => void;
     getStockAvailability?: (id: string, options?: { excludeRowId?: string, transactionTypeCode: string, isEditing?: boolean, originalWeight?: number }) => any | undefined;
     otherChargesList: { label: string; value: string; }[];
     otherChargesData: any;
@@ -161,7 +162,6 @@ export default function DraftTransactionTable({
     onClear,
     transactionType,
     initialFormData,
-    onFormDataChange,
     getStockAvailability,
     otherChargesList,
     otherChargesData,
@@ -171,15 +171,16 @@ export default function DraftTransactionTable({
     onTagNoLookup
 }: DraftTransactionTableProps) {
 
-    console.log(totals, 'totals')
 
     // 🔥 FIX: Get the current editing row ID and its transaction type
     const currentEditingRowId = editingState?.rowId;
     const currentEditingTransactionType = editingState?.transactionType;
 
+
     // Check if this table should be in editing mode
     const isThisTableEditing = currentEditingRowId !== null &&
         currentEditingTransactionType === transactionType;
+
 
     // FIX: Separate state for each modal's draft row ID
     const [stoneDraftRowId, setStoneDraftRowId] = useState<string>("");
@@ -192,11 +193,10 @@ export default function DraftTransactionTable({
     const stoneTempId = useRef<string | null>(null);
     const miscTempId = useRef<string | null>(null);
 
-    const { data: stoneItemsData } = useStoneItems();
+    const { data: stoneItemsData } = useStoneItems({STUDDED:'Y'});
     const [stoneItemsCollection, setStoneItemCollection] = useState<{ label: string; value: string }[]>([]);
-    // 2. Add state + hook at component level
-  
-    const [isLookingUp, setIsLookingUp] = useState(false);
+   
+
 
     const [tagNo , setTagNo] = useState<string>('');
 
@@ -215,10 +215,8 @@ export default function DraftTransactionTable({
 
 
 
-    // rowsRef so setTimeout closures always see latest rows
-    console.log(rows, 'rows in draft table')
     const rowsRef = useRef(rows);
-    console.log(rowsRef.current, 'rows in draft table')
+
     useEffect(() => { rowsRef.current = rows; }, [rows]);
 
     useEffect(() => {
@@ -259,13 +257,13 @@ export default function DraftTransactionTable({
     const orderedKeys = useMemo(() => {
         if (isIssue) return ["PUREID", "WT", "AWT", "TOUCH", "ATOUCH", "PUREWT", "APUREWT"];
 
-        const isReturn = transactionTitle?.toLowerCase() === "return";
-        const showTag = isReturn && isTag;
+       
+        const showTag = isTag;
 
         return showTag
             ? ["TAGNO", "ITEMID", "PCS", "GRSWT", "STNWT", "NETWT", "WASTYPE", "WASPER", "WASTAGE", "TOUCH", "PUREWT", "HMC", "MC", "STNAMT", "DESCRIPTION"]
             : ["ITEMID", "PCS", "GRSWT", "STNWT", "NETWT", "WASTYPE", "WASPER", "WASTAGE", "TOUCH", "PUREWT", "HMC", "MC", "STNAMT", "DESCRIPTION"];
-    }, [isIssue, isTag, transactionTitle]);  // ✅ add transactionTitle to deps
+    }, [isIssue, isTag]);  // ✅ add transactionTitle to deps
 
 
     const baseColumns = isIssue ? issueDataColumns : issueColumns(isTag);
@@ -549,32 +547,7 @@ export default function DraftTransactionTable({
         }
     }, [currentEditingRowId, currentEditingTransactionType, transactionType, rows]);
 
-    // 3. React to the result
-    // useEffect(() => {
-    //     if (!pendingTagNo || !tagData) return;
-
-    //     // handleChange({
-    //     //     GRSWT: tagData.GRSWT?.toString() || "0",
-    //     //     STNWT: tagData.STNWT?.toString() || "0",
-    //     //     NETWT: tagData.NETWT?.toString() || "0",
-    //     //     WASPER: tagData.WASPER?.toString() || "0",
-    //     //     MC: tagData.MC?.toString() || "0",
-    //     //     TOUCH: tagData.TOUCH?.toString() || "0",
-    //     //     SALESSTNWT: tagData.SALESSTNWT?.toString() || "0",
-    //     //     PCS: (tagData.PCS ?? 1).toString(),
-    //     //     ...(tagData.ITEMID ? { ITEMID: tagData.ITEMID.toString() } : {}),
-    //     // });
-
-    //     toaster.create({
-    //         title: "Tag Loaded",
-    //         description: `Details filled for tag: ${pendingTagNo}`,
-    //         type: "success",
-    //         duration: 1500,
-    //     });
-
-    //     setPendingTagNo(""); // ✅ resets → hook disables (enabled: !!id = false)
-    //     setTimeout(() => moveNext("TAGNO"), 100);
-    // }, [tagData]);
+   
 
     type FormData = typeof formData;
 
@@ -1054,6 +1027,7 @@ export default function DraftTransactionTable({
     };
 
     const renderFormCell = (field: FormField) => {
+
         const ref = fieldRefs.current[field.key];
         const isInvalid = !!errors[field.key] && !!touched[field.key];
         const shouldDisable = field.disabled || (!!field.dependsOn && !formData[field.dependsOn]);
@@ -1291,7 +1265,6 @@ export default function DraftTransactionTable({
 
     const getCellStyle = (col: any, extra?: React.CSSProperties): React.CSSProperties => ({
 
-
         width: getWidth(col.width),
         minWidth: getWidth(col.width),
         maxWidth: getWidth(col.width),
@@ -1307,7 +1280,7 @@ export default function DraftTransactionTable({
     useGlobalKey("Escape", () => setIsMiscModalOpen(false), "close-modal");
     console.log(transactionTitle,'transactionTitle')
 
-    console.log(isTag,'isTag')
+    const showTag = getIsTagEnabled(transactionType);
 
     return (
         <Box display="flex" flexDirection="column" gap={1}>
@@ -1327,11 +1300,13 @@ export default function DraftTransactionTable({
                             <Text as="span" color="blue.500" ml={1} fontSize="2xs"> ✎ Editing</Text>
                         )}
                     </Text>
-                    {transactionTitle?.toLowerCase() === "return" && 
+
+                    {showTag && 
                     <>
                         <Button size="2xs" bg="yellow.fg" onClick={handleTagChange}>
                             Switch {isTag ? "Non Tag" : "Tag"}
                         </Button>
+                        
                         {
                             isTag &&
                             <Box display={'flex'} alignItems={'center'} >

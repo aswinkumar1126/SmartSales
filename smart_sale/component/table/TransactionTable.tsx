@@ -100,7 +100,7 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
             borderRadius="md"
             overflow="hidden"
             bg="white"
-            zIndex='0'
+            zIndex={0}
 
 
         >

@@ -196,6 +196,7 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
                             onKeyDown={(e) => handleKeyDown(e, field.name)}
                             defaultValue ={field.defaultValue}
                             maxWidth={field.maxWidth || field.maxW || field.width}
+                        
                             
                         />
                     );

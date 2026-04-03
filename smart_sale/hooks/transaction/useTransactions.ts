@@ -22,37 +22,37 @@ export const transactionKeys = {
 /* -------------------- QUERIES -------------------- */
 
 // GET ALL
-export const useTransactions = (
-    trantype?: undefined | null | string,
-    accode?: number | null,
-    startdate?: string | null,
-    enddate?: string | null,
-    itemid?: number | null,
-) => {
+export const useTransactions = (props: {
+    TRANTYPE: string;
+    trantype?: string | null;
+    accode?: number | null;
+    startdate?: string | null;
+    enddate?: string | null;
+    itemid?: number | null;
+}) => {
     return useQuery<ApiResponse<any>>({
         queryKey: [
             "transactions",
             "list",
-            trantype ?? "all",
-            accode ?? "all",
-            startdate ?? "all",
-            enddate ?? "all",
-            itemid ?? "all",
+            props.trantype ?? "all",
+            props.accode ?? "all",
+            props.startdate ?? "all",
+            props.enddate ?? "all",
+            props.itemid ?? "all",
         ],
-        queryFn: () => TransactionService.getAll(trantype, accode, startdate, enddate, itemid),
-        // Only run the query if we have required parameters
-        // enabled: !!accode, // Add this line
+        queryFn: () => TransactionService.getAll(props),
     });
 };
 
 // GET BY TRANSACTION ID
 export const useTransactionByTransId = (
     transId: string | null,
+    TRANTYPE: string
 ) => {
     return useQuery<ApiResponse<any>>({
         queryKey: transactionKeys.byTransId(transId),
         queryFn: () =>
-            TransactionService.getByTransId(transId),
+            TransactionService.getByTransId(transId, TRANTYPE),
         enabled: !!transId ,
     });
 };
@@ -60,11 +60,12 @@ export const useTransactionByTransId = (
 // GET ONE
 export const useTransaction = (
     sno: number,
-    TRANTYPE: string
+    TRANTYPE: string,
+    tranType:string
 ) => {
     return useQuery<ApiResponse<any>>({
         queryKey: transactionKeys.byId(sno, TRANTYPE),
-        queryFn: () => TransactionService.getOne(sno, TRANTYPE),
+        queryFn: () => TransactionService.getOne(sno, TRANTYPE ,tranType),
         enabled: !!sno && !!TRANTYPE,
     });
 };
@@ -80,10 +81,12 @@ export const useUpdateTransaction = () => {
         mutationFn: ({
             entryNo,
             payload,
+            TRANTYPE
         }: {
             entryNo: number;
             payload: CreateTransaction;
-            }) => TransactionService.update(entryNo, payload),
+            TRANTYPE: string;
+            }) => TransactionService.update(entryNo, payload,TRANTYPE ),
 
         onSuccess: () => {
             queryClient.invalidateQueries({
@@ -94,7 +97,7 @@ export const useUpdateTransaction = () => {
 };
 
 // PATCH
-export const usePatchTransaction = (TRANTYPE: string) => {
+export const usePatchTransaction = (TRANTYPE: string ,tranType:string) => {
     const queryClient = useQueryClient();
 
     return useMutation({
@@ -104,7 +107,7 @@ export const usePatchTransaction = (TRANTYPE: string) => {
         }: {
             sno: number;
             payload: Partial<any>;
-        }) => TransactionService.patch(sno, payload, TRANTYPE),
+            }) => TransactionService.patch(sno, payload, TRANTYPE, tranType),
 
         onSuccess: () => {
             queryClient.invalidateQueries({
@@ -115,12 +118,12 @@ export const usePatchTransaction = (TRANTYPE: string) => {
 };
 
 // DELETE
-export const useDeleteTransaction = (TRANTYPE: string) => {
+export const useDeleteTransaction = (TRANTYPE: string ,tranType:string) => {
     const queryClient = useQueryClient();
 
     return useMutation({
         mutationFn: (sno: number) =>
-            TransactionService.remove(sno, TRANTYPE),
+            TransactionService.remove(sno, TRANTYPE,tranType),
 
         onSuccess: () => {
             queryClient.invalidateQueries({
@@ -131,20 +134,18 @@ export const useDeleteTransaction = (TRANTYPE: string) => {
 };
 
 //CREATE
+//CREATE
 export const useCreateTransactions = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: (payload: CreateTransaction) =>
-            TransactionService.createMany(payload),
+        mutationFn: ({ payload, TRANTYPE }: { payload: CreateTransaction; TRANTYPE: string }) =>
+            TransactionService.createMany(payload, TRANTYPE),
 
         onSuccess: () => {
-            // Refresh transaction list for this TRANTYPE
             queryClient.invalidateQueries({
                 queryKey: transactionKeys.all,
-                
             });
         },
-        
     });
 };

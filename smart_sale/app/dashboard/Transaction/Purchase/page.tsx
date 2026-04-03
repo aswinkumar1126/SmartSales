@@ -15,7 +15,6 @@ import {
 import lodash from "lodash";
 
 
-
 import { useTheme } from "@/context/theme/themeContext";
 import { toaster } from "@/components/ui/toaster";
 import { useListCollection, useFilter } from "@chakra-ui/react";
@@ -25,7 +24,7 @@ import { useOpeningBalance } from "@/hooks/balance/useOpeningBalance";
 import TransactionHeaderForm from "./TransactionHeaderForm/TransactionHeaderForm";
 import TransactionTypeSelector from "./TransactionTypeSelector/TransactionTypeSelector";
 import DraftTransactionTable from "./DraftTransactionTable/DraftTransactionTable";
-import RightSideDetailsPanel from "./RightSideDetailsPanel/RightSideDetailsPanel";
+import { PurchaseSearchDrawer } from "./Search/PurchaseSearchDrawer";
 import StockDrawer from "./DrawerTable/StockTable";
 import { useAllMetals } from "@/hooks/metal/useMetals";
 import Loader from "@/component/loader/Loader";
@@ -58,7 +57,6 @@ import { TRANSACTIONTYPES } from "@/data/Transaction/TransactionType";
 import { BankTransaction } from "./Balance/BankTransactionModal";
 
 
-
 //Utilities
 import { formatToFixed} from '@/utils/format/numberFormat';
 
@@ -87,9 +85,13 @@ type TransactionRow ={
     MC?:number;
 }
 
-interface DateRangeType {
-    startDate: string | null;
-    endDate: string | null;
+interface PurchaseFilter {
+    fromDate:string;
+    toDate:string;
+    weight:string;
+    pureId:string;
+    itemId:string;
+    accode:string;
 }
 
 /* ================================
@@ -97,6 +99,8 @@ interface DateRangeType {
 ================================ */
 
 export default function PurchasePage() {
+    const today = new Date().toISOString().split("T")[0];
+   
 
     const isFirstRender = useRef(true);
     const initialDraftRowsRef = useRef<any[]>([]);
@@ -109,21 +113,17 @@ export default function PurchasePage() {
     const HEADER_KEY = "transaction_header";
     const DRAFT_KEY = "transaction_draft";
     const TYPE_KEY = "transaction_type";
-    const DATE_RANGE_KEY = "transaction_date_range";
-    const ITEMID_KEY = "transaction_itemid";
-    const FILTER_KEY = "show_filter";
+
+  
     const EDITING_KEY = "isEditing";
     const EDITING_SNO_KEY = "editing_sno";
     const STONE_MASTER_KEY = "STONE_MASTER";
-    const MISC_CHARGE_KEY = "MISC_CHARGE_MASTER";
     const CLOSING_DETAILS_KEY = "CLOSING_DETAILS";
-  
     const TRANSACTION_LIST_SEARCH = "transaction_list_search";
     const ISTAG = 'is_tag';
 
 
   
-    // const [itemsStockList, setItemsStockList] = useState<{ label: string, value: string }[]>([]);
 
     const TRANSACTIONTYPES_ORDER = ["PU", "PR", "ISP", "REC"];
 
@@ -131,7 +131,6 @@ export default function PurchasePage() {
 
    
     const openFilter = () => setIsFilterOpen(true);
-    const closeFilter = () => setIsFilterOpen(false);
 
     const draftRowTempId = useRef<string | null>(null);
 
@@ -165,8 +164,6 @@ export default function PurchasePage() {
     const [closingCash, setClosingCash] = useState(0);
     const [closingPure, setClosingPure] = useState(0);
 
-    const [pendingTagNo, setPendingTagNo] = useState<string>("");
-
 
     const [singleSearch, setSingleSearch] = useSessionStorage<string>(TRANSACTION_LIST_SEARCH,'');
       const [deselectFlag, setDeselectFlag] = useState(false);
@@ -179,18 +176,18 @@ export default function PurchasePage() {
     /*-------------------PERSISTENT STATE-------------------------------*/
 
 
-    const [showFilter, setShowFilter] = useSessionStorage <boolean>(FILTER_KEY, false);
-
-    const [itemCode, setItemCode] = useSessionStorage<number|null> (ITEMID_KEY, null);
-
     const [isEditing, setIsEditing] = useSessionStorage(EDITING_KEY, false);
 
     const [editingSno, setEditingSno] = useSessionStorage<string|null>(EDITING_SNO_KEY, null);
 
-    const [dateRange, setDateRange] = useSessionStorage<DateRangeType>(DATE_RANGE_KEY, {
-        startDate: null,
-        endDate: null
-    });
+    const [purchaseFilter, setPurchaseFilter] = useState<PurchaseFilter>({
+        fromDate:today,
+        toDate: today,
+        weight:'',
+        pureId:'',
+        itemId:'',
+        accode:''
+    })
 
     const [isTag ,setIsTag] = useSessionStorage<boolean>(ISTAG , true);
 
@@ -261,25 +258,15 @@ export default function PurchasePage() {
     // Draft rows (local storage backed)
     const [draftRows, setDraftRows] = useState<any[]>([]);
 
-    // Date range state with localStorage persistence
-
-    // You can still have individual variables if needed for existing code
-    const startDate = dateRange.startDate;
-    const endDate = dateRange.endDate;
-    
+ 
 
     const { theme } = useTheme();
-    const { data: itemsData } = useItems();
-
-    const { data: tagData, refetch: tagDetailRefetch } =useTagedDetailsByTagNo(pendingTagNo, Number(headerForm.CUSTOMER));
+    const { data: itemsData } = useStoneItems();
 
 
-
-  
     const filters = {
         accountType: "PR"
     }
-
 
     const { data: allCustomer } = useAllAccountHead(filter , filters);
 
@@ -304,7 +291,7 @@ export default function PurchasePage() {
 
     const { data: allPureGoldNames } = usePureGoldNames();
 
-    const { data: transactionsById, isLoading: getbySnoLoading } = useTransactionByTransId(selectedTransactionId);
+    const { data: transactionsById, isLoading: getbySnoLoading } = useTransactionByTransId(selectedTransactionId ,'purchase');
 
     const { data: otherChargesData } = useActiveOtherCharges();
 
@@ -333,15 +320,19 @@ export default function PurchasePage() {
 
 
     // Note: This hook might need to be updated to handle multiple transaction types
-    const { data: transactionList, isLoading, refetch: refetchTransactionList } = useTransactions(
-        selectedTransactionTypes[0]?.value,
-        Number(accCode), // This will be 0 or NaN when not set
-        startDate,
-        endDate,
-        itemCode
-    );
-    
+    const { data: transactionList, isLoading, refetch: refetchTransactionList } = useTransactions({
+        TRANTYPE: "purchase",
+        trantype: null,
+        accode: purchaseFilter.accode ? Number(purchaseFilter.accode) : null,
+        startdate: purchaseFilter.fromDate || null,
+        enddate: purchaseFilter.toDate || null,
+        itemid: purchaseFilter.itemId ? Number(purchaseFilter.itemId) : null,
+    });
 
+    const { data: transactionHeaderDetail, isLoading: transactionHeaderLoading, refetch: refetchTransactionHeaderDetail } = useTransactions({
+        TRANTYPE: "purchase",
+        accode:headerForm.CUSTOMER ? Number(headerForm.CUSTOMER) : null
+    })
 
 
     const transactionIdsList = useMemo(() => {
@@ -364,15 +355,15 @@ export default function PurchasePage() {
             }));
         }
         
-        else if (transactionList?.data?.BILLNO && !isEditing) {
+        else if (transactionHeaderDetail?.data?.BILLNO && !isEditing) {
             // Set both BILLNO and ENTRYNO when transaction data is available
             setHeaderForm(prev => ({
                 ...prev,
-                ENTRYNO: transactionList.data.ENTRYNO,
-                BILLNO: transactionList.data.BILLNO,
+                ENTRYNO: transactionHeaderDetail.data.ENTRYNO,
+                BILLNO: transactionHeaderDetail.data.BILLNO,
             }));
         }
-    }, [transactionList?.data, headerForm.CUSTOMER, isEditing]);
+    }, [transactionHeaderDetail?.data, headerForm.CUSTOMER, isEditing]);
     // Note: Using transactionList?.data as dependency instead of just BILLNO
 
     useEffect(() => {
@@ -408,6 +399,7 @@ export default function PurchasePage() {
        Customer Data
     ================================ */
     const customerList = Array.isArray(allCustomer?.data?.acheads) ? allCustomer.data.acheads : [];
+
 
     useEffect(() => {
         if (!customerList) return;
@@ -458,6 +450,35 @@ export default function PurchasePage() {
     }, [otherChargesData]);
 
 
+    /* ================================
+      Search Management
+   ================================ */
+
+    // This only gets called when user clicks "Apply Filters"
+    const handleSearchFilter = useCallback((filters: PurchaseFilter) => {
+        setPurchaseFilter({
+            fromDate: filters.fromDate,
+            toDate: filters.toDate,
+            weight: filters.weight,
+            pureId: filters.pureId,
+            itemId: filters.itemId,
+            accode: filters.accode
+        });
+    }, []);
+
+    const handleSearchFilterClear = useCallback(() => {
+        setPurchaseFilter({
+            fromDate: today,
+            toDate: today,
+            weight: '',
+            pureId: '',
+            itemId: '',
+            accode: ''
+        });
+    }, [today]);
+
+
+
     const getLabelByValue = useCallback((collection: any, value: any) => {
         if (!collection) return value ?? "";
 
@@ -474,7 +495,7 @@ export default function PurchasePage() {
     ================================ */
     const mappedItems = useMemo(
         () =>
-            itemsData?.items?.map((item: any) => ({
+            itemsData?.map((item: any) => ({
                 label: item.itemName,
                 value: item.itemId.toString(),
             })) ?? [],
@@ -994,7 +1015,7 @@ export default function PurchasePage() {
             localStorage.removeItem(DRAFT_KEY);
             // localStorage.removeItem(HEADER_KEY);
             localStorage.removeItem(TYPE_KEY);
-            localStorage.removeItem(DATE_RANGE_KEY);
+        
         };
     }, []);
 
@@ -1338,14 +1359,7 @@ export default function PurchasePage() {
 
             setDraftRows(newDraftRows);
 
-            // if (newDraftRows.length > 0) {
-            //     const firstRow = newDraftRows[0];
-            //     setEditingState({
-            //         rowId: firstRow.__rowId,
-            //         transactionType: firstRow.TRANSACTION_TYPE // Use the row's transaction type
-            //     });
-            // }
-            // Show appropriate message
+       
             setTimeout(() => {
                 const stoneCount = allStones.length;
                 const chargeCount = allCharges.length;
@@ -1392,7 +1406,7 @@ export default function PurchasePage() {
 
 
 
-    const handleShowFilter = { openFilter }
+    // const handleShowFilter = { openFilter }
 
    
 
@@ -1409,7 +1423,7 @@ export default function PurchasePage() {
         setAccCode(customerValue ? Number(customerValue) : "");
 
         setTimeout(() => {
-            refetchTransactionList();
+            refetchTransactionHeaderDetail();
         }, 100);
     };
 
@@ -1419,20 +1433,7 @@ export default function PurchasePage() {
 
 
 
-// Update handlers - NO localStorage calls needed!
-const handleStartDateChange = (val?: string) => {
-    setDateRange(prev => ({ 
-        ...prev, 
-        startDate: val || null 
-    }));
-};
 
-const handleEndDateChange = (val?: string) => {
-    setDateRange(prev => ({ 
-        ...prev, 
-        endDate: val || null 
-    }));
-};
     /* ================================
        Transaction Type Handlers
     ================================ */
@@ -2204,9 +2205,9 @@ console.log(typeRows,'typeRows')
             CLOSING_DETAILS: getClosingDetailsPayload()
         };
 console.log('createTransactionPayload',payload)
-        return;
+   
 
-        createTransaction.mutate(payload, {
+        createTransaction.mutate({payload:payload ,TRANTYPE:"purchase" }, {
             onSuccess: () => {
 
                 setDraftRows([]);
@@ -2348,6 +2349,7 @@ console.log('createTransactionPayload',payload)
             await updateTransaction.mutateAsync({
                 entryNo: Number(headerForm.ENTRYNO),
                 payload,
+                TRANTYPE:"purchase"
             });
 
             /* -----------------------------------------
@@ -2372,13 +2374,7 @@ console.log('createTransactionPayload',payload)
             // Clear local storage keys
             [
                 DRAFT_KEY,
-                // HEADER_KEY,
                 TYPE_KEY,
-                DATE_RANGE_KEY,
-                // ITEMID,
-                // FILTER,
-                // EDITING,
-                // EDITING_SNO,
             ].forEach(key => localStorage.removeItem(key));
 
             toaster.create({
@@ -2425,7 +2421,7 @@ console.log('createTransactionPayload',payload)
             setSelectedTransactionId(null);
             setSelectedTransactionTypes([]);
             setAccCode(null);
-            refetchTransactionList();
+            refetchTransactionHeaderDetail();
 
 
             toaster.create({
@@ -2463,9 +2459,6 @@ console.log('createTransactionPayload',payload)
         setDeselectFlag(false); // reset deselect flag whenever typing
     };
 
-    const handleSelectItemCode = useCallback((id: number | null) => {
-        setItemCode(id);
-    }, []);
 
     /* ================================
        Calculate Overall Totals
@@ -2501,12 +2494,14 @@ console.log('createTransactionPayload',payload)
 
     const handleTagChange = () => setIsTag(prev => !prev);
 
-const handleTagNoLookup = useCallback(
+    const handleTagNoLookup = useCallback(
     async (id: string) => {
 
         if (!id?.trim()) return null;
         const response = await getTagDetails(id, Number(headerForm.CUSTOMER));
         const data=response.data ;
+
+        console.log(data,'tagdetailsresponse')
 
         if (!data) return null;
 
@@ -2522,7 +2517,8 @@ const handleTagNoLookup = useCallback(
                 SIZEID: Number(data.SIZEID) || 0,
                 ITEMID: data.ITEMID ? String(data.ITEMID) : undefined,
                 PCS: 1,
-                TAGNO:String(data.TAGNO)
+                TAGNO:String(data.TAGNO),
+                stoneDetails: data.STNDETAILS || [],
             };
         }    
   ,
@@ -2570,7 +2566,7 @@ const handleTagNoLookup = useCallback(
                             theme={theme}
                             TRANSACTIONTYPES_ORDER={TRANSACTIONTYPES_ORDER}
                             setIsStockDrawerOpen={setIsStockDrawerOpen}
-                            showFilter={showFilter}
+                            // showFilter={showFilter}
                             handleShowFilter={openFilter}
                             isEditing={isEditing}
                             onSave={isEditing ? handleUpdateTransaction : handleSaveTransaction}
@@ -2620,7 +2616,7 @@ const handleTagNoLookup = useCallback(
                                                 borderColor={theme.colors.greyColor}
                                                 flex={'100%'}
                                                 // flex={isIssue ? 1 : '100%'} // Issue types share flex, others full width
-                                                // minW={isIssue ? '300px' : '100%'} // Minimum width for side by side
+                                                // minW={isIssue ? '40%' : '100%'} // Minimum width for side by side
                                                
                                             >
                                                         <DraftTransactionTable
@@ -2782,55 +2778,18 @@ const handleTagNoLookup = useCallback(
                    
 
                 {/* RIGHT – 30% */}
-                {isFilterOpen && (
-                    <Drawer.Root open={isFilterOpen} onOpenChange={(e) => closeFilter()}>
-                        <Portal>
-                            <Drawer.Backdrop />
-                            <Drawer.Positioner>
-                                <Drawer.Content maxW="480px">
-                                    <Drawer.Header borderBottomWidth="1px" bg='cyan.50' fontSize='md'>
-                                        Transaction Filters
-                                        <Drawer.CloseTrigger asChild>
-                                            <Button variant="ghost" size="sm" onClick={closeFilter}>×</Button>
-                                        </Drawer.CloseTrigger>
-                                    </Drawer.Header>
-
-                                    <Drawer.Body p={0}>
-                                        <RightSideDetailsPanel
-                                            selectedTransactionId={selectedTransactionId}
-                                            onTransactionClick={(id: any) => {
-                                                handleTransactionClick(id);
-                                                closeFilter(); // auto close after select
-                                            }}
-                                            transactionList={transactionList}
-                                            isLoadingTransactions={isLoading}
-                                            draftTotals={totals}
-                                            headerForm={headerForm}
-                                            selectedTransactionType={selectedTransactionTypes}
-                                            theme={theme}
-                                            startDate={startDate}
-                                            endDate={endDate}
-                                            onStartDateChange={handleStartDateChange}
-                                            onEndDateChange={handleEndDateChange}
-                                            onSelectItem={handleSelectItemCode}
-                                            selectedItemCode={itemCode}
-                                            itemsCollection={itemsCollection}
-                                            itemsFilter={itemsFilter}
-                                            getLabelByValue={getLabelByValue}
-                                            
-                                        />
-                                    </Drawer.Body>
-
-                                    <Drawer.Footer borderTopWidth="1px">
-                                        <Button variant="outline" size="sm" onClick={closeFilter}>
-                                            Close
-                                        </Button>
-                                    </Drawer.Footer>
-                                </Drawer.Content>
-                            </Drawer.Positioner>
-                        </Portal>
-                    </Drawer.Root>
-                )}
+              
+                    <PurchaseSearchDrawer
+                        onSearch={handleSearchFilter}           // For final submit
+                        onClear={handleSearchFilterClear}
+                        isOpen={isFilterOpen}
+                        onClose={()=>setIsFilterOpen(false)}
+                        itemOptions={mappedItems}
+                        accodeOptions={purchaserList}
+                        pureGoldOptions={pureGoldList}
+                        initialFilters={purchaseFilter}
+                    />
+            
                
             </Box>    
               

@@ -2,15 +2,33 @@ import { axiosInstance } from "@/api/axiosInstance";
 import { ApiResponse } from "@/types/api/apiResponse";
 import { TRANSACTION, CreateTransaction,  UpdateTransactionPayload } from "@/types/transcation/Transaction";
 
-const BASE_PATH = "/purchase";
+const BASE_PURCHASE_PATH = "/purchase" ;
+const BASE_SALES_PATH = "/sales";
+
+
+type GetTransactionProps = {
+
+    TRANTYPE: string;
+    trantype?: string | null;
+    accode?: number | null;
+    startdate?: string | null;
+    enddate?: string | null;
+    itemid?: number | null;
+ 
+}
 
 export const TransactionService = {
     createMany: async (
         payload: CreateTransaction,
+        TRANTYPE: string
  
     ): Promise<ApiResponse<any>> => {
         try {
-            console.log(payload ,'payloadfor create')
+            
+            const BASE_PATH =
+                TRANTYPE === "purchase" 
+                    ? BASE_PURCHASE_PATH
+                    : BASE_SALES_PATH;
             const { data } = await axiosInstance.post(BASE_PATH ,payload);
             console.log(data, 'datatransaction')
             return data;
@@ -20,23 +38,19 @@ export const TransactionService = {
     },
 
     // GET ALL
-    getAll: async (
-        trantype?: undefined | null | string,
-        accode?: number | null,
-        startdate?: string | null,
-        enddate?: string | null,
-        itemid?: number | null,
-    ): Promise<ApiResponse<any>> => {
+    getAll: async (props: GetTransactionProps): Promise<ApiResponse<any>> => {
         try {
             const params: any = {};
-            
 
-            if (trantype) params.trantype = trantype;
-            if (accode) params.accode = accode;
-            if (startdate) params.startdate = startdate;
-            if (enddate) params.enddate = enddate;
-            if(itemid) params.itemid=itemid;
+            if (props.trantype) params.trantype = props.trantype;
+            if (props.accode) params.accode = props.accode;
+            if (props.startdate) params.startdate = props.startdate;
+            if (props.enddate) params.enddate = props.enddate;
+            if (props.itemid) params.itemid = props.itemid;
 
+            const BASE_PATH = props.TRANTYPE === "purchase"
+                ? BASE_PURCHASE_PATH
+                : BASE_SALES_PATH;
 
             const { data } = await axiosInstance.get(BASE_PATH, { params });
             return data;
@@ -47,10 +61,16 @@ export const TransactionService = {
     // GET BY TRANSACTION ID
     getByTransId: async (
         transId: string | null,
+        TRANTYPE: string
     ): Promise<ApiResponse<any>> => {
         try {
+            const BASE_PATH =
+                TRANTYPE === "purchase"
+                    ? BASE_PURCHASE_PATH
+                    : BASE_SALES_PATH;
+
             const { data } = await axiosInstance.get(`${BASE_PATH}/${transId}`);
-            console.log(data ,'transactionss')
+           
             return data;
         } catch (error: any) {
             throw error?.response?.data || error;
@@ -60,9 +80,14 @@ export const TransactionService = {
     // GET ONE
     getOne: async (
         sno: number,
-        TRANTYPE: string
+        TRANTYPE: string,
+        tranType:string
     ): Promise<ApiResponse<TRANSACTION>> => {
         try {
+            const BASE_PATH =
+                tranType === "purchase"
+                    ? BASE_PURCHASE_PATH
+                    : BASE_SALES_PATH;
             const { data } = await axiosInstance.get(`${BASE_PATH}/${sno}`, {
                 params: { TRANTYPE },
             });
@@ -76,15 +101,19 @@ export const TransactionService = {
     update: async (
         entryNo: number,
         payload: CreateTransaction,
+        TRANTYPE: string
+        
     ): Promise<ApiResponse<any>> => {
-
-        console.log(entryNo,payload,'updating entry no')
+        const BASE_PATH =
+            TRANTYPE === "purchase"
+                ? BASE_PURCHASE_PATH
+                : BASE_SALES_PATH;
         try {
             const { data } = await axiosInstance.put(
                 `${BASE_PATH}/${entryNo}`,
                 payload,
             );
-            console.log(data, 'resultData')
+     
             return data;
            
         } catch (error: any) {
@@ -96,8 +125,13 @@ export const TransactionService = {
     patch: async (
         sno: number,
         payload: Partial<TRANSACTION>,
-        TRANTYPE: string
+        TRANTYPE: string,
+        tranType:string
     ): Promise<ApiResponse<TRANSACTION>> => {
+        const BASE_PATH =
+            tranType === "purchase"
+                ? BASE_PURCHASE_PATH
+                : BASE_SALES_PATH;
         try {
             const { data } = await axiosInstance.patch(
                 `${BASE_PATH}/${sno}`,
@@ -115,8 +149,13 @@ export const TransactionService = {
     // DELETE
     remove: async (
         sno: number,
-        TRANTYPE: string
+        TRANTYPE: string,
+        tranType:string
     ): Promise<ApiResponse<number>> => {
+        const BASE_PATH =
+            tranType === "purchase"
+                ? BASE_PURCHASE_PATH
+                : BASE_SALES_PATH;
         try {
             const { data } = await axiosInstance.delete(`${BASE_PATH}/${sno}`, {
                 params: { TRANTYPE },

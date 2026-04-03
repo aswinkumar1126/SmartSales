@@ -77,19 +77,8 @@ export const TransactionListing: React.FC<TransactionListingProps> = ({
     }, [selectedIndex]);
 
     return (
-        <Box
-            ref={containerRef}
-            tabIndex={0}
-            onKeyDown={handleKeyDown}
-            maxHeight="300px"
-            overflowY="auto"
-            outline="none"
-            _focus={{ outline: "none" }}
-            bg={theme.colors.formColor}
-            p={2}
-            rounded="xl"
-        >
-            <Box display="flex" alignItems="center" justifyContent="space-between" gap={1} mb={2}>
+        <>
+        <Box display="flex" alignItems="center" justifyContent="space-between" gap={1} >
                 <SearchBar
                     placeholder="Search Item..."
                     searchTerm={searchTerm}
@@ -107,8 +96,37 @@ export const TransactionListing: React.FC<TransactionListingProps> = ({
                     Clear
                 </Button> }
                
-            </Box>
+        </Box>
 
+        <Box
+            ref={containerRef}
+            tabIndex={0}
+            onKeyDown={handleKeyDown}
+            maxHeight="auto"
+            overflowY="auto"
+            outline="none"
+            _focus={{ outline: "none" }}
+            bg={theme.colors.formColor}
+            p={2}
+            css={{
+                "&::-webkit-scrollbar": {
+                    width: "2px",
+                    rounded: '2xl'// ✅ minimal width
+                },
+                "&::-webkit-scrollbar-track": {
+                    background: "transparent",
+                },
+                "&::-webkit-scrollbar-thumb": {
+                    background: "rgba(0,0,0,0.2)", // ✅ subtle thumb
+                    borderRadius: "8px",
+                },
+                "&::-webkit-scrollbar-thumb:hover": {
+                    background: "rgba(0,0,0,0.3)",
+                },
+            }}
+
+        >
+            
             {transactionIdsList.length > 0 ? (
                 transactionIdsList.map((item, index) => (
                     <HStack
@@ -138,5 +156,6 @@ export const TransactionListing: React.FC<TransactionListingProps> = ({
                 <Text p={2} fontSize={'2xs'}>No Entries Available</Text>
             )}
         </Box>
+        </>
     );
 };

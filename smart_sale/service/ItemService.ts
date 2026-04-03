@@ -3,6 +3,11 @@ import { ItemMast } from "@/types/item/item";
 
 const BASE = "/item";
 
+
+type stoneItemsParam = {
+    STUDDED?: "Y" | "N"
+}
+
 export const ItemService = {
     getAll: async (filter?: string) => {
         try {
@@ -16,11 +21,12 @@ export const ItemService = {
             throw error;
         }
     },
-    getStoneItems: async (filter?: string) => {
+    getStoneItems: async (filter?: stoneItemsParam) => {
         try {
+            console.log(filter,'filter from service')
             const response = await axiosInstance.get(`${BASE}/stone`, {
                 // If filter exists, send as `search` query param
-                params: filter ? { filter: filter } : undefined,
+                params: filter ? filter : undefined,
             });
             return response.data;
         } catch (error: any) {

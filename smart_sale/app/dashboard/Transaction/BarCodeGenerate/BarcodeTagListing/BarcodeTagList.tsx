@@ -5,8 +5,6 @@ import { HStack, Text, Box, Button } from "@chakra-ui/react";
 import SearchBar from "@/component/search/SearchBar";
 import { useTheme } from "@/context/theme/themeContext";
 import { useSessionStorage } from "@/hooks/storage/useSessionStorage";
-import { SearchIcon, FileSearch } from "lucide-react";
-import { Tooltip } from "@/components/ui/tooltip";
 import { SearchDrawer } from "./FilterDrawer";
 import { getTagedEntryNoParams } from "@/types/tagging/Tag";
 import { useItems } from "@/hooks/item/useItems";

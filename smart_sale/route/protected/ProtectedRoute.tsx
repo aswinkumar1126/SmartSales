@@ -33,7 +33,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 
         // If authenticated and trying to access login page
         if (user && isPublicRoute) {
-            router.replace("/dashboard");
+            router.replace("/");
             return;
         }
     }, [loading, user, pathname, router]); // ✅ pathname is in dependencies - runs on every route change
