@@ -54,6 +54,9 @@ interface TransactionTableProps {
     transactionType?:string;
     showTotal?:boolean;
     showTableForm?:boolean;
+    formBackground?:string;
+    totalBG?:string;
+    totalColor?:string;
 }
 
 
@@ -82,6 +85,9 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
     transactionType,
     showTotal = true,
     showTableForm=true,
+    formBackground = '#FFF',
+    totalBG='#888',
+    totalColor ='#FFF'
 
 }) => {
 
@@ -119,7 +125,7 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
                     {/* HEADER */}
                     <thead style={{ position: "sticky", top: 0, zIndex: 10 }}>
                         <tr style={{
-                            backgroundColor: theme?.colors?.formColor || "#EDF2F7",
+                            backgroundColor: formBackground || "#EDF2F7",
                             borderBottom: "1px solid #DEDEDE",
                             
                            
@@ -317,15 +323,15 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
 
                     {/* totals footer */}
                     {rows.length > 0 && showTotal && (
-                        <tfoot style={{ position: "sticky", bottom: 0, zIndex: 10 }}>
+                        <tfoot style={{ position: "sticky", bottom: 0, zIndex: 10 , }}>
                             
-                            <tr style={{ backgroundColor: "#A0AEC0" }}>
+                            <tr   style={{ backgroundColor: totalBG ??"#A0AEC0" , color:totalColor ?? "black" }}>
                                 
-                                <td style={getCellStyle({ key: "__sno", label: "#", align: "left" }, { fontSize: 13, fontWeight: 600, color: "black" })}>
+                                <td style={getCellStyle({ key: "__sno", label: "#", align: "left" }, { fontSize: 13, fontWeight: 600,})}>
                                     TOTAL
                                 </td>
                                 {tableCols.map(col => (
-                                    <td key={col.key} style={getCellStyle(col, { fontSize: 13, fontWeight: 600, color: "black" })}>
+                                    <td key={col.key} style={getCellStyle(col, { fontSize: 13, fontWeight: 600})}>
                                         {formatTotal(totals?.[col.key], col.decimalScale)}
                                     </td>
                                 ))}

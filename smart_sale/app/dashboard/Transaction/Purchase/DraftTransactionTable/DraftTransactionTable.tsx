@@ -221,9 +221,8 @@ export default function DraftTransactionTable({
 
 
     // rowsRef so setTimeout closures always see latest rows
-    console.log(rows, 'rows in draft table')
+  
     const rowsRef = useRef(rows);
-    console.log(rowsRef.current, 'rows in draft table')
     useEffect(() => { rowsRef.current = rows; }, [rows]);
 
     useEffect(() => {
@@ -888,8 +887,6 @@ export default function DraftTransactionTable({
 
                             if (newRow && newRow.__rowId) {
                                 const permanentId = newRow.__rowId;
-                                console.log(`Found new row permanent ID: ${permanentId}`);
-
                                 const allCharges = JSON.parse(localStorage.getItem("MISC_CHARGE_MASTER") || "[]");
                                 const tempCharges = allCharges.filter((c: any) => c.draftRowId === capturedMiscTempId);
 
@@ -903,7 +900,6 @@ export default function DraftTransactionTable({
                                     if (newRowIndex !== -1) {
                                         onUpdateRow(newRowIndex, "HMC", total.toFixed(2));
                                     }
-                                    console.log(`Transferred ${tempCharges.length} misc charges to ${permanentId}`);
                                 }
                             } else if (attempts < 5) {
                                 checkForNewRow(attempts + 1);

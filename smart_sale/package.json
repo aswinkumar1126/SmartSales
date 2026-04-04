@@ -4,14 +4,14 @@
   "description": "Smart Sales POS app with barcode printing",
   "author": "Brightech Software",
   "private": true,
-  "main":"main.js",
- "scripts": {
-  "dev": "next dev",
-  "build": "next build",
-  "export": "next export",
-  "electron-dev": "concurrently \"next dev\" \"wait-on http://localhost:3000 && ELECTRON_START_URL=http://localhost:3000 electron .\"",
-  "dist": "npm run build && electron-builder"
-},
+  "main": "main.js",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "export": "next export",
+    "electron-dev": "concurrently \"next dev\" \"wait-on http://localhost:3000 && ELECTRON_START_URL=http://localhost:3000 electron .\"",
+    "dist": "npm run build && electron-builder"
+  },
   "dependencies": {
     "@chakra-ui/anatomy": "^2.3.4",
     "@chakra-ui/form-control": "^2.2.0",
@@ -30,6 +30,8 @@
     "axios": "^1.13.2",
     "framer-motion": "^12.23.26",
     "handsontable": "^17.0.0",
+    "jspdf": "^4.2.1",
+    "jspdf-autotable": "^5.0.7",
     "lodash": "^4.17.23",
     "lucide-react": "^0.561.0",
     "next": "16.0.7",
@@ -39,6 +41,7 @@
     "react-dom": "19.2.0",
     "react-hook-form": "^7.68.0",
     "react-icons": "^5.5.0",
+    "react-rnd": "^10.5.3",
     "react-spreadsheet": "^0.10.1",
     "xlsx": "^0.18.5",
     "xlsx-js-style": "^1.2.0",
@@ -50,37 +53,37 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "concurrently": "^9.2.1",
+    "electron": "^41.0.3",
+    "electron-builder": "^26.8.1",
     "eslint": "^9",
     "eslint-config-next": "16.0.7",
     "tailwindcss": "^4",
     "typescript": "^5",
-    "concurrently": "^9.2.1",
-    "electron": "^41.0.3",
-    "electron-builder": "^26.8.1",
     "wait-on": "^7.0.1"
   },
-"build": {
-  "appId": "com.smart_sale.pos",
-  "asar": true,
-  "files": [
-    "out/**/*", 
-    "main.js",
-    "package.json",
-    "public/**/*"
-  ],
-  "asarUnpack": [
-    "out/**/*" 
-  ],
-  "win": {
-    "target": [
-      "nsis",
-      "zip"
+  "build": {
+    "appId": "com.smart_sale.pos",
+    "asar": true,
+    "files": [
+      "out/**/*",
+      "main.js",
+      "package.json",
+      "public/**/*"
     ],
-    "forceCodeSigning": false,
-    "requestedExecutionLevel": "asInvoker"
-  },
-  "extraMetadata": {
-    "main": "main.js"
+    "asarUnpack": [
+      "out/**/*"
+    ],
+    "win": {
+      "target": [
+        "nsis",
+        "zip"
+      ],
+      "forceCodeSigning": false,
+      "requestedExecutionLevel": "asInvoker"
+    },
+    "extraMetadata": {
+      "main": "main.js"
+    }
   }
-}
 }

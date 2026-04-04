@@ -70,7 +70,7 @@ export const authService = {
         try {
             const res = await axiosInstance.get(`/user/${userId}`);
             console.log(res ,'response for fetch data')
-            return { success: true, data: res.data };
+            return {success: true, data: res.data.data };
         } catch {
             return { success: false, message: "Failed to fetch user" };
         }

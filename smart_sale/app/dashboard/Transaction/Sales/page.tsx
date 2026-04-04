@@ -317,6 +317,8 @@ export default function SalesPage() {
 
     const { data: transactionsById, isLoading: getbySnoLoading } = useTransactionByTransId(selectedTransactionId,"sales");
 
+    console.log(transactionsById,'transactionsById')
+
     const { data: otherChargesData } = useActiveOtherCharges();
 
     const { data: bankAccounts } = useAllBankAccounts();
@@ -341,7 +343,7 @@ export default function SalesPage() {
 
     const { data: openingBalance ,refetch:openingBalanceRefetch  } = useOpeningBalance(Number(accCode));
 
-
+    console.log(saleFilter,'saleFilter')
 
     // Note: This hook might need to be updated to handle multiple transaction types
     const { data: transactionList, isLoading, refetch: refetchTransactionList } = useTransactions({
@@ -352,9 +354,10 @@ export default function SalesPage() {
         enddate: saleFilter.toDate || null,
         itemid: saleFilter.itemId ? Number(saleFilter.itemId) : null,
     });
+    console.log(transactionList,'transactionList');
 
   const { data: transactionHeaderDetail, isLoading: transactionHeaderLoading, refetch: refetchTransactionHeaderDetail } = useTransactions({
-        TRANTYPE: "purchase",
+        TRANTYPE: "sales",
         accode:headerForm.CUSTOMER ? Number(headerForm.CUSTOMER) : null
     })
 
@@ -1083,7 +1086,7 @@ export default function SalesPage() {
 
     const handleEditTransaction = useCallback((transactionData: any, sno: string) => {
    
-
+        console.log(transactionData,'transactionData')
         if (!transactionData) {
             return;
         }
@@ -2205,7 +2208,7 @@ useEffect(() => {
         };
 
         console.log(payload ,'createTransactionPayload')
-
+     
         createTransaction.mutate({payload:payload , TRANTYPE:"sales"}, {
             onSuccess: () => {
 
@@ -2449,6 +2452,7 @@ useEffect(() => {
         if (transactionId === String(transactionId)) {
             // Same ID clicked again — force re-fetch by resetting first
             setSelectedTransactionId('');
+            console.log(transactionId,'transactionId')
             setTimeout(() => setSelectedTransactionId(String(transactionId)), 0);
             return;
         }

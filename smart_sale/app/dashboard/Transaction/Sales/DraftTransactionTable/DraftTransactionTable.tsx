@@ -12,7 +12,7 @@ import {
 } from "@chakra-ui/react";
 import { LuX } from "react-icons/lu";
 
-import { issueColumns, issueDataColumns } from "../transactionForm/TransactionForm";
+import { issueColumns, saleColumns } from "../transactionForm/TransactionForm";
 
 
 import { useStoneItems } from "@/hooks/item/useItems";
@@ -60,6 +60,7 @@ export interface FormField {
     decimalScale?: number;
     dependsOn?: string;
     defaultValue?: string;
+    allowFocus?:boolean;
 
 }
 
@@ -266,7 +267,7 @@ export default function DraftTransactionTable({
     }, [isIssue, isTag]);  // ✅ add transactionTitle to deps
 
 
-    const baseColumns = isIssue ? issueDataColumns : issueColumns(isTag);
+    const baseColumns = isIssue ? issueColumns : saleColumns(isTag);
     const colMap = useMemo(() => new Map(baseColumns.map(c => [c.key, c])), [baseColumns]);
     const tableCols = useMemo(() =>
         orderedKeys.map(k => colMap.get(k)).filter(Boolean) as any[],
@@ -374,6 +375,7 @@ export default function DraftTransactionTable({
                 placeholder: col.label || col.key,
                 type: isNum ? "number" : "text",
                 isRequired,
+                allowFocus:col.allowFocus,
                 size: "xs",
                 ...("decimalScale" in col && typeof col.decimalScale === "number"
                     ? { decimalScale: col.decimalScale } : {}),
@@ -1046,6 +1048,7 @@ export default function DraftTransactionTable({
                         rounded="sm"
                         inputRef={ref}
                         noBorder
+                        disabled
                     />
                 </Box>
             );
@@ -1282,12 +1285,23 @@ export default function DraftTransactionTable({
 
     const showTag = getIsTagEnabled(transactionType);
 
+    const TYPE_COLORS: Record<string, { bg: string; active: string; text: string }> = {
+        SA: { bg: "#b7fff1", active: "#2F855A", text: "#1C4532" },  // Blue
+        SR: { bg: "#ffc4c4", active: "#C53030", text: "#742A2A" },   // Red
+        IS: { bg: "#ffd9a4", active: "#DD6B20", text: "#7B341E" },   // Orange
+        RE: { bg: "#ffcafb", active: "#c729ba", text: "#8f1084" }   // Green
+    };
+    console.log(transactionType,'trantypesssss')
+
     return (
-        <Box display="flex" flexDirection="column" gap={1}>
+        <Box display="flex" flexDirection="column" gap={0}>
             <Flex
-                justifyContent="space-between" alignItems="center"
-                px={2} py={1}
-                bg={theme?.colors?.formColor || "#EDF2F7"}
+                justifyContent="space-between" 
+                alignItems="center"
+                px={2} 
+                py={1}
+                bg={'#FFF'}
+                color={'#222'}
                 rounded="md" borderWidth="1px"
                 borderColor={theme?.colors?.borderColor || "#CBD5E0"}
             >
@@ -1303,8 +1317,8 @@ export default function DraftTransactionTable({
 
                     {showTag && 
                     <>
-                        <Button size="2xs" bg="yellow.fg" onClick={handleTagChange}>
-                            Switch {isTag ? "Non Tag" : "Tag"}
+                        <Button size="2xs" bg="yellow.subtle" color={'blackAlpha.800'} onClick={handleTagChange}>
+                            Switch to {isTag ? "NonTag" : "Tag"}
                         </Button>
                         
                         {
@@ -1363,6 +1377,8 @@ export default function DraftTransactionTable({
                 formatTotal={formatTotal}
                 getCellStyle={getCellStyle}
                 transactionType={transactionType}
+                formBackground={TYPE_COLORS[transactionType ?? '']?.bg || '#FFF'}
+                
             />
 
 

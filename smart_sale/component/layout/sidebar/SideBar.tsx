@@ -10,6 +10,7 @@ import {
     Icon,
     useMediaQuery,
     Separator,
+    Button,
 } from "@chakra-ui/react";
 import { Tooltip } from "@/components/ui/tooltip";
 import {
@@ -36,6 +37,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { useTheme } from "@/context/theme/themeContext";
 import { normalizePath } from "@/utils/path/normalizePath";
 import { motion, AnimatePresence } from "framer-motion";
+import { useAuth } from "@/hooks/auth/useAuth";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Motion-wrapped Chakra primitives
@@ -99,6 +101,8 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
         sidebarCollapsed,
         toggleSidebar,
     } = useSidebar();
+
+    const { user , logout }= useAuth();
 
     const router = useRouter();
     const rawPathname = usePathname();
@@ -733,7 +737,7 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
                 borderColor="gray.200"
                 bg={theme.colors.sideBar}
                 backdropFilter="blur(8px)"
-                p={3}
+                p={2}
             >
                 <Tooltip content="User Profile" disabled={isExpanded} showArrow>
                     <MotionHStack
@@ -770,12 +774,18 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
                             />
                         </Box>
                         {isExpanded && (
+                            <Box display={'flex'} alignItems={'center'}>
                             <Text fontSize="sm" fontWeight="500">
-                                Admin
+                                {user?.USERNAME ?? "ADMIN"} 
                             </Text>
+                          
+                            </Box>
                         )}
+                      
                     </MotionHStack>
+                   
                 </Tooltip>
+               
             </Box>
         </MotionBox>
     );
@@ -799,7 +809,8 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
         <Box
             position="fixed"
             left={0}
-            h="100vh"
+            sm={{h:'100vh'}}
+            md={{h:'93vh'}}
             zIndex={50}
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}

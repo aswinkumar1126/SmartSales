@@ -171,9 +171,14 @@ function BarCodeGenerate() {
 
     const fieldRefs = useRef<Record<FieldKey, React.RefObject<HTMLInputElement | null>>>({
         barcode: barcodeRef,
-        grsweight: weightRef, stoneWt: stoneWtRef, salesStoneWt: salesStoneWtRef,
-        wastePercent: wastePercentRef, size: sizeRef, diamondWt: diamondWtRef,
-        mc: mcRef, touch: touchRef, 
+        grsweight: weightRef, 
+        stoneWt: stoneWtRef, 
+        salesStoneWt: salesStoneWtRef,
+        wastePercent: wastePercentRef, 
+        size: sizeRef, 
+        diamondWt: diamondWtRef,
+        mc: mcRef, 
+        touch: touchRef, 
     });
 
     /* -------- Mutation -------- */
@@ -290,6 +295,7 @@ function BarCodeGenerate() {
     const { data: tagEntryNos, isLoading: tagEntryNosLoading, isError: tagEntryNosError, refetch: tagEntryNoRefetch } = useTagEntryNos(getFilteredParams());
 
     console.log(tagEntryNos, 'tagEntryNos');
+
     const { data: tagedDetails, isLoading: tagedDetailsLoading, isError: tagedDetailsError } = useTagedDetailsByEntryNo(selectedEntryNo);
     console.log(tagedDetails ,'tagDetailsBySno');
 
@@ -1172,6 +1178,7 @@ function BarCodeGenerate() {
 
 
                         /> */}
+                        
                     </Box>
                     {/* } */}
 
@@ -1270,7 +1277,7 @@ function BarCodeGenerate() {
                 )}
               
             </Box>
-            <Box width={'20%'}>
+            <Box width={'15%'}>
         
 
                 <BarcodeTagListing 

@@ -1,4 +1,4 @@
 export const bankAccountType = [
-    { label: 'SAVINGS', value:'SAVINGS'},
-    { label: 'CURRENT', value:'CURRENT'}
+    { label: 'SAVINGS', value:'S'},
+    { label: 'CURRENT', value:'C'}
  ]

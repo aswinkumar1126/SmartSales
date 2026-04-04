@@ -270,7 +270,7 @@ export function CapitalizedInput<T>({
 
         // Limit decimals WITHOUT forcing trailing zeros
         let formatted = num.toFixed(scale);
-        console.log(formatted, 'formatted')
+   
 
         // 🔥 Remove trailing zeros
         // formatted = formatted.replace(/\.?0+$/, "");

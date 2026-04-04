@@ -30,6 +30,7 @@ export const useTransactions = (props: {
     enddate?: string | null;
     itemid?: number | null;
 }) => {
+    console.log("useTransaction called with props:", props);
     return useQuery<ApiResponse<any>>({
         queryKey: [
             "transactions",

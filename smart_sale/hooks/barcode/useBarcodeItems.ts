@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery ,useQueryClient } from "@tanstack/react-query";
 import { getBarcodeFilters, getBarcodeItemsDetails } from "@/service/BarcodeService";
 import { BarCodeFilter } from "@/types/barcode/BarcodeDetails";
 import { useApiQuery ,useApiMutation } from "../apiHook/ApiHook";
@@ -23,11 +23,15 @@ export const getBarcodeFilter = (param:any) => {
 };
 
 export const useCreateTag = () =>{
+  const queryClient = useQueryClient();
   return useApiMutation<CreateTagResponse,CreateTag>(
     {
       url:"/tagged",
       method:"POST",
-      queryKey:['create-tag']
+      queryKey:['barcode-items-filter'],
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ['tag-details']})
+      }
     }
   )
 }

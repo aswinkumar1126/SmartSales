@@ -1,4 +1,4 @@
-export const issueColumns = (isTag: boolean) => [
+export const saleColumns = (isTag: boolean) => [
 
 
     ...(isTag ? [{
@@ -151,7 +151,7 @@ export const issueColumns = (isTag: boolean) => [
     },
 ].filter(Boolean);
 
-export const issueDataColumns = [
+export const issueColumns = [
     {
         key: "SNO",
         label: "S.N0",
@@ -173,11 +173,14 @@ export const issueDataColumns = [
     {
         key: "WT",
         label: "WEIGHT",
-        width: "40px",
+        width: "30px",
         type: "number" as const,
         align: "right" as const,
-        max: 9999999999,
-        decimalScale:3
+        
+        decimalScale:3,
+        allowFocus:true,
+    
+
 
     },
     {
@@ -193,7 +196,7 @@ export const issueDataColumns = [
     {
         key: "TOUCH",
         label: "TOUCH",
-        width: "45px",
+        width: "30px",
         type: "number" as const,
         align: "right" as const,
         max: 999,
@@ -203,7 +206,7 @@ export const issueDataColumns = [
     {
         key: "ATOUCH",
         label: "A.TOUCH",
-        width: "25px",
+        width: "30px",
         type: "number" as const,
         align: "right" as const,
         max: 999,
@@ -213,24 +216,22 @@ export const issueDataColumns = [
     {
         key: "PUREWT",
         label: "PURE WT",
-        width: "45px",
+        width: "40px",
         type: "number" as const,
         align: "right" as const,
         editable: true,
         disabled: true,
-        max: 9999999999,
         decimalScale: 3
 
     },
     {
         key: "APUREWT",
         label: "A.PURE WT",
-        width: "25px",
+        width: "40px",
         type: "number" as const,
         align: "right" as const,
         editable: false,
         disabled:true,
-        max: 9999999999,
         decimalScale: 3
     },
     

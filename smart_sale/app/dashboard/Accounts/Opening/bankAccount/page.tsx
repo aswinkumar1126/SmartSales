@@ -48,7 +48,7 @@ import { DynamicForm } from "@/component/form/DynamicForm";
 
 const EMPTY_FORM: BankAccount = {
     ACCOUNTNO: "",
-    ACCOUNTTYPE: "",
+    ACCOUNTTYPE: "S",
     ACHOLDERNAME: "",
     ADDRESS: "",
     BANKAC: "",

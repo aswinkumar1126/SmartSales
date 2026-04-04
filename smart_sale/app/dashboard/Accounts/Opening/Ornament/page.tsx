@@ -1,21 +1,15 @@
 "use client";
 
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo, use } from "react";
 import {
     Box,
     Button,
-    Input,
     VStack,
     Text,
     Grid,
     GridItem,
     HStack,
     Fieldset,
-    Field,
-    NativeSelect,
-    Select,
-    Portal,
-    createListCollection,
     Flex,
 
 } from "@chakra-ui/react";
@@ -29,10 +23,9 @@ import ScrollToTop from "@/component/scroll/ScrollToTop";
 import { toastCreated, toastLoaded, toastUpdated } from "@/component/toast/toast";
 
 import { useTheme } from "@/context/theme/themeContext";
-import { fontVariables } from "@/context/theme/font";
 import { ItemMast } from "@/types/item/item";
 import { normalizeItem } from "@/utils/normalize/normalizeItem";
-import { useItems } from "@/hooks/item/useItems";
+import { useItems, useStoneItems } from "@/hooks/item/useItems";
 import {
     useOrnamentData,
     useOrnamentDataById,
@@ -42,19 +35,12 @@ import {
 import { usePrint } from "@/context/print/usePrintContext";
 import { OrnamentPayload, OrnamentFormData } from "@/types/ornament/ornament";
 import { formatToFixed } from "@/utils/format/numberFormat";
-import { parseFixedNumber } from "@/utils/format/numberInput";
 import { CustomTable } from "@/component/table/CustomTable";
-import { CapitalizedInput } from "@/components/ui/CapitalizedInput";
 import { toastError } from "@/component/toast/toast";
 import { useRouter } from "next/navigation";
 import { FaFileExcel, FaPrint } from "react-icons/fa";
-import { SelectCombobox } from "@/components/ui/selectComboBox";
 import SearchBar from "@/component/search/SearchBar";
-import RadioButton from "@/components/ui/RadioButton";
-import { stockTypes } from "@/data/stock/StockTypesData";
-import { transactionTypes } from "@/data/stock/TransactionTypeData";
 
-import { useAllAccountHead } from "@/hooks/accountHead/useAccountHead";
 import { useAllMetals } from "@/hooks/metal/useMetals";
 
 import { OrnamentOpeningFields } from "@/config/opening/ornamentOpening";
@@ -64,10 +50,7 @@ import { useEnterNavigation } from "@/component/form/useEnterNavigation";
 function OrnamentMaster() {
     /* -------------------- FORM STATE -------------------- */
     const [form, setForm] = useState<OrnamentFormData>({
-        // stockType: "CY",
-        // accode: "",
-        // tranType: "IS",
-        // metalId: "G",
+     
 
 
         itemId: "",   // ✅ NOT null
@@ -79,8 +62,6 @@ function OrnamentMaster() {
         stnwt: "",
         openCash: "",
         stnAmt: "",
-        // actualtouch: "",
-
 
     });
     const [higlightedId, setHiglightedId] = useState<Number>();
@@ -100,7 +81,8 @@ function OrnamentMaster() {
     const ornamentFields = OrnamentOpeningFields(itemCollection);
 
     /* -------------------- DATA -------------------- */
-    const { data: itemsData } = useItems();
+    const { data: itemsData } = useStoneItems();
+    console.log(itemsData,'itemsData')
     const { setData, setColumns, setShowSno, title } = usePrint();
 
     //

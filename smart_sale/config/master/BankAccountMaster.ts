@@ -17,6 +17,7 @@ export const BankAccountForm = (accountTypeCollection: { label: string; value: s
         required: true,
         rounded: "sm",
         items: accountTypeCollection, // ✅ collection from parent
+        defaultValue:''
    
     },
     {

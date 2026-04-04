@@ -54,6 +54,8 @@ export default function ItemMasterPage() {
     const [errors, setErrors] = useState<any>({});
     const [autoItemId, setAutoItemId] = useState<number | undefined>(undefined);
 
+    const [ isDisabelStudded , setIsDisableStudded] = useState<boolean>(false);
+
     const controller = new AbortController();
 
     const [form, setForm] = useState<ItemMast>({
@@ -196,6 +198,16 @@ export default function ItemMasterPage() {
         }));
     };
 
+    
+    useEffect(()=>{
+        if(form.studded !== 'Y'){
+            setForm(prev => ({
+                ...prev,
+                studdedStone: null
+            }))
+        }
+    },[])
+
     // ✅ Handle search change
     const handleSearchChange = (term: string) => {
         setSearchTerm(term);
@@ -312,13 +324,12 @@ export default function ItemMasterPage() {
 
     const fieldsName = formFields.map(f => f.name);
 
-    const { register, focusFirst, focusNext } = useEnterNavigation(fieldsName ,()=>{
-        handleSave
-    });
-    console.log(focusFirst(),'focusFirst');
+    const { register, focusFirst, focusNext } = useEnterNavigation(fieldsName ,handleSave);
+
     useEffect(() => {
         focusFirst()
-    }, [])
+    }, [focusFirst]);
+
 
     /* ===================== UI ===================== */
     return (
@@ -362,7 +373,7 @@ export default function ItemMasterPage() {
                                     loading={creating || updating}
                                     disabled={!form.itemName?.trim()}
                                 >
-                                    <AiOutlineSave /> Save
+                                    <AiOutlineSave />   {editingId ? 'Update' : 'Save'}  
                                 </Button>
 
                                 <Button size="xs" onClick={resetForm} colorPalette="blue">

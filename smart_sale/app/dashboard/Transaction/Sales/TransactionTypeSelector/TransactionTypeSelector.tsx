@@ -75,7 +75,7 @@ export default function TransactionTypeSelector({
     const isTypeSelected = (code: string) =>
         selectedTypes.some((type: any) => type.value === code);
 
-    const TYPE_COLORS: Record<string, { bg: string; active: string; text: string }> = {
+    const  TYPE_COLORS: Record<string, { bg: string; active: string; text: string }> = {
         SA: { bg: "#E6FFFA", active: "#2F855A", text: "#1C4532" },  // Blue
         SR: { bg: "#FFEAEA", active: "#C53030", text: "#742A2A" },   // Red
         IS: { bg: "#FFF4E5", active: "#DD6B20", text: "#7B341E" },   // Orange
@@ -183,7 +183,7 @@ export default function TransactionTypeSelector({
                         <Image src={isEditing ? updateIcon : saveIcon} width={60} alt="save" />
                     </Button>
 
-                    {draftRows.length > 0 &&
+                    {/* {draftRows.length > 0 &&
                         <Button
                             size="2xs"
                             fontSize="2xs"
@@ -194,7 +194,7 @@ export default function TransactionTypeSelector({
                         >
                             <HiX size={10} /> DESELECT
                         </Button>
-                    }
+                    } */}
                 </Box> }
             
             <Box display='flex' gap={4}>

@@ -5,10 +5,11 @@ import { ApiResponse, Company } from "@/service/CompanyService";
 import { LoginPayload } from "@/service/AuthService";
 
 export interface AuthUser {
-    id: string;
-    name: string;
-    email: string;
-    mobile: string;
+    USERID:number;
+    USERNAME: string;
+    USERIMAGE: string;
+    ISADMIN:"Y"|"N";
+    ACTIVE: "Y" | "N";
 }
 
 export interface AuthContextType {

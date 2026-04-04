@@ -7,7 +7,7 @@ import { useTheme } from "@/context/theme/themeContext";
 import { useSessionStorage } from "@/hooks/storage/useSessionStorage";
 import { SearchDrawer } from "./FilterDrawer";
 import { getTagedEntryNoParams } from "@/types/tagging/Tag";
-import { useItems } from "@/hooks/item/useItems";
+import { useStoneItems } from "@/hooks/item/useItems";
 
 export interface TagItem {
     ITEMNAME: string;
@@ -43,7 +43,8 @@ export const BarcodeTagListing: React.FC<TagListProps> = ({
 }) => {
     const today =new Date().toISOString().split('T')[0]
     const { theme } = useTheme();
-    const { data: items, isLoading, isError } = useItems();
+    const { data: items, isLoading, isError } = useStoneItems();
+    console.log(items,'items')
 
     const [selectedIndex, setSelectedIndex] = useSessionStorage<number>('selectedTagKey', -1);
     const containerRef = useRef<HTMLDivElement>(null);
@@ -56,13 +57,13 @@ export const BarcodeTagListing: React.FC<TagListProps> = ({
     }, [deselectFlag]);
 
     const itemOptions = useMemo(() => {
-        if (!items?.items) return [];
-        const itemList = items.items;
-        return Array.isArray(itemList) ? itemList.map((item) => ({
+        if (!items) return [];
+  
+        return Array.isArray(items) ? items.map((item) => ({
             value: String(item.itemId),
             label: item.itemName
         })) : [];
-    }, [items?.items]);
+    }, [items]);
 
     // Keyboard navigation
     const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {

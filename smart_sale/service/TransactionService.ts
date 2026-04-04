@@ -48,9 +48,12 @@ export const TransactionService = {
             if (props.enddate) params.enddate = props.enddate;
             if (props.itemid) params.itemid = props.itemid;
 
+       
+
             const BASE_PATH = props.TRANTYPE === "purchase"
                 ? BASE_PURCHASE_PATH
                 : BASE_SALES_PATH;
+            console.log(params,  BASE_PATH,'BASE_PATH');
 
             const { data } = await axiosInstance.get(BASE_PATH, { params });
             return data;
@@ -68,7 +71,7 @@ export const TransactionService = {
                 TRANTYPE === "purchase"
                     ? BASE_PURCHASE_PATH
                     : BASE_SALES_PATH;
-
+console.log(transId, BASE_PATH, 'getByTransId')
             const { data } = await axiosInstance.get(`${BASE_PATH}/${transId}`);
            
             return data;

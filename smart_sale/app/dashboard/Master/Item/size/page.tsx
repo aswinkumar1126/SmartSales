@@ -28,7 +28,7 @@ import { useRouter } from "next/navigation";
 import { useTheme } from "@/context/theme/themeContext";
 
 import { useSize, useCreateSize, useUpdateSize, useDeleteSize } from "@/hooks/size/useSize";
-import { useItems } from "@/hooks/item/useItems";
+import { useStoneItems } from "@/hooks/item/useItems";
 import { getItemSizeFields } from "@/config/master/itemSize";
 
 import { ItemSize, ItemSizePayload } from "@/types/size/Size";
@@ -45,7 +45,7 @@ function ItemSizeMaster() {
     
     
     const [filter, setFilter] = useState<string>('');
-    const { data: itemCollection } = useItems();
+    const { data: itemCollection } = useStoneItems({STUDDED:'N'});
      const { data: itemSizeData, refetch: itemSizeRefetch } = useSize(filter);
     const { mutate: createItemSize, isPending } = useCreateSize();
     const { mutate: updateItemSize } = useUpdateSize();

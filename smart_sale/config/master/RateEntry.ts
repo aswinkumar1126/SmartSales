@@ -10,6 +10,8 @@ export const RateEntryForm = ():FormField[]  => [
         icon:true,
         rounded: "sm",
         iconElement:"Rupee",
+        decimalScale:2,
+        allowFocus:true
     },
     {
         name: "GOLD 916",
@@ -20,6 +22,8 @@ export const RateEntryForm = ():FormField[]  => [
         icon: true,
         rounded: "sm",
         iconElement: "Rupee",
+        decimalScale: 2,
+        allowFocus: true
     },
     {
         name: "SILVER 100",
@@ -30,6 +34,8 @@ export const RateEntryForm = ():FormField[]  => [
         icon: true,
         rounded: "sm",
         iconElement: "Rupee",
+        decimalScale: 2,
+        allowFocus: true
     },
     {
         name: "SILVER 916",
@@ -40,5 +46,7 @@ export const RateEntryForm = ():FormField[]  => [
         icon: true,
         rounded:"sm",
         iconElement: "Rupee",
+        decimalScale: 2,
+        allowFocus: true
     },
 ];
