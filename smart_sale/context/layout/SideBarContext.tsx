@@ -233,6 +233,7 @@ const STATIC_MENU: SidebarMenu = {
     },
   },
 
+
   // ── Top-level section: Transaction ────────────────────────────────────────
   Transaction: {
     // Direct item without group wrapper
@@ -242,12 +243,18 @@ const STATIC_MENU: SidebarMenu = {
       route: "/dashboard/Transaction/Purchase",
       icon: AiOutlineShoppingCart,
     },
-     Barcode:{
-        type: "direct",
-        label: "Barcode Generate",
-        route: "/dashboard/Transaction/BarCodeGenerate",
-        icon: BadgeCheck,
-        },
+    Barcode: {
+      type: "direct",
+      label: "Barcode Generate",
+      route: "/dashboard/Transaction/BarCodeGenerate",
+      icon: BadgeCheck,
+    },
+    PurchasePrint: {
+      type: "direct",
+      label: "PurchasePrint",
+      route: "/dashboard/PurchasePrint",
+      icon: BadgeCheck,
+    },
     Sale: {
       type: "direct",
       label: "Sales",
@@ -259,8 +266,6 @@ const STATIC_MENU: SidebarMenu = {
     Transaction: {
       icon: Layers,
       items: [
-       
-       
         {
           type: "parent",
           label: "Approval",
@@ -299,6 +304,19 @@ const STATIC_MENU: SidebarMenu = {
       ],
     },
   },
+  Reports: {
+    SummaryReport: {
+      icon: Layers,
+      items: [
+        {
+          type: "direct",
+          label: "Summary Report",
+          route: "/dashboard/Reports/TagReport/SummaryReport",
+          icon: Layers,
+        }
+      ],
+    },
+  },
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -311,10 +329,10 @@ const LS_COLLAPSED_KEY = "sidebar-collapsed";
 export const SidebarProvider = ({ children }: { children: ReactNode }) => {
   const [menuData] = useState<SidebarMenu>(STATIC_MENU);
 
-  
+
   const [currentSection, _setCurrentSection] = useState<string>("Master");
 
-  
+
   const [expandedNodes, setExpandedNodes] = useState<Record<string, boolean>>(
     {}
   );
@@ -326,7 +344,7 @@ export const SidebarProvider = ({ children }: { children: ReactNode }) => {
 
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
-  
+
   const [isHydrated, setIsHydrated] = useState(false);
 
   // Hydrate sidebar-collapsed state from localStorage once on mount
@@ -337,7 +355,7 @@ export const SidebarProvider = ({ children }: { children: ReactNode }) => {
     setIsHydrated(true);
   }, []);
 
- 
+
   const setCurrentSection = useCallback(
     (section: string) => {
       _setCurrentSection((prev) => (prev === section ? "" : section));
