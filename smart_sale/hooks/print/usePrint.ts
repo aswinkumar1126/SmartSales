@@ -1,4 +1,4 @@
-import { createPrinterSetting, getAllPrinterSettings, updatePrinterSetting } from "@/service/PrinterSettingService";
+import { createPrinterSetting, getAllPrinterSettings, updatePrinterSetting, getActivePrinterSettings } from "@/service/PrinterSettingService";
 import { useQuery ,useMutation ,useQueryClient } from "@tanstack/react-query";
 
 
@@ -18,6 +18,14 @@ export const usePrint = ()=>{
         queryFn : getAllPrinterSettings
     })
 }
+
+export const useActivePrinter = () => {
+    return useQuery({
+        queryKey: ['printer-settings'],
+        queryFn: getActivePrinterSettings
+    })
+}
+
 
 export const useUpdatePrint = () => {
     const queryClient = useQueryClient()

@@ -36,6 +36,7 @@ import { useTheme } from "@/context/theme/themeContext";
 import { useSoftControlById } from "@/hooks/softControl/useSoftControl";
 import { useTagEntryNos, useTagedDetailsByEntryNo } from "@/hooks/tag/useTag";
 import { useSize } from "@/hooks/size/useSize";
+import { useActivePrinter } from "@/hooks/print/usePrint";
 
 
 /*-------------- CONSTANTS ------------------*/
@@ -64,6 +65,8 @@ import { FaDownload } from "react-icons/fa"; // download icon
    CONSTANTS
    ============================================================ */
 
+
+
 const BARCODE_HEADER_KEY = "barcode_header_form";
 const BARCODE_TRANSACTIONS_KEY = "barcode_transactions";
 
@@ -75,7 +78,37 @@ const BARCODE_EDITING_KEY = "barcode_editing_key";
 
 const BARCODE_EDITING_ENTRY_NO ="barcode_editing_entry_no";
 
-const BARCODE_ENTRY_LIST_SINGLE_SEARCH = "tag_items_single_search"
+const BARCODE_ENTRY_LIST_SINGLE_SEARCH = "tag_items_single_search";
+
+
+/* ============================================================
+    BARCODE PRINTER 
+   ============================================================ */
+
+const APP_NAME = "tag";
+
+const FILES = {
+    BAT: `${APP_NAME}.BAT`,
+    REG: `${APP_NAME}.REG`,
+    SOURCE_TXT: "barcode.txt",
+    DEST_TXT: "CTR.txt",
+};
+
+const PATHS = {
+    DOWNLOADS: "%USERPROFILE%\\Downloads",
+    BAT_PATH: `%USERPROFILE%\\Downloads\\${FILES.BAT}`,
+    SOURCE_PATH: `%USERPROFILE%\\Downloads\\${FILES.SOURCE_TXT}`,
+    DEST_PATH: `%USERPROFILE%\\Downloads\\${FILES.DEST_TXT}`,
+};
+
+const PROTOCOL = {
+    NAME: APP_NAME,                 // SmartSales://
+    REG_KEY: `HKEY_CLASSES_ROOT\\${APP_NAME}`,
+};
+
+const buildProtocolUrl = (action: string) =>
+    `${PROTOCOL.NAME}://${action}`;
+
 
 const FIELD_ORDER = [
    "barcode",  "grsweight", "stoneWt", "salesStoneWt", "wastePercent",
@@ -223,6 +256,7 @@ function BarCodeGenerate() {
     const [deselectFlag, setDeselectFlag] = useState(false);
     const [selectedItemId, setSelectedItemId] = useState<number | undefined>(undefined);
     const [submitting, setSubmitting] = useState(false);
+
      
 
     
@@ -263,6 +297,12 @@ function BarCodeGenerate() {
     const { data: allPurchaseAccount } = useAllAccountHead("", {
         accountType:"PR",
     });
+    const {data:printerSettings} = useActivePrinter();
+    console.log(printerSettings, 'printerSettings')
+
+    const printer = useMemo(()=>{
+        return printerSettings ? printerSettings.data : null ;
+    }, [printerSettings])
 
     const { data: sizes, isLoading: sizeDataLoading } = useSize('',selectedItemId);
     console.log(sizes,'sizessizes');
@@ -480,7 +520,7 @@ function BarCodeGenerate() {
             console.log("Download triggered → calling protocol");
 
             setTimeout(()=>{
-                window.location.href = "SmartSale://launch"
+                window.location.href = buildProtocolUrl("launch");
             },800);
         });
     };
@@ -1051,21 +1091,60 @@ function BarCodeGenerate() {
 
     }, [tagedDetails]);
 
+    const triggerProtocol = () => {
+        const url = buildProtocolUrl("launch");
+
+        console.log("🚀 Triggering protocol...");
+        console.log("Protocol URL:", url);
+
+        const iframe = document.createElement("iframe");
+        iframe.style.display = "none";
+        iframe.src = url;
+
+        console.log("📦 Iframe created");
+
+        document.body.appendChild(iframe);
+        console.log("✅ Iframe appended → protocol should trigger now");
+
+        setTimeout(() => {
+            document.body.removeChild(iframe);
+            console.log("🧹 Iframe removed");
+        }, 2000);
+    };
+
     const handleSinglePrint = useCallback((row: BarcodeTransactionItem) => {
-        console.log(row,'row');
-        console.log(printDetails,'printDetails');
+        console.log("🟡 handleSinglePrint triggered");
+        console.log("Row:", row);
+        console.log("Print Details:", printDetails);
+
         const detail = printDetails?.find((d) => d.TAGNO === row.barcode);
+
         if (!detail) {
-            toaster.create({ title: "No print data", description: "Print details not found for this row", type: "error", duration: 2000 });
+            console.error("❌ No matching print detail found");
+            toaster.create({
+                title: "No print data",
+                description: "Print details not found for this row",
+                type: "error",
+                duration: 2000
+            });
             return;
         }
+
+        console.log("✅ Found detail:", detail);
+
         const content = generateAllLabels([detail]);
+        console.log("🧾 Generated content:", content);
+
         downloadTxt(content, () => {
-            setTimeout(() => { window.location.href = "SmartSale://launch"; }, 800);
+            console.log("⬇️ File downloaded, preparing to trigger protocol...");
+
+            setTimeout(() => {
+                console.log("⏳ Delay complete → triggering protocol");
+                triggerProtocol();
+            }, 500);
         });
+
     }, [printDetails, generateAllLabels, downloadTxt]);
-
-
     /* ============================================================
        CELL RENDERERS
        ============================================================ */
@@ -1204,16 +1283,15 @@ function BarCodeGenerate() {
  
   
 
-    // ---------------- Generate BAT file ----------------
-    const generateBatFile = (destPath: string) => {
+    const generateBatFile = (systemName: string, printerName: string) => {
         return `@echo off
 setlocal
 
 REM Paths
-set DOWNLOAD_PATH=%USERPROFILE%\\Downloads\\barcode.txt
-set DEST_PATH=${destPath}
+set DOWNLOAD_PATH=${PATHS.SOURCE_PATH}
+set DEST_PATH=${PATHS.DEST_PATH}
 
-echo Waiting for barcode.txt...
+echo Waiting for ${FILES.SOURCE_TXT}...
 
 REM Wait for file (max 5 sec)
 set count=0
@@ -1227,15 +1305,11 @@ goto waitloop
 :movefile
 echo File found. Overwriting...
 
-REM Delete old file
 if exist "%DEST_PATH%" del "%DEST_PATH%"
-
-REM Move new file → overwrite
 move "%DOWNLOAD_PATH%" "%DEST_PATH%"
 
 echo Printing...
-
-TYPE "%DEST_PATH%" > \\\\BrightechSoftware1\\Barcode
+TYPE "%DEST_PATH%" > \\\\${systemName}\\${printerName}
 
 echo Done
 exit
@@ -1246,41 +1320,39 @@ pause
 exit
 `;
     };
-
     // ---------------- Generate REG file ----------------
-    const generateRegFile = (batFilePath: string) => {
-        return `Windows Registry Editor Version 5.00
+    const generateRegContent = useCallback((): string => `Windows Registry Editor Version 5.00
 
-[HKEY_CLASSES_ROOT\\SmartSale]
-@="URL:SmartSale Protocol"
+[HKEY_CLASSES_ROOT\\${PROTOCOL.NAME}]
+@="URL:${PROTOCOL.NAME} Protocol"
 "URL Protocol"=""
 
-[HKEY_CLASSES_ROOT\\SmartSale\\shell\\open\\command]
-@="\\"${batFilePath}\\""`;
-    };
+[HKEY_CLASSES_ROOT\\${PROTOCOL.NAME}\\shell\\open\\command]
+@="cmd.exe /c \"\"%USERPROFILE%\\Downloads\\${FILES.BAT}\""
+`, []);
 
     // ---------------- Handle Submit ----------------
+   
     const handleSubmit = async () => {
         setSubmitting(true);
 
         try {
-            // 1️⃣ Generate BAT file
-            const batContent = generateBatFile("D:\\CTR.txt");
+            if (!printer) {
+                throw new Error("Printer configuration not found");
+            }
 
-            // 2️⃣ Generate REG file
-            const regContent = generateRegFile("D:\\BarSmartSale.BAT");
+            const printerName = printer.printerName;
+            const systemName = printer.exeName;
 
-            // 3️⃣ Create ZIP
-            const zip = new JSZip();
-            zip.file("BarSmartSale.BAT", batContent);
-            zip.file("SmartSale.reg", regContent);
+            const batContent = generateBatFile(systemName, printerName);
+            const regContent = generateRegContent();
 
-            // 4️⃣ Generate blob and trigger download
-            const zipBlob = await zip.generateAsync({ type: "blob" });
-            saveAs(zipBlob, "PrintingFiles.zip");
+            // ✅ Download separately
+            downloadFile(FILES.BAT, batContent);
+            downloadFile(FILES.REG, regContent);
 
         } catch (error) {
-            console.error("Failed to generate ZIP", error);
+            console.error("Download failed", error);
         } finally {
             setSubmitting(false);
         }

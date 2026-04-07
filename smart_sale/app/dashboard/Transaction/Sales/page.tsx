@@ -275,13 +275,7 @@ export default function SalesPage() {
 
     // Draft rows (local storage backed)
     const [draftRows, setDraftRows] = useState<any[]>([]);
-
-    // Date range state with localStorage persistence
-
-    // You can still have individual variables if needed for existing code
-    const startDate = dateRange.startDate;
-    const endDate = dateRange.endDate;
-    
+ 
 
     const { theme } = useTheme();
     const { data: itemsData } = useStoneItems();
@@ -317,7 +311,7 @@ export default function SalesPage() {
 
     const { data: transactionsById, isLoading: getbySnoLoading } = useTransactionByTransId(selectedTransactionId,"sales");
 
-    console.log(transactionsById,'transactionsById')
+
 
     const { data: otherChargesData } = useActiveOtherCharges();
 
@@ -354,7 +348,7 @@ export default function SalesPage() {
         enddate: saleFilter.toDate || null,
         itemid: saleFilter.itemId ? Number(saleFilter.itemId) : null,
     });
-    console.log(transactionList,'transactionList');
+  
 
   const { data: transactionHeaderDetail, isLoading: transactionHeaderLoading, refetch: refetchTransactionHeaderDetail } = useTransactions({
         TRANTYPE: "sales",
@@ -842,8 +836,10 @@ export default function SalesPage() {
                 apiBalanceOpening.openCash  // ✅ Fixed: Now using openCash, not openPure
             );
 
-           
+        if(!isEditing){
             setOpeningBalances(balances);
+        }
+            
 
             // localStorage.setItem("OPENING_BALANCES",JSON.stringify(balances));
         }
@@ -1105,6 +1101,7 @@ export default function SalesPage() {
         // Try different possible data structures
         const transactionHeaderDetails = transactionData.TRANSACTION_HEADER;
         const transactionClosingDetails = transactionData.CLOSING_DETAILS;
+        const transactionBalanceDetails = transactionData.BALANCE;
 
         // Collect ALL transaction types that have data
         let transactionTypes: string[] = [];
@@ -1157,8 +1154,8 @@ export default function SalesPage() {
         // Remove duplicate transaction types
         const uniqueTransactionTypes = [...new Set(transactionTypes)];
 
-        // console.log('Detected transaction types:', uniqueTransactionTypes);
-        // console.log('Total transaction items:', allTransactionItems.length);
+        console.log('Detected transaction types:', uniqueTransactionTypes);
+        console.log('Total transaction items:', allTransactionItems.length);
 
         // 1. Load transaction details into header form
         if (transactionHeaderDetails) {
@@ -1215,7 +1212,9 @@ export default function SalesPage() {
             }
             // Set ALL transaction types that are present
             if (uniqueTransactionTypes.length > 0) {
-                const foundTypes = SALETRANSACTIONTYPES.filter(t => uniqueTransactionTypes.includes(t.key));
+                const foundTypes = SALETRANSACTIONTYPES.filter(t => uniqueTransactionTypes.includes(t.code));
+
+                console.log(foundTypes,'foundTypes')
                 if (foundTypes.length > 0) {
                     setSelectedTransactionTypes(foundTypes);
                     // console.log('Set transaction types to:', foundTypes);
@@ -1223,14 +1222,24 @@ export default function SalesPage() {
             }
         }
 
-        // 2. Load ALL transaction items into draft rows and load stones/charges into localStorage
+        // 2. Load Opening Balance 
+        if(transactionBalanceDetails){
+            setOpeningBalances(
+                {
+                    openCash:transactionBalanceDetails.openingCash,
+                    openPure: transactionBalanceDetails.openingPure 
+                }
+            )
+        } 
+
+        // 3. Load ALL transaction items into draft rows and load stones/charges into localStorage
         if (allTransactionItems && allTransactionItems.length > 0) {
             const allStones: any[] = [];
             const allCharges: any[] = [];
 
             const newDraftRows = allTransactionItems.map((item: any, index: number) => {
                 const itemType = item._type;
-                const isIssue = itemType === "ISP" || itemType === "REP";
+                const isIssue = itemType === "IS" || itemType === "RE";
 
                 // Generate a unique row ID for this item
                 const rowId = `edit-${Date.now()}-${index}-${Math.random().toString(36).substr(2, 9)}`;
@@ -1404,13 +1413,6 @@ export default function SalesPage() {
     };
 
 
-
-
-    const handleShowFilter = { openFilter }
-
-   
-
-
     const handleCustomerSelect = (customerValue: string, customerLabel: string) => {
         if (isEditing) return; // skip if editing
 
@@ -1427,26 +1429,6 @@ export default function SalesPage() {
         }, 100);
     };
 
-    /* ================================
-       Date Range Handlers
-    ================================ */
-
-
-
-// Update handlers - NO localStorage calls needed!
-const handleStartDateChange = (val?: string) => {
-    setDateRange(prev => ({ 
-        ...prev, 
-        startDate: val || null 
-    }));
-};
-
-const handleEndDateChange = (val?: string) => {
-    setDateRange(prev => ({ 
-        ...prev, 
-        endDate: val || null 
-    }));
-};
     /* ================================
        Transaction Type Handlers
     ================================ */
@@ -1620,11 +1602,13 @@ useEffect(() => {
         const issueStock = isIssueStock(stockRow);
 
 
+
         // 2️⃣ Pick target type deterministically
         const targetType = issueStock
-            ? SALETRANSACTIONTYPES.find(t => t.label === "issue")
-            : SALETRANSACTIONTYPES.find(t => t.value === "sale_return");
+            ? SALETRANSACTIONTYPES.find(t => t.key === "issue")
+            : SALETRANSACTIONTYPES.find(t => t.key === "sales_return");
 
+        console.log(targetType,'targetTypetargetType')
 
         // 2a️⃣ Check if transaction type exists
         if (!targetType) {
@@ -1746,7 +1730,7 @@ useEffect(() => {
 
         };
 
-        console.log('Created new row with NETWT:', newRow.NETWT);
+        console.log('Created new row with NETWT:', newRow.NETWT, targetType);
 
         // 5️⃣ Add to draft rows
         setDraftRows(prev => [...prev, newRow]);
@@ -2110,8 +2094,8 @@ useEffect(() => {
     };
 
     /* ================================
-   Save Transaction Handler with Stone Details
-================================ */
+    Save Transaction Handler with Stone Details
+    ================================ */
 
 
     const handleSaveTransaction = () => {
@@ -2560,7 +2544,7 @@ useEffect(() => {
                         customerCollection={saleCustomerList}
                         getLabelByValue={getLabelByValue}
                         theme={theme}
-                        openingBalance={apiBalanceOpening}
+                        openingBalance={isEditing ? openingBalances : apiBalanceOpening}
                         openingData={openingBalance}
                         isEditing={isEditing}
                    

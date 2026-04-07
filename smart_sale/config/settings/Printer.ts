@@ -8,29 +8,35 @@ const activeOptions = [
 
 export const printerFields: FormField[] = [
     
-    // {
-    //     name: "IPId",
-    //     label: "IP ID",
-    //     type: "text",
-    //     required: true,
-    // },
+   
     {
-        name: "IpAddress",
+        name: "ipAddress",
         label: "IP ADDRESS",
         type: "text",
         required: true,
+        isCapitalized:false
     },
     {
         name: "exeName",
         label: "SYSTEM NAME",
         type: "text",
         required: true,
+        isCapitalized: false,
+
     },
     {
         name: "printerName",
         label: "PRINTER NAME",
         type: "text",
         required: true,
+        isCapitalized: false
     },
+    {
+        name:"active",
+        label:"ACTIVE",
+        type:"select",
+        required:true,
+        options:activeOptions
+    }
    
 ];

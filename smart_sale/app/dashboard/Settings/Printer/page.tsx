@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { CustomTable } from "@/component/table/CustomTable";
 import { DynamicForm } from "@/component/form/DynamicForm";
 import { printerFields } from "@/config/settings/Printer";
@@ -21,9 +21,10 @@ import { CreatePrinterSettingInterface } from "@/service/PrinterSettingService";
 interface PrinterSettingType {
     printCode:number;
     IPId: string;
-    IpAddress: string;
+    ipAddress: string;
     exeName: string;
     printerName: string;  
+    active:string;
 
 }
 
@@ -33,10 +34,10 @@ function PrinterSetting() {
     const router = useRouter();
 
     const initialFormData = {
-      
-        IpAddress: "",
+        ipAddress: "",
         exeName: "",
-        printerName: ""
+        printerName: "",
+        active:"N",
     }
 
     /* -------------------- STATE -------------------- */
@@ -48,11 +49,18 @@ function PrinterSetting() {
 
     /* -------------------- HOOKS -------------------- */
     const { data: printerData, isLoading: printerLoading, refetch: refetchPrinters } = usePrint();
+    console.log(printerData,'printerData')
     const { mutate: createPrinter, isPending: isCreating } = useCreatePrint();
     const { mutate: updatePrinter, isPending: isUpdating } = useUpdatePrint();
 
     // Use the API data instead of local state
-    const printers = printerData?.data || printerData || [];
+    const printers = useMemo(() => {
+        if (!printerData) return [];
+        if (Array.isArray(printerData)) return printerData;
+        if (printerData.data && Array.isArray(printerData.data)) return printerData.data;
+        return [];
+    }, [printerData]);
+  
 
     /* -------------------- EFFECTS -------------------- */
     useEffect(() => {
@@ -113,12 +121,18 @@ function PrinterSetting() {
         }
 
         setIsLoading(true);
+        const payload = {
+            ipAddress: formData.ipAddress,
+            printerName: formData.printerName,
+            exeName: formData.exeName,
+            active: formData.active
+        }
 
         try {
             if (editId) {
                 // Update existing printer - ensure the payload includes the ID
                 updatePrinter(
-                    { id: editId, payload: formData },
+                    { id: editId, payload: payload },
                     {
                         onSuccess: () => {
                             toastLoaded("Printer updated successfully");
@@ -133,7 +147,7 @@ function PrinterSetting() {
                 );
             } else {
                 // Create new printer
-                createPrinter(formData, {
+                createPrinter(payload, {
                     onSuccess: () => {
                         toastLoaded("Printer created successfully");
                         resetForm();

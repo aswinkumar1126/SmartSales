@@ -39,13 +39,12 @@ import { useGlobalKey } from "@/components/key/useGlobalKey";
 
 import { useTransactions } from "@/hooks/transaction/useTransactions";
 import { useAllAccountHead } from "@/hooks/accountHead/useAccountHead";
-import { useItems, useStoneItems } from "@/hooks/item/useItems";
+import {  useStoneItems } from "@/hooks/item/useItems";
 import { useCreateTransactions, useUpdateTransaction, useTransactionByTransId } from "@/hooks/transaction/useTransactions";
 import { usePureGoldData, usePureGoldNames } from "@/hooks/pureGoldMast/usePureGoldMastData";
 import { useActiveOtherCharges } from "@/hooks/otherCharges/useOtherCharges";
 import { useRates } from "@/hooks/rate/useRate";
 import { useOrnamentData } from "@/hooks/ornament/useOrnamentData";
-import { useTagEntryNos, useTagedDetailsByTagNo } from "@/hooks/tag/useTag";
 import { useAllBankAccounts, useBankAccount } from "@/hooks/bankAccount/useBankAccount";
 
 /*-------------------  *STORAGE*  --------------------------*/
@@ -160,6 +159,8 @@ export default function PurchasePage() {
     const [selectedTransactionId, setSelectedTransactionId] = useState<string | null>(null);
     const [apiBalanceOpening, setApiBalanceOpening] = useState({ openPure: 0, openCash: 0 });
     const [openingBalances, setOpeningBalances] = useState({ openPure: 0, openCash: 0 });
+
+    console.log(openingBalances,'openingBalancesdummy')
 
     const [closingCash, setClosingCash] = useState(0);
     const [closingPure, setClosingPure] = useState(0);
@@ -845,8 +846,10 @@ export default function PurchasePage() {
                 apiBalanceOpening.openCash  // ✅ Fixed: Now using openCash, not openPure
             );
 
+        if(!isEditing){
+            setOpeningBalances(balances)
+        }
            
-            setOpeningBalances(balances);
 
             // localStorage.setItem("OPENING_BALANCES",JSON.stringify(balances));
         }
@@ -1089,7 +1092,7 @@ export default function PurchasePage() {
 
     const handleEditTransaction = useCallback((transactionData: any, sno: string) => {
    
-
+        console.log(transactionData,'transactionData')
         if (!transactionData) {
             return;
         }
@@ -1105,6 +1108,7 @@ export default function PurchasePage() {
         // Try different possible data structures
         const transactionHeaderDetails = transactionData.TRANSACTION_HEADER;
         const transactionClosingDetails = transactionData.CLOSING_DETAILS;
+        const transactionBalanceDetails = transactionData.BALANCE;
 
         // Collect ALL transaction types that have data
         let transactionTypes: string[] = [];
@@ -1222,8 +1226,18 @@ export default function PurchasePage() {
                 }
             }
         }
-
         // 2. Load ALL transaction items into draft rows and load stones/charges into localStorage
+        if (transactionBalanceDetails){
+            setOpeningBalances(
+                {
+                    openCash:transactionBalanceDetails.openingCash,
+                    openPure: transactionBalanceDetails.openingPure 
+                }
+            )
+        }
+        
+
+        // 3. Load ALL transaction items into draft rows and load stones/charges into localStorage
         if (allTransactionItems && allTransactionItems.length > 0) {
             const allStones: any[] = [];
             const allCharges: any[] = [];
@@ -1487,7 +1501,7 @@ export default function PurchasePage() {
 
     // Calculate closing balances whenever relevant data changes
 useEffect(() => {
-    if (!openingBalances) return;
+    if (!apiBalanceOpening) return;
 
     const cashRcvd = parseFloat(closingDetails.cashRcvd || "0") || 0;
     const cashPaid = parseFloat(closingDetails.cashPaid || "0") || 0;
@@ -1518,8 +1532,8 @@ useEffect(() => {
         }
     }
 
-    let newClosingCash = (openingBalances.openCash || 0) + cashRcvd + bankRcvd - cashPaid - bankPaid;
-    let newClosingPure = (openingBalances.openPure || 0);
+    let newClosingCash = (apiBalanceOpening.openCash || 0) + cashRcvd + bankRcvd - cashPaid - bankPaid;
+    let newClosingPure = (apiBalanceOpening.openPure || 0);
 
     if (conversionType === "C") {
         newClosingCash -= convAmt;
@@ -1536,7 +1550,7 @@ useEffect(() => {
     setClosingCash(Number(newClosingCash.toFixed(2)));
     setClosingPure(Number(newClosingPure.toFixed(3)));
 
-}, [closingDetails, openingBalances, headerForm.RATEGM]);
+}, [closingDetails, apiBalanceOpening, headerForm.RATEGM]);
 
     // Handle bank paid save (from modal)
     const handleBankPaidSave = (transactions: BankTransaction[], total: number) => {
@@ -2553,7 +2567,7 @@ console.log('createTransactionPayload',payload)
                         customerCollection={purchaserList}
                         getLabelByValue={getLabelByValue}
                         theme={theme}
-                        openingBalance={apiBalanceOpening}
+                        openingBalance={isEditing ? openingBalances : apiBalanceOpening}
                         openingData={openingBalance}
                         isEditing={isEditing}
                    

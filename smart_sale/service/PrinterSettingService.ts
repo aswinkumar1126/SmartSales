@@ -2,9 +2,10 @@ import { axiosInstance } from "@/api/axiosInstance";
 
 export type CreatePrinterSettingInterface = {
  
-    IpAddress: string; 
+    ipAddress: string; 
     exeName: string;     
     printerName: string;  
+    active:string;
 }
 
 export const createPrinterSetting = async (createPayload: CreatePrinterSettingInterface) => {
@@ -21,9 +22,23 @@ export const createPrinterSetting = async (createPayload: CreatePrinterSettingIn
 }
 
 // Additional useful service functions:
-export const getAllPrinterSettings = async () => {
+export const getActivePrinterSettings = async () => {
     try {
         const response = await axiosInstance.get('/printer');
+        return response.data;
+    }
+    catch (error) {
+        console.error('Error fetching printer settings:', error);
+        throw error;
+    }
+}
+
+
+// Additional useful service functions:
+export const getAllPrinterSettings = async () => {
+    try {
+      
+        const response = await axiosInstance.get('/printer/all');
         return response.data;
     }
     catch (error) {
@@ -45,6 +60,7 @@ export const getPrinterSettingById = async (id: string) => {
 
 export const updatePrinterSetting = async (id: string, updatePayload: CreatePrinterSettingInterface) => {
     try {
+        console.log(updatePayload, 'updatePayload')
         const response = await axiosInstance.put(`/printer/${id}`, updatePayload);
         return response.data;
     }
