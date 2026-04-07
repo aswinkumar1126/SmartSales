@@ -51,7 +51,7 @@ function ItemSizeMaster() {
     const { mutate: updateItemSize } = useUpdateSize();
     const { mutate: deleteItemSize } = useDeleteSize();
 
-    const itemCollectionList = (Array.isArray(itemCollection?.items) ? itemCollection.items : []).map(
+    const itemCollectionList = (Array.isArray(itemCollection) ? itemCollection : []).map(
         (item: any) => ({ label: item.itemName, value: String(item.itemId) })
     );
 

@@ -59,3 +59,62 @@ export const SALE_TRANSACTION_KEY_MAP: Record<string, SaleTransactionKey> = {
     IS: "issue",
     RE: "receipt",
 };
+
+export interface BankTransactionDetails {
+    bankName: string,
+    tranMode: "C" | "F" | "I" | "N" | "R" | "U",
+    tranDate: string,
+    chqNo: string,
+    amount: number
+}
+
+export interface ClosingDetails {
+
+    convType: "" | "P" | "C" | string;
+    convAmt: number;
+    convWt: number;
+    discAmt: number;
+    discWt: number;
+
+    cashPaid: number;
+    cashRcvd: number;
+
+    bankPaid: number;
+    bankRcvd: number;
+    bankPaidDetails: BankTransactionDetails[];
+    bankRcvdDetails: BankTransactionDetails[];
+
+}
+export interface ClosingDetails {
+
+    convType: "" | "P" | "C"|string ;
+    convAmt: number;
+    convWt: number;
+    discAmt: number;
+    discWt: number;
+
+    cashPaid: number;
+    cashRcvd: number;
+
+    bankPaid: number;
+    bankRcvd: number;
+    bankPaidDetails: BankTransactionDetails[];
+    bankRcvdDetails: BankTransactionDetails[];
+
+}
+export interface TransactionHeader {
+    ACCODE: number;
+    TRANDATE: string;
+
+    ENTRYNO?: number;
+    BILLNO?: number;
+    RATE?: number;
+}
+
+
+export interface CreateSaleTransaction {
+    TRANSACTION_HEADER: TransactionHeader;
+    TRANSACTION_DETAILS?: SaleTransactionItems;
+    CLOSING_DETAILS?: ClosingDetails;
+}
+

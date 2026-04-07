@@ -14,6 +14,7 @@ type itemMasterProps = {
     calTypeCollection:collection[],
     activeTypeCollection:collection[],
     stockTypeCollection:collection[]
+    isDisabelStudded?:boolean
 }
 
 
@@ -97,6 +98,7 @@ export const ItemMasterFields = (collections: itemMasterProps): FormField[] =>
             type: 'select',
             items: collections.studdedStoneCollection,
 
+            disabled: collections.isDisabelStudded ?? false
         },
         
         {

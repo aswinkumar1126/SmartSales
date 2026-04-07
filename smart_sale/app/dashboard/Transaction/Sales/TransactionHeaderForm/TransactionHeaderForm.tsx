@@ -114,7 +114,7 @@ export default function TransactionHeaderForm({
                 </Box>
 
                 {/* DATE */}
-                <Box w={{ base: '100%', md: '110px' }} display={{ base: 'flex', md: 'block' }} alignItems='center'>
+                <Box w={{ base: '100%', md: '90px' }} display={{ base: 'flex', md: 'block' }} alignItems='center'>
                     <Text fontSize="2xs" mb={1} minW={{ base: '100px' }}>DATE :</Text>
                     <DatePicker
                         selected={parseISOToDate(form.DATE)}

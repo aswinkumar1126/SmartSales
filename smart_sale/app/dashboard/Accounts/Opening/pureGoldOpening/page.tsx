@@ -266,7 +266,7 @@ const PureGoldOpening = () => {
         { key: "weight", label: "Weight", align: "end" as const },
         { key: "actualTouch", label: "Actual Touch", align: "end" as const },
         { key: "actualPure", label: "Actual Pure", align: "end" as const },
-        { key: "action", label: "Action", align: "center" as const },
+        // { key: "action", label: "Action", align: "center" as const },
     ];
 
     /* ---------------- Row Highlight Animation ---------------- */
@@ -415,7 +415,7 @@ const PureGoldOpening = () => {
                                 <Table.Cell textAlign="end">
                                     {formatToFixed(row.actualPure, 2)}
                                 </Table.Cell>
-                                <Table.Cell align="center">
+                                {/* <Table.Cell align="center">
                                     <Box display="flex" justifyContent="center">
                                         <FiEdit
                                             cursor="pointer"
@@ -423,7 +423,7 @@ const PureGoldOpening = () => {
                                         />
                                     </Box>
 
-                                </Table.Cell>
+                                </Table.Cell> */}
                             </>
                         )}
                     />

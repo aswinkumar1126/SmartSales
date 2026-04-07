@@ -8,7 +8,10 @@ import React, {
     useMemo,
     useCallback,
 } from "react";
-import { Box, Table, Text, Button, Portal, Drawer, Icon ,VStack ,HStack } from "@chakra-ui/react";
+import { Box, Table, Text, Button, Portal, Drawer, Icon ,VStack ,HStack ,Spinner, Span } from "@chakra-ui/react";
+import JSZip from "jszip";
+import { saveAs } from "file-saver";
+
 
 /*-------------- COMPONENTS -----------------*/
 import { CustomTable } from "@/component/table/CustomTable";
@@ -32,6 +35,8 @@ import { useSessionStorage } from "@/hooks/storage/useSessionStorage";
 import { useTheme } from "@/context/theme/themeContext";
 import { useSoftControlById } from "@/hooks/softControl/useSoftControl";
 import { useTagEntryNos, useTagedDetailsByEntryNo } from "@/hooks/tag/useTag";
+import { useSize } from "@/hooks/size/useSize";
+import { useActivePrinter } from "@/hooks/print/usePrint";
 
 
 /*-------------- CONSTANTS ------------------*/
@@ -54,10 +59,13 @@ import { BarcodeTagListing } from "./BarcodeTagListing/BarcodeTagList";
 
 /*----------------- IMAGE -------------------*/
 import { Printer } from "lucide-react";
+import { FaDownload } from "react-icons/fa"; // download icon
 
 /* ============================================================
    CONSTANTS
    ============================================================ */
+
+
 
 const BARCODE_HEADER_KEY = "barcode_header_form";
 const BARCODE_TRANSACTIONS_KEY = "barcode_transactions";
@@ -70,7 +78,37 @@ const BARCODE_EDITING_KEY = "barcode_editing_key";
 
 const BARCODE_EDITING_ENTRY_NO ="barcode_editing_entry_no";
 
-const BARCODE_ENTRY_LIST_SINGLE_SEARCH = "tag_items_single_search"
+const BARCODE_ENTRY_LIST_SINGLE_SEARCH = "tag_items_single_search";
+
+
+/* ============================================================
+    BARCODE PRINTER 
+   ============================================================ */
+
+const APP_NAME = "tag";
+
+const FILES = {
+    BAT: `${APP_NAME}.BAT`,
+    REG: `${APP_NAME}.REG`,
+    SOURCE_TXT: "barcode.txt",
+    DEST_TXT: "CTR.txt",
+};
+
+const PATHS = {
+    DOWNLOADS: "%USERPROFILE%\\Downloads",
+    BAT_PATH: `%USERPROFILE%\\Downloads\\${FILES.BAT}`,
+    SOURCE_PATH: `%USERPROFILE%\\Downloads\\${FILES.SOURCE_TXT}`,
+    DEST_PATH: `%USERPROFILE%\\Downloads\\${FILES.DEST_TXT}`,
+};
+
+const PROTOCOL = {
+    NAME: APP_NAME,                 // SmartSales://
+    REG_KEY: `HKEY_CLASSES_ROOT\\${APP_NAME}`,
+};
+
+const buildProtocolUrl = (action: string) =>
+    `${PROTOCOL.NAME}://${action}`;
+
 
 const FIELD_ORDER = [
    "barcode",  "grsweight", "stoneWt", "salesStoneWt", "wastePercent",
@@ -89,7 +127,7 @@ const today = new Date().toISOString().split("T")[0];
 
 
 const EMPTY_HEADER: BarcodeHeaderFormInterface = {
-    ENTRYNO: "", DATE: today , COMPANYTYPE: "PR", COMPANYNAME: "", INWARDNO: "", ITEMNAME: "",
+    ENTRYNO: "", DATE: today ,  COMPANYNAME: "", INWARDNO: "", ITEMNAME: "",
 };
 const EMPTY_TRANSACTION_FORM = {
     barcode: "", grsweight: "", stoneWt: "", salesStoneWt: "", wastePercent: "",
@@ -188,6 +226,7 @@ function BarCodeGenerate() {
 
     /* -------- Session-persisted State -------- */
     const [barcodeHeaderForm, setBarcodeHeaderForm] = useSessionStorage<BarcodeHeaderFormInterface>(BARCODE_HEADER_KEY, EMPTY_HEADER);
+    console.log(barcodeHeaderForm,'barcodeHeaderForm')
 
     const [transactionRows, setTransactionRows] = useSessionStorage<BarcodeTransactionItem[]>(
         BARCODE_TRANSACTIONS_KEY, EMPTY_ARRAY
@@ -215,7 +254,10 @@ function BarCodeGenerate() {
     const [excelImport, setExcelImport] = useState(false);
     // Flag to tell child to deselect
     const [deselectFlag, setDeselectFlag] = useState(false);
+    const [selectedItemId, setSelectedItemId] = useState<number | undefined>(undefined);
+    const [submitting, setSubmitting] = useState(false);
 
+     
 
     
 
@@ -253,8 +295,26 @@ function BarCodeGenerate() {
 
     /* -------- Data Fetching -------- */
     const { data: allPurchaseAccount } = useAllAccountHead("", {
-        accountType: barcodeHeaderForm.COMPANYTYPE || "PR",
+        accountType:"PR",
     });
+    const {data:printerSettings} = useActivePrinter();
+    console.log(printerSettings, 'printerSettings')
+
+    const printer = useMemo(()=>{
+        return printerSettings ? printerSettings.data : null ;
+    }, [printerSettings])
+
+    const { data: sizes, isLoading: sizeDataLoading } = useSize('',selectedItemId);
+    console.log(sizes,'sizessizes');
+
+    const itemSizeList = useMemo(()=>{
+        return Array.isArray(sizes) ? sizes.map((size) => ({
+            label:size.SIZENAME,
+            value:String(size.SIZEID)
+        })):[]
+    },[sizes]);
+    console.log(itemSizeList,'itemSizeList')
+
 
     const barcodeQueryParams = useMemo(() => ({
         ACCODE: Number(barcodeHeaderForm.COMPANYNAME),
@@ -370,6 +430,13 @@ function BarCodeGenerate() {
                 : EMPTY_ARRAY,
         [selectedItem]);
 
+    console.log(selectedItem,'selectedItemselectedItem');
+
+    useEffect(()=>{
+        if(!selectedItem?.ITEMID) return;
+        setSelectedItemId(selectedItem.ITEMID);
+    }, [selectedItem])
+
 
     const tagItemList = useMemo(()=>{
         return Array.isArray(tagEntryNos) ? tagEntryNos : [] ;
@@ -453,7 +520,7 @@ function BarCodeGenerate() {
             console.log("Download triggered → calling protocol");
 
             setTimeout(()=>{
-                window.location.href = "SmartSale://launch"
+                window.location.href = buildProtocolUrl("launch");
             },800);
         });
     };
@@ -891,6 +958,8 @@ function BarCodeGenerate() {
         alert(`Printing barcode for item: ${row.barcode}`);
     }, []);
 
+    console.log(transactionRows,'transactionRows')
+
     const handleSaveTransaction = useCallback(() => {
         if (!validateTaggingHeaders()) {
             toaster.create({ title: "Validation Error", description: "Please fill all required header fields", type: "error", duration: 2000 });
@@ -909,10 +978,16 @@ function BarCodeGenerate() {
             TAGDATE: barcodeHeaderForm.DATE || new Date().toISOString().split("T")[0],
         };
         const taggingDetails = transactionRows.map((row) => ({
-            TAGNO: row.barcode, GRSWT: row.grsweight, STNWT: row.stoneWt,
-            WASPER: row.wastePercent, DIAWT: row.diamondWt, MC: row.mc,
-            TOUCH: row.touch, SALESSTNWT: row.salesStoneWt,
-            NETWT: row.grsweight - row.stoneWt, SIZEID: Number(row.size),
+            TAGNO: row.barcode, 
+            GRSWT: row.grsweight, 
+            STNWT: row.stoneWt,
+            WASPER: row.wastePercent, 
+            DIAWT: row.diamondWt, 
+            MC: row.mc,
+            TOUCH: row.touch, 
+            SALESSTNWT: row.salesStoneWt,
+            NETWT: row.grsweight - row.stoneWt, 
+            SIZEID: Number(row.size),
         }));
 
         createTag({ PURCHASEDETAILS: purchaseDetails, TAGGINGDETAILS: taggingDetails }, {
@@ -938,7 +1013,20 @@ function BarCodeGenerate() {
                 },500)
 
             },
-            onError: () => { toaster.create({ title: "Error", description: "Failed to create tagging", type: "error", duration: 2000 }); },
+            onError: (error: any) => {
+                const message =
+                    error?.response?.data?.message ||   // backend message
+                    error?.response?.data?.error ||     // alternative key
+                    error?.message ||                   // fallback
+                    "Something went wrong";
+
+                toaster.create({
+                    title: "Error",
+                    description: message,
+                    type: "error",
+                    duration: 2000
+                });
+            }
         });
     }, [validateTaggingHeaders, validateTaggingRows, selectedItem, transactionRows, barcodeHeaderForm, itemId, createTag, setTransactionRows]);
 
@@ -994,7 +1082,6 @@ function BarCodeGenerate() {
             INWARDNO: String(purchase.PUENTRYNO ?? ""),
             ITEMNAME: String(purchase.PUSNO ?? ""),
             DATE: purchase.TAGDATE ?? "",
-            COMPANYTYPE: "PR",
         });
 
         const mappedRows = mapApiToTransactionRows(apiRows, String(purchase.ENTRYNO));
@@ -1004,21 +1091,60 @@ function BarCodeGenerate() {
 
     }, [tagedDetails]);
 
+    const triggerProtocol = () => {
+        const url = buildProtocolUrl("launch");
+
+        console.log("🚀 Triggering protocol...");
+        console.log("Protocol URL:", url);
+
+        const iframe = document.createElement("iframe");
+        iframe.style.display = "none";
+        iframe.src = url;
+
+        console.log("📦 Iframe created");
+
+        document.body.appendChild(iframe);
+        console.log("✅ Iframe appended → protocol should trigger now");
+
+        setTimeout(() => {
+            document.body.removeChild(iframe);
+            console.log("🧹 Iframe removed");
+        }, 2000);
+    };
+
     const handleSinglePrint = useCallback((row: BarcodeTransactionItem) => {
-        console.log(row,'row');
-        console.log(printDetails,'printDetails');
+        console.log("🟡 handleSinglePrint triggered");
+        console.log("Row:", row);
+        console.log("Print Details:", printDetails);
+
         const detail = printDetails?.find((d) => d.TAGNO === row.barcode);
+
         if (!detail) {
-            toaster.create({ title: "No print data", description: "Print details not found for this row", type: "error", duration: 2000 });
+            console.error("❌ No matching print detail found");
+            toaster.create({
+                title: "No print data",
+                description: "Print details not found for this row",
+                type: "error",
+                duration: 2000
+            });
             return;
         }
+
+        console.log("✅ Found detail:", detail);
+
         const content = generateAllLabels([detail]);
+        console.log("🧾 Generated content:", content);
+
         downloadTxt(content, () => {
-            setTimeout(() => { window.location.href = "SmartSale://launch"; }, 800);
+            console.log("⬇️ File downloaded, preparing to trigger protocol...");
+
+            setTimeout(() => {
+                console.log("⏳ Delay complete → triggering protocol");
+                triggerProtocol();
+            }, 500);
         });
+
     }, [printDetails, generateAllLabels, downloadTxt]);
-
-
     /* ============================================================
        CELL RENDERERS
        ============================================================ */
@@ -1136,17 +1262,114 @@ function BarCodeGenerate() {
 
     console.log(singleSearch,'singleSearch')
 
+
+
+    // ---------------- Download helper ----------------
+    const downloadFile = (filename: string, content: string) => {
+        // Always revoke previous blob URL if any
+        const blob = new Blob([content], { type: "text/plain" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = filename;
+
+        // Force click
+        a.click();
+
+        // Cleanup
+        URL.revokeObjectURL(url);
+    };
+
+ 
+  
+
+    const generateBatFile = (systemName: string, printerName: string) => {
+        return `@echo off
+setlocal
+
+REM Paths
+set DOWNLOAD_PATH=${PATHS.SOURCE_PATH}
+set DEST_PATH=${PATHS.DEST_PATH}
+
+echo Waiting for ${FILES.SOURCE_TXT}...
+
+REM Wait for file (max 5 sec)
+set count=0
+:waitloop
+if exist "%DOWNLOAD_PATH%" goto movefile
+timeout /t 1 >nul
+set /a count+=1
+if %count% GEQ 5 goto error
+goto waitloop
+
+:movefile
+echo File found. Overwriting...
+
+if exist "%DEST_PATH%" del "%DEST_PATH%"
+move "%DOWNLOAD_PATH%" "%DEST_PATH%"
+
+echo Printing...
+TYPE "%DEST_PATH%" > \\\\${systemName}\\${printerName}
+
+echo Done
+exit
+
+:error
+echo File not found!
+pause
+exit
+`;
+    };
+    // ---------------- Generate REG file ----------------
+    const generateRegContent = useCallback((): string => `Windows Registry Editor Version 5.00
+
+[HKEY_CLASSES_ROOT\\${PROTOCOL.NAME}]
+@="URL:${PROTOCOL.NAME} Protocol"
+"URL Protocol"=""
+
+[HKEY_CLASSES_ROOT\\${PROTOCOL.NAME}\\shell\\open\\command]
+@="cmd.exe /c \"\"%USERPROFILE%\\Downloads\\${FILES.BAT}\""
+`, []);
+
+    // ---------------- Handle Submit ----------------
+   
+    const handleSubmit = async () => {
+        setSubmitting(true);
+
+        try {
+            if (!printer) {
+                throw new Error("Printer configuration not found");
+            }
+
+            const printerName = printer.printerName;
+            const systemName = printer.exeName;
+
+            const batContent = generateBatFile(systemName, printerName);
+            const regContent = generateRegContent();
+
+            // ✅ Download separately
+            downloadFile(FILES.BAT, batContent);
+            downloadFile(FILES.REG, regContent);
+
+        } catch (error) {
+            console.error("Download failed", error);
+        } finally {
+            setSubmitting(false);
+        }
+    };
     /* ============================================================
        RENDER
        ============================================================ */
     return (
         <Box display="flex" flexDirection="row" width={"100%"} gap={2}>
             <Box display="flex" flexDirection="column" gap={2} width={'100%'}>
-
+                <Box bg={theme.colors.formColor} p={1} rounded="xl" display="flex" flexDirection="row" justifyContent="center">
+                <Text fontSize="base" fontWeight="semibold" textAlign="center">BARCODE GENERATION</Text>
+                </Box>
                 {/* ── Header ── */}
                 <Box bg={theme.colors.formColor} p={2} rounded="xl" display="flex" flexDirection="row" justifyContent="space-between" gap={4}>
                     <Box display="flex" flexDirection="column" gap={4}>
-                        <Text fontSize="base" fontWeight="semibold" textAlign="center">BARCODE GENERATION</Text>
+                 
                         <Box display="flex" gap={2} flexDirection="row" justifyContent="space-between">
                             <BarcodeHeaderForm
                                 form={barcodeHeaderForm}
@@ -1156,6 +1379,7 @@ function BarCodeGenerate() {
                                 itemCollection={itemCollection}
                                 isDisabled={transactionRows.length > 0}
                                 validationError={taggingErrors}
+
                             />
                         </Box>
                     </Box>
@@ -1169,15 +1393,23 @@ function BarCodeGenerate() {
                             size="sm"
                             fontSize="xs"
                         />
-                        {/* <SingleCheckbox
-                            label="DUPLICATE PRINT"
-                            checked={showEntryNo}
-                            onChange={() => setShowEntryNo((p) => !p)}
-                            size="sm"
-                            fontSize="xs"
-
-
-                        /> */}
+                
+                        <Button
+                            onClick={handleSubmit}
+                            disabled={submitting}
+                            variant="ghost"
+                            p={0}
+                        >
+                            <Box display="flex" alignItems="center" flexDirection="column">
+                                <Span fontSize="xs" display="flex" gap={1} alignItems="center">
+                                    {submitting ? <Spinner size="sm" /> : <Icon as={FaDownload} w={5} h={5} />}
+                                </Span>
+                                <Span fontSize="2xs" display="flex" gap={1} alignItems="center">
+                                    Download Printing Files
+                                </Span>
+                            </Box>
+                        </Button>
+                     
                         
                     </Box>
                     {/* } */}

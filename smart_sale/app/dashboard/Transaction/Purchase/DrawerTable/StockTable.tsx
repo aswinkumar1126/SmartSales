@@ -197,7 +197,7 @@ export default function StockDrawer({
                                 headerBg={theme.colors.accient}
                                 headerColor={theme.colors.whiteColor}
                                 renderRow={(row) => {
-
+                                    console.log(row,'rowsFo')
                                     const getStockId = (row: any) => {
                                         if (showStock === "PURE") {
                                             return row.pureId || row.PUREID || row.id;
@@ -209,7 +209,7 @@ export default function StockDrawer({
 
                                     const stockId = getStockId(row);
 
-                                
+                                    console.log(stockId,'stockId')
                                  
                                     // Get availability for this row based on stock type
                                     const availability = getStockAvailability && stockId
@@ -218,6 +218,7 @@ export default function StockDrawer({
                                             isEditing: false,
                                         })
                                         : undefined;
+                                    
 
 
                                     console.log('availability in stock drawer:', availability, 'for', showStock, 'id:', stockId);

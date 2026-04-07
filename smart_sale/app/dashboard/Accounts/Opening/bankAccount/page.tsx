@@ -221,7 +221,7 @@ function BankAccountMaster() {
                         onChange={handleChange}
                         focusNext={focusNext}
                         register={register}
-                        minLabelWidth="100px"
+                        minLabelWidth="120px"
                         layout="vertical"
 
                       />

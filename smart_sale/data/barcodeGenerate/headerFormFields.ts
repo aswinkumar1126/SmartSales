@@ -31,21 +31,10 @@ export const barcodeHeaderFields = (  options :{vendorCollection?: {
 
 
     },
-    { 
-        name: "COMPANYTYPE", 
-        label: "COMPANY TYPE", 
-        type: "select",
-        items: [
-            {label:'PURCHASER' , value:'PR'},
-        ], 
-        defaultValue:'PR',
-        css:
-        { width: "180px"  , background:'#faf1e0'  ,borderRadius:'4px'}
-
-    },
+  
     { 
         name: "COMPANYNAME", 
-        label: "COMPANY NAME", 
+        label: "PURCHASER NAME", 
         type: "combobox" ,
         items: options.vendorCollection || [],
         dependsOn: "COMPANYTYPE",

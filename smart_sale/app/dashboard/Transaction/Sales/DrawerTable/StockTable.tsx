@@ -214,7 +214,7 @@ export default function StockDrawer({
                                     // Get availability for this row based on stock type
                                     const availability = getStockAvailability && stockId
                                         ? getStockAvailability(stockId, {
-                                            transactionTypeCode: showStock === "PURE" ? "ISP" : "PR",
+                                            transactionTypeCode: showStock === "PURE" ? "IS" : "RE",
                                             isEditing: false,
                                         })
                                         : undefined;

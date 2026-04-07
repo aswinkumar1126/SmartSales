@@ -139,7 +139,8 @@ export default function ItemMasterPage() {
         stockTypeCollection:stockTypeOptions,
         studdedStoneCollection: studdedStoneCollection,
         calTypeCollection: calTypeOptions,
-        activeTypeCollection: yesNoOptions
+        activeTypeCollection: yesNoOptions,
+        isDisabelStudded: isDisabelStudded
     });
     console.log(formFields, 'formFields')
 
@@ -166,6 +167,9 @@ export default function ItemMasterPage() {
         }
     }, [items.length, metals, editingId, itemsData?.nextId, companies]);
 
+    useEffect(() => {
+        setIsDisableStudded(form.studded === 'N');
+    }, [form.studded]);
     /* ===================== LOAD ITEM FOR EDIT ===================== */
 
     const handleEdit = (id: number, row: any) => {

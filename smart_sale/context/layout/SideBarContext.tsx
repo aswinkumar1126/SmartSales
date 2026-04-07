@@ -303,6 +303,17 @@ const STATIC_MENU: SidebarMenu = {
         },
       ],
     },
+    Settings:{
+      icon: Settings,
+      items: [
+        {
+          type: "direct",
+          label: "Printer",
+          route: "/dashboard/Settings/Printer",
+          icon: Settings,
+        },
+      ],
+    }
   },
   Reports: {
     SummaryReport: {

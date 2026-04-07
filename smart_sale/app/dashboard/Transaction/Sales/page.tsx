@@ -57,7 +57,7 @@ import { TransactionType, UpdateTransactionPayload, TransactionKey, CreateTransa
 import { SALETRANSACTIONTYPES } from "@/data/Transaction/TransactionType";
 import { BankTransaction } from "./Balance/BankTransactionModal";
 import { SaleTransactionType } from "@/types/transcation/SaleTransaction";
-import { SaleTransactionKey, SaleTransactionItems, SALE_TRANSACTION_KEY_MAP, SALESTRANSACTIONITEMS } from "@/types/transcation/SaleTransaction";
+import { SaleTransactionKey, SaleTransactionItems, SALE_TRANSACTION_KEY_MAP, SALESTRANSACTIONITEMS, CreateSaleTransaction } from "@/types/transcation/SaleTransaction";
 
 //Utilities
 import { formatToFixed} from '@/utils/format/numberFormat';
@@ -124,7 +124,7 @@ export default function SalesPage() {
     const FILTER_KEY = "sale_show_filter";
     const EDITING_KEY = "sale_isEditing";
     const EDITING_SNO_KEY = "sale_editing_sno";
-    const STONE_MASTER_KEY = "sale_STONE_MASTER";
+    const SALE_STONE_MASTER_KEY = "SALE_STONE_MASTER";
     const MISC_CHARGE_KEY = "sale_MISC_CHARGE_MASTER";
     const CLOSING_DETAILS_KEY = "sale_CLOSING_DETAILS";
   
@@ -275,13 +275,7 @@ export default function SalesPage() {
 
     // Draft rows (local storage backed)
     const [draftRows, setDraftRows] = useState<any[]>([]);
-
-    // Date range state with localStorage persistence
-
-    // You can still have individual variables if needed for existing code
-    const startDate = dateRange.startDate;
-    const endDate = dateRange.endDate;
-    
+ 
 
     const { theme } = useTheme();
     const { data: itemsData } = useStoneItems();
@@ -317,7 +311,7 @@ export default function SalesPage() {
 
     const { data: transactionsById, isLoading: getbySnoLoading } = useTransactionByTransId(selectedTransactionId,"sales");
 
-    console.log(transactionsById,'transactionsById')
+
 
     const { data: otherChargesData } = useActiveOtherCharges();
 
@@ -354,7 +348,7 @@ export default function SalesPage() {
         enddate: saleFilter.toDate || null,
         itemid: saleFilter.itemId ? Number(saleFilter.itemId) : null,
     });
-    console.log(transactionList,'transactionList');
+  
 
   const { data: transactionHeaderDetail, isLoading: transactionHeaderLoading, refetch: refetchTransactionHeaderDetail } = useTransactions({
         TRANTYPE: "sales",
@@ -613,23 +607,26 @@ export default function SalesPage() {
     }) => {
         if (!pureId) return undefined;
 
+        console.log('getStockAvailability called with:', { pureId, options })
         const { excludeRowId, transactionTypeCode, originalValue } = options || {};
-        const isISP = transactionTypeCode === "IS";
-        const isPR = transactionTypeCode === "PR";
+        const isIssue = transactionTypeCode === "IS";
+        const isSales = transactionTypeCode === "SA";
 
         let stock = null;
         let totalAvailableWeight = 0;
         let totalAvailablePieces = 0;
         let stockSource = '';
+        console.log()
 
-        if (isISP) {
+        if (isIssue) {
             // ISP uses pureStockList
             stock = pureStockList.find((s: any) => String(s.pureId) === String(pureId));
+            console.log(stock,'stockstock')
             if (!stock) return undefined;
 
             totalAvailableWeight = Number(stock.weight || 0);
             stockSource = 'pure';
-        } else if (isPR) {
+        } else if (isSales) {
             // PR uses itemsStockList
             stock = itemsStockList.find((s: any) => {
                 return String(s.itemId) === String(pureId) || String(s.pureId) === String(pureId);
@@ -649,7 +646,7 @@ export default function SalesPage() {
         let usedWeight = 0;
         let usedPieces = 0;
 
-        if (isISP) {
+        if (isIssue) {
             usedWeight = getUsedQuantityByPureId(pureId, {
                 excludeRowId,
                 transactionTypeCode: "ISP",
@@ -661,7 +658,7 @@ export default function SalesPage() {
                 transactionTypeCode: "ISP",
                 field: 'PCS'
             });
-        } else if (isPR) {
+        } else if (isSales) {
             usedWeight = getUsedQuantityByPureId(pureId, {
                 excludeRowId,
                 transactionTypeCode: "PR",
@@ -679,8 +676,8 @@ export default function SalesPage() {
             stock,
             stockSource,
             transactionTypeCode,
-            isISP,
-            isPR,
+            isIssue,
+            isSales,
 
             weight: {
                 total: totalAvailableWeight,
@@ -839,8 +836,10 @@ export default function SalesPage() {
                 apiBalanceOpening.openCash  // ✅ Fixed: Now using openCash, not openPure
             );
 
-           
+        if(!isEditing){
             setOpeningBalances(balances);
+        }
+            
 
             // localStorage.setItem("OPENING_BALANCES",JSON.stringify(balances));
         }
@@ -946,9 +945,9 @@ export default function SalesPage() {
  
     // Delete stones for a specific draft row
     const deleteStonesForDraftRow = (draftRowId: string) => {
-        const all = JSON.parse(localStorage.getItem(STONE_MASTER_KEY) || "[]");
+        const all = JSON.parse(localStorage.getItem(SALE_STONE_MASTER_KEY) || "[]");
         const filtered = all.filter((s: StoneRow) => s.draftRowId !== draftRowId);
-        localStorage.setItem(STONE_MASTER_KEY, JSON.stringify(filtered));
+        localStorage.setItem(SALE_STONE_MASTER_KEY, JSON.stringify(filtered));
     };
 
     // Create empty stone row for a draft row
@@ -1102,6 +1101,7 @@ export default function SalesPage() {
         // Try different possible data structures
         const transactionHeaderDetails = transactionData.TRANSACTION_HEADER;
         const transactionClosingDetails = transactionData.CLOSING_DETAILS;
+        const transactionBalanceDetails = transactionData.BALANCE;
 
         // Collect ALL transaction types that have data
         let transactionTypes: string[] = [];
@@ -1154,8 +1154,8 @@ export default function SalesPage() {
         // Remove duplicate transaction types
         const uniqueTransactionTypes = [...new Set(transactionTypes)];
 
-        // console.log('Detected transaction types:', uniqueTransactionTypes);
-        // console.log('Total transaction items:', allTransactionItems.length);
+        console.log('Detected transaction types:', uniqueTransactionTypes);
+        console.log('Total transaction items:', allTransactionItems.length);
 
         // 1. Load transaction details into header form
         if (transactionHeaderDetails) {
@@ -1212,7 +1212,9 @@ export default function SalesPage() {
             }
             // Set ALL transaction types that are present
             if (uniqueTransactionTypes.length > 0) {
-                const foundTypes = SALETRANSACTIONTYPES.filter(t => uniqueTransactionTypes.includes(t.key));
+                const foundTypes = SALETRANSACTIONTYPES.filter(t => uniqueTransactionTypes.includes(t.code));
+
+                console.log(foundTypes,'foundTypes')
                 if (foundTypes.length > 0) {
                     setSelectedTransactionTypes(foundTypes);
                     // console.log('Set transaction types to:', foundTypes);
@@ -1220,14 +1222,24 @@ export default function SalesPage() {
             }
         }
 
-        // 2. Load ALL transaction items into draft rows and load stones/charges into localStorage
+        // 2. Load Opening Balance 
+        if(transactionBalanceDetails){
+            setOpeningBalances(
+                {
+                    openCash:transactionBalanceDetails.openingCash,
+                    openPure: transactionBalanceDetails.openingPure 
+                }
+            )
+        } 
+
+        // 3. Load ALL transaction items into draft rows and load stones/charges into localStorage
         if (allTransactionItems && allTransactionItems.length > 0) {
             const allStones: any[] = [];
             const allCharges: any[] = [];
 
             const newDraftRows = allTransactionItems.map((item: any, index: number) => {
                 const itemType = item._type;
-                const isIssue = itemType === "ISP" || itemType === "REP";
+                const isIssue = itemType === "IS" || itemType === "RE";
 
                 // Generate a unique row ID for this item
                 const rowId = `edit-${Date.now()}-${index}-${Math.random().toString(36).substr(2, 9)}`;
@@ -1340,10 +1352,10 @@ export default function SalesPage() {
 
             // Save stones to localStorage
             if (allStones.length > 0) {
-                localStorage.setItem(STONE_MASTER_KEY, JSON.stringify(allStones));
+                localStorage.setItem(SALE_STONE_MASTER_KEY, JSON.stringify(allStones));
                 // console.log('Loaded stones to localStorage:', allStones);
             } else {
-                localStorage.removeItem(STONE_MASTER_KEY);
+                localStorage.removeItem(SALE_STONE_MASTER_KEY);
             }
 
             // Save charges to localStorage
@@ -1375,7 +1387,7 @@ export default function SalesPage() {
         } else {
             console.warn("No transaction items found");
             setDraftRows([]);
-            localStorage.removeItem(STONE_MASTER_KEY);
+            localStorage.removeItem(SALE_STONE_MASTER_KEY);
             localStorage.removeItem("MISC_CHARGE_MASTER");
 
             setTimeout(() => {
@@ -1401,13 +1413,6 @@ export default function SalesPage() {
     };
 
 
-
-
-    const handleShowFilter = { openFilter }
-
-   
-
-
     const handleCustomerSelect = (customerValue: string, customerLabel: string) => {
         if (isEditing) return; // skip if editing
 
@@ -1424,26 +1429,6 @@ export default function SalesPage() {
         }, 100);
     };
 
-    /* ================================
-       Date Range Handlers
-    ================================ */
-
-
-
-// Update handlers - NO localStorage calls needed!
-const handleStartDateChange = (val?: string) => {
-    setDateRange(prev => ({ 
-        ...prev, 
-        startDate: val || null 
-    }));
-};
-
-const handleEndDateChange = (val?: string) => {
-    setDateRange(prev => ({ 
-        ...prev, 
-        endDate: val || null 
-    }));
-};
     /* ================================
        Transaction Type Handlers
     ================================ */
@@ -1617,11 +1602,13 @@ useEffect(() => {
         const issueStock = isIssueStock(stockRow);
 
 
+
         // 2️⃣ Pick target type deterministically
         const targetType = issueStock
-            ? SALETRANSACTIONTYPES.find(t => t.label === "issue")
-            : SALETRANSACTIONTYPES.find(t => t.value === "sale_return");
+            ? SALETRANSACTIONTYPES.find(t => t.key === "issue")
+            : SALETRANSACTIONTYPES.find(t => t.key === "sales_return");
 
+        console.log(targetType,'targetTypetargetType')
 
         // 2a️⃣ Check if transaction type exists
         if (!targetType) {
@@ -1743,7 +1730,7 @@ useEffect(() => {
 
         };
 
-        console.log('Created new row with NETWT:', newRow.NETWT);
+        console.log('Created new row with NETWT:', newRow.NETWT, targetType);
 
         // 5️⃣ Add to draft rows
         setDraftRows(prev => [...prev, newRow]);
@@ -2107,8 +2094,8 @@ useEffect(() => {
     };
 
     /* ================================
-   Save Transaction Handler with Stone Details
-================================ */
+    Save Transaction Handler with Stone Details
+    ================================ */
 
 
     const handleSaveTransaction = () => {
@@ -2126,7 +2113,7 @@ useEffect(() => {
         if (!validateDraftRows()) return;
 
         // Get stones
-        const allStones = JSON.parse(localStorage.getItem(STONE_MASTER_KEY) || "[]");
+        const allStones = JSON.parse(localStorage.getItem(SALE_STONE_MASTER_KEY) || "[]");
         const allCharges = JSON.parse(localStorage.getItem("MISC_CHARGE_MASTER") || "[]");
 
         const stonesByDraftRowId = allStones.reduce((acc: Record<string, StoneRow[]>, stone: StoneRow) => {
@@ -2196,7 +2183,7 @@ useEffect(() => {
             (transactionDetails[mappedType] as any[]).push(rowWithStones);
         });
 
-        const payload: CreateTransaction = {
+        const payload: CreateSaleTransaction = {
             TRANSACTION_HEADER: {
                 ACCODE: Number(headerForm.CUSTOMER),
                 TRANDATE: headerForm.DATE,
@@ -2215,7 +2202,7 @@ useEffect(() => {
                 setDraftRows([]);
                 setEditingState({ rowId: null, transactionType: null });
 
-                localStorage.removeItem(STONE_MASTER_KEY);
+                localStorage.removeItem(SALE_STONE_MASTER_KEY);
                 localStorage.removeItem(DRAFT_KEY);
                 localStorage.removeItem(CLOSING_DETAILS_KEY);
                 
@@ -2309,12 +2296,13 @@ useEffect(() => {
             /* -----------------------------------------
                STEP 1 — GROUP ROWS BY TRANSACTION TYPE
                ----------------------------------------- */
-            const transactionDetails: TransactionItems = {};
+            const transactionDetails: SaleTransactionItems = {};
 
             console.group(draftRows,'draftRowsforUpdate')
 
             draftRows.forEach(row => {
-                const mappedType = TRANSACTION_KEY_MAP[row.TRANSACTION_TYPE];
+                const mappedType = SALE_TRANSACTION_KEY_MAP[row.TRANSACTION_TYPE];
+                console.log(mappedType, row.TRANSACTION_TYPE, 'mappedType')
                 if (!mappedType) return;
 
                 if (!transactionDetails[mappedType]) transactionDetails[mappedType] = [];
@@ -2330,7 +2318,7 @@ useEffect(() => {
             /* -----------------------------------------
                STEP 2 — BUILD HEADER
                ----------------------------------------- */
-            const payload: CreateTransaction = {
+            const payload: CreateSaleTransaction = {
                 TRANSACTION_HEADER: {
                     ACCODE: Number(headerForm.CUSTOMER),
                     TRANDATE: headerForm.DATE,
@@ -2507,7 +2495,7 @@ useEffect(() => {
         async (id: string) => {
 
         if (!id?.trim()) return null;
-        const response = await getTagDetails(id, Number(headerForm.CUSTOMER));
+        const response = await getTagDetails(id, Number(headerForm.CUSTOMER) ,true );
         const data=response.data ;
 
         console.log(data,'tagResponse')
@@ -2556,7 +2544,7 @@ useEffect(() => {
                         customerCollection={saleCustomerList}
                         getLabelByValue={getLabelByValue}
                         theme={theme}
-                        openingBalance={apiBalanceOpening}
+                        openingBalance={isEditing ? openingBalances : apiBalanceOpening}
                         openingData={openingBalance}
                         isEditing={isEditing}
                    
@@ -2692,7 +2680,7 @@ useEffect(() => {
 
                                                                     // Handle stone transfer if there are pending stones
                                                                     if (formData._stoneTempId && formData._stones) {
-                                                                        const allStones = JSON.parse(localStorage.getItem(STONE_MASTER_KEY) || "[]");
+                                                                        const allStones = JSON.parse(localStorage.getItem(SALE_STONE_MASTER_KEY) || "[]");
 
                                                                         // Remove stones with temp ID
                                                                         const filtered = allStones.filter((s: StoneRow) =>
@@ -2707,7 +2695,7 @@ useEffect(() => {
 
                                                                         // Save back to localStorage
                                                                         const finalStones = [...filtered, ...updatedStones];
-                                                                        localStorage.setItem(STONE_MASTER_KEY, JSON.stringify(finalStones));
+                                                                        localStorage.setItem(SALE_STONE_MASTER_KEY, JSON.stringify(finalStones));
 
                                                                         // Update the STNWT field in the draft row
                                                                         if (formData._stoneTotalWeight) {
@@ -2717,9 +2705,9 @@ useEffect(() => {
                                                                         // Create empty stone row for non-issue types if no stones
                                                                         if (!isIssueType(transactionType)) {
                                                                             const stoneRow = createEmptyStoneRow(permanentId);
-                                                                            const existingStones = JSON.parse(localStorage.getItem(STONE_MASTER_KEY) || "[]");
+                                                                            const existingStones = JSON.parse(localStorage.getItem(SALE_STONE_MASTER_KEY) || "[]");
                                                                             existingStones.push(stoneRow);
-                                                                            localStorage.setItem(STONE_MASTER_KEY, JSON.stringify(existingStones));
+                                                                            localStorage.setItem(SALE_STONE_MASTER_KEY, JSON.stringify(existingStones));
                                                                         }
                                                                     }
 
