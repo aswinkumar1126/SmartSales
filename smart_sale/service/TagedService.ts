@@ -35,3 +35,27 @@ export const getTagDetails = async (
         }
     }
 };
+
+export interface billNoParams {
+    ACCODE:number;
+}
+
+export const getSoldItemsDetails = async(id:number , params:billNoParams) => {
+    try{
+        const response = await axiosInstance.get<ApiResponse<getSingleTagDetail>>(
+            `/tagged/sold/${id}` ,{params}
+        );
+        return { data: response.data.data };
+    }catch(err){
+        if (err instanceof AxiosError) {
+            return {
+                error: err.response?.data.message || "Failed to Fetch",
+                status: err.response?.status,
+            };
+        } else if (err instanceof Error) {
+            return { error: err.message };
+        } else {
+            return { error: "Unknown error occurred" };
+        }
+    }
+}

@@ -159,8 +159,10 @@ export default function PurchasePage() {
     const [selectedTransactionId, setSelectedTransactionId] = useState<string | null>(null);
     const [apiBalanceOpening, setApiBalanceOpening] = useState({ openPure: 0, openCash: 0 });
     const [openingBalances, setOpeningBalances] = useState({ openPure: 0, openCash: 0 });
-
-    console.log(openingBalances,'openingBalancesdummy')
+    const [editingOpeningBalance,setEditingOpeningBalance] = useState({
+        openPure: 0,
+        openCash: 0
+    })
 
     const [closingCash, setClosingCash] = useState(0);
     const [closingPure, setClosingPure] = useState(0);
@@ -836,24 +838,23 @@ export default function PurchasePage() {
     }
     // console.log(accCode, apiBalanceOpening,'apiBalanceOpening')
 
+    console.log(editingOpeningBalance,'editingOpeningBalance')
 
     // Single useEffect to calculate balances when either draftRows or API balances change
     useEffect(() => {
-        if (apiBalanceOpening.openPure !== undefined && apiBalanceOpening.openCash !== undefined) {
-            const balances = calculateOpeningBalances(
-                draftRows,
-                apiBalanceOpening.openPure,
-                apiBalanceOpening.openCash  // ✅ Fixed: Now using openCash, not openPure
-            );
+        const source = isEditing ? editingOpeningBalance : apiBalanceOpening;
 
-        if(!isEditing){
-            setOpeningBalances(balances)
-        }
-           
+        if (source.openPure === undefined || source.openCash === undefined) return;
 
-            // localStorage.setItem("OPENING_BALANCES",JSON.stringify(balances));
-        }
-    }, [accCode ,draftRows, apiBalanceOpening ]); // ✅ Single dependency array
+        const balances = calculateOpeningBalances(
+            draftRows,
+            source.openPure,
+            source.openCash
+        );
+
+        setOpeningBalances(balances);
+
+    }, [accCode, draftRows, apiBalanceOpening, editingOpeningBalance, isEditing]);
 
     /* ================================
     Pure Gold Name Data
@@ -1092,7 +1093,7 @@ export default function PurchasePage() {
 
     const handleEditTransaction = useCallback((transactionData: any, sno: string) => {
    
-        console.log(transactionData,'transactionData')
+
         if (!transactionData) {
             return;
         }
@@ -1226,18 +1227,21 @@ export default function PurchasePage() {
                 }
             }
         }
-        // 2. Load ALL transaction items into draft rows and load stones/charges into localStorage
-        if (transactionBalanceDetails){
-            setOpeningBalances(
-                {
-                    openCash:transactionBalanceDetails.openingCash,
-                    openPure: transactionBalanceDetails.openingPure 
-                }
-            )
-        }
-        
+        if (transactionBalanceDetails) {
+           
+            const loadedOpeningBalance = {
+                openPure: transactionBalanceDetails.openingPure,
+                openCash: transactionBalanceDetails.openingCash
+            };
 
-        // 3. Load ALL transaction items into draft rows and load stones/charges into localStorage
+            // ✅ Set in parent state
+            setEditingOpeningBalance(loadedOpeningBalance);
+
+            // ✅ Persist to localStorage
+            // localStorage.setItem("OPENING_BALANCE", JSON.stringify(loadedOpeningBalance));
+        }
+
+        // 2. Load ALL transaction items into draft rows and load stones/charges into localStorage
         if (allTransactionItems && allTransactionItems.length > 0) {
             const allStones: any[] = [];
             const allCharges: any[] = [];
@@ -1501,7 +1505,7 @@ export default function PurchasePage() {
 
     // Calculate closing balances whenever relevant data changes
 useEffect(() => {
-    if (!apiBalanceOpening) return;
+    if (!openingBalances) return;
 
     const cashRcvd = parseFloat(closingDetails.cashRcvd || "0") || 0;
     const cashPaid = parseFloat(closingDetails.cashPaid || "0") || 0;
@@ -1532,8 +1536,8 @@ useEffect(() => {
         }
     }
 
-    let newClosingCash = (apiBalanceOpening.openCash || 0) + cashRcvd + bankRcvd - cashPaid - bankPaid;
-    let newClosingPure = (apiBalanceOpening.openPure || 0);
+    let newClosingCash = (openingBalances.openCash || 0) + cashRcvd + bankRcvd - cashPaid - bankPaid;
+    let newClosingPure = (openingBalances.openPure || 0);
 
     if (conversionType === "C") {
         newClosingCash -= convAmt;
@@ -1550,7 +1554,7 @@ useEffect(() => {
     setClosingCash(Number(newClosingCash.toFixed(2)));
     setClosingPure(Number(newClosingPure.toFixed(3)));
 
-}, [closingDetails, apiBalanceOpening, headerForm.RATEGM]);
+}, [closingDetails, openingBalances, headerForm.RATEGM]);
 
     // Handle bank paid save (from modal)
     const handleBankPaidSave = (transactions: BankTransaction[], total: number) => {
@@ -1882,7 +1886,7 @@ useEffect(() => {
     const calculateTotalsForType = (transactionType: TransactionType) => {
         const typeRows = draftRows.filter(row => row.TRANSACTION_TYPE === transactionType.value);
         
-console.log(typeRows,'typeRows')
+
         const isIssue = isIssueType(transactionType);
 
         const keys = isIssue
@@ -2157,7 +2161,7 @@ console.log(typeRows,'typeRows')
 
         draftRows.forEach(row => {
             const mappedType = TRANSACTION_KEY_MAP[row.TRANSACTION_TYPE];
-            console.log(mappedType ,'mappedTypeAtsave')
+          
             if (!mappedType) return;
 
             if (!transactionDetails[mappedType]) transactionDetails[mappedType] = [];
@@ -2509,37 +2513,178 @@ console.log('createTransactionPayload',payload)
     const handleTagChange = () => setIsTag(prev => !prev);
 
     const handleTagNoLookup = useCallback(
-    async (id: string) => {
+        async (tagNo: string) => {
 
-        if (!id?.trim()) return null;
-        const response = await getTagDetails(id, Number(headerForm.CUSTOMER) ,false);
+            if (!tagNo?.trim()) return;
 
-        console.log(response, 'responsedata')
-        const data=response.data ;
+            if (!headerForm.CUSTOMER) {
+                toaster.create({
+                    title: "Customer Required",
+                    description: "Select customer before scanning tag",
+                    type: "warning",
+                });
+                return;
+            }
 
-        console.log(data,'tagdetailsresponse')
+            try {
+                const response = await getTagDetails(
+                    tagNo,
+                    Number(headerForm.CUSTOMER),
+                    false
+                );
 
-        if (!data) return null;
+                const data = response?.data;
 
-        return {
-                GRSWT: Number(data.GRSWT) || 0,
-                STNWT: Number(data.STNWT) || 0,
-                NETWT: Number(data.NETWT) || 0,
-                WASPER: Number(data.WASPER) || 0,
-                DIAWT: Number(data.DIAWT) || 0,
-                MC: Number(data.MC) || 0,
-                TOUCH: Number(data.TOUCH) || 0,
-                SALESSTNWT: Number(data.SALESSTNWT) || 0,
-                SIZEID: Number(data.SIZEID) || 0,
-                ITEMID: data.ITEMID ? String(data.ITEMID) : undefined,
-                PCS: 1,
-                TAGNO:String(data.TAGNO),
-            stoneDetails: data.STNDETAILS || [],
-            };
-        }    
-  ,
-    [headerForm.CUSTOMER] // ✅ IMPORTANT
-);
+                if (!data) {
+                    toaster.create({
+                        title: "Tag Not Found",
+                        description: `No data for tag ${tagNo}`,
+                        type: "error",
+                    });
+                    return;
+                }
+
+                // ✅ Prevent duplicate tag
+                const alreadyExists = draftRows.some(
+                    (row) => row.TAGNO === tagNo
+                );
+
+                if (alreadyExists) {
+                    toaster.create({
+                        title: "Duplicate Tag",
+                        description: `Tag ${tagNo} already added`,
+                        type: "warning",
+                    });
+                    return;
+                }
+
+                // ✅ Generate UNIQUE rowId (CRITICAL for mapping)
+                const rowId = `tag-${Date.now()}-${Math.random()
+                    .toString(36)
+                    .substr(2, 5)}`;
+
+                const stoneDetails = Array.isArray(data.STNDETAILS)
+                    ? data.STNDETAILS
+                    : [];
+
+                // ---------------- CREATE ROW ----------------
+                const newRow: any = {
+                    __rowId: rowId,
+                    __isNew: true,
+                    __isEditing: false,
+                    __previewSno: draftRows.length + 1,
+
+                    TRANSACTION_TYPE: "PR",   // Purchase Return
+                    _type: "PR",              // For table filtering
+
+                    ITEMID: data.ITEMID ? String(data.ITEMID) : "",
+
+                    TAGNO: String(data.TAGNO || tagNo),
+                    PCS: 1,
+
+                    GRSWT: Number(data.GRSWT) || 0,
+                    STNWT: Number(data.STNWT) || 0,
+                    NETWT: Number(data.NETWT) || 0,
+
+                    TOUCH: Number(data.TOUCH) || 0,
+                    PUREWT: Number(data.PUREWT) || 0,
+
+                    MC: Number(data.MC) || 0,
+                    WASTYPE: data.WASTYPE || "TOUCH",
+
+                    // ✅ UI flags
+                    _hasStones: stoneDetails.length > 0,
+                    _hasCharges: false,
+                };
+
+                // ---------------- HANDLE STONES ----------------
+                let stonesWithId: any[] = [];
+
+                if (stoneDetails.length > 0) {
+
+                    stonesWithId = stoneDetails.map((stone: any, index: number) => ({
+                        id: `stone-${Date.now()}-${index}-${Math.random().toString(36).substr(2, 4)}`,
+
+                        // ✅ CRITICAL LINK
+                        draftRowId: rowId,
+
+                        stoneId: String(
+                            stone.STNITEMID ||
+                            stone.STNSUBITEMID ||
+                            stone.stoneId ||
+                            ""
+                        ),
+
+                        subStoneId: String(
+                            stone.STNSUBITEMID ||
+                            stone.subStoneId ||
+                            ""
+                        ),
+
+                        stonePcs: Number(stone.STNPCS || stone.PCS || 1),
+                        stoneWeight: Number(stone.STNWT || 0),
+
+                        stoneUnit: stone.STONEUNIT || "g",
+                        stoneCalculation: stone.CALCMODE || "w",
+
+                        stoneRate: Number(stone.STNRATE || 0),
+                        stoneAmount: Number(stone.STNAMT || 0),
+                    }));
+
+                    // ✅ GET EXISTING FROM CORRECT KEY
+                    const existingStones = JSON.parse(
+                        localStorage.getItem(STONE_MASTER_KEY) || "[]"
+                    );
+
+                    // ✅ MERGE
+                    const updatedStones = [...existingStones, ...stonesWithId];
+
+                    // ✅ SAVE (FIXED KEY)
+                    localStorage.setItem(
+                        STONE_MASTER_KEY,
+                        JSON.stringify(updatedStones)
+                    );
+
+                    // ✅ UPDATE STATE (IMPORTANT FOR UI REFRESH)
+                    // setStoneDetails(updatedStones);
+
+                    // ✅ Recalculate STNWT from stones
+                    const totalStoneWeight = stonesWithId.reduce((sum, s) => {
+                        const weight =
+                            s.stoneUnit === "c"
+                                ? s.stoneWeight / 5
+                                : s.stoneWeight;
+                        return sum + weight;
+                    }, 0);
+
+                    newRow.STNWT = totalStoneWeight;
+                }
+
+                // ---------------- UPDATE DRAFT ROWS ----------------
+                setDraftRows((prev) => [...prev, newRow]);
+
+                toaster.create({
+                    title: "Tag Loaded",
+                    description: `Tag ${tagNo} loaded with ${stoneDetails.length} stone(s)`,
+                    type: "success",
+                    duration: 1000,
+                });
+
+            } catch (error) {
+                console.error("Tag lookup failed:", error);
+
+                toaster.create({
+                    title: "Error",
+                    description: "Failed to fetch tag details",
+                    type: "error",
+                });
+            }
+        },
+        [headerForm.CUSTOMER, draftRows]
+    );
+
+    console.log(draftRows,'Draftroswhentagno')
+
     return (
         <>
         <Box display={'flex'} bg={theme.colors.formColor} fontSize={'md'} fontWeight={'bold'} justifyContent={'center'} p={1} mb={1} rounded={'xl'}>
@@ -2567,7 +2712,7 @@ console.log('createTransactionPayload',payload)
                         customerCollection={purchaserList}
                         getLabelByValue={getLabelByValue}
                         theme={theme}
-                        openingBalance={isEditing ? openingBalances : apiBalanceOpening}
+                        openingBalance={isEditing ? editingOpeningBalance : apiBalanceOpening}
                         openingData={openingBalance}
                         isEditing={isEditing}
                    

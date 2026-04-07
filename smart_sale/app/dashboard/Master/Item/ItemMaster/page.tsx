@@ -43,7 +43,7 @@ import SearchBar from "@/component/search/SearchBar";
 
 import { DynamicForm } from "@/component/form/DynamicForm";
 import { useEnterNavigation } from "@/component/form/useEnterNavigation";
-import { ItemMasterFields } from "@/config/master/ItemMaster";
+import { ItemMasterFields } from "@/config/master/itemMaster";
 
 export default function ItemMasterPage() {
 

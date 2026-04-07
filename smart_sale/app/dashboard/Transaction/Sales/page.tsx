@@ -48,6 +48,13 @@ import { useTagEntryNos, useTagedDetailsByTagNo } from "@/hooks/tag/useTag";
 import { useAllBankAccounts, useBankAccount } from "@/hooks/bankAccount/useBankAccount";
 
 
+/*-------------------  *VALIDATION HOOKS*  --------------------------*/
+
+import { useIsTaggedItem } from "@/utils/TransactionValidation/TagNumberValidation";
+import { validateTransactions } from "@/utils/TransactionValidation/ValidateTransaction";
+import { buildTransactionPayload } from "@/utils/TransactionValidation/buildTransactionPayload";
+import { normalizeRowForApi } from "@/utils/TransactionValidation/normalizeRowForApi";
+
 /*-------------------  *STORAGE*  --------------------------*/
 import { useSessionStorage } from "@/hooks/storage/useSessionStorage";
 
@@ -353,7 +360,8 @@ export default function SalesPage() {
   const { data: transactionHeaderDetail, isLoading: transactionHeaderLoading, refetch: refetchTransactionHeaderDetail } = useTransactions({
         TRANTYPE: "sales",
         accode:headerForm.CUSTOMER ? Number(headerForm.CUSTOMER) : null
-    })
+    });
+
 
 
     const transactionIdsList = useMemo(() => {
@@ -501,6 +509,9 @@ export default function SalesPage() {
     useEffect(() => {
         set(mappedItems);
     }, [mappedItems, set]);
+
+
+    const isTagedItem = useIsTaggedItem(mappedItems);
 
 
     // Function to get or create draft row temp ID
@@ -1875,95 +1886,90 @@ useEffect(() => {
      Normalize Handler with Stone Details Support
   ================================ */
 
-     const normalizeRowForApi = (
-        row: any,
-        tranType: SaleTransactionKey,
-        editTransaction?: boolean
-    ): any => {
-        const {
-            __rowId,
-            __isNew,
-            __previewSno,
-            __manual_AWT,
-            __manual_ATOUCH,
-            __manual_APUREWT,
-            _stones,
-            _miscCharges,
-            ...rest
-        } = row;
+    // const normalizeRowForApi = (
+    //     row: any,
+    //     tranType: SaleTransactionKey,
+    //     editTransaction?: boolean
+    // ): any => {
 
-        if (tranType === "issue" || tranType === "receipt") {
-            // Generic weight-based transaction
-            return {
-                PUREID: rest.PUREID ? Number(rest.PUREID) : undefined,
-                WT: Number(rest.WT || 0),
-                TOUCH: Number(rest.TOUCH || 0),
-                PUREWT: Number(rest.PUREWT || 0),
-                AWT: Number(rest.AWT || 0),
-                ATOUCH: Number(rest.ATOUCH || 0),
-                APUREWT: Number(rest.APUREWT || 0),
-            } as WeightInfo;
-        }
+    //     const {
+    //         __rowId,
+    //         __isNew,
+    //         __previewSno,
+    //         _stones,
+    //         _miscCharges,
+    //         ...rest
+    //     } = row;
 
-        if (tranType === "sales") {
-            const payload: SALESTRANSACTIONITEMS = {
-                ITEMID: rest.ITEMID ? Number(rest.ITEMID) : null,
-                PCS: Number(rest.PCS || 0),
-                GRSWT: Number(rest.GRSWT || 0),
-                STNWT: Number(rest.STNWT || 0),
-                NETWT: Number(rest.NETWT || 0),
-                WASTYPE: String(rest.WASTYPE || "TOUCH"),
-                TOUCH: Number(rest.TOUCH || 0),
-                PUREWT: Number(rest.PUREWT || 0),
-                HMC: Number(rest.HMC || 0),
-                STNAMT: Number(rest.STNAMT || 0),
-                MC: Number(rest.MC || 0),
-                ...(editTransaction && { SNO: String(rest.SNO || "") }),
-                ...(rest.DESCRIPTION && { DESCRIPTION: rest.DESCRIPTION }),
-                ...(_stones && _stones.length > 0 && {
-                    STONEDETAILS: _stones.map((stone: any) => ({
-                        stoneId: stone.stoneId,
-                        subStoneId: stone.subStoneId,
-                        stonePcs: stone.stonePcs,
-                        stoneWeight: stone.stoneWeight,
-                        stoneUnit: stone.stoneUnit,
-                        stoneCalculation: stone.stoneCalculation,
-                        stoneRate: stone.stoneRate,
-                        stoneAmount: stone.stoneAmount,
-                    })),
-                }),
-                ...(_miscCharges && _miscCharges.length > 0 && {
-                    OTHERCHARGESDETAILS: _miscCharges.map((charge: any) => ({
-                        chargeId: Number(charge.chargeName),
-                        chargeAmount: Number(charge.amount),
-                    })),
-                }),
-            };
-            return payload;
-        }
+    //     // ---------------- ISSUE / RECEIPT ----------------
+    //     if (tranType === "issue" || tranType === "receipt") {
+    //         return {
+    //             PUREID: rest.PUREID ? Number(rest.PUREID) : undefined,
+    //             WT: Number(rest.WT || 0),
+    //             TOUCH: Number(rest.TOUCH || 0),
+    //             PUREWT: Number(rest.PUREWT || 0),
+    //             AWT: Number(rest.AWT || 0),
+    //             ATOUCH: Number(rest.ATOUCH || 0),
+    //             APUREWT: Number(rest.APUREWT || 0),
+    //         };
+    //     }
 
-        if (tranType === "sales_return") {
-            const payload: SALESTRANSACTIONITEMS = {
-                ITEMID: rest.ITEMID ? Number(rest.ITEMID) : null,
-                TAGNO: rest.TAGNO || "",
-                PCS: Number(rest.PCS || 0),
-                GRSWT: Number(rest.GRSWT || 0),
-                STNWT: Number(rest.STNWT || 0),
-                NETWT: Number(rest.NETWT || 0),
-                WASTYPE: String(rest.WASTYPE || "TOUCH"),
-                TOUCH: Number(rest.TOUCH || 0),
-                PUREWT: Number(rest.PUREWT || 0),
-                HMC: Number(rest.HMC || 0),
-                STNAMT: Number(rest.STNAMT || 0),
-                MC: Number(rest.MC || 0),
-                ...(editTransaction && { SNO: String(rest.SNO || "") }),
-                ...(rest.DESCRIPTION && { DESCRIPTION: rest.DESCRIPTION }),
-            };
-            return payload;
-        }
+    //     // ---------------- SALES ----------------
+    //     if (tranType === "sales") {
+    //         const itemId = rest.ITEMID ? Number(rest.ITEMID) : null;
+    //         const tagged = isTagedItem(itemId);
 
-        return null;
-    };
+    //         const payload: SALESTRANSACTIONITEMS = {
+    //             ITEMID: itemId,
+    //             PCS: Number(rest.PCS || 0),
+    //             GRSWT: Number(rest.GRSWT || 0),
+    //             STNWT: Number(rest.STNWT || 0),
+    //             NETWT: Number(rest.NETWT || 0),
+    //             WASTYPE: String(rest.WASTYPE || "TOUCH"),
+    //             TOUCH: Number(rest.TOUCH || 0),
+    //             PUREWT: Number(rest.PUREWT || 0),
+    //             HMC: Number(rest.HMC || 0),
+    //             STNAMT: Number(rest.STNAMT || 0),
+    //             MC: Number(rest.MC || 0),
+
+    //             // ✅ Only include TAGNO if tagged item
+    //             ...(tagged && { TAGNO: rest.TAGNO || "" }),
+
+    //             ...(editTransaction && { SNO: String(rest.SNO || "") }),
+    //             ...(rest.DESCRIPTION && { DESCRIPTION: rest.DESCRIPTION }),
+    //         };
+
+    //         return payload;
+    //     }
+
+    //     // ---------------- SALES RETURN ----------------
+    //     if (tranType === "sales_return") {
+    //         const payload: SALESTRANSACTIONITEMS = {
+    //             ITEMID: rest.ITEMID ? Number(rest.ITEMID) : null,
+    //             PCS: Number(rest.PCS || 0),
+    //             GRSWT: Number(rest.GRSWT || 0),
+    //             STNWT: Number(rest.STNWT || 0),
+    //             NETWT: Number(rest.NETWT || 0),
+    //             WASTYPE: String(rest.WASTYPE || "TOUCH"),
+    //             TOUCH: Number(rest.TOUCH || 0),
+    //             PUREWT: Number(rest.PUREWT || 0),
+    //             HMC: Number(rest.HMC || 0),
+    //             STNAMT: Number(rest.STNAMT || 0),
+    //             MC: Number(rest.MC || 0),
+
+    //             // ✅ Flexible return logic
+    //             ...(rest.TAGNO && { TAGNO: rest.TAGNO }),
+    //             ...(rest.BILLNO && { BILLNO: rest.BILLNO }),
+
+    //             ...(editTransaction && { SNO: String(rest.SNO || "") }),
+    //             ...(rest.DESCRIPTION && { DESCRIPTION: rest.DESCRIPTION }),
+    //         };
+
+    //         return payload;
+    //     }
+
+    //     return null;
+    // };
 
 
     const isDraftRowsChanged = () => {
@@ -2041,6 +2047,10 @@ useEffect(() => {
                         });
                         return false;
                     }
+                 
+                    const isTagedItemId = isTagedItem(Number(row.ITEMID));
+
+
 
                     if (Number(row.GRSWT) <= 0) {
                         toaster.create({
@@ -2110,7 +2120,28 @@ useEffect(() => {
             return;
         }
 
-        if (!validateDraftRows()) return;
+        // if (!validateDraftRows()) return;
+
+
+        const result = validateTransactions({
+            draftRows,
+            isDraftRowsChanged,
+            isClosingChanged,
+            SALE_TRANSACTION_KEY_MAP,
+            SALETRANSACTIONTYPES,
+            getStockAvailability,
+            isIssueType,
+            isTagedItem,
+        });
+
+        if (!result.valid) {
+            toaster.create({
+                title: "Validation Error",
+                description: result.error,
+                type: "error",
+            });
+            return;
+        }
 
         // Get stones
         const allStones = JSON.parse(localStorage.getItem(SALE_STONE_MASTER_KEY) || "[]");
@@ -2128,59 +2159,66 @@ useEffect(() => {
             return acc;
         }, {});
 
-        const transactionDetails: SaleTransactionItems = {};
+        // draftRows.forEach(row => {
+        //     const mappedType = SALE_TRANSACTION_KEY_MAP[row.TRANSACTION_TYPE];
+        //     console.log(mappedType, 'mappedTypeAtsave')
+        //     if (!mappedType) return;
 
-        draftRows.forEach(row => {
-            const mappedType = SALE_TRANSACTION_KEY_MAP[row.TRANSACTION_TYPE];
-            console.log(mappedType ,'mappedTypeAtsave')
-            if (!mappedType) return;
+        //     if (!transactionDetails[mappedType]) transactionDetails[mappedType] = [];
 
-            if (!transactionDetails[mappedType]) transactionDetails[mappedType] = [];
+        //     const rowStones = stonesByDraftRowId[row.__rowId] || [];
 
-            const rowStones = stonesByDraftRowId[row.__rowId] || [];
+        //     const validStones = rowStones.filter((stone: any) =>
+        //         stone.stoneId &&
+        //         stone.stonePcs > 0 &&
+        //         stone.stoneWeight > 0 &&
+        //         stone.stoneRate > 0
+        //     );
 
-            const validStones = rowStones.filter((stone: any) =>
-                stone.stoneId &&
-                stone.stonePcs > 0 &&
-                stone.stoneWeight > 0 &&
-                stone.stoneRate > 0
-            );
+        //     const rowCharges = row._miscCharges || chargesByDraftRowId[row.__rowId] || [];
 
-            const rowCharges = row._miscCharges || chargesByDraftRowId[row.__rowId] || [];
+        //     const validCharges = rowCharges.filter((charge: any) =>
+        //         charge.id &&
+        //         Number(charge.amount) > 0
+        //     );
 
-            const validCharges = rowCharges.filter((charge: any) =>
-                charge.id &&
-                Number(charge.amount) > 0
-            );
+        //     const normalized = normalizeRowForApi(
+        //         row,
+        //         mappedType
+        //     );
 
-            const normalized = normalizeRowForApi(
-                row,
-                mappedType 
-            );
+        //     const rowWithStones = {
+        //         ...normalized,
+        //         ...(validStones.length > 0 && {
+        //             STONEDETAILS: validStones.map((stone: any) => ({
+        //                 stoneId: stone.stoneId,
+        //                 subStoneId: stone.subStoneId,
+        //                 stonePcs: stone.stonePcs,
+        //                 stoneWeight: stone.stoneWeight,
+        //                 stoneUnit: stone.stoneUnit,
+        //                 stoneCalculation: stone.stoneCalculation,
+        //                 stoneRate: stone.stoneRate,
+        //                 stoneAmount: stone.stoneAmount,
+        //             }))
+        //         }),
+        //         ...(validCharges.length > 0 && {
+        //             OTHERCHARGESDETAILS: validCharges.map((charge: any) => ({
+        //                 chargeId: Number(charge.chargeName),
+        //                 chargeAmount: charge.amount,
+        //             }))
+        //         })
+        //     };
 
-            const rowWithStones = {
-                ...normalized,
-                ...(validStones.length > 0 && {
-                    STONEDETAILS: validStones.map((stone: any) => ({
-                        stoneId: stone.stoneId,
-                        subStoneId: stone.subStoneId,
-                        stonePcs: stone.stonePcs,
-                        stoneWeight: stone.stoneWeight,
-                        stoneUnit: stone.stoneUnit,
-                        stoneCalculation: stone.stoneCalculation,
-                        stoneRate: stone.stoneRate,
-                        stoneAmount: stone.stoneAmount,
-                    }))
-                }),
-                ...(validCharges.length > 0 && {
-                    OTHERCHARGESDETAILS: validCharges.map((charge: any) => ({
-                        chargeId: Number(charge.chargeName),
-                        chargeAmount: charge.amount,
-                    }))
-                })
-            };
+        //     (transactionDetails[mappedType] as any[]).push(rowWithStones);
+        // });
 
-            (transactionDetails[mappedType] as any[]).push(rowWithStones);
+        const transactionDetails: SaleTransactionItems = buildTransactionPayload({
+            draftRows,
+            stonesByDraftRowId,
+            chargesByDraftRowId,
+            SALE_TRANSACTION_KEY_MAP,
+            normalizeRowForApi,
+            isTagedItem,
         });
 
         const payload: CreateSaleTransaction = {
@@ -2308,7 +2346,7 @@ useEffect(() => {
                 if (!transactionDetails[mappedType]) transactionDetails[mappedType] = [];
 
             
-                const normalized = normalizeRowForApi(row, mappedType, true);
+                const normalized = normalizeRowForApi(row, mappedType, isTagedItem ,true);
 
           
                 (transactionDetails[mappedType] as any[]).push(normalized);

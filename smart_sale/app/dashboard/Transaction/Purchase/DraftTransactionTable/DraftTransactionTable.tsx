@@ -173,7 +173,21 @@ export default function DraftTransactionTable({
     onTagNoLookup
 }: DraftTransactionTableProps) {
 
-    console.log(totals, 'totals')
+    console.log(totals, 'totals');
+
+
+    const DEFAULT_FORM_DATA = {
+        GRSWT: "",
+        STNWT: "",
+        NETWT: "",
+        WASPER: "",
+        DIAWT: "",
+        MC: "",
+        TOUCH: "",
+        ITEMID: "",
+        PCS: "1",
+        TAGNO: "",
+    };
 
     // 🔥 FIX: Get the current editing row ID and its transaction type
     const currentEditingRowId = editingState?.rowId;
@@ -1030,99 +1044,18 @@ export default function DraftTransactionTable({
         if (!tagNo) return;
 
         try {
-            const result = await onTagNoLookup?.(tagNo);
-        
+            await onTagNoLookup?.(tagNo); // ✅ JUST CALL PARENT
 
-            if (result) {
-                // Generate a temporary ID for this tag lookup
-                const tempStoneId = `tag-lookup-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
+            // ✅ optional: clear input after scan
+            setTagNo("");
 
-                // ✅ FIX: Check for STNDETAILS (not stoneDetails) from API response
-                const stoneDetails = result.stoneDetails || [];
-
-                if (stoneDetails.length > 0) {
-                    const allStones = JSON.parse(localStorage.getItem("STONE_MASTER") || "[]");
-
-                    // Remove any existing stones with this temp ID (cleanup)
-                    const filtered = allStones.filter((s: any) => s.draftRowId !== tempStoneId);
-
-                    // Transform STNDETAILS to match StoneRow format
-                    const stonesWithId = stoneDetails.map((stone: any, index: number) => ({
-                        id: stone.id || `stone-${Date.now()}-${index}-${Math.random().toString(36).substr(2, 5)}`,
-                        draftRowId: tempStoneId,
-                        // Map from API field names to your StoneRow format
-                        stoneId: String(stone.STNITEMID || stone.stoneId || stone.STNSUBITEMID || ""),
-                        subStoneId: String(stone.STNSUBITEMID || stone.subStoneId || ""),
-                        stonePcs: stone.STNPCS || stone.stonePcs || stone.PCS || 1,  // Default to 1 if not provided
-                        stoneWeight: stone.STNWT || stone.stoneWeight || 0,
-                        stoneUnit: stone.STONEUNIT || stone.stoneUnit || "g",  // Default to grams
-                        stoneCalculation: stone.CALCMODE || stone.stoneCalculation || "w",  // Default to weight
-                        stoneRate: stone.STNRATE || stone.stoneRate || 0,
-                        stoneAmount: stone.STNAMT || stone.stoneAmount || 0,
-                    }));
-
-                    console.log("Transformed stones for localStorage:", stonesWithId);
-
-                    // Save to localStorage (replace any existing stones with same temp ID)
-                    const finalStones = [...filtered, ...stonesWithId];
-                    setStoneDetails(finalStones)
-                    localStorage.setItem("STONE_MASTER", JSON.stringify(finalStones));
-
-                    // Store the temp ID so modal can load it
-                    setStoneDraftRowId(tempStoneId);
-
-                    // Calculate total stone weight for STNWT
-                    const totalStoneWeight = stonesWithId.reduce((sum, stone) => {
-                        const weight = stone.stoneUnit === "c" ? stone.stoneWeight / 5 : stone.stoneWeight;
-                        return sum + weight;
-                    }, 0);
-
-                    console.log(`Saved ${stonesWithId.length} stones with total weight: ${totalStoneWeight}`);
-                } else {
-                    console.log('No stone details found in tag data');
-                    // Clear any existing stone draft row ID
-                    setStoneDraftRowId("");
-                }
-
-                // Populate the form with tag data
-                setFormData(prev => ({
-                    ...prev,
-                    GRSWT: result.GRSWT || "",
-                    STNWT: result.STNWT || "",
-                    NETWT: result.NETWT || "",
-                    WASPER: result.WASPER || "",
-                    DIAWT: result.DIAWT || "",
-                    MC: result.MC || "",
-                    TOUCH: result.TOUCH || "",
-                    ITEMID: result.ITEMID ? String(result.ITEMID) : "",
-                    PCS: result.PCS || "1",  // Default to 1 if not provided
-                    TAGNO: result.TAGNO || tagNo,
-                }));
-
-                // Show success message
-                toaster.create({
-                    title: "Tag Loaded",
-                    description: `Tag ${tagNo} loaded with ${stoneDetails.length} stone(s)`,
-                    type: "success",
-                    duration: 1000,
-                });
-
-            } else {
-                console.log('No data found for tag:', tagNo);
-                toaster.create({
-                    title: "Tag Not Found",
-                    description: `No data found for tag number: ${tagNo}`,
-                    type: "error",
-                    duration: 3000,
-                });
-            }
         } catch (error) {
-            console.error('Tag lookup failed:', error);
+            console.error("Tag lookup failed:", error);
+
             toaster.create({
                 title: "Error",
-                description: "Failed to load tag data. Please try again.",
+                description: "Failed to process tag",
                 type: "error",
-                duration: 3000,
             });
         }
     };
