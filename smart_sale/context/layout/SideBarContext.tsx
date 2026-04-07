@@ -322,7 +322,7 @@ const STATIC_MENU: SidebarMenu = {
         {
           type: "direct",
           label: "Summary Report",
-          route: "/dashboard/Reports/TagReport/SummaryReport",
+          route: "/dashboard/Reports/TagReport/ItemStockReport",
           icon: Layers,
         }
       ],

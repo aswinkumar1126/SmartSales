@@ -1,11 +1,12 @@
 import { useApiQuery } from "../apiHook/ApiHook";
-import { TaggingEntry } from "@/types/SummaryReport/SummaryReport";
+import { ItemStockEntry } from "@/types/SummaryReport/SummaryReport";
 
-export const useSummaryReport = () => {
-    return useApiQuery<TaggingEntry[]>({
-        queryKey: ["summary_report"],
-        url: "/report",
+export const useItemStockReport = (date?: string) => {
+    return useApiQuery<ItemStockEntry[]>({
+        queryKey: ["item_stock_report", date ?? ""],
+        url: "/report/itemwise",
         method: "GET",
+        params: date ? { date } : undefined,
         select: (res) => res.data,
     });
 };

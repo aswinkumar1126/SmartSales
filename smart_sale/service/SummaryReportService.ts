@@ -1,14 +1,12 @@
 import { axiosInstance } from "@/api/axiosInstance";
-import { TaggingEntryResponse } from "@/types/SummaryReport/SummaryReport";
+import { ItemStockReportResponse } from "@/types/SummaryReport/SummaryReport";
 
-export const getAllSummaryReport = async(): Promise<TaggingEntryResponse> => {
-
-     try{
-        const response = await axiosInstance.get("/report");
+export const getAllItemStockReport = async (date?: string): Promise<ItemStockReportResponse> => {
+    try {
+        const response = await axiosInstance.get("/report/itemwise", { params: date ? { date } : {} });
         return response.data;
-    }
-    catch(err){
-        console.warn("Error while fetching Summary Report",err);
+    } catch (err) {
+        console.warn("Error while fetching Item Stock Report", err);
         throw err;
     }
-}
+};

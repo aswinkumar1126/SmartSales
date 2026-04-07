@@ -46,25 +46,13 @@ export function CustomTable<T extends Record<string, any>>({
     maxWidth = "100%",
 }: CustomTableProps<T>) {
 
-   const enableScroll = data.length > 10;
-    const rowHeight = 44; // approx for size="sm"
-    const maxBodyHeight = rowHeight * 10;
-
-
-
     return (
-        <Box w={maxWidth} overflowX="auto">
-            <Box
-                maxH={enableScroll ? `${maxBodyHeight}px` : "auto"}
-                overflowY={enableScroll ? "auto" : "visible"}
+        <Box w={maxWidth} overflowX="auto" border="1px solid" borderColor={borderColor}>
+            <Table.Root
+                size={size}
+                minW="max-content"
+                showColumnBorder
             >
-                <Table.Root
-                    size={size}
-                    minW="max-content"
-                    border="1px solid"
-                    borderColor={borderColor}
-                    showColumnBorder
-                >
                     {/* HEADER */}
                     <Table.Header>
                         <Table.Row bg={headerBg}>
@@ -77,6 +65,10 @@ export function CustomTable<T extends Record<string, any>>({
                                     whiteSpace="nowrap"
                                     fontSize="xs"
                                     py={1}
+                                    position="sticky"
+                                    top={0}
+                                    zIndex={1}
+                                    bg={headerBg ?? "white"}
                                 >
                                     {col.label}
                                 </Table.ColumnHeader>
@@ -121,8 +113,7 @@ export function CustomTable<T extends Record<string, any>>({
                             })
                         )}
                     </Table.Body>
-                </Table.Root>
-            </Box>
+            </Table.Root>
         </Box>
 
     );

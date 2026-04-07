@@ -1,26 +1,26 @@
-// Type for each entry in the "data" array
-export interface TaggingEntry {
-  STNWT: number | null;
-  PCS: number | null;
-  T_GRSWT: number | null;
-  NETWT: number | null;
-  T_SALESSTNWT: number | null;
-  TRANNO: number | null;
-  ACCODE: number | null;
-  TRANDATE: string | null;
-  T_PCS: number | null;
-  T_NETWT: number | null;
-  sort_order: number;
-  SNO: string;
-  ENTRYNO: number | null;
+export interface ItemStockEntry {
   ITEMID: number | null;
-  GRSWT: number | null;
-  T_STNWT: number | null;
+  ITEMNAME: string;
+  OP_PCS: number;
+  OP_GRSWT: number;
+  OP_NETWT: number;
+  OP_STNWT: number;
+  RE_PCS: number;
+  RE_GRSWT: number;
+  RE_NETWT: number;
+  RE_STNWT: number;
+  IS_PCS: number;
+  IS_GRSWT: number;
+  IS_NETWT: number;
+  IS_STNWT: number;
+  CL_PCS: number;
+  CL_GRSWT: number;
+  CL_NETWT: number;
+  CL_STNWT: number;
 }
 
-// Type for the full API response
-export interface TaggingEntryResponse {
+export interface ItemStockReportResponse {
   success: boolean;
   message: string;
-  data: TaggingEntry[];
+  data: ItemStockEntry[];
 }
