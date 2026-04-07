@@ -12,12 +12,13 @@ export interface TagDetailsResult {
 // ✅ Service that returns either data or error
 export const getTagDetails = async (
     tagNo: string,
-    ACCODE: number
+    ACCODE: number,
+    ISSALE:boolean
 ): Promise<TagDetailsResult> => {
     try {
         const response = await axiosInstance.get<ApiResponse<getSingleTagDetail>>(
             `/tagged/singleTag/${tagNo}`,
-            { params: { ACCODE } }
+            { params: { ACCODE, ISSALE } }
         );
 
         return { data: response.data.data }; // ✅ only return actual data

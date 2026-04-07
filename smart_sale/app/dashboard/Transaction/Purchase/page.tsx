@@ -2498,7 +2498,9 @@ console.log('createTransactionPayload',payload)
     async (id: string) => {
 
         if (!id?.trim()) return null;
-        const response = await getTagDetails(id, Number(headerForm.CUSTOMER));
+        const response = await getTagDetails(id, Number(headerForm.CUSTOMER) ,false);
+
+        console.log(response, 'responsedata')
         const data=response.data ;
 
         console.log(data,'tagdetailsresponse')
@@ -2518,7 +2520,7 @@ console.log('createTransactionPayload',payload)
                 ITEMID: data.ITEMID ? String(data.ITEMID) : undefined,
                 PCS: 1,
                 TAGNO:String(data.TAGNO),
-                stoneDetails: data.STNDETAILS || [],
+            stoneDetails: data.STNDETAILS || [],
             };
         }    
   ,

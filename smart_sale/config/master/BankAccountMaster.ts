@@ -3,7 +3,7 @@ import { FormField } from "@/types/form/form";
 export const BankAccountForm = (accountTypeCollection: { label: string; value: string }[]): FormField[] => [
     {
         name: "ACCOUNTNO",
-        label: "Account Number",
+        label: "ACCOUNT NUMBER",
         type: "text",
         size: "sm",
         required: true,
@@ -11,7 +11,7 @@ export const BankAccountForm = (accountTypeCollection: { label: string; value: s
     },
     {
         name: "ACCOUNTTYPE",
-        label: "Account Type",
+        label: "ACCOUNT TYPE",
         type: "select", // ✅ select type
         size: "sm",
         required: true,
@@ -22,7 +22,7 @@ export const BankAccountForm = (accountTypeCollection: { label: string; value: s
     },
     {
         name: "ACHOLDERNAME",
-        label: "Account Holder Name",
+        label: "ACCOUNT HOLDER NAME",
         type: "text",
         size: "sm",
         required: true,
@@ -30,7 +30,7 @@ export const BankAccountForm = (accountTypeCollection: { label: string; value: s
     },
     {
         name: "ADDRESS",
-        label: "Address",
+        label: "ADDRESS",
         type: "text",
         size: "sm",
         required: false,
@@ -38,7 +38,7 @@ export const BankAccountForm = (accountTypeCollection: { label: string; value: s
     },
     {
         name: "BANKAC",
-        label: "Bank A/C",
+        label: "BANK A/C",
         type: "text",
         size: "sm",
         required: false,
@@ -46,7 +46,7 @@ export const BankAccountForm = (accountTypeCollection: { label: string; value: s
     },
     {
         name: "BANKNAME",
-        label: "Bank Name",
+        label: "BANK NAME",
         type: "text",
         size: "sm",
         required: true,
@@ -54,7 +54,7 @@ export const BankAccountForm = (accountTypeCollection: { label: string; value: s
     },
     {
         name: "BRANCHNAME",
-        label: "Branch Name",
+        label: "BRANCH NAME",
         type: "text",
         size: "sm",
         required: true,
@@ -62,7 +62,7 @@ export const BankAccountForm = (accountTypeCollection: { label: string; value: s
     },
     {
         name: "OPENINGBALANCE",
-        label: "Opening Balance",
+        label: "OPENING BALANCE",
         type: "number",
         size: "sm",
         required: true,
@@ -72,7 +72,7 @@ export const BankAccountForm = (accountTypeCollection: { label: string; value: s
     },
     {
         name: "REMARKS",
-        label: "Remarks",
+        label: "REMARKS",
         type: "text",
         size: "sm",
         required: false,

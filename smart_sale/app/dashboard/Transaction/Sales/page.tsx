@@ -57,7 +57,7 @@ import { TransactionType, UpdateTransactionPayload, TransactionKey, CreateTransa
 import { SALETRANSACTIONTYPES } from "@/data/Transaction/TransactionType";
 import { BankTransaction } from "./Balance/BankTransactionModal";
 import { SaleTransactionType } from "@/types/transcation/SaleTransaction";
-import { SaleTransactionKey, SaleTransactionItems, SALE_TRANSACTION_KEY_MAP, SALESTRANSACTIONITEMS } from "@/types/transcation/SaleTransaction";
+import { SaleTransactionKey, SaleTransactionItems, SALE_TRANSACTION_KEY_MAP, SALESTRANSACTIONITEMS, CreateSaleTransaction } from "@/types/transcation/SaleTransaction";
 
 //Utilities
 import { formatToFixed} from '@/utils/format/numberFormat';
@@ -124,7 +124,7 @@ export default function SalesPage() {
     const FILTER_KEY = "sale_show_filter";
     const EDITING_KEY = "sale_isEditing";
     const EDITING_SNO_KEY = "sale_editing_sno";
-    const STONE_MASTER_KEY = "sale_STONE_MASTER";
+    const SALE_STONE_MASTER_KEY = "SALE_STONE_MASTER";
     const MISC_CHARGE_KEY = "sale_MISC_CHARGE_MASTER";
     const CLOSING_DETAILS_KEY = "sale_CLOSING_DETAILS";
   
@@ -613,23 +613,26 @@ export default function SalesPage() {
     }) => {
         if (!pureId) return undefined;
 
+        console.log('getStockAvailability called with:', { pureId, options })
         const { excludeRowId, transactionTypeCode, originalValue } = options || {};
-        const isISP = transactionTypeCode === "IS";
-        const isPR = transactionTypeCode === "PR";
+        const isIssue = transactionTypeCode === "IS";
+        const isSales = transactionTypeCode === "SA";
 
         let stock = null;
         let totalAvailableWeight = 0;
         let totalAvailablePieces = 0;
         let stockSource = '';
+        console.log()
 
-        if (isISP) {
+        if (isIssue) {
             // ISP uses pureStockList
             stock = pureStockList.find((s: any) => String(s.pureId) === String(pureId));
+            console.log(stock,'stockstock')
             if (!stock) return undefined;
 
             totalAvailableWeight = Number(stock.weight || 0);
             stockSource = 'pure';
-        } else if (isPR) {
+        } else if (isSales) {
             // PR uses itemsStockList
             stock = itemsStockList.find((s: any) => {
                 return String(s.itemId) === String(pureId) || String(s.pureId) === String(pureId);
@@ -649,7 +652,7 @@ export default function SalesPage() {
         let usedWeight = 0;
         let usedPieces = 0;
 
-        if (isISP) {
+        if (isIssue) {
             usedWeight = getUsedQuantityByPureId(pureId, {
                 excludeRowId,
                 transactionTypeCode: "ISP",
@@ -661,7 +664,7 @@ export default function SalesPage() {
                 transactionTypeCode: "ISP",
                 field: 'PCS'
             });
-        } else if (isPR) {
+        } else if (isSales) {
             usedWeight = getUsedQuantityByPureId(pureId, {
                 excludeRowId,
                 transactionTypeCode: "PR",
@@ -679,8 +682,8 @@ export default function SalesPage() {
             stock,
             stockSource,
             transactionTypeCode,
-            isISP,
-            isPR,
+            isIssue,
+            isSales,
 
             weight: {
                 total: totalAvailableWeight,
@@ -946,9 +949,9 @@ export default function SalesPage() {
  
     // Delete stones for a specific draft row
     const deleteStonesForDraftRow = (draftRowId: string) => {
-        const all = JSON.parse(localStorage.getItem(STONE_MASTER_KEY) || "[]");
+        const all = JSON.parse(localStorage.getItem(SALE_STONE_MASTER_KEY) || "[]");
         const filtered = all.filter((s: StoneRow) => s.draftRowId !== draftRowId);
-        localStorage.setItem(STONE_MASTER_KEY, JSON.stringify(filtered));
+        localStorage.setItem(SALE_STONE_MASTER_KEY, JSON.stringify(filtered));
     };
 
     // Create empty stone row for a draft row
@@ -1340,10 +1343,10 @@ export default function SalesPage() {
 
             // Save stones to localStorage
             if (allStones.length > 0) {
-                localStorage.setItem(STONE_MASTER_KEY, JSON.stringify(allStones));
+                localStorage.setItem(SALE_STONE_MASTER_KEY, JSON.stringify(allStones));
                 // console.log('Loaded stones to localStorage:', allStones);
             } else {
-                localStorage.removeItem(STONE_MASTER_KEY);
+                localStorage.removeItem(SALE_STONE_MASTER_KEY);
             }
 
             // Save charges to localStorage
@@ -1375,7 +1378,7 @@ export default function SalesPage() {
         } else {
             console.warn("No transaction items found");
             setDraftRows([]);
-            localStorage.removeItem(STONE_MASTER_KEY);
+            localStorage.removeItem(SALE_STONE_MASTER_KEY);
             localStorage.removeItem("MISC_CHARGE_MASTER");
 
             setTimeout(() => {
@@ -2126,7 +2129,7 @@ useEffect(() => {
         if (!validateDraftRows()) return;
 
         // Get stones
-        const allStones = JSON.parse(localStorage.getItem(STONE_MASTER_KEY) || "[]");
+        const allStones = JSON.parse(localStorage.getItem(SALE_STONE_MASTER_KEY) || "[]");
         const allCharges = JSON.parse(localStorage.getItem("MISC_CHARGE_MASTER") || "[]");
 
         const stonesByDraftRowId = allStones.reduce((acc: Record<string, StoneRow[]>, stone: StoneRow) => {
@@ -2196,7 +2199,7 @@ useEffect(() => {
             (transactionDetails[mappedType] as any[]).push(rowWithStones);
         });
 
-        const payload: CreateTransaction = {
+        const payload: CreateSaleTransaction = {
             TRANSACTION_HEADER: {
                 ACCODE: Number(headerForm.CUSTOMER),
                 TRANDATE: headerForm.DATE,
@@ -2215,7 +2218,7 @@ useEffect(() => {
                 setDraftRows([]);
                 setEditingState({ rowId: null, transactionType: null });
 
-                localStorage.removeItem(STONE_MASTER_KEY);
+                localStorage.removeItem(SALE_STONE_MASTER_KEY);
                 localStorage.removeItem(DRAFT_KEY);
                 localStorage.removeItem(CLOSING_DETAILS_KEY);
                 
@@ -2309,12 +2312,13 @@ useEffect(() => {
             /* -----------------------------------------
                STEP 1 — GROUP ROWS BY TRANSACTION TYPE
                ----------------------------------------- */
-            const transactionDetails: TransactionItems = {};
+            const transactionDetails: SaleTransactionItems = {};
 
             console.group(draftRows,'draftRowsforUpdate')
 
             draftRows.forEach(row => {
-                const mappedType = TRANSACTION_KEY_MAP[row.TRANSACTION_TYPE];
+                const mappedType = SALE_TRANSACTION_KEY_MAP[row.TRANSACTION_TYPE];
+                console.log(mappedType, row.TRANSACTION_TYPE, 'mappedType')
                 if (!mappedType) return;
 
                 if (!transactionDetails[mappedType]) transactionDetails[mappedType] = [];
@@ -2330,7 +2334,7 @@ useEffect(() => {
             /* -----------------------------------------
                STEP 2 — BUILD HEADER
                ----------------------------------------- */
-            const payload: CreateTransaction = {
+            const payload: CreateSaleTransaction = {
                 TRANSACTION_HEADER: {
                     ACCODE: Number(headerForm.CUSTOMER),
                     TRANDATE: headerForm.DATE,
@@ -2507,7 +2511,7 @@ useEffect(() => {
         async (id: string) => {
 
         if (!id?.trim()) return null;
-        const response = await getTagDetails(id, Number(headerForm.CUSTOMER));
+        const response = await getTagDetails(id, Number(headerForm.CUSTOMER) ,true );
         const data=response.data ;
 
         console.log(data,'tagResponse')
@@ -2692,7 +2696,7 @@ useEffect(() => {
 
                                                                     // Handle stone transfer if there are pending stones
                                                                     if (formData._stoneTempId && formData._stones) {
-                                                                        const allStones = JSON.parse(localStorage.getItem(STONE_MASTER_KEY) || "[]");
+                                                                        const allStones = JSON.parse(localStorage.getItem(SALE_STONE_MASTER_KEY) || "[]");
 
                                                                         // Remove stones with temp ID
                                                                         const filtered = allStones.filter((s: StoneRow) =>
@@ -2707,7 +2711,7 @@ useEffect(() => {
 
                                                                         // Save back to localStorage
                                                                         const finalStones = [...filtered, ...updatedStones];
-                                                                        localStorage.setItem(STONE_MASTER_KEY, JSON.stringify(finalStones));
+                                                                        localStorage.setItem(SALE_STONE_MASTER_KEY, JSON.stringify(finalStones));
 
                                                                         // Update the STNWT field in the draft row
                                                                         if (formData._stoneTotalWeight) {
@@ -2717,9 +2721,9 @@ useEffect(() => {
                                                                         // Create empty stone row for non-issue types if no stones
                                                                         if (!isIssueType(transactionType)) {
                                                                             const stoneRow = createEmptyStoneRow(permanentId);
-                                                                            const existingStones = JSON.parse(localStorage.getItem(STONE_MASTER_KEY) || "[]");
+                                                                            const existingStones = JSON.parse(localStorage.getItem(SALE_STONE_MASTER_KEY) || "[]");
                                                                             existingStones.push(stoneRow);
-                                                                            localStorage.setItem(STONE_MASTER_KEY, JSON.stringify(existingStones));
+                                                                            localStorage.setItem(SALE_STONE_MASTER_KEY, JSON.stringify(existingStones));
                                                                         }
                                                                     }
 

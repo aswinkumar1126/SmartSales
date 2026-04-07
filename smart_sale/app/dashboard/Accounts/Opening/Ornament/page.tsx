@@ -65,7 +65,9 @@ function OrnamentMaster() {
 
     });
     const [higlightedId, setHiglightedId] = useState<Number>();
-    const [itemCollection, setItemCollection] = useState<{ label: string, value: string }[]>([])
+    const [itemCollection, setItemCollection] = useState<{ label: string, value: string }[]>([]);
+
+    console.log(itemCollection,'itemCollection')
 
 
     const [editId, setEditId] = useState<number | null>(null);
@@ -82,7 +84,7 @@ function OrnamentMaster() {
 
     /* -------------------- DATA -------------------- */
     const { data: itemsData } = useStoneItems();
-    console.log(itemsData,'itemsData')
+    console.log(itemsData,'itemsData');
     const { setData, setColumns, setShowSno, title } = usePrint();
 
     //
@@ -103,9 +105,10 @@ function OrnamentMaster() {
         : [];
 
     const items: ItemMast[] = useMemo(() => {
-        return (itemsData?.items ?? []).map(normalizeItem);
-    }, [itemsData?.items]);
+        return (itemsData ?? []).map(normalizeItem);
+    }, [itemsData]);
 
+    console.log(items,'itemsData')
 
 
 
@@ -297,7 +300,7 @@ function OrnamentMaster() {
         { key: 'touch', label: 'Touch', align: 'end' as const },
         { key: 'pure', label: 'Pure', align: 'end' as const },
         { key: 'stoneCash', label: 'StoneCash', align: 'end' as const },
-        { key: 'action', label: 'Actions', align: 'center' as const },
+        // { key: 'action', label: 'Actions', align: 'center' as const },
     ]
 
 
@@ -450,7 +453,7 @@ function OrnamentMaster() {
                                     <Table.Cell textAlign='end'>{formatToFixed(ornament.TOUCH,1)}</Table.Cell>
                                     <Table.Cell textAlign='end'>{formatToFixed(ornament.PUREWT,3)}</Table.Cell>
                                     <Table.Cell textAlign='end'>{formatToFixed(ornament.STNAMT,2)}</Table.Cell>
-                                    <Table.Cell>
+                                    {/* <Table.Cell>
                                         <Box display='flex' justifyContent='center'>
                                             <FaEdit
                                                 cursor="pointer"
@@ -458,7 +461,7 @@ function OrnamentMaster() {
                                             />
                                         </Box>
 
-                                    </Table.Cell>
+                                    </Table.Cell> */}
                                 </>
                             )}
 

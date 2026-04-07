@@ -65,7 +65,7 @@ function RateEntry() {
            "GOLD 100":"",
            "GOLD 916": "",
            "SILVER 100": "",
-           "SILVER 916": "",
+            "SILVER 916": "",
         });
         focusFirst();
         setErrors({});
@@ -122,7 +122,16 @@ function RateEntry() {
         createRate(payload, {
             onSuccess: () => {
                 toastLoaded("Rate Created Successfully");
-                resetForm();
+                // resetForm();
+                setForm({
+                    "GOLD 100": "",
+                    "GOLD 916": "",
+                    "SILVER 100": "",
+                    "SILVER 916": "",
+                });
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1000);
             }
         });
 
@@ -165,7 +174,6 @@ function RateEntry() {
                                     onChange={handleChange}
                                     register={register}
                                     focusNext={focusNext}
-                                    // disabled={{ COMPANYID: !!editId }}
                                     errors={errors}
                                     layout="vertical"
                                 />

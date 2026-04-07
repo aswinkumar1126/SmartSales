@@ -3,7 +3,7 @@ import { FormField } from "@/types/form/form";
 export const OrnamentOpeningFields = (itemCollection: { label: string; value: string }[]): FormField[] => [
     {
         name: "itemId",
-        label: "Item",
+        label: "ITEM",
         type: "combobox",
         size: "sm",
         required: true,
@@ -13,7 +13,7 @@ export const OrnamentOpeningFields = (itemCollection: { label: string; value: st
     },
     {
         name: "pcs",
-        label: "Pieces",
+        label: "PIECES",
         type: "number",
         size: "sm",
         required: true,
@@ -21,7 +21,7 @@ export const OrnamentOpeningFields = (itemCollection: { label: string; value: st
     },
     {
         name: "grswt",
-        label: "Gross Weight",
+        label: "GROSS WEIGHT",
         type: "number",
         size: "sm",
         required: true,
@@ -30,8 +30,18 @@ export const OrnamentOpeningFields = (itemCollection: { label: string; value: st
         decimalScale:3,
     },
     {
+        name: "stnwt",
+        label: "STONE WEIGHT",
+        type: "number",
+        size: "sm",
+        required: true,
+        rounded: "sm",
+        allowFocus: true,
+        decimalScale: 3,
+    },
+    {
         name: "netwt",
-        label: "Net Weight",
+        label: "NET WEIGHT",
         type: "number",
         size: "sm",
         required: true,
@@ -42,7 +52,7 @@ export const OrnamentOpeningFields = (itemCollection: { label: string; value: st
     },
     {
         name: "touch",
-        label: "Touch",
+        label: "TOUCH",
         type: "number",
         size: "sm",
         required: true,
@@ -52,7 +62,7 @@ export const OrnamentOpeningFields = (itemCollection: { label: string; value: st
     },
     {
         name: "purewt",
-        label: "Pure Weight",
+        label: "PURE WEIGHT",
         type: "number",
         size: "sm",
         required: true,
@@ -61,19 +71,10 @@ export const OrnamentOpeningFields = (itemCollection: { label: string; value: st
         decimalScale:3,
         disabled:true
     },
-    {
-        name: "stnwt",
-        label: "Stone Weight",
-        type: "number",
-        size: "sm",
-        required: true,
-        rounded: "sm",
-        allowFocus: true,
-        decimalScale:3,
-    },
+    
     {
         name: "openCash",
-        label: "Open Cash",
+        label: "OPEN CASH",
         type: "number",
         size: "sm",
         required: true,
@@ -83,7 +84,7 @@ export const OrnamentOpeningFields = (itemCollection: { label: string; value: st
     },
     {
         name: "stnAmt",
-        label: "Stone Amount",
+        label: "STONE AMOUNT",
         type: "number",
         size: "sm",
         required: true,

@@ -21,7 +21,7 @@ type StoneRow = {
     id: string;
     draftRowId: string;
     stoneId: string;
-    subStoneId: string;
+    // subStoneId: string;
     stonePcs: number;
     stoneWeight: number;
     stoneUnit: "g" | "c";
@@ -37,13 +37,13 @@ type Props = {
     onSave: (rows: StoneRow[]) => void;
     initialRows?: StoneRow[];
     stoneItems?: SelectItem[];
-    subStoneItems?: SelectItem[];
+    // subStoneItems?: SelectItem[];
 };
 
 const COL_WIDTHS: Record<string, string> = {
     __sno: "40px",
     stoneId: "100px",
-    subStoneId: "100px",
+    // subStoneId: "100px",
     stonePcs: "60px",
     stoneWeight: "80px",
     stoneUnit: "60px",
@@ -70,7 +70,7 @@ const getCellStyle = (col: any, extra?: React.CSSProperties): React.CSSPropertie
 
 // Field order for focus traversal (excludes stoneAmount - it's calculated/readonly)
 const FIELD_ORDER = [
-    "stoneId", "subStoneId", "stonePcs", "stoneWeight",
+    "stoneId", "stonePcs", "stoneWeight",
     "stoneUnit", "stoneCalculation", "stoneRate",
 ] as const;
 
@@ -82,14 +82,15 @@ export default function StoneEnterMaster({
     onSave,
     initialRows = [],
     stoneItems = [],
-    subStoneItems = [],
+    // subStoneItems = [],
     draftRowId
 }: Props) {
-    console.log(initialRows,'initialRowsForStone')
+
+    const isLoadingRef = useRef(false);
 
     const tableCols = [
         { key: "stoneId", label: "STONE", align: "left" as const },
-        { key: "subStoneId", label: "SUB STONE", align: "left" as const },
+        // { key: "subStoneId", label: "SUB STONE", align: "left" as const },
         { key: "stonePcs", label: "PCS", align: "right" as const, decimalScale: 0 },
         { key: "stoneWeight", label: "WEIGHT", align: "right" as const, decimalScale: 3 },
         { key: "stoneUnit", label: "UNIT", align: "center" as const },
@@ -106,7 +107,7 @@ export default function StoneEnterMaster({
 
     const emptyForm = {
         stoneId: "",
-        subStoneId: "",
+        // subStoneId: "",
         stonePcs: "",
         stoneWeight: "",
         stoneUnit: "g" as "g" | "c",
@@ -117,7 +118,7 @@ export default function StoneEnterMaster({
 
     const [formData, setFormData] = useState<{
         stoneId: string;
-        subStoneId: string;
+        // subStoneId: string;
         stonePcs: string;
         stoneWeight: string;
         stoneUnit: "g" | "c";
@@ -137,7 +138,7 @@ export default function StoneEnterMaster({
     const hasLoadedRef = useRef(false);
 
     const stoneIdRef = useRef<any>(null);
-    const subStoneIdRef = useRef<any>(null);
+    // const subStoneIdRef = useRef<any>(null);
     const stonePcsRef = useRef<HTMLInputElement>(null);
     const stoneWeightRef = useRef<HTMLInputElement>(null);
     const stoneUnitRef = useRef<HTMLSelectElement>(null);
@@ -146,7 +147,7 @@ export default function StoneEnterMaster({
 
     const fieldRefs: Record<FieldKey, React.RefObject<any>> = {
         stoneId: stoneIdRef,
-        subStoneId: subStoneIdRef,
+        // subStoneId: subStoneIdRef,
         stonePcs: stonePcsRef,
         stoneWeight: stoneWeightRef,
         stoneUnit: stoneUnitRef,
@@ -155,14 +156,10 @@ export default function StoneEnterMaster({
     };
 
     /* ---------------- LOAD FROM LOCALSTORAGE ---------------- */
-    
     useEffect(() => {
         if (!draftRowId) return;
 
-        if (hasLoadedRef.current && rows.length > 0) {
-            console.log(`Already loaded stones for ${draftRowId}, skipping...`);
-            return;
-        }
+        isLoadingRef.current = true;
 
         const all: StoneRow[] = JSON.parse(localStorage.getItem("STONE_MASTER") || "[]");
         const linked = all.filter(s => s.draftRowId === draftRowId);
@@ -171,25 +168,35 @@ export default function StoneEnterMaster({
             s.stonePcs > 0 && s.stoneWeight > 0 && s.stoneRate > 0
         );
 
+        console.log(`Loading stones for draftRowId: ${draftRowId}`, nonEmptyRows);
+
         if (nonEmptyRows.length > 0) {
+            // ✅ localStorage has stones — use them
             setRows(nonEmptyRows);
-            const filtered = all.filter(s =>
-                s.draftRowId !== draftRowId ||
-                (s.stoneId && s.stoneId !== "" && s.stonePcs > 0 && s.stoneWeight > 0 && s.stoneRate > 0)
-            );
-            localStorage.setItem("STONE_MASTER", JSON.stringify(filtered));
+        } else if (initialRows && initialRows.length > 0) {
+            // ✅ Fallback to initialRows prop if localStorage is empty
+            const mapped = initialRows.map(r => ({ ...r, draftRowId }));
+            setRows(mapped);
+        } else {
+            setRows([]);
         }
 
+        // ✅ DO NOT rewrite localStorage here — just read
         setIsInitialized(true);
         hasLoadedRef.current = true;
 
-        setTimeout(() => { stoneIdRef.current?.focus?.(); }, 100);
+        setTimeout(() => { isLoadingRef.current = false; }, 100);
+        setTimeout(() => { stoneIdRef.current?.focus?.(); }, 150);
 
-        return () => {
-            setTimeout(() => { hasLoadedRef.current = false; }, 300);
-        };
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [draftRowId]);
+    }, [draftRowId]); // ✅ only draftRowId
+
+    /* ---------------- SAVE TO LOCALSTORAGE ---------------- */
+  
+    useEffect(() => {
+        if (!isInitialized || !draftRowId) return;
+        if (isLoadingRef.current) return; // ✅ Never save during load window
+        saveStonesToStorage();
+    }, [rows, draftRowId, isInitialized]);
 
     /* ---------------- ESC KEY — own effect, always active ---------------- */
  
@@ -217,7 +224,7 @@ export default function StoneEnterMaster({
     /* ---------------- FORM FIELDS ---------------- */
     const formFields = [
         { key: "stoneId", label: "Stone", type: "combobox" as const, isRequired: true, collection: { items: stoneItems }, ref: stoneIdRef },
-        { key: "subStoneId", label: "Sub Stone", type: "combobox" as const, isRequired: true, collection: { items: subStoneItems }, ref: subStoneIdRef },
+        //{ key: "subStoneId", label: "Sub Stone", type: "combobox" as const, isRequired: true, collection: { items: subStoneItems }, ref: subStoneIdRef },
         { key: "stonePcs", label: "Pcs", type: "number" as const, isRequired: true, decimalScale: 0, ref: stonePcsRef },
         { key: "stoneWeight", label: "Weight", type: "number" as const, isRequired: true, decimalScale: 3, ref: stoneWeightRef },
         { key: "stoneUnit", label: "Unit", type: "select" as const, isRequired: true, collection: { items: [{ label: "Gram", value: "g" }, { label: "Carat", value: "c" }] }, ref: stoneUnitRef },
@@ -266,7 +273,7 @@ export default function StoneEnterMaster({
         FIELD_ORDER.forEach(k => { newTouched[k] = true; });
 
         if (!formData.stoneId) newErrors.stoneId = "Stone is required";
-        if (!formData.subStoneId) newErrors.subStoneId = "Sub Stone is required";
+        // if (!formData.subStoneId) newErrors.subStoneId = "Sub Stone is required";
 
         const pcs = Number(formData.stonePcs);
         if (!formData.stonePcs || isNaN(pcs) || pcs <= 0)
@@ -340,7 +347,7 @@ export default function StoneEnterMaster({
             id: editId ?? (emptyStoneRow?.id || `stone-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`),
             draftRowId,
             stoneId: formData.stoneId,
-            subStoneId: formData.subStoneId,
+            // subStoneId: formData.subStoneId,
             stonePcs: Number(formData.stonePcs),
             stoneWeight: Number(formData.stoneWeight),
             stoneUnit: formData.stoneUnit,
@@ -371,7 +378,7 @@ export default function StoneEnterMaster({
     const handleEditRow = (row: StoneRow) => {
         setFormData({
             stoneId: row.stoneId,
-            subStoneId: row.subStoneId,
+            // subStoneId: row.subStoneId,
             stonePcs: row.stonePcs.toString(),
             stoneWeight: row.stoneWeight.toString(),
             stoneUnit: row.stoneUnit,
@@ -508,10 +515,10 @@ export default function StoneEnterMaster({
             const item = stoneItems.find(i => i.value === row.stoneId);
             return item?.label || row.stoneId || "-";
         }
-        if (col.key === "subStoneId") {
-            const item = subStoneItems.find(i => i.value === row.subStoneId);
-            return item?.label || row.subStoneId || "-";
-        }
+        // if (col.key === "subStoneId") {
+        //     const item = subStoneItems.find(i => i.value === row.subStoneId);
+        //     return item?.label || row.subStoneId || "-";
+        // }
         return row[col.key as keyof StoneRow];
     };
 

@@ -34,7 +34,7 @@ type StoneRow = {
     id: string;
     draftRowId: string;
     stoneId: string;
-    subStoneId: string;
+    // subStoneId: string;
     stonePcs: number;
     stoneWeight: number;
     stoneUnit: "g" | "c";
@@ -101,7 +101,7 @@ interface DraftTransactionTableProps {
         ITEMID?: string;
         PCS?: number;
         TAGNO: string;
-        stoneDetails: [];
+        stoneDetails: any[];
     } | null>;
 }
 
@@ -197,14 +197,13 @@ export default function DraftTransactionTable({
 
     const { data: stoneItemsData } = useStoneItems({STUDDED:"Y"});
 
-    console.log(stoneItemsData,'stoneItemsData')
     const [stoneItemsCollection, setStoneItemCollection] = useState<{ label: string; value: string }[]>([]);
-    // 2. Add state + hook at component level
+   
   
-    const [isLookingUp, setIsLookingUp] = useState(false);
-
     const [tagNo , setTagNo] = useState<string>('');
+    const [stoneDetails ,setStoneDetails] = useState<any>();
 
+  
 
     const pendingStoneData = useRef<{
         tempId: string;
@@ -301,21 +300,33 @@ export default function DraftTransactionTable({
     const resetStoneTempId = () => { stoneTempId.current = null; };
     const resetMiscTempId = () => { miscTempId.current = null; };
 
-    // Stone modal: only uses stoneDraftRowId
+
+    // Stone modal opener — preserve existing stoneDraftRowId
     const handleOpenStoneModal = (grsWeight: number) => {
         if (stoneModalOpenedRef.current) return;
         stoneModalOpenedRef.current = true;
         setCurrentGRSWT(grsWeight);
 
-        // 🔥 FIX: Use currentEditingRowId instead of editingRowId
         if (currentEditingRowId) {
+            // ✅ Editing existing row — use its rowId
             setStoneDraftRowId(currentEditingRowId as string);
+        } else if (stoneDraftRowId) {
+            // ✅ Already set from tag lookup — don't overwrite, just re-set to trigger render
+            setStoneDraftRowId(stoneDraftRowId);
         } else {
+            // ✅ New entry — generate fresh temp ID
             setStoneDraftRowId(getStoneTempId());
         }
 
-        setIsStoneModalOpen(true);
+        // ✅ Delay open so setStoneDraftRowId flushes first
+        setTimeout(() => setIsStoneModalOpen(true), 50);
         setTimeout(() => { stoneModalOpenedRef.current = false; }, 500);
+    };
+
+    // Stone modal close — don't wipe ID
+    const closeStoneModal = () => {
+        setIsStoneModalOpen(false);
+        // ✅ Don't clear stoneDraftRowId here — resetForm() handles it
     };
 
     // Misc modal: only uses miscDraftRowId
@@ -359,10 +370,10 @@ export default function DraftTransactionTable({
         setTimeout(() => { miscModalOpenedRef.current = false; }, 500);
     };
 
-    const closeStoneModal = () => {
-        setIsStoneModalOpen(false);
-        setStoneDraftRowId("");
-    };
+    // const closeStoneModal = () => {
+    //     setIsStoneModalOpen(false);
+    //     // setStoneDraftRowId("");
+    // };
 
     const closeOtherChargeModal = () => {
         setIsMiscModalOpen(false);
@@ -430,7 +441,7 @@ export default function DraftTransactionTable({
     }, [tableCols, itemsCollection, isIssue ,isTag ,transactionTitle]);
 
     const visibleFormFields = useMemo(() =>
-        formFields.filter(f => !["NETWT", "PUREWT", "APUREWT"].includes(f.key) && f.type !== "calculated"),
+        formFields.filter(f => !["NETWT", "PUREWT", "APUREWT","STNAMT" ].includes(f.key) && f.type !== "calculated"),
         [formFields]
     );
 
@@ -469,7 +480,7 @@ export default function DraftTransactionTable({
 
     const pureValue = useCalculatePure(formData.WT, formData.TOUCH);
 
-    console.log(pureValue, 'pureValue')
+  
     const altPureValue = useCalculatePure(formData.AWT, formData.ATOUCH);
 
     const calcNet = useCallback(() => {
@@ -1054,6 +1065,7 @@ export default function DraftTransactionTable({
 
                     // Save to localStorage (replace any existing stones with same temp ID)
                     const finalStones = [...filtered, ...stonesWithId];
+                    setStoneDetails(finalStones)
                     localStorage.setItem("STONE_MASTER", JSON.stringify(finalStones));
 
                     // Store the temp ID so modal can load it
@@ -1162,7 +1174,7 @@ export default function DraftTransactionTable({
                         disabled={shouldDisable}
                         inputRef={ref}
                         onEnter={() =>
-                            moveNext(field.key)}
+                        moveNext(field.key)}
                         noBorder
                     />
                     <Button
@@ -1235,6 +1247,28 @@ export default function DraftTransactionTable({
                 </Box>
             );
         }
+        if (field.key === "STNAMT") {
+            return (
+                <Box position="relative" width="100%">
+                    <CapitalizedInput
+                        field={field.key}
+                        value={formData[field.key] || ""}
+                        onChange={(_, v) => handleChange(field.key, v)}
+                        type="text"
+                        isCapitalized
+                        size="xs"
+                        rounded="sm"
+                        decimalScale={field.decimalScale}
+                        disabled
+                        inputRef={ref}
+                        onEnter={() => moveNext(field.key)} 
+                        noBorder
+             
+
+                    />
+                </Box>
+            );
+        }
 
         if (field.key === "WT") {
             const availableStock = formData._availableStock;
@@ -1294,6 +1328,7 @@ export default function DraftTransactionTable({
                         disabled={shouldDisable}
                     />
                 );
+           
             case "number":
                 return (
                     <CapitalizedInput
@@ -1336,6 +1371,7 @@ export default function DraftTransactionTable({
                         disabled={shouldDisable}
                         inputRef={ref} 
                         onEnter={() => moveNext(field.key)} 
+                        
                     />
                 );
         }
@@ -1368,10 +1404,13 @@ export default function DraftTransactionTable({
     });
 
     useGlobalKey("Escape", () => setIsMiscModalOpen(false), "close-modal");
-    console.log(transactionTitle,'transactionTitle')
 
-    console.log(isTag,'isTag')
-    console.log(formData.stoneDetails,'stneDetailsForWindow')
+    const stoneModalInitialRows = useMemo(() => {
+        if (!stoneDraftRowId) return [];
+        const all = JSON.parse(localStorage.getItem("STONE_MASTER") || "[]");
+        return all.filter((s: any) => s.draftRowId === stoneDraftRowId);
+    }, [stoneDraftRowId, isStoneModalOpen]); // re-compute when modal opens
+
 
     return (
         <Box display="flex" flexDirection="column" gap={1}>
@@ -1535,53 +1574,37 @@ export default function DraftTransactionTable({
                             grsWeight={currentGRSWT}
                             onClose={closeStoneModal}
                             draftRowId={stoneDraftRowId}
+                            initialRows={stoneModalInitialRows}
                             onSave={(stoneRows) => {
                                 if (!stoneDraftRowId) return;
 
-                                // Get existing stones from localStorage
                                 const allStones = JSON.parse(localStorage.getItem("STONE_MASTER") || "[]");
-
-                           
-
-                                // Remove stones for the current draft row
                                 const filtered = allStones.filter((s: any) => s.draftRowId !== stoneDraftRowId);
-
-                                console.log(filtered,allStones, 'allStonesfiltered')
-
-                                // Attach draftRowId to new stones
                                 const updatedStones = stoneRows.map(s => ({ ...s, draftRowId: stoneDraftRowId }));
-
-                                // Save back to localStorage
                                 localStorage.setItem("STONE_MASTER", JSON.stringify([...filtered, ...updatedStones]));
 
                                 const stoneWtTotal = updatedStones.reduce((sum, r) => sum + r.stoneWeight, 0);
                                 const stnAmtTotal = updatedStones.reduce((sum, r) => sum + r.stoneAmount, 0);
 
                                 handleChange({
-                                    STNWT: stoneWtTotal.toFixed(2),
+                                    STNWT: stoneWtTotal.toFixed(3),
                                     STNAMT: stnAmtTotal.toFixed(2),
                                 });
 
-                                // Store pending stone data if draftRowId is temporary
-                                if (stoneDraftRowId.startsWith("stone-form-")) {
-                                    pendingStoneData.current = {
-                                        tempId: stoneDraftRowId,
-                                        stones: updatedStones,
-                                        totalWeight: stoneWtTotal,
-                                    };
-                                }
+                                // ✅ Always set pendingStoneData — works for tag-lookup, edit, and new
+                                pendingStoneData.current = {
+                                    tempId: stoneDraftRowId,
+                                    stones: updatedStones,
+                                    totalWeight: stoneWtTotal,
+                                };
 
-                                // Close modal and reset draft row
+                                // ✅ Close modal only — don't clear stoneDraftRowId
                                 setIsStoneModalOpen(false);
-                                setStoneDraftRowId("");
 
-                                // Focus next input after short delay
                                 setTimeout(() => focusIdx(5), 50);
-
-                                console.log("Updated stones:", updatedStones, "Weight:", stoneWtTotal, "Amount:", stnAmtTotal);
                             }}
                             stoneItems={stoneItemsCollection}
-                            subStoneItems={stoneItemsCollection}
+                            // subStoneItems={stoneItemsCollection}
                         />
                     </Box>
                 </Box>
