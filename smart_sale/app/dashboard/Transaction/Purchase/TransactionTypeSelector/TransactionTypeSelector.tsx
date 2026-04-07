@@ -3,7 +3,7 @@
 import React from "react";
 import { Button, Box, Text, Flex } from "@chakra-ui/react";
 import { GiGoldBar } from "react-icons/gi";
-import { HiFilter, HiX } from "react-icons/hi";
+import { HiFilter, HiX, HiPrinter } from "react-icons/hi";
 import { Save, RefreshCw } from "lucide-react";
 import Image from "next/image";
 import saveIcon from '@/asserts/icons/save.png';
@@ -25,8 +25,8 @@ export default function TransactionTypeSelector({
     isSaving,
     acCode,
     draftRows,
-    setDraftRows
-    
+    setDraftRows,
+    onPrint,
 }: any) {
 
     /* ---------- ORDER BY CODE ---------- */
@@ -202,6 +202,19 @@ export default function TransactionTypeSelector({
                     </Text>
                 </Box>
 
+                {/* PRINT — show when rows are loaded (same as DESELECT) */}
+                {draftRows.length > 0 && (
+                    <Box
+                        className="flex flex-col items-center cursor-pointer gap-1"
+                        onClick={onPrint}
+                    >
+                        <HiPrinter size={20} className="text-gray-600" />
+                        <Text fontSize="x-small" fontWeight="semibold">
+                            PRINT
+                        </Text>
+                    </Box>
+                )}
+
                 {/* SHOW / HIDE FILTER */}
                 <Box
                     className="flex flex-col items-center cursor-pointer animate__animated animate__fadeInUp gap-1"
@@ -217,3 +230,7 @@ export default function TransactionTypeSelector({
     );
 
 }
+
+
+
+                          
