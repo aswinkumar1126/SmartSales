@@ -29,7 +29,11 @@ import { CapitalizedInput } from "@/components/ui/CapitalizedInput";
 import { SwitchInput } from "@/components/ui/SwitchInput";
 import { SearchIcon } from "lucide-react";
 
-import { getIsTagEnabled } from "@/config/transaction/SalesConfig";
+import { getIsTagEnabled, getIsBillModalEnabled } from "@/config/transaction/SalesConfig";
+
+import { useBillDetails } from "@/hooks/tag/useTag";
+import SalesBillViewModal from "../SaleModal/SaleModal";
+
 
 type StoneRow = {
     id: string;
@@ -60,7 +64,7 @@ export interface FormField {
     decimalScale?: number;
     dependsOn?: string;
     defaultValue?: string;
-    allowFocus?:boolean;
+    allowFocus?: boolean;
 
 }
 
@@ -87,23 +91,19 @@ interface DraftTransactionTableProps {
     otherChargesList: { label: string; value: string; }[];
     otherChargesData: any;
     getAvailablePieces?: (id: string, options?: { excludeRowId?: string, transactionTypeCode: string, isEditing?: boolean, originalPieces?: number }) => any | undefined;
-    handleTagChange : () => void ;
-    isTag :boolean;
-    onTagNoLookup?: (tagNo: string) => Promise<{
-        GRSWT: number;
-        STNWT: number;
-        NETWT: number;
-        WASPER: number;
-        DIAWT: number;
-        MC: number;
-        TOUCH: number;
-        SALESSTNWT: number;
-        SIZEID: number;
-        ITEMID?: string;
-        PCS?: number;
-        TAGNO: string;
-        stoneDetails : any[]
-    } | null>;
+    handleTagChange: () => void;
+    isTag: boolean;
+    onTagNoLookup?: (tagNo: string) => void;
+    acCode?: number
+    onSaleReturnModal: {
+        billParams: { ACCODE: number | undefined; BILLNO?: string; BILLDATE?: string };
+        onBillParamChange: (field: string, value: any) => void;
+        billDetails: any[] | [];
+        loading: boolean;
+        showBillModal: boolean,
+        handleBillShow: () => void;
+        handleSelectedItems: (filterRows:any[]) => void;
+    };
 }
 
 
@@ -170,8 +170,11 @@ export default function DraftTransactionTable({
     getAvailablePieces,
     isTag,
     handleTagChange,
-    onTagNoLookup
+    onTagNoLookup,
+    acCode,
+    onSaleReturnModal
 }: DraftTransactionTableProps) {
+    console.log(onSaleReturnModal.billDetails,'onSaleReturnModal')
 
     const stoneDataSavedRef = useRef(false);
 
@@ -196,12 +199,12 @@ export default function DraftTransactionTable({
     const stoneTempId = useRef<string | null>(null);
     const miscTempId = useRef<string | null>(null);
 
-    const { data: stoneItemsData } = useStoneItems({STUDDED:'Y'});
+    const { data: stoneItemsData } = useStoneItems({ STUDDED: 'Y' });
     const [stoneItemsCollection, setStoneItemCollection] = useState<{ label: string; value: string }[]>([]);
-   
 
 
-    const [tagNo , setTagNo] = useState<string>('');
+
+    const [tagNo, setTagNo] = useState<string>('');
 
 
     const pendingStoneData = useRef<{
@@ -215,6 +218,7 @@ export default function DraftTransactionTable({
         charges: any[];
         totalAmount: number;
     } | null>(null);
+
 
 
 
@@ -233,7 +237,7 @@ export default function DraftTransactionTable({
         );
     }, [stoneItemsData]);
 
-    
+
 
     const [formData, setFormData] = useState<Record<string, any>>({});
     const [errors, setErrors] = useState<Record<string, string>>({});
@@ -246,6 +250,12 @@ export default function DraftTransactionTable({
 
     const fieldRefs = useRef<Record<string, React.RefObject<any>>>({});
     const submitBtnRef = useRef<HTMLButtonElement>(null);
+
+    /*------------------------------- BILL DETAILS MODAL STATE ----------------------------*/
+
+   
+    const { showBillModal, handleBillShow } = onSaleReturnModal;
+
 
     const wastypecollection = useMemo(
         () => ({ items: [{ label: "TOUCH", value: "TOUCH" }] }),
@@ -261,7 +271,7 @@ export default function DraftTransactionTable({
     const orderedKeys = useMemo(() => {
         if (isIssue) return ["PUREID", "WT", "AWT", "TOUCH", "ATOUCH", "PUREWT", "APUREWT"];
 
-       
+
         const showTag = isTag;
 
         return showTag
@@ -277,7 +287,7 @@ export default function DraftTransactionTable({
         [isIssue, colMap]
     );
 
-    console.log(tableCols,'tableCols')
+    console.log(tableCols, 'tableCols')
 
     // Separate temp ID getters/resetters
     const getStoneTempId = () => {
@@ -367,7 +377,7 @@ export default function DraftTransactionTable({
         setTimeout(() => { miscModalOpenedRef.current = false; }, 500);
     };
 
-  
+
     const closeOtherChargeModal = () => {
         setIsMiscModalOpen(false);
         resetMiscTempId();
@@ -386,7 +396,7 @@ export default function DraftTransactionTable({
                 placeholder: col.label || col.key,
                 type: isNum ? "number" : "text",
                 isRequired,
-                allowFocus:col.allowFocus,
+                allowFocus: col.allowFocus,
                 size: "xs",
                 ...("decimalScale" in col && typeof col.decimalScale === "number"
                     ? { decimalScale: col.decimalScale } : {}),
@@ -432,7 +442,7 @@ export default function DraftTransactionTable({
 
             return base;
         });
-    }, [tableCols, itemsCollection, isIssue ,isTag ,transactionTitle]);
+    }, [tableCols, itemsCollection, isIssue, isTag, transactionTitle]);
 
     const visibleFormFields = useMemo(() =>
         formFields.filter(f => !["NETWT", "PUREWT", "APUREWT"].includes(f.key) && f.type !== "calculated"),
@@ -560,7 +570,7 @@ export default function DraftTransactionTable({
         }
     }, [currentEditingRowId, currentEditingTransactionType, transactionType, rows]);
 
-   
+
 
     type FormData = typeof formData;
 
@@ -1004,109 +1014,27 @@ export default function DraftTransactionTable({
         return Number(decimalScale) >= 1 ? Number(value).toFixed(decimalScale) : Number(value).toString();
     };
 
- const handleTagNoKeyDown = async () => {
-
-        if (!tagNo) return;
-
-        try {
-            const result = await onTagNoLookup?.(tagNo);
-        
-
-            if (result) {
-                // Generate a temporary ID for this tag lookup
-                const tempStoneId = `tag-lookup-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
-
-                // ✅ FIX: Check for STNDETAILS (not stoneDetails) from API response
-                const stoneDetails = result.stoneDetails || [];
-                console.log(stoneDetails,'stoneDetailsstoneDetails')
-
-
-                if (stoneDetails.length > 0) {
-                    const allStones = JSON.parse(localStorage.getItem("SALE_STONE_MASTER") || "[]");
-
-                    // Remove any existing stones with this temp ID (cleanup)
-                    const filtered = allStones.filter((s: any) => s.draftRowId !== tempStoneId);
-
-                    // Transform STNDETAILS to match StoneRow format
-                    const stonesWithId = stoneDetails.map((stone: any, index: number) => ({
-                        id: stone.id || `stone-${Date.now()}-${index}-${Math.random().toString(36).substr(2, 5)}`,
-                        draftRowId: tempStoneId,
-                        // Map from API field names to your StoneRow format
-                        stoneId: String(stone.STNITEMID || stone.stoneId || stone.STNSUBITEMID || ""),
-                        subStoneId: String(stone.STNSUBITEMID || stone.subStoneId || ""),
-                        stonePcs: stone.STNPCS || stone.stonePcs || stone.PCS || 1,  // Default to 1 if not provided
-                        stoneWeight: stone.STNWT || stone.stoneWeight || 0,
-                        stoneUnit: stone.STONEUNIT || stone.stoneUnit || "g",  // Default to grams
-                        stoneCalculation: stone.CALCMODE || stone.stoneCalculation || "w",  // Default to weight
-                        stoneRate: stone.STNRATE || stone.stoneRate || 0,
-                        stoneAmount: stone.STNAMT || stone.stoneAmount || 0,
-                    }));
-
-                    console.log("Transformed stones for localStorage:", stonesWithId);
-
-                    // Save to localStorage (replace any existing stones with same temp ID)
-                    const finalStones = [...filtered, ...stonesWithId];
-                    // setStoneDetails(finalStones);
-                    localStorage.setItem("SALE_STONE_MASTER", JSON.stringify(finalStones));
-
-                    // Store the temp ID so modal can load it
-                    setStoneDraftRowId(tempStoneId);
-
-                    // Calculate total stone weight for STNWT
-                    const totalStoneWeight = stonesWithId.reduce((sum, stone) => {
-                        const weight = stone.stoneUnit === "c" ? stone.stoneWeight / 5 : stone.stoneWeight;
-                        return sum + weight;
-                    }, 0);
-
-                    console.log(`Saved ${stonesWithId.length} stones with total weight: ${totalStoneWeight}`);
-                } else {
-                    console.log('No stone details found in tag data');
-                    // Clear any existing stone draft row ID
-                    setStoneDraftRowId("");
-                }
-
-                // Populate the form with tag data
-                setFormData(prev => ({
-                    ...prev,
-                    GRSWT: result.GRSWT || "",
-                    STNWT: result.STNWT || "",
-                    NETWT: result.NETWT || "",
-                    WASPER: result.WASPER || "",
-                    DIAWT: result.DIAWT || "",
-                    MC: result.MC || "",
-                    TOUCH: result.TOUCH || "",
-                    ITEMID: result.ITEMID ? String(result.ITEMID) : "",
-                    PCS: result.PCS || "1",  // Default to 1 if not provided
-                    TAGNO: result.TAGNO || tagNo,
-                }));
-
-                // Show success message
-                toaster.create({
-                    title: "Tag Loaded",
-                    description: `Tag ${tagNo} loaded with ${stoneDetails.length} stone(s)`,
-                    type: "success",
-                    duration: 1000,
-                });
-
-            } else {
-                console.log('No data found for tag:', tagNo);
-                toaster.create({
-                    title: "Tag Not Found",
-                    description: `No data found for tag number: ${tagNo}`,
-                    type: "error",
-                    duration: 3000,
-                });
-            }
-        } catch (error) {
-            console.error('Tag lookup failed:', error);
-            toaster.create({
-                title: "Error",
-                description: "Failed to load tag data. Please try again.",
-                type: "error",
-                duration: 3000,
-            });
-        }
-    };
+     const handleTagNoKeyDown = async () => {
+   
+           if (!tagNo) return;
+   
+           try {
+               await onTagNoLookup?.(tagNo); // ✅ JUST CALL PARENT
+   
+               // ✅ optional: clear input after scan
+               setTagNo("");
+   
+           } catch (error) {
+               console.error("Tag lookup failed:", error);
+   
+               toaster.create({
+                   title: "Error",
+                   description: "Failed to process tag",
+                   type: "error",
+               });
+           }
+       };
+   
 
     // In DraftTransactionTable, when opening stone modal for tag lookup:
     const stoneModalInitialRows = useMemo(() => {
@@ -1283,20 +1211,20 @@ export default function DraftTransactionTable({
                         items={field.collection?.items || []}
                         placeholder={field.placeholder || `Select ${field.label}`}
                         ref={ref as React.RefObject<HTMLInputElement>}
-                        rounded="sm" 
-                        disable={shouldDisable} 
+                        rounded="sm"
+                        disable={shouldDisable}
                         onEnter={() => moveNext(field.key)}
                     />
                 );
             case "select":
                 return (
                     <InlineSelect
-                        value={formData[field.key] || ""} 
+                        value={formData[field.key] || ""}
                         onChange={v => handleChange(field.key, v)}
-                        collection={field.collection} 
+                        collection={field.collection}
                         isInvalid={isInvalid}
-                        inputRef={ref as any} 
-                        onEnter={() => moveNext(field.key)} 
+                        inputRef={ref as any}
+                        onEnter={() => moveNext(field.key)}
                         disabled={shouldDisable}
                     />
                 );
@@ -1310,7 +1238,7 @@ export default function DraftTransactionTable({
                         isCapitalized
                         size="sm"
                         rounded="sm"
-                        inputRef={ref} 
+                        inputRef={ref}
                         onEnter={() => moveNext(field.key)}
                         disabled={shouldDisable}
                     />
@@ -1325,7 +1253,7 @@ export default function DraftTransactionTable({
                         isCapitalized
                         size="sm"
                         rounded="sm"
-                        inputRef={ref} 
+                        inputRef={ref}
                         onEnter={() => moveNext(field.key)}
                         disabled={shouldDisable}
                     />
@@ -1335,13 +1263,13 @@ export default function DraftTransactionTable({
                     <CapitalizedInput
                         field={field.key} value={formData[field.key] || ""}
                         onChange={(_, v) => handleChange(field.key, v)}
-                        type="number"  
-                        size="sm" 
+                        type="number"
+                        size="sm"
                         rounded="sm"
-                        decimalScale={field.decimalScale} 
+                        decimalScale={field.decimalScale}
                         disabled={shouldDisable}
-                        inputRef={ref} 
-                        onEnter={() => moveNext(field.key)} 
+                        inputRef={ref}
+                        onEnter={() => moveNext(field.key)}
                     />
                 );
         }
@@ -1373,8 +1301,9 @@ export default function DraftTransactionTable({
     });
 
     useGlobalKey("Escape", () => setIsMiscModalOpen(false), "close-modal");
-  
+
     const showTag = getIsTagEnabled(transactionType);
+    const showBill = getIsBillModalEnabled(transactionType)
 
     const TYPE_COLORS: Record<string, { bg: string; active: string; text: string }> = {
         SA: { bg: "#b7fff1", active: "#2F855A", text: "#1C4532" },  // Blue
@@ -1382,14 +1311,15 @@ export default function DraftTransactionTable({
         IS: { bg: "#ffd9a4", active: "#DD6B20", text: "#7B341E" },   // Orange
         RE: { bg: "#ffcafb", active: "#c729ba", text: "#8f1084" }   // Green
     };
-   
 
+
+    console.log(onSaleReturnModal.showBillModal,'showBillModal')
     return (
         <Box display="flex" flexDirection="column" gap={0}>
             <Flex
-                justifyContent="space-between" 
+                justifyContent="space-between"
                 alignItems="center"
-                px={2} 
+                px={2}
                 py={1}
                 bg={'#FFF'}
                 color={'#222'}
@@ -1406,29 +1336,30 @@ export default function DraftTransactionTable({
                         )}
                     </Text>
 
-                    {showTag && 
-                    <>
-                        <Button size="2xs" bg="yellow.subtle" color={'blackAlpha.800'} onClick={handleTagChange}>
-                            Switch to {isTag ? "NonTag" : "Tag"}
-                        </Button>
-                        
-                        {
-                            isTag &&
-                            <Box display={'flex'} alignItems={'center'} >
+                    {showTag &&
+                        <>
+                            <Button size="2xs" bg="yellow.subtle" color={'blackAlpha.800'} onClick={handleTagChange}>
+                                Switch to {isTag ? "NonTag" : "Tag"}
+                            </Button>
+
+                            {
+                                isTag &&
+                                <Box display={'flex'} alignItems={'center'} >
                                     <CapitalizedInput
                                         field="tagNo"
                                         value={tagNo}
                                         onChange={(_, value) => setTagNo(value)}
                                         size="xs"
                                         onEnter={handleTagNoKeyDown}
-                                        
+
                                     />
-                            </Box>
-                        }
+                                </Box>
+                            }
 
                         </>
                     }
-            
+                    {showBill && <Button size="2xs" bg="blue.subtle" onClick={()=> handleBillShow()}> Bills 📄</Button>}
+
                     <Badge colorPalette={rows.length > 0 ? "green" : "gray"} variant="subtle" fontSize="2xs" px={2}>
                         {rows.length} item{rows.length !== 1 ? "s" : ""}
                     </Badge>
@@ -1469,7 +1400,7 @@ export default function DraftTransactionTable({
                 getCellStyle={getCellStyle}
                 transactionType={transactionType}
                 formBackground={TYPE_COLORS[transactionType ?? '']?.bg || '#FFF'}
-                
+
             />
 
 
@@ -1549,45 +1480,57 @@ export default function DraftTransactionTable({
                         maxW="1200px" width="100%" maxH="90vh" overflow="auto"
                         onClick={e => e.stopPropagation()}
                     >
-                      <StoneEnterMaster
-                        grsWeight={currentGRSWT}
-                        onClose={closeStoneModal}
-                        draftRowId={stoneDraftRowId}
-                        initialRows={stoneModalInitialRows}
-                        onSave={(stoneRows) => {
-                            if (!stoneDraftRowId) return;
-                      
-                            const allStones = JSON.parse(localStorage.getItem("SALE_STONE_MASTER") || "[]");
-                            const filtered = allStones.filter((s: any) => s.draftRowId !== stoneDraftRowId);
-                            const updatedStones = stoneRows.map(s => ({ ...s, draftRowId: stoneDraftRowId }));
-                            localStorage.setItem("SALE_STONE_MASTER", JSON.stringify([...filtered, ...updatedStones]));
-                      
-                            const stoneWtTotal = updatedStones.reduce((sum, r) => sum + r.stoneWeight, 0);
-                            const stnAmtTotal = updatedStones.reduce((sum, r) => sum + r.stoneAmount, 0);
-                      
-                            handleChange({
-                                STNWT: stoneWtTotal.toFixed(3),
-                                STNAMT: stnAmtTotal.toFixed(2),
-                            });
-                      
-                            // ✅ Always set pendingStoneData — works for tag-lookup, edit, and new
-                            pendingStoneData.current = {
-                                tempId: stoneDraftRowId,
-                                stones: updatedStones,
-                                totalWeight: stoneWtTotal,
-                            };
-                      
-                            // ✅ Close modal only — don't clear stoneDraftRowId
-                            setIsStoneModalOpen(false);
-                      
-                            setTimeout(() => focusIdx(5), 50);
-                        }}
-                        stoneItems={stoneItemsCollection}
+                        <StoneEnterMaster
+                            grsWeight={currentGRSWT}
+                            onClose={closeStoneModal}
+                            draftRowId={stoneDraftRowId}
+                            initialRows={stoneModalInitialRows}
+                            onSave={(stoneRows) => {
+                                if (!stoneDraftRowId) return;
+
+                                const allStones = JSON.parse(localStorage.getItem("SALE_STONE_MASTER") || "[]");
+                                const filtered = allStones.filter((s: any) => s.draftRowId !== stoneDraftRowId);
+                                const updatedStones = stoneRows.map(s => ({ ...s, draftRowId: stoneDraftRowId }));
+                                localStorage.setItem("SALE_STONE_MASTER", JSON.stringify([...filtered, ...updatedStones]));
+
+                                const stoneWtTotal = updatedStones.reduce((sum, r) => sum + r.stoneWeight, 0);
+                                const stnAmtTotal = updatedStones.reduce((sum, r) => sum + r.stoneAmount, 0);
+
+                                handleChange({
+                                    STNWT: stoneWtTotal.toFixed(3),
+                                    STNAMT: stnAmtTotal.toFixed(2),
+                                });
+
+                                // ✅ Always set pendingStoneData — works for tag-lookup, edit, and new
+                                pendingStoneData.current = {
+                                    tempId: stoneDraftRowId,
+                                    stones: updatedStones,
+                                    totalWeight: stoneWtTotal,
+                                };
+
+                                // ✅ Close modal only — don't clear stoneDraftRowId
+                                setIsStoneModalOpen(false);
+
+                                setTimeout(() => focusIdx(5), 50);
+                            }}
+                            stoneItems={stoneItemsCollection}
                         // subStoneItems={stoneItemsCollection}
-                    />
+                        />
                     </Box>
                 </Box>
             )}
+
+     
+                <SalesBillViewModal
+                    isOpen={showBillModal}
+                    onClose={handleBillShow}
+                    billParams={onSaleReturnModal.billParams}
+                    onBillParamChange={onSaleReturnModal.onBillParamChange}
+                    billDetails={onSaleReturnModal.billDetails}
+                    loading={onSaleReturnModal.loading}
+                    handleSelectionChange={onSaleReturnModal.handleSelectedItems}
+                />
+            
         </Box>
     );
 }

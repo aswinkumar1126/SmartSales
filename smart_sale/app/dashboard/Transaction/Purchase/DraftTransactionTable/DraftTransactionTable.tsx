@@ -88,21 +88,7 @@ interface DraftTransactionTableProps {
     getAvailablePieces?: (id: string, options?: { excludeRowId?: string, transactionTypeCode: string, isEditing?: boolean, originalPieces?: number }) => any | undefined;
     handleTagChange : () => void ;
     isTag :boolean;
-    onTagNoLookup?: (tagNo: string) => Promise<{
-        GRSWT: number;
-        STNWT: number;
-        NETWT: number;
-        WASPER: number;
-        DIAWT: number;
-        MC: number;
-        TOUCH: number;
-        SALESSTNWT: number;
-        SIZEID: number;
-        ITEMID?: string;
-        PCS?: number;
-        TAGNO: string;
-        stoneDetails: any[];
-    } | null>;
+    onTagNoLookup?: (tagNo: string) => void;
 }
 
 

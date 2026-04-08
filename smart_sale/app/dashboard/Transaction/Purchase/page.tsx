@@ -1115,6 +1115,8 @@ export default function PurchasePage() {
         const transactionClosingDetails = transactionData.CLOSING_DETAILS;
         const transactionBalanceDetails = transactionData.BALANCE;
 
+        console.log(transactionClosingDetails,'transactionClosingDetails')
+
         // Collect ALL transaction types that have data
         let transactionTypes: string[] = [];
         let allTransactionItems: any[] = [];
@@ -1194,8 +1196,8 @@ export default function PurchasePage() {
                     cashRcvd: transactionClosingDetails.CASHRCVD ? String(transactionClosingDetails.CASHRCVD) : "",
                     bankPaid: transactionClosingDetails.BANKPAID ? String(transactionClosingDetails.BANKPAID) : "",
                     bankRcvd: transactionClosingDetails.BANKRCVD ? String(transactionClosingDetails.BANKRCVD) : "",
-                    bankPaidDetails: transactionClosingDetails.bankPaidDetails || [],
-                    bankRcvdDetails: transactionClosingDetails.bankRcvdDetails || [],
+                    bankPaidDetails: transactionClosingDetails.BANKPAIDDETAILS || [],
+                    bankRcvdDetails: transactionClosingDetails.BANKRCVDDETAILS || [],
                 };
 
                 // ✅ Set in parent state
@@ -1508,57 +1510,80 @@ export default function PurchasePage() {
     };
 
     // Calculate closing balances whenever relevant data changes
-useEffect(() => {
-    if (!openingBalances) return;
+  useEffect(() => {
+        if (!openingBalances) return;
 
-    const cashRcvd = parseFloat(closingDetails.cashRcvd || "0") || 0;
-    const cashPaid = parseFloat(closingDetails.cashPaid || "0") || 0;
-    const bankRcvd = closingDetails.bankRcvdDetails.reduce((sum, t) => sum + (t.amount || 0), 0);
-    const bankPaid = closingDetails.bankPaidDetails.reduce((sum, t) => sum + (t.amount || 0), 0);
+        const cashRcvd = parseFloat(closingDetails.cashRcvd || "0") || 0;
+        const cashPaid = parseFloat(closingDetails.cashPaid || "0") || 0;
+        const bankRcvd = closingDetails.bankRcvdDetails.reduce((sum, t) => sum + (t.amount || 0), 0);
+        const bankPaid = closingDetails.bankPaidDetails.reduce((sum, t) => sum + (t.amount || 0), 0);
 
-    let convAmt = parseFloat(closingDetails.convAmt || "") || 0;
-    let convWt = parseFloat(closingDetails.convWt || "") || 0;
-    const conversionType = closingDetails.convType;
-    const rate = Number(headerForm.RATEGM) || 0;
+        let convAmt = parseFloat(closingDetails.convAmt || "") || 0;
+        let convWt = parseFloat(closingDetails.convWt || "") || 0;
+        const conversionType = closingDetails.convType;
+        const rate = Number(headerForm.RATEGM) || 0;
 
-    // Auto-calculate based on conversion type
-    if (rate > 0) {
-        if (conversionType === "P" && convWt > 0) {
-            const calculatedAmt = convWt * rate;
-            if (calculatedAmt.toFixed(2) !== closingDetails.convAmt) {
-                // Update the field with calculated value
-                handleClosingDetailsChange("convAmt", calculatedAmt.toFixed(2));
+        // Auto-calculate based on conversion type
+        // Auto-calculate + CLEAR logic
+        if (rate > 0) {
+
+            // 🔴 CLEAR LOGIC FIRST
+            if (conversionType === "P" && !closingDetails.convWt) {
+                if (closingDetails.convAmt !== "") {
+                    handleClosingDetailsChange("convAmt", "");
+                }
+                convAmt = 0;
             }
-            convAmt = calculatedAmt;
-        } else if (conversionType === "C" && convAmt > 0) {
-            const calculatedWt = convAmt / rate;
-            if (calculatedWt.toFixed(3) !== closingDetails.convWt) {
-                // Update the field with calculated value
-                handleClosingDetailsChange("convWt", calculatedWt.toFixed(3));
+
+            if (conversionType === "C" && !closingDetails.convAmt) {
+                if (closingDetails.convWt !== "") {
+                    handleClosingDetailsChange("convWt", "");
+                }
+                convWt = 0;
             }
-            convWt = calculatedWt;
+
+            // 🟢 NORMAL CALCULATION
+            if (conversionType === "P" && convWt > 0) {
+                const calculatedAmt = convWt * rate;
+
+                if (calculatedAmt.toFixed(2) !== closingDetails.convAmt) {
+                    handleClosingDetailsChange("convAmt", calculatedAmt.toFixed(2));
+                }
+
+                convAmt = calculatedAmt;
+
+            } else if (conversionType === "C" && convAmt > 0) {
+                const calculatedWt = convAmt / rate;
+
+                if (calculatedWt.toFixed(3) !== closingDetails.convWt) {
+                    handleClosingDetailsChange("convWt", calculatedWt.toFixed(3));
+                }
+
+                convWt = calculatedWt;
+            }
         }
-    }
 
-    let newClosingCash = (openingBalances.openCash || 0) + cashRcvd + bankRcvd - cashPaid - bankPaid;
-    let newClosingPure = (openingBalances.openPure || 0);
+        let newClosingCash = (openingBalances.openCash || 0) + cashRcvd + bankRcvd - cashPaid - bankPaid;
+        let newClosingPure = (openingBalances.openPure || 0);
 
-    if (conversionType === "C") {
-        newClosingCash -= convAmt;
-        newClosingPure += convWt;
-    }
-    if (conversionType === "P") {
-        newClosingCash += convAmt;
-        newClosingPure -= convWt;
-    }
+        if (conversionType === "C") {
+            newClosingCash -= convAmt;
+            newClosingPure += convWt;
+        }
+        if (conversionType === "P") {
+            newClosingCash += convAmt;
+            newClosingPure -= convWt;
+        }
 
-    if (!isFinite(newClosingCash)) newClosingCash = 0;
-    if (!isFinite(newClosingPure)) newClosingPure = 0;
+        if (!isFinite(newClosingCash)) newClosingCash = 0;
+        if (!isFinite(newClosingPure)) newClosingPure = 0;
 
-    setClosingCash(Number(newClosingCash.toFixed(2)));
-    setClosingPure(Number(newClosingPure.toFixed(3)));
+        setClosingCash(Number(newClosingCash.toFixed(2)));
+        setClosingPure(Number(newClosingPure.toFixed(3)));
 
-}, [closingDetails, openingBalances, headerForm.RATEGM]);
+    }, [closingDetails, openingBalances, headerForm.RATEGM]);
+
+
 
     // Handle bank paid save (from modal)
     const handleBankPaidSave = (transactions: BankTransaction[], total: number) => {

@@ -48,7 +48,7 @@ export const TransactionService = {
             if (props.enddate) params.enddate = props.enddate;
             if (props.itemid) params.itemid = props.itemid;
 
-       
+            
 
             const BASE_PATH = props.TRANTYPE === "purchase"
                 ? BASE_PURCHASE_PATH

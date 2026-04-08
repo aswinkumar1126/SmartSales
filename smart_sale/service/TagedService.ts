@@ -3,6 +3,7 @@ import { ApiResponse } from "@/types/api/apiResponse";
 import { getSingleTagDetail } from "@/types/tagging/Tag";
 import { AxiosError } from "axios";
 
+
 export interface TagDetailsResult {
     data?: getSingleTagDetail;
     error?: string; // human-readable error message
@@ -37,16 +38,34 @@ export const getTagDetails = async (
 };
 
 export interface billNoParams {
-    ACCODE:number;
+    ACCODE?:number;
+    BILLNO?:number;
+    BILLDATE?:string
 }
 
-export const getSoldItemsDetails = async(id:number , params:billNoParams) => {
-    try{
-        const response = await axiosInstance.get<ApiResponse<getSingleTagDetail>>(
-            `/tagged/sold/${id}` ,{params}
+export const getSoldItemsDetails = async (params: billNoParams) => {
+    try {
+        const queryParams: any = {};
+
+        if (params.ACCODE !== undefined) {
+            queryParams.ACCODE = params.ACCODE;
+        }
+
+        if (params.BILLNO) {
+            queryParams.BILLNO = params.BILLNO;
+        }
+
+        if (params.BILLDATE) {
+            queryParams.BILLDATE = params.BILLDATE;
+        }
+
+        const response = await axiosInstance.get<ApiResponse<getSingleTagDetail[]>>(
+            `/tagged/sales`,
+            { params: queryParams } // ✅ send only filtered params
         );
-        return { data: response.data.data };
-    }catch(err){
+
+        return response.data.data;
+    } catch (err) {
         if (err instanceof AxiosError) {
             return {
                 error: err.response?.data.message || "Failed to Fetch",
@@ -58,4 +77,4 @@ export const getSoldItemsDetails = async(id:number , params:billNoParams) => {
             return { error: "Unknown error occurred" };
         }
     }
-}
+};
