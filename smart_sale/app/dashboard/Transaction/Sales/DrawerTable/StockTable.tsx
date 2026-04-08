@@ -198,23 +198,16 @@ export default function StockDrawer({
                                 headerColor={theme.colors.whiteColor}
                                 renderRow={(row) => {
 
-                                    const getStockId = (row: any) => {
-                                        if (showStock === "PURE") {
-                                            return row.pureId || row.PUREID || row.id;
-                                        } else {
-                                            // For items, make sure you're using the correct ID field
-                                            return row.itemId || row.ITEMID || row.id || row.ornamentId;
-                                        }
-                                    };
+                                  
 
                                     const stockId = getStockId(row);
 
-                                
+                        
                                  
                                     // Get availability for this row based on stock type
                                     const availability = getStockAvailability && stockId
                                         ? getStockAvailability(stockId, {
-                                            transactionTypeCode: showStock === "PURE" ? "IS" : "RE",
+                                            transactionTypeCode: showStock === "PURE" ? "IS" : "SA",
                                             isEditing: false,
                                         })
                                         : undefined;

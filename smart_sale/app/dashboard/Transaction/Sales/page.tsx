@@ -4,13 +4,8 @@ import React, { useEffect, useMemo, useState, useCallback ,useRef } from "react"
 import {
     Text,
     Box,
-    Button,
     Flex,
     VStack,
-    Drawer,
-    Portal,
-    Grid,
-    GridItem
 } from "@chakra-ui/react";
 import lodash from "lodash";
 
@@ -23,7 +18,6 @@ import { useOpeningBalance } from "@/hooks/balance/useOpeningBalance";
 import TransactionHeaderForm from "./TransactionHeaderForm/TransactionHeaderForm";
 import TransactionTypeSelector from "./TransactionTypeSelector/TransactionTypeSelector";
 import DraftTransactionTable from "./DraftTransactionTable/DraftTransactionTable";
-import RightSideDetailsPanel from "./RightSideDetailsPanel/RightSideDetailsPanel";
 import StockDrawer from "./DrawerTable/StockTable";
 import { useAllMetals } from "@/hooks/metal/useMetals";
 import Loader from "@/component/loader/Loader";
@@ -38,14 +32,13 @@ import { useGlobalKey } from "@/components/key/useGlobalKey";
 
 import { useTransactions } from "@/hooks/transaction/useTransactions";
 import { useAllAccountHead } from "@/hooks/accountHead/useAccountHead";
-import { useItems, useStoneItems } from "@/hooks/item/useItems";
+import { useStoneItems } from "@/hooks/item/useItems";
 import { useCreateTransactions, useUpdateTransaction, useTransactionByTransId } from "@/hooks/transaction/useTransactions";
 import { usePureGoldData, usePureGoldNames } from "@/hooks/pureGoldMast/usePureGoldMastData";
 import { useActiveOtherCharges } from "@/hooks/otherCharges/useOtherCharges";
 import { useRates } from "@/hooks/rate/useRate";
 import { useOrnamentData } from "@/hooks/ornament/useOrnamentData";
-import { useTagEntryNos, useTagedDetailsByTagNo } from "@/hooks/tag/useTag";
-import { useAllBankAccounts, useBankAccount } from "@/hooks/bankAccount/useBankAccount";
+import { useAllBankAccounts } from "@/hooks/bankAccount/useBankAccount";
 
 
 /*-------------------  *VALIDATION HOOKS*  --------------------------*/
@@ -55,12 +48,16 @@ import { validateTransactions } from "@/utils/TransactionValidation/ValidateTran
 import { buildTransactionPayload } from "@/utils/TransactionValidation/buildTransactionPayload";
 import { normalizeRowForApi } from "@/utils/TransactionValidation/normalizeRowForApi";
 
+/*--------------------- *CALCULATION HOOKS* ---------------------------------*/
+import { useStockAvailability } from "./SalesComponent/UseStokeAvailability";
+
+
 /*-------------------  *STORAGE*  --------------------------*/
 import { useSessionStorage } from "@/hooks/storage/useSessionStorage";
 
 
 // Types & Constants
-import { TransactionType, UpdateTransactionPayload, TransactionKey, CreateTransaction, TransactionItems, TRANSACTION_KEY_MAP, ClosingDetails ,WeightInfo , purchasereturnPayload ,purchasePayload} from "@/types/transcation/Transaction";
+import {ClosingDetails ,WeightInfo , purchasereturnPayload ,purchasePayload} from "@/types/transcation/Transaction";
 import { SALETRANSACTIONTYPES } from "@/data/Transaction/TransactionType";
 import { BankTransaction } from "./Balance/BankTransactionModal";
 import { SaleTransactionType } from "@/types/transcation/SaleTransaction";
@@ -139,14 +136,11 @@ export default function SalesPage() {
     const ISTAG = 'sale_is_tag';
 
 
-  
-    // const [itemsStockList, setItemsStockList] = useState<{ label: string, value: string }[]>([]);
 
     const TRANSACTIONTYPES_ORDER = ["SA" ,"SR","IS" ,"RE"];
 
 
     const openFilter = () => setIsFilterOpen(true);
-    const closeFilter = () => setIsFilterOpen(false);
 
     const draftRowTempId = useRef<string | null>(null);
 
@@ -163,7 +157,7 @@ export default function SalesPage() {
     const [accCode, setAccCode] = useState<number | undefined | null | string>();
     const [loading, setLoading] = useState<boolean>(true);
     const [saleCustomerList, setSaleCustomerList] = useState<{ label: string, value: string }[]>([]);
-    const [filter, setFilter] = useState<string>('');
+
     const [isStockDrawerOpen, setIsStockDrawerOpen] = useState(false);
     const [showStock, setShowStock] = useState<string>("PURE");
     const [pureGoldList, setPureGoldList] = useState<{ label: string, value: string }[]>([]);
@@ -190,7 +184,9 @@ export default function SalesPage() {
             pureId:'',
             itemId:'',
             accode:''
-        })
+        });
+
+    const filter = ''
     
 
 
@@ -201,18 +197,11 @@ export default function SalesPage() {
     /*-------------------PERSISTENT STATE-------------------------------*/
 
 
-    const [showFilter, setShowFilter] = useSessionStorage <boolean>(FILTER_KEY, false);
-
-    const [itemCode, setItemCode] = useSessionStorage<number|null> (ITEMID_KEY, null);
 
     const [isEditing, setIsEditing] = useSessionStorage(EDITING_KEY, false);
 
     const [editingSno, setEditingSno] = useSessionStorage<string|null>(EDITING_SNO_KEY, null);
 
-    const [dateRange, setDateRange] = useSessionStorage<DateRangeType>(DATE_RANGE_KEY, {
-        startDate: null,
-        endDate: null
-    });
 
     const [isTag ,setIsTag] = useSessionStorage<boolean>(ISTAG , true);
 
@@ -563,224 +552,250 @@ export default function SalesPage() {
     useGlobalKey("F1" ,()=>openFilter() ,"openFilter");
 
 
-    const getUsedQuantityByPureId = useCallback((pureId: string | number, options?: {
-        excludeRowId?: string,
-        transactionTypeCode?: string,
-        field?: 'WT' | 'PCS' | 'NETWT'
-    }) => {
-        const pureIdStr = String(pureId);
-        const { excludeRowId, transactionTypeCode, field = 'WT' } = options || {};
+    // const getUsedQuantityByPureId = useCallback((pureId: string | number, options?: {
+
+    //     excludeRowId?: string,
+    //     transactionTypeCode?: string,
+    //     field?: 'WT' | 'PCS' | 'NETWT'
+    // }) => {
+    //     const pureIdStr = String(pureId);
+    //     const { excludeRowId, transactionTypeCode, field = 'WT' } = options || {};
 
 
-        const filteredRows = draftRows.filter(row => {
-            // Skip the excluded row
-            if (excludeRowId && row.__rowId === excludeRowId) {
-                return false;
-            }
+    //     const filteredRows = draftRows.filter(row => {
+    //         // Skip the excluded row
+    //         if (excludeRowId && row.__rowId === excludeRowId) {
+    //             return false;
+    //         }
 
-            // Match PUREID
-            if (String(row.PUREID|| row.ITEMID )  !== pureIdStr) {
-                return false;
-            }
+    //         // Match PUREID
+    //         if (String(row.PUREID|| row.ITEMID )  !== pureIdStr) {
+    //             return false;
+    //         }
 
-            // Find the transaction type
-            const transactionType = SALETRANSACTIONTYPES.find(t => t.value === row.TRANSACTION_TYPE);
-            if (!transactionType) {
-                return false;
-            }
-            if (transactionTypeCode && transactionType.value !== transactionTypeCode) {
+    //         // Find the transaction type
+    //         const transactionType = SALETRANSACTIONTYPES.find(t => t.value === row.TRANSACTION_TYPE);
+    //         if (!transactionType) {
+    //             return false;
+    //         }
+    //         if (transactionTypeCode && transactionType.value !== transactionTypeCode) {
               
-                return false;
-            }
+    //             return false;
+    //         }
 
           
-            return true;
-        });
+    //         return true;
+    //     });
 
-        const sum = filteredRows.reduce((sum, row) => {
-            const value = Number(row[field]) || 0;
-            // console.log(`Adding ${field}:`, value, 'from row:', row.__rowId);
-            return sum + value;
-        }, 0);
+    //     const sum = filteredRows.reduce((sum, row) => {
+    //         const value = Number(row[field]) || 0;
+    //         // console.log(`Adding ${field}:`, value, 'from row:', row.__rowId);
+    //         return sum + value;
+    //     }, 0);
 
         
 
-        return sum;
-    }, [draftRows]);
+    //     return sum;
+    // }, [draftRows]);
 
 
 
-    const getStockAvailability = useCallback((pureId: string | number | null, options?: {
-        excludeRowId?: string,
-        transactionTypeCode?: string,
-        isEditing?: boolean,
-        originalValue?: number
-    }) => {
-        if (!pureId) return undefined;
+    // const getStockAvailability = useCallback((pureId: string | number | null, options?: {
+    //     excludeRowId?: string,
+    //     transactionTypeCode?: string,
+    //     isEditing?: boolean,
+    //     originalValue?: number
+    // }) => {
+    //     if (!pureId) return undefined;
 
-        console.log('getStockAvailability called with:', { pureId, options })
-        const { excludeRowId, transactionTypeCode, originalValue } = options || {};
-        const isIssue = transactionTypeCode === "IS";
-        const isSales = transactionTypeCode === "SA";
+    //     console.log('getStockAvailability called with:', { pureId, options })
+    //     const { excludeRowId, transactionTypeCode, originalValue } = options || {};
+    //     const isIssue = transactionTypeCode === "IS";
+    //     const isSales = transactionTypeCode === "SA";
 
-        let stock = null;
-        let totalAvailableWeight = 0;
-        let totalAvailablePieces = 0;
-        let stockSource = '';
-        console.log()
+    //     let stock = null;
+    //     let totalAvailableWeight = 0;
+    //     let totalAvailablePieces = 0;
+    //     let stockSource = '';
+    //     console.log()
 
-        if (isIssue) {
-            // ISP uses pureStockList
-            stock = pureStockList.find((s: any) => String(s.pureId) === String(pureId));
-            console.log(stock,'stockstock')
-            if (!stock) return undefined;
+    //     if (isIssue) {
+    //         // ISP uses pureStockList
+    //         stock = pureStockList.find((s: any) => String(s.pureId) === String(pureId));
+    //         console.log(stock,'stockstock')
+    //         if (!stock) return undefined;
 
-            totalAvailableWeight = Number(stock.weight || 0);
-            stockSource = 'pure';
-        } else if (isSales) {
-            // PR uses itemsStockList
-            stock = itemsStockList.find((s: any) => {
-                return String(s.itemId) === String(pureId) || String(s.pureId) === String(pureId);
-            });
+    //         totalAvailableWeight = Number(stock.weight || 0);
+    //         stockSource = 'pure';
+    //     } else if (isSales) {
+    //         // PR uses itemsStockList
+    //         stock = itemsStockList.find((s: any) => {
+    //             return String(s.itemId) === String(pureId) || String(s.pureId) === String(pureId);
+    //         });
 
-            if (!stock) return undefined;
+    //         if (!stock) return undefined;
 
-            totalAvailablePieces = Number(stock.pcs || stock.pieces || stock.quantity || 0);
-            totalAvailableWeight = Number(stock.netwt || stock.netWeight || stock.purewt || 0);
+    //         totalAvailablePieces = Number(stock.pcs || stock.pieces || stock.quantity || 0);
+    //         totalAvailableWeight = Number(stock.netwt || stock.netWeight || stock.purewt || 0);
 
-            stockSource = 'items';
-        } else {
-            return undefined;
-        }
+    //         stockSource = 'items';
+    //     } else {
+    //         return undefined;
+    //     }
 
-        // Calculate used quantities based on transaction type
-        let usedWeight = 0;
-        let usedPieces = 0;
+    //     // Calculate used quantities based on transaction type
+    //     let usedWeight = 0;
+    //     let usedPieces = 0;
 
-        if (isIssue) {
-            usedWeight = getUsedQuantityByPureId(pureId, {
-                excludeRowId,
-                transactionTypeCode: "ISP",
-                field: 'WT'
-            });
+    //     if (isIssue) {
+    //         usedWeight = getUsedQuantityByPureId(pureId, {
+    //             excludeRowId,
+    //             transactionTypeCode: "ISP",
+    //             field: 'WT'
+    //         });
 
-            usedPieces = getUsedQuantityByPureId(pureId, {
-                excludeRowId,
-                transactionTypeCode: "ISP",
-                field: 'PCS'
-            });
-        } else if (isSales) {
-            usedWeight = getUsedQuantityByPureId(pureId, {
-                excludeRowId,
-                transactionTypeCode: "PR",
-                field: 'NETWT'
-            });
+    //         usedPieces = getUsedQuantityByPureId(pureId, {
+    //             excludeRowId,
+    //             transactionTypeCode: "ISP",
+    //             field: 'PCS'
+    //         });
+    //     } else if (isSales) {
+    //         usedWeight = getUsedQuantityByPureId(pureId, {
+    //             excludeRowId,
+    //             transactionTypeCode: "PR",
+    //             field: 'NETWT'
+    //         });
 
-            usedPieces = getUsedQuantityByPureId(pureId, {
-                excludeRowId,
-                transactionTypeCode: "PR",
-                field: 'PCS'
-            });
-        }
+    //         usedPieces = getUsedQuantityByPureId(pureId, {
+    //             excludeRowId,
+    //             transactionTypeCode: "PR",
+    //             field: 'PCS'
+    //         });
+    //     }
 
-        return {
-            stock,
-            stockSource,
-            transactionTypeCode,
-            isIssue,
-            isSales,
+    //     return {
+    //         stock,
+    //         stockSource,
+    //         transactionTypeCode,
+    //         isIssue,
+    //         isSales,
 
-            weight: {
-                total: totalAvailableWeight,
-                used: usedWeight,
-                remaining: Math.max(totalAvailableWeight - usedWeight, 0)
-            },
+    //         weight: {
+    //             total: totalAvailableWeight,
+    //             used: usedWeight,
+    //             remaining: Math.max(totalAvailableWeight - usedWeight, 0)
+    //         },
 
-            pieces: {
-                total: totalAvailablePieces,
-                used: usedPieces,
-                remaining: Math.max(totalAvailablePieces - usedPieces, 0)
-            },
+    //         pieces: {
+    //             total: totalAvailablePieces,
+    //             used: usedPieces,
+    //             remaining: Math.max(totalAvailablePieces - usedPieces, 0)
+    //         },
 
-            // For backward compatibility
-            total: totalAvailableWeight,
-            used: usedWeight,
-            remaining: Math.max(totalAvailableWeight - usedWeight, 0),
-            usedPieces,
-            remainingPieces: Math.max(totalAvailablePieces - usedPieces, 0)
-        };
-    }, [pureStockList, itemsStockList, getUsedQuantityByPureId]);
+    //         // For backward compatibility
+    //         total: totalAvailableWeight,
+    //         used: usedWeight,
+    //         remaining: Math.max(totalAvailableWeight - usedWeight, 0),
+    //         usedPieces,
+    //         remainingPieces: Math.max(totalAvailablePieces - usedPieces, 0)
+    //     };
+    // }, [pureStockList, itemsStockList, getUsedQuantityByPureId]);
          
 
 
 
     // Separate helper functions for specific use cases
-    const getAvailableWeight = useCallback((pureId: string | number | null, options?: {
-        excludeRowId?: string,
-        transactionTypeCode?: string
-    }) => {
-        const availability = getStockAvailability(pureId, options);
-        return availability?.weight.remaining ?? null;
-    }, [getStockAvailability]);
+    // const getAvailableWeight = useCallback((pureId: string | number | null, options?: {
+    //     excludeRowId?: string,
+    //     transactionTypeCode?: string
+    // }) => {
+    //     const availability = getStockAvailability(pureId, options);
+    //     return availability?.weight.remaining ?? null;
+    // }, [getStockAvailability]);
 
-    const getAvailablePieces = useCallback((pureId: string | number | null, options?: {
-        excludeRowId?: string,
-        transactionTypeCode?: string
-    }) => {
-        const availability = getStockAvailability(pureId, options);
-        return availability?.pieces.remaining ?? null;
-    }, [getStockAvailability]);
+    // const getAvailablePieces = useCallback((pureId: string | number | null, options?: {
+    //     excludeRowId?: string,
+    //     transactionTypeCode?: string
+    // }) => {
+    //     const availability = getStockAvailability(pureId, options);
+    //     return availability?.pieces.remaining ?? null;
+    // }, [getStockAvailability]);
 
-    // Validation function for forms
-    const validateQuantity = useCallback((pureId: string | number | null, value: number, options: {
-        transactionTypeCode: string,
-        field: 'WT' | 'PIECES' | 'NETWT',
-        excludeRowId?: string,
-        originalValue?: number
-    }) => {
-        if (!pureId) return true;
+    // // Validation function for forms
+    // const validateQuantity = useCallback((pureId: string | number | null, value: number, options: {
+    //     transactionTypeCode: string,
+    //     field: 'WT' | 'PIECES' | 'NETWT',
+    //     excludeRowId?: string,
+    //     originalValue?: number
+    // }) => {
+    //     if (!pureId) return true;
 
-        const availability = getStockAvailability(pureId, {
-            excludeRowId: options.excludeRowId,
-            transactionTypeCode: options.transactionTypeCode,
-            originalValue: options.originalValue
-        });
+    //     const availability = getStockAvailability(pureId, {
+    //         excludeRowId: options.excludeRowId,
+    //         transactionTypeCode: options.transactionTypeCode,
+    //         originalValue: options.originalValue
+    //     });
 
-        if (!availability) return true; // No stock record, assume valid
+    //     if (!availability) return true; // No stock record, assume valid
 
-        if (options.transactionTypeCode === "ISP") {
-            // ISP validation
-            if (options.field === 'WT') {
-                return value <= availability.weight.remaining;
-            } else if (options.field === 'PIECES') {
-                return value <= availability.pieces.remaining;
-            }
-        } else if (options.transactionTypeCode === "PR") {
-            // PR validation
-            if (options.field === 'NETWT') {
-                return value <= availability.weight.remaining;
-            } else if (options.field === 'PIECES') {
-                return value <= availability.pieces.remaining;
-            }
-        }
+    //     if (options.transactionTypeCode === "ISP") {
+    //         // ISP validation
+    //         if (options.field === 'WT') {
+    //             return value <= availability.weight.remaining;
+    //         } else if (options.field === 'PIECES') {
+    //             return value <= availability.pieces.remaining;
+    //         }
+    //     } else if (options.transactionTypeCode === "PR") {
+    //         // PR validation
+    //         if (options.field === 'NETWT') {
+    //             return value <= availability.weight.remaining;
+    //         } else if (options.field === 'PIECES') {
+    //             return value <= availability.pieces.remaining;
+    //         }
+    //     }
 
-        return false; // Unsupported transaction type or field
-    }, [getStockAvailability]);
+    //     return false; // Unsupported transaction type or field
+    // }, [getStockAvailability]);
 
-    // Helper to get stock based on transaction type
-    const getStockForTransaction = useCallback((pureId: string | number, transactionTypeCode: string) => {
-        if (transactionTypeCode === "ISP") {
-            return pureStockList.find((s: any) => String(s.pureId) === String(pureId));
-        } else if (transactionTypeCode === "PR") {
-            return itemsStockList.find((s: any) =>
-                String(s.itemId) === String(pureId) || String(s.pureId) === String(pureId)
-            );
-        }
-        return null;
-    }, [pureStockList, itemsStockList]);
+    // // Helper to get stock based on transaction type
+    // const getStockForTransaction = useCallback((pureId: string | number, transactionTypeCode: string) => {
+    //     if (transactionTypeCode === "ISP") {
+    //         return pureStockList.find((s: any) => String(s.pureId) === String(pureId));
+    //     } else if (transactionTypeCode === "PR") {
+    //         return itemsStockList.find((s: any) =>
+    //             String(s.itemId) === String(pureId) || String(s.pureId) === String(pureId)
+    //         );
+    //     }
+    //     return null;
+    // }, [pureStockList, itemsStockList]);
 
     
     // Main calculation function
+    
+    /*--------------------------------STOCK CHECKING------------------------ */
+    
+    const {
+        transactionKey,
+        isIssue,
+        isSales,
+        isSalesReturn,
+        isReceipt,
+        getStockAvailability,
+        getAvailableWeight,
+        getAvailablePieces,
+        validateQuantity,
+        getStockForTransaction,
+    } = useStockAvailability({
+        transactionCode: (selectedTransactionTypes[0] ?? SALETRANSACTIONTYPES[0]).code,
+        pureStockList,
+        itemsStockList,
+        draftRows,
+        SALETRANSACTIONTYPES
+    });
+    
+    
+    
+    
     function calculateOpeningBalances(
         draftRows: TransactionRow[],
         initialPure: number,
@@ -790,7 +805,7 @@ export default function SalesPage() {
         let openCash = initialCash;
 
         draftRows.forEach((row) => {
-            const type = TRANSACTION_KEY_MAP[row.TRANSACTION_TYPE];
+            const type = SALE_TRANSACTION_KEY_MAP[row.TRANSACTION_TYPE];
             const pureWt = Number(row.PUREWT) || 0;
 
             // Calculate cash amount for this row
@@ -801,14 +816,14 @@ export default function SalesPage() {
       
 
             switch (type) {
-                case "purchase":
-                    openPure += pureWt;
-                    openCash += cash;
-                    break;
-
-                case "purchase_return":
+                case "sales":
                     openPure -= pureWt;
                     openCash -= cash;
+                    break;
+
+                case "sales_return":
+                    openPure += pureWt;
+                    openCash += cash;
                     break;
 
                 case "receipt":
@@ -1497,20 +1512,41 @@ useEffect(() => {
     const rate = Number(headerForm.RATEGM) || 0;
 
     // Auto-calculate based on conversion type
+    // Auto-calculate + CLEAR logic
     if (rate > 0) {
+
+        // 🔴 CLEAR LOGIC FIRST
+        if (conversionType === "P" && !closingDetails.convWt) {
+            if (closingDetails.convAmt !== "") {
+                handleClosingDetailsChange("convAmt", "");
+            }
+            convAmt = 0;
+        }
+
+        if (conversionType === "C" && !closingDetails.convAmt) {
+            if (closingDetails.convWt !== "") {
+                handleClosingDetailsChange("convWt", "");
+            }
+            convWt = 0;
+        }
+
+        // 🟢 NORMAL CALCULATION
         if (conversionType === "P" && convWt > 0) {
             const calculatedAmt = convWt * rate;
+
             if (calculatedAmt.toFixed(2) !== closingDetails.convAmt) {
-                // Update the field with calculated value
                 handleClosingDetailsChange("convAmt", calculatedAmt.toFixed(2));
             }
+
             convAmt = calculatedAmt;
+
         } else if (conversionType === "C" && convAmt > 0) {
             const calculatedWt = convAmt / rate;
+
             if (calculatedWt.toFixed(3) !== closingDetails.convWt) {
-                // Update the field with calculated value
                 handleClosingDetailsChange("convWt", calculatedWt.toFixed(3));
             }
+
             convWt = calculatedWt;
         }
     }
@@ -1534,6 +1570,8 @@ useEffect(() => {
     setClosingPure(Number(newClosingPure.toFixed(3)));
 
 }, [closingDetails, openingBalances, headerForm.RATEGM]);
+
+
 
     // Handle bank paid save (from modal)
     const handleBankPaidSave = (transactions: BankTransaction[], total: number) => {
@@ -1654,7 +1692,9 @@ useEffect(() => {
         let usedWeight = 0;
 
         if (isIssue && pureId) {
-            const availability = getStockAvailability(pureId , {transactionTypeCode: targetType.value} );
+            const availability = getStockAvailability(pureId);
+
+            console.log(availability,'availabilityavailability')
 
             if (!availability) {
                 toaster.create({
@@ -2494,9 +2534,6 @@ useEffect(() => {
         setDeselectFlag(false); // reset deselect flag whenever typing
     };
 
-    const handleSelectItemCode = useCallback((id: number | null) => {
-        setItemCode(id);
-    }, []);
 
     /* ================================
        Calculate Overall Totals
@@ -2597,7 +2634,7 @@ useEffect(() => {
                             theme={theme}
                             TRANSACTIONTYPES_ORDER={TRANSACTIONTYPES_ORDER}
                             setIsStockDrawerOpen={setIsStockDrawerOpen}
-                            showFilter={showFilter}
+                            // showFilter={showFilter}
                             handleShowFilter={openFilter}
                             isEditing={isEditing}
                             onSave={isEditing ? handleUpdateTransaction : handleSaveTransaction}

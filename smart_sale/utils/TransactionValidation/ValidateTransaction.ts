@@ -66,6 +66,7 @@ export const validateTransactions = ({
 
     for (const pureId in usedByPureId) {
         const availability = getStockAvailability(pureId);
+        console.log(availability,'availabilityofstock')
 
         if (availability && usedByPureId[pureId] > availability.total) {
             return {

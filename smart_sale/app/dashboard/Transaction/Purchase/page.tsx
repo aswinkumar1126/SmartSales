@@ -2587,10 +2587,10 @@ console.log('createTransactionPayload',payload)
                     NETWT: Number(data.NETWT) || 0,
 
                     TOUCH: Number(data.TOUCH) || 0,
-                    PUREWT: Number(data.PUREWT) || 0,
+                    // PUREWT: Number(data.PUREWT) || 0,
 
                     MC: Number(data.MC) || 0,
-                    WASTYPE: data.WASTYPE || "TOUCH",
+                    // WASTYPE: data.WASTYPE || "TOUCH",
 
                     // ✅ UI flags
                     _hasStones: stoneDetails.length > 0,
