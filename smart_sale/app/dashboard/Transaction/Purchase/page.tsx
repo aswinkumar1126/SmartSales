@@ -30,6 +30,7 @@ import { useAllMetals } from "@/hooks/metal/useMetals";
 import Loader from "@/component/loader/Loader";
 import BalanceSummary, { ClosingFormDetails } from "./Balance/BalanceSummary";
 import { TransactionListing } from "./TransactionList/TransactionIdsListing";
+import PurchaseReceipt from "@/component/PurchasePrint/PurchasePrint";
 
 //Key
 import { useGlobalKey } from "@/components/key/useGlobalKey";
@@ -170,6 +171,9 @@ export default function PurchasePage() {
 
     const [singleSearch, setSingleSearch] = useSessionStorage<string>(TRANSACTION_LIST_SEARCH,'');
       const [deselectFlag, setDeselectFlag] = useState(false);
+
+      const [showPrintModal, setShowPrintModal] = useState(false);
+    const [printData, setPrintData] = useState<any>(null);
 
 
 
@@ -2738,6 +2742,13 @@ console.log('createTransactionPayload',payload)
                             acCode={headerForm.CUSTOMER}
                             draftRows ={draftRows}
                             setDraftRows={setDraftRows}
+                            onPrint={() => {
+                                const data = transactionsById?.data ?? transactionsById;
+                                if (data?.TRANSACTION_HEADER) {
+                                    setPrintData(data);
+                                    setShowPrintModal(true);
+                                }
+                            }}
 
                         />
                 
@@ -3005,6 +3016,21 @@ console.log('createTransactionPayload',payload)
             />
                
         </Flex>
+        {/* Print Modal */}
+            {showPrintModal && printData && (
+                <Box
+                    position="fixed" top={0} left={0} w="100vw" h="100vh"
+                    bg="blackAlpha.600" zIndex={1000}
+                    display="flex" alignItems="center" justifyContent="center"
+                    onClick={() => setShowPrintModal(false)}
+                >
+                    <Box onClick={(e) => e.stopPropagation()} maxH="90vh" overflowY="auto" borderRadius="xl">
+                        <PurchaseReceipt
+                            {...printData}
+                        />
+                    </Box>
+                </Box>
+            )}
      
         </>
         

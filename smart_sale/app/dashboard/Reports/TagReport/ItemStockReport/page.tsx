@@ -23,10 +23,10 @@ const WEIGHT_OPTIONS: { value: WeightKey; label: string; sub: string }[] = [
 ];
 
 const GROUPS = [
-  { label: "Opening", prefix: "OP", accent: "#385ba1", bg: "#eff6ff", border: "#bfdbfe" },
-  { label: "Receipt",  prefix: "RE", accent: "#385ba1", bg: "#ecfdf5", border: "#a7f3d0" },
-  { label: "Issue",    prefix: "IS", accent: "#385ba1", bg: "#fef2f2", border: "#fecaca" },
-  { label: "Closing",  prefix: "CL", accent: "#385ba1", bg: "#fffbeb", border: "#fde68a" },
+  { label: "Opening", prefix: "OP", accent: "#385ba1", bg: "#bfdbfe", border: "#bfdbfe" },
+  { label: "Receipt",  prefix: "RE", accent: "#385ba1", bg: "#a7f3d0", border: "#a7f3d0" },
+  { label: "Issue",    prefix: "IS", accent: "#385ba1", bg: "#fecaca", border: "#fecaca" },
+  { label: "Closing",  prefix: "CL", accent: "#385ba1", bg: "#fde68a", border: "#fde68a" },
 ] as const;
 
 const PRINT_COLUMNS = [

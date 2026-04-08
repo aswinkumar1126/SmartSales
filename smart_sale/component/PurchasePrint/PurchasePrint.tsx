@@ -1,407 +1,451 @@
-import React, { useRef, useCallback, useState } from "react";
+"use client";
+import React, { useRef, useCallback, useState, useEffect } from "react";
 
-// ─── Types ───────────────────────────────────────────────────────────────────
+// ─── API Data Types ───────────────────────────────────────────────────────────
 
-export interface PurchaseItem {
-  productName: string;
-  qty: number;
-  rate: number;
-  total: number;
-  [key: string]: unknown;
+export interface TransactionItem {
+  PUREID?: number | null;
+  ITEMID?: number | null;
+  ITEMNAME?: string | null;
+  PCS?: number | null;
+  WT?: number | null;
+  AWT?: number | null;
+  TOUCH?: number | null;
+  ATOUCH?: number | null;
+  PUREWT?: number | null;
+  APUREWT?: number | null;
+  GRSWT?: number | null;
+  STNWT?: number | null;
+  NETWT?: number | null;
+  HMC?: number | null;
+  MC?: number | null;
+  STNAMT?: number | null;
+  AMOUNT?: number | null;
+  RATE?: number | null;
+  TRANTYPE?: string | null;
+  BATCHNO?: string | null;
+  SNO?: string | null;
+  DESCRIPTION?: string | null;
+  stoneDetails?: any[];
+  purchaseOtherChargesDetails?: any[];
+  PUREGOLDNAME?: string | null;
 }
 
 export interface PurchaseReceiptProps {
-  companyName: string;
-  companyAddress: string[];
-  partyName: string;
-  partyAddress: string[];
-  billNo?: string;
-  billDate?: string;
-  operator?: string;
-  cashOpeningBefore: number;
-  cashClosingBefore: number;
-  weightOpeningBefore: number;
-  weightClosingBefore: number;
-  items: PurchaseItem[];
-  extraLines?: { label: string; value: number }[];
-  cashOpeningAfter: number;
-  cashClosingAfter: number;
-  weightOpeningAfter: number;
-  weightClosingAfter: number;
-  greeting?: string;
-  /** "40" = 80mm thermal print | "50" = 100mm thermal print. Default "40" */
+  CLOSING_DETAILS: {
+    accode: number;
+    bankPaid: number;
+    bankPaidDetails: any[];
+    bankRcvd: number;
+    bankRcvdDetails: any[];
+    batchNo: string;
+    billno: number;
+    cashPaid: number;
+    cashRcvd: number;
+    convAmt: number;
+    convType: string;
+    convWt: number;
+    discAmt: number;
+    discWt: number;
+    entryNo: number;
+    purchaseNo: string;
+    rate: number;
+    tranDate: string | null;
+  };
+  TRANSACTION_HEADER: {
+    BILLNO: number;
+    ACCODE: number;
+    RATE: number;
+    ENTRYNO: number;
+    TRANDATE: string;
+    BATCHNO: string;
+    PURCHASENO: string;
+    ACNAME?: string;
+  };
+  TRANSACTION_DETAILS: {
+    purchase: TransactionItem[];
+    purchase_return: TransactionItem[];
+    issue: TransactionItem[];
+    receipt: TransactionItem[];
+  };
+  BALANCE: {
+    openingCash: number;
+    openingPure: number;
+    closingCash: number;
+    closingPure: number;
+  };
+  ACHEAD_DETAILS?: {
+    ACNAME: string;
+    ADDRESS: string | null;
+    PINCODE: string | null;
+  };
   columnSize?: "40" | "50";
-  /** Accent color for the card header. Default "#1E40AF" */
   accentColor?: string;
 }
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
-const fmt = (n: number) =>
-  "₹" +
-  Number(n || 0).toLocaleString("en-IN", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
+const fmtWt = (n: number | null | undefined) =>
+  Number(n || 0).toLocaleString("en-IN", { minimumFractionDigits: 3, maximumFractionDigits: 3 }) + " g";
 
-const fmtKg = (n: number) =>
-  Number(n || 0).toLocaleString("en-IN", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }) + " kg";
+const fmtAmt = (n: number | null | undefined) =>
+  "₹" + Number(n || 0).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-const initials = (name: string) =>
-  name
-    .split(" ")
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((w) => w[0].toUpperCase())
-    .join("");
-
-// ─── Print CSS generator ──────────────────────────────────────────────────────
-
-const buildPrintCSS = (is50: boolean): string => {
-  const pageW   = is50 ? "100mm" : "80mm";
-  const bodyW   = is50 ? "96mm"  : "76mm";
-  const margin  = is50 ? "4mm 2mm" : "3mm 2mm";
-  const base    = is50 ? "13pt" : "11pt";
-  const small   = is50 ? "12pt" : "10pt";
-  const title   = is50 ? "17pt" : "14pt";
-  const cellPad = is50 ? "4px 5px" : "3px 4px";
-
-  return `
-@page { size: ${pageW} auto; margin: ${margin}; }
-* { margin:0; padding:0; box-sizing:border-box; }
-html, body {
-  width: ${pageW};
-  background: #fff;
-  -webkit-print-color-adjust: exact;
-  print-color-adjust: exact;
-  font-family: 'DM Sans','Segoe UI',sans-serif;
-}
-.pr-thermal {
-  width: ${bodyW};
-  margin: 0 auto;
-  font-size: ${base};
-  line-height: 1.5;
-  color: #111;
-  padding: 6px 0 10px;
-}
-.pr-thermal .co-name {
-  text-align:center; font-size:${title}; font-weight:900;
-  text-transform:uppercase; letter-spacing:1px;
-  font-family:'Playfair Display',Georgia,serif;
-  line-height:1.2; margin-bottom:4px;
-}
-.pr-thermal .co-addr { text-align:center; font-size:${small}; color:#333; line-height:1.4; }
-.pr-thermal .bold-div { border-top:2.5px solid #111; margin:6px 0; }
-.pr-thermal .thin-div { border-top:1px solid #111;   margin:5px 0; }
-.pr-thermal .dash-div { border-top:1px dashed #555;  margin:5px 0; }
-.pr-thermal .sec-title {
-  text-align:center; font-size:${small}; font-weight:700;
-  letter-spacing:2.5px; text-transform:uppercase;
-  font-family:'Barlow Condensed','Arial Narrow',sans-serif;
-  margin:5px 0 4px; color:#222;
-}
-.pr-thermal .lr {
-  display:flex; justify-content:space-between; align-items:baseline;
-  font-size:${base}; margin:3px 0;
-}
-.pr-thermal .lr .lv { font-family:'Courier New',monospace; letter-spacing:0.3px; }
-.pr-thermal .party-block { font-size:${base}; margin:6px 0 4px; }
-.pr-thermal .party-name  { font-weight:600; }
-.pr-thermal .party-addr  { padding-left:46px; color:#444; }
-.pr-thermal table { width:100%; border-collapse:collapse; margin-top:2px; }
-.pr-thermal table th {
-  padding:${cellPad}; font-size:${small}; font-weight:600;
-  border-bottom:2px solid #111; border-top:1px solid #111;
-  text-align:left; background:#f5f5f5;
-}
-.pr-thermal table td {
-  padding:${cellPad}; font-size:${small};
-  vertical-align:top; word-break:break-word; border-bottom:1px dotted #ccc;
-}
-.pr-thermal table td.r { text-align:right; font-family:'Courier New',monospace; letter-spacing:0.3px; }
-.pr-thermal .total-bar {
-  display:flex; justify-content:space-between; align-items:center;
-  font-size:${base}; border-top:2px solid #111; padding-top:4px; margin:4px 0 2px;
-}
-.pr-thermal .total-bar .tv { font-family:'Courier New',monospace; font-weight:600; }
-.pr-thermal .net-row {
-  display:flex; justify-content:space-between;
-  font-size:${is50 ? "15pt" : "13pt"}; font-weight:600; margin:3px 0;
-}
-.pr-thermal .net-row .lv { font-family:'Courier New',monospace; }
-.pr-thermal .greeting {
-  text-align:center; font-size:${base};
-  font-family:'Playfair Display',Georgia,serif;
-  font-weight:700; font-style:italic; letter-spacing:0.5px;
-  margin:5px 0 2px; color:#222;
-}
-`;
+const formatDate = (d: string | null | undefined) => {
+  if (!d) return "—";
+  try { return new Date(d).toLocaleDateString("en-IN"); } catch { return d; }
 };
 
-// ─── Thermal HTML builder ─────────────────────────────────────────────────────
+// ─── Static Company Details ───────────────────────────────────────────────────
+
+const COMPANY = {
+  name: "RANGAS PAATHIRA KADAL",
+  address1: "NO 12, BIG BAZAAR STREET",
+  address2: "THERADI BAZAAR, (OPP.) MALAI VASAL",
+  address3: "TRICHY - 620002",
+  mobile: "04312711916",
+  gst: "33BAAFR6426L123",
+};
+
+// ─── Styling Constants (matching EstimationPrint) ────────────────────────────
+
+const FONT_SHOP = "Arial, 'Helvetica Neue', sans-serif";
+const FONT_BODY = "Arial, 'Helvetica Neue', sans-serif";
+const FONT_AMOUNT = "Arial, 'Helvetica Neue', sans-serif";
+
+const baseStyle: React.CSSProperties = {
+  fontFamily: FONT_BODY,
+  fontWeight: "normal",
+  color: "#000",
+  background: "#fff",
+  width: "100%",
+  margin: "0 auto",
+  boxSizing: "border-box",
+  maxWidth: "72mm",
+  padding: "4px 2px",
+  fontSize: "12px",
+  lineHeight: "1.4",
+};
+
+const thStyle: React.CSSProperties = {
+  padding: "2px 2px",
+  fontSize: "10px",
+  fontWeight: "bold",
+  borderBottom: "1px solid #000",
+  fontFamily: FONT_BODY,
+};
+
+const tdStyle: React.CSSProperties = {
+  padding: "1px 2px",
+  fontSize: "10px",
+  fontWeight: "medium",
+  fontFamily: FONT_BODY,
+};
+
+const tdAmtStyle: React.CSSProperties = {
+  padding: "3px 4px",
+  fontSize: "10px",
+  fontWeight: "medium",
+  fontFamily: FONT_AMOUNT,
+  textAlign: "right",
+};
+
+const DashedLine = () => <div style={{ borderTop: "1px dashed #000", margin: "4px 0" }} />;
+const DoubleLine = () => <div style={{ borderTop: "3px double #000", margin: "4px 0" }} />;
+
+// ─── Thermal HTML Builder (with full columns for purchase/purchase_return) ────
 
 const buildThermalHTML = (p: PurchaseReceiptProps, is50: boolean): string => {
-  const grandTotal = p.items.reduce((s, i) => s + i.total, 0);
-  const grandQty   = p.items.reduce((s, i) => s + i.qty, 0);
-  const extraNet   = (p.extraLines ?? []).reduce((s, e) => s + e.value, 0);
-  const netTotal   = grandTotal + extraNet;
+  const { TRANSACTION_HEADER: H, TRANSACTION_DETAILS: D, BALANCE: B, CLOSING_DETAILS: C, ACHEAD_DETAILS: A } = p;
 
-  const addrLines = p.companyAddress
-    .map((l) => `<div class="co-addr">${l}</div>`)
-    .join("");
+  const partyName = A?.ACNAME || `AC #${H.ACCODE}`;
+  const partyAddress = A?.ADDRESS ? A.ADDRESS.replace(/null/g, "") : "";
 
-  const partyAddrLines = p.partyAddress
-    .map((l) => `<div class="party-addr">${l}</div>`)
-    .join("");
+  // Define sections with a flag 'isIssue' (Issue/Receipt) vs purchase/purchase_return
+  const sections = [
+    { label: "PURCHASE", rows: D.purchase ?? [], type: "purchase" },
+    { label: "PURCHASE RETURN", rows: D.purchase_return ?? [], type: "purchase" },
+    { label: "ISSUE", rows: D.issue ?? [], type: "issue" },
+    { label: "RECEIPT", rows: D.receipt ?? [], type: "issue" },
+  ].filter((s) => s.rows.length > 0);
 
-  const itemRows = p.items
-    .map(
-      (item, idx) =>
-        `<tr style="background:${idx % 2 === 0 ? "#fafafa" : "#fff"}">
-          <td>${item.productName}</td>
-          <td class="r">${item.qty}</td>
-          <td class="r">${fmt(item.rate)}</td>
-          <td class="r">${fmt(item.total)}</td>
-        </tr>`
-    )
-    .join("");
+  const itemSections = sections.map(({ label, rows, type }) => {
+    const isPurchaseType = type === "purchase";
+    const headers = isPurchaseType
+      ? `<th>Item</th><th style="text-align:right">Pcs</th><th style="text-align:right">Gr.Wt</th><th style="text-align:right">Stn Wt</th><th style="text-align:right">Touch</th><th style="text-align:right">Net Wt</th><th style="text-align:right">Pure Wt</th>`
+      : `<th>Item</th><th style="text-align:right">Wt</th><th style="text-align:right">Touch</th><th style="text-align:right">PureWt</th>`;
 
-  const extraRows =
-    p.extraLines && p.extraLines.length > 0
-      ? `<div class="dash-div"></div>
-         <div class="sec-title">Extras</div>
-         ${p.extraLines
-           .map(
-             (ex) =>
-               `<div class="lr"><span>${ex.label}</span><span class="lv">${fmt(ex.value)}</span></div>`
-           )
-           .join("")}
-         <div class="thin-div"></div>
-         <div class="net-row"><span>Net Total</span><span class="lv">${fmt(netTotal)}</span></div>`
-      : "";
+    const rowsHtml = rows.map((item, idx) => {
+      const name = item.ITEMNAME || item.PUREGOLDNAME || (item.PUREID ? `Pure #${item.PUREID}` : item.ITEMID ? `Item #${item.ITEMID}` : "—");
+      if (isPurchaseType) {
+        return `<tr style="background:${idx % 2 === 0 ? "#fafafa" : "#fff"}">
+          <td>${name}</td>
+          <td class="r">${item.PCS ?? 0}</td>
+          <td class="r">${fmtWt(item.GRSWT)}</td>
+          <td class="r">${fmtWt(item.STNWT)}</td>
+          <td class="r">${Number(item.TOUCH || 0).toFixed(2)}%</td>
+          <td class="r">${fmtWt(item.NETWT)}</td>
+          <td class="r">${fmtWt(item.PUREWT)}</td>
+        </tr>`;
+      } else {
+        return `<tr style="background:${idx % 2 === 0 ? "#fafafa" : "#fff"}">
+          <td>${name}</td>
+          <td class="r">${fmtWt(item.WT)}</td>
+          <td class="r">${Number(item.TOUCH || 0).toFixed(2)}%</td>
+          <td class="r">${fmtWt(item.PUREWT)}</td>
+        </tr>`;
+      }
+    }).join("");
 
-  const billMeta =
-    p.billNo || p.operator
-      ? `${p.billNo ? `<div class="lr"><span>Bill No : ${p.billNo}</span><span class="lv">${p.billDate ?? ""}</span></div>` : ""}
-         ${p.operator ? `<div class="lr"><span>Operator : ${p.operator}</span><span></span></div>` : ""}
-         <div class="thin-div"></div>`
-      : "";
+    return `<div class="dashed-line"></div>
+      <div class="sec-title">${label}</div>
+      <table><thead>${headers}</thead><tbody>${rowsHtml}</tbody></table>`;
+  }).join("");
 
   return `
 <div class="pr-thermal">
-  <div class="co-name">${p.companyName}</div>
-  ${addrLines}
-  <div class="bold-div"></div>
-  <div class="party-block">
-    <div style="display:flex;gap:4px;">
-      <span style="font-weight:600;min-width:38px;">Party :</span>
-      <span class="party-name">${p.partyName}</span>
+  <div style="text-align:center; margin-bottom:6px;">
+    <img src="/logo3.png" alt="logo" style="height:60px; object-fit:contain;" />
+  </div>
+  <div style="text-align:center; margin-bottom:6px;">
+    <div style="font-size:17px; font-weight:bold; text-transform:uppercase; letter-spacing:0.5px;">${COMPANY.name}</div>
+    <div style="font-size:12px;">${COMPANY.address1}</div>
+    ${COMPANY.address2 ? `<div style="font-size:12px;">${COMPANY.address2}</div>` : ""}
+    ${COMPANY.address3 ? `<div style="font-size:12px;">${COMPANY.address3}</div>` : ""}
+    <div style="font-size:12px;">Mob: ${COMPANY.mobile}</div>
+    <div style="font-size:12px;">GST: ${COMPANY.gst}</div>
+  </div>
+  <div class="dashed-line"></div>
+  <div style="text-align:center; font-size:15px; font-weight:bold; letter-spacing:2px; margin:4px 0;">PURCHASE RECEIPT</div>
+  <div class="dashed-line"></div>
+  <div style="display:flex; justify-content:space-between; margin:4px 0;">
+    <div style="font-size:12px;">
+      <div><strong>Bill No :</strong> ${H.BILLNO}</div>
+      <div><strong>Batch :</strong> ${H.BATCHNO}</div>
     </div>
-    ${partyAddrLines}
+    <div style="font-size:12px; text-align:right;">
+      <div><strong>Date :</strong> ${formatDate(H.TRANDATE)}</div>
+      <div><strong>Rate/g :</strong> ₹${Number(H.RATE).toFixed(2)}</div>
+    </div>
   </div>
-  <div class="thin-div"></div>
-  ${billMeta}
-  <div class="sec-title">Before Purchase</div>
-  <div class="lr"><span>Cash Opening</span><span class="lv">${fmt(p.cashOpeningBefore)}</span></div>
-  <div class="lr"><span>Cash Closing</span><span class="lv">${fmt(p.cashClosingBefore)}</span></div>
-  <div class="lr"><span>Wt. Opening</span><span class="lv">${fmtKg(p.weightOpeningBefore)}</span></div>
-  <div class="lr"><span>Wt. Closing</span><span class="lv">${fmtKg(p.weightClosingBefore)}</span></div>
-  <div class="dash-div"></div>
-  <div class="sec-title">Purchase</div>
-  <table>
-    <thead>
-      <tr>
-        <th style="width:40%">Product</th>
-        <th style="text-align:right;width:13%">Qty</th>
-        <th style="text-align:right;width:23%">Rate</th>
-        <th style="text-align:right;width:24%">Total</th>
-      </tr>
-    </thead>
-    <tbody>${itemRows}</tbody>
-  </table>
-  <div class="total-bar">
-    <span><strong>Total Qty :</strong> ${grandQty}</span>
-    <span><strong>Total :</strong> <span class="tv">${fmt(grandTotal)}</span></span>
+  <div style="font-size:12px; margin:4px 0;">
+    <div><strong>Party :</strong> ${partyName}</div>
+    ${partyAddress ? `<div>${partyAddress}</div>` : ""}
   </div>
-  ${extraRows}
-  <div class="bold-div"></div>
-  <div class="sec-title">After Purchase</div>
-  <div class="lr"><span>Cash Opening</span><span class="lv">${fmt(p.cashOpeningAfter)}</span></div>
-  <div class="lr"><span>Cash Closing</span><span class="lv">${fmt(p.cashClosingAfter)}</span></div>
-  <div class="lr"><span>Wt. Opening</span><span class="lv">${fmtKg(p.weightOpeningAfter)}</span></div>
-  <div class="lr"><span>Wt. Closing</span><span class="lv">${fmtKg(p.weightClosingAfter)}</span></div>
-  <div class="bold-div"></div>
-  <div class="greeting">${p.greeting ?? "Thank you for your business!"}</div>
-  <div class="bold-div"></div>
+  <div class="dashed-line"></div>
+  <div class="sec-title">Opening Balance</div>
+  <div class="lr"><span>Cash</span><span class="lv">${fmtAmt(B.openingCash)}</span></div>
+  <div class="lr"><span>Pure Wt</span><span class="lv">${fmtWt(B.openingPure)}</span></div>
+  ${itemSections}
+  <div class="double-line"></div>
+  <div class="sec-title">Closing Balance</div>
+  <div class="lr"><span>Cash</span><span class="lv">${fmtAmt(B.closingCash)}</span></div>
+  <div class="lr"><span>Pure Wt</span><span class="lv">${fmtWt(B.closingPure)}</span></div>
+  ${C.cashRcvd ? `<div class="lr"><span>Cash Rcvd</span><span class="lv">${fmtAmt(C.cashRcvd)}</span></div>` : ""}
+  ${C.cashPaid ? `<div class="lr"><span>Cash Paid</span><span class="lv">${fmtAmt(C.cashPaid)}</span></div>` : ""}
+  ${C.bankRcvd ? `<div class="lr"><span>Bank Rcvd</span><span class="lv">${fmtAmt(C.bankRcvd)}</span></div>` : ""}
+  ${C.bankPaid ? `<div class="lr"><span>Bank Paid</span><span class="lv">${fmtAmt(C.bankPaid)}</span></div>` : ""}
+  <div class="double-line"></div>
+  <div class="greeting">Thank you for your business!</div>
+  <div class="double-line"></div>
 </div>`;
 };
 
-// ─── Card sub-components (screen preview) ────────────────────────────────────
+// ─── Print CSS ────────────────────────────────────────────────────────────────
 
-const SectionLabel: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <div style={{ fontSize: 11, fontWeight: 500, letterSpacing: "1px", textTransform: "uppercase" as const, color: "#6b7280", marginBottom: 8 }}>
-    {children}
-  </div>
-);
+const buildPrintCSS = (is50: boolean): string => {
+  const pageW = is50 ? "100mm" : "80mm";
+  const bodyW = is50 ? "96mm" : "72mm";
+  const margin = is50 ? "4mm 2mm" : "2mm auto";
+  return `
+@page { size: ${pageW} auto; margin: ${margin}; }
+* { margin:0; padding:0; box-sizing:border-box; }
+html, body { width:${pageW}; background:#fff; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+.pr-thermal {
+  font-family: 'Arial', 'Helvetica Neue', sans-serif;
+  font-weight: normal;
+  color: #000;
+  background: #fff;
+  width: ${bodyW};
+  margin: 0 auto;
+  padding: 4px 2px;
+  font-size: 12px;
+  line-height: 1.4;
+}
+.pr-thermal .co-name, .pr-thermal .sec-title { text-align:center; font-weight:bold; margin:6px 0 4px; }
+.pr-thermal .co-name { font-size:17px; text-transform:uppercase; letter-spacing:0.5px; }
+.pr-thermal .sec-title { font-size:12px; text-transform:uppercase; }
+.pr-thermal .dashed-line { border-top: 1px dashed #000; margin: 4px 0; }
+.pr-thermal .double-line { border-top: 3px double #000; margin: 4px 0; }
+.pr-thermal .lr { display:flex; justify-content:space-between; font-size:12px; margin:2px 0; }
+.pr-thermal table { width:100%; border-collapse:collapse; margin:4px 0; }
+.pr-thermal table th { padding:2px 2px; font-size:11px; font-weight:bold; border-bottom:1px solid #000; text-align:left; }
+.pr-thermal table td { padding:2px 2px; font-size:11px; vertical-align:top; border-bottom:1px dotted #ccc; }
+.pr-thermal table td.r { text-align:right; font-family: 'Arial', 'Helvetica Neue', sans-serif; }
+.pr-thermal .greeting { text-align:center; font-size:12px; font-weight:bold; margin:6px 0; }
+`;
+};
 
-const StatGrid: React.FC<{
-  items: { label: string; value: string }[];
-  accent?: boolean;
-  accentColor?: string;
-}> = ({ items, accent, accentColor = "#1E40AF" }) => (
-  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-    {items.map((s) => (
-      <div key={s.label} style={{ background: "#f9fafb", borderRadius: 8, padding: "10px 12px" }}>
-        <div style={{ fontSize: 11, color: "#9ca3af", marginBottom: 4 }}>{s.label}</div>
-        <div style={{ fontSize: 15, fontWeight: 500, fontFamily: "monospace", color: accent ? accentColor : "#111827" }}>
-          {s.value}
-        </div>
-      </div>
-    ))}
-  </div>
-);
+// ─── Screen Card Component (same column logic) ───────────────────────────────
 
-// ─── Card Receipt Body (screen) ───────────────────────────────────────────────
+const CardReceiptBody: React.FC<{ p: PurchaseReceiptProps; innerRef?: React.Ref<HTMLDivElement> }> = ({ p, innerRef }) => {
+  const { TRANSACTION_HEADER: H, TRANSACTION_DETAILS: D, BALANCE: B, CLOSING_DETAILS: C, ACHEAD_DETAILS: A } = p;
+  const partyName = A?.ACNAME || `AC #${H.ACCODE}`;
+  const partyAddress = A?.ADDRESS ? A.ADDRESS.replace(/null/g, "") : "";
 
-const CardReceiptBody: React.FC<{
-  p: PurchaseReceiptProps;
-  innerRef?: React.Ref<HTMLDivElement>;
-}> = ({ p, innerRef }) => {
-  const accent      = p.accentColor ?? "#1E40AF";
-  const accentLight = "#EFF6FF";
-  const border      = "0.5px solid #e5e7eb";
-
-  const grandTotal = p.items.reduce((s, i) => s + i.total, 0);
-  const grandQty   = p.items.reduce((s, i) => s + i.qty, 0);
-  const extraNet   = (p.extraLines ?? []).reduce((s, e) => s + e.value, 0);
-  const netTotal   = grandTotal + extraNet;
+  const sections = [
+    { label: "PURCHASE", rows: D.purchase ?? [], type: "purchase" },
+    { label: "PURCHASE RETURN", rows: D.purchase_return ?? [], type: "purchase" },
+    { label: "ISSUE", rows: D.issue ?? [], type: "issue" },
+    { label: "RECEIPT", rows: D.receipt ?? [], type: "issue" },
+  ].filter((s) => s.rows.length > 0);
 
   return (
-    <div
-      ref={innerRef}
-      className="purchase-receipt-card"
-      style={{ fontFamily: "'Inter','DM Sans','Segoe UI',system-ui,sans-serif", background: "#fff", border, borderRadius: 12, overflow: "hidden", maxWidth: 560, width: "100%", color: "#111827", fontSize: 14, lineHeight: 1.5 }}
-    >
-      {/* Header */}
-      <div style={{ background: accent, padding: "20px 24px", color: "#fff" }}>
-        <div style={{ fontSize: 20, fontWeight: 600, marginBottom: 4 }}>{p.companyName}</div>
-        {p.companyAddress.map((l, i) => <div key={i} style={{ fontSize: 13, opacity: 0.78 }}>{l}</div>)}
+    <div ref={innerRef} className="pr-thermal" style={baseStyle}>
+      {/* Logo & Company */}
+      <div style={{ textAlign: "center", marginBottom: "6px" }}>
+        <img src="/logo.jpg" alt="logo" style={{ height: "60px", objectFit: "contain" }} />
       </div>
-
-      {/* Meta bar */}
-      <div style={{ display: "flex", borderBottom: border }}>
-        {[{ label: "Bill No", value: p.billNo ?? "—" }, { label: "Date", value: p.billDate ?? "—" }, { label: "Operator", value: p.operator ?? "—" }].map((m, i, arr) => (
-          <div key={m.label} style={{ flex: 1, padding: "10px 14px", borderRight: i < arr.length - 1 ? border : "none" }}>
-            <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.8px", color: "#9ca3af", marginBottom: 2 }}>{m.label}</div>
-            <div style={{ fontSize: 13, fontWeight: 500 }}>{m.value}</div>
-          </div>
-        ))}
-      </div>
-
-      {/* Party */}
-      <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 24px", borderBottom: border }}>
-        <div style={{ width: 38, height: 38, borderRadius: "50%", background: accentLight, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 600, color: accent, flexShrink: 0 }}>
-          {initials(p.partyName)}
+      <div style={{ textAlign: "center", marginBottom: "6px" }}>
+        <div style={{ fontSize: "17px", fontWeight: "bold", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+          {COMPANY.name}
         </div>
-        <div>
-          <div style={{ fontSize: 14, fontWeight: 500 }}>{p.partyName}</div>
-          {p.partyAddress.map((l, i) => <div key={i} style={{ fontSize: 12, color: "#6b7280" }}>{l}</div>)}
+        <div style={{ fontSize: "12px" }}>{COMPANY.address1}</div>
+        {COMPANY.address2 && <div style={{ fontSize: "12px" }}>{COMPANY.address2}</div>}
+        {COMPANY.address3 && <div style={{ fontSize: "12px" }}>{COMPANY.address3}</div>}
+        <div style={{ fontSize: "12px" }}>Mob: {COMPANY.mobile}</div>
+        <div style={{ fontSize: "12px" }}>GST: {COMPANY.gst}</div>
+      </div>
+      <DashedLine />
+      <div style={{ textAlign: "center", fontSize: "15px", fontWeight: "bold", letterSpacing: "2px", margin: "4px 0" }}>
+        PURCHASE RECEIPT
+      </div>
+      <DashedLine />
+      {/* Bill & Party */}
+      <div style={{ display: "flex", justifyContent: "space-between", margin: "4px 0" }}>
+        <div style={{ fontSize: "12px" }}>
+          <div><strong>Bill No :</strong>SMJ/2627/{H.BILLNO}</div>
+          <div><strong>Batch :</strong> {H.BATCHNO}</div>
         </div>
-      </div>
-
-      {/* Before */}
-      <div style={{ padding: "14px 24px", borderBottom: border }}>
-        <SectionLabel>Before purchase</SectionLabel>
-        <StatGrid items={[
-          { label: "Cash opening", value: fmt(p.cashOpeningBefore) },
-          { label: "Cash closing", value: fmt(p.cashClosingBefore) },
-          { label: "Wt. opening",  value: fmtKg(p.weightOpeningBefore) },
-          { label: "Wt. closing",  value: fmtKg(p.weightClosingBefore) },
-        ]} />
-      </div>
-
-      {/* Items */}
-      <div style={{ padding: "14px 24px", borderBottom: border }}>
-        <SectionLabel>Purchase items</SectionLabel>
-        <table style={{ width: "100%", borderCollapse: "collapse", tableLayout: "fixed" }}>
-          <thead>
-            <tr>
-              {(["Product", "Qty", "Rate", "Total"] as const).map((h, i) => (
-                <th key={h} style={{ fontSize: 11, fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.8px", color: "#9ca3af", padding: "0 0 8px", textAlign: i === 0 ? "left" : "right", borderBottom: border, width: i === 0 ? "40%" : undefined }}>{h}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {p.items.map((item, idx) => (
-              <tr key={idx}>
-                <td style={{ padding: "8px 0", fontSize: 13, borderBottom: "0.5px solid #f3f4f6", wordBreak: "break-word" }}>{item.productName}</td>
-                <td style={{ padding: "8px 0", fontSize: 13, textAlign: "right", fontFamily: "monospace", borderBottom: "0.5px solid #f3f4f6", color: "#374151" }}>{item.qty}</td>
-                <td style={{ padding: "8px 0", fontSize: 13, textAlign: "right", fontFamily: "monospace", borderBottom: "0.5px solid #f3f4f6", color: "#374151" }}>{fmt(item.rate)}</td>
-                <td style={{ padding: "8px 0", fontSize: 13, textAlign: "right", fontFamily: "monospace", borderBottom: "0.5px solid #f3f4f6", color: "#374151" }}>{fmt(item.total)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        <div style={{ display: "flex", justifyContent: "space-between", marginTop: 10, paddingTop: 8, borderTop: "1px solid #e5e7eb" }}>
-          <span style={{ fontSize: 13, color: "#6b7280" }}>Subtotal · {grandQty} items</span>
-          <span style={{ fontSize: 14, fontWeight: 500, fontFamily: "monospace" }}>{fmt(grandTotal)}</span>
+        <div style={{ fontSize: "12px", textAlign: "right" }}>
+          <div><strong>Date :</strong> {formatDate(H.TRANDATE)}</div>
+          <div><strong>Rate/g :</strong> ₹{Number(H.RATE).toFixed(2)}</div>
         </div>
       </div>
+      <div style={{ fontSize: "12px", margin: "4px 0" }}>
+        <div><strong>Party :</strong> {partyName}</div>
+        {partyAddress && <div>{partyAddress}</div>}
+      </div>
+      <DashedLine />
+      {/* Opening Balance */}
+      <div style={{ textAlign: "center", fontSize: "12px", fontWeight: "bold", margin: "6px 0 4px" }}>OPENING BALANCE</div>
+      <div style={{ display: "flex", justifyContent: "space-between", fontSize: "12px", margin: "2px 0" }}>
+        <span>Cash</span><span>{fmtAmt(B.openingCash)}</span>
+      </div>
+      <div style={{ display: "flex", justifyContent: "space-between", fontSize: "12px", margin: "2px 0" }}>
+        <span>Pure Wt</span><span>{fmtWt(B.openingPure)}</span>
+      </div>
 
-      {/* Extras */}
-      {p.extraLines && p.extraLines.length > 0 && (
-        <div style={{ padding: "12px 24px", borderBottom: border }}>
-          <SectionLabel>Extras</SectionLabel>
-          {p.extraLines.map((ex) => (
-            <div key={ex.label} style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: "#6b7280", padding: "4px 0" }}>
-              <span>{ex.label}</span>
-              <span style={{ fontFamily: "monospace" }}>{fmt(ex.value)}</span>
-            </div>
-          ))}
-        </div>
+      {/* Transaction Sections */}
+      {sections.map(({ label, rows, type }) => {
+        const isPurchase = type === "purchase";
+        return (
+          <React.Fragment key={label}>
+            <DashedLine />
+            <div style={{ textAlign: "center", fontSize: "12px", fontWeight: "bold", margin: "6px 0 4px" }}>{label}</div>
+            <table style={{ width: "100%", borderCollapse: "collapse", margin: "4px 0" }}>
+              <thead>
+                <tr>
+                  {isPurchase ? (
+                    <>
+                      <th style={thStyle}>Item</th>
+                      <th style={{ ...thStyle, textAlign: "right" }}>Pcs</th>
+                      <th style={{ ...thStyle, textAlign: "right" }}>Gr.Wt</th>
+                      <th style={{ ...thStyle, textAlign: "right" }}>Stn Wt</th>
+                      <th style={{ ...thStyle, textAlign: "right" }}>Touch</th>
+                      <th style={{ ...thStyle, textAlign: "right" }}>Net Wt</th>
+                      <th style={{ ...thStyle, textAlign: "right" }}>Pure Wt</th>
+                    </>
+                  ) : (
+                    <>
+
+                      <th style={thStyle}>Item</th>
+                      <th style={{ ...thStyle, textAlign: "right" }}>Wt</th>
+                      <th style={{ ...thStyle, textAlign: "right" }}>Touch</th>
+                      <th style={{ ...thStyle, textAlign: "right" }}>PureWt</th>
+                    </>
+                  )}
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((item, idx) => {
+                  const name = item.ITEMNAME || item.PUREGOLDNAME || (item.PUREID ? `Pure #${item.PUREID}` : item.ITEMID ? `Item #${item.ITEMID}` : "—");
+                  if (isPurchase) {
+                    return (
+                      <tr key={idx}>
+                        <td style={tdStyle}>{name}</td>
+                        <td style={tdAmtStyle}>{item.PCS ?? 0}</td>
+                        <td style={tdAmtStyle}>{fmtWt(item.GRSWT)}</td>
+                        <td style={tdAmtStyle}>{fmtWt(item.STNWT)}</td>
+                        <td style={tdAmtStyle}>{Number(item.TOUCH || 0).toFixed(2)}</td>
+                        <td style={tdAmtStyle}>{fmtWt(item.NETWT)}</td>
+                        <td style={tdAmtStyle}>{fmtWt(item.PUREWT)}</td>
+                      </tr>
+                    );
+                  } else {
+                    return (
+                      <tr key={idx}>
+                        <td style={tdStyle}>{name}</td>
+                        <td style={tdAmtStyle}>{fmtWt(item.WT)}</td>
+                        <td style={tdAmtStyle}>{Number(item.TOUCH || 0).toFixed(2)}%</td>
+                        <td style={tdAmtStyle}>{fmtWt(item.PUREWT)}</td>
+                      </tr>
+                    );
+                  }
+                })}
+              </tbody>
+            </table>
+          </React.Fragment>
+        );
+      })}
+
+      <DoubleLine />
+      <div style={{ textAlign: "center", fontSize: "12px", fontWeight: "bold", margin: "6px 0 4px" }}>CLOSING BALANCE</div>
+      <div style={{ display: "flex", justifyContent: "space-between", fontSize: "12px", margin: "2px 0" }}>
+        <span>Cash</span><span>{fmtAmt(B.closingCash)}</span>
+      </div>
+      <div style={{ display: "flex", justifyContent: "space-between", fontSize: "12px", margin: "2px 0" }}>
+        <span>Pure Wt</span><span>{fmtWt(B.closingPure)}</span>
+      </div>
+      {(C.cashRcvd > 0 || C.cashPaid > 0 || C.bankRcvd > 0 || C.bankPaid > 0) && (
+        <>
+          <DashedLine />
+          <div style={{ textAlign: "center", fontSize: "12px", fontWeight: "bold", margin: "6px 0 4px" }}>PAYMENTS</div>
+          {C.cashRcvd > 0 && <div style={{ display: "flex", justifyContent: "space-between" }}><span>Cash Received</span><span>{fmtAmt(C.cashRcvd)}</span></div>}
+          {C.cashPaid > 0 && <div style={{ display: "flex", justifyContent: "space-between" }}><span>Cash Paid</span><span>{fmtAmt(C.cashPaid)}</span></div>}
+          {C.bankRcvd > 0 && <div style={{ display: "flex", justifyContent: "space-between" }}><span>Bank Received</span><span>{fmtAmt(C.bankRcvd)}</span></div>}
+          {C.bankPaid > 0 && <div style={{ display: "flex", justifyContent: "space-between" }}><span>Bank Paid</span><span>{fmtAmt(C.bankPaid)}</span></div>}
+        </>
       )}
-
-      {/* Net total */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 24px", background: "#f9fafb", borderBottom: border }}>
-        <div>
-          <div style={{ fontSize: 13, color: "#6b7280" }}>Net total</div>
-          <span style={{ fontSize: 11, background: accentLight, color: accent, padding: "3px 8px", borderRadius: 999, fontWeight: 500, marginTop: 4, display: "inline-block" }}>
-            {grandQty} items
-          </span>
-        </div>
-        <div style={{ fontSize: 22, fontWeight: 600, fontFamily: "monospace", color: accent }}>{fmt(netTotal)}</div>
+      <DoubleLine />
+      <div style={{ textAlign: "center", fontSize: "12px", fontWeight: "bold", margin: "6px 0" }}>
+        Thank you for your business!
       </div>
-
-      {/* After */}
-      <div style={{ padding: "14px 24px", borderBottom: border }}>
-        <SectionLabel>After purchase</SectionLabel>
-        <StatGrid accent accentColor={accent} items={[
-          { label: "Cash opening", value: fmt(p.cashOpeningAfter) },
-          { label: "Cash closing", value: fmt(p.cashClosingAfter) },
-          { label: "Wt. opening",  value: fmtKg(p.weightOpeningAfter) },
-          { label: "Wt. closing",  value: fmtKg(p.weightClosingAfter) },
-        ]} />
-      </div>
-
-      {/* Footer */}
-      <div style={{ padding: "14px 24px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <div style={{ fontSize: 13, color: "#9ca3af", fontStyle: "italic" }}>{p.greeting ?? "Thank you for your business!"}</div>
-        <div style={{ fontSize: 11, background: "#dcfce7", color: "#166534", padding: "4px 10px", borderRadius: 999, fontWeight: 500 }}>Paid</div>
-      </div>
+      <DoubleLine />
     </div>
   );
 };
 
-// ─── Main Component ───────────────────────────────────────────────────────────
+// ─── Main Component (unchanged logic) ────────────────────────────────────────
 
-const PurchaseReceipt: React.FC<PurchaseReceiptProps> = (props) => {
+const PurchaseReceipt40Col: React.FC<PurchaseReceiptProps> = (props) => {
+  useEffect(() => {
+    console.log("RECEIPT PROPS:", props);
+  }, [props]);
+
   const { columnSize = "40", accentColor = "#1E40AF" } = props;
   const is50 = columnSize === "50";
-
-  const printRef   = useRef<HTMLDivElement>(null);
+  const printRef = useRef<HTMLDivElement>(null);
   const [isPrinting, setIsPrinting] = useState(false);
 
   const handlePrint = useCallback(() => {
@@ -409,30 +453,23 @@ const PurchaseReceipt: React.FC<PurchaseReceiptProps> = (props) => {
     setIsPrinting(true);
 
     const thermalHTML = buildThermalHTML(props, is50);
-    const css         = buildPrintCSS(is50);
+    const css = buildPrintCSS(is50);
 
     const iframe = document.createElement("iframe");
-    iframe.style.cssText =
-      "position:fixed;left:-9999px;top:0;width:120mm;height:1px;border:none;visibility:hidden;";
+    iframe.style.cssText = "position:fixed;left:-9999px;top:0;width:120mm;height:1px;border:none;visibility:hidden;";
     document.body.appendChild(iframe);
 
     const doc = iframe.contentDocument || iframe.contentWindow?.document;
     if (!doc) { iframe.remove(); setIsPrinting(false); return; }
 
-    const GOOGLE_FONTS =
-      "https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@400;500;600&family=Barlow+Condensed:wght@600;700&display=swap";
-
+    const GOOGLE_FONTS = "https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@400;500;600&family=Barlow+Condensed:wght@600;700&display=swap";
     doc.open();
-    doc.write(
-      `<!DOCTYPE html><html><head><meta charset="utf-8"/>` +
-      `<link rel="stylesheet" href="${GOOGLE_FONTS}"/>` +
-      `<style>${css}</style></head><body>${thermalHTML}</body></html>`
-    );
+    doc.write(`<!DOCTYPE html><html><head><meta charset="utf-8"/><link rel="stylesheet" href="${GOOGLE_FONTS}"/><style>${css}</style></head><body>${thermalHTML}</body></html>`);
     doc.close();
 
     iframe.onload = () => {
       setTimeout(() => {
-        try { iframe.contentWindow?.focus(); iframe.contentWindow?.print(); } catch {}
+        try { iframe.contentWindow?.focus(); iframe.contentWindow?.print(); } catch { }
         setTimeout(() => { iframe.remove(); setIsPrinting(false); }, 300);
       }, 400);
     };
@@ -440,34 +477,24 @@ const PurchaseReceipt: React.FC<PurchaseReceiptProps> = (props) => {
 
   return (
     <div style={{ fontFamily: "'Inter','DM Sans',sans-serif" }}>
-      {/* Screen — always card style */}
       <CardReceiptBody p={props} innerRef={printRef} />
-
-      {/* Print button */}
       <div style={{ marginTop: 16, display: "flex", alignItems: "center", gap: 12 }}>
         <button
           onClick={handlePrint}
           disabled={isPrinting}
           style={{
-            padding: "9px 24px",
-            fontSize: 14,
-            fontWeight: 500,
+            padding: "9px 24px", fontSize: 14, fontWeight: 500,
             background: isPrinting ? "#9ca3af" : accentColor,
-            color: "#fff",
-            border: "none",
-            borderRadius: 8,
+            color: "#fff", border: "none", borderRadius: 8,
             cursor: isPrinting ? "not-allowed" : "pointer",
-            transition: "background 0.2s",
           }}
         >
           {isPrinting ? "Printing…" : `Print Receipt (${columnSize} col)`}
         </button>
-        <span style={{ fontSize: 12, color: "#9ca3af" }}>
-          {is50 ? "100 mm paper" : "80 mm paper"}
-        </span>
+        <span style={{ fontSize: 12, color: "#9ca3af" }}>{is50 ? "100 mm paper" : "80 mm paper"}</span>
       </div>
     </div>
   );
 };
 
-export default PurchaseReceipt;
+export default PurchaseReceipt40Col;
