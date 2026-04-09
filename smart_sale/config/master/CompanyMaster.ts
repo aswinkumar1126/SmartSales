@@ -24,6 +24,36 @@ export const getCompanyFormFields = (stateOptions: any[], editId: string | null)
         size: 'xs'
     },
     {
+        name:'ADDRESS1',
+        label:'FLAT',
+        type:'text',
+        size:'xs'
+    },
+    {
+        name: 'ADDRESS2',
+        label: 'STREET',
+        type: 'text',
+        size: 'xs'
+    },
+    {
+        name: 'ADDRESS3',
+        label: 'AREA',
+        type: 'text',
+        size: 'xs'
+    },
+    {
+        name: 'ADDRESS4',
+        label: 'CITY',
+        type: 'text',
+        size: 'xs'
+    },
+    {
+        name: 'AREACODE',
+        label: 'PIN CODE',
+        type: 'text',
+        size: 'xs'
+    },
+    {
         name: 'STATEID',
         label: 'STATE',
         type: 'combobox',
@@ -32,8 +62,16 @@ export const getCompanyFormFields = (stateOptions: any[], editId: string | null)
         placeholder: 'Select State',
         size: 'xs',
 
-        
+
     },
+    {
+        name: 'PHONE',
+        label: 'PHONE',
+        type: 'text',
+        size: 'xs',
+        inputModeType:'mobile'
+    },
+   
     {
         name: 'GSTNO',
         label: 'GSTIN',
@@ -41,6 +79,28 @@ export const getCompanyFormFields = (stateOptions: any[], editId: string | null)
         inputModeType: 'gst',
         maxLength: 15,
         size: 'xs'
+    },
+    {
+        name: 'EMAIL',
+        label: 'EMAIL',
+        type: 'text',
+        inputModeType: 'email',
+        maxLength: 15,
+        size: 'xs'
+    },
+    {
+        name: 'PANNO',
+        label: 'PAN NO',
+        type: 'text',
+        inputModeType: 'pan',
+        size: 'xs'
+    },
+    {
+        name: 'LOGO',
+        label: 'LOGO',
+        type: 'image',
+        size: 'xs',
+        maxW:'50px'
     },
     {
         name: 'ACTIVE',

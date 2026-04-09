@@ -31,7 +31,6 @@ import { SearchIcon } from "lucide-react";
 
 import { getIsTagEnabled, getIsBillModalEnabled } from "@/config/transaction/SalesConfig";
 
-import { useBillDetails } from "@/hooks/tag/useTag";
 import SalesBillViewModal from "../SaleModal/SaleModal";
 
 
@@ -96,13 +95,14 @@ interface DraftTransactionTableProps {
     onTagNoLookup?: (tagNo: string) => void;
     acCode?: number
     onSaleReturnModal: {
-        billParams: { ACCODE: number | undefined; BILLNO?: string; BILLDATE?: string };
+        billParams: { ACCODE: number | undefined; ENTRYNO?: string; BILLDATE?: string ,TAGNO?:string};
         onBillParamChange: (field: string, value: any) => void;
         billDetails: any[] | [];
         loading: boolean;
         showBillModal: boolean,
         handleBillShow: () => void;
         handleSelectedItems: (filterRows:any[]) => void;
+        handleLoadSelectedItems: (items:any[]) => void
     };
 }
 
@@ -1302,6 +1302,8 @@ export default function DraftTransactionTable({
 
     useGlobalKey("Escape", () => setIsMiscModalOpen(false), "close-modal");
 
+    // useGlobalKey("Escape", ()=> )
+
     const showTag = getIsTagEnabled(transactionType);
     const showBill = getIsBillModalEnabled(transactionType)
 
@@ -1358,7 +1360,7 @@ export default function DraftTransactionTable({
 
                         </>
                     }
-                    {showBill && <Button size="2xs" bg="blue.subtle" onClick={()=> handleBillShow()}> Bills 📄</Button>}
+                    {showBill && <Button size="2xs" bg="blue.subtle" color={theme.colors.primaryText} onClick={()=> handleBillShow()}> Bills 📄</Button>}
 
                     <Badge colorPalette={rows.length > 0 ? "green" : "gray"} variant="subtle" fontSize="2xs" px={2}>
                         {rows.length} item{rows.length !== 1 ? "s" : ""}
@@ -1529,6 +1531,7 @@ export default function DraftTransactionTable({
                     billDetails={onSaleReturnModal.billDetails}
                     loading={onSaleReturnModal.loading}
                     handleSelectionChange={onSaleReturnModal.handleSelectedItems}
+                    handleLoadItems ={onSaleReturnModal.handleLoadSelectedItems}
                 />
             
         </Box>

@@ -4,13 +4,8 @@ import React, { useEffect, useMemo, useState, useCallback ,useRef } from "react"
 import {
     Text,
     Box,
-    Button,
     Flex,
     VStack,
-    Drawer,
-    Portal,
-    Grid,
-    GridItem
 } from "@chakra-ui/react";
 import lodash from "lodash";
 
@@ -47,12 +42,13 @@ import { useActiveOtherCharges } from "@/hooks/otherCharges/useOtherCharges";
 import { useRates } from "@/hooks/rate/useRate";
 import { useOrnamentData } from "@/hooks/ornament/useOrnamentData";
 import { useAllBankAccounts, useBankAccount } from "@/hooks/bankAccount/useBankAccount";
+import { useCompanyById } from "@/hooks/company/useCompany";
 
 /*-------------------  *STORAGE*  --------------------------*/
 import { useSessionStorage } from "@/hooks/storage/useSessionStorage";
 
 // Types & Constants
-import { TransactionType, UpdateTransactionPayload, TransactionKey, CreateTransaction, TransactionItems, TRANSACTION_KEY_MAP, ClosingDetails ,WeightInfo , purchasereturnPayload ,purchasePayload} from "@/types/transcation/Transaction";
+import { TransactionType, UpdateTransactionPayload, TransactionKey, CreateTransaction, PurchaseCLosing, TransactionItems, TRANSACTION_KEY_MAP, ClosingDetails ,WeightInfo , purchasereturnPayload ,purchasePayload} from "@/types/transcation/Transaction";
 import { TRANSACTIONTYPES } from "@/data/Transaction/TransactionType";
 import { BankTransaction } from "./Balance/BankTransactionModal";
 
@@ -173,7 +169,9 @@ export default function PurchasePage() {
       const [deselectFlag, setDeselectFlag] = useState(false);
 
       const [showPrintModal, setShowPrintModal] = useState(false);
+
     const [printData, setPrintData] = useState<any>(null);
+    console.log(printData,'printData')
 
 
 
@@ -341,6 +339,14 @@ export default function PurchasePage() {
         accode:headerForm.CUSTOMER ? Number(headerForm.CUSTOMER) : null
     })
 
+    const { data: companyData } = useCompanyById('SMJ');
+
+    const companyDetails = useMemo(()=> {
+        return companyData?.data
+ } ,[companyData] )
+
+ console.log(companyDetails,'companydetails')
+    
 
     const transactionIdsList = useMemo(() => {
         const list = transactionList?.data?.snoList;
@@ -1042,6 +1048,11 @@ export default function PurchasePage() {
         }
     }, [selectedTransactionTypes]);
 
+    /* ================================
+          Load Transaction Data When Selected for Priniting
+       ================================ */
+
+    
 
  
     /* ================================
@@ -1092,6 +1103,7 @@ export default function PurchasePage() {
         resetDraftRowTempId();
         setSingleSearch("");
         setDeselectFlag(true);
+    
         setTimeout(() => setDeselectFlag(false), 50);
     }, [editingState]);
 
@@ -1106,6 +1118,8 @@ export default function PurchasePage() {
         setIsEditing(true);
         setEditingSno(sno);
         setSelectedTransactionId(sno);
+
+        setPrintData(transactionData)
 
 
         // After setAccCode(transactionDetails.ACCODE);
@@ -1127,6 +1141,8 @@ export default function PurchasePage() {
         // Check if TRANSACTION_DETAILS exists and has data
         if (transactionData.TRANSACTION_DETAILS) {
             const details = transactionData.TRANSACTION_DETAILS;
+
+            console.log(details,'detailsdetails')
 
             // Load purchase items
             if (details.purchase && details.purchase.length > 0) {
@@ -1157,10 +1173,10 @@ export default function PurchasePage() {
 
             // Load receipt items
             if (details.receipt && details.receipt.length > 0) {
-                transactionTypes.push('REP');
+                transactionTypes.push('REC');
                 allTransactionItems = [...allTransactionItems, ...details.receipt.map((item: any) => ({
                     ...item,
-                    _type: 'REP'
+                    _type: 'REC'
                 }))];
             }
         }
@@ -1168,8 +1184,8 @@ export default function PurchasePage() {
         // Remove duplicate transaction types
         const uniqueTransactionTypes = [...new Set(transactionTypes)];
 
-        // console.log('Detected transaction types:', uniqueTransactionTypes);
-        // console.log('Total transaction items:', allTransactionItems.length);
+        console.log('Detected transaction types:', uniqueTransactionTypes);
+        console.log('Total transaction items:', allTransactionItems.length);
 
         // 1. Load transaction details into header form
         if (transactionHeaderDetails) {
@@ -1254,7 +1270,7 @@ export default function PurchasePage() {
 
             const newDraftRows = allTransactionItems.map((item: any, index: number) => {
                 const itemType = item._type;
-                const isIssue = itemType === "ISP" || itemType === "REP";
+                const isIssue = itemType === "ISP" || itemType === "REC";
 
                 // Generate a unique row ID for this item
                 const rowId = `edit-${Date.now()}-${index}-${Math.random().toString(36).substr(2, 9)}`;
@@ -2469,6 +2485,7 @@ console.log('createTransactionPayload',payload)
             setSelectedTransactionTypes([]);
             setAccCode(null);
             refetchTransactionHeaderDetail();
+            setPrintData(null)
 
 
             toaster.create({
@@ -2480,9 +2497,23 @@ console.log('createTransactionPayload',payload)
             // If creating new, clear everything
             setSelectedTransactionTypes([]);
             localStorage.removeItem(TYPE_KEY);
+            
         }
 
         localStorage.removeItem(DRAFT_KEY);
+        setClosingDetails({
+            convType: "",
+            convAmt: "",
+            convWt: "",
+            discAmt: "",
+            discWt: "",
+            cashPaid: "",
+            cashRcvd: "",
+            bankPaid: "",
+            bankRcvd: "",
+            bankPaidDetails: [],
+            bankRcvdDetails: [],
+        });
     };
   
 
@@ -2768,11 +2799,7 @@ console.log('createTransactionPayload',payload)
                             draftRows ={draftRows}
                             setDraftRows={setDraftRows}
                             onPrint={() => {
-                                const data = transactionsById?.data ?? transactionsById;
-                                if (data?.TRANSACTION_HEADER) {
-                                    setPrintData(data);
-                                    setShowPrintModal(true);
-                                }
+                                setShowPrintModal(prev=> !prev)
                             }}
 
                         />
@@ -3042,7 +3069,7 @@ console.log('createTransactionPayload',payload)
                
         </Flex>
         {/* Print Modal */}
-            {showPrintModal && printData && (
+            {showPrintModal && (
                 <Box
                     position="fixed" top={0} left={0} w="100vw" h="100vh"
                     bg="blackAlpha.600" zIndex={1000}
@@ -3051,6 +3078,8 @@ console.log('createTransactionPayload',payload)
                 >
                     <Box onClick={(e) => e.stopPropagation()} maxH="90vh" overflowY="auto" borderRadius="xl">
                         <PurchaseReceipt
+                            COMPANY_DETAILS = {companyDetails}
+                     
                             {...printData}
                         />
                     </Box>

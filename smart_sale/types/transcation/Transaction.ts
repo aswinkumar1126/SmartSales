@@ -170,6 +170,35 @@ export interface ClosingDetails {
 
 }
 
+export type BankTransaction = {
+    AMOUNT: number;
+    BANKNAME: string | null;
+    CHQNO: string | null;
+    TRANDATE: string | null;
+    TRANMODE: string | null;
+}
+
+export interface PurchaseCLosing{
+    ACCODE: number;
+    BANKPAID: number;
+    BANKPAIDDETAILS: BankTransaction[];
+    BANKRCVD: number;
+    BANKRCVDDETAILS: BankTransaction[];
+    BATCHNO: string;
+    BILLNO: number;
+    CASHPAID: number;
+    CASHRCVD: number;
+    CONVAMT: number;
+    CONVTYPE: string;
+    CONVWT: number;
+    DISCAMT: number;
+    DISCWT: number;
+    ENTRYNO: number;
+    PURCHASENO: string;
+    RATE: number;
+    TRANDATE: string | null;
+};
+
 
 /* =========================================================
    CREATE TRANSACTION PAYLOAD

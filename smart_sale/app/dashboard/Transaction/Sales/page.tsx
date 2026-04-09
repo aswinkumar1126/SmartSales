@@ -39,7 +39,7 @@ import { useActiveOtherCharges } from "@/hooks/otherCharges/useOtherCharges";
 import { useRates } from "@/hooks/rate/useRate";
 import { useOrnamentData } from "@/hooks/ornament/useOrnamentData";
 import { useAllBankAccounts } from "@/hooks/bankAccount/useBankAccount";
-import { useBillDetails } from "@/hooks/tag/useTag";
+import { useBillDetails } from "@/hooks/transaction/useTransactions";
 
 /*-------------------  *VALIDATION HOOKS*  --------------------------*/
 
@@ -108,7 +108,7 @@ interface SalesFilter {
 
 export type billDetailsParams = {
     ACCODE: number | undefined;
-    BILLNO?: string;
+    ENTRYNO?: string;
     BILLDATE?: string;
     TAGNO?:string;
 }
@@ -200,7 +200,7 @@ export default function SalesPage() {
     const initialBillDetailsFormData = {
         ACCODE:undefined,
         BILLDATE: today,
-        BILLNO: '',
+        ENTRYNO: '',
         TAGNO:'',
     };
 
@@ -347,8 +347,9 @@ export default function SalesPage() {
 
     const { data: billDetails, isLoading: billDetailsLoading, isError: billDetailsError } = useBillDetails({
         ACCODE: Number(billParams.ACCODE),
-        BILLNO:Number(billParams.BILLNO) ,
-        BILLDATE : billParams.BILLDATE 
+        ENTRYNO: Number(billParams.ENTRYNO) ,
+        BILLDATE : billParams.BILLDATE ,
+        TAGNO :billParams.TAGNO
     });
     console.log(billDetails, 'billDetails')
     console.log(billParams,'billParams')
@@ -611,6 +612,98 @@ export default function SalesPage() {
         }));
     }, []);
 
+    console.log(selectedSalesItems,'selectedSalesItems');
+
+    console.log(draftRows ,'draftRows');
+
+
+    const handleLoadSalesItems = useCallback(
+        (items: any[]) => {
+            if (!items || !Array.isArray(items) || items.length === 0) return;
+
+            const newRows: any[] = [];
+
+            console.log(items,'itemsitemsitems')
+
+            items.forEach((item) => {
+                // ✅ Check if SNO already exists in draftRows
+                const exists = draftRows.some((row) => row.SNO === item.SNO);
+                if (exists) {
+                    toaster.create({
+                        title: "Duplicate Item",
+                        description: `Item with SNO ${item.SNO} already exists in draft`,
+                        type: "warning",
+                        duration: 1500,
+                    });
+                    return; // Skip this item
+                }
+
+                // ✅ Generate unique rowId
+                const rowId = `sales-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
+
+                // Extract stone details if present
+                const stonesWithId: any[] = (item.stoneDetails || []).map((stone: any, index: number) => ({
+                    id: `stone-${Date.now()}-${index}-${Math.random().toString(36).substr(2, 4)}`,
+                    draftRowId: rowId,
+                    stoneId: String(stone.STNITEMID || stone.STNSUBITEMID || stone.stoneId || ""),
+                    subStoneId: String(stone.STNSUBITEMID || stone.subStoneId || ""),
+                    stonePcs: Number(stone.STNPCS || stone.PCS || 1),
+                    stoneWeight: Number(stone.STNWT || 0),
+                    stoneUnit: stone.STONEUNIT || "g",
+                    stoneCalculation: stone.CALCMODE || "w",
+                    stoneRate: Number(stone.STNRATE || 0),
+                    stoneAmount: Number(stone.STNAMT || 0),
+                }));
+
+                // Save stones to localStorage
+                const existingStones = JSON.parse(localStorage.getItem(SALE_STONE_MASTER_KEY) || "[]");
+                localStorage.setItem(SALE_STONE_MASTER_KEY, JSON.stringify([...existingStones, ...stonesWithId]));
+
+                // Recalculate STNWT from stones
+                const totalStoneWeight = stonesWithId.reduce((sum, s) => {
+                    const weight = s.stoneUnit === "c" ? s.stoneWeight / 5 : s.stoneWeight;
+                    return sum + weight;
+                }, 0);
+
+                // Build new row
+                newRows.push({
+                    __rowId: rowId,
+                    __isNew: true,
+                    __isEditing: false,
+                    __previewSno: draftRows.length + newRows.length + 1,
+
+                    TRANSACTION_TYPE: "SR",
+                    _type: "SR",
+
+                    ITEMID: String(item.ITEMID || ""),
+                    TAGNO: String(item.TAGNO || ""),
+                    PCS: Number(item.PCS || 1),
+                    GRSWT: Number(item.GRSWT || 0),
+                    STNWT: totalStoneWeight,
+                    NETWT: Number(item.NETWT || 0),
+                    WASTYPE:item.WASTYPE ,
+                    TOUCH: Number(item.TOUCH || 0) ,
+                    MC: Number(item.MC || 0),
+                    SNO: item.SNO ,
+                    DESCRIPTION:item.DESCRIPTION || "",
+
+                    _hasStones: stonesWithId.length > 0,
+                    _hasCharges: !!item.OtherChargesDetails,
+                });
+            });
+
+            if (newRows.length > 0) {
+                setDraftRows((prev) => [...prev, ...newRows]);
+                toaster.create({
+                    title: "Items Loaded",
+                    description: `${newRows.length} item(s) loaded into draft`,
+                    type: "success",
+                    duration: 1000,
+                });
+            }
+        },
+        [draftRows]
+    );
 
     // const getUsedQuantityByPureId = useCallback((pureId: string | number, options?: {
 
@@ -3046,7 +3139,8 @@ export default function SalesPage() {
                                                             loading: billDetailsLoading,
                                                             showBillModal,
                                                             handleBillShow: handleBillShow,
-                                                            handleSelectedItems:handleSelectedItems
+                                                            handleSelectedItems:handleSelectedItems,
+                                                            handleLoadSelectedItems: handleLoadSalesItems
                                                         }
 
                                                     }

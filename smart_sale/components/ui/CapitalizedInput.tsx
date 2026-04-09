@@ -1,7 +1,7 @@
 "use client";
 
-import React from "react";
-import { Input, InputGroup } from "@chakra-ui/react";
+import React, { useRef } from "react";
+import { Input, InputGroup, Button, Box, Image as ChakraImage } from "@chakra-ui/react";
 import { capitalizeText } from "@/utils/capitalize/capitalizeText";
 import { useTheme } from "@/context/theme/themeContext";
 import { ICONS_MAP } from "../icon/iconsMap";
@@ -14,15 +14,16 @@ export type InputModeType =
     | "aadhaar"
     | "pan"
     | "email"
-    | "pincode";
+    | "pincode"
+    | "image"; // 🔥 NEW: Added image type
 
 type CapitalizedInputProps<T> = {
     value: string | undefined;
-    field:any;
+    field: any;
     onChange: (field: keyof T, value: any) => void;
     placeholder?: string;
     isCapitalized?: boolean;
-    type?: "text" | "number" | "password" |"capitalized";
+    type?: "text" | "number" | "password" | "capitalized" | "image"; // 🔥 Added image
     disabled?: boolean;
     max?: number;
     icon?: boolean;
@@ -34,7 +35,7 @@ type CapitalizedInputProps<T> = {
     onNegativeConfirm?: () => boolean | Promise<boolean>;
     autoFocus?: any;
     onKeyDown?: any;
-    onEnter?: () => void; // ADD THIS
+    onEnter?: () => void;
     inputRef?: any;
     onClassUse?: boolean;
     maxWidth?: string;
@@ -44,10 +45,16 @@ type CapitalizedInputProps<T> = {
     inputModeType?: InputModeType;
     rounded?: string;
     minWidth?: string;
-    noBorder?:boolean;
-    onBlur?:()=>void;
+    noBorder?: boolean;
+    onBlur?: () => void;
     iconElement?: string;
-    allowFocus?:boolean
+    allowFocus?: boolean;
+
+    // 🔥 NEW: Image upload props
+    accept?: string; // e.g., "image/*", "image/png,image/jpeg"
+    maxSize?: number; // in bytes, e.g., 5 * 1024 * 1024 for 5MB
+    onImageError?: (error: string) => void;
+    imagePreview?: boolean; // Show preview of uploaded image
 };
 
 export function CapitalizedInput<T>({
@@ -66,7 +73,7 @@ export function CapitalizedInput<T>({
     confirmNegative = false,
     onNegativeConfirm,
     onKeyDown,
-    onEnter, // ADD THIS
+    onEnter,
     inputRef,
     onClassUse = false,
     maxWidth,
@@ -78,12 +85,130 @@ export function CapitalizedInput<T>({
     minWidth,
     noBorder,
     onBlur,
-    iconElement="",
-    allowFocus=false
+    iconElement = "",
+    allowFocus = false,
+    accept = "image/*", // 🔥 NEW
+    maxSize = 5 * 1024 * 1024, // 🔥 NEW: 5MB default
+    onImageError, // 🔥 NEW
+    imagePreview = true // 🔥 NEW
 }: CapitalizedInputProps<T>) {
     const { theme } = useTheme();
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
-    const inputIcon = icon ? ICONS_MAP[iconElement] : null ;
+    const inputIcon = icon ? ICONS_MAP[iconElement] : null;
+
+    // 🔥 NEW: Handle image file selection
+    const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+
+        if (!file) {
+            onChange(field, null);
+            return;
+        }
+
+        // Validate file type
+        const acceptedTypes = accept.replace(/\s/g, '').split(',');
+        const fileType = file.type;
+        const isValidType = acceptedTypes.some(type => {
+            if (type === 'image/*') return fileType.startsWith('image/');
+            return fileType === type;
+        });
+
+        if (!isValidType) {
+            onImageError?.(`Invalid file type. Please upload: ${accept}`);
+            return;
+        }
+
+        // Validate file size
+        if (file.size > maxSize) {
+            const maxSizeMB = maxSize / (1024 * 1024);
+            onImageError?.(`File size exceeds ${maxSizeMB}MB limit`);
+            return;
+        }
+
+        // 🔥 Convert to base64 for preview and API submission
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            const base64String = reader.result as string;
+
+            // Return both the base64 string and the original file object
+            const imageData = {
+                base64: base64String,
+                file: file,
+                name: file.name,
+                size: file.size,
+                type: file.type
+            };
+
+            onChange(field, imageData);
+        };
+
+        reader.onerror = () => {
+            onImageError?.("Error reading file");
+        };
+
+        reader.readAsDataURL(file);
+    };
+
+    // 🔥 NEW: Handle image removal
+    const handleRemoveImage = () => {
+        onChange(field, null);
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+        }
+    };
+
+    // 🔥 NEW: Render image input
+    const renderImageInput = () => {
+        const currentImage = value as any;
+        const hasImage = currentImage && typeof currentImage === 'object' && currentImage.base64;
+
+        return (
+            <Box width="100%">
+                <Box display="flex" gap={2}>
+                    <input
+                        type="file"
+                        ref={fileInputRef}
+                        onChange={handleImageChange}
+                        accept={accept}
+                        disabled={disabled}
+                        // style={{ display: 'none' }}
+                        style={{ border: '1px solid #DDD', fontSize:'xs',padding:'5px' ,color:'#444', }}
+                    
+                    />
+              
+                  
+                    {hasImage && (
+                        <Button
+                            onClick={handleRemoveImage}
+                            disabled={disabled}
+                            size={size}
+                            bg="red.500"
+                            color="white"
+                            _hover={{ bg: "red.600" }}
+                            rounded={'full'}
+                        >
+                            Remove
+                        </Button>
+                    )}
+                </Box>
+
+                {/* 🔥 Image Preview */}
+                {imagePreview && hasImage && currentImage.base64 && (
+                    <Box mt={2}>
+                        <ChakraImage
+                            src={currentImage.base64}
+                            alt="Preview"
+                            maxHeight="80px"
+                            maxWidth="100%"
+                            objectFit="cover"
+                            borderRadius="md"
+                        />
+                    </Box>
+                )}
+            </Box>
+        );
+    };
 
     const handleChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         let inputValue = e.target.value;
@@ -116,6 +241,7 @@ export function CapitalizedInput<T>({
             if (len === 10 && !/^[A-Z]{5}[0-9]{4}[A-Z]$/.test(inputValue)) return;
             if (len > 10) return;
         }
+
         if (mode === "gst") {
             inputValue = inputValue.toUpperCase();
             const len = inputValue.length;
@@ -130,33 +256,22 @@ export function CapitalizedInput<T>({
             if (len > 15) return;
         }
 
-
         if (mode === "email") {
             inputValue = inputValue.toLowerCase();
 
-            // Only allow valid email characters
             if (!/^[a-z0-9@._-]*$/.test(inputValue)) return;
 
-            // If user typed "@", validate domain
             if (inputValue.includes("@")) {
-                const [localPart, domain] = inputValue.split("@");
-
-                // Prevent multiple @
                 if (inputValue.split("@").length > 2) return;
-
-                // Allow typing domain gradually
+                const [localPart, domain] = inputValue.split("@");
                 if (domain && !"gmail.com".startsWith(domain)) {
-                    return; // ❌ block wrong domain
+                    return;
                 }
-
-                // If full domain typed and it's not gmail.com
                 if (domain.length >= 9 && domain !== "gmail.com") {
                     return;
                 }
             }
         }
-
-        /* ================== EXISTING LOGIC ================== */
 
         if (type === "number") {
             if (inputValue === "-") {
@@ -185,67 +300,20 @@ export function CapitalizedInput<T>({
 
         onChange(
             field,
-            isCapitalized && type !== "number" 
+            isCapitalized && type !== "number"
                 ? capitalizeText(inputValue)
                 : inputValue
         );
     };
-    // const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    //     let inputValue = e.target.value;
-
-    //     // For text, always allow typing
-    //     if (type === "text" && isCapitalized) {
-    //         onChange(field, capitalizeText(inputValue));
-    //         return;
-    //     }
-
-    //     // For numbers, allow "-" temporarily if allowNegative
-    //     if (type === "number") {
-    //         if (!allowDecimal && inputValue.includes(".")) return;
-    //         if (!allowNegative && inputValue.includes("-")) return;
-    //         if (allowDecimal && inputValue.includes(".")) {
-    //             const [_, decimals] = inputValue.split(".");
-    //             if (decimals && decimals.length > decimalScale) return;
-    //         }
-    //         onChange(field, inputValue); // pass as string, parse later on save
-    //         return;
-    //     }
-
-    //     // For modes like mobile, pan, gst etc, allow typing up to max length
-    //     if (inputModeType === "mobile" || inputModeType === "aadhaar" || inputModeType === "pincode") {
-    //         if (/^[0-9]*$/.test(inputValue)) {
-    //             onChange(field, inputValue);
-    //         }
-    //         return;
-    //     }
-
-    //     if (inputModeType === "pan" || inputModeType === "gst") {
-    //         onChange(field, inputValue.toUpperCase());
-    //         return;
-    //     }
-
-    //     if (inputModeType === "email") {
-    //         onChange(field, inputValue.toLowerCase());
-    //         return;
-    //     }
-
-    //     // fallback
-    //     onChange(field, inputValue);
-    // };
-
-
-
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
         const val = (e.target as HTMLInputElement).value;
 
-        // Handle Enter key
         if (e.key === "Enter") {
             e.preventDefault();
-            onEnter?.(); // Call the onEnter callback to focus next cell
+            onEnter?.();
         }
 
-        // Number input validations
         if (type === "number") {
             if (!allowDecimal && e.key === ".") {
                 e.preventDefault();
@@ -256,94 +324,89 @@ export function CapitalizedInput<T>({
             }
 
             if (allowDecimal && e.key === "." && val.includes(".")) {
-                e.preventDefault(); // only one dot
+                e.preventDefault();
             }
         }
 
         onKeyDown?.(e);
     };
+
     const formatDecimalOnBlur = (val: string, scale: number) => {
         if (!val || isNaN(Number(val))) return val;
         if (!allowFocus) return val;
 
         let num = Number(val);
-
-        // Limit decimals WITHOUT forcing trailing zeros
         let formatted = num.toFixed(scale);
-   
-
-        // 🔥 Remove trailing zeros
-        // formatted = formatted.replace(/\.?0+$/, "");
-
         return formatted;
     };
 
+    // 🔥 Return image input for type="image"
+    if (type === "image") {
+        return renderImageInput();
+    }
+
     return (
-        // In CapitalizedInput component, update the ref handling:
-        <InputGroup startElement={inputIcon ? inputIcon : undefined}   >
-        <Input
-              
-            type={type === "number" ? "number" : type}
-            value={value ?? ""}
-            pl={icon ? "2.5rem" : "0.2rem"}
-            textTransform={isCapitalized ? "uppercase" : "none"}
-            placeholder={placeholder}
-            onChange={handleChange}
-            disabled={disabled}
-            max={type === "number" ? max : undefined}
-            maxLength={type === "text" ? max : undefined}
-            size={size}
-            autoFocus={autoFocus}
-            onKeyDown={handleKeyDown}
-            onBlur={(e) => {
-                if (type === "number" && allowDecimal) {
-                    const formatted = formatDecimalOnBlur(e.target.value, decimalScale);
-                    onChange(field, formatted);
-                }
-
-                onBlur?.();
-            }}
-            ref={(el) => {
-                if (inputRef) {
-                    if (typeof inputRef === 'function') {
-                        inputRef(el);
-                    } else if (inputRef.current !== undefined) {
-                        inputRef.current = el;
+        <InputGroup startElement={inputIcon ? inputIcon : undefined}>
+            <Input
+                type={type === "number" ? "number" : type}
+                value={value ?? ""}
+                pl={icon ? "2.5rem" : "0.2rem"}
+                textTransform={isCapitalized ? "uppercase" : "none"}
+                placeholder={placeholder}
+                onChange={handleChange}
+                disabled={disabled}
+                max={type === "number" ? max : undefined}
+                maxLength={type === "text" ? max : undefined}
+                size={size}
+                autoFocus={autoFocus}
+                onKeyDown={handleKeyDown}
+                onBlur={(e) => {
+                    if (type === "number" && allowDecimal) {
+                        const formatted = formatDecimalOnBlur(e.target.value, decimalScale);
+                        onChange(field, formatted);
                     }
-                }
-            }}
-            className={onClassUse ? "type-inputs" : ""}
-            maxWidth={maxWidth}
-            bg={noBorder ? theme.colors.formColor:theme.colors.whiteColor}
-            fontSize='xs'
-            rounded={rounded}
-            minWidth={minWidth}
-            border="1px solid #DDD"
-            _focus={{
-                border: "1px solid #FFF",
-                boxShadow: "none",
-            }}
-            _hover={{
-                border: "1px solid #BBB",
-            }}
-            css={type === "number" ? {
-                WebkitAppearance: 'none',
-                MozAppearance: 'textfield',
-                '&::-webkit-outer-spin-button, &::-webkit-inner-spin-button': {
+                    onBlur?.();
+                }}
+                ref={(el) => {
+                    if (inputRef) {
+                        if (typeof inputRef === 'function') {
+                            inputRef(el);
+                        } else if (inputRef.current !== undefined) {
+                            inputRef.current = el;
+                        }
+                    }
+                }}
+                className={onClassUse ? "type-inputs" : ""}
+                maxWidth={maxWidth}
+                bg={noBorder ? theme.colors.formColor : theme.colors.whiteColor}
+                fontSize='xs'
+                rounded={rounded}
+                minWidth={minWidth}
+                border="1px solid #DDD"
+                _focus={{
+                    border: "1px solid #FFF",
+                    boxShadow: "none",
+                }}
+                _hover={{
+                    border: "1px solid #BBB",
+                }}
+                css={type === "number" ? {
                     WebkitAppearance: 'none',
-                    margin: 0,
-                }
-            } : undefined}
-            _disabled={{
-                opacity: 1,  // Keep full opacity
-                cursor: 'not-allowed',  // Show disabled cursor
-                bg: noBorder ? '#ffffff' : theme.colors.greyColor,  // Maintain background
-                border: "1px solid transparent",  // Keep border consistent
-                color:theme.colors.green,
-                fontWeight:'bold'
-            }}
-        />
+                    MozAppearance: 'textfield',
+                    '&::-webkit-outer-spin-button, &::-webkit-inner-spin-button': {
+                        WebkitAppearance: 'none',
+                        margin: 0,
+                    }
+                } : undefined}
+                _disabled={{
+                    opacity: 1,
+                    cursor: 'not-allowed',
+                    bg: noBorder ? '#ffffff' : theme.colors.greyColor,
+                    border: "1px solid transparent",
+                    color: theme.colors.green,
+                    fontWeight: 'bold'
+                }}
+            />
         </InputGroup>
-
     );
 }

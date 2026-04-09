@@ -4,9 +4,11 @@ import {
     useQueryClient,
 } from "@tanstack/react-query";
 
-import { TransactionService } from "@/service/TransactionService";
+import { TransactionService ,getBillWiseSales } from "@/service/TransactionService";
 import { CreateTransaction,  UpdateTransactionPayload } from "@/types/transcation/Transaction";
 import { ApiResponse } from "@/types/api/apiResponse";
+import { billNoParams } from "@/service/TransactionService";
+
 
 /* -------------------- QUERY KEYS -------------------- */
 export const transactionKeys = {
@@ -150,3 +152,16 @@ export const useCreateTransactions = () => {
         },
     });
 };
+
+
+export const useBillDetails = (params: billNoParams) => {
+    return useQuery({
+        queryKey: ['bill-details', params],
+        queryFn: () => getBillWiseSales(params),
+        enabled: true,
+        staleTime: 1000 * 60 * 5, // optional: cache for 5 mins
+        retry: 1,
+
+
+    })
+}

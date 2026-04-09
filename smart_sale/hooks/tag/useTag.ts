@@ -3,8 +3,6 @@ import { useApiQuery ,useApiMutation } from "../apiHook/ApiHook";
 import { CreateTag, getTagedEntryNo, getSingleTagDetail, getTagedEntryNoParams, getTagedEntryNoParamsForApi , } from "@/types/tagging/Tag";
 import { ApiResponse } from "@/types/api/apiResponse";
 import { useQuery } from "@tanstack/react-query";
-import { getSoldItemsDetails } from "@/service/TagedService";
-import { billNoParams } from "@/service/TagedService";
 
 export const useTagEntryNos = (params:getTagedEntryNoParamsForApi) => {
     return useApiQuery<ApiResponse<getTagedEntryNo> ,getTagedEntryNoParamsForApi>(
@@ -46,14 +44,3 @@ export const useTagedDetailsByTagNo = (id: string, ACCODE: number) => {
     });
 };
 
-export const useBillDetails = (params: billNoParams) =>{
-    return useQuery({
-        queryKey: ['bill-details',params],
-        queryFn: () => getSoldItemsDetails(params),
-        enabled:true,
-        staleTime: 1000 * 60 * 5, // optional: cache for 5 mins
-        retry: 1,
-      
-
-    })
-}

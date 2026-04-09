@@ -6,7 +6,9 @@ import {
     Dialog,
     Portal,
     Text,
-    Button
+    Button,
+    Badge,
+    Span
 } from "@chakra-ui/react";
 import { useState } from "react";
 import { FaEdit } from "react-icons/fa";
@@ -17,6 +19,9 @@ import { DatePickerInput } from "@/components/ui/DatePickerInput";
 import { formatDateForShow } from "@/utils/format/formatDateForAPI";
 
 import { billDetailsParams } from "../page";
+import { formatToFixed } from "@/utils/format/numberFormat";
+import loadImg from '@/asserts/icons/download.png';
+import Image from "next/image";
 
 interface SalesBillViewModalProps {
     isOpen: boolean;
@@ -27,6 +32,7 @@ interface SalesBillViewModalProps {
     highlightedId?: number | string;
     onClose: () => void;
     handleSelectionChange: (selectedRows:any[]) => void;
+    handleLoadItems:(items:any[]) => void;
 }
 
 export default function SalesBillViewModal({
@@ -37,7 +43,8 @@ export default function SalesBillViewModal({
     billDetails,
     loading,
     highlightedId,
-    handleSelectionChange
+    handleSelectionChange,
+    handleLoadItems
    
 }: SalesBillViewModalProps) {
     const today = new Date().toISOString().split("T")[0];
@@ -93,16 +100,16 @@ export default function SalesBillViewModal({
         return (
             <>
                 <Table.Cell>{renderCellValue(row.BILLNO)}</Table.Cell>
-                <Table.Cell>{renderCellValue(formatDateForShow(row.ISSDATE))}</Table.Cell>
+                <Table.Cell>{renderCellValue(formatDateForShow(row.TRANDATE))}</Table.Cell>
                 <Table.Cell>{renderCellValue(row.TAGNO)}</Table.Cell>
                 <Table.Cell>{renderCellValue(row.ITEMID)}</Table.Cell>
                 <Table.Cell>{renderCellValue(row.ITEMNAME)}</Table.Cell>
-                <Table.Cell textAlign="center">{renderCellValue(row.GRSWT, "0")}</Table.Cell>
-                <Table.Cell textAlign="center">{renderCellValue(row.STNWT, "0")}</Table.Cell>
-                <Table.Cell textAlign="center">{renderCellValue(row.NETWT, "0")}</Table.Cell>
-                <Table.Cell textAlign="center">{renderCellValue(row.TOUCH, "0")}</Table.Cell>
-                <Table.Cell textAlign="center">{renderCellValue(row.STNAMT, "0")}</Table.Cell>
-                <Table.Cell textAlign="center">{renderCellValue(row.MC, "0")}</Table.Cell>
+                <Table.Cell textAlign="end">{renderCellValue(formatToFixed(row.GRSWT,3) , "0")}</Table.Cell>
+                <Table.Cell textAlign="end">{renderCellValue(formatToFixed(row.STNWT,3), "0")}</Table.Cell>
+                <Table.Cell textAlign="end">{renderCellValue(formatToFixed(row.NETWT,3), "0")}</Table.Cell>
+                <Table.Cell textAlign="end">{renderCellValue(formatToFixed(row.TOUCH,1), "0")}</Table.Cell>
+                <Table.Cell textAlign="end">{renderCellValue(formatToFixed(row.STNAMT,2), "0")}</Table.Cell>
+                <Table.Cell textAlign="end">{renderCellValue(formatToFixed(row.MC,2), "0")}</Table.Cell>
                 <Table.Cell>{renderCellValue(row.DESCRIPTION)}</Table.Cell>
             </>
         );
@@ -130,12 +137,13 @@ export default function SalesBillViewModal({
                                         ENTRY NO:
                                     </Text>
                                     <CapitalizedInput<billDetailsParams>
-                                        value={billParams.BILLNO}
-                                        field="BILLNO"
+                                        value={billParams.ENTRYNO}
+                                        field="ENTRYNO"
                                         onChange={onBillParamChange}
                                         placeholder="ENTRY NO"
                                         size="sm"
                                         maxWidth="100px"
+                                        type="number"
                                     />
                                 </Box>
                                 <Box display={'flex'} alignItems={'center'}>
@@ -178,7 +186,7 @@ export default function SalesBillViewModal({
                                             ? Number(highlightedId)
                                             : null
                                     }
-                                    rowIdKey="TAGNO"
+                                    rowIdKey="SNO"
                                     bodyBg={theme.colors.formColor}
                                         selection={{
                                             enabled: true,
@@ -193,12 +201,36 @@ export default function SalesBillViewModal({
                                     maxHeight="400px"
  
                                 />
+                                
                             )}
+                            <Box mt={2} p={2} bg={theme.colors.formColor} rounded={'xl'}>
+                                <Span fontSize={'xs'}> SELECTED IDS :</Span>
+                                {selectedItemIds.map((i) =>
+                                    <Badge key={i} colorPalette={'red'} variant={'subtle'} >
+                                        {i}
+                                    </Badge>
+                                )}
+                            </Box>
+                           
+                    
+                           
+                         
                         </Dialog.Body>
                         <Dialog.Footer m={0}>
-                            <Button onClick={() => onClose()}>
-                                Close
-                            </Button>
+                            <Image 
+                            src={loadImg}
+                            alt={'LOAD ITEMS'}
+                            width={40}
+                            height={40}
+                            onClick={()=>
+                                {
+                                    handleLoadItems(selectedItems);
+                                    setSelectedItems([]);
+                                    setSelectedItemIds([]);
+                                    onClose();
+                                }
+                            } />
+                       
                         </Dialog.Footer>
                     </Dialog.Content>
                 </Dialog.Positioner>

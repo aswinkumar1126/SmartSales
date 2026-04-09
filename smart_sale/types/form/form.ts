@@ -5,7 +5,7 @@ import { InputModeType } from "@/components/ui/CapitalizedInput";
 export interface FormField {
     name: string;           // field name
     label: string;          // display label
-    type: 'text' | 'select' | 'combobox' | 'capitalized' | 'gst' | 'yesno' | 'radio' | 'number' | 'password' | 'date' | 'color' | 'currency' | 'barcode' | 'switch';
+    type: 'text' | 'select' | 'combobox' | 'capitalized' | 'gst' | 'yesno' | 'radio' | 'number' | 'password' | 'date' | 'color' | 'currency' | 'barcode' | 'switch' |'image';
     required?: boolean;
     disabled?: boolean;
     colSpan?: number;       // for grid layout

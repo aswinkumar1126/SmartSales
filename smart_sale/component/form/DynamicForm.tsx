@@ -31,6 +31,7 @@ interface DynamicFormProps {
     layout?: "vertical" | "horizontal" | "grid" | "verticalCombine" | "horizontalCombine"; 
     minLabelWidth?:string;
     labelFontSize?:string;
+    gap?:number
 }
 
 export const DynamicForm: React.FC<DynamicFormProps> = ({
@@ -43,7 +44,9 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
     errors = {}, // Default to empty object
     layout,
     minLabelWidth = "100px",
-    labelFontSize = "x-small"
+    labelFontSize = "x-small",
+    gap= 4
+   
 }) => {
 
     const [touched, setTouched] = useState<Record<string, boolean>>({});
@@ -302,6 +305,28 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
                             allowFocus={field.allowFocus}
                         />
                     );
+                    case 'image' :
+                        return (
+                            <CapitalizedInput 
+                                type='image'
+                                inputRef={setRef}
+                                key={field.name}
+                                field={field.name}
+                                value={formData[field.name] ?? ''} // controlled
+                                onChange={onChange} // Pass the original onChange that expects (field, value)
+                                disabled={isDisabled}
+                                size={field.size || "xs"}
+                                placeholder={field.placeholder}
+                                maxWidth={field.maxWidth || field.maxW || field.width}
+                                minWidth={field.minWidth}
+                                rounded={field.rounded}
+                                onEnter={() => focusNext(field.name)}
+                                onKeyDown={(e: any) => handleKeyDown(e, field.name)}
+                                onBlur={() => handleBlur(field.name)}
+                                
+
+                            />
+                        )
             case 'text':
                 default:
                     return (
@@ -378,7 +403,7 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
                     : "nowrap"
             }
             gridTemplateColumns={layout === "grid" ? getGridTemplateColumns() : undefined}
-            gap={4}
+            gap={gap}
          
             width="100%"
         >

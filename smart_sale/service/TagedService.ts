@@ -37,44 +37,4 @@ export const getTagDetails = async (
     }
 };
 
-export interface billNoParams {
-    ACCODE?:number;
-    BILLNO?:number;
-    BILLDATE?:string
-}
 
-export const getSoldItemsDetails = async (params: billNoParams) => {
-    try {
-        const queryParams: any = {};
-
-        if (params.ACCODE !== undefined) {
-            queryParams.ACCODE = params.ACCODE;
-        }
-
-        if (params.BILLNO) {
-            queryParams.BILLNO = params.BILLNO;
-        }
-
-        if (params.BILLDATE) {
-            queryParams.BILLDATE = params.BILLDATE;
-        }
-
-        const response = await axiosInstance.get<ApiResponse<getSingleTagDetail[]>>(
-            `/tagged/sales`,
-            { params: queryParams } // ✅ send only filtered params
-        );
-
-        return response.data.data;
-    } catch (err) {
-        if (err instanceof AxiosError) {
-            return {
-                error: err.response?.data.message || "Failed to Fetch",
-                status: err.response?.status,
-            };
-        } else if (err instanceof Error) {
-            return { error: err.message };
-        } else {
-            return { error: "Unknown error occurred" };
-        }
-    }
-};

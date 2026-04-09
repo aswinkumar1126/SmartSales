@@ -112,7 +112,7 @@ function AccountMaster() {
             EMAIL: company.EMAIL ?? "",
             GSTNO: company.GSTNO ?? "",
             ACTIVE: company.ACTIVE ?? "Y",
-            STATEID: company.STATEID ?? "",
+            STATEID: String(company.STATEID) ?? "",
         });
     }, [company]);
 

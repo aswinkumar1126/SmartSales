@@ -203,7 +203,7 @@ export default function TransactionTypeSelector({
                 </Box>
 
                 {/* PRINT — show when rows are loaded (same as DESELECT) */}
-                {draftRows.length > 0 && (
+                {isEditing && (
                     <Box
                         className="flex flex-col items-center cursor-pointer gap-1"
                         onClick={onPrint}

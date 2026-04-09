@@ -25,7 +25,7 @@ export const useCompanyById = (companyId: string) => {
 export const useCreateCompany = () => {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: ({ payload, logo }: { payload: CreateCompanyPayload; logo?: File }) =>
+        mutationFn: ({ payload, logo }: { payload: CreateCompanyPayload; logo?: File|null }) =>
             CompanyService.create(payload, logo),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["companies"] });
@@ -42,7 +42,7 @@ export const useCreateCompany = () => {
 export const useUpdateCompany = () => {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: ({ id, payload, logo }: { id: string; payload: CreateCompanyPayload; logo?: File }) =>
+        mutationFn: ({ id, payload, logo }: { id: string; payload: CreateCompanyPayload; logo?: File|null }) =>
             CompanyService.updateById(id, payload, logo),
         
         onSuccess: () => {

@@ -8,19 +8,58 @@ export interface ApiResponse<T = any> {
 }
 
 export interface Company {
+    ACTIVE: "Y" | "N";
+
     COMPANYID: string;
     COMPANYNAME: string;
-    COSTID?: string;
+
     ADDRESS1?: string;
     ADDRESS2?: string;
     ADDRESS3?: string;
+    ADDRESS4?: string;
+
     AREACODE?: string;
+
     PHONE?: string;
     EMAIL?: string;
+
     GSTNO?: string;
-    ACTIVE: "Y" | "N";
-    STATEID?: string;
-    LOGO?: string;
+    PANNO?: string;
+
+    STATEID: number;
+
+    LOGO?: string | File;
+
+    UPDATED?: string;
+    UPTIME?: string;
+
+    // Optional / nullable fields converted to optional
+    ANDROIDLINK?: string;
+    APPSTORELINK?: string;
+    AUTOGENERATOR?: string;
+    BASEURL?: string;
+
+    COSTID?: string;
+    CSTNO?: string;
+    DISPLAYORDER?: number;
+
+    FACEBOOKLINK?: string;
+    GOOGLEBUSINESSLINK?: string;
+    INSTALINK?: string;
+    TWITTERLINK?: string;
+    WHATSAPPLINK?: string;
+    YOUTUBELINK?: string;
+
+    LOCALTAXNO?: string;
+    TANNO?: string;
+    TDSNO?: string;
+    TINNO?: string;
+
+    PASSWORD?: string;
+    SHORTKEY?: string;
+
+    USERID?: number;
+    USERNAME?: string;
 }
 
 export interface CreateCompanyPayload {
@@ -30,13 +69,15 @@ export interface CreateCompanyPayload {
     ADDRESS1?: string;
     ADDRESS2?: string;
     ADDRESS3?: string;
+    ADDRESS4?: string;
     AREACODE?: string;
     PHONE?: string;
     EMAIL?: string;
     GSTNO?: string;
     ACTIVE: "Y" | "N";
     STATEID?: string;
-    LOGO?: string;
+    LOGO?: File | null |undefined | string;
+    PANNO?:string
 }
 
 export const CompanyService = {
@@ -50,7 +91,7 @@ export const CompanyService = {
         return data;
     },
 
-    create: async (payload: CreateCompanyPayload, logo?: File): Promise<ApiResponse<Company>> => {
+    create: async (payload: CreateCompanyPayload, logo?: File|null): Promise<ApiResponse<Company>> => {
         try{
             const formData = new FormData();
 
@@ -59,6 +100,8 @@ export const CompanyService = {
             formData.append("company", new Blob([JSON.stringify(payload)], { type: "application/json" }));
 
             if (logo) formData.append("logo", logo);
+
+            console.log(formData,'formData')
 
             const response = await axiosInstance.post("/company", formData, {
 
@@ -76,7 +119,7 @@ export const CompanyService = {
        
     },
 
-    updateById: async (companyId: string, payload: CreateCompanyPayload, logo?: File): Promise<ApiResponse<Company>> => {
+    updateById: async (companyId: string, payload: CreateCompanyPayload, logo?: File|null): Promise<ApiResponse<Company>> => {
         const formData = new FormData();
         formData.append("company", new Blob([JSON.stringify(payload)], { type: "application/json" }));
 
@@ -91,6 +134,7 @@ export const CompanyService = {
         const { data } = await axiosInstance.put(`/company/update`, formData, {
             headers: { "Content-Type": "multipart/form-data" },
         });
+        console.log(data,'updated result')
         return data;
     },
 };

@@ -6,7 +6,14 @@ import {
     Sofia,
     Domine
 } from "next/font/google";
+import localFont from 'next/font/local';
 
+export const Caprasimo = localFont({
+    src: "../../public/fonts/Caprasimo/Caprasimo-Regular.ttf",
+    variable: "--font-caprasimo",
+    weight:"400",
+    
+});
 // Primary font
 export const alice = Alice({
     subsets: ["latin"],

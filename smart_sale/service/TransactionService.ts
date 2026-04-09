@@ -1,6 +1,9 @@
 import { axiosInstance } from "@/api/axiosInstance";
+import { AxiosError } from "axios";
 import { ApiResponse } from "@/types/api/apiResponse";
 import { TRANSACTION, CreateTransaction,  UpdateTransactionPayload } from "@/types/transcation/Transaction";
+import { getSingleTagDetail } from "@/types/tagging/Tag";
+
 
 const BASE_PURCHASE_PATH = "/purchase" ;
 const BASE_SALES_PATH = "/sales";
@@ -16,6 +19,14 @@ type GetTransactionProps = {
     itemid?: number | null;
  
 }
+
+export interface billNoParams {
+    ACCODE?: number;
+    ENTRYNO?: number;
+    BILLDATE?: string;
+    TAGNO?:string;
+}
+
 
 export const TransactionService = {
     createMany: async (
@@ -170,3 +181,44 @@ console.log(transId, BASE_PATH, 'getByTransId')
     },
 };
 
+
+
+export const getBillWiseSales = async (params: billNoParams) => {
+    try {
+        console.log(params,'paramforsales')
+        const queryParams: any = {};
+
+        if (params.ACCODE !== undefined) {
+            queryParams.ACCODE = params.ACCODE;
+        }
+
+        if (params.ENTRYNO) {
+            queryParams.ENTRYNO = params.ENTRYNO;
+        }
+        if(params.TAGNO){
+            queryParams.TAGNO = params.TAGNO;
+        }
+
+        if (params.BILLDATE) {
+            queryParams.BILLDATE = params.BILLDATE;
+        }
+
+        const response = await axiosInstance.get<ApiResponse<getSingleTagDetail[]>>(
+            `/sales/entry`,
+            { params: queryParams } // ✅ send only filtered params
+        );
+
+        return response.data.data;
+    } catch (err) {
+        if (err instanceof AxiosError) {
+            return {
+                error: err.response?.data.message || "Failed to Fetch",
+                status: err.response?.status,
+            };
+        } else if (err instanceof Error) {
+            return { error: err.message };
+        } else {
+            return { error: "Unknown error occurred" };
+        }
+    }
+};

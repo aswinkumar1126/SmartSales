@@ -36,9 +36,6 @@ import { useEnterNavigation } from "@/component/form/useEnterNavigation";
 import { DynamicForm } from "@/component/form/DynamicForm";
 import { getCompanyFormFields } from "@/config/master/CompanyMaster";
 
-
-
-
 function CompanyMaster() {
     const { theme } = useTheme();
     const router = useRouter();
@@ -64,20 +61,21 @@ function CompanyMaster() {
         ADDRESS1: "",
         ADDRESS2: "",
         ADDRESS3: "",
+        ADDRESS4: "",
         AREACODE: "",
+        PANNO: "",
         PHONE: "",
         EMAIL: "",
         GSTNO: "",
         ACTIVE: "Y",
         STATEID: "24",
+        LOGO: null, // Changed to null for image
     });
 
     const [highlightedId, setHighlightedId] = useState<number>();
-    const [logoFile, setLogoFile] = useState<File>();
+    const [logoFile, setLogoFile] = useState<File | null>(null); // Store file separately
     const [editId, setEditId] = useState<string | null>(null);
     const [errors, setErrors] = useState<Record<string, string>>({});
-
-
 
     /* -------------------- FETCH COMPANY FOR EDIT -------------------- */
     const { data: companyById } = useCompanyById(editId ?? '');
@@ -91,18 +89,25 @@ function CompanyMaster() {
             ADDRESS1: company.ADDRESS1 ?? "",
             ADDRESS2: company.ADDRESS2 ?? "",
             ADDRESS3: company.ADDRESS3 ?? "",
+            ADDRESS4: company.ADDRESS4 ?? "",
             AREACODE: company.AREACODE ?? "",
+            PANNO: company.PANNO ?? "",
             PHONE: company.PHONE ?? "",
             EMAIL: company.EMAIL ?? "",
             GSTNO: company.GSTNO ?? "",
             ACTIVE: company.ACTIVE ?? "Y",
             STATEID: String(company.STATEID) ?? "24",
+            LOGO: company.LOGO ?? null, // Set existing logo
         });
+
+        // If there's an existing logo URL, we might want to show preview
+        if (company.LOGO) {
+            setLogoFile(null); // Reset file, but keep the URL in form.LOGO
+        }
 
         setTimeout(() => {
             toastLoaded("Company");
             ScrollToTop();
-            // focusFirst();
         }, 0);
     }, [company]);
 
@@ -114,26 +119,41 @@ function CompanyMaster() {
 
     /* -------------------- HANDLERS -------------------- */
     const handleChange = (field: any, value: any) => {
-        setForm((prev) => ({ ...prev, [field]: value }));
+        // Handle image/logo change
+        if (field === 'LOGO') {
+            // Value will be the image object from CapitalizedInput
+            if (value && value.file) {
+                setLogoFile(value.file);
+                setForm((prev) => ({ ...prev, [field]: value.base64 }));
+            } else {
+                setLogoFile(null);
+                setForm((prev) => ({ ...prev, [field]: null }));
+            }
+        } else {
+            setForm((prev) => ({ ...prev, [field]: value }));
+        }
     };
 
     const resetForm = () => {
         setEditId(null);
-        setLogoFile(undefined);
+        setLogoFile(null);
         setForm({
             COMPANYID: "",
             COMPANYNAME: "",
             ADDRESS1: "",
             ADDRESS2: "",
             ADDRESS3: "",
+            ADDRESS4: "",
             AREACODE: "",
+            PANNO: "",
             PHONE: "",
             EMAIL: "",
             GSTNO: "",
             ACTIVE: "Y",
             STATEID: "24",
+            LOGO: null,
         });
-        focusFirst();
+        if (focusFirst) focusFirst();
         setErrors({});
     };
 
@@ -153,10 +173,10 @@ function CompanyMaster() {
         return undefined;
     };
 
-
     // Validate all fields
     const validateForm = (): boolean => {
         const newErrors: Record<string, string> = {};
+        const companyFormFields = getCompanyFormFields(stateOptions, editId);
 
         companyFormFields.forEach(field => {
             if (field.required) {
@@ -169,9 +189,6 @@ function CompanyMaster() {
         return Object.keys(newErrors).length === 0;
     };
 
-
-
-
     const handleSave = () => {
         // Validation
         if (!validateForm()) {
@@ -183,7 +200,7 @@ function CompanyMaster() {
             updateCompany({
                 id: editId,
                 payload: form,
-                logo: logoFile,
+                logo: logoFile, // Pass the file separately
             }, {
                 onSuccess: () => {
                     companyRefetch();
@@ -194,7 +211,7 @@ function CompanyMaster() {
         } else {
             createCompany({
                 payload: form,
-                logo: logoFile,
+                logo: logoFile, // Pass the file separately
             }, {
                 onSuccess: () => {
                     companyRefetch();
@@ -206,7 +223,7 @@ function CompanyMaster() {
 
     const handleEdit = (company: Company) => {
         setEditId(company.COMPANYID);
-        focusFirst();
+        if (focusFirst) focusFirst();
     };
 
     /* -------------------- TABLE COLUMNS -------------------- */
@@ -235,7 +252,7 @@ function CompanyMaster() {
     const companyFormFields = getCompanyFormFields(stateOptions, editId);
     const fieldSequence = companyFormFields.map(f => f.name);
 
-   const { register, focusNext, focusFirst } = useEnterNavigation(fieldSequence, () => {
+    const { register, focusNext, focusFirst } = useEnterNavigation(fieldSequence, () => {
         handleSave();
     });
 
@@ -260,7 +277,7 @@ function CompanyMaster() {
                                     disabled={{ COMPANYID: !!editId }}
                                     errors={errors}
                                     layout="vertical"
-                                    
+                                    gap={2}
                                 />
                             </Fieldset.Content>
                         </Fieldset.Root>
