@@ -24,6 +24,7 @@ import StockDrawer from "./DrawerTable/StockTable";
 import { useAllMetals } from "@/hooks/metal/useMetals";
 import Loader from "@/component/loader/Loader";
 import BalanceSummary, { ClosingFormDetails } from "./Balance/BalanceSummary";
+
 import { TransactionListing } from "./TransactionList/TransactionIdsListing";
 import PurchaseReceipt from "@/component/PurchasePrint/PurchasePrint";
 
@@ -1113,6 +1114,8 @@ export default function PurchasePage() {
         if (!transactionData) {
             return;
         }
+        // handleResetDraft();
+        
 
         // Set editing mode and SNO
         setIsEditing(true);
@@ -1373,6 +1376,9 @@ export default function PurchasePage() {
 
                         DESCRIPTION: item.DESCRIPTION || "",
                         BATCHNO: item.BATCHNO || "",
+
+                        TAGNO: item.TAGNO ?? "" ,
+                        // REFSNO : item.REFSNO ?? "",
 
                         // Store references to stones and charges
                         _hasStones: item.stoneDetails && item.stoneDetails.length > 0,

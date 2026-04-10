@@ -16,6 +16,8 @@ import { SaleTransactionKey, SALESTRANSACTIONITEMS } from "@/types/transcation/S
             ...rest
         } = row;
 
+        console.log(row ,'draftrowinapi')
+
         // ---------------- ISSUE / RECEIPT ----------------
         if (tranType === "issue" || tranType === "receipt") {
             return {
@@ -46,6 +48,7 @@ import { SaleTransactionKey, SALESTRANSACTIONITEMS } from "@/types/transcation/S
                 HMC: Number(rest.HMC || 0),
                 STNAMT: Number(rest.STNAMT || 0),
                 MC: Number(rest.MC || 0),
+               
 
                 // ✅ Only include TAGNO if tagged item
                 ...(tagged && { TAGNO: rest.TAGNO || "" }),
@@ -71,6 +74,7 @@ import { SaleTransactionKey, SALESTRANSACTIONITEMS } from "@/types/transcation/S
                 HMC: Number(rest.HMC || 0),
                 STNAMT: Number(rest.STNAMT || 0),
                 MC: Number(rest.MC || 0),
+                REFSNO: String(rest.SNO),
 
                 // ✅ Flexible return logic
                 ...(rest.TAGNO && { TAGNO: rest.TAGNO }),
