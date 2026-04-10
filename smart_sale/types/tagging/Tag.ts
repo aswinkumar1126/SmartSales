@@ -92,12 +92,50 @@ export interface getSingleTagDetail {
     TOUCH: number;
     TRANTYPE?: string | null;
     WASPER: number;
-    STNDETAILS:
+    STONEDETAILS:
     {
+        APPVER?: string | null;
+        CALCMODE?: string | null;
+        CARRYFLAG?: string | null;
+        CLARITYID?: number | null;
+        COLORID?: number | null;
+        COMPANYID?: number | null;
+        COSTID?: number | null;
+        CUTID: number | null;
+        DESCRIP: string | null;
+        HEIGHT: number | null;
+        INDRS: string | null;
+        ISSDATE: string | null;
+        ITEMID: number;
+        ITEMNAME: string | null;
+        MINRATE: number | null;
+        OLDTAGNO: string | null;
+        PACKETNO: string | null;
+        RECDATE: string | null;
+        SALESSTNWT: number;
+        SETTYPEID: number | null;
+        SHAPEID: number | null;
+        SIZECODE: string | null;
+        SNO: number;
+        STNAMT: number | null;
+        STNGRPID: number | null;
+        STNITEMID: number;
+        STNPCS: number | null;
+        STNRATE: number | null;
+        STNSUBITEMID: number | null;
         STNWT: number;
-        STNAMT: number;
-        STNID: number;
-        STNDESC: string;
+        STONEUNIT: string | null;
+        SYSTEMID: number | null;
+        TAGMSNO: number | null;
+        TAGNO: string;
+        TAGSNO: string;
+        TRANSFERED: boolean | null;
+        TRFVALUE: number | null;
+        USERID: number;
+        USRATE: number | null;
+        VATEXM: boolean | null;
+        WIDTH: number | null;
+
     }[]
 
 }

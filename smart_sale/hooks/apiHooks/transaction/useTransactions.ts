@@ -4,11 +4,11 @@ import {
     useQueryClient,
 } from "@tanstack/react-query";
 
-import { TransactionService ,getBillWiseSales } from "@/service/TransactionService";
-import { CreateTransaction,  UpdateTransactionPayload } from "@/types/transcation/Transaction";
+import { TransactionService, getBillWiseSales } from "@/service/TransactionService";
+import { CreateTransaction, UpdateTransactionPayload } from "@/types/transcation/Transaction";
 import { ApiResponse } from "@/types/api/apiResponse";
 import { billNoParams } from "@/service/TransactionService";
-
+import { PurchaseTransactionList } from "@/types/transactionList/TransactionList";
 
 /* -------------------- QUERY KEYS -------------------- */
 export const transactionKeys = {
@@ -16,7 +16,7 @@ export const transactionKeys = {
     list: (TRANTYPE: string) => [...transactionKeys.all, TRANTYPE] as const,
     byId: (sno: number, TRANTYPE: string) =>
         [...transactionKeys.all, "one", sno, TRANTYPE] as const,
-    byTransId: (transId: string|null) =>
+    byTransId: (transId: string | null) =>
         [...transactionKeys.all, "transId", transId] as const,
 };
 
@@ -33,7 +33,7 @@ export const useTransactions = (props: {
     itemid?: number | null;
 }) => {
     console.log("useTransaction called with props:", props);
-    return useQuery<ApiResponse<any>>({
+    return useQuery<ApiResponse<PurchaseTransactionList>, Error, PurchaseTransactionList>({
         queryKey: [
             "transactions",
             "list",
@@ -44,6 +44,7 @@ export const useTransactions = (props: {
             props.itemid ?? "all",
         ],
         queryFn: () => TransactionService.getAll(props),
+        select: (res) => res.data
     });
 };
 
@@ -56,7 +57,7 @@ export const useTransactionByTransId = (
         queryKey: transactionKeys.byTransId(transId),
         queryFn: () =>
             TransactionService.getByTransId(transId, TRANTYPE),
-        enabled: !!transId ,
+        enabled: !!transId,
     });
 };
 
@@ -64,11 +65,11 @@ export const useTransactionByTransId = (
 export const useTransaction = (
     sno: number,
     TRANTYPE: string,
-    tranType:string
+    tranType: string
 ) => {
     return useQuery<ApiResponse<any>>({
         queryKey: transactionKeys.byId(sno, TRANTYPE),
-        queryFn: () => TransactionService.getOne(sno, TRANTYPE ,tranType),
+        queryFn: () => TransactionService.getOne(sno, TRANTYPE, tranType),
         enabled: !!sno && !!TRANTYPE,
     });
 };
@@ -89,7 +90,7 @@ export const useUpdateTransaction = () => {
             entryNo: number;
             payload: CreateTransaction;
             TRANTYPE: string;
-            }) => TransactionService.update(entryNo, payload,TRANTYPE ),
+        }) => TransactionService.update(entryNo, payload, TRANTYPE),
 
         onSuccess: () => {
             queryClient.invalidateQueries({
@@ -100,7 +101,7 @@ export const useUpdateTransaction = () => {
 };
 
 // PATCH
-export const usePatchTransaction = (TRANTYPE: string ,tranType:string) => {
+export const usePatchTransaction = (TRANTYPE: string, tranType: string) => {
     const queryClient = useQueryClient();
 
     return useMutation({
@@ -110,7 +111,7 @@ export const usePatchTransaction = (TRANTYPE: string ,tranType:string) => {
         }: {
             sno: number;
             payload: Partial<any>;
-            }) => TransactionService.patch(sno, payload, TRANTYPE, tranType),
+        }) => TransactionService.patch(sno, payload, TRANTYPE, tranType),
 
         onSuccess: () => {
             queryClient.invalidateQueries({
@@ -121,12 +122,12 @@ export const usePatchTransaction = (TRANTYPE: string ,tranType:string) => {
 };
 
 // DELETE
-export const useDeleteTransaction = (TRANTYPE: string ,tranType:string) => {
+export const useDeleteTransaction = (TRANTYPE: string, tranType: string) => {
     const queryClient = useQueryClient();
 
     return useMutation({
         mutationFn: (sno: number) =>
-            TransactionService.remove(sno, TRANTYPE,tranType),
+            TransactionService.remove(sno, TRANTYPE, tranType),
 
         onSuccess: () => {
             queryClient.invalidateQueries({

@@ -4,16 +4,15 @@ import React from "react";
 import { Button, Box, Text, Flex } from "@chakra-ui/react";
 import { GiGoldBar } from "react-icons/gi";
 import { HiFilter, HiX } from "react-icons/hi";
-import { Save, RefreshCw } from "lucide-react";
 import Image from "next/image";
 import saveIcon from '@/asserts/icons/save.png';
 import clearIcon from '@/asserts/icons/clear.jpeg';
 import updateIcon from '@/asserts/icons/update.png';
+import { useSaleTransactionStore } from "@/store/sales/useSaleTransactionStore";
+import { toaster } from "@/components/ui/toaster";
 
 export default function TransactionTypeSelector({
     transactionTypes,
-    selectedTypes = [],
-    onSelectTypes,
     theme,
     TRANSACTIONTYPES_ORDER,
     showFilter,
@@ -24,78 +23,69 @@ export default function TransactionTypeSelector({
     onReset,
     isSaving,
     acCode,
-    draftRows,
-    setDraftRows
-    
 }: any) {
-    console.log(transactionTypes,'TRANSACTIONTYPES_ORDER');
-    console.log(TRANSACTIONTYPES_ORDER,'TRANSACTIONTYPES_ORDER');
-        console.log(transactionTypes,'transactionTypes');
-    
-    
+    // Get from Zustand store
+    const {
+        selectedTransactionTypes,
+        setSelectedTransactionTypes,
+        removeTransactionType,
+        clearAllTransactionTypes,
+        draftRows,
+        clearDraftRows,
+    } = useSaleTransactionStore();
 
     /* ---------- ORDER BY CODE ---------- */
     const orderedTypes = TRANSACTIONTYPES_ORDER
         .map((value: string) => transactionTypes.find((t: any) => t.value === value))
         .filter(Boolean);
 
-    console.log(orderedTypes,'orderedTypes')
-
     /* ---------- CLICK HANDLER ---------- */
     const handleTypeClick = (clickedType: any) => {
 
-        const isSelected = selectedTypes.some(
+        if(!acCode) return toaster.create({ title: "Please select customer", type: "info" });
+
+        const isSelected = selectedTransactionTypes.some(
             (type: any) => type.value === clickedType.value
         );
 
-        let newSelectedTypes = [...selectedTypes];
-
         // REMOVE
         if (isSelected) {
-
-
             const confirmRemove = window.confirm(
-                `Remove "${clickedType.label}" from filter ?`
+                `Remove "${clickedType.label}" from filter?`
             );
 
             if (!confirmRemove) return;
 
-            newSelectedTypes = selectedTypes.filter(
-                (type: any) => type.value !== clickedType.value
-            );
+            removeTransactionType(clickedType.value);
         }
         // ADD
         else {
-            newSelectedTypes.push(clickedType);
+            setSelectedTransactionTypes([...selectedTransactionTypes, clickedType]);
         }
-
-        onSelectTypes(newSelectedTypes);
     };
 
     const isTypeSelected = (code: string) =>
-        selectedTypes.some((type: any) => type.value === code);
+        selectedTransactionTypes.some((type: any) => type.value === code);
 
-    const  TYPE_COLORS: Record<string, { bg: string; active: string; text: string }> = {
-        SA: { bg: "#E6FFFA", active: "#2F855A", text: "#1C4532" },  // Blue
-        SR: { bg: "#FFEAEA", active: "#C53030", text: "#742A2A" },   // Red
-        IS: { bg: "#FFF4E5", active: "#DD6B20", text: "#7B341E" },   // Orange
-        RE: { bg: "#ffe8fd", active: "#c729ba", text: "#8f1084" }   // Green
+    const TYPE_COLORS: Record<string, { bg: string; active: string; text: string }> = {
+        SA: { bg: "#E6FFFA", active: "#2F855A", text: "#1C4532" },
+        SR: { bg: "#FFEAEA", active: "#C53030", text: "#742A2A" },
+        IS: { bg: "#FFF4E5", active: "#DD6B20", text: "#7B341E" },
+        RE: { bg: "#ffe8fd", active: "#c729ba", text: "#8f1084" }
     };
 
     const handleDeselectAll = () => {
-
         if (draftRows && draftRows.length > 0) {
-
             const confirmClear = window.confirm(
                 "Table contains rows. Clear table and deselect transaction types?"
             );
 
             if (!confirmClear) return;
 
-            setDraftRows([])
+            clearDraftRows();
         }
 
-        onSelectTypes([]); // clear selection
+        clearAllTransactionTypes();
     };
 
     return (
@@ -115,8 +105,6 @@ export default function TransactionTypeSelector({
                 {orderedTypes.map((btn: any) => {
                     const Icon = btn.icon;
                     const selected = isTypeSelected(btn.value);
-                    console.log(selected,'selected')
-
                     const colors = TYPE_COLORS[btn.value] || {
                         bg: "#F1F1F1",
                         active: "#444",
@@ -135,18 +123,14 @@ export default function TransactionTypeSelector({
                             alignItems="center"
                             gap={1}
                             transition="all .15s ease"
-
-                            /* -------- COLORS -------- */
                             bg={selected ? colors.active : colors.bg}
                             color={selected ? "white" : colors.text}
                             borderWidth="1px"
                             borderColor={selected ? colors.active : "transparent"}
-
                             _hover={{
                                 bg: selected ? colors.active : `${colors.bg}`,
                                 transform: "translateY(-1px)"
                             }}
-
                             _active={{
                                 transform: "scale(.96)"
                             }}
@@ -157,17 +141,18 @@ export default function TransactionTypeSelector({
                     );
                 })}
             </Box>
-            {acCode && 
+
+            {acCode &&
                 <Box gap={2}>
                     <Button
                         size="xs"
                         fontSize='2xs'
-                        onClick={onReset}
+                        onClick={onReset || handleDeselectAll}
                         variant='ghost'
                         bg={theme.colors.formColor}
                         p={0}
                     >
-                        <Image src={clearIcon} width={58} alt="save" />
+                        <Image src={clearIcon} width={58} alt="clear" />
                     </Button>
 
                     <Button
@@ -178,27 +163,13 @@ export default function TransactionTypeSelector({
                         loadingText="Saving..."
                         variant='ghost'
                         p={0}
-
                     >
                         <Image src={isEditing ? updateIcon : saveIcon} width={60} alt="save" />
                     </Button>
+                </Box>
+            }
 
-                    {/* {draftRows.length > 0 &&
-                        <Button
-                            size="2xs"
-                            fontSize="2xs"
-                            onClick={handleDeselectAll}
-                            bg="red.600"
-                            color="white"
-                            rounded="full"
-                        >
-                            <HiX size={10} /> DESELECT
-                        </Button>
-                    } */}
-                </Box> }
-            
             <Box display='flex' gap={4}>
-
                 {/* ALL STOCK */}
                 <Box
                     className="flex flex-col items-center cursor-pointer gap-1"
@@ -223,5 +194,4 @@ export default function TransactionTypeSelector({
             </Box>
         </Box>
     );
-
 }

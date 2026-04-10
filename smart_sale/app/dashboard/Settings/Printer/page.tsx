@@ -14,17 +14,17 @@ import { FaEdit } from "react-icons/fa";
 import { FaPrint, FaFileExcel } from "react-icons/fa";
 import { useRouter } from "next/navigation";
 import { toastError, toastLoaded } from "@/component/toast/toast";
-import { usePrint, useCreatePrint, useUpdatePrint } from "@/hooks/print/usePrint";
+import { usePrint, useCreatePrint, useUpdatePrint } from "@/hooks/apiHooks/print/usePrint";
 import { CreatePrinterSettingInterface } from "@/service/PrinterSettingService";
 
 // Type definition based on your service
 interface PrinterSettingType {
-    printCode:number;
+    printCode: number;
     IPId: string;
     ipAddress: string;
     exeName: string;
-    printerName: string;  
-    active:string;
+    printerName: string;
+    active: string;
 
 }
 
@@ -37,7 +37,7 @@ function PrinterSetting() {
         ipAddress: "",
         exeName: "",
         printerName: "",
-        active:"N",
+        active: "N",
     }
 
     /* -------------------- STATE -------------------- */
@@ -49,7 +49,7 @@ function PrinterSetting() {
 
     /* -------------------- HOOKS -------------------- */
     const { data: printerData, isLoading: printerLoading, refetch: refetchPrinters } = usePrint();
-    console.log(printerData,'printerData')
+    console.log(printerData, 'printerData')
     const { mutate: createPrinter, isPending: isCreating } = useCreatePrint();
     const { mutate: updatePrinter, isPending: isUpdating } = useUpdatePrint();
 
@@ -60,7 +60,7 @@ function PrinterSetting() {
         if (printerData.data && Array.isArray(printerData.data)) return printerData.data;
         return [];
     }, [printerData]);
-  
+
 
     /* -------------------- EFFECTS -------------------- */
     useEffect(() => {
@@ -112,7 +112,7 @@ function PrinterSetting() {
         return Object.keys(newErrors).length === 0;
     };
 
-    console.log(formData,'formData')
+    console.log(formData, 'formData')
 
     const handleSave = async () => {
         if (!validateForm()) {

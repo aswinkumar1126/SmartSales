@@ -25,13 +25,13 @@ import { toastCreated, toastLoaded, toastUpdated } from "@/component/toast/toast
 import { useTheme } from "@/context/theme/themeContext";
 import { ItemMast } from "@/types/item/item";
 import { normalizeItem } from "@/utils/normalize/normalizeItem";
-import { useItems, useStoneItems } from "@/hooks/item/useItems";
+import { useItems, useStoneItems } from "@/hooks/apiHooks/item/useItems";
 import {
     useOrnamentData,
     useOrnamentDataById,
     useCreateOrnament,
     useUpdateOrnament,
-} from "@/hooks/ornament/useOrnamentData";
+} from "@/hooks/apiHooks/ornament/useOrnamentData";
 import { usePrint } from "@/context/print/usePrintContext";
 import { OrnamentPayload, OrnamentFormData } from "@/types/ornament/ornament";
 import { formatToFixed } from "@/utils/format/numberFormat";
@@ -41,7 +41,7 @@ import { useRouter } from "next/navigation";
 import { FaFileExcel, FaPrint } from "react-icons/fa";
 import SearchBar from "@/component/search/SearchBar";
 
-import { useAllMetals } from "@/hooks/metal/useMetals";
+import { useAllMetals } from "@/hooks/apiHooks/metal/useMetals";
 
 import { OrnamentOpeningFields } from "@/config/opening/ornamentOpening";
 import { DynamicForm } from "@/component/form/DynamicForm";
@@ -50,7 +50,7 @@ import { useEnterNavigation } from "@/component/form/useEnterNavigation";
 function OrnamentMaster() {
     /* -------------------- FORM STATE -------------------- */
     const [form, setForm] = useState<OrnamentFormData>({
-     
+
 
 
         itemId: "",   // ✅ NOT null
@@ -67,7 +67,7 @@ function OrnamentMaster() {
     const [higlightedId, setHiglightedId] = useState<Number>();
     const [itemCollection, setItemCollection] = useState<{ label: string, value: string }[]>([]);
 
-    console.log(itemCollection,'itemCollection')
+    console.log(itemCollection, 'itemCollection')
 
 
     const [editId, setEditId] = useState<number | null>(null);
@@ -84,7 +84,7 @@ function OrnamentMaster() {
 
     /* -------------------- DATA -------------------- */
     const { data: itemsData } = useStoneItems();
-    console.log(itemsData,'itemsData');
+    console.log(itemsData, 'itemsData');
     const { setData, setColumns, setShowSno, title } = usePrint();
 
     //
@@ -97,7 +97,7 @@ function OrnamentMaster() {
 
     const { data: ornamentList, isLoading } = useOrnamentData(filter);
 
-    console.log(ornamentList,'ornamentList')
+    console.log(ornamentList, 'ornamentList')
 
 
     const ornaments = Array.isArray(ornamentList?.data)
@@ -108,7 +108,7 @@ function OrnamentMaster() {
         return (itemsData ?? []).map(normalizeItem);
     }, [itemsData]);
 
-    console.log(items,'itemsData')
+    console.log(items, 'itemsData')
 
 
 
@@ -184,7 +184,7 @@ function OrnamentMaster() {
     };
 
     const toPayload = (form: OrnamentFormData): OrnamentPayload => ({
-       
+
         itemId: Number(form.itemId),
         pcs: Number(form.pcs),
         grswt: Number(form.grswt),
@@ -200,7 +200,7 @@ function OrnamentMaster() {
     const resetForm = () => {
         setEditId(null);
         setForm({
-           
+
             itemId: "",
             pcs: "",
             grswt: "",
@@ -238,10 +238,10 @@ function OrnamentMaster() {
                 { field: "netwt", condition: () => !!form.netwt && Number(form.netwt) > 0, message: "Net weight must be greater than 0" },
                 { field: "purewt", condition: () => form.purewt === undefined || Number(form.purewt) >= 0, message: "Pure weight cannot be negative" },
                 { field: "touch", condition: () => form.touch === undefined || Number(form.touch) >= 0, message: "Touch cannot be negative" },
-              
+
                 { field: "stnwt", condition: () => form.stnwt === undefined || Number(form.stnwt) >= 0, message: "Stone weight cannot be negative" },
                 { field: "stnAmt", condition: () => form.stnAmt === undefined || Number(form.stnAmt) >= 0, message: "Stone cash cannot be negative" },
-           
+
             ];
 
         // Run through rules
@@ -319,13 +319,13 @@ function OrnamentMaster() {
         router.push(`/print?export=${option}`);
     }
 
-    const getFormNames = ornamentFields.map(f=>f.name);
+    const getFormNames = ornamentFields.map(f => f.name);
 
-    const {register ,focusFirst ,focusNext } = useEnterNavigation(getFormNames , handleSave);
+    const { register, focusFirst, focusNext } = useEnterNavigation(getFormNames, handleSave);
 
-    useEffect(()=>{
+    useEffect(() => {
         focusFirst();
-    },[])
+    }, [])
 
     /* -------------------- UI -------------------- */
     return (
@@ -358,9 +358,9 @@ function OrnamentMaster() {
                                     register={register}
                                     minLabelWidth="100px"
                                     focusNext={focusNext}
-                                    layout="vertical" 
+                                    layout="vertical"
                                 />
-                                   
+
 
                                 {/* ACTION BUTTONS */}
 
@@ -447,12 +447,12 @@ function OrnamentMaster() {
                                     <Table.Cell>{index + 1}</Table.Cell>
                                     <Table.Cell>{ornament.ITEMNAME}</Table.Cell>
                                     <Table.Cell textAlign='end'>{ornament.PCS}</Table.Cell>
-                                    <Table.Cell textAlign='end'>{formatToFixed(ornament.GRSWT,3)}</Table.Cell>
-                                    <Table.Cell textAlign='end'>{formatToFixed(ornament.STNWT,3)}</Table.Cell>
-                                    <Table.Cell textAlign='end'>{formatToFixed(ornament.NETWT,3)}</Table.Cell>
-                                    <Table.Cell textAlign='end'>{formatToFixed(ornament.TOUCH,1)}</Table.Cell>
-                                    <Table.Cell textAlign='end'>{formatToFixed(ornament.PUREWT,3)}</Table.Cell>
-                                    <Table.Cell textAlign='end'>{formatToFixed(ornament.STNAMT,2)}</Table.Cell>
+                                    <Table.Cell textAlign='end'>{formatToFixed(ornament.GRSWT, 3)}</Table.Cell>
+                                    <Table.Cell textAlign='end'>{formatToFixed(ornament.STNWT, 3)}</Table.Cell>
+                                    <Table.Cell textAlign='end'>{formatToFixed(ornament.NETWT, 3)}</Table.Cell>
+                                    <Table.Cell textAlign='end'>{formatToFixed(ornament.TOUCH, 1)}</Table.Cell>
+                                    <Table.Cell textAlign='end'>{formatToFixed(ornament.PUREWT, 3)}</Table.Cell>
+                                    <Table.Cell textAlign='end'>{formatToFixed(ornament.STNAMT, 2)}</Table.Cell>
                                     {/* <Table.Cell>
                                         <Box display='flex' justifyContent='center'>
                                             <FaEdit

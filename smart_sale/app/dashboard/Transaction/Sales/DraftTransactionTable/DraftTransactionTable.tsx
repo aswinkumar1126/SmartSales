@@ -14,9 +14,8 @@ import { LuX } from "react-icons/lu";
 
 import { issueColumns, saleColumns } from "../transactionForm/TransactionForm";
 
-
-import { useStoneItems } from "@/hooks/item/useItems";
-import { useCalculatePure } from "@/hooks/pure/useCalculatePure";
+import { useStoneItems } from "@/hooks/apiHooks/item/useItems";
+import { useCalculatePure } from "@/hooks/apiHooks/pure/useCalculatePure";
 
 import StoneEnterMaster from "../StoneMaster/StoneEntryMaster";
 import OtherChargesWindow from "../OtherCharges/OtherChargesWindow";
@@ -26,19 +25,17 @@ import { useGlobalKey } from "@/components/key/useGlobalKey";
 import TransactionTable from "@/component/table/TransactionTable";
 import { toaster } from "@/components/ui/toaster";
 import { CapitalizedInput } from "@/components/ui/CapitalizedInput";
-import { SwitchInput } from "@/components/ui/SwitchInput";
-import { SearchIcon } from "lucide-react";
 
 import { getIsTagEnabled, getIsBillModalEnabled } from "@/config/transaction/SalesConfig";
-
 import SalesBillViewModal from "../SaleModal/SaleModal";
 
+
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 type StoneRow = {
     id: string;
     draftRowId: string;
     stoneId: string;
-    // subStoneId: string;
     stonePcs: number;
     stoneWeight: number;
     stoneUnit: "g" | "c";
@@ -64,13 +61,13 @@ export interface FormField {
     dependsOn?: string;
     defaultValue?: string;
     allowFocus?: boolean;
-
 }
 
 interface DraftTransactionTableProps {
     rows: any[];
-    // 🔥 FIX: Replace editingRowId with editingState
     editingState: { rowId: string | null; transactionType: string | null };
+    // ✅ FIX 1: Added onEditRow — called for UPDATES (replaces field-by-field onUpdateRow in edit path)
+    onEditRow: (rowId: string, submitData: any) => void;
     onAddRow: (formData?: any) => void;
     onUpdateRow: (rowIndex: number, field: string, value: any) => void;
     onRemoveRow: (rowId: string) => void;
@@ -82,43 +79,59 @@ interface DraftTransactionTableProps {
     theme: any;
     isEditing: boolean;
     isIssue?: boolean;
-    getAvailableWeight?: (id: string | number, options?: { excludeRowId?: string, isEditing?: boolean, originalWeight?: number, transactionTypeCode?: string }) => number | null;
+    getAvailableWeight?: (
+        id: string | number,
+        options?: { excludeRowId?: string; isEditing?: boolean; originalWeight?: number; transactionTypeCode?: string }
+    ) => number | null;
     onClear?: () => void;
     transactionType?: string;
     initialFormData?: any;
-    getStockAvailability?: (id: string, options?: { excludeRowId?: string, transactionTypeCode: string, isEditing?: boolean, originalWeight?: number }) => any | undefined;
-    otherChargesList: { label: string; value: string; }[];
+    getStockAvailability?: (
+        id: string,
+        options?: { excludeRowId?: string; transactionTypeCode: string; isEditing?: boolean; originalWeight?: number }
+    ) => any | undefined;
+    otherChargesList: { label: string; value: string }[];
     otherChargesData: any;
-    getAvailablePieces?: (id: string, options?: { excludeRowId?: string, transactionTypeCode: string, isEditing?: boolean, originalPieces?: number }) => any | undefined;
+    getAvailablePieces?: (
+        id: string,
+        options?: { excludeRowId?: string; transactionTypeCode: string; isEditing?: boolean; originalPieces?: number }
+    ) => any | undefined;
     handleTagChange: () => void;
     isTag: boolean;
     onTagNoLookup?: (tagNo: string) => void;
-    acCode?: number
+    acCode?: number;
     onSaleReturnModal: {
-        billParams: { ACCODE: number | undefined; ENTRYNO?: string; BILLDATE?: string ,TAGNO?:string};
+        billParams: { ACCODE: number | undefined; ENTRYNO?: string; BILLDATE?: string; TAGNO?: string };
         onBillParamChange: (field: string, value: any) => void;
         billDetails: any[] | [];
         loading: boolean;
-        showBillModal: boolean,
+        showBillModal: boolean;
         handleBillShow: () => void;
-        handleSelectedItems: (filterRows:any[]) => void;
-        handleLoadSelectedItems: (items:any[]) => void
+        handleSelectedItems: (filterRows: any[]) => void;
+        handleLoadSelectedItems: (items: any[]) => void;
     };
 }
 
-
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const getWidth = (width: string | number) => width || "30px";
 
-
 function InlineSelect({
-    value, onChange, collection, inputRef, onEnter, disabled, isInvalid,
+    value,
+    onChange,
+    collection,
+    inputRef,
+    onEnter,
+    disabled,
+    isInvalid,
 }: {
-    value: string; onChange: (v: string) => void;
+    value: string;
+    onChange: (v: string) => void;
     collection?: { items: { label: string; value: string }[] };
     isInvalid?: boolean;
     inputRef?: React.RefObject<HTMLSelectElement>;
-    onEnter?: () => void; disabled?: boolean;
+    onEnter?: () => void;
+    disabled?: boolean;
 }) {
     const localRef = useRef<HTMLSelectElement>(null);
     const ref = (inputRef || localRef) as React.RefObject<HTMLSelectElement>;
@@ -128,27 +141,40 @@ function InlineSelect({
         <select
             ref={ref}
             value={value}
-            onChange={e => onChange(e.target.value)}
-            onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); onEnter?.(); } }}
+            onChange={(e) => onChange(e.target.value)}
+            onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                    e.preventDefault();
+                    onEnter?.();
+                }
+            }}
             disabled={disabled}
             style={{
-                width: "100%", height: 22, fontSize: 10, borderRadius: 3,
+                width: "100%",
+                height: 22,
+                fontSize: 10,
+                borderRadius: 3,
                 border: isInvalid ? "1px solid #FC8181" : "1px solid transparent",
-                outline: "none", padding: "0 4px",
+                outline: "none",
+                padding: "0 4px",
                 background: disabled ? "#F7FAFC" : "white",
             }}
         >
-            {safeItems.map(opt => (
-                <option key={opt.value} value={opt.value}>{opt.label}</option>
+            {safeItems.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                </option>
             ))}
         </select>
     );
 }
 
+// ─── Component ────────────────────────────────────────────────────────────────
+
 export default function DraftTransactionTable({
     rows,
-    // 🔥 FIX: Use editingState instead of editingRowId
     editingState,
+    onEditRow,       // ✅ FIX 1: destructure new prop
     onAddRow,
     onUpdateRow,
     onRemoveRow,
@@ -172,124 +198,27 @@ export default function DraftTransactionTable({
     handleTagChange,
     onTagNoLookup,
     acCode,
-    onSaleReturnModal
+    onSaleReturnModal,
 }: DraftTransactionTableProps) {
-    console.log(onSaleReturnModal.billDetails,'onSaleReturnModal')
 
-    const stoneDataSavedRef = useRef(false);
+    console.log(rows,'rowsrowsrows')
 
-    // 🔥 FIX: Get the current editing row ID and its transaction type
+    // ── Editing state ──────────────────────────────────────────────────────────
     const currentEditingRowId = editingState?.rowId;
     const currentEditingTransactionType = editingState?.transactionType;
+    const isThisTableEditing =
+        currentEditingRowId !== null && currentEditingTransactionType === transactionType;
 
-
-    // Check if this table should be in editing mode
-    const isThisTableEditing = currentEditingRowId !== null &&
-        currentEditingTransactionType === transactionType;
-
-
-    // FIX: Separate state for each modal's draft row ID
+    // ── Modal / draft-ID state ─────────────────────────────────────────────────
     const [stoneDraftRowId, setStoneDraftRowId] = useState<string>("");
     const [miscDraftRowId, setMiscDraftRowId] = useState<string>("");
 
     const stoneModalOpenedRef = useRef(false);
     const miscModalOpenedRef = useRef(false);
 
-    // Separate temp ID refs
     const stoneTempId = useRef<string | null>(null);
     const miscTempId = useRef<string | null>(null);
 
-    const { data: stoneItemsData } = useStoneItems({ STUDDED: 'Y' });
-    const [stoneItemsCollection, setStoneItemCollection] = useState<{ label: string; value: string }[]>([]);
-
-
-
-    const [tagNo, setTagNo] = useState<string>('');
-
-
-    const pendingStoneData = useRef<{
-        tempId: string;
-        stones: StoneRow[];
-        totalWeight: number;
-    } | null>(null);
-
-    const pendingMiscData = useRef<{
-        tempId: string;
-        charges: any[];
-        totalAmount: number;
-    } | null>(null);
-
-
-
-
-
-    const rowsRef = useRef(rows);
-
-    useEffect(() => { rowsRef.current = rows; }, [rows]);
-
-    useEffect(() => {
-        if (!stoneItemsData) return;
-        setStoneItemCollection(
-            stoneItemsData.map((item: any) => ({
-                label: item.itemName,
-                value: item.itemId.toString(),
-            }))
-        );
-    }, [stoneItemsData]);
-
-
-
-    const [formData, setFormData] = useState<Record<string, any>>({});
-    const [errors, setErrors] = useState<Record<string, string>>({});
-    const [touched, setTouched] = useState<Record<string, boolean>>({});
-    const [isSubmitting, setIsSubmitting] = useState(false);
-
-    const [isStoneModalOpen, setIsStoneModalOpen] = useState(false);
-    const [isMiscModalOpen, setIsMiscModalOpen] = useState(false);
-    const [currentGRSWT, setCurrentGRSWT] = useState<number>(0);
-
-    const fieldRefs = useRef<Record<string, React.RefObject<any>>>({});
-    const submitBtnRef = useRef<HTMLButtonElement>(null);
-
-    /*------------------------------- BILL DETAILS MODAL STATE ----------------------------*/
-
-   
-    const { showBillModal, handleBillShow } = onSaleReturnModal;
-
-
-    const wastypecollection = useMemo(
-        () => ({ items: [{ label: "TOUCH", value: "TOUCH" }] }),
-        []
-    );
-
-    const numericFields = useMemo(() => [
-        "PCS", "GRSWT", "STNWT", "NETWT", "WASPER", "WASTAGE", "STNAMT",
-        "PUREWT", "HMC", "MC", "WT", "TOUCH", "AWT", "APUREWT"
-    ], []);
-
-
-    const orderedKeys = useMemo(() => {
-        if (isIssue) return ["PUREID", "WT", "AWT", "TOUCH", "ATOUCH", "PUREWT", "APUREWT"];
-
-
-        const showTag = isTag;
-
-        return showTag
-            ? ["TAGNO", "ITEMID", "PCS", "GRSWT", "STNWT", "NETWT", "WASTYPE", "WASPER", "WASTAGE", "TOUCH", "PUREWT", "HMC", "MC", "STNAMT", "DESCRIPTION"]
-            : ["ITEMID", "PCS", "GRSWT", "STNWT", "NETWT", "WASTYPE", "WASPER", "WASTAGE", "TOUCH", "PUREWT", "HMC", "MC", "STNAMT", "DESCRIPTION"];
-    }, [isIssue, isTag]);  // ✅ add transactionTitle to deps
-
-
-    const baseColumns = isIssue ? issueColumns : saleColumns(isTag);
-    const colMap = useMemo(() => new Map(baseColumns.map(c => [c.key, c])), [baseColumns]);
-    const tableCols = useMemo(() =>
-        orderedKeys.map(k => colMap.get(k)).filter(Boolean) as any[],
-        [isIssue, colMap]
-    );
-
-    console.log(tableCols, 'tableCols')
-
-    // Separate temp ID getters/resetters
     const getStoneTempId = () => {
         if (!stoneTempId.current) {
             stoneTempId.current = `stone-form-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
@@ -307,82 +236,75 @@ export default function DraftTransactionTable({
     const resetStoneTempId = () => { stoneTempId.current = null; };
     const resetMiscTempId = () => { miscTempId.current = null; };
 
-    // Stone modal: only uses stoneDraftRowId
-    const handleOpenStoneModal = (grsWeight: number) => {
-        if (stoneModalOpenedRef.current) return;
-        stoneModalOpenedRef.current = true;
-        setCurrentGRSWT(grsWeight);
+    // ── Stone / misc data pending refs ────────────────────────────────────────
+    const pendingStoneData = useRef<{ tempId: string; stones: StoneRow[]; totalWeight: number } | null>(null);
+    const pendingMiscData = useRef<{ tempId: string; charges: any[]; totalAmount: number } | null>(null);
 
-        // if (currentEditingRowId) {
-        //     // ✅ Editing existing row — use its rowId
-        //     setStoneDraftRowId(currentEditingRowId as string);
-        // } else if (stoneDraftRowId) {
-        //     // ✅ Already set from tag lookup — don't overwrite, just re-set to trigger render
-        //     setStoneDraftRowId(stoneDraftRowId);
-        // } else {
-        //     // ✅ New entry — generate fresh temp ID
-        //     setStoneDraftRowId(getStoneTempId());
-        // }
+    // ── Other refs & external data ────────────────────────────────────────────
+    const rowsRef = useRef(rows);
+    useEffect(() => { rowsRef.current = rows; }, [rows]);
 
-        // ✅ Delay open so setStoneDraftRowId flushes first
-        setTimeout(() => setIsStoneModalOpen(true), 50);
-        setTimeout(() => { stoneModalOpenedRef.current = false; }, 500);
-    };
+    const { data: stoneItemsData } = useStoneItems({ STUDDED: "Y" });
+    const [stoneItemsCollection, setStoneItemCollection] = useState<{ label: string; value: string }[]>([]);
+    useEffect(() => {
+        if (!stoneItemsData) return;
+        setStoneItemCollection(
+            stoneItemsData.map((item: any) => ({
+                label: item.itemName,
+                value: item.itemId.toString(),
+            }))
+        );
+    }, [stoneItemsData]);
 
-    // Stone modal close — don't wipe ID
-    const closeStoneModal = () => {
-        setIsStoneModalOpen(false);
-        // ✅ Don't clear stoneDraftRowId here — resetForm() handles it
-    };
+    const [tagNo, setTagNo] = useState<string>("");
 
+    // ── Form state ────────────────────────────────────────────────────────────
+    const [formData, setFormData] = useState<Record<string, any>>({});
+    const [errors, setErrors] = useState<Record<string, string>>({});
+    const [touched, setTouched] = useState<Record<string, boolean>>({});
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
-    // Misc modal: only uses miscDraftRowId
-    const handleOpenMiscModal = () => {
-        if (miscModalOpenedRef.current) return;
-        miscModalOpenedRef.current = true;
+    // ── Modal open state ──────────────────────────────────────────────────────
+    const [isStoneModalOpen, setIsStoneModalOpen] = useState(false);
+    const [isMiscModalOpen, setIsMiscModalOpen] = useState(false);
+    const [currentGRSWT, setCurrentGRSWT] = useState<number>(0);
 
-        let idToUse: string;
+    // ── Refs for focus management ─────────────────────────────────────────────
+    const fieldRefs = useRef<Record<string, React.RefObject<any>>>({});
+    const submitBtnRef = useRef<HTMLButtonElement>(null);
 
-        // 🔥 FIX: Use currentEditingRowId instead of editingRowId
-        if (currentEditingRowId) {
-            idToUse = currentEditingRowId as string;
-            console.log("Opening misc modal for existing row:", idToUse);
+    // ── Bill modal ────────────────────────────────────────────────────────────
+    const { showBillModal, handleBillShow } = onSaleReturnModal;
 
-            const allCharges = JSON.parse(localStorage.getItem("MISC_CHARGE_MASTER") || "[]");
-            const rowCharges = allCharges.filter((c: any) => c.draftRowId === idToUse);
-            if (rowCharges.length > 0) {
-                const total = rowCharges.reduce((sum: number, c: any) => sum + c.amount, 0);
-                pendingMiscData.current = { tempId: idToUse, charges: rowCharges, totalAmount: total };
-                handleChange("HMC", total.toFixed(2));
-            }
-        } else if (miscDraftRowId) {
-            // Reuse existing misc temp ID — stone modal closing never touches this
-            idToUse = miscDraftRowId;
-            console.log("Reusing existing misc ID:", idToUse);
+    // ── Collections / column setup ────────────────────────────────────────────
+    const wastypecollection = useMemo(
+        () => ({ items: [{ label: "TOUCH", value: "TOUCH" }] }),
+        []
+    );
 
-            const allCharges = JSON.parse(localStorage.getItem("MISC_CHARGE_MASTER") || "[]");
-            const rowCharges = allCharges.filter((c: any) => c.draftRowId === idToUse);
-            if (rowCharges.length > 0) {
-                const total = rowCharges.reduce((sum: number, c: any) => sum + c.amount, 0);
-                pendingMiscData.current = { tempId: idToUse, charges: rowCharges, totalAmount: total };
-                handleChange("HMC", total.toFixed(2));
-            }
-        } else {
-            idToUse = getMiscTempId();
-            console.log("Created new misc temp ID:", idToUse);
-        }
+    const numericFields = useMemo(
+        () => ["PCS", "GRSWT", "STNWT", "NETWT", "WASPER", "WASTAGE", "STNAMT",
+            "PUREWT", "HMC", "MC", "WT", "TOUCH", "AWT", "APUREWT"],
+        []
+    );
 
-        setMiscDraftRowId(idToUse);
-        setIsMiscModalOpen(true);
-        setTimeout(() => { miscModalOpenedRef.current = false; }, 500);
-    };
+    const orderedKeys = useMemo(() => {
+        if (isIssue) return ["PUREID", "WT", "AWT", "TOUCH", "ATOUCH", "PUREWT", "APUREWT"];
+        return isTag
+            ? ["TAGNO", "ITEMID", "PCS", "GRSWT", "STNWT", "NETWT", "WASTYPE", "WASPER",
+                "WASTAGE", "TOUCH", "PUREWT", "HMC", "MC", "STNAMT", "DESCRIPTION"]
+            : ["ITEMID", "PCS", "GRSWT", "STNWT", "NETWT", "WASTYPE", "WASPER",
+                "WASTAGE", "TOUCH", "PUREWT", "HMC", "MC", "STNAMT", "DESCRIPTION"];
+    }, [isIssue, isTag]);
 
+    const baseColumns = isIssue ? issueColumns : saleColumns(isTag);
+    const colMap = useMemo(() => new Map(baseColumns.map((c) => [c.key, c])), [baseColumns]);
+    const tableCols = useMemo(
+        () => orderedKeys.map((k) => colMap.get(k)).filter(Boolean) as any[],
+        [isIssue, colMap]
+    );
 
-    const closeOtherChargeModal = () => {
-        setIsMiscModalOpen(false);
-        resetMiscTempId();
-    }
-
+    // ── Form fields definition ────────────────────────────────────────────────
     const formFields = useMemo<FormField[]>(() => {
         return tableCols.map((col): FormField => {
             const isNum = numericFields.includes(col.key);
@@ -399,14 +321,12 @@ export default function DraftTransactionTable({
                 allowFocus: col.allowFocus,
                 size: "xs",
                 ...("decimalScale" in col && typeof col.decimalScale === "number"
-                    ? { decimalScale: col.decimalScale } : {}),
+                    ? { decimalScale: col.decimalScale }
+                    : {}),
             };
 
             if (col.key === "ITEMID" || col.key === "PUREID")
                 return { ...base, type: "combobox", collection: itemsCollection || { items: [] }, isRequired: true };
-
-            // if (col.key === "ITEMCODE" || col.key === "HSNCODE")
-            //     return { ...base, type: "capitalized" };
 
             if (col.key === "WASTYPE")
                 return { ...base, type: "select", collection: wastypecollection, isRequired: true, dependsOn: "ITEMID", defaultValue: "TOUCH" };
@@ -417,49 +337,55 @@ export default function DraftTransactionTable({
             if (isIssue && ["PUREWT", "APUREWT"].includes(col.key))
                 return { ...base, type: "calculated", disabled: true };
 
-
-            // In formFields useMemo:
-            if (!isIssue && ["PCS", "GRSWT", "STNWT", "WASTYPE", "WASPER", "WASTAGE", "MC", "HMC", "TOUCH", "STNAMT", "DESCRIPTION"].includes(col.key)) {
-                // ✅ When isTag, these fields get filled by TAGNO lookup — no dependsOn lock needed
+            if (!isIssue && ["PCS", "GRSWT", "STNWT", "WASTYPE", "WASPER", "WASTAGE",
+                "MC", "HMC", "TOUCH", "STNAMT", "DESCRIPTION"].includes(col.key)) {
+                // ✅ When isTag, tag lookup fills these — no dependsOn lock needed
                 return { ...base, dependsOn: isTag ? undefined : "ITEMID" };
             }
 
             if (isIssue && ["WT", "AWT", "TOUCH", "ATOUCH"].includes(col.key))
                 return { ...base, dependsOn: "PUREID" };
 
-            if (!isIssue && ["STNAMT"].includes(col.key))
+            if (!isIssue && col.key === "STNAMT")
                 return { ...base, type: "calculated", disabled: true };
 
             if (col.key === "TAGNO") {
                 const isReturn = transactionTitle?.toLowerCase() === "return";
-                return {
-                    ...base,
-                    type: "text",
-                    isRequired: isReturn && isTag,
-                    disabled: false,
-                };
+                return { ...base, type: "text", isRequired: isReturn && isTag, disabled: false };
             }
 
             return base;
         });
     }, [tableCols, itemsCollection, isIssue, isTag, transactionTitle]);
 
-    const visibleFormFields = useMemo(() =>
-        formFields.filter(f => !["NETWT", "PUREWT", "APUREWT"].includes(f.key) && f.type !== "calculated"),
+    // ── Visible fields (excludes auto-calculated display-only fields) ─────────
+    const visibleFormFields = useMemo(
+        () => formFields.filter(
+            (f) => !["NETWT", "PUREWT", "APUREWT"].includes(f.key) && f.type !== "calculated"
+        ),
         [formFields]
     );
 
     const formFieldsRef = useRef(formFields);
     useEffect(() => { formFieldsRef.current = formFields; }, [formFields]);
 
-
     const onRowClickRef = useRef(onRowClick);
     useEffect(() => { onRowClickRef.current = onRowClick; }, [onRowClick]);
 
+    // ── Ensure refs exist for every visible field ──────────────────────────────
+    useEffect(() => {
+        visibleFormFields.forEach((f) => {
+            if (!fieldRefs.current[f.key]) {
+                fieldRefs.current[f.key] = React.createRef<any>();
+            }
+        });
+    }, [visibleFormFields]);
+
+    // ── Initialise from initialFormData prop ──────────────────────────────────
     useEffect(() => {
         if (!initialFormData) return;
         const next: Record<string, any> = {};
-        formFieldsRef.current.forEach(f => {   // ✅ use ref
+        formFieldsRef.current.forEach((f) => {
             if (f.type === "number" && initialFormData[f.key] !== undefined) {
                 next[f.key] = initialFormData[f.key].toString();
             } else {
@@ -468,24 +394,98 @@ export default function DraftTransactionTable({
         });
         setFormData(next);
         if (initialFormData.__rowId) {
-            onRowClickRef.current(initialFormData, transactionType || "");  // ✅ use ref
+            onRowClickRef.current(initialFormData, transactionType || "");
         }
     }, [initialFormData, transactionType]);
 
+    // ── Blank form on mount ────────────────────────────────────────────────────
+    useEffect(() => {
+        const init: Record<string, any> = {};
+        formFields.forEach((f) => { init[f.key] = f.defaultValue ?? ""; });
+        setFormData(init);
+    }, []); // empty — mount only
+
+
+
+    // ── Populate form when editing an existing row ────────────────────────────
+    useEffect(() => {
+        if (currentEditingRowId && currentEditingTransactionType === transactionType) {
+            const rowToEdit = rows.find((r) => r.__rowId === currentEditingRowId);
+            console.log(rowToEdit,'rowToEdit')
+            if (!rowToEdit) return;
+
+            const next: Record<string, any> = {};
+            formFieldsRef.current.forEach((f) => {
+                if (f.type === "number" && rowToEdit[f.key] !== undefined) {
+                    next[f.key] = rowToEdit[f.key].toString();
+                } else {
+                    next[f.key] = rowToEdit[f.key] ?? f.defaultValue ?? "";
+                }
+            });
+            setFormData(next);
+
+            // ✅ FIXED: Load stones from row's _stones array instead of localStorage
+            const rowStones = rowToEdit._stones || [];
+            console.log(rowStones,'rowStonesrowStones')
+            if (rowStones.length > 0) {
+                const totalStoneWeight = rowStones.reduce(
+                    (sum: number, s: any) =>
+                        sum + (s.stoneUnit === "c" ? s.stoneWeight / 5 : s.stoneWeight),
+                    0
+                );
+                if (totalStoneWeight > 0) {
+                    setFormData((prev) => ({ ...prev, STNWT: totalStoneWeight.toFixed(3) }));
+                }
+                pendingStoneData.current = {
+                    tempId: currentEditingRowId as string,
+                    stones: rowStones,
+                    totalWeight: totalStoneWeight,
+                };
+                setStoneDraftRowId(currentEditingRowId as string);
+            }
+
+            // ── Restore misc charges from row's _miscCharges array ────────────
+            const rowCharges = rowToEdit._miscCharges || [];
+            if (rowCharges.length > 0) {
+                const totalMiscAmount = rowCharges.reduce(
+                    (sum: number, c: any) => sum + (c.amount || 0),
+                    0
+                );
+                setFormData((prev) => ({ ...prev, HMC: totalMiscAmount.toFixed(2) }));
+                pendingMiscData.current = {
+                    tempId: currentEditingRowId as string,
+                    charges: rowCharges,
+                    totalAmount: totalMiscAmount,
+                };
+                setMiscDraftRowId(currentEditingRowId as string);
+            }
+
+            setErrors({});
+            setTouched({});
+        }
+    }, [currentEditingRowId, currentEditingTransactionType, transactionType, rows]);
+
+    // ── Derived / calculated values ───────────────────────────────────────────
+    const pureValue = useCalculatePure(formData.WT, formData.TOUCH);
+    const altPureValue = useCalculatePure(formData.AWT, formData.ATOUCH);
+
+    // Keep NETWT / PUREWT in sync whenever GRSWT / STNWT / TOUCH change
+    useEffect(() => {
+        const g = parseFloat(formData.GRSWT) || 0;
+        const s = parseFloat(formData.STNWT) || 0;
+        const t = parseFloat(formData.TOUCH) || 0;
+        const netwt = (g - s).toFixed(3);
+        const purewt = ((g - s) * t / 100).toFixed(3);
+        setFormData((prev) => {
+            if (prev.NETWT === netwt && prev.PUREWT === purewt) return prev;
+            return { ...prev, NETWT: netwt, PUREWT: purewt };
+        });
+    }, [formData.GRSWT, formData.STNWT, formData.TOUCH]);
 
     useEffect(() => {
-        visibleFormFields.forEach(f => {
-            if (!fieldRefs.current[f.key]) {
-                fieldRefs.current[f.key] = React.createRef<any>();
-            }
-        });
-    }, [visibleFormFields]);
-
-
-    const pureValue = useCalculatePure(formData.WT, formData.TOUCH);
-
-    console.log(pureValue, 'pureValue')
-    const altPureValue = useCalculatePure(formData.AWT, formData.ATOUCH);
+        if (pureValue) setFormData((p) => ({ ...p, PUREWT: pureValue }));
+        if (altPureValue) setFormData((p) => ({ ...p, APUREWT: altPureValue }));
+    }, [pureValue, altPureValue]);
 
     const calcNet = useCallback(() => {
         const g = parseFloat(formData.GRSWT) || 0;
@@ -499,79 +499,7 @@ export default function DraftTransactionTable({
         return ((n * t) / 100).toFixed(3);
     }, [calcNet, formData.TOUCH]);
 
-
-    useEffect(() => {
-        const g = parseFloat(formData.GRSWT) || 0;
-        const s = parseFloat(formData.STNWT) || 0;
-        const t = parseFloat(formData.TOUCH) || 0;
-        const netwt = (g - s).toFixed(3);
-        const purewt = ((g - s) * t / 100).toFixed(3);
-
-        setFormData(prev => {
-            // ✅ Only update if values actually changed — prevents infinite loop
-            if (prev.NETWT === netwt && prev.PUREWT === purewt) return prev;
-            return { ...prev, NETWT: netwt, PUREWT: purewt };
-        });
-    }, [formData.GRSWT, formData.STNWT, formData.TOUCH]);
-
-    useEffect(() => {
-        if (pureValue) setFormData(p => ({ ...p, PUREWT: pureValue }));
-        if (altPureValue) setFormData(p => ({ ...p, APUREWT: altPureValue }));
-    }, [pureValue]);
-
-    useEffect(() => {
-        const init: Record<string, any> = {};
-        formFields.forEach(f => { init[f.key] = f.defaultValue ?? ""; });
-        setFormData(init);
-    }, []); // ✅ empty — only on mount
-
-    // 🔥 FIX: Populate form + load stones/misc when currentEditingRowId changes
-    useEffect(() => {
-        if (currentEditingRowId && currentEditingTransactionType === transactionType) {
-            const rowToEdit = rows.find(r => r.__rowId === currentEditingRowId);
-            if (rowToEdit) {
-                const next: Record<string, any> = {};
-                formFieldsRef.current.forEach(f => {   // ✅ use ref, not formFields
-                    if (f.type === "number" && rowToEdit[f.key] !== undefined) {
-                        next[f.key] = rowToEdit[f.key].toString();
-                    } else {
-                        next[f.key] = rowToEdit[f.key] ?? f.defaultValue ?? "";
-                    }
-                });
-                setFormData(next);
-
-                // Load stones
-                const allStones = JSON.parse(localStorage.getItem("SALE_STONE_MASTER") || "[]");
-                const rowStones = allStones.filter((s: StoneRow) => s.draftRowId === currentEditingRowId);
-                if (rowStones.length > 0) {
-                    const totalStoneWeight = rowStones.reduce(
-                        (sum: any, s: any) => sum + (s.stoneUnit === "c" ? s.stoneWeight / 5 : s.stoneWeight), 0
-                    );
-                    if (totalStoneWeight > 0) {
-                        setFormData(prev => ({ ...prev, STNWT: totalStoneWeight.toFixed(3) }));
-                    }
-                    pendingStoneData.current = { tempId: currentEditingRowId as string, stones: rowStones, totalWeight: totalStoneWeight };
-                    setStoneDraftRowId(currentEditingRowId as string);
-                }
-
-                // Load misc charges
-                const allCharges = JSON.parse(localStorage.getItem("MISC_CHARGE_MASTER") || "[]");
-                const rowCharges = allCharges.filter((c: any) => c.draftRowId === currentEditingRowId);
-                if (rowCharges.length > 0) {
-                    const totalMiscAmount = rowCharges.reduce((sum: any, c: any) => sum + (c.amount || 0), 0);
-                    setFormData(prev => ({ ...prev, HMC: totalMiscAmount.toFixed(2) }));
-                    pendingMiscData.current = { tempId: currentEditingRowId as string, charges: rowCharges, totalAmount: totalMiscAmount };
-                    setMiscDraftRowId(currentEditingRowId as string);
-                }
-
-                setErrors({});
-                setTouched({});
-            }
-        }
-    }, [currentEditingRowId, currentEditingTransactionType, transactionType, rows]);
-
-
-
+    // ── handleChange ──────────────────────────────────────────────────────────
     type FormData = typeof formData;
 
     const handleChange = useCallback(
@@ -580,90 +508,76 @@ export default function DraftTransactionTable({
 
             if (typeof keyOrObject === "string") {
                 next[keyOrObject] = value;
+                // Mirror WT → AWT and TOUCH → ATOUCH
+                if (keyOrObject === "WT") next.AWT = value;
+                if (keyOrObject === "TOUCH") next.ATOUCH = value;
             } else {
                 next = { ...next, ...keyOrObject };
+                if ("WT" in keyOrObject) next.AWT = keyOrObject.WT;
+                if ("TOUCH" in keyOrObject) next.ATOUCH = keyOrObject.TOUCH;
             }
 
-            // Handle mirror logic for WT and TOUCH
-            if (typeof keyOrObject === "string") {
-                // Single field change
-                if (keyOrObject === "WT") {
-                    // When WT changes, update AWT to match
-                    next.AWT = value;
-                } else if (keyOrObject === "TOUCH") {
-                    // When TOUCH changes, update ATOUCH to match
-                    next.ATOUCH = value;
-                }
-                // If AWT or ATOUCH are changed directly, we don't mirror anything
-            } else {
-                // Multiple fields changed
-                if (keyOrObject.hasOwnProperty('WT')) {
-                    next.AWT = keyOrObject.WT;
-                }
-                if (keyOrObject.hasOwnProperty('TOUCH')) {
-                    next.ATOUCH = keyOrObject.TOUCH;
-                }
-            }
-
-            // Calculate the actual values
             const wt = parseFloat(next.WT || 0);
             const awt = parseFloat(next.AWT || 0);
             const atouch = parseFloat(next.ATOUCH || 0);
-
-            // Recalculate NETWT / PUREWT if relevant
             const g = parseFloat(next.GRSWT || 0);
             const s = parseFloat(next.STNWT || 0);
-            next.NETWT = (g - s).toFixed(3);
             const touch = parseFloat(next.TOUCH || 0);
 
+            next.NETWT = (g - s).toFixed(3);
             next.PUREWT = isIssue ? (wt * touch / 100).toFixed(3) : ((g - s) * touch / 100).toFixed(3);
             next.APUREWT = (awt * atouch / 100).toFixed(3);
 
             setFormData(next);
 
-            // Mark touched fields
             if (typeof keyOrObject === "string") {
-                setTouched(p => ({ ...p, [keyOrObject]: true }));
-                setErrors(p => ({ ...p, [keyOrObject]: "" }));
+                setTouched((p) => ({ ...p, [keyOrObject]: true }));
+                setErrors((p) => ({ ...p, [keyOrObject]: "" }));
             } else {
-                Object.keys(keyOrObject).forEach(k => {
-                    setTouched(p => ({ ...p, [k]: true }));
-                    setErrors(p => ({ ...p, [k]: "" }));
+                Object.keys(keyOrObject).forEach((k) => {
+                    setTouched((p) => ({ ...p, [k]: true }));
+                    setErrors((p) => ({ ...p, [k]: "" }));
                 });
             }
         },
         [formData, isIssue]
     );
 
+    // ── Focus helpers ─────────────────────────────────────────────────────────
+    const focusIdx = useCallback(
+        (idx: number) => {
+            const f = visibleFormFields[idx];
+            if (!f) return;
+            const ref = fieldRefs.current[f.key];
+            setTimeout(() => { ref?.current?.focus?.(); ref?.current?.select?.(); }, 60);
+        },
+        [visibleFormFields]
+    );
 
+    // ✅ FIX 2: moveNext — only skip explicitly disabled fields.
+    //    The old code also skipped fields whose dependsOn parent was empty,
+    //    which meant TOUCH, GRSWT, STNWT etc. were unreachable via Enter
+    //    unless ITEMID was already filled. Removing that condition restores
+    //    normal tab-order navigation through all visible fields.
+    const moveNext = useCallback(
+        (key: string) => {
+            const idx = visibleFormFields.findIndex((f) => f.key === key);
+            let next = idx + 1;
+            // Only skip fields that are hard-disabled (calculated, explicitly disabled prop)
+            while (next < visibleFormFields.length && visibleFormFields[next].disabled === true) {
+                next++;
+            }
+            if (next < visibleFormFields.length) focusIdx(next);
+            else submitBtnRef.current?.click();
+        },
+        [visibleFormFields, focusIdx]
+    );
 
-
-    // console.log(visibleFormFields,'visibleFormFields');
-    const focusIdx = useCallback((idx: number) => {
-        const f = visibleFormFields[idx];
-
-        if (!f) return;
-        const ref = fieldRefs.current[f.key];
-        setTimeout(() => { ref?.current?.focus?.(); ref?.current?.select?.(); }, 60);
-    }, [visibleFormFields]);
-
-    const moveNext = useCallback((key: string) => {
-        const idx = visibleFormFields.findIndex(f => f.key === key);
-        // console.log(idx,'idsx');
-        let next = idx + 1;
-        while (
-            next < visibleFormFields.length &&
-            (visibleFormFields[next].disabled ||
-                (visibleFormFields[next].dependsOn && !formData[visibleFormFields[next].dependsOn!]))
-        ) next++;
-        if (next < visibleFormFields.length) focusIdx(next);
-        else submitBtnRef.current?.click();
-    }, [visibleFormFields, formData, focusIdx]);
-
+    // ── Validation ────────────────────────────────────────────────────────────
     const validateForm = useCallback((): boolean => {
         const errs: Record<string, string> = {};
         let valid = true;
-        visibleFormFields.forEach(f => {
+        visibleFormFields.forEach((f) => {
             const val = formData[f.key];
             if (f.isRequired && (!val || val.toString().trim() === "")) {
                 errs[f.key] = `${f.label} is required`;
@@ -671,143 +585,108 @@ export default function DraftTransactionTable({
             }
         });
         const allTouched: Record<string, boolean> = {};
-        visibleFormFields.forEach(f => { allTouched[f.key] = true; });
+        visibleFormFields.forEach((f) => { allTouched[f.key] = true; });
         setTouched(allTouched);
         setErrors(errs);
-
         if (!valid) {
-            const firstErrField = visibleFormFields.find(f => errs[f.key]);
-            if (firstErrField) {
-                focusIdx(visibleFormFields.findIndex(f => f.key === firstErrField.key));
-                toaster.create({ title: "Validation Error", description: errs[firstErrField.key], type: "error" });
+            const firstErr = visibleFormFields.find((f) => errs[f.key]);
+            if (firstErr) {
+                focusIdx(visibleFormFields.findIndex((f) => f.key === firstErr.key));
+                toaster.create({ title: "Validation Error", description: errs[firstErr.key], type: "error" });
             }
         }
         return valid;
     }, [visibleFormFields, formData, focusIdx]);
 
+    // ── Reset form ────────────────────────────────────────────────────────────
     const resetForm = useCallback(() => {
         onCancelEdit?.();
         const reset: Record<string, any> = {};
-        formFields.forEach(f => { reset[f.key] = f.defaultValue ?? ""; });
+        formFields.forEach((f) => { reset[f.key] = f.defaultValue ?? ""; });
         setFormData(reset);
         setErrors({});
         setTouched({});
-
-        // Reset both IDs independently
         resetStoneTempId();
         resetMiscTempId();
         setStoneDraftRowId("");
         setMiscDraftRowId("");
         focusIdx(0);
-    }, [formFields]);
+    }, [formFields, focusIdx]);
 
-
+    // ── Submit ────────────────────────────────────────────────────────────────
     const handleSubmit = useCallback(async () => {
         if (!validateForm()) return;
 
-        // Common validation for both types
-        if (transactionType === "IS") {
-            if (Number(formData.WT) <= 0) {
-                toaster.create({
-                    title: "Invalid Weight",
-                    description: "Weight must be greater than 0",
-                    type: "error"
-                });
-                return;
-            }
-        } else if (transactionType === "SA") {
+        // ── Basic value validation ─────────────────────────────────────────
+        if (transactionType === "IS" && Number(formData.WT) <= 0) {
+            toaster.create({ title: "Invalid Weight", description: "Weight must be greater than 0", type: "error" });
+            return;
+        }
+        if (transactionType === "SA") {
             if (Number(formData.PCS) <= 0) {
-                toaster.create({
-                    title: "Invalid Pieces",
-                    description: "Pieces must be greater than 0",
-                    type: "error"
-                });
+                toaster.create({ title: "Invalid Pieces", description: "Pieces must be greater than 0", type: "error" });
                 return;
             }
             if (Number(formData.NETWT) <= 0) {
-                toaster.create({
-                    title: "Invalid Net Weight",
-                    description: "Net weight must be greater than 0",
-                    type: "error"
-                });
+                toaster.create({ title: "Invalid Net Weight", description: "Net weight must be greater than 0", type: "error" });
                 return;
             }
         }
 
-        // Stock availability check for both IS and SA
+        // ── Stock availability check ───────────────────────────────────────
         const stockId = transactionType === "IS" ? formData.PUREID : formData.ITEMID;
-
         if (stockId) {
-            const isEditing = !!(currentEditingRowId && currentEditingTransactionType === transactionType);
+            const isEditMode = !!(currentEditingRowId && currentEditingTransactionType === transactionType);
 
-            // Get the appropriate value based on transaction type
-            let requestedValue = 0;
-            let originalValue = 0;
-            let valueField = '';
-
-            if (transactionType === "IS") {
-                requestedValue = Number(formData.WT) || 0;
-                originalValue = isEditing ? Number(formData._originalWeight) || 0 : 0;
-                valueField = 'WT';
-            } else if (transactionType === "SA") {
-                // For PR, we need to check both pieces and net weight
-                const requestedPieces = Number(formData.PCS) || 0;
-                const requestedNetwt = Number(formData.NETWT) || 0;
-
-                // Check pieces availability
+            if (transactionType === "SA") {
                 const availablePieces = getAvailablePieces?.(stockId, {
-                    excludeRowId: isEditing ? currentEditingRowId : undefined,
-                    isEditing: isEditing,
-                    originalPieces: isEditing ? Number(formData._originalPieces) || 0 : 0,
+                    excludeRowId: isEditMode ? (currentEditingRowId as string) : undefined,
+                    isEditing: isEditMode,
+                    originalPieces: isEditMode ? Number(formData._originalPieces) || 0 : 0,
                     transactionTypeCode: transactionType,
                 }) ?? null;
 
-                if (availablePieces !== null && requestedPieces > availablePieces) {
+                if (availablePieces !== null && Number(formData.PCS) > availablePieces) {
                     toaster.create({
                         title: "Insufficient Stock",
-                        description: `Requested pieces ${requestedPieces} exceeds available stock ${availablePieces}`,
-                        type: "error"
+                        description: `Requested pieces ${formData.PCS} exceeds available stock ${availablePieces}`,
+                        type: "error",
                     });
                     return;
                 }
 
-                // Check net weight availability
                 const availableWeight = getAvailableWeight?.(stockId, {
-                    excludeRowId: isEditing ? currentEditingRowId : undefined,
-                    isEditing: isEditing,
-                    originalWeight: isEditing ? Number(formData._originalNetwt) || 0 : 0,
+                    excludeRowId: isEditMode ? (currentEditingRowId as string) : undefined,
+                    isEditing: isEditMode,
+                    originalWeight: isEditMode ? Number(formData._originalNetwt) || 0 : 0,
                     transactionTypeCode: transactionType,
                 }) ?? null;
 
-                if (availableWeight !== null && requestedNetwt > availableWeight) {
+                if (availableWeight !== null && Number(formData.NETWT) > availableWeight) {
                     toaster.create({
                         title: "Insufficient Stock",
-                        description: `Requested net weight ${requestedNetwt.toFixed(3)}g exceeds available stock ${availableWeight.toFixed(3)}g`,
-                        type: "error"
+                        description: `Requested net weight ${Number(formData.NETWT).toFixed(3)}g exceeds available ${availableWeight.toFixed(3)}g`,
+                        type: "error",
                     });
                     return;
                 }
-
-                // If both checks pass, continue
-            } else {
-                // For other transaction types (REC, PU) - skip stock check or handle differently
-                console.log('Skipping stock check for transaction type:', transactionType);
             }
 
-            // For IS weight check
             if (transactionType === "IS") {
+                const requestedWeight = Number(formData.WT) || 0;
+                const originalWeight = isEditMode ? Number(formData._originalWeight) || 0 : 0;
                 const availableWeight = getAvailableWeight?.(stockId, {
-                    excludeRowId: isEditing ? currentEditingRowId : undefined,
-                    isEditing: isEditing,
-                    originalWeight: originalValue,
+                    excludeRowId: isEditMode ? (currentEditingRowId as string) : undefined,
+                    isEditing: isEditMode,
+                    originalWeight,
                     transactionTypeCode: transactionType,
                 }) ?? null;
 
-                if (availableWeight !== null && requestedValue > availableWeight) {
+                if (availableWeight !== null && requestedWeight > availableWeight) {
                     toaster.create({
                         title: "Insufficient Stock",
-                        description: `Requested weight ${requestedValue.toFixed(3)}g exceeds available stock ${availableWeight.toFixed(3)}g`,
-                        type: "error"
+                        description: `Requested weight ${requestedWeight.toFixed(3)}g exceeds available ${availableWeight.toFixed(3)}g`,
+                        type: "error",
                     });
                     return;
                 }
@@ -841,161 +720,218 @@ export default function DraftTransactionTable({
                 }
             }
 
-            // Handle edit or new row
             if (currentEditingRowId && currentEditingTransactionType === transactionType) {
-                const rowIndex = rows.findIndex(r => r.__rowId === currentEditingRowId);
-                if (rowIndex === -1) {
-                    console.error("Row not found for update");
-                    return;
-                }
-
-                // Update only changed fields
-                Object.keys(submitData).forEach(key => {
-                    const currentValue = rows[rowIndex][key];
-                    const newValue = submitData[key];
-                    if (String(currentValue) !== String(newValue)) {
-                        onUpdateRow(rowIndex, key, newValue);
-                    }
-                });
-
-                toaster.create({
-                    title: "Row Updated",
-                    description: "Row has been updated successfully",
-                    type: "success",
-                    duration: 2000
-                });
-                onCancelEdit?.();
+                onEditRow(currentEditingRowId as string, submitData);
+                toaster.create({ title: "Row Updated", type: "success", duration: 2000 });
                 resetForm();
-            } else {
-                // NEW ROW
-                const capturedMiscTempId = miscDraftRowId || currentMiscData?.tempId;
-                const capturedMiscData = currentMiscData;
-
-                console.log("Submitting new row. Misc temp ID:", capturedMiscTempId);
-                onAddRow(submitData);
-
-                // Handle misc charges transfer if needed
-                if (capturedMiscTempId && capturedMiscData && capturedMiscData.charges.length > 0) {
-                    const checkForNewRow = (attempts = 0) => {
-                        setTimeout(() => {
-                            const latestRows = rowsRef.current;
-                            const typeRows = latestRows.filter((r: any) => r.TRANSACTION_TYPE === transactionType);
-                            const newRow = typeRows[typeRows.length - 1];
-
-                            if (newRow && newRow.__rowId) {
-                                const permanentId = newRow.__rowId;
-                                console.log(`Found new row permanent ID: ${permanentId}`);
-
-                                const allCharges = JSON.parse(localStorage.getItem("MISC_CHARGE_MASTER") || "[]");
-                                const tempCharges = allCharges.filter((c: any) => c.draftRowId === capturedMiscTempId);
-
-                                if (tempCharges.length > 0) {
-                                    const withoutTemp = allCharges.filter((c: any) => c.draftRowId !== capturedMiscTempId);
-                                    const updatedCharges = tempCharges.map((c: any) => ({ ...c, draftRowId: permanentId }));
-                                    localStorage.setItem("MISC_CHARGE_MASTER", JSON.stringify([...withoutTemp, ...updatedCharges]));
-
-                                    const total = updatedCharges.reduce((s: number, c: any) => s + c.amount, 0);
-                                    const newRowIndex = latestRows.findIndex((r: any) => r.__rowId === permanentId);
-                                    if (newRowIndex !== -1) {
-                                        onUpdateRow(newRowIndex, "HMC", total.toFixed(2));
-                                    }
-                                    console.log(`Transferred ${tempCharges.length} misc charges to ${permanentId}`);
-                                }
-                            } else if (attempts < 5) {
-                                checkForNewRow(attempts + 1);
-                            } else {
-                                console.error("Could not find new row after 5 attempts");
-                            }
-                        }, 100);
-                    };
-                    checkForNewRow();
-                }
-
-                resetForm();
+                return;
             }
 
+            // NEW ROW - No localStorage needed
+            onAddRow(submitData);
+            resetForm();
+        } finally {
             pendingStoneData.current = null;
             pendingMiscData.current = null;
-
-        } finally {
             setIsSubmitting(false);
         }
-    }, [formData, calcNet, calcPure, validateForm, isIssue, onAddRow, onUpdateRow, onCancelEdit,
-        currentEditingRowId, currentEditingTransactionType, transactionType, rows, miscDraftRowId,
-        resetForm, getAvailableWeight, getAvailablePieces, toaster]);
+    }, [
+        formData, calcNet, calcPure, validateForm, isIssue, pureValue,
+        onAddRow, onEditRow, currentEditingRowId, currentEditingTransactionType,
+        transactionType, resetForm, getAvailableWeight, getAvailablePieces,
+    ]);
 
-    const handleEditRow = useCallback((row: any, tranType: string | undefined) => {
-        const next: Record<string, any> = {};
+    // ── Edit row handler (called from table row click) ────────────────────────
+    const handleEditRow = useCallback(
+        (row: any, tranType: string | undefined) => {
+            const next: Record<string, any> = {};
+            formFields.forEach((f) => {
+                if (f.type === "number" && row[f.key] !== undefined) {
+                    next[f.key] = row[f.key].toString();
+                } else {
+                    next[f.key] = row[f.key] ?? f.defaultValue ?? "";
+                }
+            });
 
-        // Map form fields
-        formFields.forEach(f => {
-            if (f.type === "number" && row[f.key] !== undefined) {
-                next[f.key] = row[f.key].toString();
-            } else {
-                next[f.key] = row[f.key] ?? f.defaultValue ?? "";
-            }
-        });
-
-        // Stock availability check for editing
-        if (isIssue && (row.PUREID || row.ITEMID)) {
-            const stockId = tranType === "IS" ? row.PUREID : row.ITEMID;
-
-            if (stockId && getStockAvailability) {
-                const availability = getStockAvailability(stockId, {
-                    excludeRowId: row.__rowId,
-                    isEditing: true,
-                    originalWeight: tranType === "IS" ? Number(row.WT) || 0 : Number(row.NETWT) || 0,
-                    transactionTypeCode: tranType || "",
-                });
-
-                if (availability) {
-                    // Store original values for stock calculation during update
-                    if (tranType === "IS") {
-                        next._originalWeight = Number(row.WT) || 0;
-                        next._pureId = row.PUREID;
-
-                        toaster.create({
-                            title: "Stock Info - IS",
-                            description: `Total: ${availability.weight.total.toFixed(3)}g | Used elsewhere: ${availability.weight.used.toFixed(3)}g | Available: ${availability.weight.remaining.toFixed(3)}g`,
-                            type: "info",
-                            duration: 4000,
-                        });
-                    } else if (tranType === "SA") {
-                        next._originalPieces = Number(row.PCS) || 0;
-                        next._originalNetwt = Number(row.NETWT) || 0;
-                        next._itemId = row.ITEMID;
-
-                        toaster.create({
-                            title: "Stock Info - Item",
-                            description: `Pieces: ${availability.pieces.remaining} available (Total: ${availability.pieces.total}, Used: ${availability.pieces.used}) | Net Wt: ${availability.weight.remaining.toFixed(3)}g available`,
-                            type: "info",
-                            duration: 5000,
-                        });
+            if (isIssue && (row.PUREID || row.ITEMID)) {
+                const stockId = tranType === "IS" ? row.PUREID : row.ITEMID;
+                if (stockId && getStockAvailability) {
+                    const availability = getStockAvailability(stockId, {
+                        excludeRowId: row.__rowId,
+                        isEditing: true,
+                        originalWeight: tranType === "IS" ? Number(row.WT) || 0 : Number(row.NETWT) || 0,
+                        transactionTypeCode: tranType || "",
+                    });
+                    if (availability) {
+                        if (tranType === "IS") {
+                            next._originalWeight = Number(row.WT) || 0;
+                            next._pureId = row.PUREID;
+                            toaster.create({
+                                title: "Stock Info - IS",
+                                description: `Total: ${availability.weight.total.toFixed(3)}g | Used: ${availability.weight.used.toFixed(3)}g | Available: ${availability.weight.remaining.toFixed(3)}g`,
+                                type: "info", duration: 4000,
+                            });
+                        } else if (tranType === "SA") {
+                            next._originalPieces = Number(row.PCS) || 0;
+                            next._originalNetwt = Number(row.NETWT) || 0;
+                            next._itemId = row.ITEMID;
+                            toaster.create({
+                                title: "Stock Info - Item",
+                                description: `Pieces: ${availability.pieces.remaining} avail | Net Wt: ${availability.weight.remaining.toFixed(3)}g avail`,
+                                type: "info", duration: 5000,
+                            });
+                        }
+                        next._availableStock = tranType === "IS" ? availability.weight.remaining : availability.pieces.remaining;
+                        next._totalStock = tranType === "IS" ? availability.weight.total : availability.pieces.total;
+                        next._stockAvailability = availability;
                     }
-
-                    // Store common stock info
-                    next._availableStock = tranType === "IS" ? availability.weight.remaining : availability.pieces.remaining;
-                    next._totalStock = tranType === "IS" ? availability.weight.total : availability.pieces.total;
-                    next._stockAvailability = availability;
                 }
             }
+
+            setFormData(next);
+            setErrors({});
+            setTouched({});
+            onRowClick(row, tranType || "");
+            pendingStoneData.current = null;
+            setTimeout(() => focusIdx(0), 100);
+        },
+        [formFields, focusIdx, onRowClick, isIssue, getStockAvailability]
+    );
+
+    // ── Delete row ────────────────────────────────────────────────────────────
+    const handleDeleteRow = useCallback(
+        (row: any) => {
+            if (!window.confirm("Delete this row?")) return;
+            onRemoveRow(row.__rowId);
+            if (currentEditingRowId === row.__rowId) resetForm();
+        },
+        [onRemoveRow, currentEditingRowId, resetForm]
+    );
+
+    // ── Stone modal ───────────────────────────────────────────────────────────
+
+    const handleOpenStoneModal = (grsWeight: number) => {
+        if (stoneModalOpenedRef.current) return;
+        stoneModalOpenedRef.current = true;
+        setCurrentGRSWT(grsWeight);
+
+        if (currentEditingRowId) {
+            // Editing existing row — use its permanent rowId
+            setStoneDraftRowId(currentEditingRowId as string);
+        } else if (stoneDraftRowId) {
+            // Already assigned (e.g. from tag lookup) — keep it, just re-set to force render
+            setStoneDraftRowId(stoneDraftRowId);
+        } else {
+            // Brand-new entry — generate a fresh temp ID
+            setStoneDraftRowId(getStoneTempId());
         }
 
-        setFormData(next);
-        setErrors({});
-        setTouched({});
-        onRowClick(row, tranType || "");
-        pendingStoneData.current = null;
-        setTimeout(() => focusIdx(0), 100);
-    }, [formFields, focusIdx, onRowClick, isIssue, getStockAvailability, toaster]);
+        setTimeout(() => setIsStoneModalOpen(true), 50);
+        setTimeout(() => { stoneModalOpenedRef.current = false; }, 500);
+    };
 
-    const handleDeleteRow = useCallback((row: any) => {
-        if (!window.confirm("Delete this row?")) return;
-        onRemoveRow(row.__rowId);
-        // 🔥 FIX: Use currentEditingRowId instead of editingRowId
-        if (currentEditingRowId === row.__rowId) resetForm();
-    }, [onRemoveRow, currentEditingRowId, resetForm]);
+    const closeStoneModal = () => {
+        setIsStoneModalOpen(false);
+        // Do NOT clear stoneDraftRowId here — resetForm() handles it
+    };
 
+    // ── Misc / other-charges modal ────────────────────────────────────────────
+    const handleOpenMiscModal = () => {
+        if (miscModalOpenedRef.current) return;
+        miscModalOpenedRef.current = true;
+
+        let idToUse: string;
+
+        if (currentEditingRowId) {
+            idToUse = currentEditingRowId as string;
+            const row = rows.find((r: any) => r.__rowId === idToUse);
+            console.log(row , 'rowsfor the misc')
+            const rowCharges = row?._miscCharges || [];
+            if (rowCharges.length > 0) {
+                const total = rowCharges.reduce((sum: number, c: any) => sum + c.amount, 0);
+                pendingMiscData.current = { tempId: idToUse, charges: rowCharges, totalAmount: total };
+                handleChange("HMC", total.toFixed(2));
+            }
+        } else if (miscDraftRowId) {
+            idToUse = miscDraftRowId;
+            // Check pending data first
+            if (pendingMiscData.current?.tempId === idToUse) {
+                const total = pendingMiscData.current.totalAmount;
+                handleChange("HMC", total.toFixed(2));
+            } else {
+                // Check row data
+                const row = rows.find((r: any) => r.__rowId === idToUse);
+                console.log(row, 'rowsfor the misc')
+                const rowCharges = row?._miscCharges || [];
+                if (rowCharges.length > 0) {
+                    const total = rowCharges.reduce((sum: number, c: any) => sum + c.amount, 0);
+                    pendingMiscData.current = { tempId: idToUse, charges: rowCharges, totalAmount: total };
+                    handleChange("HMC", total.toFixed(2));
+                }
+            }
+        } else {
+            idToUse = getMiscTempId();
+        }
+
+        setMiscDraftRowId(idToUse);
+        setIsMiscModalOpen(true);
+        setTimeout(() => { miscModalOpenedRef.current = false; }, 500);
+    };
+
+    const closeOtherChargeModal = () => {
+        setIsMiscModalOpen(false);
+        resetMiscTempId();
+    };
+
+    // ── Tag lookup ────────────────────────────────────────────────────────────
+    const handleTagNoKeyDown = async () => {
+        if (!tagNo) return;
+        try {
+            await onTagNoLookup?.(tagNo);
+            setTagNo("");
+        } catch (error) {
+            console.error("Tag lookup failed:", error);
+            toaster.create({ title: "Error", description: "Failed to process tag", type: "error" });
+        }
+    };
+    console.log(pendingStoneData,'pendingStoneData')
+
+    // ── Stone modal initial rows ───────────────────────────────────────────────
+    const stoneModalInitialRows = useMemo(() => {
+        if (!stoneDraftRowId) return [];
+
+        // First check pending data
+        if (pendingStoneData.current?.tempId === stoneDraftRowId) {
+            return pendingStoneData.current.stones;
+        }
+
+        // Then check the actual row data
+        const row = rows.find((r: any) => r.__rowId === stoneDraftRowId);
+        if (row?._stones) {
+            return row._stones;
+        }
+
+        return [];
+    }, [stoneDraftRowId, isStoneModalOpen, rows]);
+
+    // ── Other Charges initial rows ───────────────────────────────────────────────
+    const otherChargesInitialRows = useMemo(() => {
+        if (!miscDraftRowId) return [];
+
+        // First check pending data
+        if (pendingMiscData.current?.tempId === miscDraftRowId) {
+            return pendingMiscData.current.charges;
+        }
+
+        // Then check the actual row data
+        const row = rows.find((r: any) => r.__rowId === miscDraftRowId);
+        if (row?._miscCharges) {
+            return row._miscCharges;
+        }
+
+        return [];
+    }, [miscDraftRowId, isMiscModalOpen, rows]);
+    // ── Cell rendering ────────────────────────────────────────────────────────
     const getCellValue = (col: any, row: any) => {
         const val = row[col.key];
         if (col.getLabelByValue && col.collection) return col.getLabelByValue(col.collection, val);
@@ -1014,46 +950,24 @@ export default function DraftTransactionTable({
         return Number(decimalScale) >= 1 ? Number(value).toFixed(decimalScale) : Number(value).toString();
     };
 
-     const handleTagNoKeyDown = async () => {
-   
-           if (!tagNo) return;
-   
-           try {
-               await onTagNoLookup?.(tagNo); // ✅ JUST CALL PARENT
-   
-               // ✅ optional: clear input after scan
-               setTagNo("");
-   
-           } catch (error) {
-               console.error("Tag lookup failed:", error);
-   
-               toaster.create({
-                   title: "Error",
-                   description: "Failed to process tag",
-                   type: "error",
-               });
-           }
-       };
-   
+    const getCellStyle = (col: any, extra?: React.CSSProperties): React.CSSProperties => ({
+        width: getWidth(col.width),
+        minWidth: getWidth(col.width),
+        maxWidth: getWidth(col.width),
+        padding: "1px 3px",
+        borderRight: "1px solid #E2E8F0",
+        textAlign: col.align === "right" ? "right" : col.align === "center" ? "center" : "left",
+        overflow: "hidden",
+        boxSizing: "border-box",
+        fontSize: "10px",
+        ...extra,
+    });
 
-    // In DraftTransactionTable, when opening stone modal for tag lookup:
-    const stoneModalInitialRows = useMemo(() => {
-        if (!stoneDraftRowId) return [];
-        const all = JSON.parse(localStorage.getItem("SALE_STONE_MASTER") || "[]");
-        const stones = all.filter((s: any) => s.draftRowId === stoneDraftRowId);
-
-        console.log(`Stone modal initial rows for ${stoneDraftRowId}:`, stones);
-
-        // ✅ Return the stones, don't modify them
-        return stones;
-    }, [stoneDraftRowId, isStoneModalOpen]);
-
+    // ── Form cell renderer ────────────────────────────────────────────────────
     const renderFormCell = (field: FormField) => {
-
         const ref = fieldRefs.current[field.key];
         const isInvalid = !!errors[field.key] && !!touched[field.key];
         const shouldDisable = field.disabled || (!!field.dependsOn && !formData[field.dependsOn]);
-
 
         if (field.key === "TAGNO") {
             return (
@@ -1063,7 +977,7 @@ export default function DraftTransactionTable({
                         value={formData[field.key] || ""}
                         onChange={(_, v) => handleChange(field.key, v)}
                         type="text"
-                        isCapitalized={true}
+                        isCapitalized
                         size="xs"
                         rounded="sm"
                         inputRef={ref}
@@ -1074,16 +988,18 @@ export default function DraftTransactionTable({
             );
         }
 
-
         if (field.key === "STNWT") {
             return (
-                <Box position="relative" width="100%" onFocus={() => {
-                    if (formData.GRSWT && Number(formData.GRSWT) > 0) {
-                        handleOpenStoneModal(Number(formData.GRSWT));
-                    } else {
-                        toaster.create({ title: "Enter GRSWT first", type: "warning" });
-                    }
-                }}>
+                <Box
+                    position="relative" width="100%"
+                    onFocus={() => {
+                        if (formData.GRSWT && Number(formData.GRSWT) > 0) {
+                            handleOpenStoneModal(Number(formData.GRSWT));
+                        } else {
+                            toaster.create({ title: "Enter GRSWT first", type: "warning" });
+                        }
+                    }}
+                >
                     <CapitalizedInput
                         field={field.key}
                         value={formData[field.key] || ""}
@@ -1095,8 +1011,7 @@ export default function DraftTransactionTable({
                         decimalScale={field.decimalScale}
                         disabled={shouldDisable}
                         inputRef={ref}
-                        onEnter={() =>
-                            moveNext(field.key)}
+                        onEnter={() => moveNext(field.key)}
                         noBorder
                     />
                     <Button
@@ -1112,18 +1027,21 @@ export default function DraftTransactionTable({
             return (
                 <Box position="relative" width="100%" onFocus={handleOpenMiscModal}>
                     <CapitalizedInput
-                        field={field.key} value={formData[field.key] || ""}
+                        field={field.key}
+                        value={formData[field.key] || ""}
                         onChange={(_, v) => handleChange(field.key, v)}
-                        type="number" isCapitalized={false}
+                        type="number"
+                        isCapitalized={false}
                         size="xs"
                         rounded="sm"
-                        decimalScale={2} inputRef={ref}
-                        onEnter={() => moveNext(field.key)} noBorder
+                        decimalScale={2}
+                        inputRef={ref}
+                        onEnter={() => moveNext(field.key)}
+                        noBorder
                     />
                     <Button
                         size="2xs" position="absolute" right="0" top="0" height="100%"
                         variant="ghost" minW="auto" px={0.5} title="Other Charges"
-
                     >📋</Button>
                 </Box>
             );
@@ -1140,7 +1058,6 @@ export default function DraftTransactionTable({
                         isCapitalized
                         size="xs"
                         rounded="sm"
-                        decimalScale={field.decimalScale}
                         disabled={shouldDisable}
                         inputRef={ref}
                         onEnter={() => handleSubmit()}
@@ -1149,6 +1066,7 @@ export default function DraftTransactionTable({
                 </Box>
             );
         }
+
         if (field.key === "ATOUCH") {
             return (
                 <Box position="relative" width="100%">
@@ -1220,7 +1138,7 @@ export default function DraftTransactionTable({
                 return (
                     <InlineSelect
                         value={formData[field.key] || ""}
-                        onChange={v => handleChange(field.key, v)}
+                        onChange={(v) => handleChange(field.key, v)}
                         collection={field.collection}
                         isInvalid={isInvalid}
                         inputRef={ref as any}
@@ -1261,7 +1179,8 @@ export default function DraftTransactionTable({
             default:
                 return (
                     <CapitalizedInput
-                        field={field.key} value={formData[field.key] || ""}
+                        field={field.key}
+                        value={formData[field.key] || ""}
                         onChange={(_, v) => handleChange(field.key, v)}
                         type="number"
                         size="sm"
@@ -1275,108 +1194,102 @@ export default function DraftTransactionTable({
         }
     };
 
-    const allDisplayCols = useMemo(() => [
-        { key: "__sno", label: "", align: "center" as const },
-        ...tableCols,
-        { key: "__actions", label: "ACT", align: "center" as const },
-    ], [tableCols]);
+    // ── Display columns ───────────────────────────────────────────────────────
+    const allDisplayCols = useMemo(
+        () => [
+            { key: "__sno", label: "", align: "center" as const },
+            ...tableCols,
+            { key: "__actions", label: "ACT", align: "center" as const },
+        ],
+        [tableCols]
+    );
 
-    const stripedBg = transactionType === "SA" ? "#EBF8FF"
-        : transactionType === "SR" ? "#FFF5F5"
-            : transactionType === "IS" ? "#FFFAF0"
-                : "#F7FAFC";
+    const stripedBg =
+        transactionType === "SA" ? "#EBF8FF"
+            : transactionType === "SR" ? "#FFF5F5"
+                : transactionType === "IS" ? "#FFFAF0"
+                    : "#F7FAFC";
 
-    const getCellStyle = (col: any, extra?: React.CSSProperties): React.CSSProperties => ({
+    const TYPE_COLORS: Record<string, { bg: string; active: string; text: string }> = {
+        SA: { bg: "#b7fff1", active: "#2F855A", text: "#1C4532" },
+        SR: { bg: "#ffc4c4", active: "#C53030", text: "#742A2A" },
+        IS: { bg: "#ffd9a4", active: "#DD6B20", text: "#7B341E" },
+        RE: { bg: "#ffcafb", active: "#c729ba", text: "#8f1084" },
+    };
 
-        width: getWidth(col.width),
-        minWidth: getWidth(col.width),
-        maxWidth: getWidth(col.width),
-        padding: "1px 3px",
-        borderRight: "1px solid #E2E8F0",
-        textAlign: col.align === "right" ? "right" : col.align === "center" ? "center" : "left",
-        overflow: "hidden",
-        boxSizing: "border-box",
-        fontSize: "10px",
-        ...extra,
-    });
+    const showTag = getIsTagEnabled(transactionType);
+    const showBill = getIsBillModalEnabled(transactionType);
 
     useGlobalKey("Escape", () => setIsMiscModalOpen(false), "close-modal");
 
-    // useGlobalKey("Escape", ()=> )
-
-    const showTag = getIsTagEnabled(transactionType);
-    const showBill = getIsBillModalEnabled(transactionType)
-
-    const TYPE_COLORS: Record<string, { bg: string; active: string; text: string }> = {
-        SA: { bg: "#b7fff1", active: "#2F855A", text: "#1C4532" },  // Blue
-        SR: { bg: "#ffc4c4", active: "#C53030", text: "#742A2A" },   // Red
-        IS: { bg: "#ffd9a4", active: "#DD6B20", text: "#7B341E" },   // Orange
-        RE: { bg: "#ffcafb", active: "#c729ba", text: "#8f1084" }   // Green
-    };
-
-
-    console.log(onSaleReturnModal.showBillModal,'showBillModal')
+    // ── Render ────────────────────────────────────────────────────────────────
     return (
         <Box display="flex" flexDirection="column" gap={0}>
+            {/* ── Header bar ─────────────────────────────────────────────── */}
             <Flex
                 justifyContent="space-between"
                 alignItems="center"
-                px={2}
-                py={1}
-                bg={'#FFF'}
-                color={'#222'}
+                px={2} py={1}
+                bg="#FFF" color="#222"
                 rounded="md" borderWidth="1px"
                 borderColor={theme?.colors?.borderColor || "#CBD5E0"}
             >
-
                 <HStack gap={2}>
                     <Text fontSize="xs" fontWeight="semibold" color={theme?.colors?.primaryText || "#1a202c"}>
                         {transactionTitle || "Transaction"} Items
-                        {/* 🔥 FIX: Use isThisTableEditing to show editing indicator */}
                         {isThisTableEditing && (
                             <Text as="span" color="blue.500" ml={1} fontSize="2xs"> ✎ Editing</Text>
                         )}
                     </Text>
 
-                    {showTag &&
+                    {showTag && (
                         <>
-                            <Button size="2xs" bg="yellow.subtle" color={'blackAlpha.800'} onClick={handleTagChange}>
+                            <Button size="2xs" bg="yellow.subtle" color="blackAlpha.800" onClick={handleTagChange}>
                                 Switch to {isTag ? "NonTag" : "Tag"}
                             </Button>
-
-                            {
-                                isTag &&
-                                <Box display={'flex'} alignItems={'center'} >
+                            {isTag && (
+                                <Box display="flex" alignItems="center">
                                     <CapitalizedInput
                                         field="tagNo"
                                         value={tagNo}
                                         onChange={(_, value) => setTagNo(value)}
                                         size="xs"
                                         onEnter={handleTagNoKeyDown}
-
                                     />
                                 </Box>
-                            }
-
+                            )}
                         </>
-                    }
-                    {showBill && <Button size="2xs" bg="blue.subtle" color={theme.colors.primaryText} onClick={()=> handleBillShow()}> Bills 📄</Button>}
+                    )}
 
-                    <Badge colorPalette={rows.length > 0 ? "green" : "gray"} variant="subtle" fontSize="2xs" px={2}>
+                    {showBill && (
+                        <Button
+                            size="2xs" bg="blue.subtle"
+                            color={theme.colors.primaryText}
+                            onClick={() => handleBillShow()}
+                        >
+                            Bills 📄
+                        </Button>
+                    )}
+
+                    <Badge
+                        colorPalette={rows.length > 0 ? "green" : "gray"}
+                        variant="subtle" fontSize="2xs" px={2}
+                    >
                         {rows.length} item{rows.length !== 1 ? "s" : ""}
                     </Badge>
                 </HStack>
 
-
                 {!isEditing && (
-                    <Button size="2xs" colorPalette="red" variant="outline"
-                        onClick={() => { onClear?.(); resetForm(); }} fontSize="2xs">
+                    <Button
+                        size="2xs" colorPalette="red" variant="outline" fontSize="2xs"
+                        onClick={() => { onClear?.(); resetForm(); }}
+                    >
                         <Icon as={LuX} boxSize={2} /> Clear All
                     </Button>
                 )}
             </Flex>
 
-
+            {/* ── Main table ─────────────────────────────────────────────── */}
             <TransactionTable
                 theme={theme}
                 tableCols={tableCols}
@@ -1385,8 +1298,7 @@ export default function DraftTransactionTable({
                 formData={formData}
                 errors={errors}
                 touched={touched}
-                // 🔥 FIX: Pass currentEditingRowId to TransactionTable
-                localEditId={isThisTableEditing ? currentEditingRowId as string : null}
+                localEditId={isThisTableEditing ? (currentEditingRowId as string) : null}
                 isSubmitting={isSubmitting}
                 totals={totals}
                 stripedBg={stripedBg}
@@ -1401,65 +1313,51 @@ export default function DraftTransactionTable({
                 formatTotal={formatTotal}
                 getCellStyle={getCellStyle}
                 transactionType={transactionType}
-                formBackground={TYPE_COLORS[transactionType ?? '']?.bg || '#FFF'}
-
+                formBackground={TYPE_COLORS[transactionType ?? ""]?.bg || "#FFF"}
             />
 
-
-            {/* MISC MODAL — uses miscDraftRowId only, never touches stoneDraftRowId */}
+            {/* ── Misc / Other-charges modal ──────────────────────────────── */}
             {isMiscModalOpen && (
                 <Box
                     position="fixed" top={0} left={0} right={0} bottom={0}
                     bg="rgba(0,0,0,0.5)" zIndex={100}
                     display="flex" alignItems="center" justifyContent="center"
-                    onClick={() => {
-                        setIsMiscModalOpen(false);
-                        resetMiscTempId();
-                        // Do NOT clear miscDraftRowId — keeps ID alive for re-open
-                    }}
+                    onClick={() => { setIsMiscModalOpen(false); resetMiscTempId(); }}
                 >
                     <Box
                         bg={theme?.colors?.formColor || "white"} borderRadius="lg"
                         maxW="600px" width="100%" maxH="90vh" overflow="auto"
-                        onClick={e => e.stopPropagation()}
+                        onClick={(e) => e.stopPropagation()}
                     >
                         <OtherChargesWindow
                             draftRowId={miscDraftRowId}
                             onClose={closeOtherChargeModal}
+                            initialRows={otherChargesInitialRows}
                             onSave={(chargeRows) => {
                                 if (!miscDraftRowId) return;
 
-                                const allCharges = JSON.parse(localStorage.getItem("MISC_CHARGE_MASTER") || "[]");
-                                const filtered = allCharges.filter((c: any) => c.draftRowId !== miscDraftRowId);
-                                const updatedCharges = chargeRows.map(c => ({ ...c, draftRowId: miscDraftRowId }));
-                                localStorage.setItem("MISC_CHARGE_MASTER", JSON.stringify([...filtered, ...updatedCharges]));
-
+                                const updatedCharges = chargeRows.map((c) => ({ ...c, draftRowId: miscDraftRowId }));
                                 const total = updatedCharges.reduce((sum, c) => sum + (c.amount || 0), 0);
-                                handleChange("HMC", total.toFixed(2));
 
-                                // Always update pendingMiscData regardless of ID type
+                                handleChange("HMC", total.toFixed(2));
                                 pendingMiscData.current = {
                                     tempId: miscDraftRowId,
                                     charges: updatedCharges,
-                                    totalAmount: total
+                                    totalAmount: total,
                                 };
 
                                 toaster.create({
                                     title: "Charges Updated",
                                     description: `Total charges: Rs.${total.toFixed(2)}`,
-                                    type: "success",
-                                    duration: 2000,
+                                    type: "success", duration: 2000,
                                 });
 
                                 setIsMiscModalOpen(false);
                                 resetMiscTempId();
-                                // Do NOT clear miscDraftRowId after save
 
                                 setTimeout(() => {
-                                    const nextFieldIndex = visibleFormFields.findIndex(
-                                        f => f.key === "HMC"
-                                    ) + 1;
-                                    if (nextFieldIndex < visibleFormFields.length) focusIdx(nextFieldIndex);
+                                    const nextIdx = visibleFormFields.findIndex((f) => f.key === "HMC") + 1;
+                                    if (nextIdx < visibleFormFields.length) focusIdx(nextIdx);
                                 }, 50);
                             }}
                             chargeItems={otherChargesList}
@@ -1469,7 +1367,7 @@ export default function DraftTransactionTable({
                 </Box>
             )}
 
-            {/* STONE MODAL — uses stoneDraftRowId only, never touches miscDraftRowId */}
+            {/* ── Stone modal ─────────────────────────────────────────────── */}
             {isStoneModalOpen && (
                 <Box
                     position="fixed" top={0} left={0} right={0} bottom={0}
@@ -1480,7 +1378,7 @@ export default function DraftTransactionTable({
                     <Box
                         bg={theme?.colors?.formColor || "white"} borderRadius="lg"
                         maxW="1200px" width="100%" maxH="90vh" overflow="auto"
-                        onClick={e => e.stopPropagation()}
+                        onClick={(e) => e.stopPropagation()}
                     >
                         <StoneEnterMaster
                             grsWeight={currentGRSWT}
@@ -1490,11 +1388,7 @@ export default function DraftTransactionTable({
                             onSave={(stoneRows) => {
                                 if (!stoneDraftRowId) return;
 
-                                const allStones = JSON.parse(localStorage.getItem("SALE_STONE_MASTER") || "[]");
-                                const filtered = allStones.filter((s: any) => s.draftRowId !== stoneDraftRowId);
-                                const updatedStones = stoneRows.map(s => ({ ...s, draftRowId: stoneDraftRowId }));
-                                localStorage.setItem("SALE_STONE_MASTER", JSON.stringify([...filtered, ...updatedStones]));
-
+                                const updatedStones = stoneRows.map((s) => ({ ...s, draftRowId: stoneDraftRowId }));
                                 const stoneWtTotal = updatedStones.reduce((sum, r) => sum + r.stoneWeight, 0);
                                 const stnAmtTotal = updatedStones.reduce((sum, r) => sum + r.stoneAmount, 0);
 
@@ -1503,37 +1397,33 @@ export default function DraftTransactionTable({
                                     STNAMT: stnAmtTotal.toFixed(2),
                                 });
 
-                                // ✅ Always set pendingStoneData — works for tag-lookup, edit, and new
                                 pendingStoneData.current = {
                                     tempId: stoneDraftRowId,
                                     stones: updatedStones,
                                     totalWeight: stoneWtTotal,
                                 };
 
-                                // ✅ Close modal only — don't clear stoneDraftRowId
                                 setIsStoneModalOpen(false);
-
                                 setTimeout(() => focusIdx(5), 50);
                             }}
                             stoneItems={stoneItemsCollection}
-                        // subStoneItems={stoneItemsCollection}
                         />
+
                     </Box>
                 </Box>
             )}
 
-     
-                <SalesBillViewModal
-                    isOpen={showBillModal}
-                    onClose={handleBillShow}
-                    billParams={onSaleReturnModal.billParams}
-                    onBillParamChange={onSaleReturnModal.onBillParamChange}
-                    billDetails={onSaleReturnModal.billDetails}
-                    loading={onSaleReturnModal.loading}
-                    handleSelectionChange={onSaleReturnModal.handleSelectedItems}
-                    handleLoadItems ={onSaleReturnModal.handleLoadSelectedItems}
-                />
-            
+            {/* ── Sales bill modal ────────────────────────────────────────── */}
+            <SalesBillViewModal
+                isOpen={showBillModal}
+                onClose={handleBillShow}
+                billParams={onSaleReturnModal.billParams}
+                onBillParamChange={onSaleReturnModal.onBillParamChange}
+                billDetails={onSaleReturnModal.billDetails}
+                loading={onSaleReturnModal.loading}
+                handleSelectionChange={onSaleReturnModal.handleSelectedItems}
+                handleLoadItems={onSaleReturnModal.handleLoadSelectedItems}
+            />
         </Box>
     );
 }

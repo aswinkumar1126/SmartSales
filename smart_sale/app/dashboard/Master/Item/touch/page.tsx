@@ -14,10 +14,10 @@ import {
     Flex,
 } from "@chakra-ui/react";
 
-import { useItems } from "@/hooks/item/useItems";
-import useTouchMastCreate from "@/hooks/touch/useTouchMastCreate";
-import { useModifyTouchMasterById } from "@/hooks/touch/useTouchMastModify";
-import { useTouchMastData } from "@/hooks/touch/useTouchMastData";
+import { useItems } from "@/hooks/apiHooks/item/useItems";
+import useTouchMastCreate from "@/hooks/apiHooks/touch/useTouchMastCreate";
+import { useModifyTouchMasterById } from "@/hooks/apiHooks/touch/useTouchMastModify";
+import { useTouchMastData } from "@/hooks/apiHooks/touch/useTouchMastData";
 
 import { TouchMaster } from "@/types/touch/touch";
 import { CustomTable } from "@/component/table/CustomTable";
@@ -34,9 +34,9 @@ import { FaFileExcel } from "react-icons/fa";
 import { CapitalizedInput } from "@/components/ui/CapitalizedInput";
 import { AccountTypeList } from "@/data/ACCOUNTtYPE/AccountType";
 import { SelectCombobox } from "@/components/ui/selectComboBox";
-import { useAllAccountHead } from "@/hooks/accountHead/useAccountHead";
+import { useAllAccountHead } from "@/hooks/apiHooks/accountHead/useAccountHead";
 import { CalTypeCollection } from "@/data/CalType/CalType";
-import { useTouchMasterDataById } from "@/hooks/touch/useTouchMastById";
+import { useTouchMasterDataById } from "@/hooks/apiHooks/touch/useTouchMastById";
 import { AiOutlineSave } from "react-icons/ai";
 import { usePrint } from "@/context/print/usePrintContext";
 import SearchBar from "@/component/search/SearchBar";

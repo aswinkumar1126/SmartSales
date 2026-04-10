@@ -32,7 +32,7 @@ import {
     useCompanyById,
     useCreateCompany,
     useUpdateCompany,
-} from "@/hooks/company/useCompany";
+} from "@/hooks/apiHooks/company/useCompany";
 
 import ScrollToTop from "@/component/scroll/ScrollToTop";
 import { CreateCompanyPayload, Company } from "@/service/CompanyService";

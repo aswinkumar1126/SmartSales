@@ -24,9 +24,9 @@ import { IoIosExit } from "react-icons/io";
 import { fontVariables } from "@/context/theme/font";
 import { useTheme } from "@/context/theme/themeContext";
 
-import { useAllMetals, useMetalBySno } from "@/hooks/metal/useMetals";
-import { useUpdateMetal } from "@/hooks/metal/useUpdateMetal";
-import { useCreateMetal } from "@/hooks/metal/useCreateMetal";
+import { useAllMetals, useMetalBySno } from "@/hooks/apiHooks/metal/useMetals";
+import { useUpdateMetal } from "@/hooks/apiHooks/metal/useUpdateMetal";
+import { useCreateMetal } from "@/hooks/apiHooks/metal/useCreateMetal";
 import { Metal } from "@/service/metalService";
 import { toastError } from '@/component/toast/toast'
 import { Toaster } from "@/components/ui/toaster";
@@ -36,7 +36,7 @@ import { CapitalizedInput } from "@/components/ui/CapitalizedInput";
 import { usePrint } from "@/context/print/usePrintContext";
 import { useRouter } from "next/navigation";
 import { FaPrint, FaFileExcel } from "react-icons/fa";
-import { usePureGoldData } from "@/hooks/pureGoldMast/usePureGoldMastData";
+import { usePureGoldData } from "@/hooks/apiHooks/pureGoldMast/usePureGoldMastData";
 
 import { metalMasterFields } from "@/config/master/MetalMaster";
 import { useEnterNavigation } from "@/component/form/useEnterNavigation";
@@ -120,8 +120,8 @@ function MetalMaster() {
     const createMutation = useCreateMetal();
     const updateMutation = useUpdateMetal();
 
-   
-   
+
+
 
     const handleChange = (field: keyof Metal, value: any) => {
         setForm((prev) => {
@@ -244,14 +244,14 @@ function MetalMaster() {
         title?.("Metal List")
     };
 
-    const formFieldName = getFormFields.map(f=>f.name);
+    const formFieldName = getFormFields.map(f => f.name);
 
-    const {register ,focusFirst ,focusNext } = useEnterNavigation(formFieldName,()=>{
+    const { register, focusFirst, focusNext } = useEnterNavigation(formFieldName, () => {
         handleSave
     });
-    useEffect(()=>{
+    useEffect(() => {
         focusFirst()
-    },[])
+    }, [])
 
     return (
         <Box
@@ -276,13 +276,13 @@ function MetalMaster() {
 
                         <Fieldset.Root size="sm" width="100%">
                             <Fieldset.Content>
-                                <DynamicForm 
+                                <DynamicForm
                                     fields={getFormFields}
                                     formData={form}
                                     onChange={handleChange}
                                     register={register}
                                     focusNext={focusNext}
-                                    minLabelWidth="80px"    
+                                    minLabelWidth="80px"
                                     layout="vertical"
                                 />
 

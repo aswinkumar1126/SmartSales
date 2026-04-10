@@ -34,7 +34,7 @@ import { CapitalizedInput } from "@/components/ui/CapitalizedInput";
 import { usePrint } from "@/context/print/usePrintContext";
 import { useRouter } from "next/navigation";
 
-import { useAllBankAccounts, useCreateBankAccount, useUpdatebankAccount } from "@/hooks/bankAccount/useBankAccount";
+import { useAllBankAccounts, useCreateBankAccount, useUpdatebankAccount } from "@/hooks/apiHooks/bankAccount/useBankAccount";
 import { BankAccount } from "@/types/bankAccount/BankAccount";
 import { bankAccountType } from "@/data/bankAccount/bankAccountTypes";
 import { SelectCombobox } from "@/components/ui/selectComboBox";
@@ -191,12 +191,12 @@ function BankAccountMaster() {
         { key: "actions", label: "Actions", align: "center" as const },
     ];
 
-    const fieldName = getFormFields.map(f=>f.name);
-    const {register ,focusFirst ,focusNext } = useEnterNavigation(fieldName,handleSave)
+    const fieldName = getFormFields.map(f => f.name);
+    const { register, focusFirst, focusNext } = useEnterNavigation(fieldName, handleSave)
 
-    useEffect(()=>{
+    useEffect(() => {
         focusFirst()
-    },[])
+    }, [])
     return (
         <Box bg={theme.colors.primary}>
             <Toaster />
@@ -215,16 +215,16 @@ function BankAccountMaster() {
                             BANK ACCOUNT MASTER
                         </Text>
 
-                      <DynamicForm 
-                        fields={getFormFields}
-                        formData={form}
-                        onChange={handleChange}
-                        focusNext={focusNext}
-                        register={register}
-                        minLabelWidth="120px"
-                        layout="vertical"
+                        <DynamicForm
+                            fields={getFormFields}
+                            formData={form}
+                            onChange={handleChange}
+                            focusNext={focusNext}
+                            register={register}
+                            minLabelWidth="120px"
+                            layout="vertical"
 
-                      />
+                        />
 
 
 

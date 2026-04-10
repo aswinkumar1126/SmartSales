@@ -15,7 +15,7 @@ import { useForm, Controller } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { loginSchema } from "@/utils/validation/authSchema";
 
-import { useAuth } from "@/hooks/auth/useAuth";
+import { useAuth } from "@/hooks/apiHooks/auth/useAuth";
 
 import { Toaster, toaster } from "@/components/ui/toaster";
 import { RiLockPasswordLine } from 'react-icons/ri'

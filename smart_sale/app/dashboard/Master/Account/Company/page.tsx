@@ -23,8 +23,8 @@ import {
     useCompanyById,
     useCreateCompany,
     useUpdateCompany,
-} from "@/hooks/company/useCompany";
-import { useAllStates } from "@/hooks/state/useStates";
+} from "@/hooks/apiHooks/company/useCompany";
+import { useAllStates } from "@/hooks/apiHooks/state/useStates";
 import ScrollToTop from "@/component/scroll/ScrollToTop";
 import { CreateCompanyPayload, Company } from "@/service/CompanyService";
 import { toastError, toastLoaded } from "@/component/toast/toast";

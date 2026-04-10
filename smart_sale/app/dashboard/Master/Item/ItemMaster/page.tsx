@@ -24,11 +24,11 @@ import { IoIosExit } from "react-icons/io";
 import { ItemMast } from "@/types/item/item";
 import { normalizeItem } from "@/utils/normalize/normalizeItem";
 
-import { useItems } from "@/hooks/item/useItems";
-import { useCreateItem } from "@/hooks/item/useCreateItem";
-import { useUpdateItem } from "@/hooks/item/useUpdateItem";
-import { useAllCompanies } from "@/hooks/company/useCompany";
-import { useAllMetals } from "@/hooks/metal/useMetals";
+import { useItems } from "@/hooks/apiHooks/item/useItems";
+import { useCreateItem } from "@/hooks/apiHooks/item/useCreateItem";
+import { useUpdateItem } from "@/hooks/apiHooks/item/useUpdateItem";
+import { useAllCompanies } from "@/hooks/apiHooks/company/useCompany";
+import { useAllMetals } from "@/hooks/apiHooks/metal/useMetals";
 
 import { CustomTable, TableColumn } from "@/component/table/CustomTable";
 import { Toaster } from "@/components/ui/toaster";
@@ -54,7 +54,7 @@ export default function ItemMasterPage() {
     const [errors, setErrors] = useState<any>({});
     const [autoItemId, setAutoItemId] = useState<number | undefined>(undefined);
 
-    const [ isDisabelStudded , setIsDisableStudded] = useState<boolean>(false);
+    const [isDisabelStudded, setIsDisableStudded] = useState<boolean>(false);
 
     const controller = new AbortController();
 
@@ -67,7 +67,7 @@ export default function ItemMasterPage() {
         stockType: "T",
         calType: "W",
         studded: "N",
-        studdedStone:"T",
+        studdedStone: "T",
         active: "Y",
         companyId: "",
 
@@ -127,16 +127,16 @@ export default function ItemMasterPage() {
         { label: "TAGGED", value: "T" },
         { label: "NON TAGGED", value: "N" },
     ];
-    const studdedStoneCollection =[
+    const studdedStoneCollection = [
         { label: "STONE", value: "T" },
-        { label: "DIAMOND", value: "D" }, 
+        { label: "DIAMOND", value: "D" },
     ]
 
 
     const formFields = ItemMasterFields({
         companyCollection: companies,
         metalCollection: metals,
-        stockTypeCollection:stockTypeOptions,
+        stockTypeCollection: stockTypeOptions,
         studdedStoneCollection: studdedStoneCollection,
         calTypeCollection: calTypeOptions,
         activeTypeCollection: yesNoOptions,
@@ -157,7 +157,7 @@ export default function ItemMasterPage() {
                 calType: "W",
                 active: "Y",
                 studded: "N",
-                studdedStone:"T",
+                studdedStone: "T",
                 companyId: companies[0]?.value ?? "",
             }));
             setAutoItemId(itemsData?.nextId ?? '0');
@@ -197,20 +197,20 @@ export default function ItemMasterPage() {
             calType: "W",
             active: "Y",
             studded: "N",
-            studdedStone:"T",
+            studdedStone: "T",
             companyId: companies[0]?.value ?? "",
         }));
     };
 
-    
-    useEffect(()=>{
-        if(form.studded !== 'Y'){
+
+    useEffect(() => {
+        if (form.studded !== 'Y') {
             setForm(prev => ({
                 ...prev,
                 studdedStone: null
             }))
         }
-    },[])
+    }, [])
 
     // ✅ Handle search change
     const handleSearchChange = (term: string) => {
@@ -242,7 +242,7 @@ export default function ItemMasterPage() {
         if (!form.itemName?.trim()) {
             newErrors.itemName = "Item Name is required";
         }
-        if(!form.active){
+        if (!form.active) {
             newErrors.active = "Active is required"
         }
 
@@ -285,7 +285,7 @@ export default function ItemMasterPage() {
                 },
             });
         } else {
-           
+
             delete payload.itemId;
 
             createItem(payload as ItemMast, {
@@ -328,7 +328,7 @@ export default function ItemMasterPage() {
 
     const fieldsName = formFields.map(f => f.name);
 
-    const { register, focusFirst, focusNext } = useEnterNavigation(fieldsName ,handleSave);
+    const { register, focusFirst, focusNext } = useEnterNavigation(fieldsName, handleSave);
 
     useEffect(() => {
         focusFirst()
@@ -377,7 +377,7 @@ export default function ItemMasterPage() {
                                     loading={creating || updating}
                                     disabled={!form.itemName?.trim()}
                                 >
-                                    <AiOutlineSave />   {editingId ? 'Update' : 'Save'}  
+                                    <AiOutlineSave />   {editingId ? 'Update' : 'Save'}
                                 </Button>
 
                                 <Button size="xs" onClick={resetForm} colorPalette="blue">

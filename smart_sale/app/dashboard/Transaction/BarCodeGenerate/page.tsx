@@ -8,7 +8,7 @@ import React, {
     useMemo,
     useCallback,
 } from "react";
-import { Box, Table, Text, Button, Portal, Drawer, Icon ,VStack ,HStack ,Spinner, Span } from "@chakra-ui/react";
+import { Box, Table, Text, Button, Portal, Drawer, Icon, VStack, HStack, Spinner, Span } from "@chakra-ui/react";
 import JSZip from "jszip";
 import { saveAs } from "file-saver";
 
@@ -29,14 +29,14 @@ import { getTagedEntryNoParams, getTagedEntryNoParamsForApi } from "@/types/tagg
 
 /*-------------- HOOKS ----------------------*/
 
-import { useAllAccountHead } from "@/hooks/accountHead/useAccountHead";
-import { useBarcodeItems, useCreateTag } from "@/hooks/barcode/useBarcodeItems";
-import { useSessionStorage } from "@/hooks/storage/useSessionStorage";
+import { useAllAccountHead } from "@/hooks/apiHooks/accountHead/useAccountHead";
+import { useBarcodeItems, useCreateTag } from "@/hooks/apiHooks/barcode/useBarcodeItems";
+import { useSessionStorage } from "@/hooks/apiHooks/storage/useSessionStorage";
 import { useTheme } from "@/context/theme/themeContext";
-import { useSoftControlById } from "@/hooks/softControl/useSoftControl";
-import { useTagEntryNos, useTagedDetailsByEntryNo } from "@/hooks/tag/useTag";
-import { useSize } from "@/hooks/size/useSize";
-import { useActivePrinter } from "@/hooks/print/usePrint";
+import { useSoftControlById } from "@/hooks/apiHooks/softControl/useSoftControl";
+import { useTagEntryNos, useTagedDetailsByEntryNo } from "@/hooks/apiHooks/tag/useTag";
+import { useSize } from "@/hooks/apiHooks/size/useSize";
+import { useActivePrinter } from "@/hooks/apiHooks/print/usePrint";
 
 
 /*-------------- CONSTANTS ------------------*/
@@ -76,7 +76,7 @@ const BARCODE_PRINT_DETAILS = "barcode_print_details";
 
 const BARCODE_EDITING_KEY = "barcode_editing_key";
 
-const BARCODE_EDITING_ENTRY_NO ="barcode_editing_entry_no";
+const BARCODE_EDITING_ENTRY_NO = "barcode_editing_entry_no";
 
 const BARCODE_ENTRY_LIST_SINGLE_SEARCH = "tag_items_single_search";
 
@@ -111,7 +111,7 @@ const buildProtocolUrl = (action: string) =>
 
 
 const FIELD_ORDER = [
-   "barcode",  "grsweight", "stoneWt", "salesStoneWt", "wastePercent",
+    "barcode", "grsweight", "stoneWt", "salesStoneWt", "wastePercent",
     "size", "diamondWt", "mc", "touch",
 ] as const;
 
@@ -127,7 +127,7 @@ const today = new Date().toISOString().split("T")[0];
 
 
 const EMPTY_HEADER: BarcodeHeaderFormInterface = {
-    ENTRYNO: "", DATE: today ,  COMPANYNAME: "", INWARDNO: "", ITEMNAME: "",
+    ENTRYNO: "", DATE: today, COMPANYNAME: "", INWARDNO: "", ITEMNAME: "",
 };
 const EMPTY_TRANSACTION_FORM = {
     barcode: "", grsweight: "", stoneWt: "", salesStoneWt: "", wastePercent: "",
@@ -209,38 +209,38 @@ function BarCodeGenerate() {
 
     const fieldRefs = useRef<Record<FieldKey, React.RefObject<HTMLInputElement | null>>>({
         barcode: barcodeRef,
-        grsweight: weightRef, 
-        stoneWt: stoneWtRef, 
+        grsweight: weightRef,
+        stoneWt: stoneWtRef,
         salesStoneWt: salesStoneWtRef,
-        wastePercent: wastePercentRef, 
-        size: sizeRef, 
+        wastePercent: wastePercentRef,
+        size: sizeRef,
         diamondWt: diamondWtRef,
-        mc: mcRef, 
-        touch: touchRef, 
+        mc: mcRef,
+        touch: touchRef,
     });
 
     /* -------- Mutation -------- */
     const { mutate: createTag } = useCreateTag();
 
-  
+
 
     /* -------- Session-persisted State -------- */
     const [barcodeHeaderForm, setBarcodeHeaderForm] = useSessionStorage<BarcodeHeaderFormInterface>(BARCODE_HEADER_KEY, EMPTY_HEADER);
-    console.log(barcodeHeaderForm,'barcodeHeaderForm')
+    console.log(barcodeHeaderForm, 'barcodeHeaderForm')
 
     const [transactionRows, setTransactionRows] = useSessionStorage<BarcodeTransactionItem[]>(
         BARCODE_TRANSACTIONS_KEY, EMPTY_ARRAY
     );
 
     const [printId, setPrintId] = useSessionStorage<number | null>(BARCODE_PRINT_KEY, null);
-    const [printDetails, setPrintDetails] = useSessionStorage<BarcodePrintingDetails[] | [] >(BARCODE_PRINT_DETAILS, []);
-    const [isEditing, setIsEditing] = useSessionStorage<boolean>(BARCODE_EDITING_KEY ,false);
+    const [printDetails, setPrintDetails] = useSessionStorage<BarcodePrintingDetails[] | []>(BARCODE_PRINT_DETAILS, []);
+    const [isEditing, setIsEditing] = useSessionStorage<boolean>(BARCODE_EDITING_KEY, false);
 
     const [printIsEnable, setPrintIsEnable] = useState<boolean>(false);
 
     const [selectedEntryNo, setSelectedEntryNo] = useSessionStorage<string>(BARCODE_EDITING_ENTRY_NO, '');
 
-    const [singleSearch, setSingleSearch] = useSessionStorage<string>(BARCODE_ENTRY_LIST_SINGLE_SEARCH,'')
+    const [singleSearch, setSingleSearch] = useSessionStorage<string>(BARCODE_ENTRY_LIST_SINGLE_SEARCH, '')
 
 
     /* -------- Local State -------- */
@@ -257,13 +257,13 @@ function BarCodeGenerate() {
     const [selectedItemId, setSelectedItemId] = useState<number | undefined>(undefined);
     const [submitting, setSubmitting] = useState(false);
 
-     
 
-    
+
+
 
     const [tagNumberParams, setTagNumberParams] = useState<getTagedEntryNoParams>({
 
-        FROMDATE:'',
+        FROMDATE: '',
         TODATE: '',
         ITEMID: '',
         ACCODE: '',
@@ -282,7 +282,7 @@ function BarCodeGenerate() {
             [field]: value
         }));
     }, []);
-// Auto-refetch when filters change
+    // Auto-refetch when filters change
     useEffect(() => {
         if (tagNumberParams) {
             tagEntryNoRefetch();
@@ -295,40 +295,40 @@ function BarCodeGenerate() {
 
     /* -------- Data Fetching -------- */
     const { data: allPurchaseAccount } = useAllAccountHead("", {
-        accountType:"PR",
+        accountType: "PR",
     });
-    const {data:printerSettings} = useActivePrinter();
+    const { data: printerSettings } = useActivePrinter();
     console.log(printerSettings, 'printerSettings')
 
-    const printer = useMemo(()=>{
-        return printerSettings ? printerSettings.data : null ;
+    const printer = useMemo(() => {
+        return printerSettings ? printerSettings.data : null;
     }, [printerSettings])
 
-    const { data: sizes, isLoading: sizeDataLoading } = useSize('',selectedItemId);
-    console.log(sizes,'sizessizes');
+    const { data: sizes, isLoading: sizeDataLoading } = useSize('', selectedItemId);
+    console.log(sizes, 'sizessizes');
 
-    const itemSizeList = useMemo(()=>{
+    const itemSizeList = useMemo(() => {
         return Array.isArray(sizes) ? sizes.map((size) => ({
-            label:size.SIZENAME,
-            value:String(size.SIZEID)
-        })):[]
-    },[sizes]);
-    console.log(itemSizeList,'itemSizeList')
+            label: size.SIZENAME,
+            value: String(size.SIZEID)
+        })) : []
+    }, [sizes]);
+    console.log(itemSizeList, 'itemSizeList')
 
 
     const barcodeQueryParams = useMemo(() => ({
         ACCODE: Number(barcodeHeaderForm.COMPANYNAME),
         PURCHASE_ENTRYNO: Number(barcodeHeaderForm.INWARDNO),
         SNO: String(barcodeHeaderForm.ITEMNAME),
-        ISEDITING: isEditing ? true :false
+        ISEDITING: isEditing ? true : false
     }), [barcodeHeaderForm.COMPANYNAME, barcodeHeaderForm.INWARDNO, barcodeHeaderForm.ITEMNAME, isEditing]);
 
 
     const { data: barcodeItems } = useBarcodeItems(barcodeQueryParams);
 
     const { data: softControlDataById } = useSoftControlById("LOT_TAG_CONTROL");
- 
-   
+
+
     // To this:
     const getFilteredParams = useCallback((): Partial<getTagedEntryNoParamsForApi> => {
         const filteredParams: Partial<getTagedEntryNoParamsForApi> = {};
@@ -349,7 +349,7 @@ function BarCodeGenerate() {
         return filteredParams;
     }, [tagNumberParams]);
 
-    console.log(getFilteredParams(),'filterParams')
+    console.log(getFilteredParams(), 'filterParams')
 
     // Use filtered params for API call
     const { data: tagEntryNos, isLoading: tagEntryNosLoading, isError: tagEntryNosError, refetch: tagEntryNoRefetch } = useTagEntryNos(getFilteredParams());
@@ -357,7 +357,7 @@ function BarCodeGenerate() {
     console.log(tagEntryNos, 'tagEntryNos');
 
     const { data: tagedDetails, isLoading: tagedDetailsLoading, isError: tagedDetailsError } = useTagedDetailsByEntryNo(selectedEntryNo);
-    console.log(tagedDetails ,'tagDetailsBySno');
+    console.log(tagedDetails, 'tagDetailsBySno');
 
     /* ============================================================
        EFFECTS
@@ -430,19 +430,19 @@ function BarCodeGenerate() {
                 : EMPTY_ARRAY,
         [selectedItem]);
 
-    console.log(selectedItem,'selectedItemselectedItem');
+    console.log(selectedItem, 'selectedItemselectedItem');
 
-    useEffect(()=>{
-        if(!selectedItem?.ITEMID) return;
+    useEffect(() => {
+        if (!selectedItem?.ITEMID) return;
         setSelectedItemId(selectedItem.ITEMID);
     }, [selectedItem])
 
 
-    const tagItemList = useMemo(()=>{
-        return Array.isArray(tagEntryNos) ? tagEntryNos : [] ;
+    const tagItemList = useMemo(() => {
+        return Array.isArray(tagEntryNos) ? tagEntryNos : [];
     }, [tagEntryNos]);
 
-    console.log(tagItemList,'tagItemList')
+    console.log(tagItemList, 'tagItemList')
 
     /* ============================================================
        BARCODE REBUILD
@@ -455,7 +455,7 @@ function BarCodeGenerate() {
     /* ============================================================
          PRINT CONFING
           ============================================================ */
-        const TSPL_HEADER = `
+    const TSPL_HEADER = `
             SIZE 97.5 mm, 25 mm
             DIRECTION 0,0
             REFERENCE 0,0
@@ -466,8 +466,8 @@ function BarCodeGenerate() {
             SET TEAR ON
             CLS
             `;
-                const generateLabelTSPL = (data: BarcodePrintingDetails) => {
-                    return `
+    const generateLabelTSPL = (data: BarcodePrintingDetails) => {
+        return `
             QRCODE 766,166,L,3,A,180,M2,S7,"${data.TAGNO}"
             CODEPAGE 1252
             TEXT 691,161,"0",180,11,9,"size:${data.SIZEID}"
@@ -478,7 +478,7 @@ function BarCodeGenerate() {
             TEXT 624,116,"0",90,8,6,"ASWIN"
             PRINT 1,1
             `;
-        };
+    };
 
     const generateAllLabels = (dataArray: BarcodePrintingDetails[]) => {
         const labels = dataArray
@@ -514,17 +514,17 @@ function BarCodeGenerate() {
         }
 
         const content = generateAllLabels(printDetails);
-        console.log("Generated TSPL Content:", content);    
+        console.log("Generated TSPL Content:", content);
 
         downloadTxt(content, () => {
             console.log("Download triggered → calling protocol");
 
-            setTimeout(()=>{
+            setTimeout(() => {
                 window.location.href = buildProtocolUrl("launch");
-            },800);
+            }, 800);
         });
     };
-    
+
     /* ============================================================
        TABLE CONFIG
        ============================================================ */
@@ -533,18 +533,18 @@ function BarCodeGenerate() {
             const isNum = NUMERIC_FIELDS.has(col.key);
             const isRequired = REQUIRED_FIELDS.has(col.key);
             const base: any = {
-                key: col.key, 
-                label: col.label || col.key, 
+                key: col.key,
+                label: col.label || col.key,
                 placeholder: col.label || col.key,
-                type: isNum ? "number" : "text", 
-                isRequired, 
-                size: "xs", 
+                type: isNum ? "number" : "text",
+                isRequired,
+                size: "xs",
                 align: isNum ? "right" : "left",
-                allowFocus:col.allowFocus
+                allowFocus: col.allowFocus
 
             };
             if (col.decimalScale) base.decimalScale = col.decimalScale;
-          
+
             if (col.key === "size") return { ...base, type: "combobox" as const, align: "left", collection: itemSizeCollection };
             if (col.key === "wastePercent") return { ...base, type: "number", decimalScale: 2 };
             if (col.key === "barcode") return { ...base, type: "text", align: "left", disabled: true };
@@ -557,7 +557,7 @@ function BarCodeGenerate() {
         () => transactionFormFields.filter((f: any) => f),
         [transactionFormFields]);
 
-    console.log(visibleFormFields,'visibleFormFields')
+    console.log(visibleFormFields, 'visibleFormFields')
     const allDisplayCols = useMemo(() => [
 
         ...transactionTableCols
@@ -910,7 +910,7 @@ function BarCodeGenerate() {
             setTimeout(() => focusField(FIELD_ORDER[0]), 100);
         } finally {
             setIsSubmitting(false);
-           
+
         }
     }, [validateTransactionForm, editId, transactionFormData, barcodeHeaderForm.ENTRYNO, rebuildBarcodes, setTransactionRows, resetTransactionForm, focusField]);
 
@@ -958,7 +958,7 @@ function BarCodeGenerate() {
         alert(`Printing barcode for item: ${row.barcode}`);
     }, []);
 
-    console.log(transactionRows,'transactionRows')
+    console.log(transactionRows, 'transactionRows')
 
     const handleSaveTransaction = useCallback(() => {
         if (!validateTaggingHeaders()) {
@@ -978,15 +978,15 @@ function BarCodeGenerate() {
             TAGDATE: barcodeHeaderForm.DATE || new Date().toISOString().split("T")[0],
         };
         const taggingDetails = transactionRows.map((row) => ({
-            TAGNO: row.barcode, 
-            GRSWT: row.grsweight, 
+            TAGNO: row.barcode,
+            GRSWT: row.grsweight,
             STNWT: row.stoneWt,
-            WASPER: row.wastePercent, 
-            DIAWT: row.diamondWt, 
+            WASPER: row.wastePercent,
+            DIAWT: row.diamondWt,
             MC: row.mc,
-            TOUCH: row.touch, 
+            TOUCH: row.touch,
             SALESSTNWT: row.salesStoneWt,
-            NETWT: row.grsweight - row.stoneWt, 
+            NETWT: row.grsweight - row.stoneWt,
             SIZEID: Number(row.size),
         }));
 
@@ -1008,9 +1008,9 @@ function BarCodeGenerate() {
                 setPrintId(res?.data?.ENTRYNO);
 
                 setPrintDetails(res?.data?.TAGDETAILS);
-                setTimeout(()=>{
+                setTimeout(() => {
                     handlePrintTagDetails()
-                },500)
+                }, 500)
 
             },
             onError: (error: any) => {
@@ -1073,7 +1073,7 @@ function BarCodeGenerate() {
 
         const purchase = tagedDetails.PURCHASEDETAILS;
         const apiRows = tagedDetails.TAGGINGDETAILS || [];
-        console.log(purchase,'purchase')
+        console.log(purchase, 'purchase')
 
         // ✅ Reset header completely instead of merging with prev
         setBarcodeHeaderForm({
@@ -1208,20 +1208,20 @@ function BarCodeGenerate() {
 
         if (field.type === "number") return (
             <Box position="relative">
-                <CapitalizedInput 
-                field={key} 
-                value={value} 
-                onChange={(_: unknown, v: unknown) => handleTransactionChange(key, v)}
-                type="number" 
-                isCapitalized={false} 
-                size="xs" 
-                rounded="sm" 
-                decimalScale={field.decimalScale ?? 3}
-                inputRef={ref} 
-                onEnter={() => moveToNext(key)} 
-                noBorder
-                allowFocus={field.allowFocus || false}
-                 />
+                <CapitalizedInput
+                    field={key}
+                    value={value}
+                    onChange={(_: unknown, v: unknown) => handleTransactionChange(key, v)}
+                    type="number"
+                    isCapitalized={false}
+                    size="xs"
+                    rounded="sm"
+                    decimalScale={field.decimalScale ?? 3}
+                    inputRef={ref}
+                    onEnter={() => moveToNext(key)}
+                    noBorder
+                    allowFocus={field.allowFocus || false}
+                />
             </Box>
         );
         if (field.key === "barcode") return (
@@ -1243,24 +1243,24 @@ function BarCodeGenerate() {
         );
         return (
             <Box position="relative">
-                <CapitalizedInput 
-                field={key} 
-                value={value} 
-                onChange={(_: unknown, v: unknown) => handleTransactionChange(key, v)} 
-                type="text" 
-                isCapitalized={false} 
-                size="xs" 
-                rounded="sm"
-                inputRef={ref}
-                onEnter={() => moveToNext(key)} 
-                noBorder 
-                disabled={disabled}
+                <CapitalizedInput
+                    field={key}
+                    value={value}
+                    onChange={(_: unknown, v: unknown) => handleTransactionChange(key, v)}
+                    type="text"
+                    isCapitalized={false}
+                    size="xs"
+                    rounded="sm"
+                    inputRef={ref}
+                    onEnter={() => moveToNext(key)}
+                    noBorder
+                    disabled={disabled}
                 />
             </Box>
         );
     }, [transactionFormData, handleTransactionChange, moveToNext, handleTransactionSubmit]);
 
-    console.log(singleSearch,'singleSearch')
+    console.log(singleSearch, 'singleSearch')
 
 
 
@@ -1280,8 +1280,8 @@ function BarCodeGenerate() {
         URL.revokeObjectURL(url);
     };
 
- 
-  
+
+
 
     const generateBatFile = (systemName: string, printerName: string) => {
         return `@echo off
@@ -1332,7 +1332,7 @@ exit
 `, []);
 
     // ---------------- Handle Submit ----------------
-   
+
     const handleSubmit = async () => {
         setSubmitting(true);
 
@@ -1364,12 +1364,12 @@ exit
         <Box display="flex" flexDirection="row" width={"100%"} gap={2}>
             <Box display="flex" flexDirection="column" gap={2} width={'100%'}>
                 <Box bg={theme.colors.formColor} p={1} rounded="xl" display="flex" flexDirection="row" justifyContent="center">
-                <Text fontSize="base" fontWeight="semibold" textAlign="center">BARCODE GENERATION</Text>
+                    <Text fontSize="base" fontWeight="semibold" textAlign="center">BARCODE GENERATION</Text>
                 </Box>
                 {/* ── Header ── */}
                 <Box bg={theme.colors.formColor} p={2} rounded="xl" display="flex" flexDirection="row" justifyContent="space-between" gap={4}>
                     <Box display="flex" flexDirection="column" gap={4}>
-                 
+
                         <Box display="flex" gap={2} flexDirection="row" justifyContent="space-between">
                             <BarcodeHeaderForm
                                 form={barcodeHeaderForm}
@@ -1393,7 +1393,7 @@ exit
                             size="sm"
                             fontSize="xs"
                         />
-                
+
                         <Button
                             onClick={handleSubmit}
                             disabled={submitting}
@@ -1409,8 +1409,8 @@ exit
                                 </Span>
                             </Box>
                         </Button>
-                     
-                        
+
+
                     </Box>
                     {/* } */}
 
@@ -1507,26 +1507,26 @@ exit
                         </Portal>
                     </Drawer.Root>
                 )}
-              
+
             </Box>
             <Box width={'15%'}>
-        
 
-                <BarcodeTagListing 
 
-                    tagListItems={tagItemList} 
-                    searchTerm={singleSearch} 
-                    handleSearchChange={handleSingleSearch} 
-                    handleEditTagTransaction={handleEditTagTransaction} 
-                    handleDeselect={handleClear} 
-                    deselectFlag={deselectFlag} 
+                <BarcodeTagListing
+
+                    tagListItems={tagItemList}
+                    searchTerm={singleSearch}
+                    handleSearchChange={handleSingleSearch}
+                    handleEditTagTransaction={handleEditTagTransaction}
+                    handleDeselect={handleClear}
+                    deselectFlag={deselectFlag}
                     onFilterChange={handleFilterChange}
                     filterParams={tagNumberParams}
                     collections={{ acCodeCollection: purchaserCollection }}
                 />
             </Box>
         </Box>
-    
+
     );
 }
 

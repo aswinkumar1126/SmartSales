@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useRef, useState } from "react";
 import {
     Box,
     Grid,
@@ -11,117 +11,125 @@ import {
     Checkbox,
     Badge,
 } from "@chakra-ui/react";
+
 import { CapitalizedInput } from "@/components/ui/CapitalizedInput";
-import { formatToFixed } from '@/utils/format/numberFormat';
+import { formatToFixed } from "@/utils/format/numberFormat";
 import { BankTransactionModal } from "./BankTransactionModal";
 
-interface BankTransaction {
-    draftRowId: string;
-    id: string;
-    bankName: string;
-    tranMode: "C" | "F" | "I" | "N" | "R" | "U";
-    tranDate: string;
-    chqNo: string;
-    amount: number;
-}
+import { useSalesBalanceSummary } from "@/store/sales/useSalesBalanceSummaryStore";
 
-export interface ClosingFormDetails {
-    convType: "P" | "C" | ""|string;
-    convAmt: string;
-    convWt: string;
-    discAmt: string;
-    discWt: string;
-    cashPaid: string;
-    cashRcvd: string;
-    bankPaid: string;
-    bankRcvd: string;
-    bankPaidDetails: BankTransaction[];
-    bankRcvdDetails: BankTransaction[];
-}
 
-type BalanceSummaryProps = {
+
+interface BalanceSummaryProps {
     theme: any;
     openBalance: { openCash: number; openPure: number };
-    closingDetails: ClosingFormDetails;
-    onClosingDetailsChange: (field: string, value: any) => void;
     accCode: number;
     rate: number;
-    closingCash: number;      // Calculated in parent
-    closingPure: number;      // Calculated in parent
+    closingCash: number;
+    closingPure: number;
     transactionResetSignal?: boolean;
-    onBankPaidSave: (transactions: BankTransaction[], total: number) => void; 
-    onBankRcvdSave: (transactions: BankTransaction[], total: number) => void;  
-    bankAccList?:{label:string,value:string}[]
-};
+    bankAccList?: { label: string; value: string }[];
+}
 
 const BalanceSummary = ({
     theme,
     openBalance,
-    closingDetails,
-    onClosingDetailsChange,
     accCode,
     rate,
     closingCash,
     closingPure,
-    onBankPaidSave,
-    onBankRcvdSave,
-    bankAccList
+    bankAccList,
 }: BalanceSummaryProps) => {
+    // =====================
+    // ZUSTAND STORE
+    // =====================
+    const {
+        closingDetails,
+        setClosingField,
+        bankModalType,
+        openBankModal,
+        closeBankModal,
+        setBankPaid,
+        setBankRcvd,
+    } = useSalesBalanceSummary();
 
-    const [conversionType, setConversionType] = useState<"" | "C" | "P"|string>(closingDetails.convType);
-    const [activeBankModal, setActiveBankModal] = useState<"paid" | "received" | null>(null);
+    const conversionType = closingDetails.convType;
+    console.log(closingDetails,'closingDetails')
 
+    // =====================
+    // REFS
+    // =====================
     const bankPaidModalOpenedRef = useRef(false);
     const bankRcvdModalOpenedRef = useRef(false);
 
-    const openingPure = openBalance.openPure ? formatToFixed(openBalance.openPure, 3) : "0.000";
-    const openingCash = openBalance.openCash ? formatToFixed(openBalance.openCash, 2) : "0.00";
+    // =====================
+    // FORMAT VALUES
+    // =====================
+    const openingPure = openBalance.openPure
+        ? formatToFixed(openBalance.openPure, 3)
+        : "0.000";
 
-    // Update conversion type when closingDetails changes from parent
-    useEffect(() => {
-        setConversionType(closingDetails.convType);
-    }, [closingDetails.convType]);
+    const openingCash = openBalance.openCash
+        ? formatToFixed(openBalance.openCash, 2)
+        : "0.00";
 
-    // Event handlers
-    const handleChange = (field: keyof ClosingFormDetails, value: string) => {
-        onClosingDetailsChange(field, value);
+    // =====================
+    // HANDLERS
+    // =====================
+    const handleChange = (field: any, value: any) => {
+        setClosingField(field, value);
     };
 
-
     const handleConvTypeChange = (type: "P" | "C" | "") => {
-        const newConvType = conversionType === type ? "" : type;
-        setConversionType(newConvType);
-        onClosingDetailsChange("convType", newConvType);
-        // Reset conversion values when type changes
-        onClosingDetailsChange("convAmt", "");
-        onClosingDetailsChange("convWt", "");
+        const newType = conversionType === type ? "" : type;
+
+        setClosingField("convType", newType);
+        setClosingField("convAmt", "");
+        setClosingField("convWt", "");
     };
 
     const handleOpenBankPaidModal = () => {
         if (!accCode || bankPaidModalOpenedRef.current) return;
+
         bankPaidModalOpenedRef.current = true;
-        setActiveBankModal("paid");
-        setTimeout(() => { bankPaidModalOpenedRef.current = false; }, 500);
+        openBankModal("paid");
+
+        setTimeout(() => {
+            bankPaidModalOpenedRef.current = false;
+        }, 500);
     };
 
     const handleOpenBankRcvdModal = () => {
         if (!accCode || bankRcvdModalOpenedRef.current) return;
+
         bankRcvdModalOpenedRef.current = true;
-        setActiveBankModal("received");
-        setTimeout(() => { bankRcvdModalOpenedRef.current = false; }, 500);
+        openBankModal("received");
+
+        setTimeout(() => {
+            bankRcvdModalOpenedRef.current = false;
+        }, 500);
     };
 
-    const closeActiveModal = () => setActiveBankModal(null);
+    const closeActiveModal = () => closeBankModal();
 
+    // =====================
+    // UI
+    // =====================
     return (
         <Box p={1} bg={theme.colors.formColor} borderRadius="md">
             <Grid templateColumns="50px 1fr 1fr" gap={2} alignItems="center">
                 <GridItem />
-                <Text textAlign="center" fontSize="xs" fontWeight="semibold">Pure</Text>
-                <Text textAlign="center" fontSize="xs" fontWeight="semibold">Cash</Text>
+                <Text textAlign="center" fontSize="xs" fontWeight="semibold">
+                    Pure
+                </Text>
+                <Text textAlign="center" fontSize="xs" fontWeight="semibold">
+                    Cash
+                </Text>
 
                 {/* Opening Balance */}
-                <Text fontSize="xs" fontWeight="semibold">Opening Balance</Text>
+                <Text fontSize="xs" fontWeight="semibold">
+                    Opening Balance
+                </Text>
                 <CapitalizedInput
                     value={openingPure}
                     field="openPure"
@@ -144,62 +152,85 @@ const BalanceSummary = ({
                 />
 
                 {/* Conversion Type */}
-                <Text fontSize="xs" fontWeight="semibold">Conv By</Text>
+                <Text fontSize="xs" fontWeight="semibold">
+                    Conv By
+                </Text>
+
                 <HStack>
                     <Checkbox.Root
-                        disabled={!accCode} size="xs"
+                        disabled={!accCode}
+                        size="xs"
                         checked={conversionType === "P"}
                         onCheckedChange={() => handleConvTypeChange("P")}
                     >
                         <Checkbox.HiddenInput />
-                        <Checkbox.Control><Checkbox.Indicator /></Checkbox.Control>
+                        <Checkbox.Control>
+                            <Checkbox.Indicator />
+                        </Checkbox.Control>
                         <Checkbox.Label fontSize="2xs">Pure</Checkbox.Label>
                     </Checkbox.Root>
                 </HStack>
+
                 <HStack>
                     <Checkbox.Root
-                        disabled={!accCode} size="xs"
+                        disabled={!accCode}
+                        size="xs"
                         checked={conversionType === "C"}
                         onCheckedChange={() => handleConvTypeChange("C")}
                     >
                         <Checkbox.HiddenInput />
-                        <Checkbox.Control><Checkbox.Indicator /></Checkbox.Control>
+                        <Checkbox.Control>
+                            <Checkbox.Indicator />
+                        </Checkbox.Control>
                         <Checkbox.Label fontSize="2xs">Cash</Checkbox.Label>
                     </Checkbox.Root>
                 </HStack>
 
-                {/* Conversion Values */}
-                <Text fontSize="xs" fontWeight="semibold">Conv</Text>
+                {/* Conversion Inputs */}
+                <Text fontSize="xs" fontWeight="semibold">
+                    Conv
+                </Text>
+
                 <CapitalizedInput
-                    value={closingDetails.convWt}
                     field="convWt"
+                    value={closingDetails.convWt}
                     onChange={(_, v) => handleChange("convWt", v)}
                     type="number"
                     allowDecimal
                     decimalScale={3}
                     size="xs"
                     rounded="sm"
-                    disabled={!accCode || conversionType === "C" || conversionType === ""}
+                    disabled={
+                        !accCode || conversionType === "C" || conversionType === ""
+                    }
                 />
+
                 <CapitalizedInput
-                    value={closingDetails.convAmt}
                     field="convAmt"
+                    value={closingDetails.convAmt}
                     onChange={(_, v) => handleChange("convAmt", v)}
                     type="number"
                     allowDecimal
                     decimalScale={2}
                     size="xs"
                     rounded="sm"
-                    disabled={!accCode || conversionType === "P" || conversionType === ""}
+                    disabled={
+                        !accCode || conversionType === "P" || conversionType === ""
+                    }
                 />
 
-                <Box /><Box /><Box />
+                <Box />
+                <Box />
+                <Box />
 
-                {/* Bank Received */}
-                <Text /><Text />
+                {/* BANK RECEIVED */}
+                <Text />
+                <Text />
                 <VStack align="start" gap={0}>
                     <HStack justify="space-between" width="100%">
-                        <Text fontSize="2xs" fontWeight="medium">Bank Received</Text>
+                        <Text fontSize="2xs" fontWeight="medium">
+                            Bank Received
+                        </Text>
                     </HStack>
                     <Box
                         onClick={handleOpenBankRcvdModal}
@@ -207,9 +238,9 @@ const BalanceSummary = ({
                         width="100%"
                     >
                         <CapitalizedInput
-                            value={closingDetails.bankRcvd}
                             field="bankRcvd"
-                            onChange={() => { }}
+                            onChange={() => null}
+                            value={closingDetails.bankRcvd}
                             type="number"
                             decimalScale={2}
                             size="xs"
@@ -217,20 +248,24 @@ const BalanceSummary = ({
                             disabled={!accCode}
                         />
                     </Box>
-                    {closingDetails.bankRcvdDetails?.length > 0 && (
+
+                    {closingDetails.bankRcvdDetails.length > 0 && (
                         <Badge size="xs" colorPalette="blue" fontSize="2xs">
                             {closingDetails.bankRcvdDetails.length} transaction(s)
                         </Badge>
                     )}
                 </VStack>
 
-                {/* Cash Received */}
-                <Text /><Text />
+                {/* CASH RECEIVED */}
+                <Text />
+                <Text />
                 <VStack align="start" gap={0}>
-                    <Text fontSize="2xs" fontWeight="medium">Cash Received</Text>
+                    <Text fontSize="2xs" fontWeight="medium">
+                        Cash Received
+                    </Text>
                     <CapitalizedInput
-                        value={closingDetails.cashRcvd}
                         field="cashRcvd"
+                        value={closingDetails.cashRcvd}
                         onChange={(_, v) => handleChange("cashRcvd", v)}
                         type="number"
                         decimalScale={2}
@@ -240,11 +275,14 @@ const BalanceSummary = ({
                     />
                 </VStack>
 
-                {/* Bank Paid */}
-                <Text /><Text />
+                {/* BANK PAID */}
+                <Text />
+                <Text />
                 <VStack align="start" gap={0}>
                     <HStack justify="space-between" width="100%">
-                        <Text fontSize="2xs" fontWeight="medium">Bank Paid</Text>
+                        <Text fontSize="2xs" fontWeight="medium">
+                            Bank Paid
+                        </Text>
                     </HStack>
                     <Box
                         onClick={handleOpenBankPaidModal}
@@ -254,7 +292,7 @@ const BalanceSummary = ({
                         <CapitalizedInput
                             value={closingDetails.bankPaid}
                             field="bankPaid"
-                            onChange={() => { }}
+                            onChange={() => null}
                             type="number"
                             decimalScale={2}
                             size="xs"
@@ -262,20 +300,24 @@ const BalanceSummary = ({
                             disabled={!accCode}
                         />
                     </Box>
-                    {closingDetails.bankPaidDetails?.length > 0 && (
+
+                    {closingDetails.bankPaidDetails.length > 0 && (
                         <Badge size="xs" colorPalette="red" fontSize="2xs">
                             {closingDetails.bankPaidDetails.length} transaction(s)
                         </Badge>
                     )}
                 </VStack>
 
-                {/* Cash Paid */}
-                <Text /><Text />
+                {/* CASH PAID */}
+                <Text />
+                <Text />
                 <VStack align="start" gap={0}>
-                    <Text fontSize="2xs" fontWeight="medium">Cash Paid</Text>
+                    <Text fontSize="2xs" fontWeight="medium">
+                        Cash Paid
+                    </Text>
                     <CapitalizedInput
-                        value={closingDetails.cashPaid}
                         field="cashPaid"
+                        value={closingDetails.cashPaid}
                         onChange={(_, v) => handleChange("cashPaid", v)}
                         type="number"
                         decimalScale={2}
@@ -285,12 +327,15 @@ const BalanceSummary = ({
                     />
                 </VStack>
 
-                {/* Closing Balance */}
-                <Text fontWeight="semibold" fontSize='xs'>Closing Balance</Text>
+                {/* CLOSING */}
+                <Text fontWeight="semibold" fontSize="xs">
+                    Closing Balance
+                </Text>
+
                 <CapitalizedInput
+                    field="closingPure"
                     value={formatToFixed(closingPure.toString(), 3)}
-                    field="closePure"
-                    onChange={() => { }}
+                    onChange={() => null}
                     type="number"
                     allowDecimal
                     decimalScale={3}
@@ -299,9 +344,9 @@ const BalanceSummary = ({
                     disabled
                 />
                 <CapitalizedInput
+                    field="closingCash"
                     value={formatToFixed(closingCash.toString(), 2)}
-                    field="closeCash"
-                    onChange={() => { }}
+                    onChange={() => null}
                     type="number"
                     size="xs"
                     rounded="sm"
@@ -309,28 +354,29 @@ const BalanceSummary = ({
                 />
             </Grid>
 
-            {/* Bank Transaction Modal */}
+            {/* =====================
+          MODAL (ZUSTAND CONTROLLED)
+      ===================== */}
             <BankTransactionModal
-                key={activeBankModal ?? "none"}
+                key={bankModalType ?? "none"}
                 draftRowId={
-                    activeBankModal === "paid"
+                    bankModalType === "paid"
                         ? `bank-paid-${accCode}`
                         : `bank-rcvd-${accCode}`
                 }
-                isOpen={activeBankModal !== null}
+                isOpen={bankModalType !== null}
                 onClose={closeActiveModal}
-                onSave={activeBankModal === "paid" ? onBankPaidSave : onBankRcvdSave}  // Use parent handlers
-                type={activeBankModal ?? "paid"}
+                onSave={bankModalType === "paid" ? setBankPaid : setBankRcvd}
+                type={bankModalType ?? "paid"}
                 theme={theme}
-                initialTransactions={
-                    !accCode ? [] :
-                        activeBankModal === "paid"
-                            ? closingDetails.bankPaidDetails || []
-                            : closingDetails.bankRcvdDetails || []
-                }
                 accCode={accCode}
-                escapeId="bankModal"
+                initialTransactions={
+                    bankModalType === "paid"
+                        ? closingDetails.bankPaidDetails
+                        : closingDetails.bankRcvdDetails
+                }
                 bankAccList={bankAccList}
+                escapeId="bankModal"
             />
         </Box>
     );

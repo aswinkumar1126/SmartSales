@@ -1,6 +1,6 @@
 "use client";
 
-import { Box, HStack, Button, IconButton, Group, Text, Icon ,Menu,Portal ,Flex  } from "@chakra-ui/react";
+import { Box, HStack, Button, IconButton, Group, Text, Icon, Menu, Portal, Flex } from "@chakra-ui/react";
 import { FiMenu, FiEye, FiEyeOff, FiSun, FiMoon } from "react-icons/fi";
 import { useMediaQuery } from "@chakra-ui/react";
 import { useSidebar } from "@/context/layout/SideBarContext";
@@ -12,7 +12,7 @@ import {
     Menu as MenuIcon,
     X,
 } from "lucide-react";
-import { useRates } from "@/hooks/rate/useRate";
+import { useRates } from "@/hooks/apiHooks/rate/useRate";
 import { MetalRatesMenu } from "../rates/MetalRates";
 import { useEffect, useState } from "react";
 
@@ -24,13 +24,13 @@ const Header = ({ onOpenMenu }: any) => {
         sidebarCollapsed,
         toggleSidebar
     } = useSidebar();
-    const {data:metalRates , isLoading , isError} =useRates();
-   
+    const { data: metalRates, isLoading, isError } = useRates();
+
 
     const [isDesktop] = useMediaQuery(["(min-width: 768px)"]);
     const now = new Date();
 
-    
+
     const formatDate = (date: Date) => {
         const dd = String(date.getDate()).padStart(2, "0");
         const mm = String(date.getMonth() + 1).padStart(2, "0");
@@ -39,27 +39,27 @@ const Header = ({ onOpenMenu }: any) => {
     };
 
 
-  const [timeNow, setTimeNow] = useState("");
+    const [timeNow, setTimeNow] = useState("");
 
-  useEffect(() => {
+    useEffect(() => {
 
-    const interval = setInterval(() => {
-      const currentTime = new Date().toLocaleTimeString("en-US", {
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit",
-        hour12: true,
-      });
+        const interval = setInterval(() => {
+            const currentTime = new Date().toLocaleTimeString("en-US", {
+                hour: "2-digit",
+                minute: "2-digit",
+                second: "2-digit",
+                hour12: true,
+            });
 
-      setTimeNow(currentTime);
-    }, 1000);
+            setTimeNow(currentTime);
+        }, 1000);
 
-    return () => clearInterval(interval);
+        return () => clearInterval(interval);
 
-  }, []);
+    }, []);
 
     {
-if(isError) return <div>Error fetching rates</div>
+        if (isError) return <div>Error fetching rates</div>
     }
     { if (isLoading) return <div>Error fetching rates</div> }
 
@@ -112,7 +112,7 @@ if(isError) return <div>Error fetching rates</div>
                                 fontWeight="600"
                                 cursor="pointer"
                                 onClick={onOpenMenu}
-                             
+
                             >
                                 Dashboard
                             </Text>
@@ -140,7 +140,7 @@ if(isError) return <div>Error fetching rates</div>
                         )}
                     </HStack>
 
-                   
+
                 </HStack>
 
                 {/* Right section with theme toggle */}

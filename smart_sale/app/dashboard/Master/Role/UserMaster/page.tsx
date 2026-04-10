@@ -24,13 +24,13 @@ import { IoIosExit } from "react-icons/io";
 import { LuUser } from "react-icons/lu";
 import { RiLockPasswordLine } from 'react-icons/ri';
 
-import { useAuth } from "@/hooks/auth/useAuth";
-import { useUsers } from "@/hooks/user/useUsers";
-import { useCreateUser } from "@/hooks/user/useCreateUser";
-import { usePatchUser } from "@/hooks/user/usePatchUser";
+import { useAuth } from "@/hooks/apiHooks/auth/useAuth";
+import { useUsers } from "@/hooks/apiHooks/user/useUsers";
+import { useCreateUser } from "@/hooks/apiHooks/user/useCreateUser";
+import { usePatchUser } from "@/hooks/apiHooks/user/usePatchUser";
 import { UserMaster } from "@/types/user/user";
 import { FiEdit } from "react-icons/fi";
-import { useUserById } from "@/hooks/user/useUserById";
+import { useUserById } from "@/hooks/apiHooks/user/useUserById";
 import { CustomTable } from "@/component/table/CustomTable";
 import { CapitalizedInput } from "@/components/ui/CapitalizedInput";
 import { getImage } from "@/utils/image/getImage";

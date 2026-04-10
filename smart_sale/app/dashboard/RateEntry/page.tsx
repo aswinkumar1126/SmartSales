@@ -21,7 +21,7 @@ import { toastError, toastLoaded } from "@/component/toast/toast";
 
 import { useEnterNavigation } from "@/component/form/useEnterNavigation";
 import { DynamicForm } from "@/component/form/DynamicForm";
-import { useCreateRate , useRates,useAllRates } from "@/hooks/rate/useRate";
+import { useCreateRate, useRates, useAllRates } from "@/hooks/apiHooks/rate/useRate";
 import { RateForm } from "@/types/rate/rate";
 import { RateEntryForm } from "@/config/master/RateEntry";
 
@@ -31,17 +31,17 @@ function RateEntry() {
     const { theme } = useTheme();
 
     /* -------------------- API HOOKS -------------------- */
-  
+
     const { mutate: createRate, isPending } = useCreateRate();
 
-    const {data:LatestRate } = useRates();
+    const { data: LatestRate } = useRates();
 
-    const {data:AllRate } = useAllRates();
+    const { data: AllRate } = useAllRates();
     // const { mutate: updateCompany } = useUpdateCompany();
 
     /* -------------------- FORM STATE -------------------- */
     const [form, setForm] = useState<RateForm>({
-        "GOLD 100":"",
+        "GOLD 100": "",
         "GOLD 916": "",
         "SILVER 100": "",
         "SILVER 916": "",
@@ -52,7 +52,7 @@ function RateEntry() {
 
 
 
-  
+
 
 
     /* -------------------- HANDLERS -------------------- */
@@ -62,16 +62,16 @@ function RateEntry() {
 
     const resetForm = () => {
         setForm({
-           "GOLD 100":"",
-           "GOLD 916": "",
-           "SILVER 100": "",
+            "GOLD 100": "",
+            "GOLD 916": "",
+            "SILVER 100": "",
             "SILVER 916": "",
         });
         focusFirst();
         setErrors({});
     };
 
-   
+
     const validateField = (field: string, value: any): string | undefined => {
         switch (field) {
             case 'GOLD 100':
@@ -113,12 +113,12 @@ function RateEntry() {
             return;
         }
         const payload = {
-            "GOLD 100":Number(form["GOLD 100"]),
+            "GOLD 100": Number(form["GOLD 100"]),
             "GOLD 916": Number(form["GOLD 916"]),
             "SILVER 100": Number(form["SILVER 100"]),
             "SILVER 916": Number(form["SILVER 916"]),
         }
-        
+
         createRate(payload, {
             onSuccess: () => {
                 toastLoaded("Rate Created Successfully");
@@ -149,12 +149,12 @@ function RateEntry() {
     const rateFormFields = RateEntryForm();
     const fieldSequence = rateFormFields.map(f => f.name);
 
-   const { register, focusNext, focusFirst } = useEnterNavigation(fieldSequence, () => {
+    const { register, focusNext, focusFirst } = useEnterNavigation(fieldSequence, () => {
         handleSave();
     });
     useEffect(() => {
         focusFirst();
-    }, []); 
+    }, []);
 
     /* -------------------- UI -------------------- */
     return (

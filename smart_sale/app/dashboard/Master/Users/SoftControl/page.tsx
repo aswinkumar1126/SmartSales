@@ -23,7 +23,7 @@ import {
   useCreateSoftControl,
   useUpdateSoftControl,
   useSoftControlById,
-} from '@/hooks/softControl/useSoftControl';
+} from '@/hooks/apiHooks/softControl/useSoftControl';
 import { useEnterNavigation } from "@/component/form/useEnterNavigation";
 import { DynamicForm } from "@/component/form/DynamicForm";
 import { toastError, toastLoaded } from "@/component/toast/toast";
@@ -51,7 +51,7 @@ function SoftControlMaster() {
   const softControls = data ?? [];
 
   const { data: softControlDataById, isLoading, error } = useSoftControlById('LOT_TAG_CONTROL')
-  console.log(softControlDataById,'softControlDataById')
+  console.log(softControlDataById, 'softControlDataById')
 
   const { mutate: createSoftControl, isPending: isCreating } = useCreateSoftControl();
   const { mutate: updateSoftControl } = useUpdateSoftControl();
@@ -131,7 +131,7 @@ function SoftControlMaster() {
 
   const handleSave = () => {
 
-   
+
     if (!validateForm(String(editId))) {
       // toastError("Please fix the errors in the form");
       return;
@@ -139,7 +139,7 @@ function SoftControlMaster() {
 
     if (editId) {
       updateSoftControl(
-        { ...form ,id:editId },
+        { ...form, id: editId },
         {
           onSuccess: () => {
             resetForm();
@@ -166,9 +166,9 @@ function SoftControlMaster() {
     console.log("Editing SoftControl:", sc)
     setEditId(sc.CTLID);
     setForm({
-        CTLID:sc.CTLID ?? "",
-        CTLNAME: sc.CTLNAME ?? "",
-        CTLTEXT: sc.CTLTEXT ?? "",
+      CTLID: sc.CTLID ?? "",
+      CTLNAME: sc.CTLNAME ?? "",
+      CTLTEXT: sc.CTLTEXT ?? "",
     });
     focusFirst();
     toastLoaded("SoftControl loaded for editing");
@@ -189,9 +189,9 @@ function SoftControlMaster() {
   const handleExport = (option: string) => {
     setData(softControls);
     setColumns([
-        { key: "CTLID", label: "ID" },
-        { key: "CTLNAME", label: "NAME" },
-        { key: "CTLTEXT", label: "VALUE" },
+      { key: "CTLID", label: "ID" },
+      { key: "CTLNAME", label: "NAME" },
+      { key: "CTLTEXT", label: "VALUE" },
     ]);
     setShowSno(true);
     title?.("SoftControl Master");

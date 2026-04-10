@@ -5,7 +5,7 @@ import { DatePickerInput } from "@/components/ui/DatePickerInput";
 import { formatDateForAPI, formatDateForShow } from "@/utils/format/formatDateForAPI";
 import { FaFileExcel, FaPrint, FaFilePdf } from "react-icons/fa";
 import Loader from "@/component/loader/Loader";
-import { useItemStockReport } from "@/hooks/SummaryReport/useSummaryReport";
+import { useItemStockReport } from "@/hooks/apiHooks/SummaryReport/useSummaryReport";
 import { ItemStockEntry } from "@/types/SummaryReport/SummaryReport";
 import { usePrint } from "@/context/print/usePrintContext";
 import { useTheme } from "@/context/theme/themeContext";
@@ -18,35 +18,35 @@ type WeightKey = "GRS" | "NET" | "STN";
 
 const WEIGHT_OPTIONS: { value: WeightKey; label: string; sub: string }[] = [
   { value: "GRS", label: "Gross Wt", sub: "GRS.WT" },
-  { value: "NET", label: "Net Wt",   sub: "NET.WT" },
+  { value: "NET", label: "Net Wt", sub: "NET.WT" },
   { value: "STN", label: "Stone Wt", sub: "STN.WT" },
 ];
 
 const GROUPS = [
   { label: "Opening", prefix: "OP", accent: "#385ba1", bg: "#bfdbfe", border: "#bfdbfe" },
-  { label: "Receipt",  prefix: "RE", accent: "#385ba1", bg: "#a7f3d0", border: "#a7f3d0" },
-  { label: "Issue",    prefix: "IS", accent: "#385ba1", bg: "#fecaca", border: "#fecaca" },
-  { label: "Closing",  prefix: "CL", accent: "#385ba1", bg: "#fde68a", border: "#fde68a" },
+  { label: "Receipt", prefix: "RE", accent: "#385ba1", bg: "#a7f3d0", border: "#a7f3d0" },
+  { label: "Issue", prefix: "IS", accent: "#385ba1", bg: "#fecaca", border: "#fecaca" },
+  { label: "Closing", prefix: "CL", accent: "#385ba1", bg: "#fde68a", border: "#fde68a" },
 ] as const;
 
 const PRINT_COLUMNS = [
-  { key: "ITEMNAME", label: "Item Name",  align: "start" as const },
-  { key: "OP_PCS",   label: "OP PCS",     align: "end" as const, allowTotal: true },
-  { key: "OP_GRSWT", label: "OP Grs.Wt",  align: "end" as const, allowTotal: true },
-  { key: "OP_NETWT", label: "OP Net.Wt",  align: "end" as const, allowTotal: true },
-  { key: "OP_STNWT", label: "OP Stn.Wt",  align: "end" as const, allowTotal: true },
-  { key: "RE_PCS",   label: "RE PCS",     align: "end" as const, allowTotal: true },
-  { key: "RE_GRSWT", label: "RE Grs.Wt",  align: "end" as const, allowTotal: true },
-  { key: "RE_NETWT", label: "RE Net.Wt",  align: "end" as const, allowTotal: true },
-  { key: "RE_STNWT", label: "RE Stn.Wt",  align: "end" as const, allowTotal: true },
-  { key: "IS_PCS",   label: "IS PCS",     align: "end" as const, allowTotal: true },
-  { key: "IS_GRSWT", label: "IS Grs.Wt",  align: "end" as const, allowTotal: true },
-  { key: "IS_NETWT", label: "IS Net.Wt",  align: "end" as const, allowTotal: true },
-  { key: "IS_STNWT", label: "IS Stn.Wt",  align: "end" as const, allowTotal: true },
-  { key: "CL_PCS",   label: "CL PCS",     align: "end" as const, allowTotal: true },
-  { key: "CL_GRSWT", label: "CL Grs.Wt",  align: "end" as const, allowTotal: true },
-  { key: "CL_NETWT", label: "CL Net.Wt",  align: "end" as const, allowTotal: true },
-  { key: "CL_STNWT", label: "CL Stn.Wt",  align: "end" as const, allowTotal: true },
+  { key: "ITEMNAME", label: "Item Name", align: "start" as const },
+  { key: "OP_PCS", label: "OP PCS", align: "end" as const, allowTotal: true },
+  { key: "OP_GRSWT", label: "OP Grs.Wt", align: "end" as const, allowTotal: true },
+  { key: "OP_NETWT", label: "OP Net.Wt", align: "end" as const, allowTotal: true },
+  { key: "OP_STNWT", label: "OP Stn.Wt", align: "end" as const, allowTotal: true },
+  { key: "RE_PCS", label: "RE PCS", align: "end" as const, allowTotal: true },
+  { key: "RE_GRSWT", label: "RE Grs.Wt", align: "end" as const, allowTotal: true },
+  { key: "RE_NETWT", label: "RE Net.Wt", align: "end" as const, allowTotal: true },
+  { key: "RE_STNWT", label: "RE Stn.Wt", align: "end" as const, allowTotal: true },
+  { key: "IS_PCS", label: "IS PCS", align: "end" as const, allowTotal: true },
+  { key: "IS_GRSWT", label: "IS Grs.Wt", align: "end" as const, allowTotal: true },
+  { key: "IS_NETWT", label: "IS Net.Wt", align: "end" as const, allowTotal: true },
+  { key: "IS_STNWT", label: "IS Stn.Wt", align: "end" as const, allowTotal: true },
+  { key: "CL_PCS", label: "CL PCS", align: "end" as const, allowTotal: true },
+  { key: "CL_GRSWT", label: "CL Grs.Wt", align: "end" as const, allowTotal: true },
+  { key: "CL_NETWT", label: "CL Net.Wt", align: "end" as const, allowTotal: true },
+  { key: "CL_STNWT", label: "CL Stn.Wt", align: "end" as const, allowTotal: true },
 ];
 
 /* ─────────────────────────────────────────────────────────────────────────────
@@ -54,7 +54,7 @@ const PRINT_COLUMNS = [
 ───────────────────────────────────────────────────────────────────────────── */
 function getKey(prefix: string, sub: string): keyof ItemStockEntry {
   const map: Record<string, string> = {
-    "PCS":    `${prefix}_PCS`,
+    "PCS": `${prefix}_PCS`,
     "GRS.WT": `${prefix}_GRSWT`,
     "NET.WT": `${prefix}_NETWT`,
     "STN.WT": `${prefix}_STNWT`,
@@ -273,8 +273,8 @@ function ExportMenu({
   return (
     <Flex align="center" gap={1}>
       {btn("#059669", "#a7f3d0", "#ecfdf5", <FaFileExcel size={12} />, "Excel", onExcel)}
-      {btn("#dc2626", "#fecaca", "#fef2f2", <FaFilePdf   size={12} />, "PDF",   onPdf)}
-      {btn("#4f46e5", "#c7d2fe", "#eef2ff", <FaPrint     size={12} />, "Print", onPrint)}
+      {btn("#dc2626", "#fecaca", "#fef2f2", <FaFilePdf size={12} />, "PDF", onPdf)}
+      {btn("#4f46e5", "#c7d2fe", "#eef2ff", <FaPrint size={12} />, "Print", onPrint)}
     </Flex>
   );
 }
@@ -364,7 +364,7 @@ function ItemStockReport() {
     const rows = data ?? [];
     return {
       tableData: rows.filter((r) => r.ITEMNAME !== "TOTAL"),
-      totalRow:  rows.find((r)  => r.ITEMNAME === "TOTAL") ?? null,
+      totalRow: rows.find((r) => r.ITEMNAME === "TOTAL") ?? null,
     };
   }, [data]);
 
@@ -500,10 +500,10 @@ function ItemStockReport() {
 
   /* ── stats for summary bar ── */
   const STAT_CARDS = [
-    { label: "Opening PCS",  value: totalRow?.OP_PCS ?? 0, sub: "units in stock",    accent: "#2563eb" },
-    { label: "Received PCS", value: totalRow?.RE_PCS ?? 0, sub: "units added",        accent: "#059669" },
-    { label: "Issued PCS",   value: totalRow?.IS_PCS ?? 0, sub: "units dispatched",   accent: "#dc2626" },
-    { label: "Closing PCS",  value: totalRow?.CL_PCS ?? 0, sub: `across ${tableData.length} items`, accent: "#d97706" },
+    { label: "Opening PCS", value: totalRow?.OP_PCS ?? 0, sub: "units in stock", accent: "#2563eb" },
+    { label: "Received PCS", value: totalRow?.RE_PCS ?? 0, sub: "units added", accent: "#059669" },
+    { label: "Issued PCS", value: totalRow?.IS_PCS ?? 0, sub: "units dispatched", accent: "#dc2626" },
+    { label: "Closing PCS", value: totalRow?.CL_PCS ?? 0, sub: `across ${tableData.length} items`, accent: "#d97706" },
   ];
 
   /* ─────────────────────────────────────────────────────────────────────────

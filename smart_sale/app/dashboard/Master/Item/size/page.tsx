@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect ,useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
     Box,
     Button,
@@ -27,8 +27,8 @@ import { usePrint } from "@/context/print/usePrintContext";
 import { useRouter } from "next/navigation";
 import { useTheme } from "@/context/theme/themeContext";
 
-import { useSize, useCreateSize, useUpdateSize, useDeleteSize } from "@/hooks/size/useSize";
-import { useStoneItems } from "@/hooks/item/useItems";
+import { useSize, useCreateSize, useUpdateSize, useDeleteSize } from "@/hooks/apiHooks/size/useSize";
+import { useStoneItems } from "@/hooks/apiHooks/item/useItems";
 import { getItemSizeFields } from "@/config/master/itemSize";
 
 import { ItemSize, ItemSizePayload } from "@/types/size/Size";
@@ -40,13 +40,13 @@ function ItemSizeMaster() {
     const { setData, setColumns, setShowSno, title } = usePrint();
 
     /* -------------------- API HOOKS -------------------- */
-   
 
-    
-    
+
+
+
     const [filter, setFilter] = useState<string>('');
-    const { data: itemCollection } = useStoneItems({STUDDED:'N'});
-     const { data: itemSizeData, refetch: itemSizeRefetch } = useSize(filter);
+    const { data: itemCollection } = useStoneItems({ STUDDED: 'N' });
+    const { data: itemSizeData, refetch: itemSizeRefetch } = useSize(filter);
     const { mutate: createItemSize, isPending } = useCreateSize();
     const { mutate: updateItemSize } = useUpdateSize();
     const { mutate: deleteItemSize } = useDeleteSize();
@@ -62,8 +62,8 @@ function ItemSizeMaster() {
     });
 
     const [highlightedId, setHighlightedId] = useState<string | undefined>();
-    console.log(highlightedId,'highlightedId')
-    const [editId, setEditId] = useState< string | null>(null);
+    console.log(highlightedId, 'highlightedId')
+    const [editId, setEditId] = useState<string | null>(null);
     const [errors, setErrors] = useState<Record<string, string>>({});
 
     /* -------------------- REF HANDLERS -------------------- */
@@ -98,7 +98,7 @@ function ItemSizeMaster() {
 
         itemSizeFormFields.forEach((field) => {
             const value = form[field.name as keyof ItemSizePayload];
-            console.log(value,'value')
+            console.log(value, 'value')
 
             // Required field validation
             if (field.required) {
@@ -140,7 +140,7 @@ function ItemSizeMaster() {
         };
         if (editId) {
             // For update:
-            if (!validateForm(existingSizes,Number(editId))) return;
+            if (!validateForm(existingSizes, Number(editId))) return;
             // pass id separately for path variable
             updateItemSize({ ...payload, id: editId }, {
                 onSuccess: () => {
@@ -161,9 +161,10 @@ function ItemSizeMaster() {
                     resetForm();
                     itemSizeRefetch();
                     onDone();
-                  
+
                 },
-                onError: (error) => {toastError(error.message);
+                onError: (error) => {
+                    toastError(error.message);
                     onDone
                 }
             });
@@ -172,7 +173,7 @@ function ItemSizeMaster() {
 
     const handleEdit = (size: ItemSize) => {
 
-        setEditId( String(size.SIZEID) ?? null);
+        setEditId(String(size.SIZEID) ?? null);
         // setHighlightedId( String(size.SIZEID) ?? undefined);
         console.log("Editing Item Size:", size);
         setForm({
@@ -259,15 +260,15 @@ function ItemSizeMaster() {
                         <Box display='flex' mb={2} gap={2} justifyContent='space-between' alignItems='center'>
                             <Text fontWeight="semibold" fontSize="small">ITEM SIZE DETAILS</Text>
                             <Flex>
-                                                                
-                                    <SearchBar
-                                        searchTerm={filter}
-                                        onChange={setFilter}
-                                        placeholder="Search Size"
-                                        size="2xs"
 
-                                    />
-                                
+                                <SearchBar
+                                    searchTerm={filter}
+                                    onChange={setFilter}
+                                    placeholder="Search Size"
+                                    size="2xs"
+
+                                />
+
                                 <Button variant="ghost" size="xs" color={theme.colors.green} onClick={() => handleExport("excel")}>
                                     <FaFileExcel />
                                 </Button>

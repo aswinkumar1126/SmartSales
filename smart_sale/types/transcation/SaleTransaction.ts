@@ -1,8 +1,9 @@
 export type SaleTransactionKey =
     | "sales"
+    | "sales_return"
     | "issue"
     | "receipt"
-    | "sales_return";
+   
 
 
 

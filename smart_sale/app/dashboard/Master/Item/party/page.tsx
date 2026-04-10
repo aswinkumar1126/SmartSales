@@ -25,10 +25,10 @@ import { IoIosExit } from "react-icons/io";
 import { fontVariables } from "@/context/theme/font";
 import { useTheme } from "@/context/theme/themeContext";
 
-import { useAllParties } from "@/hooks/party/useGetParty";
-import { usePartyById } from "@/hooks/party/useGetPartyById";
-import { useCreateParty } from "@/hooks/party/useCreateParty";
-import { useUpdateParty } from "@/hooks/party/useUpdateParty";
+import { useAllParties } from "@/hooks/apiHooks/party/useGetParty";
+import { usePartyById } from "@/hooks/apiHooks/party/useGetPartyById";
+import { useCreateParty } from "@/hooks/apiHooks/party/useCreateParty";
+import { useUpdateParty } from "@/hooks/apiHooks/party/useUpdateParty";
 
 import { PartyForm, CreateParty, GetParty } from "@/types/party/party";
 import scrollToTop from "@/component/scroll/ScrollToTop";
@@ -36,7 +36,7 @@ import { toastError, toastLoaded } from "@/component/toast/toast";
 import { Toaster } from "@/components/ui/toaster";
 import { FiEdit } from "react-icons/fi";
 import { CustomTable } from "@/component/table/CustomTable";
-import { useAllCompanies } from "@/hooks/company/useCompany";
+import { useAllCompanies } from "@/hooks/apiHooks/company/useCompany";
 import { formatToFixed } from "@/utils/format/numberFormat";
 
 import { usePrint } from "@/context/print/usePrintContext";

@@ -27,14 +27,14 @@ import { CustomTable } from "@/component/table/CustomTable";
 import { usePrint } from "@/context/print/usePrintContext";
 import { pureGoldMastForm, pureGoldMastOpenForm } from "@/types/pureGold/pureGold";
 
-import { usePureGoldData, usePureGoldNames } from "@/hooks/pureGoldMast/usePureGoldMastData";
-import { useCreatePureGoldMast } from "@/hooks/pureGoldMast/usePureGoldMastCreate";
-import { useUpdatePureGoldMast } from "@/hooks/pureGoldMast/usePureGoldMastUpdate";
+import { usePureGoldData, usePureGoldNames } from "@/hooks/apiHooks/pureGoldMast/usePureGoldMastData";
+import { useCreatePureGoldMast } from "@/hooks/apiHooks/pureGoldMast/usePureGoldMastCreate";
+import { useUpdatePureGoldMast } from "@/hooks/apiHooks/pureGoldMast/usePureGoldMastUpdate";
 import { AiOutlineSave } from "react-icons/ai";
 import { useRouter } from "next/navigation";
 import { formatToFixed } from "@/utils/format/numberFormat";
 import { CapitalizedInput } from "@/components/ui/CapitalizedInput";
-import { useAllMetals } from "@/hooks/metal/useMetals";
+import { useAllMetals } from "@/hooks/apiHooks/metal/useMetals";
 import { SelectCombobox } from "@/components/ui/selectComboBox";
 import { safeValue } from "@/utils/comboBox/safeValue";
 import SearchBar from "@/component/search/SearchBar";
@@ -292,13 +292,13 @@ const PureGoldOpening = () => {
         router.push(`/print?export=${option}`);
     }
 
-    const pureGoldFieldsName =  PureGoldOpeningFields.map(f=>f.name);
+    const pureGoldFieldsName = PureGoldOpeningFields.map(f => f.name);
 
-    const {register , focusFirst ,focusNext}= useEnterNavigation(pureGoldFieldsName,handleSubmit)
+    const { register, focusFirst, focusNext } = useEnterNavigation(pureGoldFieldsName, handleSubmit)
 
-    useEffect(()=>{
-       focusFirst()
-    },[focusFirst])
+    useEffect(() => {
+        focusFirst()
+    }, [focusFirst])
     /* ---------------- UI ---------------- */
 
     return (
@@ -321,7 +321,7 @@ const PureGoldOpening = () => {
                         </Text>
                     </Heading>
 
-                    <DynamicForm 
+                    <DynamicForm
                         fields={PureGoldOpeningFields}
                         formData={form}
                         register={register}
@@ -330,7 +330,7 @@ const PureGoldOpening = () => {
                         layout="vertical"
                         focusNext={focusNext}
                         errors={errors}
-                        />
+                    />
 
                     {/* ================= ACTION BUTTONS ================= */}
                     <Box mt={2}>

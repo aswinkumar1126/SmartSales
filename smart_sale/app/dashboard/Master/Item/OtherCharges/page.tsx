@@ -29,11 +29,11 @@ import { toastError, toastLoaded } from "@/component/toast/toast";
 import { CustomTable } from "@/component/table/CustomTable";
 import { usePrint } from "@/context/print/usePrintContext";
 import { OtherChargeForm, OtherChargeStateForm } from "@/types/others/OtherCharges";
-import { useOtherCharges, useOtherChargeById, useUpdateOtherCharges, useCreateOtherCharges, useDeleteOtherCharges } from "@/hooks/otherCharges/useOtherCharges";
+import { useOtherCharges, useOtherChargeById, useUpdateOtherCharges, useCreateOtherCharges, useDeleteOtherCharges } from "@/hooks/apiHooks/otherCharges/useOtherCharges";
 import { AiOutlineSave } from "react-icons/ai";
 import { useRouter } from "next/navigation";
 import { CapitalizedInput } from "@/components/ui/CapitalizedInput";
-import { useAllMetals } from "@/hooks/metal/useMetals";
+import { useAllMetals } from "@/hooks/apiHooks/metal/useMetals";
 import SearchBar from "@/component/search/SearchBar";
 
 import { DynamicForm } from "@/component/form/DynamicForm";
@@ -83,10 +83,10 @@ const OtherCharges = () => {
     const otherChargesData = otherCharges?.data ?? [];
 
 
-    const activeStatus =[
-            { label: "YES", value: "Y" },
-            { label: "NO", value: "N" },
-        ]
+    const activeStatus = [
+        { label: "YES", value: "Y" },
+        { label: "NO", value: "N" },
+    ]
 
     const getOtherChargesFields = OtherMasterFields({ active: activeStatus })
 
@@ -115,7 +115,7 @@ const OtherCharges = () => {
     /* ---------------- Edit Handler ---------------- */
 
     const handleEdit = (row: TouchTableRow) => {
-        console.log(row,'row')
+        console.log(row, 'row')
         setEditId(row.chargeId ?? null);
         scrollToTop();
         setOriginalName(row.chargeName); // store original
@@ -138,7 +138,7 @@ const OtherCharges = () => {
         originalName?: string
     ): FormErrors => {
 
-        console.log(editId,'editId')
+        console.log(editId, 'editId')
         const errors: FormErrors = {};
 
         const normalize = (v?: string) => v?.trim().toLowerCase();
@@ -254,9 +254,9 @@ const OtherCharges = () => {
         otherChargesFields,
         handleSubmit
     );
-    useEffect(()=>{
+    useEffect(() => {
         focusFirst()
-    },[])
+    }, [])
 
     /* ---------------- UI ---------------- */
 
@@ -279,7 +279,7 @@ const OtherCharges = () => {
 
                         </Text>
                     </Heading>
-                    <DynamicForm 
+                    <DynamicForm
                         fields={getOtherChargesFields}
                         formData={form}
                         focusNext={focusNext}

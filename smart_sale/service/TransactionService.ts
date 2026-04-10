@@ -3,7 +3,7 @@ import { AxiosError } from "axios";
 import { ApiResponse } from "@/types/api/apiResponse";
 import { TRANSACTION, CreateTransaction,  UpdateTransactionPayload } from "@/types/transcation/Transaction";
 import { getSingleTagDetail } from "@/types/tagging/Tag";
-
+import { PurchaseTransactionList } from "@/types/transactionList/TransactionList";
 
 const BASE_PURCHASE_PATH = "/purchase" ;
 const BASE_SALES_PATH = "/sales";
@@ -49,7 +49,7 @@ export const TransactionService = {
     },
 
     // GET ALL
-    getAll: async (props: GetTransactionProps): Promise<ApiResponse<any>> => {
+    getAll: async (props: GetTransactionProps): Promise<ApiResponse<PurchaseTransactionList>> => {
         try {
             const params: any = {};
 
@@ -66,8 +66,8 @@ export const TransactionService = {
                 : BASE_SALES_PATH;
             console.log(params,  BASE_PATH,'BASE_PATH');
 
-            const { data } = await axiosInstance.get(BASE_PATH, { params });
-            return data;
+            const {data} = await axiosInstance.get(BASE_PATH, { params });
+            return data ;
         } catch (error: any) {
             throw error?.response?.data || error;
         }

@@ -1,22 +1,25 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import type { ClosingFormDetails, BankTransaction } from '@/types/balanceSummary/BalanceSummary';
+import type { PurchaseClosingFormDetails, BankTransaction } from '@/types/balanceSummary/BalanceSummary';
 
 type BankModalType = "paid" | "received" | null;
 
-type BalanceSummaryStore = {
+type PurchaseBalanceSummaryStore = {
     // =====================
     // STATE
     // =====================
-    closingDetails: ClosingFormDetails;
+    closingDetails: PurchaseClosingFormDetails;
     bankModalType: BankModalType;
 
     // =====================
     // ACTIONS
     // =====================
-    setClosingField: <K extends keyof ClosingFormDetails>(
+  
+    setClosingDetails: (data: Partial<PurchaseClosingFormDetails>) => void;
+
+    setClosingField: <K extends keyof PurchaseClosingFormDetails>(
         field: K,
-        value: ClosingFormDetails[K]
+        value: PurchaseClosingFormDetails[K]
     ) => void;
 
     openBankModal: (type: Exclude<BankModalType, null>) => void;
@@ -28,7 +31,7 @@ type BalanceSummaryStore = {
     resetBalance: () => void;
 };
 
-const initialClosingDetails: ClosingFormDetails = {
+const initialClosingDetails: PurchaseClosingFormDetails = {
     convType: "",
     convAmt: "",
     convWt: "",
@@ -40,7 +43,7 @@ const initialClosingDetails: ClosingFormDetails = {
     bankRcvdDetails: [],
 };
 
-export const useBalanceSummary = create<BalanceSummaryStore>()(
+export const usePurchaseBalanceSummary = create<PurchaseBalanceSummaryStore>()(
     persist(
         (set) => ({
             // =====================
@@ -52,6 +55,14 @@ export const useBalanceSummary = create<BalanceSummaryStore>()(
             // =====================
             // UPDATE SINGLE FIELD (STRICT TYPING)
             // =====================
+            setClosingDetails: (data) =>
+                set((state) => ({
+                    closingDetails: {
+                        ...state.closingDetails,
+                        ...data,
+                    },
+                })),
+                
             setClosingField: (field, value) =>
                 set((state) => ({
                     closingDetails: {
@@ -104,7 +115,7 @@ export const useBalanceSummary = create<BalanceSummaryStore>()(
                 }),
         }),
         {
-            name: "balance-summary-storage",
+            name: "purchase-balance-summary-storage",
         }
     )
 );

@@ -15,8 +15,8 @@ import { LuX } from "react-icons/lu";
 import { issueColumns, issueDataColumns } from "../transactionForm/TransactionForm";
 
 
-import { useStoneItems } from "@/hooks/item/useItems";
-import { useCalculatePure } from "@/hooks/pure/useCalculatePure";
+import { useStoneItems } from "@/hooks/apiHooks/item/useItems";
+import { useCalculatePure } from "@/hooks/apiHooks/pure/useCalculatePure";
 
 import StoneEnterMaster from "../StoneMaster/StoneEntryMaster";
 import OtherChargesWindow from "../OtherCharges/OtherChargesWindow";
@@ -86,8 +86,8 @@ interface DraftTransactionTableProps {
     otherChargesList: { label: string; value: string; }[];
     otherChargesData: any;
     getAvailablePieces?: (id: string, options?: { excludeRowId?: string, transactionTypeCode: string, isEditing?: boolean, originalPieces?: number }) => any | undefined;
-    handleTagChange : () => void ;
-    isTag :boolean;
+    handleTagChange: () => void;
+    isTag: boolean;
     onTagNoLookup?: (tagNo: string) => void;
 }
 
@@ -195,15 +195,15 @@ export default function DraftTransactionTable({
     const miscTempId = useRef<string | null>(null);
 
 
-    const { data: stoneItemsData } = useStoneItems({STUDDED:"Y"});
+    const { data: stoneItemsData } = useStoneItems({ STUDDED: "Y" });
 
     const [stoneItemsCollection, setStoneItemCollection] = useState<{ label: string; value: string }[]>([]);
-   
-  
-    const [tagNo , setTagNo] = useState<string>('');
-    const [stoneDetails ,setStoneDetails] = useState<any>();
 
-  
+
+    const [tagNo, setTagNo] = useState<string>('');
+    const [stoneDetails, setStoneDetails] = useState<any>();
+
+
 
     const pendingStoneData = useRef<{
         tempId: string;
@@ -220,7 +220,7 @@ export default function DraftTransactionTable({
 
 
     // rowsRef so setTimeout closures always see latest rows
-  
+
     const rowsRef = useRef(rows);
     useEffect(() => { rowsRef.current = rows; }, [rows]);
 
@@ -234,7 +234,7 @@ export default function DraftTransactionTable({
         );
     }, [stoneItemsData]);
 
-    
+
 
     const [formData, setFormData] = useState<Record<string, any>>({});
     const [errors, setErrors] = useState<Record<string, string>>({});
@@ -253,7 +253,7 @@ export default function DraftTransactionTable({
         []
     );
 
-    console.log(formData,'purchaseformData')
+    console.log(formData, 'purchaseformData')
 
     const numericFields = useMemo(() => [
         "PCS", "GRSWT", "STNWT", "NETWT", "WASPER", "WASTAGE", "STNAMT",
@@ -280,7 +280,7 @@ export default function DraftTransactionTable({
         [isIssue, colMap]
     );
 
-    console.log(tableCols,'tableCols')
+    console.log(tableCols, 'tableCols')
 
     // Separate temp ID getters/resetters
     const getStoneTempId = () => {
@@ -438,10 +438,10 @@ export default function DraftTransactionTable({
 
             return base;
         });
-    }, [tableCols, itemsCollection, isIssue ,isTag ,transactionTitle]);
+    }, [tableCols, itemsCollection, isIssue, isTag, transactionTitle]);
 
     const visibleFormFields = useMemo(() =>
-        formFields.filter(f => !["NETWT", "PUREWT", "APUREWT","STNAMT" ].includes(f.key) && f.type !== "calculated"),
+        formFields.filter(f => !["NETWT", "PUREWT", "APUREWT", "STNAMT"].includes(f.key) && f.type !== "calculated"),
         [formFields]
     );
 
@@ -480,7 +480,7 @@ export default function DraftTransactionTable({
 
     const pureValue = useCalculatePure(formData.WT, formData.TOUCH);
 
-  
+
     const altPureValue = useCalculatePure(formData.AWT, formData.ATOUCH);
 
     const calcNet = useCallback(() => {
@@ -566,7 +566,7 @@ export default function DraftTransactionTable({
         }
     }, [currentEditingRowId, currentEditingTransactionType, transactionType, rows]);
 
- 
+
     type FormData = typeof formData;
 
     const handleChange = useCallback(
@@ -730,12 +730,12 @@ export default function DraftTransactionTable({
 
             if (formData.TAGNO) {
                 const isEditing = !!(currentEditingRowId && currentEditingTransactionType === transactionType);
-               
+
                 const isExists = rows.some(r =>
                     r.TAGNO.toLowerCase() === formData.TAGNO.toLowerCase() &&
                     (!isEditing || r.__rowId !== currentEditingRowId) // ignore the current row if editing
                 );
-          
+
                 if (isExists) {
                     toaster.create({
                         title: "Tag No Already Exists",
@@ -1024,7 +1024,7 @@ export default function DraftTransactionTable({
         if (value == null) return "";
         return Number(decimalScale) >= 1 ? Number(value).toFixed(decimalScale) : Number(value).toString();
     };
-    
+
     const handleTagNoKeyDown = async () => {
 
         if (!tagNo) return;
@@ -1093,7 +1093,7 @@ export default function DraftTransactionTable({
                         disabled={shouldDisable}
                         inputRef={ref}
                         onEnter={() =>
-                        moveNext(field.key)}
+                            moveNext(field.key)}
                         noBorder
                     />
                     <Button
@@ -1180,9 +1180,9 @@ export default function DraftTransactionTable({
                         decimalScale={field.decimalScale}
                         disabled
                         inputRef={ref}
-                        onEnter={() => moveNext(field.key)} 
+                        onEnter={() => moveNext(field.key)}
                         noBorder
-             
+
 
                     />
                 </Box>
@@ -1230,24 +1230,24 @@ export default function DraftTransactionTable({
                         items={field.collection?.items || []}
                         placeholder={field.placeholder || `Select ${field.label}`}
                         ref={ref as React.RefObject<HTMLInputElement>}
-                        rounded="sm" 
-                        disable={shouldDisable} 
+                        rounded="sm"
+                        disable={shouldDisable}
                         onEnter={() => moveNext(field.key)}
                     />
                 );
             case "select":
                 return (
                     <InlineSelect
-                        value={formData[field.key] || ""} 
+                        value={formData[field.key] || ""}
                         onChange={v => handleChange(field.key, v)}
-                        collection={field.collection} 
+                        collection={field.collection}
                         isInvalid={isInvalid}
-                        inputRef={ref as any} 
-                        onEnter={() => moveNext(field.key)} 
+                        inputRef={ref as any}
+                        onEnter={() => moveNext(field.key)}
                         disabled={shouldDisable}
                     />
                 );
-           
+
             case "number":
                 return (
                     <CapitalizedInput
@@ -1258,7 +1258,7 @@ export default function DraftTransactionTable({
                         isCapitalized
                         size="sm"
                         rounded="sm"
-                        inputRef={ref} 
+                        inputRef={ref}
                         onEnter={() => moveNext(field.key)}
                         disabled={shouldDisable}
                     />
@@ -1273,7 +1273,7 @@ export default function DraftTransactionTable({
                         isCapitalized
                         size="sm"
                         rounded="sm"
-                        inputRef={ref} 
+                        inputRef={ref}
                         onEnter={() => moveNext(field.key)}
                         disabled={shouldDisable}
                     />
@@ -1283,14 +1283,14 @@ export default function DraftTransactionTable({
                     <CapitalizedInput
                         field={field.key} value={formData[field.key] || ""}
                         onChange={(_, v) => handleChange(field.key, v)}
-                        type="number"  
-                        size="sm" 
+                        type="number"
+                        size="sm"
                         rounded="sm"
-                        decimalScale={field.decimalScale} 
+                        decimalScale={field.decimalScale}
                         disabled={shouldDisable}
-                        inputRef={ref} 
-                        onEnter={() => moveNext(field.key)} 
-                        
+                        inputRef={ref}
+                        onEnter={() => moveNext(field.key)}
+
                     />
                 );
         }
@@ -1349,28 +1349,28 @@ export default function DraftTransactionTable({
                             <Text as="span" color="blue.500" ml={1} fontSize="2xs"> ✎ Editing</Text>
                         )}
                     </Text>
-                    {transactionTitle?.toLowerCase() === "return" && 
-                    <>
-                        <Button size="2xs" bg="yellow.fg" onClick={handleTagChange}>
-                            Switch {isTag ? "Non Tag" : "Tag"}
-                        </Button>
-                        {
-                            isTag &&
-                            <Box display={'flex'} alignItems={'center'} >
+                    {transactionTitle?.toLowerCase() === "return" &&
+                        <>
+                            <Button size="2xs" bg="yellow.fg" onClick={handleTagChange}>
+                                Switch {isTag ? "Non Tag" : "Tag"}
+                            </Button>
+                            {
+                                isTag &&
+                                <Box display={'flex'} alignItems={'center'} >
                                     <CapitalizedInput
                                         field="tagNo"
                                         value={tagNo}
                                         onChange={(_, value) => setTagNo(value)}
                                         size="xs"
                                         onEnter={handleTagNoKeyDown}
-                                        
+
                                     />
-                            </Box>
-                        }
+                                </Box>
+                            }
 
                         </>
                     }
-            
+
                     <Badge colorPalette={rows.length > 0 ? "green" : "gray"} variant="subtle" fontSize="2xs" px={2}>
                         {rows.length} item{rows.length !== 1 ? "s" : ""}
                     </Badge>
@@ -1523,7 +1523,7 @@ export default function DraftTransactionTable({
                                 setTimeout(() => focusIdx(5), 50);
                             }}
                             stoneItems={stoneItemsCollection}
-                            // subStoneItems={stoneItemsCollection}
+                        // subStoneItems={stoneItemsCollection}
                         />
                     </Box>
                 </Box>

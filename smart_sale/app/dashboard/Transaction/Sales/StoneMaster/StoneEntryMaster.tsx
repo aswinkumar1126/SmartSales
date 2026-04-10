@@ -7,9 +7,7 @@ import {
     NativeSelect,
     Button,
     HStack,
-    IconButton,
 } from "@chakra-ui/react";
-import { LuX } from "react-icons/lu";
 import { CapitalizedInput } from "@/components/ui/CapitalizedInput";
 import { SelectCombobox, SelectItem } from "@/components/ui/selectComboBox";
 import TransactionTable from "@/component/table/TransactionTable";
@@ -86,9 +84,6 @@ export default function StoneEnterMaster({
     draftRowId
 }: Props) {
 
-    const isLoadingRef = useRef(false);
-    const isFirstLoadRef = useRef(true);
-
     const tableCols = [
         { key: "stoneId", label: "STONE", align: "left" as const },
         // { key: "subStoneId", label: "SUB STONE", align: "left" as const },
@@ -128,15 +123,11 @@ export default function StoneEnterMaster({
         stoneAmount: number;
     }>(emptyForm);
 
-
     const [rows, setRows] = useState<StoneRow[]>([]);
     const [editId, setEditId] = useState<string | null>(null);
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [touched, setTouched] = useState<Record<string, boolean>>({});
     const [isSubmitting] = useState(false);
-    const [isInitialized, setIsInitialized] = useState(false);
-
-    const hasLoadedRef = useRef(false);
 
     const stoneIdRef = useRef<any>(null);
     // const subStoneIdRef = useRef<any>(null);
@@ -156,85 +147,22 @@ export default function StoneEnterMaster({
         stoneRate: stoneRateRef,
     };
 
-    /* ---------------- LOAD FROM LOCALSTORAGE ---------------- */
+    // ✅ Load initialRows when provided
     useEffect(() => {
-        if (!draftRowId) return;
-
-        // ✅ Only load on first mount or when draftRowId actually changes
-        if (!isFirstLoadRef.current && hasLoadedRef.current) {
-            console.log('Skipping reload - already loaded');
-            return;
-        }
-
-        if (isLoadingRef.current) return;
-        isLoadingRef.current = true;
-
-        const all: StoneRow[] = JSON.parse(localStorage.getItem("SALE_STONE_MASTER") || "[]");
-        const linked = all.filter(s => s.draftRowId === draftRowId);
-
-        console.log(`Loading stones for draftRowId: ${draftRowId}`, linked);
-        console.log('initialRows prop:', initialRows);
-
-        if (linked.length > 0) {
-            setRows(linked);
-            console.log('✅ Loaded from localStorage:', linked.length, 'stones');
-        } else if (initialRows && initialRows.length > 0 && isFirstLoadRef.current) {
-            const mapped = initialRows.map(r => ({ ...r, draftRowId }));
-            setRows(mapped);
-            console.log('✅ Loaded from initialRows prop:', mapped.length, 'stones');
-
-            const filtered = all.filter(s => s.draftRowId !== draftRowId);
-            localStorage.setItem("SALE_STONE_MASTER", JSON.stringify([...filtered, ...mapped]));
-            console.log('💾 Saved initialRows to localStorage');
+        if (initialRows && initialRows.length > 0) {
+            // Ensure all rows have the correct draftRowId
+            const mappedRows = initialRows.map(r => ({ ...r, draftRowId }));
+            setRows(mappedRows);
         } else {
-            // ✅ Don't clear rows if we already have data
-            if (rows.length === 0) {
-                setRows([]);
-            }
+            setRows([]);
         }
+    }, [initialRows, draftRowId]);
 
-        setIsInitialized(true);
-        hasLoadedRef.current = true;
-        isFirstLoadRef.current = false;
-
-        setTimeout(() => {
-            isLoadingRef.current = false;
-        }, 100);
-
-    }, [draftRowId]);
-
-    /* ---------------- SAVE TO LOCALSTORAGE ---------------- */
-  
-    useEffect(() => {
-        if (!isInitialized || !draftRowId) return;
-        if (isLoadingRef.current) return; // ✅ Never save during load window
-        saveStonesToStorage();
-    }, [rows, draftRowId, isInitialized]);
-
-    /* ---------------- ESC KEY — own effect, always active ---------------- */
- 
-
-    /* ---------------- AUTO CALCULATE AMOUNT ---------------- */
+    // Auto-calculate amount
     useEffect(() => {
         setFormData(prev => ({ ...prev, stoneAmount: calculateAmount(prev) }));
     }, [formData.stoneWeight, formData.stonePcs, formData.stoneRate, formData.stoneUnit, formData.stoneCalculation]);
 
-    /* ---------------- SAVE TO LOCALSTORAGE ---------------- */
-    useEffect(() => {
-        if (!isInitialized || !draftRowId) return;
-        saveStonesToStorage();
-    }, [rows, draftRowId, isInitialized]);
-
-    const saveStonesToStorage = () => {
-        const all: StoneRow[] = JSON.parse(localStorage.getItem("SALE_STONE_MASTER") || "[]");
-        const filtered = all.filter(s => s.draftRowId !== draftRowId);
-        const nonEmptyRows = rows.filter(s =>
-            s.stoneId && s.stoneId !== "" && s.stonePcs > 0 && s.stoneWeight > 0 && s.stoneRate > 0
-        );
-        localStorage.setItem("SALE_STONE_MASTER", JSON.stringify([...filtered, ...nonEmptyRows]));
-    };
-
-    /* ---------------- FORM FIELDS ---------------- */
     const formFields = [
         { key: "stoneId", label: "Stone", type: "combobox" as const, isRequired: true, collection: { items: stoneItems }, ref: stoneIdRef },
         //{ key: "subStoneId", label: "Sub Stone", type: "combobox" as const, isRequired: true, collection: { items: subStoneItems }, ref: subStoneIdRef },
@@ -246,7 +174,6 @@ export default function StoneEnterMaster({
         { key: "stoneAmount", label: "Amount", type: "number" as const, isRequired: false, decimalScale: 2, ref: stoneRateRef, disabled: true },
     ];
 
-    /* ---------------- CALCULATION ---------------- */
     const calculateAmount = (data: typeof formData) => {
         let weight = Number(data.stoneWeight) || 0;
         const pcs = Number(data.stonePcs) || 0;
@@ -260,7 +187,6 @@ export default function StoneEnterMaster({
         return sum + (r.stoneUnit === "c" ? Number(r.stoneWeight) / 5 : Number(r.stoneWeight));
     }, 0);
 
-    /* ---------------- FOCUS HELPER ---------------- */
     const focusField = useCallback((key: FieldKey) => {
         setTimeout(() => {
             const ref = fieldRefs[key];
@@ -278,7 +204,6 @@ export default function StoneEnterMaster({
         }
     }, [formData]);
 
-    /* ---------------- VALIDATION with focus + toaster ---------------- */
     const validateForm = useCallback((): boolean => {
         const newErrors: Record<string, string> = {};
         const newTouched: Record<string, boolean> = {};
@@ -304,7 +229,6 @@ export default function StoneEnterMaster({
         setTouched(newTouched);
 
         if (Object.keys(newErrors).length > 0) {
-            // Focus the first errored field
             const firstError = FIELD_ORDER.find(k => newErrors[k]);
             if (firstError) {
                 focusField(firstError);
@@ -320,7 +244,6 @@ export default function StoneEnterMaster({
         return true;
     }, [formData, focusField]);
 
-    /* ---------------- HANDLERS ---------------- */
     const handleChange = (key: string, value: any) => {
         setFormData(prev => ({ ...prev, [key]: value }));
         setTouched(prev => ({ ...prev, [key]: true }));
@@ -408,34 +331,26 @@ export default function StoneEnterMaster({
     const handleDeleteRow = (row: StoneRow) => {
         if (confirm("Delete this row?")) {
             const remainingRows = rows.filter(r => r.id !== row.id);
-            if (remainingRows.length === 0) {
-                setRows([]);
-            } else {
-                setRows(remainingRows);
-            }
+            setRows(remainingRows);
             if (editId === row.id) resetForm();
         }
     };
 
     const handleSaveAndClose = () => {
-        saveStonesToStorage();
+        // ✅ Pass rows directly to parent - no localStorage
         onSave(rows);
         onClose();
     };
 
-      // In useGlobalKey
-        useGlobalKey('Escape', () => {
-            console.log('useGlobalKey ESC handler triggered');
-            handleSaveAndClose();
-        }, "stone-window");
+    useGlobalKey('Escape', () => {
+        handleSaveAndClose();
+    }, "stone-window");
 
-    /* ---------------- RENDER FORM CELL ---------------- */
     const renderFormCell = (field: any) => {
         const ref = fieldRefs[field.key as FieldKey];
         const isInvalid = !!errors[field.key] && !!touched[field.key];
         const value = formData[field.key as keyof typeof formData]?.toString() || "";
 
-        // stoneAmount is display-only / calculated
         if (field.key === "stoneAmount") {
             return (
                 <Box
@@ -549,7 +464,6 @@ export default function StoneEnterMaster({
     const remainingWeight = Number(grsWeight) - totalUsedWeight;
     const isOverWeight = totalUsedWeight > Number(grsWeight);
 
-    /* ---------------- UI ---------------- */
     return (
         <Box p={2}>
             <HStack justify="center" mb={2}>
@@ -564,9 +478,6 @@ export default function StoneEnterMaster({
                         {" / "}{Number(grsWeight).toFixed(3)}g
                     </Text>
                 </HStack>
-                {/* <IconButton aria-label="Close (ESC)" onClick={onClose} size="xs" variant="ghost" title="Close (ESC)">
-                    <LuX size={14} />
-                </IconButton> */}
             </HStack>
 
             <TransactionTable
@@ -574,7 +485,6 @@ export default function StoneEnterMaster({
                 tableCols={tableCols}
                 formFields={formFields}
                 rows={rows}
-                // formData={formData}
                 errors={errors}
                 touched={touched}
                 localEditId={editId}
@@ -597,9 +507,6 @@ export default function StoneEnterMaster({
                     Used: {Number(totalUsedWeight).toFixed(3)} / {Number(grsWeight).toFixed(3)} g
                     {isOverWeight && " ⚠ Over limit!"}
                 </Text>
-                {/* <Button variant="outline" size="xs" onClick={onClose} title="ESC">
-                    Cancel (ESC)
-                </Button> */}
                 <Button colorPalette="blue" size="xs" onClick={handleSaveAndClose}>
                     Save & Close
                 </Button>

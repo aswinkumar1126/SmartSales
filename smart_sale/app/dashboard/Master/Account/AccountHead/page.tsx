@@ -32,7 +32,7 @@ import { useTheme } from "@/context/theme/themeContext";
 import { fontVariables } from "@/context/theme/font";
 import {
     useAllCompanies,
-} from "@/hooks/company/useCompany";
+} from "@/hooks/apiHooks/company/useCompany";
 
 import ScrollToTop from "@/component/scroll/ScrollToTop";
 import { toastCreated, toastError, toastLoaded, toastUpdated, toastUploaded } from "@/component/toast/toast";
@@ -42,8 +42,8 @@ import { usePrint } from "@/context/print/usePrintContext";
 import { useRouter } from "next/navigation";
 import { FaPrint, FaFileExcel } from "react-icons/fa";
 import { AccountTypeList } from "@/data/ACCOUNTtYPE/AccountType";
-import { useAllStates } from "@/hooks/state/useStates";
-import { useAllAccountHead, useCreateAccountHead, useUpdateAccountHead, useAccountHeadById } from "@/hooks/accountHead/useAccountHead";
+import { useAllStates } from "@/hooks/apiHooks/state/useStates";
+import { useAllAccountHead, useCreateAccountHead, useUpdateAccountHead, useAccountHeadById } from "@/hooks/apiHooks/accountHead/useAccountHead";
 import { AccountHead } from "@/types/accountHead/AccountHead";
 import { SelectCombobox } from "@/components/ui/selectComboBox";
 import SearchBar from "@/component/search/SearchBar";
@@ -140,9 +140,9 @@ function AccountHeadMaster() {
     };
 
     const activeStatus = [
-   
-            { label: "YES", value: "Y" },
-            { label: "NO", value: "N" },
+
+        { label: "YES", value: "Y" },
+        { label: "NO", value: "N" },
 
     ];
 
@@ -151,7 +151,7 @@ function AccountHeadMaster() {
         stateOptions: stateCollection,
         activeOptions: activeStatus,
     })
-    console.log(getAccountHeaderForm,'getAccountHeaderForm')
+    console.log(getAccountHeaderForm, 'getAccountHeaderForm')
 
     /* -------------------- EFFECTS -------------------- */
 
@@ -453,7 +453,7 @@ function AccountHeadMaster() {
     };
     const formfields = getAccountHeaderForm.map(f => f.name);
 
-    const { register, focusFirst, focusNext } = useEnterNavigation(formfields ,handleSave);
+    const { register, focusFirst, focusNext } = useEnterNavigation(formfields, handleSave);
 
     /* -------------------- UI -------------------- */
     return (
@@ -474,7 +474,7 @@ function AccountHeadMaster() {
 
                         <Fieldset.Root size="sm" width="100%">
                             <Fieldset.Content>
-                                <DynamicForm 
+                                <DynamicForm
                                     fields={getAccountHeaderForm}
                                     formData={form}
                                     onChange={handleChange}
@@ -482,7 +482,7 @@ function AccountHeadMaster() {
                                     focusNext={focusNext}
                                     layout="vertical"
 
-                                    />
+                                />
                             </Fieldset.Content>
                         </Fieldset.Root>
 

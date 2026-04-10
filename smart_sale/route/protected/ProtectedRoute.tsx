@@ -1,7 +1,7 @@
 // hooks/ProtectedRoute.tsx
 "use client";
 
-import { useAuth } from "@/hooks/auth/useAuth";
+import { useAuth } from "@/hooks/apiHooks/auth/useAuth";
 import { useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Loader from "@/component/loader/Loader";
@@ -41,7 +41,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     // Show loading while checking auth
     if (loading) {
         return <div>
-            <Loader isLoading fullscreen/>
+            <Loader isLoading fullscreen />
         </div>;
     }
 

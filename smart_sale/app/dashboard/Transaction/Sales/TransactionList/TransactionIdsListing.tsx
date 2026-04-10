@@ -4,11 +4,11 @@ import React, { useState, useEffect, useRef } from "react";
 import { HStack, Text, Box, Button } from "@chakra-ui/react";
 import SearchBar from "@/component/search/SearchBar";
 import { useTheme } from "@/context/theme/themeContext";
-import { useSessionStorage } from "@/hooks/storage/useSessionStorage";
+import { useSessionStorage } from "@/hooks/apiHooks/storage/useSessionStorage";
 
 export interface transactionIdsList {
     label: string;
-    value:string;
+    value: string;
 }
 
 export interface TransactionListingProps {
@@ -33,7 +33,7 @@ export const TransactionListing: React.FC<TransactionListingProps> = ({
     const [selectedIndex, setSelectedIndex] = useSessionStorage<number>('selectedTransactionId', -1); // no default selection
     const containerRef = useRef<HTMLDivElement>(null);
 
-    console.log(selectedIndex,'selectedIndex')
+    console.log(selectedIndex, 'selectedIndex')
     // Deselect if parent tells us to
     useEffect(() => {
         if (deselectFlag) {
@@ -78,7 +78,7 @@ export const TransactionListing: React.FC<TransactionListingProps> = ({
 
     return (
         <>
-         <Box display="flex" alignItems="center" justifyContent="space-between" gap={1} >
+            <Box display="flex" alignItems="center" justifyContent="space-between" gap={1} >
                 <SearchBar
                     placeholder="Search Item..."
                     searchTerm={searchTerm}
@@ -156,6 +156,6 @@ export const TransactionListing: React.FC<TransactionListingProps> = ({
                 )}
             </Box>
         </>
-       
+
     );
 };

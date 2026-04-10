@@ -7,20 +7,21 @@ import { CapitalizedInput } from "@/components/ui/CapitalizedInput";
 import { formatToFixed } from "@/utils/format/numberFormat";
 import { SelectCombobox } from "@/components/ui/selectComboBox";
 
+import { SalesHeaderForm } from "@/types/TransactionTypes/sales/SalesHeaderType";
 
 interface TransactionHeaderFormProps {
     form: any;
-    onFormChange: (field: string, value: any) => void;
+    onFormChange: <K extends keyof SalesHeaderForm>(
+        field: K,
+        value: string
+    ) => void;
     onCustomerSelect: (value: string, label: string) => void;
     customerCollection: any;
-    customerFilter?: (value: string) => void;
     getLabelByValue?: (collection: any, value: any) => string;
     theme: any;
     openingBalance: any;
     openingData: any;
     isEditing?: boolean;
-    // entryNo?: string;
-    // billNo?: string;
 }
 
 export default function TransactionHeaderForm({
@@ -28,17 +29,11 @@ export default function TransactionHeaderForm({
     onFormChange,
     onCustomerSelect,
     customerCollection,
-    customerFilter,
     getLabelByValue,
     theme,
     openingBalance,
     openingData,
-
     isEditing = false,
-    // entryNo,
-    // billNo,
-
-
 }: TransactionHeaderFormProps) {
 
     // Get the customer label for the current form.CUSTOMER value

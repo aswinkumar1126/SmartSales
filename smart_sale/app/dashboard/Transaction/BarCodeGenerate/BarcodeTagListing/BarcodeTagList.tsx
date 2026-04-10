@@ -4,10 +4,10 @@ import React, { useState, useEffect, useRef, useMemo } from "react";
 import { HStack, Text, Box, Button } from "@chakra-ui/react";
 import SearchBar from "@/component/search/SearchBar";
 import { useTheme } from "@/context/theme/themeContext";
-import { useSessionStorage } from "@/hooks/storage/useSessionStorage";
+import { useSessionStorage } from "@/hooks/apiHooks/storage/useSessionStorage";
 import { SearchDrawer } from "./FilterDrawer";
 import { getTagedEntryNoParams } from "@/types/tagging/Tag";
-import { useStoneItems } from "@/hooks/item/useItems";
+import { useStoneItems } from "@/hooks/apiHooks/item/useItems";
 
 export interface TagItem {
     ITEMNAME: string;
@@ -41,10 +41,10 @@ export const BarcodeTagListing: React.FC<TagListProps> = ({
     collections,
     onFilterChange, // Make sure this is received
 }) => {
-    const today =new Date().toISOString().split('T')[0]
+    const today = new Date().toISOString().split('T')[0]
     const { theme } = useTheme();
     const { data: items, isLoading, isError } = useStoneItems();
-    console.log(items,'items')
+    console.log(items, 'items')
 
     const [selectedIndex, setSelectedIndex] = useSessionStorage<number>('selectedTagKey', -1);
     const containerRef = useRef<HTMLDivElement>(null);
@@ -58,7 +58,7 @@ export const BarcodeTagListing: React.FC<TagListProps> = ({
 
     const itemOptions = useMemo(() => {
         if (!items) return [];
-  
+
         return Array.isArray(items) ? items.map((item) => ({
             value: String(item.itemId),
             label: item.itemName
@@ -166,8 +166,8 @@ export const BarcodeTagListing: React.FC<TagListProps> = ({
                 itemOptions={itemOptions}
                 accodeOptions={collections?.acCodeCollection || []}
                 initialFilters={{
-                    fromDate: filterParams.FROMDATE || today||"",
-                    toDate: filterParams.TODATE || today|| "",
+                    fromDate: filterParams.FROMDATE || today || "",
+                    toDate: filterParams.TODATE || today || "",
                     entryNo: filterParams.ENTRYNO || "",
                     lotNumber: filterParams.PUENTRYNO || "",
                     tagNumber: filterParams.TAGNO || "",

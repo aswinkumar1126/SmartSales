@@ -26,14 +26,14 @@ import { toastError, toastLoaded } from "@/component/toast/toast";
 import { CustomTable } from "@/component/table/CustomTable";
 import { usePrint } from "@/context/print/usePrintContext";
 import { pureGoldMastForm } from "@/types/pureGold/pureGold";
-import { usePureGoldNames, usePureGoldNameById } from "@/hooks/pureGoldMast/usePureGoldMastData";
-import { useCreatePureGoldNmae } from "@/hooks/pureGoldMast/usePureGoldMastCreate";
-import { useUpdatePureGoldName } from "@/hooks/pureGoldMast/usePureGoldMastUpdate";
+import { usePureGoldNames, usePureGoldNameById } from "@/hooks/apiHooks/pureGoldMast/usePureGoldMastData";
+import { useCreatePureGoldNmae } from "@/hooks/apiHooks/pureGoldMast/usePureGoldMastCreate";
+import { useUpdatePureGoldName } from "@/hooks/apiHooks/pureGoldMast/usePureGoldMastUpdate";
 import { AiOutlineSave } from "react-icons/ai";
 import { useRouter } from "next/navigation";
 import { formatToFixed } from "@/utils/format/numberFormat";
 import { CapitalizedInput } from "@/components/ui/CapitalizedInput";
-import { useAllMetals } from "@/hooks/metal/useMetals";
+import { useAllMetals } from "@/hooks/apiHooks/metal/useMetals";
 import { SelectCombobox } from "@/components/ui/selectComboBox";
 import { safeValue } from "@/utils/comboBox/safeValue";
 import SearchBar from "@/component/search/SearchBar";
@@ -82,7 +82,7 @@ const PureGoldMaster = () => {
     const [filter, setFilter] = useState<string>('');
 
 
-    const getPureGoldFields = pureGoldNameFields({ metal :metalData});
+    const getPureGoldFields = pureGoldNameFields({ metal: metalData });
 
     /* ---------------- Hooks ---------------- */
     const router = useRouter();
@@ -112,14 +112,14 @@ const PureGoldMaster = () => {
         setMetalData(fetchedData);
     }, [metalsData]);
 
-    useEffect(()=>{
-        setForm((prev)=>({
-            ...prev ,
-            metalId : metalData[0]?.value || ''
+    useEffect(() => {
+        setForm((prev) => ({
+            ...prev,
+            metalId: metalData[0]?.value || ''
 
         }))
     }, [metalData]);
-    console.log(form,'formtoupdate')
+    console.log(form, 'formtoupdate')
 
 
     /* ---------------- Helpers ---------------- */
@@ -131,7 +131,7 @@ const PureGoldMaster = () => {
     };
 
     const resetForm = () => {
-        setForm({...initialFormState , metalId: metalData[0]?.value || ''});
+        setForm({ ...initialFormState, metalId: metalData[0]?.value || '' });
         setEditId(null);
 
         setErrors({});
@@ -199,7 +199,7 @@ const PureGoldMaster = () => {
     /* ---------------- Submit Handler ---------------- */
 
     const handleSubmit = () => {
-console.log('triggers')
+        console.log('triggers')
         const validationErrors = validateForm(
             form,
             pureGoldData,
@@ -212,7 +212,7 @@ console.log('triggers')
             setErrors(validationErrors);
             return;
         }
-    
+
         const payload = {
             pureGoldName: form.pureGoldName,
             metalId: form.metalId,
@@ -281,12 +281,12 @@ console.log('triggers')
         title?.("Pure Gold Opening Master")
     }
 
-    const formFieldName = getPureGoldFields.map(f=>f.name);
-    const {register ,focusFirst ,focusNext } = useEnterNavigation(formFieldName,()=>handleSubmit())
+    const formFieldName = getPureGoldFields.map(f => f.name);
+    const { register, focusFirst, focusNext } = useEnterNavigation(formFieldName, () => handleSubmit())
 
-    useEffect(()=>{
+    useEffect(() => {
         focusFirst();
-    },[])
+    }, [])
     /* ---------------- UI ---------------- */
 
     return (
@@ -309,15 +309,15 @@ console.log('triggers')
                         </Text>
                     </Heading>
                     <Box display="grid" gap={2}>
-                      <DynamicForm 
-                        fields={getPureGoldFields}
-                        formData={form}
-                        register={register}
-                        onChange={handleChange}
-                        focusNext={focusNext}
-                        layout="vertical"
-                        errors={errors}
-                      />
+                        <DynamicForm
+                            fields={getPureGoldFields}
+                            formData={form}
+                            register={register}
+                            onChange={handleChange}
+                            focusNext={focusNext}
+                            layout="vertical"
+                            errors={errors}
+                        />
                     </Box>
                     {/* ================= ACTION BUTTONS ================= */}
                     <Box mt={2}>

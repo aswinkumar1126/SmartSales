@@ -37,7 +37,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { useTheme } from "@/context/theme/themeContext";
 import { normalizePath } from "@/utils/path/normalizePath";
 import { motion, AnimatePresence } from "framer-motion";
-import { useAuth } from "@/hooks/auth/useAuth";
+import { useAuth } from "@/hooks/apiHooks/auth/useAuth";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Motion-wrapped Chakra primitives
@@ -102,7 +102,7 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
         toggleSidebar,
     } = useSidebar();
 
-    const { user , logout }= useAuth();
+    const { user, logout } = useAuth();
 
     const router = useRouter();
     const rawPathname = usePathname();
@@ -775,17 +775,17 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
                         </Box>
                         {isExpanded && (
                             <Box display={'flex'} alignItems={'center'}>
-                            <Text fontSize="sm" fontWeight="500">
-                                {user?.USERNAME ?? "ADMIN"} 
-                            </Text>
-                          
+                                <Text fontSize="sm" fontWeight="500">
+                                    {user?.USERNAME ?? "ADMIN"}
+                                </Text>
+
                             </Box>
                         )}
-                      
+
                     </MotionHStack>
-                   
+
                 </Tooltip>
-               
+
             </Box>
         </MotionBox>
     );
@@ -809,8 +809,8 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
         <Box
             position="fixed"
             left={0}
-            sm={{h:'100vh'}}
-            md={{h:'93vh'}}
+            sm={{ h: '100vh' }}
+            md={{ h: '93vh' }}
             zIndex={50}
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
