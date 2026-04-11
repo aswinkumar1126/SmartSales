@@ -17,6 +17,8 @@ export const validateTransactions = ({
     const draftChanged = isDraftRowsChanged();
     const closingChanged = isClosingChanged();
 
+    // console.log(draftChanged , closingChanged ,'changesmade');    
+
     if (!draftChanged && !closingChanged) {
         return { valid: false, error: "No changes detected to save." };
     }

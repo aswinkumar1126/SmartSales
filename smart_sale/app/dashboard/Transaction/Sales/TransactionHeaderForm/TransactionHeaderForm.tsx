@@ -22,6 +22,8 @@ interface TransactionHeaderFormProps {
     openingBalance: any;
     openingData: any;
     isEditing?: boolean;
+    isClosingChanged ?: boolean;
+    isDraftRowChanged ? :boolean
 }
 
 export default function TransactionHeaderForm({
@@ -34,6 +36,8 @@ export default function TransactionHeaderForm({
     openingBalance,
     openingData,
     isEditing = false,
+    isDraftRowChanged,
+    isClosingChanged ,
 }: TransactionHeaderFormProps) {
 
     // Get the customer label for the current form.CUSTOMER value
@@ -63,6 +67,10 @@ export default function TransactionHeaderForm({
 
     const openingCash = openingBalance.openCash ? formatToFixed(openingBalance.openCash, 2) : 0;
     const openingPure = openingBalance.openPure ? formatToFixed(openingBalance.openPure, 3) : 0;
+
+    console.log(isEditing ,isDraftRowChanged ,isClosingChanged ,'isChanged ')
+
+    const customerDisable = isEditing ; 
 
     return (
         <Box
@@ -136,6 +144,7 @@ export default function TransactionHeaderForm({
                         type="number"
                         size="xs"
                         rounded="sm"
+                        disabled
                     />
                 </Box>
 
@@ -152,6 +161,7 @@ export default function TransactionHeaderForm({
                         }}
                         placeholder="Select Customer"
                         rounded="md"
+                        disable= {customerDisable}
                     />
                 </Box>
 

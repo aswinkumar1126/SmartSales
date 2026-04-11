@@ -1,27 +1,16 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import {
     Box,
     Button,
-    Input,
     VStack,
     Text,
     Grid,
     GridItem,
     HStack,
-    Stack,
     Fieldset,
-    Field,
-    NativeSelect,
-    Textarea,
-    createListCollection,
-    For,
     Flex,
-    Combobox,
-    Portal,
-    useFilter,
-    useListCollection,
 } from "@chakra-ui/react";
 import { Table } from "@chakra-ui/react/table";
 import { AiOutlineSave } from "react-icons/ai";
@@ -37,7 +26,6 @@ import {
 import ScrollToTop from "@/component/scroll/ScrollToTop";
 import { toastCreated, toastError, toastLoaded, toastUpdated, toastUploaded } from "@/component/toast/toast";
 import { CustomTable } from "@/component/table/CustomTable";
-import { CapitalizedInput } from "@/components/ui/CapitalizedInput";
 import { usePrint } from "@/context/print/usePrintContext";
 import { useRouter } from "next/navigation";
 import { FaPrint, FaFileExcel } from "react-icons/fa";
@@ -45,7 +33,6 @@ import { AccountTypeList } from "@/data/ACCOUNTtYPE/AccountType";
 import { useAllStates } from "@/hooks/apiHooks/state/useStates";
 import { useAllAccountHead, useCreateAccountHead, useUpdateAccountHead, useAccountHeadById } from "@/hooks/apiHooks/accountHead/useAccountHead";
 import { AccountHead } from "@/types/accountHead/AccountHead";
-import { SelectCombobox } from "@/components/ui/selectComboBox";
 import SearchBar from "@/component/search/SearchBar";
 
 import { getAccountHeadFields } from "@/config/master/AccountHeadMaster";
@@ -53,12 +40,19 @@ import { getAccountHeadFields } from "@/config/master/AccountHeadMaster";
 import { useEnterNavigation } from "@/component/form/useEnterNavigation";
 
 import { DynamicForm } from "@/component/form/DynamicForm";
+import { usePageName } from "@/context/header/PageNameContext";
 
 
 function AccountHeadMaster() {
     const { theme } = useTheme();
 
 
+      const {setPageName  ,setDescription} = usePageName();
+    
+        useEffect(()=>{
+            setPageName("ACCOUNT MASTER");
+            // setDescription("Create and Manage the Account Master");
+        },[])
 
     /* -------------------- API HOOKS -------------------- */
     const { data, isLoading } = useAllCompanies();

@@ -156,7 +156,7 @@ export interface BankTransactionFormDetails {
 
 export interface ClosingDetails {
 
-    convType: "" | "P" | "C"|string ;
+    convType: string | "P" | "C" ;
     convAmt: number;
     convWt: number;
     discAmt: number;

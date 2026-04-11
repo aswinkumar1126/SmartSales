@@ -9,6 +9,8 @@ import QueryProvider from "@/context/query/providers";
 import { PrintProvider } from "@/context/print/usePrintContext";
 import { Toaster } from "@/components/ui/toaster";
 import ProtectedRoute from "@/route/protected/ProtectedRoute";
+import { PageNameProvider } from "@/context/header/PageNameContext";
+
 
 export function AllProviders({ children }: { children: React.ReactNode }) {
 
@@ -21,11 +23,12 @@ export function AllProviders({ children }: { children: React.ReactNode }) {
             <PrintProvider>
               <SidebarProvider>
                 <ProtectedRoute>
-                  <DashboardLayout>
-                    <Toaster />
-                    {children}
-                    
-                  </DashboardLayout>
+                  <PageNameProvider>
+                    <DashboardLayout>
+                      <Toaster />
+                      {children}
+                    </DashboardLayout>
+                  </PageNameProvider>
                 </ProtectedRoute>
               </SidebarProvider>
             </PrintProvider>

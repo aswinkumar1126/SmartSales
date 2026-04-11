@@ -15,11 +15,15 @@ import {
 import { useRates } from "@/hooks/apiHooks/rate/useRate";
 import { MetalRatesMenu } from "../rates/MetalRates";
 import { useEffect, useState } from "react";
+import { usePageName } from "@/context/header/PageNameContext";
 
 const Header = ({ onOpenMenu }: any) => {
+
     const { theme, mode, toggleTheme } = useTheme();
+    
+    const {pageName ,description} =usePageName();
 
-
+    console.log(pageName ,description ,'pagenameinheader');
     const {
         sidebarCollapsed,
         toggleSidebar
@@ -139,8 +143,42 @@ const Header = ({ onOpenMenu }: any) => {
                             </Tooltip>
                         )}
                     </HStack>
+                   
 
 
+                </HStack>
+                <HStack
+                    bg={theme.colors.formColor}
+                    px={3}
+                    py={1}
+                    spaceX={2}
+                    borderRadius="full"
+                    align="center"
+                    boxShadow="sm"
+                    maxW="full"
+                 
+                >
+                    {/* Page Name Badge */}
+                    <Text
+                        fontSize="sm"
+                        fontWeight="bold"
+                        color="crimson"
+                        maxW="220px"
+                      truncate
+                    >
+                        {pageName}
+                    </Text>
+
+
+                    {/* Description */}
+                    <Text
+                        fontSize="xs"
+                        color="gray.600"
+                        maxW="260px"
+                        truncate
+                    >
+                        {description}
+                    </Text>
                 </HStack>
 
                 {/* Right section with theme toggle */}

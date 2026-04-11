@@ -84,8 +84,6 @@ import { formatToFixed } from '@/utils/format/numberFormat';
 
 import { getTagDetails } from "@/service/TagedService";
 
-
-
 //Icons
 type StoneRow = {
     id: string;
@@ -129,6 +127,7 @@ export default function SalesPage() {
     const initialDraftRowsRef = useRef<any[]>([]);
     const initialClosingRef = useRef<ClosingDetails>(null);
 
+    console.log(initialClosingRef.current,initialDraftRowsRef.current  ,'currentref');
 
     /* ================================
        GLOBAL  HEADER MANAGEMENT
@@ -550,10 +549,6 @@ export default function SalesPage() {
 
 
 
-    // Get rows for specific transaction type
-    const getTypeRows = (transactionType: string) => {
-        return draftRows.filter(row => row.TRANSACTION_TYPE === transactionType);
-    };
 
     // Handle clear rows for type
     const handleClearRowsForType = (transactionType: any) => {
@@ -695,8 +690,6 @@ export default function SalesPage() {
             });
         }
     };
-    console.log(isEditing,'isEditing')
-
     useEffect(() => {
         if (isEditing) return; 
 
@@ -880,14 +873,9 @@ export default function SalesPage() {
     const { loadTransaction } =  useLoadSalesTransaction();
 
     const handleEditTransaction = useCallback((data: any, sno: string) => {
-
-        console.log(data,'datadata')
  
         setOpeningBalance(data , true);
-
         const result = loadTransaction(data, sno);
-        console.log(result, 'resultresult')
-
         if (!result) return;
 
     }, []);
@@ -918,7 +906,11 @@ export default function SalesPage() {
        ================================ */
     const {closingDetails ,setClosingDetails , resetBalance } = useSalesBalanceSummary();
 
+
+
     const closingDetailsRef = useRef(closingDetails);
+
+
     useConversionSync(Number(headerForm.RATEGM || 0));
     const {closingPure ,closingCash} = useClosingCalculation(closingDetails ,openingBalances , Number(headerForm.RATEGM || 0) );
 
@@ -1090,19 +1082,7 @@ export default function SalesPage() {
 
     };
 
-    /* ================================
-       Draft Table Handlers
-    ================================ */
-
- 
-    // Handle update draft row (for inline edits)
-    const handleUpdateDraftRow = (rowIndex: number, field: string, value: any) => {
-        const typeRows = draftRows.filter(r => r.TRANSACTION_TYPE === selectedTransactionTypes[0]?.value);
-        const targetRow = typeRows[rowIndex];
-        if (!targetRow) return;
-
-        updateDraftRow(targetRow.__rowId, { [field]: value });
-    };
+  
 
     /* ================================
         Calculate Totals For Specific Type
@@ -1125,226 +1105,23 @@ export default function SalesPage() {
         }, Object.fromEntries(keys.map(k => [k, 0])));
     };
 
-    /* ================================
-     Normalize Handler with Stone Details Support
-  ================================ */
-
-    // const normalizeRowForApi = (
-    //     row: any,
-    //     tranType: SaleTransactionKey,
-    //     editTransaction?: boolean
-    // ): any => {
-
-    //     const {
-    //         __rowId,
-    //         __isNew,
-    //         __previewSno,
-    //         _stones,
-    //         _miscCharges,
-    //         ...rest
-    //     } = row;
-
-    //     // ---------------- ISSUE / RECEIPT ----------------
-    //     if (tranType === "issue" || tranType === "receipt") {
-    //         return {
-    //             PUREID: rest.PUREID ? Number(rest.PUREID) : undefined,
-    //             WT: Number(rest.WT || 0),
-    //             TOUCH: Number(rest.TOUCH || 0),
-    //             PUREWT: Number(rest.PUREWT || 0),
-    //             AWT: Number(rest.AWT || 0),
-    //             ATOUCH: Number(rest.ATOUCH || 0),
-    //             APUREWT: Number(rest.APUREWT || 0),
-    //         };
-    //     }
-
-    //     // ---------------- SALES ----------------
-    //     if (tranType === "sales") {
-    //         const itemId = rest.ITEMID ? Number(rest.ITEMID) : null;
-    //         const tagged = isTagedItem(itemId);
-
-    //         const payload: SALESTRANSACTIONITEMS = {
-    //             ITEMID: itemId,
-    //             PCS: Number(rest.PCS || 0),
-    //             GRSWT: Number(rest.GRSWT || 0),
-    //             STNWT: Number(rest.STNWT || 0),
-    //             NETWT: Number(rest.NETWT || 0),
-    //             WASTYPE: String(rest.WASTYPE || "TOUCH"),
-    //             TOUCH: Number(rest.TOUCH || 0),
-    //             PUREWT: Number(rest.PUREWT || 0),
-    //             HMC: Number(rest.HMC || 0),
-    //             STNAMT: Number(rest.STNAMT || 0),
-    //             MC: Number(rest.MC || 0),
-
-    //             // ✅ Only include TAGNO if tagged item
-    //             ...(tagged && { TAGNO: rest.TAGNO || "" }),
-
-    //             ...(editTransaction && { SNO: String(rest.SNO || "") }),
-    //             ...(rest.DESCRIPTION && { DESCRIPTION: rest.DESCRIPTION }),
-    //         };
-
-    //         return payload;
-    //     }
-
-    //     // ---------------- SALES RETURN ----------------
-    //     if (tranType === "sales_return") {
-    //         const payload: SALESTRANSACTIONITEMS = {
-    //             ITEMID: rest.ITEMID ? Number(rest.ITEMID) : null,
-    //             PCS: Number(rest.PCS || 0),
-    //             GRSWT: Number(rest.GRSWT || 0),
-    //             STNWT: Number(rest.STNWT || 0),
-    //             NETWT: Number(rest.NETWT || 0),
-    //             WASTYPE: String(rest.WASTYPE || "TOUCH"),
-    //             TOUCH: Number(rest.TOUCH || 0),
-    //             PUREWT: Number(rest.PUREWT || 0),
-    //             HMC: Number(rest.HMC || 0),
-    //             STNAMT: Number(rest.STNAMT || 0),
-    //             MC: Number(rest.MC || 0),
-
-    //             // ✅ Flexible return logic
-    //             ...(rest.TAGNO && { TAGNO: rest.TAGNO }),
-    //             ...(rest.BILLNO && { BILLNO: rest.BILLNO }),
-
-    //             ...(editTransaction && { SNO: String(rest.SNO || "") }),
-    //             ...(rest.DESCRIPTION && { DESCRIPTION: rest.DESCRIPTION }),
-    //         };
-
-    //         return payload;
-    //     }
-
-    //     return null;
-    // };
-
-
-    const isDraftRowsChanged = () => {
-        return !lodash.isEqual(initialDraftRowsRef.current || [], draftRows || []);
-    };
-
-    const isClosingChanged = () => {
+    const isDraftRowsChanged = useCallback(() => {
         return !lodash.isEqual(
-            initialClosingRef.current || {},
-            getClosingDetailsPayload() || {}
+            initialDraftRowsRef.current ?? [],
+            draftRows ?? []
         );
-    };
+    }, [draftRows]);
 
+    const isClosingChanged = useCallback(() => {
+        return !lodash.isEqual(
+            initialClosingRef.current ?? {},
+            getClosingDetailsPayload() ?? {}
+        );
+    }, [getClosingDetailsPayload]);
 
-    /* ================================
-         Validation Handler
-      ================================ */
-    const validateDraftRows = () => {
+    console.log(isDraftRowsChanged(), isClosingChanged(), 'isDraftRowsChanged, isClosingChanged')
 
-        const draftChanged = isDraftRowsChanged();
-        const closingChanged = isClosingChanged();
-
-        if (!draftChanged && !closingChanged) {
-            toaster.create({
-                title: "No Changes",
-                description: "No changes detected to save.",
-                type: "warning",
-            });
-            return false;
-        }
-
-        // If draft rows changed → run row validations
-        if (draftChanged) {
-
-            if (draftRows.length === 0) {
-                toaster.create({
-                    title: "No Items",
-                    description: "Please add at least one item.",
-                    type: "error",
-                });
-                return false;
-            }
-
-            for (let i = 0; i < draftRows.length; i++) {
-                const row = draftRows[i];
-                const transactionType = SALETRANSACTIONTYPES.find(t => t.code === row.TRANSACTION_TYPE);
-
-
-                if (!transactionType) {
-                    toaster.create({
-                        title: "Invalid Transaction Type",
-                        description: `Row ${i + 1}: Invalid transaction type.`,
-                        type: "error",
-                    });
-                    return false;
-                }
-
-                const isIssue = isIssueType(transactionType);
-
-                if (isIssue) {
-                    if (!row.PUREID || row.WT == null || row.TOUCH == null || row.PUREWT == null) {
-                        toaster.create({
-                            title: "Incomplete Items",
-                            description: `Row ${i + 1}: Please fill PUREID, Weight, Touch, and Pure.`,
-                            type: "error",
-                        });
-                        return false;
-                    }
-                } else {
-                    if (!row.ITEMID) {
-                        toaster.create({
-                            title: "Incomplete Items",
-                            description: `Row ${i + 1}: Please select an item.`,
-                            type: "error",
-                        });
-                        return false;
-                    }
-
-                    const isTagedItemId = isTagedItem(Number(row.ITEMID));
-
-
-
-                    if (Number(row.GRSWT) <= 0) {
-                        toaster.create({
-                            title: "Invalid Gross Weight",
-                            description: `Row ${i + 1}: Gross weight must be greater than 0.`,
-                            type: "warning",
-                        });
-                        return false;
-                    }
-
-                    if (Number(row.TOUCH) <= 0) {
-                        toaster.create({
-                            title: "Invalid TOUCH",
-                            description: `Row ${i + 1}: TOUCH must be greater than 0.`,
-                            type: "warning",
-                        });
-                        return false;
-                    }
-                }
-            }
-
-            // Stock validation
-            const usedByPureId: Record<string, number> = {};
-
-            draftRows.forEach((row) => {
-                const transactionType = SALETRANSACTIONTYPES.find(t => t.value === row.TRANSACTION_TYPE);
-                if (!transactionType) return;
-
-                const isIssue = isIssueType(transactionType);
-
-                if (isIssue && row.PUREID) {
-                    const key = String(row.PUREID);
-                    usedByPureId[key] = (usedByPureId[key] || 0) + Number(row.WT || 0);
-                }
-            });
-
-            for (const pureId in usedByPureId) {
-                const availability = getStockAvailability(pureId);
-                if (availability && usedByPureId[pureId] > availability.total) {
-                    toaster.create({
-                        title: "Stock Exceeded",
-                        description: `Pure ID ${pureId}: Total ${usedByPureId[pureId].toFixed(3)}g exceeds available stock (${availability.total.toFixed(3)}g)`,
-                        type: "error",
-                    });
-                    return false;
-                }
-            }
-        }
-
-        return true;
-    };
+    
 
     /* ================================
     Save Transaction Handler with Stone Details
@@ -1362,9 +1139,7 @@ export default function SalesPage() {
             });
             return;
         }
-
-        // if (!validateDraftRows()) return;
-
+        console.log(initialClosingRef.current, initialDraftRowsRef.current, 'currentref');
 
         const result = validateTransactions({
             draftRows,
@@ -1513,7 +1288,7 @@ export default function SalesPage() {
             return;
         }
 
-        if (!validateDraftRows()) return;
+        // if (!validateDraftRows()) return;
 
         try {
             /* -----------------------------------------
@@ -1721,6 +1496,8 @@ export default function SalesPage() {
                             openingBalance={baseOpening}
                             openingData={openingBalance}
                             isEditing={isEditing}
+                            // isClosingChanged={closingChanged}
+                            // isDraftRowChanged ={draftChanged}
 
                         />
 

@@ -36,9 +36,20 @@ import { useEnterNavigation } from "@/component/form/useEnterNavigation";
 import { DynamicForm } from "@/component/form/DynamicForm";
 import { getCompanyFormFields } from "@/config/master/CompanyMaster";
 
+import { usePageName } from "@/context/header/PageNameContext";
+
 function CompanyMaster() {
     const { theme } = useTheme();
+    const {setPageName  ,setDescription} = usePageName();
+
+    useEffect(()=>{
+        setPageName("COMPANY MASTER");
+        // setDescription("Create and Manage the Company Master");
+    },[])
+   
+
     const router = useRouter();
+
     const { setData, setColumns, setShowSno, title } = usePrint();
 
     /* -------------------- API HOOKS -------------------- */
