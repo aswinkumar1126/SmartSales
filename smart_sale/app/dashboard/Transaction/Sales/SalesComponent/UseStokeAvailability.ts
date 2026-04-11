@@ -62,7 +62,7 @@ export function useStockAvailability({
     SALETRANSACTIONTYPES
 }: UseStockAvailabilityDeps) {
 
-    console.log(draftRows, transactionCode,'draftRowsdraftRows')
+  
     // Derive key + booleans once from the prop — no raw string checks anywhere below
     const transactionKey = SALE_TRANSACTION_KEY_MAP[transactionCode];
     const isIssue = transactionKey === 'issue';

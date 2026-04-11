@@ -75,9 +75,10 @@ export default function ItemMasterPage() {
         stockType: "T",
         calType: "W",
         studded: "N",
-        studdedStone: "T",
+        studdedStone: "",
         active: "Y",
         companyId: "",
+        stnPresent:"Y",
 
     } as ItemMast);
 
@@ -166,6 +167,7 @@ export default function ItemMasterPage() {
                 active: "Y",
                 studded: "N",
                 studdedStone: "T",
+                stnPresent:"Y",
                 companyId: companies[0]?.value ?? "",
             }));
             setAutoItemId(itemsData?.nextId ?? '0');
@@ -206,6 +208,7 @@ export default function ItemMasterPage() {
             active: "Y",
             studded: "N",
             studdedStone: "T",
+            stnPresent:"Y",
             companyId: companies[0]?.value ?? "",
         }));
     };
@@ -281,6 +284,7 @@ export default function ItemMasterPage() {
             studded: form.studded,
             studdedStone: form.studded === "Y" ? form.studdedStone : null,
             companyId: form.companyId,
+            stnPresent:form.stnPresent,
         };
 
         if (editingId) {

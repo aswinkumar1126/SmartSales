@@ -12,19 +12,13 @@ export interface DraftRow {
 }
 
 interface SaleTransactionState {
-    // Selected transaction types
+   
     selectedTransactionTypes: SaleTransactionType[];
-
-    // Draft rows
     draftRows: DraftRow[];
-
-    // Editing state
     editingState: {
         rowId: string | null;
         transactionType: string | null;
     };
-
-    // Selected transaction ID (for editing existing transactions)
     selectedTransactionId: string | null;
 
     // Actions
@@ -67,20 +61,20 @@ export const useSaleTransactionStore = create<SaleTransactionState>()(
 
             addTransactionType: (type) => {
                 const { selectedTransactionTypes } = get();
-                if (!selectedTransactionTypes.some(t => t.value === type.value)) {
+                if (!selectedTransactionTypes.some(t => t.code === type.code)) {
                     set({ selectedTransactionTypes: [...selectedTransactionTypes, type] });
                 }
             },
 
-            removeTransactionType: (typeValue) => {
+            removeTransactionType: (typeCode: string) => {
                 const { selectedTransactionTypes } = get();
+
                 set({
                     selectedTransactionTypes: selectedTransactionTypes.filter(
-                        t => t.value !== typeValue
+                        t => t.code !== typeCode
                     ),
                 });
             },
-
             clearAllTransactionTypes: () => {
                 set({ selectedTransactionTypes: [] });
             },

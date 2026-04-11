@@ -57,7 +57,6 @@ import { useClosingCalculation } from "@/hooks/Transaction/sales/useClosingBalan
 import { useSalesOpeningBalances } from "@/hooks/Transaction/sales/useSalesOpeningCal";
 
 
-
 import { useSyncSalesHeader } from "@/hooks/Transaction/sales/useSalesHeaderSync";
 import { useLoadSalesTransaction } from "@/hooks/Transaction/sales/useSalesTransactionLoad";
 
@@ -77,12 +76,11 @@ import { ClosingDetails, WeightInfo, purchasereturnPayload, purchasePayload } fr
 import { SALETRANSACTIONTYPES } from "@/data/Transaction/TransactionType";
 import { SaleTransactionType } from "@/types/transcation/SaleTransaction";
 import { SaleTransactionKey, SaleTransactionItems, SALE_TRANSACTION_KEY_MAP, SALESTRANSACTIONITEMS, CreateSaleTransaction } from "@/types/transcation/SaleTransaction";
-import { SalesClosingFormDetails } from "@/types/balanceSummary/BalanceSummary";
 
+import { BaseClosingFormDetails } from "@/types/balanceSummary/BalanceSummary";
 //Utilities
 import { formatToFixed } from '@/utils/format/numberFormat';
-
-import { getTagDetails } from "@/service/TagedService";
+import { usePageName } from "@/context/header/PageNameContext";
 
 //Icons
 type StoneRow = {
@@ -122,10 +120,15 @@ export type billDetailsParams = {
 ================================ */
 
 export default function SalesPage() {
+
+    const {setPageName } =usePageName();
+    useEffect(()=>{
+        setPageName("SALES")
+    },[])
     const today = new Date().toISOString().split("T")[0];
 
     const initialDraftRowsRef = useRef<any[]>([]);
-    const initialClosingRef = useRef<ClosingDetails>(null);
+    const initialClosingRef = useRef<BaseClosingFormDetails>(null);
 
     console.log(initialClosingRef.current,initialDraftRowsRef.current  ,'currentref');
 
@@ -151,13 +154,10 @@ export default function SalesPage() {
        Session Storage Keys (All in one place)
     ================================ */
 
-    const DRAFT_KEY = "sale_transaction_draft";
     const TYPE_KEY = "sale_transaction_type";
-    const DATE_RANGE_KEY = "sale_transaction_date_range";
 
   
     const EDITING_SNO_KEY = "sale_editing_sno";
-    const SALE_STONE_MASTER_KEY = "sales_stone_entries";
 
 
     const TRANSACTION_LIST_SEARCH = "sale_transaction_list_search";
@@ -188,7 +188,7 @@ export default function SalesPage() {
     const [metalId, setMetalId] = useState<string | undefined>();
     const [selectedName, setSelectedName] = useState<string | undefined>();
     const [isFilterOpen, setIsFilterOpen] = useState(false);
-    const [selectedSalesItems, setSelectedSalesItems] = useState<(string|number)[]>()
+    const [selectedSalesItems, setSelectedSalesItems] = useState<(string|number)[]>();
     const [apiBalanceOpening, setApiBalanceOpening] = useState({ openPure: 0, openCash: 0 });
 
     const[ selectedTransactionId ,setSelectedTransactionId] = useState<string | null>(null)
@@ -255,7 +255,9 @@ export default function SalesPage() {
 
     const { theme } = useTheme();
     const { data: itemsData } = useStoneItems();
+    const {data: tagedItems } = useStoneItems({STOCKTYPE:'T'});
 
+    console.log(tagedItems,'tagedItems')
 
     const filters = {
         accountType: "CR"
@@ -290,7 +292,7 @@ export default function SalesPage() {
     /*------------------------------- BILL DETAILS API ----------------------------*/
 
     const { data: billDetails, isLoading: billDetailsLoading, isError: billDetailsError } = useBillDetails({
-        ACCODE: Number(billParams.ACCODE),
+        ACCODE: Number(accCode),
         ENTRYNO: Number(billParams.ENTRYNO),
         BILLDATE: billParams.BILLDATE,
         TAGNO: billParams.TAGNO
@@ -300,6 +302,8 @@ export default function SalesPage() {
         const billList = billDetails;
         return Array.isArray(billList) ? billList : []
     }, [billDetails]);
+
+    console.log(billDetailsList,billParams,'billDetailsList')
 
 
     const { data: otherChargesData } = useActiveOtherCharges();
@@ -466,6 +470,14 @@ export default function SalesPage() {
         [itemsData]
     );
 
+    const tagedItemsList = useMemo(()=>
+        tagedItems?.map((item: any) => ({
+            label: item.itemName,
+            value: item.itemId.toString(),
+        })) ?? [] ,[]);
+
+    console.log(tagedItemsList,'tagedItemsList')
+
     const { collection: itemsCollection, filter: itemsFilter, set } = useListCollection({
         initialItems: mappedItems,
         filter: contains,
@@ -476,17 +488,12 @@ export default function SalesPage() {
     }, [mappedItems, set]);
 
 
-    const isTagedItem = useIsTaggedItem(mappedItems);
 
 
-    // Function to get or create draft row temp ID
-    const getDraftRowTempId = () => {
-        if (!draftRowTempId.current) {
-            draftRowTempId.current = `draft-form-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
+    const isTagedItem = useIsTaggedItem(tagedItemsList);
 
-        }
-        return draftRowTempId.current;
-    };
+
+  
 
     // Reset draft row temp ID
     const resetDraftRowTempId = () => {
@@ -538,16 +545,18 @@ export default function SalesPage() {
         selectedTransactionTypes,
         draftRows,
         editingState,
+
         setEditingState,
+        setDraftRows,
         updateDraftRow,
         clearDraftRowsByType,
         resetStore,
         setSelectedTransactionTypes
     } = useSaleTransactionStore();
 
-    const { handleAddRow, handleEditRow , handleRemoveRow, handleUpdateRow } = useDraftRowOperations();
+    const { handleAddRow, handleEditRow , handleRemoveRow, handleUpdateRow } = useDraftRowOperations(isTagedItem);
 
-
+    console.log(draftRows, 'draftRowsssssss')
 
 
     // Handle clear rows for type
@@ -558,100 +567,8 @@ export default function SalesPage() {
         }
     };
 
-    const handleSelectedItems = useCallback((selectedItems: (any)[]) => {
-        setSelectedSalesItems(selectedItems);
-    }, []);
-
-    const handleLoadSalesItems = useCallback(
-        (items: any[]) => {
-            if (!items || !Array.isArray(items) || items.length === 0) return;
-
-            const newRows: any[] = [];
-
-            console.log(items, 'itemsitemsitems')
-
-            items.forEach((item) => {
-                // ✅ Check if SNO already exists in draftRows
-                const exists = draftRows.some((row) => row.SNO === item.SNO);
-                if (exists) {
-                    toaster.create({
-                        title: "Duplicate Item",
-                        description: `Item with SNO ${item.SNO} already exists in draft`,
-                        type: "warning",
-                        duration: 1500,
-                    });
-                    return; // Skip this item
-                }
-
-                // ✅ Generate unique rowId
-                const rowId = `sales-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
-
-                // Extract stone details if present
-                const stonesWithId: any[] = (item.stoneDetails || []).map((stone: any, index: number) => ({
-                    id: `stone-${Date.now()}-${index}-${Math.random().toString(36).substr(2, 4)}`,
-                    draftRowId: rowId,
-                    stoneId: String(stone.STNITEMID || stone.STNSUBITEMID || stone.stoneId || ""),
-                    subStoneId: String(stone.STNSUBITEMID || stone.subStoneId || ""),
-                    stonePcs: Number(stone.STNPCS || stone.PCS || 1),
-                    stoneWeight: Number(stone.STNWT || 0),
-                    stoneUnit: stone.STONEUNIT || "g",
-                    stoneCalculation: stone.CALCMODE || "w",
-                    stoneRate: Number(stone.STNRATE || 0),
-                    stoneAmount: Number(stone.STNAMT || 0),
-                }));
-
-                // Save stones to localStorage
-                const existingStones = JSON.parse(localStorage.getItem(SALE_STONE_MASTER_KEY) || "[]");
-                localStorage.setItem(SALE_STONE_MASTER_KEY, JSON.stringify([...existingStones, ...stonesWithId]));
-
-                // Recalculate STNWT from stones
-                const totalStoneWeight = stonesWithId.reduce((sum, s) => {
-                    const weight = s.stoneUnit === "c" ? s.stoneWeight / 5 : s.stoneWeight;
-                    return sum + weight;
-                }, 0);
-
-                // Build new row
-                newRows.push({
-                    __rowId: rowId,
-                    __isNew: true,
-                    __isEditing: false,
-                    __previewSno: draftRows.length + newRows.length + 1,
-
-                    TRANSACTION_TYPE: "SR",
-                    _type: "SR",
-
-                    ITEMID: String(item.ITEMID || ""),
-                    TAGNO: String(item.TAGNO || ""),
-                    PCS: Number(item.PCS || 1),
-                    GRSWT: Number(item.GRSWT || 0),
-                    STNWT: totalStoneWeight,
-                    NETWT: Number(item.NETWT || 0),
-                    WASTYPE: item.WASTYPE,
-                    TOUCH: Number(item.TOUCH || 0),
-                    MC: Number(item.MC || 0),
-                    SNO: item.SNO,
-                    DESCRIPTION: item.DESCRIPTION || "",
-
-                    _hasStones: stonesWithId.length > 0,
-                    _hasCharges: !!item.OtherChargesDetails,
-                });
-            });
-
-            if (newRows.length > 0) {
-                toaster.create({
-                    title: "Items Loaded",
-                    description: `${newRows.length} item(s) loaded into draft`,
-                    type: "success",
-                    duration: 1000,
-                });
-            }
-        },
-        [draftRows]
-    );
-
    
 
-    // Main calculation function
 
     /*--------------------------------STOCK CHECKING------------------------ */
 
@@ -745,79 +662,9 @@ export default function SalesPage() {
         return isIssueType(transactionType) ? pureNameCollection : itemsCollection;
     };
 
-    const getActiveFilterForType = (transactionType: SaleTransactionType) => {
-        return isIssueType(transactionType) ? purenameFilter : itemsFilter;
-    };
-
-    /* ================================
-         ADD NEW ROW IN DRAFT TABLE FOR SPECIFIC TYPE
-      ================================ */
-
-    const createEmptyRowForType = (transactionType: SaleTransactionType) => {
-        const base = {
-            // Make sure this ID is unique and consistent
-            __rowId: `row-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
-            __isNew: true,
-            __previewSno: draftRows.filter(r => r.TRANSACTION_TYPE === transactionType.code).length + 1,
-            TRANSACTION_TYPE: transactionType.code,
-        };
-        if (isIssueType(transactionType)) {
-            return {
-                ...base,
-                PUREID: "",
-                WT: "",
-                TOUCH: "",
-                PUREWT: "",
-                AWT: "",
-                ATOUCH: "",
-                APUREWT: "",
-            };
-        }
-
-        return {
-            ...base,
-            ITEMID: "",
-            PCS: "",
-            GRSWT: "",
-            STNWT: "",
-            NETWT: "",
-            TOUCH: "",
-            PUREWT: "",
-            HMC: "",
-            RATE: "",
-            MCHARGE: "",
-            WASTAGE: "",
-            DESCRIPTION: "",
-            TAGNO: "",
-        };
-    };
 
 
 
-
-
-    // Delete stones for a specific draft row
-    const deleteStonesForDraftRow = (draftRowId: string) => {
-        const all = JSON.parse(localStorage.getItem(SALE_STONE_MASTER_KEY) || "[]");
-        const filtered = all.filter((s: StoneRow) => s.draftRowId !== draftRowId);
-        localStorage.setItem(SALE_STONE_MASTER_KEY, JSON.stringify(filtered));
-    };
-
-    // Create empty stone row for a draft row
-    const createEmptyStoneRow = (draftRowId: string): StoneRow => {
-        return {
-            id: `stone-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
-            draftRowId, // This must match the draft row ID exactly
-            stoneId: "",
-            subStoneId: "",
-            stonePcs: "",
-            stoneWeight: "",
-            stoneUnit: "g",
-            stoneCalculation: "w",
-            stoneRate: "",
-            stoneAmount: "",
-        };
-    };
 
 
 
@@ -834,16 +681,7 @@ export default function SalesPage() {
 
 
 
-    //For Saving the Purchase with Ref
-    useEffect(() => {
-        initialDraftRowsRef.current = JSON.parse(JSON.stringify(draftRows));
-    }, []);
-
-
-    useEffect(() => {
-        initialClosingRef.current = JSON.parse(JSON.stringify(getClosingDetailsPayload()));
-    }, []);
-
+   
 
     const handleRowClick = (row: any, clickedTransactionType: string) => {
         // console.log('Row clicked:', row, 'Type:', clickedTransactionType);
@@ -875,8 +713,13 @@ export default function SalesPage() {
     const handleEditTransaction = useCallback((data: any, sno: string) => {
  
         setOpeningBalance(data , true);
-        const result = loadTransaction(data, sno);
+        const result = loadTransaction(data, sno ,isTagedItem);
         if (!result) return;
+
+       
+        setSelectedTransactionTypes(result.selectedTransactionTypes);
+        setDraftRows(result.rows);
+   
 
     }, []);
 
@@ -906,33 +749,34 @@ export default function SalesPage() {
        ================================ */
     const {closingDetails ,setClosingDetails , resetBalance } = useSalesBalanceSummary();
 
+    console.log(closingDetails,'closingDetailsfromstore')
 
 
-    const closingDetailsRef = useRef(closingDetails);
 
 
     useConversionSync(Number(headerForm.RATEGM || 0));
+
     const {closingPure ,closingCash} = useClosingCalculation(closingDetails ,openingBalances , Number(headerForm.RATEGM || 0) );
 
 
     // ✅ Always reads latest — even before re-render
-    const getClosingDetailsPayload = useCallback((): ClosingDetails => {
-        const d = closingDetailsRef.current;
+    const getClosingDetailsPayload = (): ClosingDetails => {
+        const d = closingDetails;
+
         return {
             convType: d.convType,
-            convAmt: d.convAmt ? parseFloat(d.convAmt) : 0,
-            convWt: d.convWt ? parseFloat(d.convWt) : 0,
-            discAmt: d.discAmt ? parseFloat(d.discAmt) : 0,
-            discWt: d.discWt ? parseFloat(d.discWt) : 0,
-            cashPaid: d.cashPaid ? parseFloat(d.cashPaid) : 0,
-            cashRcvd: d.cashRcvd ? parseFloat(d.cashRcvd) : 0,
-            bankPaid: d.bankPaid ? parseFloat(d.bankPaid) : 0,
-            bankRcvd: d.bankRcvd ? parseFloat(d.bankRcvd) : 0,
+            convAmt: Number(d.convAmt || 0),
+            convWt: Number(d.convWt || 0),
+            discAmt: Number(d.discAmt || 0),
+            discWt: Number(d.discWt || 0),
+            cashPaid: Number(d.cashPaid || 0),
+            cashRcvd: Number(d.cashRcvd || 0),
+            bankPaid: Number(d.bankPaid || 0),
+            bankRcvd: Number(d.bankRcvd || 0),
             bankPaidDetails: d.bankPaidDetails,
             bankRcvdDetails: d.bankRcvdDetails,
         };
-    }, []);
-
+    };
 
     const handleLoadFromStock = (stockRow: any) => {
         // 1️⃣ Determine if this is issue-type stock
@@ -1118,6 +962,7 @@ export default function SalesPage() {
             getClosingDetailsPayload() ?? {}
         );
     }, [getClosingDetailsPayload]);
+    
 
     console.log(isDraftRowsChanged(), isClosingChanged(), 'isDraftRowsChanged, isClosingChanged')
 
@@ -1145,6 +990,7 @@ export default function SalesPage() {
             draftRows,
             isDraftRowsChanged,
             isClosingChanged,
+            getClosingDetailsPayload,
             SALE_TRANSACTION_KEY_MAP,
             SALETRANSACTIONTYPES,
             getStockAvailability,
@@ -1161,27 +1007,12 @@ export default function SalesPage() {
             return;
         }
 
-        // Get stones
-        const allStones = JSON.parse(localStorage.getItem(SALE_STONE_MASTER_KEY) || "[]");
-        const allCharges = JSON.parse(localStorage.getItem("MISC_CHARGE_MASTER") || "[]");
-
-        const stonesByDraftRowId = allStones.reduce((acc: Record<string, StoneRow[]>, stone: StoneRow) => {
-            if (!acc[stone.draftRowId]) acc[stone.draftRowId] = [];
-            acc[stone.draftRowId].push(stone);
-            return acc;
-        }, {});
-
-        const chargesByDraftRowId = allCharges.reduce((acc: Record<string, any[]>, charge: any) => {
-            if (!acc[charge.draftRowId]) acc[charge.draftRowId] = [];
-            acc[charge.draftRowId].push(charge);
-            return acc;
-        }, {});
-
+        console.log(draftRows,'draftRows')
+      
+       
       
         const transactionDetails: SaleTransactionItems = buildTransactionPayload({
             draftRows,
-            stonesByDraftRowId,
-            chargesByDraftRowId,
             SALE_TRANSACTION_KEY_MAP,
             normalizeRowForApi,
             isTagedItem,
@@ -1198,8 +1029,9 @@ export default function SalesPage() {
             CLOSING_DETAILS: getClosingDetailsPayload()
         };
 
-        console.log(payload, 'createTransactionPayload')
-
+        console.log(payload, 'createTransactionPayload');
+        return;
+  
         createTransaction.mutate({ payload: payload, TRANTYPE: "sales" }, {
             onSuccess: () => {
 
@@ -1216,22 +1048,9 @@ export default function SalesPage() {
                 goldStockRefetch();
                 itemStockRefetch();
                 openingBalanceRefetch();
-                setSelectedTransactionId(null);
-         
-                setClosingDetails({
-                    convType: "",
-                    convAmt: "",
-                    convWt: "",
-                    discAmt: "",
-                    discWt: "",
-                    cashPaid: "",
-                    cashRcvd: "",
-                    bankPaid: "",
-                    bankRcvd: "",
-                    bankPaidDetails: [],
-                    bankRcvdDetails: [],
-                });
-              
+                
+                resetStore();
+                resetBalance();
 
             },
 
@@ -1357,12 +1176,7 @@ export default function SalesPage() {
                 RATEGM: metalRates ? formatToFixed(metalRates["GOLD 916.00"], 2) : "",
             });
 
-            // Clear local storage keys
-            [
-                DRAFT_KEY,
-                TYPE_KEY,
-                DATE_RANGE_KEY,
-            ].forEach(key => localStorage.removeItem(key));
+         
 
             toaster.create({
                 title: "Transaction Updated",
@@ -1412,7 +1226,6 @@ export default function SalesPage() {
             localStorage.removeItem(TYPE_KEY);
         }
 
-        localStorage.removeItem(DRAFT_KEY);
     };
 
 
@@ -1475,9 +1288,7 @@ export default function SalesPage() {
    
     return (
         <>
-            <Box display={'flex'} bg={theme.colors.formColor} fontSize={'md'} fontWeight={'bold'} justifyContent={'center'} p={1} mb={1} rounded={'xl'} >
-                SALES
-            </Box>
+            
             <Flex gap={1} >
 
                 {/* LEFT – 70% */}
@@ -1597,8 +1408,6 @@ export default function SalesPage() {
                                                         loading: billDetailsLoading,
                                                         showBillModal,
                                                         handleBillShow: handleBillShow,
-                                                        handleSelectedItems: handleSelectedItems,
-                                                        handleLoadSelectedItems: handleLoadSalesItems
                                                     }}
                                                 />
                                             </Box>

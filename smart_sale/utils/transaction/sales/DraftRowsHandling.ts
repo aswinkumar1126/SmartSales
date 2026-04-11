@@ -13,27 +13,27 @@ export interface SALESTRANSACTIONITEMS {
     ITEMID: string | null;
     SNO?: string;
     TAGNO?: string;
-    PCS: string;  
-    GRSWT: string;  
-    STNWT: string;  
-    NETWT: string;  
+    PCS: string;
+    GRSWT: string;
+    STNWT: string;
+    NETWT: string;
     WASTYPE: string;
-    TOUCH: string;  
-    PUREWT: string;  
-    HMC: string;  
-    STNAMT: string;  
-    MC: string;  
+    TOUCH: string;
+    PUREWT: string;
+    HMC: string;
+    STNAMT: string;
+    MC: string;
     DESCRIPTION?: string;
 }
 
 // Issue Transaction Item Interface (with string for form handling)
 export interface ISSUETRANSACTIONITEMS {
-    WT: string;  
-    TOUCH: string;  
-    PUREWT?: string;  
-    AWT?: string;  
-    ATOUCH?: string;  
-    APUREWT?: string;  
+    WT: string;
+    TOUCH: string;
+    PUREWT?: string;
+    AWT?: string;
+    ATOUCH?: string;
+    APUREWT?: string;
 }
 
 // Base Draft Row Interface
@@ -42,6 +42,7 @@ export interface DraftRow {
     __isNew?: boolean;
     __tempId?: string;
     __previewSno?: number;
+    __isTaged?:boolean;
     TRANSACTION_TYPE: string;
     items?: SALESTRANSACTIONITEMS[] | ISSUETRANSACTIONITEMS[];
     [key: string]: any;
@@ -63,9 +64,10 @@ export interface SalesDraftRow extends DraftRow {
     STNAMT: string;
     MC: string;
     DESCRIPTION?: string;
-    RATE: string;  
-    AMOUNT: string;  
-    DISC: string;  
+    RATE: string;
+    AMOUNT: string;
+    DISC: string;
+    ITEM_TYPE: string;
 }
 
 // Issue Draft Row (IS) - All fields as strings for form handling
@@ -76,13 +78,13 @@ export interface IssueDraftRow extends DraftRow {
     AWT?: string;
     ATOUCH?: string;
     APUREWT?: string;
-    RATE: string;  
-    AMOUNT: string;  
+    RATE: string;
+    AMOUNT: string;
 }
 
 // Receipt Draft Row (RE) - All fields as strings for form handling
 export interface ReceiptDraftRow extends DraftRow {
-    AMOUNT: string;  
+    AMOUNT: string;
     BANK_NAME: string;
     TRAN_MODE: string;
     CHQ_NO: string;
@@ -90,19 +92,11 @@ export interface ReceiptDraftRow extends DraftRow {
     NOTES?: string;
 }
 
-/**
- * Generate a temporary ID for a draft row
- * Format: temp-{transactionType}-{timestamp}-{counter}
- */
 export const getDraftRowTempId = (transactionType: string): string => {
     tempIdCounter++;
     return `temp-${transactionType}-${Date.now()}-${tempIdCounter}`;
 };
 
-/**
- * Generate a permanent ID for saved rows
- * Format: row-{transactionType}-{timestamp}-{random}
- */
 export const getPermanentRowId = (transactionType: string): string => {
     const random = Math.random().toString(36).substring(2, 8);
     return `row-${transactionType}-${Date.now()}-${random}`;
@@ -155,6 +149,7 @@ export const createEmptySalesRow = (transactionType: 'SA' | 'SR'): SalesDraftRow
     return {
         __rowId: '',
         __isNew: true,
+        __isTaged:true,
         TRANSACTION_TYPE: transactionType,
         ITEMID: null,
         SNO: '',
@@ -173,6 +168,7 @@ export const createEmptySalesRow = (transactionType: 'SA' | 'SR'): SalesDraftRow
         RATE: '',
         AMOUNT: '',
         DISC: '',
+        ITEM_TYPE:'',
     };
 };
 
@@ -247,7 +243,7 @@ export const createDraftRow = (
 
     // Generate appropriate ID
     const rowId = isNew
-        ? getDraftRowTempId(transactionType.value)
+        ? getDraftRowTempId(transactionType.value || 'SA')
         : existingData!.__rowId!;
 
     const previewSno = existingData?.__previewSno || 1;
@@ -259,7 +255,7 @@ export const createDraftRow = (
         __isNew: isNew,
         __tempId: isNew ? rowId : undefined,
         __previewSno: previewSno,
-        TRANSACTION_TYPE: transactionType.value,
+        TRANSACTION_TYPE: transactionType.value ? transactionType.value : '',
     };
 };
 
@@ -329,75 +325,7 @@ export const validateDraftRow = (
     };
 };
 
-/**
- * Calculate calculated fields for sales row
- */
-export const calculateSalesRowFields = (row: SalesDraftRow): Partial<SalesDraftRow> => {
-    const updates: Partial<SalesDraftRow> = {};
 
-    const stnwt = toNumber(row.STNWT);
-    const rate = toNumber(row.RATE);
-    const disc = toNumber(row.DISC);
-
-    // Calculate STNAMT (Stone Amount)
-    if (stnwt > 0 && rate > 0) {
-        const stnamt = stnwt * rate;
-        updates.STNAMT = stnamt.toFixed(2);
-
-        // Calculate AMOUNT
-        let amount = stnamt;
-        if (disc > 0) {
-            amount = stnamt - (stnamt * disc / 100);
-        }
-        updates.AMOUNT = amount.toFixed(2);
-    }
-
-    return updates;
-};
-
-/**
- * Calculate calculated fields for issue row
- */
-export const calculateIssueRowFields = (row: IssueDraftRow): Partial<IssueDraftRow> => {
-    const updates: Partial<IssueDraftRow> = {};
-
-    const wt = toNumber(row.WT);
-    const touch = toNumber(row.TOUCH);
-    const rate = toNumber(row.RATE);
-
-    // Calculate PUREWT = WT * (TOUCH / 100)
-    if (wt > 0 && touch > 0) {
-        const purewt = wt * (touch / 100);
-        updates.PUREWT = purewt.toFixed(3);
-
-        // Calculate AMOUNT
-        if (rate > 0) {
-            const amount = purewt * rate;
-            updates.AMOUNT = amount.toFixed(2);
-        }
-    }
-
-    return updates;
-};
-
-/**
- * Update row with auto-calculated fields
- */
-export const updateRowWithCalculations = (row: DraftRow): DraftRow => {
-    const transactionType = row.TRANSACTION_TYPE;
-
-    if (transactionType === 'SA' || transactionType === 'SR') {
-        const updates = calculateSalesRowFields(row as SalesDraftRow);
-        return { ...row, ...updates };
-    }
-
-    if (transactionType === 'IS') {
-        const updates = calculateIssueRowFields(row as IssueDraftRow);
-        return { ...row, ...updates };
-    }
-
-    return row;
-};
 
 /**
  * Create a deep copy of a draft row

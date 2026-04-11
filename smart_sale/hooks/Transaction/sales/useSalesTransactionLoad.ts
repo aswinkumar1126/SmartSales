@@ -7,10 +7,10 @@ import { mapSalesTransactionItems } from "@/utils/transaction/sales/MapSalesTran
 
 export const useLoadSalesTransaction = () => {
     const { setHeaderForm, setAccCode, startEdit } = useSalesHeader();
-    const { setClosingDetails } = useSalesBalanceSummary(); // if using zustand
-    // const { setBaseOpening } = useOpeningBalanceStore(); // optional
+    const { setClosingDetails } = useSalesBalanceSummary(); 
+    // const { setBaseOpening } = useOpeningBalanceStore(); 
 
-    const loadTransaction = (transactionData: any, sno: string) => {
+    const loadTransaction = (transactionData: any, sno: string ,isTagedItem:(id: number | null) => boolean ) => {
         if (!transactionData) return;
 
         startEdit(sno);
@@ -20,9 +20,9 @@ export const useLoadSalesTransaction = () => {
 
         // loadOpening(transactionData.BALANCE, setBaseOpening);
 
-        const { rows, stones, charges } = mapSalesTransactionItems(transactionData);
+        const { rows, stones, charges ,selectedTransactionTypes } = mapSalesTransactionItems(transactionData, isTagedItem );
 
-        return { rows, stones, charges };
+        return { rows, stones, charges, selectedTransactionTypes };
     };
 
     return { loadTransaction };

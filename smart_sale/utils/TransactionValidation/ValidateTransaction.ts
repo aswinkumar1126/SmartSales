@@ -1,12 +1,27 @@
 import { VALIDATORS } from "./validatorEngine";
+import { ClosingDetails } from "@/types/transcation/SaleTransaction";
 
-
-
+// ✅ Check if closing details has ANY meaningful value
+const hasAnyClosingValue = (payload: ClosingDetails): boolean => {
+    return (
+        (payload.convAmt ?? 0) !== 0 ||
+        (payload.convWt ?? 0) !== 0 ||
+        (payload.discAmt ?? 0) !== 0 ||
+        (payload.discWt ?? 0) !== 0 ||
+        (payload.cashPaid ?? 0) !== 0 ||
+        (payload.cashRcvd ?? 0) !== 0 ||
+        (payload.bankPaid ?? 0) !== 0 ||
+        (payload.bankRcvd ?? 0) !== 0 ||
+        (payload.bankPaidDetails?.length ?? 0) > 0 ||
+        (payload.bankRcvdDetails?.length ?? 0) > 0
+    );
+};
 
 export const validateTransactions = ({
     draftRows,
     isDraftRowsChanged,
     isClosingChanged,
+    getClosingDetailsPayload,
     SALE_TRANSACTION_KEY_MAP,
     SALETRANSACTIONTYPES,
     getStockAvailability,
@@ -16,20 +31,34 @@ export const validateTransactions = ({
 
     const draftChanged = isDraftRowsChanged();
     const closingChanged = isClosingChanged();
+    const closingPayload = getClosingDetailsPayload();
+    const closingHasValues = hasAnyClosingValue(closingPayload);
 
-    // console.log(draftChanged , closingChanged ,'changesmade');    
+    console.log({ draftChanged, closingChanged, closingHasValues }, 'changesMade');
 
-    if (!draftChanged && !closingChanged) {
+    // ✅ Must have EITHER draft rows with changes OR closing details with any value
+    const hasSomethingToSave = draftChanged || closingChanged || closingHasValues;
+
+    if (!hasSomethingToSave) {
         return { valid: false, error: "No changes detected to save." };
     }
 
-    if (draftRows.length === 0) {
+    // ✅ If only closing details — allow save, skip row validations
+    const hasDraftContent = draftRows.length > 0;
+
+    if (!hasDraftContent && !draftChanged) {
+        // Only closing details present — already passed hasSomethingToSave check
+        return { valid: true };
+    }
+
+    // ✅ Draft rows exist but are empty after changes
+    if (draftChanged && draftRows.length === 0) {
         return { valid: false, error: "Please add at least one item." };
     }
 
+    // ✅ Row-level validation
     for (let i = 0; i < draftRows.length; i++) {
         const row = draftRows[i];
-
         const mappedType = SALE_TRANSACTION_KEY_MAP[row.TRANSACTION_TYPE];
 
         if (!mappedType) {
@@ -37,43 +66,38 @@ export const validateTransactions = ({
         }
 
         const validator = VALIDATORS[mappedType];
-
         if (validator) {
             const error = validator(row, { isTagedItem });
-
             if (error) {
                 return { valid: false, error: `Row ${i + 1}: ${error}` };
             }
         }
     }
 
-    // ---------------- STOCK VALIDATION ----------------
+    // ✅ Stock validation
     const usedByPureId: Record<string, number> = {};
 
     draftRows.forEach((row: any) => {
         const transactionType = SALETRANSACTIONTYPES.find(
             (t: any) => t.value === row.TRANSACTION_TYPE
         );
-
         if (!transactionType) return;
 
         const isIssue = isIssueType(transactionType);
-
         if (isIssue && row.PUREID) {
             const key = String(row.PUREID);
-            usedByPureId[key] =
-                (usedByPureId[key] || 0) + Number(row.WT || 0);
+            usedByPureId[key] = (usedByPureId[key] || 0) + Number(row.WT || 0);
         }
     });
 
     for (const pureId in usedByPureId) {
         const availability = getStockAvailability(pureId);
-        console.log(availability,'availabilityofstock')
+        console.log(availability, 'availabilityofstock');
 
         if (availability && usedByPureId[pureId] > availability.total) {
             return {
                 valid: false,
-                error: `Pure ID ${pureId} exceeds stock`,
+                error: `Pure ID ${pureId} exceeds available stock`,
             };
         }
     }

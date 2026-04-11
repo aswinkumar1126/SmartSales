@@ -2,7 +2,12 @@ import { useQuery } from "@tanstack/react-query";
 import { ItemService } from "@/service/ItemService";
 
 type stoneItemsParam = {
-    STUDDED?:"Y"|"N"
+
+    STUDDED?:"Y"|"N",
+    STUDDEDTYPE?: "T"|"D" | "" | string;
+    STNPRESENT?:"Y"|"N";
+    STOCKTYPE ?: "T" | "N" | string;
+
 }
 
 export const useItems = (filter?: string) => {

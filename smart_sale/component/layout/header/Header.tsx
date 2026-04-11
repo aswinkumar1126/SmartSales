@@ -23,7 +23,7 @@ const Header = ({ onOpenMenu }: any) => {
     
     const {pageName ,description} =usePageName();
 
-    console.log(pageName ,description ,'pagenameinheader');
+
     const {
         sidebarCollapsed,
         toggleSidebar
@@ -149,7 +149,7 @@ const Header = ({ onOpenMenu }: any) => {
                 </HStack>
                 <HStack
                     bg={theme.colors.formColor}
-                    px={3}
+                    px={4}
                     py={1}
                     spaceX={2}
                     borderRadius="full"
@@ -171,14 +171,14 @@ const Header = ({ onOpenMenu }: any) => {
 
 
                     {/* Description */}
-                    <Text
+                    {/* <Text
                         fontSize="xs"
                         color="gray.600"
                         maxW="260px"
                         truncate
                     >
                         {description}
-                    </Text>
+                    </Text> */}
                 </HStack>
 
                 {/* Right section with theme toggle */}

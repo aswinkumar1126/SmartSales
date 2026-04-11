@@ -36,6 +36,8 @@ import { SaleTransactionKey, SALESTRANSACTIONITEMS } from "@/types/transcation/S
             const itemId = rest.ITEMID ? Number(rest.ITEMID) : null;
             const tagged = isTaggedItem(itemId);
 
+            console.log(tagged,'tagged')
+
             const payload: SALESTRANSACTIONITEMS = {
                 ITEMID: itemId,
                 PCS: Number(rest.PCS || 0),

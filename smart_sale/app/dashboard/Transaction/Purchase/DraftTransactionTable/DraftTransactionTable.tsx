@@ -540,9 +540,9 @@ export default function DraftTransactionTable({
                 const allStones = JSON.parse(localStorage.getItem("STONE_MASTER") || "[]");
                 const rowStones = allStones.filter((s: StoneRow) => s.draftRowId === currentEditingRowId);
                 if (rowStones.length > 0) {
-                    const totalStoneWeight = rowStones.reduce(
-                        (sum: any, s: any) => sum + (s.stoneUnit === "c" ? s.stoneWeight / 5 : s.stoneWeight), 0
-                    );
+                    const totalStoneWeight = rowStones.reduce((sum:any, s:any) => {
+                        return sum + Number(s.stoneWeight || 0);
+                    }, 0);
                     if (totalStoneWeight > 0) {
                         setFormData(prev => ({ ...prev, STNWT: totalStoneWeight.toFixed(3) }));
                     }

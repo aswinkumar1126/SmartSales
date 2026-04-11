@@ -6,7 +6,6 @@ export type SaleTransactionKey =
    
 
 
-
 export interface SaleTransactionType {
     code: "IS" | "RE" | "SA" | "SR";  
     key: SaleTransactionKey;                 

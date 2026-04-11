@@ -17,7 +17,7 @@ export const useIsTaggedItem = (items: Item[]) => {
 
     // 🔥 Fast lookup (O(1))
     const isTaggedItem = useCallback((itemId: number | null) => {
-        if (itemId === null) return false;
+        if (itemId === null || itemId === undefined) return false;
         return valueSet.has(itemId);
     }, [valueSet]);
 

@@ -11,7 +11,6 @@ import {
     Span
 } from "@chakra-ui/react";
 import { useState } from "react";
-import { FaEdit } from "react-icons/fa";
 import { CustomTable, TableColumn } from "@/component/table/CustomTable";
 import { useTheme } from "@/context/theme/themeContext";
 import { CapitalizedInput } from "@/components/ui/CapitalizedInput";
@@ -23,6 +22,8 @@ import { formatToFixed } from "@/utils/format/numberFormat";
 import loadImg from '@/asserts/icons/download.png';
 import Image from "next/image";
 
+import { useLoadSalesReturnItems } from "@/hooks/Transaction/sales/useLoadSalesReturnItems";
+
 interface SalesBillViewModalProps {
     isOpen: boolean;
     billParams: billDetailsParams;
@@ -31,8 +32,7 @@ interface SalesBillViewModalProps {
     loading: boolean;
     highlightedId?: number | string;
     onClose: () => void;
-    handleSelectionChange: (selectedRows:any[]) => void;
-    handleLoadItems:(items:any[]) => void;
+
 }
 
 export default function SalesBillViewModal({
@@ -43,31 +43,23 @@ export default function SalesBillViewModal({
     billDetails,
     loading,
     highlightedId,
-    handleSelectionChange,
-    handleLoadItems
-   
+ 
 }: SalesBillViewModalProps) {
     const today = new Date().toISOString().split("T")[0];
 
-    console.log(billDetails, 'billDetails');
+    const { loadSalesReturnItems } = useLoadSalesReturnItems();
 
 
     // State to store selected IDs and rows
     const [selectedItemIds, setSelectedItemIds] = useState<(string | number)[]>([]);
     const [selectedItems, setSelectedItems] = useState<any[]>([]);
 
+
     // Handle selection change from CustomTable and pass to parent
     const onSelectionChange = (selectedIds: (string | number)[], selectedRows: any[]) => {
-        // Update local state if needed
+     
         setSelectedItemIds(selectedIds);
         setSelectedItems(selectedRows);
-        console.log(selectedRows,'selectedRows')
-        // Pass to parent component
-        handleSelectionChange(selectedRows);
-
-        // Log for debugging
-        console.log("Selected IDs in child:", selectedIds);
-        console.log("Selected Rows in child:", selectedRows);
     };
 
     const { theme } = useTheme();
@@ -224,7 +216,7 @@ export default function SalesBillViewModal({
                             height={40}
                             onClick={()=>
                                 {
-                                    handleLoadItems(selectedItems);
+                                    loadSalesReturnItems(selectedItems)
                                     setSelectedItems([]);
                                     setSelectedItemIds([]);
                                     onClose();

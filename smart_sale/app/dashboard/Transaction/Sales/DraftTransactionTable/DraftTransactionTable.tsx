@@ -107,8 +107,6 @@ interface DraftTransactionTableProps {
         loading: boolean;
         showBillModal: boolean;
         handleBillShow: () => void;
-        handleSelectedItems: (filterRows: any[]) => void;
-        handleLoadSelectedItems: (items: any[]) => void;
     };
 }
 
@@ -361,7 +359,7 @@ export default function DraftTransactionTable({
     // ── Visible fields (excludes auto-calculated display-only fields) ─────────
     const visibleFormFields = useMemo(
         () => formFields.filter(
-            (f) => !["NETWT", "PUREWT", "APUREWT"].includes(f.key) && f.type !== "calculated"
+            (f) => !["NETWT","STNAMT", "PUREWT", "APUREWT"].includes(f.key) && f.type !== "calculated"
         ),
         [formFields]
     );
@@ -428,11 +426,9 @@ export default function DraftTransactionTable({
             const rowStones = rowToEdit._stones || [];
             console.log(rowStones,'rowStonesrowStones')
             if (rowStones.length > 0) {
-                const totalStoneWeight = rowStones.reduce(
-                    (sum: number, s: any) =>
-                        sum + (s.stoneUnit === "c" ? s.stoneWeight / 5 : s.stoneWeight),
-                    0
-                );
+                const totalStoneWeight = rowStones.reduce((sum: number, s: any) => {
+                    return sum + Number(s.stoneWeight || 0);
+                }, 0);
                 if (totalStoneWeight > 0) {
                     setFormData((prev) => ({ ...prev, STNWT: totalStoneWeight.toFixed(3) }));
                 }
@@ -554,11 +550,7 @@ export default function DraftTransactionTable({
         [visibleFormFields]
     );
 
-    // ✅ FIX 2: moveNext — only skip explicitly disabled fields.
-    //    The old code also skipped fields whose dependsOn parent was empty,
-    //    which meant TOUCH, GRSWT, STNWT etc. were unreachable via Enter
-    //    unless ITEMID was already filled. Removing that condition restores
-    //    normal tab-order navigation through all visible fields.
+  
     const moveNext = useCallback(
         (key: string) => {
             const idx = visibleFormFields.findIndex((f) => f.key === key);
@@ -967,7 +959,7 @@ export default function DraftTransactionTable({
     const renderFormCell = (field: FormField) => {
         const ref = fieldRefs.current[field.key];
         const isInvalid = !!errors[field.key] && !!touched[field.key];
-        const shouldDisable = field.disabled || (!!field.dependsOn && !formData[field.dependsOn]);
+        const shouldDisable = field.disabled || (!!field.dependsOn && !formData[field.dependsOn]) ;
 
         if (field.key === "TAGNO") {
             return (
@@ -987,6 +979,7 @@ export default function DraftTransactionTable({
                 </Box>
             );
         }
+
 
         if (field.key === "STNWT") {
             return (
@@ -1046,6 +1039,20 @@ export default function DraftTransactionTable({
                 </Box>
             );
         }
+        if(field.key === "STNAMT"){
+            return (
+                <CapitalizedInput 
+                    field={field.key}
+                    value={formData[field.key] || ""}
+                    onEnter={() => moveNext(field.key)}
+                    onChange={(_, v) => handleChange(field.key, v)}
+                    type="number"
+                    decimalScale={2}
+                    allowFocus
+                    disabled
+                />
+            )
+        } 
 
         if (field.key === "DESCRIPTION") {
             return (
@@ -1421,8 +1428,6 @@ export default function DraftTransactionTable({
                 onBillParamChange={onSaleReturnModal.onBillParamChange}
                 billDetails={onSaleReturnModal.billDetails}
                 loading={onSaleReturnModal.loading}
-                handleSelectionChange={onSaleReturnModal.handleSelectedItems}
-                handleLoadItems={onSaleReturnModal.handleLoadSelectedItems}
             />
         </Box>
     );

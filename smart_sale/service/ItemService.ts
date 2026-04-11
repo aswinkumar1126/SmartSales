@@ -5,7 +5,12 @@ const BASE = "/item";
 
 
 type stoneItemsParam = {
-    STUDDED?: "Y" | "N"
+
+    STUDDED?: "Y" | "N",
+    STUDDEDTYPE?: "T" | "D" | "" | string;
+    STNPRESENT?: "Y" | "N";
+    STOCKTYPE?: string;
+
 }
 
 export const ItemService = {
@@ -23,11 +28,19 @@ export const ItemService = {
     },
     getStoneItems: async (filter?: stoneItemsParam) => {
         try {
-            console.log(filter,'filter from service')
-            const response = await axiosInstance.get(`${BASE}/stone`, {
-                // If filter exists, send as `search` query param
-                params: filter ? filter : undefined,
+            const cleanedParams = Object.fromEntries(
+                Object.entries(filter || {}).filter(
+                    ([_, value]) => value !== undefined && value !== null
+                )
+            );
+            
+            console.log(cleanedParams,'cleanedParams')
+            const response = await axiosInstance.get(`${BASE}`, {
+                params: Object.keys(cleanedParams).length
+                    ? cleanedParams
+                    : undefined,
             });
+            console.log(response.data, 'stone items response')
             return response.data;
         } catch (error: any) {
             console.error('Error fetching all items:', error?.response?.data || error.message);
@@ -61,6 +74,7 @@ export const ItemService = {
     // ✅ Update item
     update: async (payload: ItemMast) => {
         try {
+            console.log("Sending payload to server:", payload);
             const response = await axiosInstance.put(`${BASE}/update`, payload);
             console.log(response ,'response from api')
             return response.data;

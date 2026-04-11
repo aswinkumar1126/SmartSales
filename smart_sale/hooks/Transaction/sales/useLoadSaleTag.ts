@@ -82,7 +82,7 @@ export const useLoadSaleTag = () => {
                 PCS: 1,
 
                 GRSWT: Number(data.GRSWT) || 0,
-                STNWT: Number(data.STNWT) || 0,
+                STNWT: Number(data.SALESSTNWT) || 0,
                 NETWT: Number(data.NETWT) || 0,
 
                 TOUCH: Number(data.TOUCH) || 0,
@@ -115,7 +115,7 @@ export const useLoadSaleTag = () => {
                         ),
 
                         stonePcs: Number(stone.STNPCS || 1),
-                        stoneWeight: Number(stone.STNWT || 0),
+                        stoneWeight: Number(stone.SALESSTNWT || 0),
 
                         stoneUnit: stone.STONEUNIT || "g",
                         stoneCalculation: stone.CALCMODE || "w",
@@ -127,16 +127,9 @@ export const useLoadSaleTag = () => {
 
                 console.log(stonesWithId,'stonesWithId')
                 // recalc stone weight
-                const totalStoneWeight = stonesWithId.reduce(
-                    (sum, s) => {
-                        const weight =
-                            s.stoneUnit === "c"
-                                ? s.stoneWeight / 5
-                                : s.stoneWeight;
-                        return sum + weight;
-                    },
-                    0
-                );
+                const totalStoneWeight = stonesWithId.reduce((sum: number, s: any) => {
+                    return sum + Number(s.stoneWeight || 0);
+                }, 0);
 
                 newRow.STNWT = totalStoneWeight;
                 newRow._stones= stonesWithId;

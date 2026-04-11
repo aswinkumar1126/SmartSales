@@ -1,6 +1,7 @@
 export const loadSalesClosing = (closing: any, setClosingDetails: any) => {
     if (!closing) return;
 
+    console.log(closing, "closingclosing");
     setClosingDetails({
         convType: closing.CONVTYPE || "",
         convAmt: closing.CONVAMT ? String(closing.CONVAMT) : "",

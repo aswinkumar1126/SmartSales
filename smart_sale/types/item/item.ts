@@ -48,7 +48,7 @@ export interface ItemMast {
     sizeStock: "Y" | "N" | null;
     stockReport: "Y" | "N" | null;
     studded: "Y" | "N" | null;
-    studdedStone: "T" | "D" | null;
+    studdedStone: "T" | "D" | null | "";
     subItem: "Y" | "N" | null;
     tagImage: "Y" | "N" | null;
     tagLock: "Y" | "N" | null;
@@ -59,6 +59,7 @@ export interface ItemMast {
     valueAddedType: string | null;
     valueCalc: "Y" | "N" | null;
     zeroWastage: "Y" | "N" | null;
+    stnPresent : "Y" | "N" | null | "";
 
     /* ===== NUMERIC ===== */
     currentStyleNo: number | null;

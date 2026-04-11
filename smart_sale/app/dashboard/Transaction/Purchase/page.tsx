@@ -68,6 +68,8 @@ import { getTagDetails } from "@/service/TagedService";
 import { useClosingCalculation } from "@/hooks/Transaction/purchase/useClosingBalanceCalculation";
 import { useConversionSync } from "@/hooks/Transaction/purchase/useConversionSync";
 
+import { BaseClosingFormDetails } from "@/types/balanceSummary/BalanceSummary";
+
 
 //Icons
 type StoneRow = {
@@ -359,7 +361,7 @@ export default function PurchasePage() {
 
 
     const transactionIdsList = useMemo(() => {
-        const list = transactionList?.data?.snoList;
+        const list = transactionList?.snoList;
         if (!list || !Array.isArray(list)) return [];
 
         return list.map((item: any) => ({
@@ -378,15 +380,15 @@ export default function PurchasePage() {
             }));
         }
 
-        else if (transactionHeaderDetail?.data?.BILLNO && !isEditing) {
+        else if (transactionHeaderDetail?.BILLNO && !isEditing) {
             // Set both BILLNO and ENTRYNO when transaction data is available
             setHeaderForm(prev => ({
                 ...prev,
-                ENTRYNO: transactionHeaderDetail.data.ENTRYNO,
-                BILLNO: transactionHeaderDetail.data.BILLNO,
+                ENTRYNO: transactionHeaderDetail.ENTRYNO,
+                BILLNO: transactionHeaderDetail.BILLNO,
             }));
         }
-    }, [transactionHeaderDetail?.data, headerForm.CUSTOMER, isEditing]);
+    }, [transactionHeaderDetail, headerForm.CUSTOMER, isEditing]);
     // Note: Using transactionList?.data as dependency instead of just BILLNO
 
     useEffect(() => {
@@ -1215,12 +1217,12 @@ export default function PurchasePage() {
             setAccCode(transactionHeaderDetails.ACCODE);
 
             if (transactionClosingDetails) {
-                const loadedClosingDetails: ClosingFormDetails = {
+                const loadedClosingDetails: BaseClosingFormDetails = {
                     convType: transactionClosingDetails.CONVTYPE || "",
                     convAmt: transactionClosingDetails.CONVAMT ? String(transactionClosingDetails.CONVAMT) : "",
                     convWt: transactionClosingDetails.CONVWT ? String(transactionClosingDetails.CONVWT) : "",
-                    discAmt: transactionClosingDetails.DISCAMT ? String(transactionClosingDetails.DISCAMT) : "",
-                    discWt: transactionClosingDetails.DISCWT ? String(transactionClosingDetails.DISCWT) : "",
+                    // discAmt: transactionClosingDetails.DISCAMT ? String(transactionClosingDetails.DISCAMT) : "",
+                    // discWt: transactionClosingDetails.DISCWT ? String(transactionClosingDetails.DISCWT) : "",
                     cashPaid: transactionClosingDetails.CASHPAID ? String(transactionClosingDetails.CASHPAID) : "",
                     cashRcvd: transactionClosingDetails.CASHRCVD ? String(transactionClosingDetails.CASHRCVD) : "",
                     bankPaid: transactionClosingDetails.BANKPAID ? String(transactionClosingDetails.BANKPAID) : "",
@@ -2653,8 +2655,8 @@ export default function PurchasePage() {
                     .toString(36)
                     .substr(2, 5)}`;
 
-                const stoneDetails = Array.isArray(data.STNDETAILS)
-                    ? data.STNDETAILS
+                const stoneDetails = Array.isArray(data.STONEDETAILS)
+                    ? data.STONEDETAILS
                     : [];
 
                 // ---------------- CREATE ROW ----------------
@@ -2739,12 +2741,8 @@ export default function PurchasePage() {
                     // setStoneDetails(updatedStones);
 
                     // ✅ Recalculate STNWT from stones
-                    const totalStoneWeight = stonesWithId.reduce((sum, s) => {
-                        const weight =
-                            s.stoneUnit === "c"
-                                ? s.stoneWeight / 5
-                                : s.stoneWeight;
-                        return sum + weight;
+                     const totalStoneWeight = stonesWithId.reduce((sum:number, s:any) => {
+                    return sum + Number(s.stoneWeight || 0);
                     }, 0);
 
                     newRow.STNWT = totalStoneWeight;

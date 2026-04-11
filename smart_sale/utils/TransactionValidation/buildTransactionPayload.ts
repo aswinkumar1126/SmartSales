@@ -1,16 +1,11 @@
 export const buildTransactionPayload = ({
     draftRows,
-    stonesByDraftRowId,
-    chargesByDraftRowId,
     SALE_TRANSACTION_KEY_MAP,
     normalizeRowForApi,
-    isTagedItem,
 }: any) => {
-
     const transactionDetails: Record<string, any[]> = {};
 
     draftRows.forEach((row: any) => {
-
         const mappedType = SALE_TRANSACTION_KEY_MAP[row.TRANSACTION_TYPE];
         if (!mappedType) return;
 
@@ -18,8 +13,9 @@ export const buildTransactionPayload = ({
             transactionDetails[mappedType] = [];
         }
 
-        // ---------------- STONES ----------------
-        const rowStones = stonesByDraftRowId[row.__rowId] || [];
+        // ✅ DIRECT ACCESS
+        const rowStones = row._stones || [];
+        const rowCharges = row._miscCharges || [];
 
         const validStones = rowStones.filter((stone: any) =>
             stone.stoneId &&
@@ -28,22 +24,12 @@ export const buildTransactionPayload = ({
             stone.stoneRate > 0
         );
 
-        // ---------------- CHARGES ----------------
-        const rowCharges =
-            row._miscCharges || chargesByDraftRowId[row.__rowId] || [];
-
         const validCharges = rowCharges.filter((charge: any) =>
             charge.id && Number(charge.amount) > 0
         );
 
-        // ---------------- NORMALIZE ----------------
-        const normalized = normalizeRowForApi(
-            row,
-            mappedType,
-            isTagedItem
-        );
+        const normalized = normalizeRowForApi(row, mappedType);
 
-        // ---------------- FINAL OBJECT ----------------
         const finalRow = {
             ...normalized,
 

@@ -1,6 +1,4 @@
 
-
-
 export const validateSales = (row: any, ctx: any) => {
     const { isTagedItem } = ctx;
 

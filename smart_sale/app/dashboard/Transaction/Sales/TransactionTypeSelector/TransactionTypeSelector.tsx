@@ -42,6 +42,7 @@ export default function TransactionTypeSelector({
     /* ---------- CLICK HANDLER ---------- */
     const handleTypeClick = (clickedType: any) => {
 
+
         if(!acCode) return toaster.create({ title: "Please select customer", type: "info" });
 
         const isSelected = selectedTransactionTypes.some(
@@ -50,6 +51,21 @@ export default function TransactionTypeSelector({
 
         // REMOVE
         if (isSelected) {
+
+            const isDraftRowsExists = draftRows.some((row: any) => row.TRANSACTION_TYPE === clickedType.value);
+
+        
+            if (isDraftRowsExists){
+                toaster.create({
+                    title: "Transaction rows exist",
+                    description: `You have transaction row(s) of selected ${clickedType.label} .`,
+                    type: "warning",
+                    duration: 2000,
+                });
+                return;
+            };
+           
+
             const confirmRemove = window.confirm(
                 `Remove "${clickedType.label}" from filter?`
             );
