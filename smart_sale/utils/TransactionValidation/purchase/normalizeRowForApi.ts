@@ -1,9 +1,9 @@
-import { SaleTransactionKey, SALESTRANSACTIONITEMS } from "@/types/transcation/SaleTransaction"; 
- 
+
+import { TransactionKey, PurchasePayload } from "@/types/transcation/Transaction"; 
+
  export const normalizeRowForApi = (
      row: any,
-     tranType: SaleTransactionKey,
-     isTaggedItem: (itemId: number | null) => boolean,
+     tranType: TransactionKey,
      editTransaction?: boolean
  ): any => {
 
@@ -16,7 +16,7 @@ import { SaleTransactionKey, SALESTRANSACTIONITEMS } from "@/types/transcation/S
             ...rest
         } = row;
 
-        console.log(row ,'draftrowinapi')
+     
 
         // ---------------- ISSUE / RECEIPT ----------------
         if (tranType === "issue" || tranType === "receipt") {
@@ -32,13 +32,12 @@ import { SaleTransactionKey, SALESTRANSACTIONITEMS } from "@/types/transcation/S
         }
 
         // ---------------- SALES ----------------
-        if (tranType === "sales") {
+        if (tranType === "purchase") {
             const itemId = rest.ITEMID ? Number(rest.ITEMID) : null;
-            const tagged = isTaggedItem(itemId);
 
-            console.log(tagged,'tagged')
+            const tagged = rest.__isTaged ;
 
-            const payload: SALESTRANSACTIONITEMS = {
+            const payload: PurchasePayload = {
                 ITEMID: itemId,
                 PCS: Number(rest.PCS || 0),
                 GRSWT: Number(rest.GRSWT || 0),
@@ -52,8 +51,6 @@ import { SaleTransactionKey, SALESTRANSACTIONITEMS } from "@/types/transcation/S
                 MC: Number(rest.MC || 0),
                
 
-                // ✅ Only include TAGNO if tagged item
-                ...(tagged && { TAGNO: rest.TAGNO || "" }),
 
                 ...(editTransaction && { SNO: String(rest.SNO || "") }),
                 ...(rest.DESCRIPTION && { DESCRIPTION: rest.DESCRIPTION }),
@@ -63,8 +60,8 @@ import { SaleTransactionKey, SALESTRANSACTIONITEMS } from "@/types/transcation/S
         }
 
         // ---------------- SALES RETURN ----------------
-        if (tranType === "sales_return") {
-            const payload: SALESTRANSACTIONITEMS = {
+        if (tranType === "purchase_return") {
+            const payload: PurchasePayload = {
                 ITEMID: rest.ITEMID ? Number(rest.ITEMID) : null,
                 PCS: Number(rest.PCS || 0),
                 GRSWT: Number(rest.GRSWT || 0),
@@ -76,7 +73,6 @@ import { SaleTransactionKey, SALESTRANSACTIONITEMS } from "@/types/transcation/S
                 HMC: Number(rest.HMC || 0),
                 STNAMT: Number(rest.STNAMT || 0),
                 MC: Number(rest.MC || 0),
-                REFSNO: String(rest.SNO),
 
                 // ✅ Flexible return logic
                 ...(rest.TAGNO && { TAGNO: rest.TAGNO }),

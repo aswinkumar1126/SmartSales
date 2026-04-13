@@ -38,6 +38,8 @@ export type SectionDirectItem = {
   label: string;
   route: string;
   icon: React.ElementType;
+  title?: string;
+  description?:string;
 };
 
 // A group with icon and items
@@ -55,9 +57,13 @@ export type DirectMenuItem = {
   label: string;
   route: string;
   icon: React.ElementType;
+  title?:string;
+  description?: string;
 };
 
 export type ParentMenuItem = {
+  title?: string;
+  description?: string;
   type: "parent";
   label: string;
   icon: React.ElementType;
@@ -65,6 +71,8 @@ export type ParentMenuItem = {
 };
 
 export type ChildMenuItem = {
+  title?: string;
+  description?: string;
   label: string;
   route: string;
   icon: React.ElementType;
@@ -112,7 +120,6 @@ export const useSidebar = (): SidebarContextType => {
 };
 
 const STATIC_MENU: SidebarMenu = {
-  // ── Top-level section: Master ─────────────────────────────────────────────
   Master: {
     Accounts: {
       icon: Building2,
@@ -122,15 +129,20 @@ const STATIC_MENU: SidebarMenu = {
           label: "Company",
           icon: Building2,
           route: "/dashboard/Master/Account/Company",
+          title: "COMPANY MASTER",
+          description: "Manage company details and configurations",
         },
         {
           type: "direct",
           label: "Account Head",
           route: "/dashboard/Master/Account/AccountHead",
           icon: Users,
+          title: "ACCOUNT HEAD",
+          description: "Manage account head and ledger groups",
         },
       ],
     },
+
     Item: {
       icon: Boxes,
       items: [
@@ -139,50 +151,66 @@ const STATIC_MENU: SidebarMenu = {
           label: "Metal",
           route: "/dashboard/Master/Item/Metal",
           icon: Coins,
+          title: "METAL MASTER",
+          description: "Define and manage metal types",
         },
         {
           type: "direct",
           label: "Item Master",
           route: "/dashboard/Master/Item/ItemMaster",
           icon: Boxes,
+          title: "ITEM MASTER",
+          description: "Manage all product/item details",
         },
         {
           type: "direct",
           label: "Touch Master",
           route: "/dashboard/Master/Item/touch",
           icon: SlidersHorizontal,
+          title: "TOUCH MASTER",
+          description: "Configure purity touch settings",
         },
         {
           type: "direct",
           label: "Pure Gold Master",
           route: "/dashboard/Master/Item/pureGold",
           icon: Gem,
+          title: "PURE GOLD MASTER",
+          description: "Manage pure gold configurations",
         },
         {
           type: "direct",
           label: "Other Charges",
           route: "/dashboard/Master/Item/OtherCharges",
           icon: PlusCircle,
+          title: "OTHER CHARGES",
+          description: "Manage additional charges and fees",
         },
         {
           type: "direct",
           label: "Size Master",
           route: "/dashboard/Master/Item/size",
           icon: Users,
+          title: "SIZE MASTER",
+          description: "Define item size standards",
         },
       ],
     },
+
     Users: {
       icon: Users,
       items: [
         {
           type: "direct",
-          label: "Soft Control",
+          label: "SOFT CONTROL",
           route: "/dashboard/Master/Users/SoftControl",
           icon: Settings,
+          title: "Soft Control",
+          description: "Manage system soft controls and settings",
         },
       ],
     },
+
     Role: {
       icon: Shield,
       items: [
@@ -191,22 +219,24 @@ const STATIC_MENU: SidebarMenu = {
           label: "User Master",
           route: "/dashboard/Master/Role/UserMaster",
           icon: Shield,
+          title: "USER MASTER",
+          description: "Manage system users and roles",
         },
       ],
     },
   },
 
-  // ── Top-level section: Rate Entry ─────────────────────────────────────────
   RateEntry: {
     GoldRate: {
       type: "direct",
       label: "Gold Rate",
       route: "/dashboard/RateEntry",
       icon: TrendingUp,
+      title: "GOLD RATE",
+      description: "Update and manage gold rate entries",
     },
   },
 
-  // ── Top-level section: Accounts ───────────────────────────────────────────
   Accounts: {
     Opening: {
       icon: Layers,
@@ -216,53 +246,68 @@ const STATIC_MENU: SidebarMenu = {
           label: "Ornament Opening",
           route: "/dashboard/Accounts/Opening/Ornament",
           icon: Layers,
+          title: "ORNAMENT OPENING",
+          description: "Manage opening stock of ornaments",
         },
         {
           type: "direct",
           label: "Bank Account Master",
           route: "/dashboard/Accounts/Opening/bankAccount",
           icon: Landmark,
+          title: "BANK ACCOUNT MASTER",
+          description: "Manage bank account details",
         },
         {
           type: "direct",
           label: "Pure Gold Opening",
           route: "/dashboard/Accounts/Opening/pureGoldOpening",
           icon: Gem,
+          title: "PURE GOLD OPENING",
+          description: "Manage pure gold opening balances",
         },
       ],
     },
   },
 
-
-  // ── Top-level section: Transaction ────────────────────────────────────────
   Transaction: {
-    // Direct item without group wrapper
     Purchase: {
       type: "direct",
       label: "Purchase",
       route: "/dashboard/Transaction/Purchase",
       icon: AiOutlineShoppingCart,
+      title: "PURCHASE ENTRY",
+      description: "Create and manage purchase transactions",
     },
+
     Barcode: {
       type: "direct",
       label: "Barcode Generate",
       route: "/dashboard/Transaction/BarCodeGenerate",
       icon: BadgeCheck,
+      title: "BARCODE GENERATOR",
+      description: "Generate and print item barcodes",
     },
-    PurchasePrint: {
-      type: "direct",
-      label: "PurchasePrint",
-      route: "/dashboard/PurchasePrint",
-      icon: BadgeCheck,
-    },
+
+  
+
     Sale: {
       type: "direct",
       label: "Sales",
       route: "/dashboard/Transaction/Sales",
       icon: AiOutlineDollar,
+      title: "SALES ENTRY",
+      description: "Create and manage sales transactions",
     },
 
-    // Regular group with icon and items
+    PurchasePage: {
+      type: "direct",
+      label: "Purchase",
+      route: "/dashboard/Transaction/PurchasePage",
+      icon: AiOutlineShoppingCart,
+      title: "PURCHASE ENTRY",
+      description: "Create and manage purchase transactions",
+    },
+
     Transaction: {
       icon: Layers,
       items: [
@@ -270,16 +315,22 @@ const STATIC_MENU: SidebarMenu = {
           type: "parent",
           label: "Approval",
           icon: BadgeCheck,
+          title: "Approval Module",
+          description: "Approve or reject pending transactions",
           children: [
             {
               label: "Pending",
               route: "/dashboard/Transaction/Transaction/Approval/pending",
               icon: HiArrowDownCircle,
+              title: "Pending Approvals",
+              description: "View transactions waiting for approval",
             },
             {
               label: "Completed",
               route: "/dashboard/Transaction/Transaction/Approval/completed",
               icon: BadgeCheck,
+              title: "Completed Approvals",
+              description: "View approved transactions",
             },
           ],
         },
@@ -288,22 +339,29 @@ const STATIC_MENU: SidebarMenu = {
           label: "Bank Transaction",
           route: "/dashboard/Transaction/Transaction/BankTransaction",
           icon: Landmark,
+          title: "Bank Transaction",
+          description: "Manage bank transactions",
         },
         {
           type: "direct",
           label: "Expenses",
           route: "/dashboard/Transaction/Transaction/Expenses",
           icon: TrendingDown,
+          title: "Expenses",
+          description: "Track and manage expenses",
         },
         {
           type: "direct",
           label: "Income",
           route: "/dashboard/Transaction/Transaction/Income",
           icon: TrendingUp,
+          title: "Income",
+          description: "Track income entries",
         },
       ],
     },
-    Settings:{
+
+    Settings: {
       icon: Settings,
       items: [
         {
@@ -311,10 +369,13 @@ const STATIC_MENU: SidebarMenu = {
           label: "Printer",
           route: "/dashboard/Settings/Printer",
           icon: Settings,
+          title: "PRINTER SETTINGS",
+          description: "Configure printing options",
         },
       ],
-    }
+    },
   },
+
   Reports: {
     SummaryReport: {
       icon: Layers,
@@ -324,7 +385,9 @@ const STATIC_MENU: SidebarMenu = {
           label: "Summary Report",
           route: "/dashboard/Reports/TagReport/ItemStockReport",
           icon: Layers,
-        }
+          title: "Summary Report",
+          description: "View stock and item summary reports",
+        },
       ],
     },
   },

@@ -1,8 +1,8 @@
-import { SaleTransactionType } from "@/types/transcation/SaleTransaction";
-import { SALE_TRANSACTION_TYPES } from "./SaleTransactionKeyMap";
+import { TransactionType } from "@/types/transcation/Transaction";
+import { TRANSACTIONTYPES } from "@/data/Transaction/TransactionType";
 
 
-const mapSalesItems = (list: any[] = [], type: string, isTagedItem: any) => {
+const mapPurchaseReturnItems = (list: any[] = [], type: string, isTagedItem?: any) => {
     return list.map((item, index) => {
 
         const stones = item.STONEDETAILS || [];
@@ -11,13 +11,12 @@ const mapSalesItems = (list: any[] = [], type: string, isTagedItem: any) => {
             (sum: number, s: any) => sum + Number(s.STNWT || 0),
             0
         );
+
         const isTagged = item.ITEMID
             ? isTagedItem(Number(item.ITEMID))
             : false;
-
         const ITEM_TYPE = isTagged ? "TAGGED" : "NON_TAGGED";
-
-
+     
         const grswt = Number(item.GRSWT || 0);
         const stnwt = stones.length > 0 ? totalStoneWeight : Number(item.STNWT || 0);
 
@@ -33,6 +32,49 @@ const mapSalesItems = (list: any[] = [], type: string, isTagedItem: any) => {
 
             ITEMID: String(item.ITEMID || ""),
             TAGNO : item.TAGNO || "",
+
+            PCS: Number(item.PCS || 0),
+            GRSWT: grswt,
+            STNWT: stnwt,
+            NETWT: grswt - stnwt,
+
+            TOUCH: Number(item.TOUCH || 0),
+            PUREWT: Number(item.PUREWT || 0),
+
+            MC: Number(item.MC || 0),
+            DESCRIPTION: item.DESCRIPTION || "",
+
+            _stones: stones,
+            _miscCharges: item.OTHERCHARGESDETAILS || [],
+        };
+    });
+};
+
+
+const mapPurchaseItems = (list: any[] = [], type: string, ) => {
+    return list.map((item, index) => {
+
+        const stones = item.STONEDETAILS || [];
+
+        const totalStoneWeight = stones.reduce(
+            (sum: number, s: any) => sum + Number(s.STNWT || 0),
+            0
+        );
+
+  
+
+        const grswt = Number(item.GRSWT || 0);
+        const stnwt = stones.length > 0 ? totalStoneWeight : Number(item.STNWT || 0);
+
+        return {
+            __rowId: `edit-${item.SNO || Date.now()}-${index}`,
+            __isNew: false,
+
+            TRANSACTION_TYPE: type,
+            _type: type,
+
+            ITEMID: String(item.ITEMID || ""),
+            TAGNO: item.TAGNO || "",
 
             PCS: Number(item.PCS || 0),
             GRSWT: grswt,
@@ -80,11 +122,13 @@ const mapIssueItems = (list: any[] = [], type: string) => {
 };
 
 
-export const mapSalesTransactionItems = (
+export const mapPurchaseTransactionItems = (
     transactionData: any,
     isTagedItem: (id: number | null) => boolean
 ) => {
     const details = transactionData?.TRANSACTION_DETAILS;
+
+    console.log(details,'detailsdetails')
 
     if (!details) {
         return {
@@ -93,15 +137,15 @@ export const mapSalesTransactionItems = (
         };
     }
 
-    const sales = mapSalesItems(details.sales, "SA", isTagedItem);
-    const salesReturn = mapSalesItems(details.sales_return, "SR", isTagedItem);
+    const purchase = mapPurchaseItems(details.purchase, "PU");
+    const purchaseReturn = mapPurchaseReturnItems(details.purchase_return, "PR", isTagedItem);
 
-    const issue = mapIssueItems(details.issue, "IS");
-    const receipt = mapIssueItems(details.receipt, "RE");
+    const issue = mapIssueItems(details.issue, "ISP");
+    const receipt = mapIssueItems(details.receipt, "REC");
 
     const rows = [
-        ...sales,
-        ...salesReturn,
+        ...purchase,
+        ...purchaseReturn,
         ...issue,
         ...receipt,
     ].map((item, index) => ({
@@ -113,10 +157,10 @@ export const mapSalesTransactionItems = (
 
     rows.forEach(r => selectedTransactionTypesSet.add(r.TRANSACTION_TYPE));
 
-    const selectedTransactionTypes: SaleTransactionType[] =
+    const selectedTransactionTypes: TransactionType[] =
         Array.from(selectedTransactionTypesSet)
-            .map(code => SALE_TRANSACTION_TYPES.find(t => t.code === code))
-            .filter((t): t is SaleTransactionType => !!t);
+            .map(code => TRANSACTIONTYPES.find(t => t.code === code))
+            .filter((t): t is TransactionType => !!t);
 
     return {
         rows,

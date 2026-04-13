@@ -7,11 +7,11 @@ import { CapitalizedInput } from "@/components/ui/CapitalizedInput";
 import { formatToFixed } from "@/utils/format/numberFormat";
 import { SelectCombobox } from "@/components/ui/selectComboBox";
 
-import { SalesHeaderForm } from "@/types/TransactionTypes/sales/SalesHeaderType";
+import { PurchaseHeaderForm } from "@/types/TransactionTypes/purchase/PurchaseHeaderType";
 
 interface TransactionHeaderFormProps {
     form: any;
-    onFormChange: <K extends keyof SalesHeaderForm>(
+    onFormChange: <K extends keyof PurchaseHeaderForm>(
         field: K,
         value: string
     ) => void;

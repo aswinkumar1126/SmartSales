@@ -1,15 +1,15 @@
 
-export const validateSales = (row: any, ctx: any) => {
-    const { isTagedItem } = ctx;
+export const validateSales = (row: any) => {
+
+    console.log("VALIDATING ROW:", row);
 
     if (!row.ITEMID) {
         return "Please select an item";
     }
 
-    const isTagged = isTagedItem(Number(row.ITEMID));
-
-    if (isTagged && !row.TAGNO) {
-        return "TAG NO required for tagged item";
+    if (row.ITEM_TYPE === "TAGGED" && !row.TAGNO?.trim()) {
+    
+        return "it's a Taged Item Please enter tag no";
     }
 
     if (Number(row.GRSWT) <= 0) {
@@ -19,10 +19,10 @@ export const validateSales = (row: any, ctx: any) => {
     if (Number(row.TOUCH) <= 0) {
         return "TOUCH must be > 0";
     }
+ 
 
     return null;
 };
-
 export const validateSalesReturn = (row: any) => {
     if (!row.TAGNO && !row.BILLNO) {
         return "Provide TAG NO or BILL NO";

@@ -56,7 +56,7 @@ export interface MetalTransactionRow extends WeightInfo {
    ITEM TRANSACTION (Purchase / Return / Sales)
    ========================================================= */
 
-export interface purchasePayload {
+export interface PurchasePayload {
 
 
     ITEMID: number | null;
@@ -86,7 +86,7 @@ export interface purchasePayload {
 }
 
 
-export interface purchasereturnPayload {
+export interface PurchaseReturnPayload {
 
     ITEMID: number | null;
     SNO?: string;
@@ -119,8 +119,8 @@ export type TransactionRow = MetalTransactionRow;
 export type TransactionItems = Partial<{
     issue: MetalTransactionRow[];
     receipt: MetalTransactionRow[];
-    purchase: purchasePayload[];
-    purchase_return: purchasereturnPayload[];
+    purchase: PurchasePayload[];
+    purchase_return: PurchaseReturnPayload[];
 }>;
 
 
@@ -159,8 +159,9 @@ export interface ClosingDetails {
     convType: string | "P" | "C" ;
     convAmt: number;
     convWt: number;
-    discAmt: number;
-    discWt: number;
+    
+    discAmt?: number;
+    discWt?: number;
 
     cashPaid: number;
     cashRcvd: number;

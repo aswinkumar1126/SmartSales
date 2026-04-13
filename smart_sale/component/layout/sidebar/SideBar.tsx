@@ -38,6 +38,8 @@ import { useTheme } from "@/context/theme/themeContext";
 import { normalizePath } from "@/utils/path/normalizePath";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/hooks/apiHooks/auth/useAuth";
+import { usePageName } from "@/context/header/PageNameContext";
+import { useSessionStorage } from "@/hooks/apiHooks/storage/useSessionStorage";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Motion-wrapped Chakra primitives
@@ -103,13 +105,16 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
     } = useSidebar();
 
     const { user, logout } = useAuth();
+    const {setPageName  , setDescription} =usePageName();
 
     const router = useRouter();
     const rawPathname = usePathname();
     const pathname = normalizePath(rawPathname);
+    console.log(pathname,'pathname')
     const { theme } = useTheme();
 
     // ── Local UI state ─────────────────────────────────────────────────────────
+    const [title, setTitle] = useSessionStorage<string| null>("PAGE",null);
     const [isDesktop] = useMediaQuery(["(min-width: 768px)"]);
     const [isHovered, setIsHovered] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
@@ -135,6 +140,8 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
             setSearchQuery("");
         }
     }, [isExpanded]);
+
+    useEffect(() => setPageName(title),[title])
 
     // ── Search filtering ───────────────────────────────────────────────────────
     const filteredMenuData = useMemo(() => {
@@ -175,10 +182,21 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
         return result;
     }, [menuData, searchQuery]);
 
+
     // ── Navigation ─────────────────────────────────────────────────────────────
     const navigate = useCallback(
-        (route: string) => {
+        (route: string ,meta?:any) => {
             router.push(route);
+        
+            console.log("Navigating to:", route,meta);
+
+
+            if (meta?.title) {
+                setTitle(meta.title);
+                setPageName(meta.title);
+                setDescription(meta.description);
+            }
+
             if (!isDesktop) onClose();
         },
         [router, isDesktop, onClose]
@@ -209,7 +227,7 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
                         borderLeftColor={isActive ? theme.colors.primary : "transparent"}
                         color={isActive ? theme.colors.primary : "gray.500"}
                         _hover={{ bg: isActive ? `${theme.colors.primary}20` : "gray.100" }}
-                        onClick={() => navigate(item.route)}
+                        onClick={() => navigate(item.route , item)}
                         whileHover={{ x: 2 }}
                         whileTap={{ scale: 0.98 }}
                         justifyContent={isExpanded ? "flex-start" : "center"}
@@ -307,7 +325,7 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
                                             bg={isChildActive ? `${theme.colors.primary}15` : "transparent"}
                                             color={isChildActive ? theme.colors.primary : "gray.400"}
                                             _hover={{ bg: "gray.100", color: theme.colors.primaryText }}
-                                            onClick={() => navigate(child.route)}
+                                            onClick={() => navigate(child.route ,child)}
                                             whileHover={{ x: 2 }}
                                             whileTap={{ scale: 0.97 }}
                                         >
@@ -364,7 +382,7 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
                             borderLeftColor={isActive ? theme.colors.primary : "transparent"}
                             color={isActive ? theme.colors.primary : "gray.500"}
                             _hover={{ bg: isActive ? `${theme.colors.primary}20` : "gray.100" }}
-                            onClick={() => navigate(item.route)}
+                            onClick={() => navigate(item.route ,item)}
                             whileHover={{ x: 2 }}
                             whileTap={{ scale: 0.98 }}
                             justifyContent={isExpanded ? "flex-start" : "center"}

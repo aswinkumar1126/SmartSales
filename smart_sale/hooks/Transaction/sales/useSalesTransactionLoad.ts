@@ -20,9 +20,9 @@ export const useLoadSalesTransaction = () => {
 
         // loadOpening(transactionData.BALANCE, setBaseOpening);
 
-        const { rows, stones, charges ,selectedTransactionTypes } = mapSalesTransactionItems(transactionData, isTagedItem );
+        const { rows,selectedTransactionTypes } = mapSalesTransactionItems(transactionData, isTagedItem );
 
-        return { rows, stones, charges, selectedTransactionTypes };
+        return { rows,selectedTransactionTypes };
     };
 
     return { loadTransaction };

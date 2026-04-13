@@ -40,19 +40,13 @@ import { getAccountHeadFields } from "@/config/master/AccountHeadMaster";
 import { useEnterNavigation } from "@/component/form/useEnterNavigation";
 
 import { DynamicForm } from "@/component/form/DynamicForm";
-import { usePageName } from "@/context/header/PageNameContext";
 
 
 function AccountHeadMaster() {
     const { theme } = useTheme();
 
 
-      const {setPageName  ,setDescription} = usePageName();
-    
-        useEffect(()=>{
-            setPageName("ACCOUNT MASTER");
-            // setDescription("Create and Manage the Account Master");
-        },[])
+   
 
     /* -------------------- API HOOKS -------------------- */
     const { data, isLoading } = useAllCompanies();

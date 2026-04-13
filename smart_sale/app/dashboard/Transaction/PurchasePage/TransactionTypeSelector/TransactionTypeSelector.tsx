@@ -8,7 +8,7 @@ import Image from "next/image";
 import saveIcon from '@/asserts/icons/save.png';
 import clearIcon from '@/asserts/icons/clear.jpeg';
 import updateIcon from '@/asserts/icons/update.png';
-import { useSaleTransactionStore } from "@/store/sales/useSaleTransactionStore";
+import { usePurchaseTransactionStore } from "@/store/purchase/usePurchaseTransactionStore";
 import { toaster } from "@/components/ui/toaster";
 import { HiPrinter } from "react-icons/hi2";
 
@@ -34,7 +34,7 @@ export default function TransactionTypeSelector({
         clearAllTransactionTypes,
         draftRows,
         clearDraftRows,
-    } = useSaleTransactionStore();
+    } = usePurchaseTransactionStore();
 
     /* ---------- ORDER BY CODE ---------- */
     const orderedTypes = TRANSACTIONTYPES_ORDER
@@ -86,10 +86,10 @@ export default function TransactionTypeSelector({
         selectedTransactionTypes.some((type: any) => type.value === code);
 
     const TYPE_COLORS: Record<string, { bg: string; active: string; text: string }> = {
-        SA: { bg: "#E6FFFA", active: "#2F855A", text: "#1C4532" },
-        SR: { bg: "#FFEAEA", active: "#C53030", text: "#742A2A" },
-        IS: { bg: "#FFF4E5", active: "#DD6B20", text: "#7B341E" },
-        RE: { bg: "#ffe8fd", active: "#c729ba", text: "#8f1084" }
+        PU: { bg: "#E6FFFA", active: "#2F855A", text: "#1C4532" },
+        PR: { bg: "#FFEAEA", active: "#C53030", text: "#742A2A" },
+        ISP: { bg: "#FFF4E5", active: "#DD6B20", text: "#7B341E" },
+        REC: { bg: "#ffe8fd", active: "#c729ba", text: "#8f1084" }
     };
 
     const handleDeselectAll = () => {

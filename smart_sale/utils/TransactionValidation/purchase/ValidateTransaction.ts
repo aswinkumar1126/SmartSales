@@ -26,7 +26,6 @@ export const validateTransactions = ({
     SALETRANSACTIONTYPES,
     getStockAvailability,
     isIssueType,
-    isTagedItem,
 }: any): { valid: boolean; error?: string } => {
 
     const draftChanged = isDraftRowsChanged();
@@ -67,7 +66,8 @@ export const validateTransactions = ({
 
         const validator = VALIDATORS[mappedType];
         if (validator) {
-            const error = validator(row, { isTagedItem });
+            const error = validator(row);
+            console.log(error,'errorerror')
             if (error) {
                 return { valid: false, error: `Row ${i + 1}: ${error}` };
             }

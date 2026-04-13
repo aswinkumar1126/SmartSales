@@ -46,43 +46,40 @@ import { useCompanyById } from "@/hooks/apiHooks/company/useCompany";
 
 /*-------------------  *VALIDATION HOOKS*  --------------------------*/
 
-import { useIsTaggedItem } from "@/utils/TransactionValidation/sales/TagNumberValidation";
-import { validateTransactions } from "@/utils/TransactionValidation/sales/ValidateTransaction";
-import { buildTransactionPayload } from "@/utils/TransactionValidation/sales/buildTransactionPayload";
-import { normalizeRowForApi } from "@/utils/TransactionValidation/sales/normalizeRowForApi";
+import { useIsTaggedItem } from "@/utils/TransactionValidation/purchase/TagNumberValidation";
+import { validateTransactions } from "@/utils/TransactionValidation/purchase/ValidateTransaction";
+import { buildTransactionPayload } from "@/utils/TransactionValidation/purchase/buildTransactionPayload";
+import { normalizeRowForApi } from "@/utils/TransactionValidation/purchase/normalizeRowForApi";
 
 
 /*--------------------- *CALCULATION HOOKS* ---------------------------------*/
 
-import { useStockAvailability } from "@/hooks/Transaction/sales/useStockAvailability";
+import { useStockAvailability } from "@/hooks/Transaction/purchase/useStockAvailability";
 
-import { useConversionSync } from "@/hooks/Transaction/sales/useConversionSync";
-import { useClosingCalculation } from "@/hooks/Transaction/sales/useClosingBalanceCalculation";
-import { useSalesOpeningBalances } from "@/hooks/Transaction/sales/useSalesOpeningCal";
+import { useConversionSync } from "@/hooks/Transaction/purchase/useConversionSync";
+import { useClosingCalculation } from "@/hooks/Transaction/purchase/useClosingBalanceCalculation";
+import { usePurchaseOpeningBalances } from "@/hooks/Transaction/purchase/usePurchaseOpeningCal";
 
 
 
-import { useSyncSalesHeader } from "@/hooks/Transaction/sales/useSalesHeaderSync";
-import { useLoadSalesTransaction } from "@/hooks/Transaction/sales/useSalesTransactionLoad";
+import { useSyncPurchaseHeader } from "@/hooks/Transaction/purchase/usePurchaseHeaderSync";
+import { useLoadPurchaseTransaction } from "@/hooks/Transaction/purchase/usePurchaseTransactionLoad";
 
-import { useDraftRowOperations } from "@/hooks/Transaction/sales/useDraftRowOperations";
-import { useLoadSaleTag } from "@/hooks/Transaction/sales/useLoadSaleTag";
-import { useLoadSalesStock } from "@/hooks/Transaction/sales/useLoadSalesStock";
+import { useDraftRowOperations } from "@/hooks/Transaction/purchase/useDraftRowOperations";
+import { useLoadPurchaseTag } from "@/hooks/Transaction/purchase/useLoadPurchaseTag";
+import { useLoadPurchaseStock } from "@/hooks/Transaction/purchase/useLoadPurchaseStock";
 
 /*-------------------  *STORAGE*  --------------------------*/
 
 import { useSessionStorage } from "@/hooks/apiHooks/storage/useSessionStorage";
-import { useSalesBalanceSummary } from "@/store/sales/useSalesBalanceSummaryStore";
-import { useSalesHeader } from "@/store/sales/useSalesHeader";
-import { useSaleTransactionStore } from "@/store/sales/useSaleTransactionStore";
+import { usePurchaseBalanceSummary } from "@/store/purchase/useBalanceSummaryStore";
+import { usePurchaseHeader } from "@/store/purchase/usePurchaseHeader";
+import { usePurchaseTransactionStore } from "@/store/purchase/usePurchaseTransactionStore";
 
 
 // Types & Constants
-import { ClosingDetails, WeightInfo,} from "@/types/transcation/Transaction";
-import { SALETRANSACTIONTYPES } from "@/data/Transaction/TransactionType";
-import { SaleTransactionType } from "@/types/transcation/SaleTransaction";
-import { SaleTransactionKey, SaleTransactionItems, SALE_TRANSACTION_KEY_MAP, SALESTRANSACTIONITEMS, CreateSaleTransaction } from "@/types/transcation/SaleTransaction";
-
+import { ClosingDetails, WeightInfo, PurchaseReturnPayload, PurchasePayload, TransactionType, TRANSACTION_KEY_MAP, CreateTransaction, TransactionItems } from "@/types/transcation/Transaction";
+import {TRANSACTIONTYPES} from '@/data/Transaction/TransactionType';
 import { BaseClosingFormDetails } from "@/types/balanceSummary/BalanceSummary";
 //Utilities
 import { formatToFixed } from '@/utils/format/numberFormat';
@@ -103,7 +100,7 @@ type StoneRow = {
 };
 
 
-interface SalesFilter {
+interface PurchaseFilter {
     fromDate: string;
     toDate: string;
     weight: string;
@@ -125,9 +122,9 @@ export type billDetailsParams = {
    Main Component
 ================================ */
 
-export default function SalesPage() {
+export default function PurchasePage() {
 
-    
+
     const router = useRouter();
     const today = new Date().toISOString().split("T")[0];
 
@@ -151,25 +148,25 @@ export default function SalesPage() {
         stopEdit,
         resetHeader,
         isEditing
-    } = useSalesHeader();
+    } = usePurchaseHeader();
 
 
     /* ================================
    Session Storage Keys (All in one place)
 ================================ */
 
-    const TYPE_KEY = "sale_transaction_type";
+    const TYPE_KEY = "purchase_transaction_type";
 
 
-    const EDITING_SNO_KEY = "sale_editing_sno";
+    const EDITING_SNO_KEY = "purchase_editing_sno";
 
 
-    const TRANSACTION_LIST_SEARCH = "sale_transaction_list_search";
-    const ISTAG = 'sale_is_tag';
+    const TRANSACTION_LIST_SEARCH = "purchase_transaction_list_search";
+    const ISTAG = 'purchase_is_tag';
 
 
 
-    const TRANSACTIONTYPES_ORDER = ["SA", "SR", "IS", "RE"];
+    const TRANSACTIONTYPES_ORDER = ["PU", "PR", "ISP", "REC"];
 
 
     const openFilter = () => setIsFilterOpen(true);
@@ -197,7 +194,7 @@ export default function SalesPage() {
 
     const [selectedTransactionId, setSelectedTransactionId] = useState<string | null>(null)
 
-    const [baseOpening, setBaseOpening] = useSessionStorage<{ openPure: number, openCash: number }>('sales-openingBalance', {
+    const [baseOpening, setBaseOpening] = useSessionStorage<{ openPure: number, openCash: number }>('purchase-openingBalance', {
         openPure: 0,
         openCash: 0,
     });
@@ -207,7 +204,7 @@ export default function SalesPage() {
     const [showPrintModal, setShowPrintModal] = useState<boolean>(false);
     const [printData, setPrintData] = useState<any>(null);
 
-    const [saleFilter, setSaleFilter] = useState<SalesFilter>({
+    const [purchaseFilter, setPurchaseFilter] = useState<PurchaseFilter>({
         fromDate: today,
         toDate: today,
         weight: '',
@@ -243,7 +240,7 @@ export default function SalesPage() {
     const [editingSno, setEditingSno] = useSessionStorage<string | null>(EDITING_SNO_KEY, null);
     const [editingRowsData, setEditingRowsData] = useSessionStorage<any>("EDITING_DATA", {});
 
-    const [isTag, setIsTag] = useSessionStorage<boolean>(ISTAG, true);
+    const [isTag, setIsTag] = useSessionStorage<boolean>(ISTAG, false);
 
 
     /* ================================
@@ -266,7 +263,7 @@ export default function SalesPage() {
     console.log(tagedItems, 'tagedItems')
 
     const filters = {
-        accountType: "CR"
+        accountType: "PR"
     }
 
 
@@ -295,7 +292,7 @@ export default function SalesPage() {
 
     const { data: allPureGoldNames } = usePureGoldNames();
 
-    const { data: transactionsById, isLoading: getbySnoLoading } = useTransactionByTransId(selectedTransactionId, "sales");
+    const { data: transactionsById, isLoading: getbySnoLoading } = useTransactionByTransId(selectedTransactionId, "purchase");
 
 
 
@@ -349,24 +346,24 @@ export default function SalesPage() {
 
     // Note: This hook might need to be updated to handle multiple transaction types
     const { data: transactionList, isLoading, refetch: refetchTransactionList } = useTransactions({
-        TRANTYPE: "sales",
+        TRANTYPE: "purchase",
         trantype: null,
-        accode: saleFilter.accode ? Number(saleFilter.accode) : null,
-        startdate: saleFilter.fromDate || null,
-        enddate: saleFilter.toDate || null,
-        itemid: saleFilter.itemId ? Number(saleFilter.itemId) : null,
+        accode: purchaseFilter.accode ? Number(purchaseFilter.accode) : null,
+        startdate: purchaseFilter.fromDate || null,
+        enddate: purchaseFilter.toDate || null,
+        itemid: purchaseFilter.itemId ? Number(purchaseFilter.itemId) : null,
     });
 
     const { data: metalRates, isLoading: metalRatesLoading, isError: metalRatesError } = useRates();
 
     const { data: transactionHeaderDetail, isLoading: transactionHeaderLoading, refetch: refetchTransactionHeaderDetail } = useTransactions({
-        TRANTYPE: "sales",
+        TRANTYPE: "purchase",
         accode: headerForm.CUSTOMER ? Number(headerForm.CUSTOMER) : null
     });
 
 
 
-    useSyncSalesHeader(transactionHeaderDetail, metalRates);
+    useSyncPurchaseHeader(transactionHeaderDetail, metalRates);
 
 
     const transactionIdsList = useMemo(() => {
@@ -524,8 +521,8 @@ export default function SalesPage() {
      ================================ */
 
     // This only gets called when user clicks "Apply Filters"
-    const handleSearchFilter = useCallback((filters: SalesFilter) => {
-        setSaleFilter({
+    const handleSearchFilter = useCallback((filters: PurchaseFilter) => {
+        setPurchaseFilter({
             fromDate: filters.fromDate,
             toDate: filters.toDate,
             weight: filters.weight,
@@ -536,7 +533,7 @@ export default function SalesPage() {
     }, []);
 
     const handleSearchFilterClear = useCallback(() => {
-        setSaleFilter({
+        setPurchaseFilter({
             fromDate: today,
             toDate: today,
             weight: '',
@@ -569,11 +566,11 @@ export default function SalesPage() {
         clearDraftRowsByType,
         resetStore,
         setSelectedTransactionTypes
-    } = useSaleTransactionStore();
+    } = usePurchaseTransactionStore();
 
     const { handleAddRow, handleEditRow, handleRemoveRow, handleUpdateRow } = useDraftRowOperations(isTagedItem);
 
-    console.log(draftRows, 'draftRowsssssss')
+  
 
 
     // Handle clear rows for type
@@ -608,7 +605,7 @@ export default function SalesPage() {
     }, [apiBalanceOpening, isEditing]);
 
     // Single useEffect to calculate balances when either draftRows or API balances change
-    const openingBalances = useSalesOpeningBalances(
+    const openingBalances = usePurchaseOpeningBalances(
         draftRows,
         baseOpening.openPure,
         baseOpening.openCash
@@ -640,9 +637,9 @@ export default function SalesPage() {
     /* ================================
        Helper Functions
     ================================ */
-    const isIssueType = (transactionType: SaleTransactionType) => {
+    const isIssueType = (transactionType: TransactionType) => {
         console.log(transactionType, 'transactionTypetransactionType')
-        return transactionType.code.toUpperCase() === "IS" || transactionType.code.toUpperCase() === "RE";
+        return transactionType.code.toUpperCase() === "ISP" || transactionType.code.toUpperCase() === "REC";
     };
 
     // Determines if a stock row should be treated as an Issue-type (ISSUE / RECEIPT)
@@ -650,7 +647,7 @@ export default function SalesPage() {
         return !!stockRow.pureId; // if pureId exists, it's issue stock
     };
 
-    const getActiveCollectionForType = (transactionType: SaleTransactionType) => {
+    const getActiveCollectionForType = (transactionType: TransactionType) => {
         return isIssueType(transactionType) ? pureNameCollection : itemsCollection;
     };
 
@@ -699,7 +696,7 @@ export default function SalesPage() {
 
 
 
-    const { loadTransaction } = useLoadSalesTransaction();
+    const { loadTransaction } = useLoadPurchaseTransaction();
 
 
 
@@ -707,6 +704,8 @@ export default function SalesPage() {
 
         setOpeningBalance(data, true);
         setEditingSno(sno);
+
+        console.log(data,'datadata')
 
         const result = loadTransaction(data, sno, isTagedItem);
         if (!result) return;
@@ -724,7 +723,7 @@ export default function SalesPage() {
     /* ================================
        Transaction Type Handlers
     ================================ */
-    const handleTransactionTypesSelect = (types: SaleTransactionType[]) => {
+    const handleTransactionTypesSelect = (types:TransactionType[]) => {
 
 
         if (!headerForm.CUSTOMER) {
@@ -744,7 +743,7 @@ export default function SalesPage() {
     /* ================================
           CLOSING DETAILS FORM
        ================================ */
-    const { closingDetails, setClosingDetails, resetBalance } = useSalesBalanceSummary();
+    const { closingDetails, setClosingDetails, resetBalance } = usePurchaseBalanceSummary();
 
     console.log(closingDetails, 'closingDetailsfromstore')
 
@@ -775,15 +774,15 @@ export default function SalesPage() {
         };
     };
 
-    const { createRowFromStock } = useLoadSalesStock();
+    const { createRowFromStock } = useLoadPurchaseStock();
 
     const handleLoadFromStock = (stockRow: any) => {
 
         const issueStock = isIssueStock(stockRow);
 
         const targetType = issueStock
-            ? SALETRANSACTIONTYPES.find(t => t.key === "issue")
-            : SALETRANSACTIONTYPES.find(t => t.key === "sales");
+            ? TRANSACTIONTYPES.find(t => t.key === "issue")
+            : TRANSACTIONTYPES.find(t => t.key === "purchase");
 
         if (!targetType) {
             toaster.create({
@@ -867,11 +866,11 @@ export default function SalesPage() {
         getEditAvailableWeightForIS,
         getEditAvailableWeightForSA,
     } = useStockAvailability({
-        transactionCode: (selectedTransactionTypes[0] ?? SALETRANSACTIONTYPES[0]).code,
+        transactionCode: (selectedTransactionTypes[0] ?? TRANSACTIONTYPES[0]).code,
         pureStockList,
         itemsStockList,
         draftRows,
-        SALETRANSACTIONTYPES,
+        TRANSACTIONTYPES,
         isEditMode: !!originalTransactionData, // Enable edit mode if editing
         originalTransactionData, // Pass the original transaction data
     });
@@ -883,7 +882,7 @@ export default function SalesPage() {
     /* ================================
         Calculate Totals For Specific Type
      ================================ */
-    const calculateTotalsForType = (transactionType: SaleTransactionType) => {
+    const calculateTotalsForType = (transactionType: TransactionType) => {
         const typeRows = draftRows.filter(row => row.TRANSACTION_TYPE === transactionType.value);
 
 
@@ -931,8 +930,8 @@ export default function SalesPage() {
             isDraftRowsChanged,
             isClosingChanged,
             getClosingDetailsPayload,
-            SALE_TRANSACTION_KEY_MAP,
-            SALETRANSACTIONTYPES,
+            TRANSACTION_KEY_MAP,
+            TRANSACTIONTYPES,
             getStockAvailability,
             isIssueType,
         });
@@ -941,13 +940,13 @@ export default function SalesPage() {
             return { valid: false, error: validation.error };
         }
 
-        const transactionDetails: SaleTransactionItems = buildTransactionPayload({
+        const transactionDetails: TransactionItems = buildTransactionPayload({
             draftRows,
-            SALE_TRANSACTION_KEY_MAP,
+            TRANSACTION_KEY_MAP,
             normalizeRowForApi,
         });
 
-        const payload: CreateSaleTransaction = {
+        const payload: CreateTransaction = {
             TRANSACTION_HEADER: {
                 ACCODE: Number(headerForm.CUSTOMER),
                 TRANDATE: headerForm.DATE,
@@ -987,7 +986,7 @@ export default function SalesPage() {
         }
 
         createTransaction.mutate(
-            { payload: result.payload, TRANTYPE: "sales" },
+            { payload: result.payload, TRANTYPE: "purchase" },
             {
                 onSuccess: () => {
 
@@ -1048,7 +1047,7 @@ export default function SalesPage() {
             await updateTransaction.mutateAsync({
                 entryNo: Number(headerForm.ENTRYNO),
                 payload: result.payload,
-                TRANTYPE: "sales"
+                TRANTYPE: "purchase"
             });
 
             setEditingSno(null);
@@ -1164,7 +1163,7 @@ export default function SalesPage() {
     /* ================================
        Render
     ================================ */
-    const { loadSaleTag } = useLoadSaleTag();
+    const { loadSaleTag } = useLoadPurchaseTag();
 
     const handleTagChange = () => setIsTag(prev => !prev);
 
@@ -1204,7 +1203,7 @@ export default function SalesPage() {
                         {/* 2. Transaction Type Selector */}
 
                         <TransactionTypeSelector
-                            transactionTypes={SALETRANSACTIONTYPES}
+                            transactionTypes={TRANSACTIONTYPES}
                             selectedTypes={selectedTransactionTypes}
                             onSelectTypes={handleTransactionTypesSelect}
                             theme={theme}
@@ -1243,7 +1242,7 @@ export default function SalesPage() {
                                 {/* Map selected transaction types in order */}
                                 {TRANSACTIONTYPES_ORDER
                                     .map(code => selectedTransactionTypes?.find(t => t.value === code))
-                                    .filter((t): t is SaleTransactionType => !!t)
+                                    .filter((t): t is TransactionType => !!t)
                                     .map(transactionType => {
                                         const typeRows = draftRows.filter(
                                             row => row.TRANSACTION_TYPE === transactionType.value
@@ -1321,7 +1320,7 @@ export default function SalesPage() {
                         itemOptions={mappedItems}
                         accodeOptions={saleCustomerList}
                         pureGoldOptions={pureGoldList}
-                        initialFilters={saleFilter}
+                        initialFilters={purchaseFilter}
                     />
 
                 </Box>

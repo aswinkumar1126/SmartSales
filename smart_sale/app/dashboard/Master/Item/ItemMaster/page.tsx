@@ -44,16 +44,9 @@ import SearchBar from "@/component/search/SearchBar";
 import { DynamicForm } from "@/component/form/DynamicForm";
 import { useEnterNavigation } from "@/component/form/useEnterNavigation";
 import { ItemMasterFields } from "@/config/master/itemMaster";
-import { usePageName } from "@/context/header/PageNameContext";
-
 export default function ItemMasterPage() {
 
-      const {setPageName  ,setDescription} = usePageName();
     
-        useEffect(()=>{
-            setPageName("ITEM MASTER");
-            // setDescription("Create and Manage the Company Master");
-        },[])
 
     /* ===================== STATE ===================== */
     const [editingId, setEditingId] = useState<number | null>(null);

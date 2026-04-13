@@ -17,7 +17,6 @@ export interface SaleTransactionType {
 export interface SALESTRANSACTIONITEMS {
 
     ITEMID: number | null;
-    SNO?: string;
     TAGNO?: string;
     PCS: number;
     GRSWT: number;
@@ -30,6 +29,10 @@ export interface SALESTRANSACTIONITEMS {
     STNAMT: number;
     MC: number;
     DESCRIPTION?: string;
+
+    BILLNO?:number;
+    SNO?: string;
+
 }
  
 export interface ISSUETRANSACTIONITEMS {
@@ -73,8 +76,8 @@ export interface ClosingDetails {
     convType: "" | "P" | "C" | string;
     convAmt: number;
     convWt: number;
-    discAmt: number;
-    discWt: number;
+    discAmt?: number;
+    discWt?: number;
 
     cashPaid: number;
     cashRcvd: number;
@@ -85,23 +88,7 @@ export interface ClosingDetails {
     bankRcvdDetails: BankTransactionDetails[];
 
 }
-export interface ClosingDetails {
 
-    convType: "" | "P" | "C"|string ;
-    convAmt: number;
-    convWt: number;
-    discAmt: number;
-    discWt: number;
-
-    cashPaid: number;
-    cashRcvd: number;
-
-    bankPaid: number;
-    bankRcvd: number;
-    bankPaidDetails: BankTransactionDetails[];
-    bankRcvdDetails: BankTransactionDetails[];
-
-}
 export interface TransactionHeader {
     ACCODE: number;
     TRANDATE: string;
@@ -118,3 +105,32 @@ export interface CreateSaleTransaction {
     CLOSING_DETAILS?: ClosingDetails;
 }
 
+
+export type SalesBankTransaction = {
+    AMOUNT: number;
+    BANKNAME: string | null;
+    CHQNO: string | null;
+    TRANDATE: string | null;
+    TRANMODE: string | null;
+}
+
+export interface SalesCLosing{
+    ACCODE: number;
+    BANKPAID: number;
+    BANKPAIDDETAILS: SalesBankTransaction[];
+    BANKRCVD: number;
+    BANKRCVDDETAILS: SalesBankTransaction[];
+    BATCHNO: string;
+    BILLNO: number;
+    CASHPAID: number;
+    CASHRCVD: number;
+    CONVAMT: number;
+    CONVTYPE: string;
+    CONVWT: number;
+    DISCAMT: number;
+    DISCWT: number;
+    ENTRYNO: number;
+    PURCHASENO: string;
+    RATE: number;
+    TRANDATE: string | null;
+};

@@ -26,7 +26,7 @@ import Loader from "@/component/loader/Loader";
 import BalanceSummary from "./Balance/BalanceSummary";
 
 import { TransactionListing } from "./TransactionList/TransactionIdsListing";
-import PurchaseReceipt from "@/component/PurchasePrint/PurchasePrint";
+import PurchaseReceipt from "@/component/ReceiptPrint/PurchasePrint";
 
 //Key
 import { useGlobalKey } from "@/components/key/useGlobalKey";
@@ -180,10 +180,10 @@ export default function PurchasePage() {
     const [singleSearch, setSingleSearch] = useSessionStorage<string>(TRANSACTION_LIST_SEARCH, '');
     const [deselectFlag, setDeselectFlag] = useState(false);
 
-    const [showPrintModal, setShowPrintModal] = useState(false);
+    const [showPrintModal, setShowPrintModal] = useState<boolean>(false);
 
     const [printData, setPrintData] = useState<any>(null);
-    console.log(printData, 'printData')
+
 
 
 
@@ -355,9 +355,9 @@ export default function PurchasePage() {
 
     const companyDetails = useMemo(() => {
         return companyData?.data
-    }, [companyData])
+    }, [companyData]);
 
-    console.log(companyDetails, 'companydetails')
+
 
 
     const transactionIdsList = useMemo(() => {
@@ -384,8 +384,8 @@ export default function PurchasePage() {
             // Set both BILLNO and ENTRYNO when transaction data is available
             setHeaderForm(prev => ({
                 ...prev,
-                ENTRYNO: transactionHeaderDetail.ENTRYNO,
-                BILLNO: transactionHeaderDetail.BILLNO,
+                ENTRYNO: String(transactionHeaderDetail.ENTRYNO),
+                BILLNO: String(transactionHeaderDetail.BILLNO),
             }));
         }
     }, [transactionHeaderDetail, headerForm.CUSTOMER, isEditing]);
@@ -1133,9 +1133,9 @@ export default function PurchasePage() {
         setEditingSno(sno);
         setSelectedTransactionId(sno);
 
-        setPrintData(transactionData)
+        setPrintData(transactionData);
 
-        console.log(transactionData,'transactionsData')
+        console.log(transactionData, 'transactionsData')
 
         // After setAccCode(transactionDetails.ACCODE);
 
@@ -1621,7 +1621,7 @@ export default function PurchasePage() {
     const { closingDetails, setClosingField, setClosingDetails, resetBalance } = usePurchaseBalanceSummary();
     const closingDetailsRef = useRef(closingDetails);
 
-    const { closingCash, closingPure  } = useClosingCalculation(
+    const { closingCash, closingPure } = useClosingCalculation(
         closingDetails,
         apiBalanceOpening,
         Number(headerForm.RATEGM)
@@ -1690,8 +1690,8 @@ export default function PurchasePage() {
             convType: d.convType,
             convAmt: d.convAmt ? parseFloat(d.convAmt) : 0,
             convWt: d.convWt ? parseFloat(d.convWt) : 0,
-            discAmt: d.discAmt ? parseFloat(d.discAmt) : 0,
-            discWt: d.discWt ? parseFloat(d.discWt) : 0,
+            // discAmt: d.discAmt ? parseFloat(d.discAmt) : 0,
+            // discWt: d.discWt ? parseFloat(d.discWt) : 0,
             cashPaid: d.cashPaid ? parseFloat(d.cashPaid) : 0,
             cashRcvd: d.cashRcvd ? parseFloat(d.cashRcvd) : 0,
             bankPaid: d.bankPaid ? parseFloat(d.bankPaid) : 0,
@@ -2545,7 +2545,7 @@ export default function PurchasePage() {
         //     bankRcvdDetails: [],
         // });
         resetBalance();
-        
+
     };
 
 
@@ -2741,8 +2741,8 @@ export default function PurchasePage() {
                     // setStoneDetails(updatedStones);
 
                     // ✅ Recalculate STNWT from stones
-                     const totalStoneWeight = stonesWithId.reduce((sum:number, s:any) => {
-                    return sum + Number(s.stoneWeight || 0);
+                    const totalStoneWeight = stonesWithId.reduce((sum: number, s: any) => {
+                        return sum + Number(s.stoneWeight || 0);
                     }, 0);
 
                     newRow.STNWT = totalStoneWeight;
@@ -2775,9 +2775,7 @@ export default function PurchasePage() {
 
     return (
         <>
-            <Box display={'flex'} bg={theme.colors.formColor} fontSize={'md'} fontWeight={'bold'} justifyContent={'center'} p={1} mb={1} rounded={'xl'}>
-                PURCHASE
-            </Box>
+            
             <Flex gap={1} >
 
                 {/* Loading indicator for transaction data */}
@@ -3098,20 +3096,14 @@ export default function PurchasePage() {
             </Flex>
             {/* Print Modal */}
             {showPrintModal && (
-                <Box
-                    position="fixed" top={0} left={0} w="100vw" h="100vh"
-                    bg="blackAlpha.600" zIndex={1000}
-                    display="flex" alignItems="center" justifyContent="center"
-                    onClick={() => setShowPrintModal(false)}
-                >
-                    <Box onClick={(e) => e.stopPropagation()} maxH="90vh" overflowY="auto" borderRadius="xl">
-                        <PurchaseReceipt
-                            COMPANY_DETAILS={companyDetails}
 
-                            {...printData}
-                        />
-                    </Box>
+                <Box onClick={(e) => e.stopPropagation()} >
+                    <PurchaseReceipt
+                        COMPANY_DETAILS={companyDetails}
+                        {...printData}
+                    />
                 </Box>
+
             )}
 
         </>

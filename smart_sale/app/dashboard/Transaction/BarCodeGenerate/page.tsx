@@ -1363,9 +1363,7 @@ exit
     return (
         <Box display="flex" flexDirection="row" width={"100%"} gap={2}>
             <Box display="flex" flexDirection="column" gap={2} width={'100%'}>
-                <Box bg={theme.colors.formColor} p={1} rounded="xl" display="flex" flexDirection="row" justifyContent="center">
-                    <Text fontSize="base" fontWeight="semibold" textAlign="center">BARCODE GENERATION</Text>
-                </Box>
+              
                 {/* ── Header ── */}
                 <Box bg={theme.colors.formColor} p={2} rounded="xl" display="flex" flexDirection="row" justifyContent="space-between" gap={4}>
                     <Box display="flex" flexDirection="column" gap={4}>
