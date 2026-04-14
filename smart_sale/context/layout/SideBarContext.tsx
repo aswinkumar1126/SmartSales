@@ -270,10 +270,11 @@ const STATIC_MENU: SidebarMenu = {
   },
 
   Transaction: {
+
     Purchase: {
       type: "direct",
       label: "Purchase",
-      route: "/dashboard/Transaction/Purchase",
+      route: "/dashboard/Transaction/PurchasePage",
       icon: AiOutlineShoppingCart,
       title: "PURCHASE ENTRY",
       description: "Create and manage purchase transactions",
@@ -299,14 +300,15 @@ const STATIC_MENU: SidebarMenu = {
       description: "Create and manage sales transactions",
     },
 
-    PurchasePage: {
-      type: "direct",
-      label: "Purchase",
-      route: "/dashboard/Transaction/PurchasePage",
-      icon: AiOutlineShoppingCart,
-      title: "PURCHASE ENTRY",
-      description: "Create and manage purchase transactions",
-    },
+    
+    // Purchase: {
+    //   type: "direct",
+    //   label: "Purchase",
+    //   route: "/dashboard/Transaction/Purchase",
+    //   icon: AiOutlineShoppingCart,
+    //   title: "PURCHASE ENTRY",
+    //   description: "Create and manage purchase transactions",
+    // },
 
     Transaction: {
       icon: Layers,
@@ -382,10 +384,10 @@ const STATIC_MENU: SidebarMenu = {
       items: [
         {
           type: "direct",
-          label: "Summary Report",
+          label: "Stock Report",
           route: "/dashboard/Reports/TagReport/ItemStockReport",
           icon: Layers,
-          title: "Summary Report",
+          title: "ITEM WISE STOCK REPORT",
           description: "View stock and item summary reports",
         },
       ],

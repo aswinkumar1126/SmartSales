@@ -83,6 +83,7 @@ import {TRANSACTIONTYPES} from '@/data/Transaction/TransactionType';
 import { BaseClosingFormDetails } from "@/types/balanceSummary/BalanceSummary";
 //Utilities
 import { formatToFixed } from '@/utils/format/numberFormat';
+import PurchaseReceipt from "@/component/ReceiptPrint/PurchasePrint";
 
 
 //Icons
@@ -1374,7 +1375,7 @@ export default function PurchasePage() {
             {showPrintModal && (
 
                 <Box>
-                    <SalesReceipt
+                    <PurchaseReceipt
                         COMPANY_DETAILS={companyDetails}
                         {...printData}
                     />

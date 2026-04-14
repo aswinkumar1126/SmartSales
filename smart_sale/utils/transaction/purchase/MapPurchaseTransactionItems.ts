@@ -5,20 +5,69 @@ import { TRANSACTIONTYPES } from "@/data/Transaction/TransactionType";
 const mapPurchaseReturnItems = (list: any[] = [], type: string, isTagedItem?: any) => {
     return list.map((item, index) => {
 
-        const stones = item.STONEDETAILS || [];
+        const rowId = `edit-${item.SNO || Date.now()}-${index}`;
 
-        const totalStoneWeight = stones.reduce(
-            (sum: number, s: any) => sum + Number(s.STNWT || 0),
-            0
-        );
+     
 
         const isTagged = item.ITEMID
             ? isTagedItem(Number(item.ITEMID))
             : false;
         const ITEM_TYPE = isTagged ? "TAGGED" : "NON_TAGGED";
+
+
+
+        // ---------------- STONES ----------------
+        const stonesRaw = item.STONEDETAILS || [];
+
+        const normalizedStones = stonesRaw.map((s: any, i: number) => ({
+            id: `stone-${rowId}-${i}`,
+
+            draftRowId: rowId,
+
+            stoneId: String(s.stoneId || s.STNITEMID || ""),
+            subStoneId: String(s.substoneId || s.STNSUBITEMID || ""),
+
+            stonePcs: Number(s.stonepcs || s.STNPCS || 1),
+            stoneWeight: Number(s.stoneWeight || s.STNWT || 0),
+
+            stoneUnit: s.stoneUnit || "g",
+            stoneCalculation: s.stoneCalculation || s.stoneCalculation || "w",
+
+            stoneRate: Number(s.stoneRate || s.STNRATE || 0),
+            stoneAmount: Number(s.stoneAmount || s.STNAMT || 0),
+        }));
+
+        const totalStoneWeight = normalizedStones.reduce(
+            (sum: number, s: any) => sum + s.stoneWeight,
+            0
+        );
      
         const grswt = Number(item.GRSWT || 0);
-        const stnwt = stones.length > 0 ? totalStoneWeight : Number(item.STNWT || 0);
+        const stnwt = normalizedStones.length > 0 ? totalStoneWeight : Number(item.STNWT || 0);
+        const totalStoneAmount = normalizedStones.length > 0 ? normalizedStones.reduce((sum:number ,s:any) => sum + Number(s.stoneAmount), 0) : item.STNAMT || 0 ;
+
+
+        // ---------------- MISC CHARGES (HMC) ----------------
+        const miscChargesRaw = item.PURCHASEOTHERCHARGESDETAILS || [];
+
+        const normalizedMisc = miscChargesRaw.map((c: any, i: number) => ({
+            id: `misc-${rowId}-${i}`,
+
+            draftRowId: rowId,
+
+            chargeName: String(c.chargeId || 0),
+            amount: Number(c.chargeAmount || 0),
+
+            itemId: Number(c.itemId || item.ITEMID || 0),
+        }));
+
+        const totalHMC =
+            normalizedMisc.length > 0
+                ? normalizedMisc.reduce(
+                    (sum: number, c: any) => sum + c.amount,
+                    0
+                )
+                : Number(item.HMC || item.MC || 0);
 
         return {
             __rowId: `edit-${item.SNO || Date.now()}-${index}`,
@@ -41,34 +90,88 @@ const mapPurchaseReturnItems = (list: any[] = [], type: string, isTagedItem?: an
             TOUCH: Number(item.TOUCH || 0),
             PUREWT: Number(item.PUREWT || 0),
 
+            STNAMT: totalStoneAmount,
+            HMC: totalHMC,
             MC: Number(item.MC || 0),
             DESCRIPTION: item.DESCRIPTION || "",
 
-            _stones: stones,
-            _miscCharges: item.OTHERCHARGESDETAILS || [],
+            _stones: normalizedStones,
+            _miscCharges: normalizedMisc || [],
         };
     });
 };
 
 
-const mapPurchaseItems = (list: any[] = [], type: string, ) => {
+const mapPurchaseItems = (list: any[] = [], type: string) => {
     return list.map((item, index) => {
 
-        const stones = item.STONEDETAILS || [];
+        console.log(list,'purchaseitems');
 
-        const totalStoneWeight = stones.reduce(
-            (sum: number, s: any) => sum + Number(s.STNWT || 0),
+        const rowId = `edit-${item.SNO || Date.now()}-${index}`;
+
+        // ---------------- STONES ----------------
+        const stonesRaw = item.STONEDETAILS || [];
+
+        const normalizedStones = stonesRaw.map((s: any, i: number) => ({
+            id: `stone-${rowId}-${i}`,
+
+            draftRowId: rowId,
+
+            stoneId: String(s.stoneId || s.STNITEMID || ""),
+            subStoneId: String(s.substoneId || s.STNSUBITEMID || ""),
+
+            stonePcs: Number(s.stonepcs || s.STNPCS || 1),
+            stoneWeight: Number(s.stoneWeight || s.STNWT || 0),
+
+            stoneUnit: s.stoneUnit || "g",
+            stoneCalculation: s.stoneCalculation || s.stoneCalculation || "w",
+
+            stoneRate: Number(s.stoneRate || s.STNRATE || 0),
+            stoneAmount: Number(s.stoneAmount || s.STNAMT || 0),
+        }));
+
+        const totalStoneWeight = normalizedStones.reduce(
+            (sum: number, s: any) => sum + s.stoneWeight,
             0
         );
 
-  
-
+        // ---------------- BASIC WEIGHTS ----------------
         const grswt = Number(item.GRSWT || 0);
-        const stnwt = stones.length > 0 ? totalStoneWeight : Number(item.STNWT || 0);
 
+        const stnwt =
+            normalizedStones.length > 0
+                ? totalStoneWeight
+                : Number(item.STNWT || 0);
+
+        const netwt = grswt - stnwt;
+
+        // ---------------- MISC CHARGES (HMC) ----------------
+        const miscChargesRaw = item.PURCHASEOTHERCHARGESDETAILS || [];
+
+        const normalizedMisc = miscChargesRaw.map((c: any, i: number) => ({
+            id: `misc-${rowId}-${i}`,
+
+            draftRowId: rowId,
+
+            chargeName: String(c.chargeId || 0),
+            amount: Number(c.chargeAmount || 0),
+
+            itemId: Number(c.itemId || item.ITEMID || 0),
+        }));
+
+        const totalHMC =
+            normalizedMisc.length > 0
+                ? normalizedMisc.reduce(
+                    (sum: number, c: any) => sum + c.amount,
+                    0
+                )
+                : Number(item.HMC || item.MC || 0);
+
+        // ---------------- FINAL ROW ----------------
         return {
-            __rowId: `edit-${item.SNO || Date.now()}-${index}`,
+            __rowId: rowId,
             __isNew: false,
+            __isEditing: false,
 
             TRANSACTION_TYPE: type,
             _type: type,
@@ -77,18 +180,24 @@ const mapPurchaseItems = (list: any[] = [], type: string, ) => {
             TAGNO: item.TAGNO || "",
 
             PCS: Number(item.PCS || 0),
+
             GRSWT: grswt,
             STNWT: stnwt,
-            NETWT: grswt - stnwt,
+            NETWT: netwt,
 
-            TOUCH: Number(item.TOUCH || 0),
+            TOUCH: item.TOUCH || 'TOUCH',
             PUREWT: Number(item.PUREWT || 0),
 
             MC: Number(item.MC || 0),
+            HMC: totalHMC,
+            STNAMT:item.STNAMT || 0,
+
             DESCRIPTION: item.DESCRIPTION || "",
 
-            _stones: stones,
-            _miscCharges: item.OTHERCHARGESDETAILS || [],
+            // ✅ MATCHES SALE TAG STRUCTURE
+            _stones: normalizedStones,
+
+            _miscCharges: normalizedMisc,
         };
     });
 };

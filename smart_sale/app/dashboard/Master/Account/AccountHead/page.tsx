@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect ,useCallback} from "react";
 import {
     Box,
     Button,
@@ -11,6 +11,7 @@ import {
     HStack,
     Fieldset,
     Flex,
+    Badge,
 } from "@chakra-ui/react";
 import { Table } from "@chakra-ui/react/table";
 import { AiOutlineSave } from "react-icons/ai";
@@ -443,6 +444,52 @@ function AccountHeadMaster() {
 
     const { register, focusFirst, focusNext } = useEnterNavigation(formfields, handleSave);
 
+    useEffect(()=>{
+        focusFirst();
+    },[focusFirst]);
+
+
+    const renderAccountRow = useCallback(
+        (account: any, index: number) => {
+            return (
+                <>
+                    <Table.Cell>{index + 1}</Table.Cell>
+                    <Table.Cell>{account.ACNAME}</Table.Cell>
+                    <Table.Cell textAlign="center">
+                        <Box
+                            bg={account.ACTYPE === "PR" ? "orange.200" : "green.100"}
+                            color={account.ACTYPE === "PR" ? "orange.700" : "green.700"}
+                            px={3}
+                            py={1}
+                            borderRadius="full"
+                            fontSize="xs"
+                            fontWeight="600"
+                            display="inline-block"
+                            minW="90px"
+                            textAlign="center"
+                        >
+                            {account.ACTYPE === "PR" ? "PURCHASER" : "CUSTOMER"}
+                        </Box>
+                    </Table.Cell>
+                    <Table.Cell>{account.STATE}</Table.Cell>
+                    <Table.Cell textAlign="center">{account.OPENING_PURE}</Table.Cell>
+                    <Table.Cell textAlign="center">{account.OPENING_CASH}</Table.Cell>
+                    <Table.Cell textAlign="center">{account.ACTIVE}</Table.Cell>
+
+                    <Table.Cell>
+                        <Box display="flex" justifyContent="center">
+                            <FaEdit
+                                onClick={() => handleEdit(account)}
+                                cursor="pointer"
+                            />
+                        </Box>
+                    </Table.Cell>
+                </>
+            );
+        },
+        [handleEdit]
+    );
+
     /* -------------------- UI -------------------- */
     return (
         <Box
@@ -540,25 +587,7 @@ function AccountHeadMaster() {
                         <CustomTable
                             columns={accountColumn}
                             data={accountList}
-                            renderRow={(account, index) => (
-                                <>
-
-                                    <Table.Cell>{index + 1}</Table.Cell>
-                                    <Table.Cell>{account.ACNAME}</Table.Cell>
-                                    <Table.Cell>{account.ACTYPE}</Table.Cell>
-                                    <Table.Cell>{account.STATE}</Table.Cell>
-                                    <Table.Cell textAlign="center">{account.OPENING_PURE}</Table.Cell>
-                                    <Table.Cell textAlign="center">{account.OPENING_CASH}</Table.Cell>
-
-                                    {/* <Table.Cell textAlign="center">{account.OPENING_WEIGHT}</Table.Cell> */}
-                                    <Table.Cell textAlign="center">{account.ACTIVE}</Table.Cell>
-                                    <Table.Cell>
-                                        <Box display="flex" justifyContent="center">
-                                            <FaEdit onClick={() => handleEdit(account)} cursor="pointer" />
-                                        </Box>
-                                    </Table.Cell>
-                                </>
-                            )}
+                            renderRow={renderAccountRow}
                             headerBg="blue.800"
                             headerColor="white"
                             borderColor="white"

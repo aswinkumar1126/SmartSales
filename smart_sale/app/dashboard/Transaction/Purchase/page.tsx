@@ -52,7 +52,7 @@ import { useSessionStorage } from "@/hooks/apiHooks/storage/useSessionStorage";
 import { usePurchaseBalanceSummary } from "@/store/purchase/useBalanceSummaryStore";
 
 /*-------------------  * TYPES * --------------------------*/
-import { TransactionType, UpdateTransactionPayload, TransactionKey, CreateTransaction, PurchaseCLosing, TransactionItems, TRANSACTION_KEY_MAP, ClosingDetails, WeightInfo, purchasereturnPayload, purchasePayload } from "@/types/transcation/Transaction";
+import { TransactionType, UpdateTransactionPayload, TransactionKey, CreateTransaction, PurchaseCLosing, TransactionItems, TRANSACTION_KEY_MAP, ClosingDetails, WeightInfo, PurchaseReturnPayload, PurchasePayload } from "@/types/transcation/Transaction";
 import { TRANSACTIONTYPES } from "@/data/Transaction/TransactionType";
 import { BankTransaction } from "./Balance/BankTransactionModal";
 
@@ -2009,7 +2009,7 @@ export default function PurchasePage() {
         }
 
         if (tranType === "purchase") {
-            const payload: purchasePayload = {
+            const payload: PurchasePayload = {
                 ITEMID: rest.ITEMID ? Number(rest.ITEMID) : null,
                 PCS: Number(rest.PCS || 0),
                 GRSWT: Number(rest.GRSWT || 0),
@@ -2046,7 +2046,7 @@ export default function PurchasePage() {
         }
 
         if (tranType === "purchase_return") {
-            const payload: purchasereturnPayload = {
+            const payload: PurchaseReturnPayload = {
                 ITEMID: rest.ITEMID ? Number(rest.ITEMID) : null,
                 TAGNO: rest.TAGNO || "",
                 PCS: Number(rest.PCS || 0),

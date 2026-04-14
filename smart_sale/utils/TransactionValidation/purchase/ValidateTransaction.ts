@@ -22,8 +22,8 @@ export const validateTransactions = ({
     isDraftRowsChanged,
     isClosingChanged,
     getClosingDetailsPayload,
-    SALE_TRANSACTION_KEY_MAP,
-    SALETRANSACTIONTYPES,
+    TRANSACTION_KEY_MAP,
+    TRANSACTIONTYPES,
     getStockAvailability,
     isIssueType,
 }: any): { valid: boolean; error?: string } => {
@@ -58,7 +58,7 @@ export const validateTransactions = ({
     // ✅ Row-level validation
     for (let i = 0; i < draftRows.length; i++) {
         const row = draftRows[i];
-        const mappedType = SALE_TRANSACTION_KEY_MAP[row.TRANSACTION_TYPE];
+        const mappedType = TRANSACTION_KEY_MAP[row.TRANSACTION_TYPE];
 
         if (!mappedType) {
             return { valid: false, error: `Row ${i + 1}: Invalid transaction type` };
@@ -78,7 +78,7 @@ export const validateTransactions = ({
     const usedByPureId: Record<string, number> = {};
 
     draftRows.forEach((row: any) => {
-        const transactionType = SALETRANSACTIONTYPES.find(
+        const transactionType = TRANSACTIONTYPES.find(
             (t: any) => t.value === row.TRANSACTION_TYPE
         );
         if (!transactionType) return;

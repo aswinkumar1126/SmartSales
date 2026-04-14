@@ -399,7 +399,7 @@ const buildThermalHTML = (p: PurchaseReceiptProps, is50: boolean): string => {
     <div style="font-size:12px;">GST NO: ${CD.GSTNO}</div>
   </div>
   <div class="dashed-line"></div>
-  <div style="text-align:center; font-size:14px; font-weight:bold; letter-spacing:2px; margin:4px 0;">PURCHASE RECEIPT</div>
+  <div style="text-align:center; font-size:14px; font-weight:bold; letter-spacing:1px; margin:4px 0;">PURCHASE RECEIPT</div>
   <div class="dashed-line"></div>
 
   <table style="width:100%; font-size:12px; margin:4px 0;" class="no-border">
@@ -502,6 +502,9 @@ html, body { width:${pageW}; background:#fff; -webkit-print-color-adjust:exact; 
 
 const PurchaseReceipt: React.FC<PurchaseReceiptProps> = (props) => {
   const { columnSize = "40",} = props;
+
+
+  console.log("PurchaseReceipt props", props)
   const is50 = columnSize === "50";
  
   const hasPrintedRef = useRef(false);

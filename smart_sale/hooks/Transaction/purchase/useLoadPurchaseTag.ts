@@ -74,8 +74,8 @@ export const useLoadPurchaseTag = () => {
                 __isEditing: false,
                 __previewSno: draftRows.length + 1,
 
-                TRANSACTION_TYPE: "PU",
-                _type: "PU",
+                TRANSACTION_TYPE: "PR",
+                _type: "PR",
 
                 ITEMID: data.ITEMID ? String(data.ITEMID) : "",
                 TAGNO: String(data.TAGNO || tagNo),
@@ -131,12 +131,16 @@ export const useLoadPurchaseTag = () => {
                     return sum + Number(s.stoneWeight || 0);
                 }, 0);
 
+                const totalStoneAmount = stonesWithId.reduce((sum:number , s:any)=>{
+                    return sum + Number(s.stoneAmount || 0)} , 0);
+
                 newRow.STNWT = totalStoneWeight;
+                newRow.STNAMT = totalStoneAmount || Number(data.STNAMT || 0);
                 newRow._stones= stonesWithId;
             }
 
             // ---------------- STORE UPDATE ----------------
-            console.log(newRow,'newRownewRow')
+       
             addDraftRow(newRow);
 
             setSelectedTransactionId("SA");

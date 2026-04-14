@@ -92,6 +92,7 @@ export interface getSingleTagDetail {
     TOUCH: number;
     TRANTYPE?: string | null;
     WASPER: number;
+    STNAMT:number;
     STONEDETAILS:
     {
         APPVER?: string | null;
