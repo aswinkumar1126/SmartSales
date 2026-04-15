@@ -114,6 +114,7 @@ export function useStockAvailability({
         ): StockAvailability | undefined => {
             if (!id) return undefined;
 
+            console.log("getStockAvailability called with:", { id, options })
             const { excludeRowId, originalValue } = options ?? {};
 
             let stock: any = null;

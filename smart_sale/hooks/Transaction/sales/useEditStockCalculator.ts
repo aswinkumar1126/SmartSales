@@ -20,7 +20,7 @@ export function useEditStockCalculator({
         if (!details) return 0;
 
         const rows = type === 'IS'
-            ? [...(details.issue || []), ...(details.receipt || [])]
+            ? [...(details.issue || [])]
             : [...(details.sales || []), ...(details.sales_return || [])];
 
         return rows

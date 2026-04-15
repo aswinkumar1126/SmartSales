@@ -5,6 +5,7 @@ export const buildTransactionPayload = ({
 }: any) => {
     const transactionDetails: Record<string, any[]> = {};
 
+    console.log(draftRows,'draftRowsforupdates')
     draftRows.forEach((row: any) => {
         const mappedType = TRANSACTION_KEY_MAP[row.TRANSACTION_TYPE];
         if (!mappedType) return;

@@ -382,8 +382,8 @@ export default function SalesPage() {
 
     useEffect(() => {
 
-        const openPure = Number(openingBalance?.data?.openpure ?? 0);
-        const openCash = Number(openingBalance?.data?.opencash ?? 0);
+        const openPure = Number(openingBalance?.data?.OPENPURE ?? 0);
+        const openCash = Number(openingBalance?.data?.OPENCASH ?? 0);
 
         setApiBalanceOpening({
             openPure,
@@ -872,7 +872,7 @@ export default function SalesPage() {
         itemsStockList,
         draftRows,
         SALETRANSACTIONTYPES,
-        isEditMode: !!originalTransactionData, // Enable edit mode if editing
+        isEditMode: isEditing, // Enable edit mode if editing
         originalTransactionData, // Pass the original transaction data
     });
 

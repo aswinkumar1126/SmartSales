@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { HStack, Text, Box, Button } from "@chakra-ui/react";
 import SearchBar from "@/component/search/SearchBar";
 import { useTheme } from "@/context/theme/themeContext";
@@ -8,7 +8,7 @@ import { useSessionStorage } from "@/hooks/apiHooks/storage/useSessionStorage";
 
 export interface transactionIdsList {
     label: string;
-    value: string;
+    value: string; // transactionId
 }
 
 export interface TransactionListingProps {
@@ -16,8 +16,8 @@ export interface TransactionListingProps {
     searchTerm: string;
     handleSearchChange: (term: string) => void;
     handleEditTransaction?: (value: string) => void;
-    handleDeselect?: () => void; // parent tells child to deselect
-    deselectFlag?: boolean; // optional prop to trigger deselect
+    handleDeselect?: () => void;
+    deselectFlag?: boolean;
 }
 
 export const TransactionListing: React.FC<TransactionListingProps> = ({
@@ -26,60 +26,99 @@ export const TransactionListing: React.FC<TransactionListingProps> = ({
     handleSearchChange,
     handleEditTransaction,
     handleDeselect,
-    deselectFlag =false,
+    deselectFlag = false,
 }) => {
     const { theme } = useTheme();
 
-    const [selectedIndex, setSelectedIndex] = useSessionStorage<number>('selectedTransactionId', -1); // no default selection
+    // ✅ Store transactionId instead of index
+    const [selectedTransactionId, setSelectedTransactionId] =
+        useSessionStorage<string>("selectedTransactionId", "");
+
     const containerRef = useRef<HTMLDivElement>(null);
 
-    console.log(selectedIndex, 'selectedIndex');
-    console.log(selectedIndex,deselectFlag,'deselectFlag')
-    // Deselect if parent tells us to
+    // ✅ Derive index safely (for keyboard nav)
+    const selectedIndex = useMemo(() => {
+        return transactionIdsList.findIndex(
+            (item) => item.value === selectedTransactionId
+        );
+    }, [transactionIdsList, selectedTransactionId]);
+
+    // ✅ Deselect from parent trigger
     useEffect(() => {
         if (deselectFlag) {
-            console.log('comes')
-            setSelectedIndex(-1);
+            setSelectedTransactionId("");
         }
     }, [deselectFlag]);
 
-
-    // Keyboard navigation
+    // ✅ Keyboard navigation
     const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
         if (transactionIdsList.length === 0) return;
 
+        let nextIndex = selectedIndex;
+
         if (e.key === "ArrowDown") {
             e.preventDefault();
-            const next = selectedIndex < transactionIdsList.length - 1 ? selectedIndex + 1 : 0;
-            setSelectedIndex(next);
-            handleEditTransaction?.(String(transactionIdsList[next].value));
+            nextIndex =
+                selectedIndex < transactionIdsList.length - 1
+                    ? selectedIndex + 1
+                    : 0;
         }
 
         if (e.key === "ArrowUp") {
             e.preventDefault();
-            const next = selectedIndex > 0 ? selectedIndex - 1 : transactionIdsList.length - 1;
-            setSelectedIndex(next);
-            handleEditTransaction?.(String(transactionIdsList[next].value));
+            nextIndex =
+                selectedIndex > 0
+                    ? selectedIndex - 1
+                    : transactionIdsList.length - 1;
         }
 
-        if (e.key === "Enter" && selectedIndex >= 0) {
-            handleEditTransaction?.(String(transactionIdsList[selectedIndex].value));
+        if (e.key === "Enter") {
+            if (selectedIndex >= 0) {
+                handleEditTransaction?.(selectedTransactionId);
+            }
+            return;
+        }
+
+        // ✅ Update selection
+        if (nextIndex !== selectedIndex && nextIndex >= 0) {
+            const nextItem = transactionIdsList[nextIndex];
+            setSelectedTransactionId(nextItem.value);
+            handleEditTransaction?.(nextItem.value);
         }
     };
 
-    // Auto-scroll active item into view
+    // ✅ Auto-scroll active item
     useEffect(() => {
-        if (selectedIndex < 0) return;
+        if (!selectedTransactionId) return;
+
         const container = containerRef.current;
-        if (container) {
-            const activeEl = container.querySelectorAll("div[data-index]")[selectedIndex] as HTMLDivElement;
-            activeEl?.scrollIntoView({ block: "nearest" });
-        }
-    }, [selectedIndex]);
+        if (!container) return;
+
+        const activeEl = container.querySelector(
+            `[data-id="${selectedTransactionId}"]`
+        ) as HTMLDivElement;
+
+        activeEl?.scrollIntoView({
+            block: "nearest",
+        });
+    }, [selectedTransactionId]);
+
+    // ✅ Handle click selection
+    const handleItemClick = (id: string) => {
+        setSelectedTransactionId(id);
+        handleEditTransaction?.(id);
+    };
+
+    // ✅ Handle clear
+    const handleClear = () => {
+        setSelectedTransactionId("");
+        handleDeselect?.();
+    };
 
     return (
         <>
-            <Box display="flex" alignItems="center" justifyContent="space-between" gap={1} >
+            {/* 🔍 Search + Clear */}
+            <Box display="flex" alignItems="center" gap={1}>
                 <SearchBar
                     placeholder="Search Item..."
                     searchTerm={searchTerm}
@@ -88,75 +127,78 @@ export const TransactionListing: React.FC<TransactionListingProps> = ({
                     maxWidth="100%"
                     rounded="sm"
                 />
-                {selectedIndex !== -1 && <Button
-                    bg="red.600"
-                    size="xs"
-                    fontSize="xs"
-                    onClick={handleDeselect} // parent handles deselect
-                >
-                    Clear
-                </Button>}
 
+                {selectedTransactionId && (
+                    <Button
+                        bg="red.600"
+                        size="xs"
+                        fontSize="xs"
+                        onClick={handleClear}
+                    >
+                        Clear
+                    </Button>
+                )}
             </Box>
+
+            {/* 📋 List */}
             <Box
                 ref={containerRef}
                 tabIndex={0}
                 onKeyDown={handleKeyDown}
-                minHeight="auto"
                 overflowY="auto"
                 outline="none"
                 _focus={{ outline: "none" }}
                 bg={theme.colors.formColor}
                 p={2}
                 css={{
-                    "&::-webkit-scrollbar": {
-                        width: "2px",
-                        rounded: '2xl'// ✅ minimal width
-                    },
+                    "&::-webkit-scrollbar": { width: "2px" },
                     "&::-webkit-scrollbar-track": {
                         background: "transparent",
                     },
                     "&::-webkit-scrollbar-thumb": {
-                        background: "rgba(0,0,0,0.2)", // ✅ subtle thumb
+                        background: "rgba(0,0,0,0.2)",
                         borderRadius: "8px",
-                    },
-                    "&::-webkit-scrollbar-thumb:hover": {
-                        background: "rgba(0,0,0,0.3)",
                     },
                 }}
             >
-
-
                 {transactionIdsList.length > 0 ? (
-                    transactionIdsList.map((item, index) => (
-                        <HStack
-                            key={item.value}
-                            data-index={index}
-                            justify="space-between"
-                            p={1.5}
-                            bg={selectedIndex === index ? "cyan.100" : "gray.50"}
-                            border="1px solid"
-                            borderColor={selectedIndex === index ? "cyan.400" : "gray.200"}
-                            _hover={{ bg: "cyan.50" }}
-                            cursor="pointer"
-                            onClick={() => {
-                                setSelectedIndex(index);
-                                handleEditTransaction?.(String(item.value)); // ✅ call directly here
-                            }}
-                        >
-                            <Text fontWeight="semibold" color="black" fontSize="2xs">
-                                {item.value}
-                            </Text>
-                            {/* <Text fontWeight="semibold" color="gray.600" fontSize="xs">
-                            {item.ITEMNAME}
-                        </Text> */}
-                        </HStack>
-                    ))
+                    transactionIdsList.map((item) => {
+                        const isActive =
+                            selectedTransactionId === item.value;
+
+                        return (
+                            <HStack
+                                key={item.value}
+                                data-id={item.value}
+                                justify="space-between"
+                                p={1.5}
+                                bg={isActive ? "cyan.100" : "gray.50"}
+                                border="1px solid"
+                                borderColor={
+                                    isActive ? "cyan.400" : "gray.200"
+                                }
+                                _hover={{ bg: "cyan.50" }}
+                                cursor="pointer"
+                                onClick={() =>
+                                    handleItemClick(item.value)
+                                }
+                            >
+                                <Text
+                                    fontWeight="semibold"
+                                    color="black"
+                                    fontSize="2xs"
+                                >
+                                    {item.value}
+                                </Text>
+                            </HStack>
+                        );
+                    })
                 ) : (
-                    <Text p={2} fontSize={'2xs'}>No Entries Available</Text>
+                    <Text p={2} fontSize="2xs">
+                        No Entries Available
+                    </Text>
                 )}
             </Box>
         </>
-
     );
 };

@@ -19,9 +19,16 @@ export function useEditStockCalculator({
         const details = originalTransactionData?.TRANSACTION_DETAILS;
         if (!details) return 0;
 
+        // const rows = type === 'ISP'
+        //     ? [...(details.issue || []), ...(details.receipt || [])]
+        //     : [...(details.purchase || []), ...(details.purchase_return || [])];
+
         const rows = type === 'ISP'
-            ? [...(details.issue || []), ...(details.receipt || [])]
-            : [...(details.sales || []), ...(details.sales_return || [])];
+            ? [...(details.issue || [])]
+            : [...(details.purchase || [])];
+
+
+        console.log(rows,'rowsrows');
 
         return rows
             .filter(r => String(r.PUREID || r.ITEMID) === String(id))

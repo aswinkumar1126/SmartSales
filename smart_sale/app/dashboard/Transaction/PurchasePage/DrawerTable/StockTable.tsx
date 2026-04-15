@@ -200,7 +200,7 @@ export default function StockDrawer({
                                 headerColor={theme.colors.whiteColor}
                                 renderRow={(row) => {
 
-                                  
+                                    console.log(stockData,'stockDatastockData')
 
                                     const stockId = getStockId(row);
 
@@ -209,12 +209,12 @@ export default function StockDrawer({
                                     // Get availability for this row based on stock type
                                     const availability = getStockAvailability && stockId
                                         ? getStockAvailability(stockId, {
-                                            transactionTypeCode: showStock === "PURE" ? "IS" : "SA",
+                                            transactionTypeCode: showStock === "PURE" ? "ISP" : "PU",
                                             isEditing: false,
                                         })
                                         : undefined;
 
-
+                                    console.log(availability ,getStockAvailability , stockId,'availability');
 
                                     const isOutOfStock = showStock === "PURE"
                                         ? (availability?.remaining ?? 0) <= 0

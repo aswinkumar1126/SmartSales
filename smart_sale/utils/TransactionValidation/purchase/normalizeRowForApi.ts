@@ -16,22 +16,25 @@ import { TransactionKey, PurchasePayload } from "@/types/transcation/Transaction
             ...rest
         } = row;
 
+        console.log(rest ,'rowscolumns');
      
 
         // ---------------- ISSUE / RECEIPT ----------------
-        if (tranType === "issue" || tranType === "receipt") {
-            return {
-                PUREID: rest.PUREID ? Number(rest.PUREID) : undefined,
-                WT: Number(rest.WT || 0),
-                TOUCH: Number(rest.TOUCH || 0),
-                PUREWT: Number(rest.PUREWT || 0),
-                AWT: Number(rest.AWT || 0),
-                ATOUCH: Number(rest.ATOUCH || 0),
-                APUREWT: Number(rest.APUREWT || 0),
-            };
-        }
+     if (tranType === "issue" || tranType === "receipt") {
+         return {
+             PUREID: rest.PUREID ? Number(rest.PUREID) : undefined,
+             WT: Number(rest.WT || 0),
+             TOUCH: Number(rest.TOUCH || 0),
+             PUREWT: Number(rest.PUREWT || 0),
+             AWT: Number(rest.AWT || 0),
+             ATOUCH: Number(rest.ATOUCH || 0),
+             APUREWT: Number(rest.APUREWT || 0),
 
-        // ---------------- SALES ----------------
+             ...(rest.SNO && { SNO: String(rest.SNO) }) // ✅ only added if exists
+         };
+     }
+
+        // ---------------- PURCHASE ----------------
         if (tranType === "purchase") {
             const itemId = rest.ITEMID ? Number(rest.ITEMID) : null;
 
@@ -54,12 +57,13 @@ import { TransactionKey, PurchasePayload } from "@/types/transcation/Transaction
 
                 ...(editTransaction && { SNO: String(rest.SNO || "") }),
                 ...(rest.DESCRIPTION && { DESCRIPTION: rest.DESCRIPTION }),
+                ...(rest.SNO && { SNO: String(rest.SNO) }) // ✅ only added if exists
             };
 
             return payload;
         }
 
-        // ---------------- SALES RETURN ----------------
+        // ---------------- PURCHASE RETURN ----------------
         if (tranType === "purchase_return") {
             const payload: PurchasePayload = {
                 ITEMID: rest.ITEMID ? Number(rest.ITEMID) : null,
@@ -80,6 +84,7 @@ import { TransactionKey, PurchasePayload } from "@/types/transcation/Transaction
 
                 ...(editTransaction && { SNO: String(rest.SNO || "") }),
                 ...(rest.DESCRIPTION && { DESCRIPTION: rest.DESCRIPTION }),
+                ...(rest.SNO && { SNO: String(rest.SNO) }) // ✅ only added if exists
             };
 
             return payload;

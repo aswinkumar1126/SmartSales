@@ -287,7 +287,7 @@ export default function DraftTransactionTable({
 
     const orderedKeys = useMemo(() => {
         if (isIssue) return ["PUREID", "WT", "AWT", "TOUCH", "ATOUCH", "PUREWT", "APUREWT"];
-        return isTag
+        return isTag && transactionType === "PR"
             ? ["TAGNO", "ITEMID", "PCS", "GRSWT", "STNWT", "NETWT", "WASTYPE", "WASPER",
                 "WASTAGE", "TOUCH", "PUREWT", "HMC", "MC", "STNAMT", "DESCRIPTION"]
             : ["ITEMID", "PCS", "GRSWT", "STNWT", "NETWT", "WASTYPE", "WASPER",
@@ -609,11 +609,11 @@ export default function DraftTransactionTable({
         if (!validateForm()) return;
 
         // ── Basic value validation ─────────────────────────────────────────
-        if (transactionType === "IS" && Number(formData.WT) <= 0) {
+        if (transactionType === "ISP" && Number(formData.WT) <= 0) {
             toaster.create({ title: "Invalid Weight", description: "Weight must be greater than 0", type: "error" });
             return;
         }
-        if (transactionType === "SA") {
+        if (transactionType === "PU") {
             if (Number(formData.PCS) <= 0) {
                 toaster.create({ title: "Invalid Pieces", description: "Pieces must be greater than 0", type: "error" });
                 return;
@@ -625,11 +625,11 @@ export default function DraftTransactionTable({
         }
 
         // ── Stock availability check ───────────────────────────────────────
-        const stockId = transactionType === "IS" ? formData.PUREID : formData.ITEMID;
+        const stockId = transactionType === "ISP" ? formData.PUREID : formData.ITEMID;
         if (stockId) {
             const isEditMode = !!(currentEditingRowId && currentEditingTransactionType === transactionType);
 
-            if (transactionType === "SA") {
+            if (transactionType === "PU") {
                 const availablePieces = getAvailablePieces?.(stockId, {
                     excludeRowId: isEditMode ? (currentEditingRowId as string) : undefined,
                     isEditing: isEditMode,
@@ -663,7 +663,7 @@ export default function DraftTransactionTable({
                 }
             }
 
-            if (transactionType === "IS") {
+            if (transactionType === "ISP") {
                 const requestedWeight = Number(formData.WT) || 0;
                 const originalWeight = isEditMode ? Number(formData._originalWeight) || 0 : 0;
                 const availableWeight = getAvailableWeight?.(stockId, {
@@ -672,6 +672,8 @@ export default function DraftTransactionTable({
                     originalWeight,
                     transactionTypeCode: transactionType,
                 }) ?? null;
+
+              
 
                 if (availableWeight !== null && requestedWeight > availableWeight) {
                     toaster.create({
@@ -745,24 +747,25 @@ export default function DraftTransactionTable({
             });
 
             if (isIssue && (row.PUREID || row.ITEMID)) {
-                const stockId = tranType === "IS" ? row.PUREID : row.ITEMID;
+                const stockId = tranType === "ISP" ? row.PUREID : row.ITEMID;
                 if (stockId && getStockAvailability) {
                     const availability = getStockAvailability(stockId, {
                         excludeRowId: row.__rowId,
                         isEditing: true,
-                        originalWeight: tranType === "IS" ? Number(row.WT) || 0 : Number(row.NETWT) || 0,
+                        originalWeight: tranType === "ISP" ? Number(row.WT) || 0 : Number(row.NETWT) || 0,
                         transactionTypeCode: tranType || "",
                     });
+                    console.log(availability, 'availabilityintable')
                     if (availability) {
-                        if (tranType === "IS") {
+                        if (tranType === "ISP") {
                             next._originalWeight = Number(row.WT) || 0;
                             next._pureId = row.PUREID;
                             toaster.create({
-                                title: "Stock Info - IS",
+                                title: "Stock Info - ISP",
                                 description: `Total: ${availability.weight.total.toFixed(3)}g | Used: ${availability.weight.used.toFixed(3)}g | Available: ${availability.weight.remaining.toFixed(3)}g`,
                                 type: "info", duration: 4000,
                             });
-                        } else if (tranType === "SA") {
+                        } else if (tranType === "PU") {
                             next._originalPieces = Number(row.PCS) || 0;
                             next._originalNetwt = Number(row.NETWT) || 0;
                             next._itemId = row.ITEMID;
@@ -772,8 +775,8 @@ export default function DraftTransactionTable({
                                 type: "info", duration: 5000,
                             });
                         }
-                        next._availableStock = tranType === "IS" ? availability.weight.remaining : availability.pieces.remaining;
-                        next._totalStock = tranType === "IS" ? availability.weight.total : availability.pieces.total;
+                        next._availableStock = tranType === "ISP" ? availability.weight.remaining : availability.pieces.remaining;
+                        next._totalStock = tranType === "ISP" ? availability.weight.total : availability.pieces.total;
                         next._stockAvailability = availability;
                     }
                 }

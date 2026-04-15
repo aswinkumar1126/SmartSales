@@ -201,7 +201,7 @@ export default function PurchasePage() {
     });
 
     const [singleSearch, setSingleSearch] = useSessionStorage<string>(TRANSACTION_LIST_SEARCH, '');
-    const [deselectFlag, setDeselectFlag] = useState(false);
+    const [deselectFlag, setDeselectFlag] = useSessionStorage<boolean>('TRAN_ID_SELECT', false);
     const [showPrintModal, setShowPrintModal] = useState<boolean>(false);
     const [printData, setPrintData] = useState<any>(null);
 
@@ -213,6 +213,7 @@ export default function PurchasePage() {
         itemId: '',
         accode: ''
     });
+    console.log(deselectFlag, 'deselectFlag');
 
     const filter = ''
 
@@ -380,8 +381,8 @@ export default function PurchasePage() {
 
     useEffect(() => {
 
-        const openPure = Number(openingBalance?.data?.openpure ?? 0);
-        const openCash = Number(openingBalance?.data?.opencash ?? 0);
+        const openPure = Number(openingBalance?.data?.OPENPURE ?? 0);
+        const openCash = Number(openingBalance?.data?.OPENCASH ?? 0);
 
         setApiBalanceOpening({
             openPure,
@@ -855,8 +856,8 @@ export default function PurchasePage() {
     const {
         transactionKey,
         isIssue,
-        isSales,
-        isSalesReturn,
+        isPurchase,
+        isPurchaseReturn,
         isReceipt,
         getStockAvailability,
         getAvailableWeight,
@@ -864,21 +865,17 @@ export default function PurchasePage() {
         validateQuantity,
         getStockForTransaction,
         // These are only available in edit mode
-        getEditAvailableWeightForIS,
-        getEditAvailableWeightForSA,
+        getEditAvailableWeightForISP,
+        getEditAvailableWeightForPU,
     } = useStockAvailability({
         transactionCode: (selectedTransactionTypes[0] ?? TRANSACTIONTYPES[0]).code,
         pureStockList,
         itemsStockList,
         draftRows,
         TRANSACTIONTYPES,
-        isEditMode: !!originalTransactionData, // Enable edit mode if editing
+        isEditMode: isEditing, // Enable edit mode if editing
         originalTransactionData, // Pass the original transaction data
     });
-
-    const editavailable = getAvailableWeight('5');
-    console.log(editavailable, 'editavailable');
-
 
     /* ================================
         Calculate Totals For Specific Type
@@ -1035,6 +1032,8 @@ export default function PurchasePage() {
 
         const result = buildTransactionRequest();
 
+        console.log(result.payload ,'updatepayload');
+
         if (!result.valid || !result.payload) {
             toaster.create({
                 title: "Validation Error",
@@ -1043,8 +1042,10 @@ export default function PurchasePage() {
             });
             return;
         }
+  
 
         try {
+
             await updateTransaction.mutateAsync({
                 entryNo: Number(headerForm.ENTRYNO),
                 payload: result.payload,
@@ -1052,17 +1053,21 @@ export default function PurchasePage() {
             });
 
             setEditingSno(null);
-
-            toaster.create({
-                title: "Transaction Updated",
-                description: "Transaction updated successfully.",
-                type: "success",
-            });
+;
 
             goldStockRefetch();
             itemStockRefetch();
             openingBalanceRefetch();
 
+            setEditingState({ rowId: null, transactionType: null });
+
+            toaster.create({
+                title: "Transaction Update",
+                description: "Transaction Updated Successfully",
+                type: "success",
+            });
+
+            
             resetStore();
             resetBalance();
 

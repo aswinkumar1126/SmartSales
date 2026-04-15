@@ -214,7 +214,7 @@ export default function StockDrawer({
                                         })
                                         : undefined;
 
-
+                                    console.log(availability ,'avaliableinstocktable')
 
                                     const isOutOfStock = showStock === "PURE"
                                         ? (availability?.remaining ?? 0) <= 0

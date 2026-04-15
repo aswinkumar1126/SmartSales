@@ -32,8 +32,8 @@ export interface StockAvailability {
     stockSource: 'pure' | 'items';
     transactionKey: TransactionKey;
     isIssue: boolean;
-    isSales: boolean;
-    isSalesReturn: boolean;
+    isPurchase: boolean;
+    isPurchaseReturn: boolean;
     isReceipt: boolean;
     weight: QuantityDetail;
     pieces: QuantityDetail;
@@ -74,9 +74,10 @@ export function useStockAvailability({
 
     const transactionKey = TRANSACTION_KEY_MAP[transactionCode];
     const isIssue = transactionKey === 'issue';
-    const isSales = transactionKey === 'purchase';
-    const isSalesReturn = transactionKey === 'purchase_return';
     const isReceipt = transactionKey === 'receipt';
+    const isPurchase = transactionKey === 'purchase';
+    const isPurchaseReturn = transactionKey === 'purchase_return';
+   
 
     const getUsedQuantityById = useCallback((id: string | number, options?: {
         excludeRowId?: string,
@@ -85,6 +86,8 @@ export function useStockAvailability({
     }) => {
         const pureIdStr = String(id);
         const { excludeRowId, transactionTypeCode, field = 'WT' } = options || {};
+
+
 
         const filteredRows = draftRows.filter(row => {
             if (excludeRowId && row.__rowId === excludeRowId) return false;
@@ -131,8 +134,9 @@ export function useStockAvailability({
                 // For edit mode, get original usage from transaction being edited
                 if (isEditMode && originalTransactionData) {
                     originalUsage = editCalculator.getOriginalUsage(String(id), 'WT', 'ISP');
+                    console.log("Original usage for ISP:", originalUsage);
                 }
-            } else if (isSales || isSalesReturn) {
+            } else if (isPurchase || isPurchaseReturn) {
                 stock = itemsStockList.find(
                     (s) =>
                         String(s.itemId) === String(id) ||
@@ -172,7 +176,7 @@ export function useStockAvailability({
             if (isEditMode) {
                 // Edit mode formula: Base Stock + Original - Current Draft
                 weightRemaining = Math.max(totalAvailableWeight + originalUsage - usedWeight, 0);
-                piecesRemaining = Math.max(totalAvailablePieces + (isSales || isSalesReturn ? originalUsage : 0) - usedPieces, 0);
+                piecesRemaining = Math.max(totalAvailablePieces + (isPurchase || isPurchaseReturn ? originalUsage : 0) - usedPieces, 0);
             } else {
                 // Normal mode formula: Base Stock - Current Draft
                 weightRemaining = Math.max(totalAvailableWeight - usedWeight, 0);
@@ -184,8 +188,8 @@ export function useStockAvailability({
                 stockSource,
                 transactionKey,
                 isIssue,
-                isSales,
-                isSalesReturn,
+                isPurchase,
+                isPurchaseReturn,
                 isReceipt,
                 weight: {
                     total: totalAvailableWeight,
@@ -212,8 +216,8 @@ export function useStockAvailability({
             itemsStockList,
             getUsedQuantityById,
             isIssue,
-            isSales,
-            isSalesReturn,
+            isPurchase,
+            isPurchaseReturn,
             isReceipt,
             transactionKey,
             isEditMode,
@@ -255,14 +259,14 @@ export function useStockAvailability({
                 if (field === 'PIECES') return value <= availability.pieces.remaining;
             }
 
-            if (isSales || isSalesReturn) {
+            if (isPurchase || isPurchaseReturn) {
                 if (field === 'NETWT') return value <= availability.weight.remaining;
                 if (field === 'PIECES') return value <= availability.pieces.remaining;
             }
 
             return false;
         },
-        [getStockAvailability, isIssue, isReceipt, isSales, isSalesReturn]
+        [getStockAvailability, isIssue, isReceipt, isPurchase, isPurchaseReturn]
     );
 
     const getStockForTransaction = useCallback(
@@ -272,7 +276,7 @@ export function useStockAvailability({
                     (s) => String(s.pureId) === String(pureId)
                 ) ?? null;
             }
-            if (isSales || isSalesReturn) {
+            if (isPurchase || isPurchaseReturn) {
                 return itemsStockList.find(
                     (s) =>
                         String(s.itemId) === String(pureId) ||
@@ -281,14 +285,14 @@ export function useStockAvailability({
             }
             return null;
         },
-        [pureStockList, itemsStockList, isIssue, isReceipt, isSales, isSalesReturn]
+        [pureStockList, itemsStockList, isIssue, isReceipt, isPurchase, isPurchaseReturn]
     );
 
     return {
         transactionKey,
         isIssue,
-        isSales,
-        isSalesReturn,
+        isPurchase,
+        isPurchaseReturn,
         isReceipt,
         getStockAvailability,
         getAvailableWeight,
@@ -297,8 +301,8 @@ export function useStockAvailability({
         getStockForTransaction,
         // Expose edit calculator methods for direct access if needed
         ...(isEditMode && {
-            getEditAvailableWeightForIS: (pureId: string) => editCalculator.getAvailableWeightForISP(pureId),
-            getEditAvailableWeightForSA: (itemId: string) => editCalculator.getAvailableWeightForPU(itemId),
+            getEditAvailableWeightForISP: (pureId: string) => editCalculator.getAvailableWeightForISP(pureId),
+            getEditAvailableWeightForPU: (itemId: string) => editCalculator.getAvailableWeightForPU(itemId),
         }),
     };
 }

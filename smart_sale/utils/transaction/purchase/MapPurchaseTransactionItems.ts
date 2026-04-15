@@ -94,6 +94,7 @@ const mapPurchaseReturnItems = (list: any[] = [], type: string, isTagedItem?: an
             HMC: totalHMC,
             MC: Number(item.MC || 0),
             DESCRIPTION: item.DESCRIPTION || "",
+            SNO: item.SNO || "",
 
             _stones: normalizedStones,
             _miscCharges: normalizedMisc || [],
@@ -193,6 +194,7 @@ const mapPurchaseItems = (list: any[] = [], type: string) => {
             STNAMT:item.STNAMT || 0,
 
             DESCRIPTION: item.DESCRIPTION || "",
+            SNO: item.SNO || "",
 
             // ✅ MATCHES SALE TAG STRUCTURE
             _stones: normalizedStones,
@@ -226,6 +228,7 @@ const mapIssueItems = (list: any[] = [], type: string) => {
             APUREWT: Number(item.PUREWT || 0),
 
             DESCRIPTION: item.DESCRIPTION || "",
+            SNO : item.SNO || "",
         };
     });
 };
