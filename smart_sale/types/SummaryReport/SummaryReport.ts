@@ -1,6 +1,8 @@
 export interface ItemStockEntry {
   ITEMID: number | null;
-  ITEMNAME: string;
+  ITEMNAME: string|null;
+  PUREID: number | null;
+  PUREGOLDNAME: string|null;
   OP_PCS: number;
   OP_GRSWT: number;
   OP_NETWT: number;

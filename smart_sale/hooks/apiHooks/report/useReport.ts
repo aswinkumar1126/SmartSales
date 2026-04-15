@@ -10,5 +10,6 @@ export const useTagedReport = () =>{
         method:'GET',
         select: (res) => res.data
 
-    })
+    }
+)
 }
