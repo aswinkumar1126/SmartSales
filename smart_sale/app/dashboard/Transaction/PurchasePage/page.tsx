@@ -76,10 +76,9 @@ import { usePurchaseBalanceSummary } from "@/store/purchase/useBalanceSummarySto
 import { usePurchaseHeader } from "@/store/purchase/usePurchaseHeader";
 import { usePurchaseTransactionStore } from "@/store/purchase/usePurchaseTransactionStore";
 
-
 // Types & Constants
 import { ClosingDetails, WeightInfo, PurchaseReturnPayload, PurchasePayload, TransactionType, TRANSACTION_KEY_MAP, CreateTransaction, TransactionItems } from "@/types/transcation/Transaction";
-import {TRANSACTIONTYPES} from '@/data/Transaction/TransactionType';
+import { TRANSACTIONTYPES } from '@/data/Transaction/TransactionType';
 import { BaseClosingFormDetails } from "@/types/balanceSummary/BalanceSummary";
 //Utilities
 import { formatToFixed } from '@/utils/format/numberFormat';
@@ -130,9 +129,21 @@ export default function PurchasePage() {
     const today = new Date().toISOString().split("T")[0];
 
     const initialDraftRowsRef = useRef<any[]>([]);
-    const initialClosingRef = useRef<BaseClosingFormDetails>(null);
+    const initialClosingRef = useRef<BaseClosingFormDetails>(
+        {
+            BANKPAID: "",
+            BANKPAIDDETAILS: [],
+            BANKRCVD: "",
+            BANKRCVDDETAILS: [],
+            CASHPAID: "",
+            CASHRCVD: "",
+            CONVAMT: "",
+            CONVTYPE: "",
+            CONVWT: ""
+        }
+    );
 
-    console.log(initialClosingRef.current, initialDraftRowsRef.current, 'currentref');
+    console.log(initialClosingRef.current, 'currentClosingRef');
 
     /* ================================
        GLOBAL  HEADER MANAGEMENT
@@ -201,7 +212,7 @@ export default function PurchasePage() {
     });
 
     const [singleSearch, setSingleSearch] = useSessionStorage<string>(TRANSACTION_LIST_SEARCH, '');
-    const [deselectFlag, setDeselectFlag] = useSessionStorage<boolean>('TRAN_ID_SELECT', false);
+    const [deselectFlag, setDeselectFlag] = useState<boolean>(false);
     const [showPrintModal, setShowPrintModal] = useState<boolean>(false);
     const [printData, setPrintData] = useState<any>(null);
 
@@ -566,13 +577,15 @@ export default function PurchasePage() {
         setDraftRows,
         updateDraftRow,
         clearDraftRowsByType,
+        setSelectedTransactionTypes,
+
         resetStore,
-        setSelectedTransactionTypes
+
     } = usePurchaseTransactionStore();
 
     const { handleAddRow, handleEditRow, handleRemoveRow, handleUpdateRow } = useDraftRowOperations(isTagedItem);
 
-  
+
 
 
     // Handle clear rows for type
@@ -692,8 +705,8 @@ export default function PurchasePage() {
         setEditingState({ rowId: null, transactionType: null });
         resetDraftRowTempId();
         setSingleSearch("");
-        setDeselectFlag(true);
-        setTimeout(() => setDeselectFlag(false), 50);
+        // setDeselectFlag(true);
+        // setTimeout(() => setDeselectFlag(false), 50);
     }, [editingState]);
 
 
@@ -707,7 +720,7 @@ export default function PurchasePage() {
         setOpeningBalance(data, true);
         setEditingSno(sno);
 
-        console.log(data,'datadata')
+        console.log(data, 'datadata')
 
         const result = loadTransaction(data, sno, isTagedItem);
         if (!result) return;
@@ -725,7 +738,7 @@ export default function PurchasePage() {
     /* ================================
        Transaction Type Handlers
     ================================ */
-    const handleTransactionTypesSelect = (types:TransactionType[]) => {
+    const handleTransactionTypesSelect = (types: TransactionType[]) => {
 
 
         if (!headerForm.CUSTOMER) {
@@ -747,7 +760,8 @@ export default function PurchasePage() {
        ================================ */
     const { closingDetails, setClosingDetails, resetBalance } = usePurchaseBalanceSummary();
 
-    console.log(closingDetails, 'closingDetailsfromstore')
+    console.log(closingDetails, 'closingDetailsfromstore');
+
 
 
 
@@ -762,17 +776,17 @@ export default function PurchasePage() {
         const d = closingDetails;
 
         return {
-            convType: d.convType,
-            convAmt: Number(d.convAmt || 0),
-            convWt: Number(d.convWt || 0),
+            CONVTYPE: d.CONVTYPE,
+            CONVAMT: Number(d.CONVAMT || 0),
+            CONVWT: Number(d.CONVWT || 0),
             // discAmt: Number(d.discAmt || 0),
             // discWt: Number(d.discWt || 0),
-            cashPaid: Number(d.cashPaid || 0),
-            cashRcvd: Number(d.cashRcvd || 0),
-            bankPaid: Number(d.bankPaid || 0),
-            bankRcvd: Number(d.bankRcvd || 0),
-            bankPaidDetails: d.bankPaidDetails,
-            bankRcvdDetails: d.bankRcvdDetails,
+            CASHPAID: Number(d.CASHPAID || 0),
+            CASHRCVD: Number(d.CASHRCVD || 0),
+            BANKPAID: Number(d.BANKPAID || 0),
+            BANKRCVD: Number(d.BANKRCVD || 0),
+            BANKPAIDDETAILS: d.BANKPAIDDETAILS,
+            BANKRCVDDETAILS: d.BANKRCVDDETAILS,
         };
     };
 
@@ -906,11 +920,30 @@ export default function PurchasePage() {
     }, [draftRows]);
 
     const isClosingChanged = useCallback(() => {
-        return !lodash.isEqual(
-            initialClosingRef.current ?? {},
-            getClosingDetailsPayload() ?? {}
-        );
-    }, [getClosingDetailsPayload]);
+        // const prev = initialClosingRef.current ?? {};
+        // const current = getClosingDetailsPayload() ?? {};
+        // console.log(current, 'currentPayloadClosingRef')
+
+        // const closingChanged = !lodash.isEqual(prev, current);
+
+        // console.log(closingChanged,'closingChanged')
+
+        const isBalanceSame = Number(openingBalances.openPure || 0) === Number(closingPure || 0) && Number(openingBalances.openCash || 0) === Number(closingCash || 0);
+
+        
+
+        const hasAnyValue =
+            Number(closingDetails.CONVAMT || 0) > 0 ||
+            Number(closingDetails.CONVWT || 0) > 0 ||
+            Number(closingDetails.CASHPAID || 0) > 0 ||
+            Number(closingDetails.CASHRCVD || 0) > 0 ||
+            Number(closingDetails.BANKPAID || 0) > 0 ||
+            Number(closingDetails.BANKRCVD || 0) > 0 ||
+            (closingDetails.BANKPAIDDETAILS?.length ?? 0) > 0 ||
+            (closingDetails.BANKRCVDDETAILS?.length ?? 0) > 0;
+            
+        return (!isBalanceSame && hasAnyValue);
+    }, [closingDetails, getClosingDetailsPayload]);
 
 
     console.log(isDraftRowsChanged(), isClosingChanged(), 'isDraftRowsChanged, isClosingChanged')
@@ -957,6 +990,51 @@ export default function PurchasePage() {
 
         return { valid: true, payload };
     };
+
+
+    const handleResetDraft = () => {
+
+        setSelectedTransactionId(null);
+        setEditingState({ rowId: null, transactionType: null });
+        resetDraftRowTempId();
+
+        setSingleSearch("");
+
+        setEditingSno(null);
+
+        resetHeader();
+        resetBalance();
+        resetStore();
+
+
+        if (isEditing) {
+            stopEdit();
+            refetchTransactionHeaderDetail();
+
+            toaster.create({
+                title: "Edit Cancelled",
+                description: "Transaction edit has been cancelled.",
+                type: "info",
+            });
+        } else {
+            localStorage.removeItem(TYPE_KEY);
+            setSelectedTransactionId('');
+        }
+        setHeaderForm({
+            ENTRYNO: "",
+            CUSTOMER: "",
+            CUSTOMER_NAME: "",
+            BILLNO: "",
+            DATE: new Date().toISOString().split("T")[0],
+            RATEGM: metalRates ? formatToFixed(metalRates["GOLD 916.00"], 2) : "",
+        });
+
+        setDeselectFlag(true);
+        setTimeout(() => setDeselectFlag(false), 1000);
+
+
+    };
+
     const handleSaveTransaction = () => {
 
         setEditingState({ rowId: null, transactionType: null });
@@ -971,8 +1049,6 @@ export default function PurchasePage() {
         }
 
         const result = buildTransactionRequest();
-
-
 
         if (!result.valid || !result.payload) {
             toaster.create({
@@ -1032,7 +1108,7 @@ export default function PurchasePage() {
 
         const result = buildTransactionRequest();
 
-        console.log(result.payload ,'updatepayload');
+        console.log(result.payload, 'updatepayload');
 
         if (!result.valid || !result.payload) {
             toaster.create({
@@ -1042,7 +1118,7 @@ export default function PurchasePage() {
             });
             return;
         }
-  
+
 
         try {
 
@@ -1053,7 +1129,7 @@ export default function PurchasePage() {
             });
 
             setEditingSno(null);
-;
+            ;
 
             goldStockRefetch();
             itemStockRefetch();
@@ -1067,9 +1143,11 @@ export default function PurchasePage() {
                 type: "success",
             });
 
-            
+
             resetStore();
             resetBalance();
+            setDeselectFlag(true);
+            handleResetDraft();
 
         } catch (error: any) {
             toaster.create({
@@ -1082,46 +1160,6 @@ export default function PurchasePage() {
         }
     };
 
-    const handleResetDraft = () => {
-
-        setEditingState({ rowId: null, transactionType: null });
-        resetDraftRowTempId();
-
-        setSingleSearch("");
-        setDeselectFlag(true);
-        setTimeout(() => setDeselectFlag(false), 50);
-
-        setEditingSno(null);
-
-        resetHeader();
-        resetBalance();
-        resetStore();
-
-
-        if (isEditing) {
-            stopEdit();
-            refetchTransactionHeaderDetail();
-
-            toaster.create({
-                title: "Edit Cancelled",
-                description: "Transaction edit has been cancelled.",
-                type: "info",
-            });
-        } else {
-            localStorage.removeItem(TYPE_KEY);
-        }
-        setHeaderForm({
-            ENTRYNO: "",
-            CUSTOMER: "",
-            CUSTOMER_NAME: "",
-            BILLNO: "",
-            DATE: new Date().toISOString().split("T")[0],
-            RATEGM: metalRates ? formatToFixed(metalRates["GOLD 916.00"], 2) : "",
-        });
-
-
-
-    };
 
 
     const handleTransactionClick = useCallback((transactionId: string) => {

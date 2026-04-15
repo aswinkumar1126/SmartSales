@@ -1,45 +1,45 @@
 export interface BankTransaction {
-    draftRowId: string;
-    id: string;
-    bankName: string;
-    tranMode: "C" | "F" | "I" | "N" | "R" | "U";
-    tranDate: string;
-    chqNo: string;
-    amount: number;
+    DRAFTROWID: string;
+    ID: string;
+    BANKID: string;
+    TRANMODE: "C" | "F" | "I" | "N" | "R" | "U";
+    PAYDATE: string;
+    CHQNO: string;
+    AMOUNT: number;
 }
 
 export interface BankTransactionPayload {
-    draftRowId: string;
-    id: string;
-    bankName: number;
-    tranMode: "C" | "F" | "I" | "N" | "R" | "U";
-    tranDate: string;
-    chqNo: string;
-    amount: number;
+    DRAFTROWID: string;
+    ID: string;
+    BANKID: number;
+    TRANMODE: "C" | "F" | "I" | "N" | "R" | "U";
+    PAYDATE: string;
+    CHQNO: string;
+    AMOUNT: number;
 }
 
 export interface BaseClosingFormDetails {
-    convType: "P" | "C" | "" | string;
-    convAmt: string;
-    convWt: string;
-    cashPaid: string;
-    cashRcvd: string;
-    bankPaid: string;
-    bankRcvd: string;
-    bankPaidDetails: BankTransaction[];
-    bankRcvdDetails: BankTransaction[];
+    CONVTYPE: "P" | "C" | "" | string;
+    CONVAMT: string;
+    CONVWT: string;
+    CASHPAID: string;
+    CASHRCVD: string;
+    BANKPAID: string;
+    BANKRCVD: string;
+    BANKPAIDDETAILS: BankTransaction[];
+    BANKRCVDDETAILS: BankTransaction[];
 }
 
 export interface BaseClosingPayloadDetails {
-    convType: "P" | "C" | "" | string;
-    convAmt: string;
-    convWt: string;
-    cashPaid: string;
-    cashRcvd: string;
-    bankPaid: string;
-    bankRcvd: string;
-    bankPaidDetails: BankTransaction[];
-    bankRcvdDetails: BankTransaction[];
+    CONVTYPE: "P" | "C" | "" | string;
+    CONVAMT: string;
+    CONVWT: string;
+    CASHPAID: string;
+    CASHRCVD: string;
+    BANKPAID: string;
+    BANKRCVD: string;
+    BANKPAIDDETAILS: BankTransaction[];
+    BANKRCVDDETAILS: BankTransaction[];
 }
 
 

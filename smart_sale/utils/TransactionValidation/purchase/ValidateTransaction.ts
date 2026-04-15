@@ -84,7 +84,8 @@ export const validateTransactions = ({
         if (!transactionType) return;
 
         const isIssue = isIssueType(transactionType);
-        if (isIssue && row.PUREID) {
+        console.log(isIssue, row.PUREID, transactionType, 'isIssuecheck')
+        if (transactionType.value === "ISP" && row.PUREID) {
             const key = String(row.PUREID);
             usedByPureId[key] = (usedByPureId[key] || 0) + Number(row.WT || 0);
         }
@@ -94,7 +95,7 @@ export const validateTransactions = ({
         const availability = getStockAvailability(pureId);
         console.log(availability, 'availabilityofstock');
 
-        if (availability && usedByPureId[pureId] > availability.total) {
+        if ( availability && usedByPureId[pureId] >  availability.total) {
             return {
                 valid: false,
                 error: `Pure ID ${pureId} exceeds available stock`,

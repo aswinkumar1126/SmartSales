@@ -7,7 +7,7 @@ import { mapPurchaseTransactionItems } from "@/utils/transaction/purchase/MapPur
 
 export const useLoadPurchaseTransaction = () => {
     const { setHeaderForm, setAccCode, startEdit } = usePurchaseHeader();
-    const { setClosingDetails } = usePurchaseBalanceSummary(); 
+    const { setClosingDetails ,setBankPaid ,setBankRcvd} = usePurchaseBalanceSummary(); 
     // const { setBaseOpening } = useOpeningBalanceStore(); 
 
     const loadTransaction = (transactionData: any, sno: string ,isTagedItem:(id: number | null) => boolean ) => {
@@ -16,7 +16,7 @@ export const useLoadPurchaseTransaction = () => {
         startEdit(sno);
 
         loadPurchaseHeader(transactionData.TRANSACTION_HEADER , setHeaderForm, setAccCode);
-        loadPurchaseClosing(transactionData.CLOSING_DETAILS, setClosingDetails);
+        loadPurchaseClosing(transactionData.CLOSING_DETAILS, setClosingDetails, setBankPaid, setBankRcvd);
 
         // loadOpening(transactionData.BALANCE, setBaseOpening);
 

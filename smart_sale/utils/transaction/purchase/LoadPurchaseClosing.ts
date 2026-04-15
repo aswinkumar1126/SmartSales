@@ -1,16 +1,21 @@
-export const loadPurchaseClosing = (closing: any, setClosingDetails: any) => {
+export const loadPurchaseClosing = (closing: any, setClosingDetails: any, setBankPaid:any, setBankRcvd :any) => {
     if (!closing) return;
 
-    console.log(closing, "closingclosing");
+    console.log(closing,'closingdetailstoload');
+
     setClosingDetails({
-        convType: closing.CONVTYPE || "",
-        convAmt: closing.CONVAMT ? String(closing.CONVAMT) : "",
-        convWt: closing.CONVWT ? String(closing.CONVWT) : "",
-        cashPaid: closing.CASHPAID ? String(closing.CASHPAID) : "",
-        cashRcvd: closing.CASHRCVD ? String(closing.CASHRCVD) : "",
-        bankPaid: closing.BANKPAID ? String(closing.BANKPAID) : "",
-        bankRcvd: closing.BANKRCVD ? String(closing.BANKRCVD) : "",
-        bankPaidDetails: closing.bankPaidDetails || [],
-        bankRcvdDetails: closing.bankRcvdDetails || [],
+        CONVTYPE: closing.CONVTYPE || "",
+        CONVAMT: closing.CONVAMT ? String(closing.CONVAMT) : "",
+        CONVWT:  closing.CONVWT ? String(closing.CONVWT) : "",
+        CASHPAID: closing.CASHPAID ? String(closing.CASHPAID) : "",
+        CASHRCVD: closing.CASHRCVD ? String(closing.CASHRCVD) : "",
+        BANKPAID: closing.BANKPAID ? String(closing.BANKPAID) : "",
+        BANKRCVD: closing.BANKRCVD ? String(closing.BANKRCVD) : "",
+        BANKPAIDDETAILS: closing.BANKPAIDDETAILS || [],
+        BANKRCVDDETAILS: closing.BANKRCVDDETAILS || [],
+        
     });
+
+    setBankPaid(closing.BANKPAIDDETAILS || [])
+    setBankRcvd(closing.BANKRCVDDETAILS || [])
 };

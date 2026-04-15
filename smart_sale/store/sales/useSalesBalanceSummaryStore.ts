@@ -32,15 +32,15 @@ type SalesBalanceSummaryStore = {
 };
 
 const initialClosingDetails: SalesClosingFormDetails = {
-    convType: "",
-    convAmt: "",
-    convWt: "",
-    cashPaid: "",
-    cashRcvd: "",
-    bankPaid: "",
-    bankRcvd: "",
-    bankPaidDetails: [],
-    bankRcvdDetails: [],
+    CONVTYPE: "",
+    CONVAMT: "",
+    CONVWT: "",
+    CASHPAID: "",
+    CASHRCVD: "",
+    BANKPAID: "",
+    BANKRCVD: "",
+    BANKPAIDDETAILS: [],
+    BANKRCVDDETAILS: [],
 };
 
 export const useSalesBalanceSummary = create<SalesBalanceSummaryStore>()(
@@ -86,7 +86,7 @@ export const useSalesBalanceSummary = create<SalesBalanceSummaryStore>()(
                         ...state.closingDetails,
                         bankPaidDetails: transactions,
                         bankPaid: transactions
-                            .reduce((sum, t) => sum + Number(t.amount || 0), 0)
+                            .reduce((sum, t) => sum + Number(t.AMOUNT || 0), 0)
                             .toFixed(2),
                     },
                 })),
@@ -100,7 +100,7 @@ export const useSalesBalanceSummary = create<SalesBalanceSummaryStore>()(
                         ...state.closingDetails,
                         bankRcvdDetails: transactions,
                         bankRcvd: transactions
-                            .reduce((sum, t) => sum + Number(t.amount || 0), 0)
+                            .reduce((sum, t) => sum + Number(t.AMOUNT || 0), 0)
                             .toFixed(2),
                     },
                 })),

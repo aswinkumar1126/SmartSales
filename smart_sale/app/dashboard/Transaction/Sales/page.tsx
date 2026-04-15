@@ -908,12 +908,32 @@ export default function SalesPage() {
         );
     }, [draftRows]);
 
-    const isClosingChanged = useCallback(() => {
-        return !lodash.isEqual(
-            initialClosingRef.current ?? {},
-            getClosingDetailsPayload() ?? {}
-        );
-    }, [getClosingDetailsPayload]);
+      const isClosingChanged = useCallback(() => {
+            // const prev = initialClosingRef.current ?? {};
+            // const current = getClosingDetailsPayload() ?? {};
+            // console.log(current, 'currentPayloadClosingRef')
+    
+            // const closingChanged = !lodash.isEqual(prev, current);
+    
+            // console.log(closingChanged,'closingChanged')
+    
+            const isBalanceSame = Number(openingBalances.openPure || 0) === Number(closingPure || 0) && Number(openingBalances.openCash || 0) === Number(closingCash || 0);
+    
+            
+    
+            const hasAnyValue =
+                Number(closingDetails.convAmt || 0) > 0 ||
+                Number(closingDetails.convWt || 0) > 0 ||
+                Number(closingDetails.cashPaid || 0) > 0 ||
+                Number(closingDetails.cashRcvd || 0) > 0 ||
+                Number(closingDetails.bankPaid || 0) > 0 ||
+                Number(closingDetails.bankRcvd || 0) > 0 ||
+                (closingDetails.bankPaidDetails?.length ?? 0) > 0 ||
+                (closingDetails.bankRcvdDetails?.length ?? 0) > 0;
+                
+            return (!isBalanceSame && hasAnyValue);
+        }, [closingDetails, getClosingDetailsPayload]);
+    
 
 
     console.log(isDraftRowsChanged(), isClosingChanged(), 'isDraftRowsChanged, isClosingChanged')

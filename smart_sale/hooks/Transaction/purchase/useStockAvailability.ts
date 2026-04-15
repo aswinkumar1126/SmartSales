@@ -126,16 +126,23 @@ export function useStockAvailability({
             let originalUsage = 0;
 
             if (isIssue || isReceipt) {
+                
                 stock = pureStockList.find((s) => String(s.pureId) === String(id));
                 if (!stock) return undefined;
-                totalAvailableWeight = Number(stock.weight ?? 0);
-                stockSource = 'pure';
-
+                
                 // For edit mode, get original usage from transaction being edited
                 if (isEditMode && originalTransactionData) {
                     originalUsage = editCalculator.getOriginalUsage(String(id), 'WT', 'ISP');
                     console.log("Original usage for ISP:", originalUsage);
                 }
+
+
+                totalAvailableWeight = Number(stock.weight ?? 0) + Number(originalUsage);
+                stockSource = 'pure';
+
+                console.log(totalAvailableWeight, originalUsage, 'totalweightdebug')
+
+             
             } else if (isPurchase || isPurchaseReturn) {
                 stock = itemsStockList.find(
                     (s) =>
@@ -143,14 +150,19 @@ export function useStockAvailability({
                         String(s.pureId) === String(id)
                 );
                 if (!stock) return undefined;
-                totalAvailablePieces = Number(stock.pcs ?? stock.pieces ?? stock.quantity ?? 0);
-                totalAvailableWeight = Number(stock.netwt ?? stock.netWeight ?? stock.purewt ?? 0);
-                stockSource = 'items';
 
                 // For edit mode, get original usage from transaction being edited
                 if (isEditMode && originalTransactionData) {
                     originalUsage = editCalculator.getOriginalUsage(String(id), 'NETWT', 'PU');
                 }
+                
+                totalAvailablePieces = Number(stock.pcs ?? stock.pieces ?? stock.quantity ?? 0);
+                totalAvailableWeight = Number(stock.netwt ?? stock.netWeight ?? stock.purewt ?? 0) + Number(originalUsage) ;
+
+              
+                stockSource = 'items';
+
+               
             } else {
                 return undefined;
             }
@@ -169,13 +181,15 @@ export function useStockAvailability({
                 field: 'PCS',
             });
 
+            
+
             // Apply edit mode calculation
             let weightRemaining: number;
             let piecesRemaining: number;
 
             if (isEditMode) {
                 // Edit mode formula: Base Stock + Original - Current Draft
-                weightRemaining = Math.max(totalAvailableWeight + originalUsage - usedWeight, 0);
+                weightRemaining = Math.max(totalAvailableWeight - usedWeight, 0);
                 piecesRemaining = Math.max(totalAvailablePieces + (isPurchase || isPurchaseReturn ? originalUsage : 0) - usedPieces, 0);
             } else {
                 // Normal mode formula: Base Stock - Current Draft
@@ -183,6 +197,8 @@ export function useStockAvailability({
                 piecesRemaining = Math.max(totalAvailablePieces - usedPieces, 0);
             }
 
+            console.log("Stock Availability Debug:",
+                { id, totalAvailableWeight, usedWeight, weightRemaining, originalUsage })
             return {
                 stock,
                 stockSource,

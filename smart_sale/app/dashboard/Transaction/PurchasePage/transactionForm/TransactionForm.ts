@@ -15,6 +15,7 @@ export const purchaseColumns = (isTag: boolean) => [
         width: "120px",
         align: "left" as const,
         type: "combobox" as const,
+        
       
     },
     {
@@ -32,7 +33,9 @@ export const purchaseColumns = (isTag: boolean) => [
         width: "45px",
         type: "number" as const,
         align: "right" as const,
-        decimalScale: 3
+        decimalScale: 3,
+        allowFocus:true,
+        max: 999999,
  
     },
     {
@@ -41,7 +44,9 @@ export const purchaseColumns = (isTag: boolean) => [
         width: "45px",
         type: "number" as const,
         align: "right" as const,
-        decimalScale: 3
+        decimalScale: 3,
+        allowFocus: true,
+        max: 999999,
  
     },
     {
@@ -51,7 +56,9 @@ export const purchaseColumns = (isTag: boolean) => [
         type: "number" as const,
         align: "right" as const,
         editable:false,
-        decimalScale: 3
+        decimalScale: 3,
+        allowFocus: true,
+        max: 999999,
    
     },
     {
@@ -85,8 +92,9 @@ export const purchaseColumns = (isTag: boolean) => [
         width: "35px",
         type: "number" as const,
         align: "right" as const,
-        max: 999,
-        decimalScale: 1
+        max: 9999,
+        decimalScale: 1,
+        allowFocus: true,
 
     },
     {
@@ -115,7 +123,8 @@ export const purchaseColumns = (isTag: boolean) => [
         width: "35px",
         type: "number" as const,
         align: "right" as const,
-        decimalScale: 2
+        decimalScale: 2,
+        allowFocus:true
   
     },
     
@@ -135,15 +144,16 @@ export const purchaseColumns = (isTag: boolean) => [
         width: "45px",
         type: "number" as const,
         align: "right" as const,
-        max: 999999999,
+        max: 999999,
         decimalScale: 2,
-        editable:false
+        editable:false,
+        allowFocus:true,
 
     },
   
     {
         key: "DESCRIPTION",
-        label: "DESCRIPTION",
+        label: "DESC",
         width: "50px",
         align: "left" as const,
         type: "text" as const,
@@ -176,7 +186,7 @@ export const issueColumns = [
         width: "30px",
         type: "number" as const,
         align: "right" as const,
-        
+        max:999999,
         decimalScale:3,
         allowFocus:true,
     
@@ -189,8 +199,10 @@ export const issueColumns = [
         width: "25px",
         type: "number" as const,
         align: "right" as const,
-        max: 999,
-        decimalScale: 3
+        max: 999999,
+        decimalScale: 3,
+        allowFocus: true,
+     
 
     },
     {
@@ -200,7 +212,8 @@ export const issueColumns = [
         type: "number" as const,
         align: "right" as const,
         max: 999,
-        decimalScale: 3
+        decimalScale: 3,
+        allowFocus: true,
 
     },
     {
@@ -210,7 +223,8 @@ export const issueColumns = [
         type: "number" as const,
         align: "right" as const,
         max: 999,
-        decimalScale: 3
+        decimalScale: 3,
+        allowFocus: true,
 
     },
     {
@@ -221,7 +235,8 @@ export const issueColumns = [
         align: "right" as const,
         editable: true,
         disabled: true,
-        decimalScale: 3
+        decimalScale: 3,
+        allowFocus: true,
 
     },
     {

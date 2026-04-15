@@ -138,11 +138,11 @@ export interface TransactionHeader {
 }
 
 export interface BankTransactionDetails {
-    bankName: string,
-    tranMode: "C" | "F" | "I" | "N" |"R" | "U",
-    tranDate:string,
-    chqNo: string,
-    amount: number
+    BANKID: string,
+    TRANMODE: "C" | "F" | "I" | "N" |"R" | "U",
+    PAYDATE:string,
+    CHQNO: string,
+    AMOUNT: number
 }
 
 export interface BankTransactionFormDetails {
@@ -156,20 +156,20 @@ export interface BankTransactionFormDetails {
 
 export interface ClosingDetails {
 
-    convType: string | "P" | "C" ;
-    convAmt: number;
-    convWt: number;
+    CONVTYPE: string | "P" | "C" ;
+    CONVAMT: number;
+    CONVWT: number;
     
-    discAmt?: number;
-    discWt?: number;
+    DISCAMT?: number;
+    DISCWT?: number;
 
-    cashPaid: number;
-    cashRcvd: number;
+    CASHPAID: number;
+    CASHRCVD: number;
 
-    bankPaid: number;
-    bankRcvd: number;
-    bankPaidDetails: BankTransactionDetails[];
-    bankRcvdDetails: BankTransactionDetails[];
+    BANKPAID: number;
+    BANKRCVD: number;
+    BANKPAIDDETAILS: BankTransactionDetails[];
+    BANKRCVDDETAILS: BankTransactionDetails[];
 
 }
 
