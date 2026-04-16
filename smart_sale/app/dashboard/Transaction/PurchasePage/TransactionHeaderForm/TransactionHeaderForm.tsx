@@ -40,6 +40,8 @@ export default function TransactionHeaderForm({
     isClosingChanged,
 }: TransactionHeaderFormProps) {
 
+    console.log(form,'headerformintran');
+
     // Get the customer label for the current form.CUSTOMER value
     const getCustomerLabel = (value: any) => {
         if (!value) return "";
@@ -133,6 +135,25 @@ export default function TransactionHeaderForm({
 
                     />
                 </Box>
+
+                {/* METAL TYPE */}
+                <Box w={{ base: '100%', md: '120px' }} display={{ base: 'flex', md: 'block' }} alignItems='center'>
+                    <Text fontSize="2xs" mb={1} minW={{ base: '100px' }}>METAL TYPE:</Text>
+                    <SelectCombobox
+                        items={[
+                            { label: "Gold", value: "G" },
+                            { label: "Silver", value: "S" }
+                        ]}
+                        value={form.METALTYPE}
+                        disable={isEditing}
+                        onChange={(val) =>
+                            onFormChange("METALTYPE",val)
+                        }
+                        placeholder="Select Metal"
+                        rounded="sm"
+                    />
+                </Box>
+
 
                 {/* RATE / GM */}
                 <Box w={{ base: '100%', md: '80px' }} display={{ base: 'flex', md: 'block' }} alignItems='center'>

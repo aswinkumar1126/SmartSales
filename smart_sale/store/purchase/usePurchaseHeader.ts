@@ -29,6 +29,7 @@ const initialHeader: PurchaseHeaderForm = {
     BILLNO: "",
     ENTRYNO: "",
     RATEGM: "",
+    METALTYPE: "G",
 };
 
 export const usePurchaseHeader = create<PurchaseHeaderState & SalesHeaderActions>()(

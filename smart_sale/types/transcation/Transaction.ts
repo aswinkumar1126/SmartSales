@@ -138,6 +138,7 @@ export interface TransactionHeader {
 }
 
 export interface BankTransactionDetails {
+    
     BANKID: string,
     TRANMODE: "C" | "F" | "I" | "N" |"R" | "U",
     PAYDATE:string,

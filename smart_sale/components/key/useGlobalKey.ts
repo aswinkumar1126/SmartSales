@@ -12,6 +12,7 @@ export function useGlobalKey(
 
     const callbackRef = useRef(callback);
 
+    // Always keep latest callback
     useEffect(() => {
         callbackRef.current = callback;
     }, [callback]);
@@ -23,10 +24,10 @@ export function useGlobalKey(
             callbackRef.current(event);
         };
 
-        registerKey(id, key, wrappedCallback);
+        registerKey(id, key.toLowerCase(), wrappedCallback);
 
         return () => {
-            unregisterKey(id, key);
+            unregisterKey(id, key.toLowerCase());
         };
     }, [key]);
 }

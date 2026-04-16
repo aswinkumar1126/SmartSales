@@ -350,7 +350,7 @@ export function CapitalizedInput<T>({
             <Input
                 type={type === "number" ? "number" : type}
                 value={value ?? ""}
-                pl={icon ? "2.5rem" : "0.2rem"}
+                pl={icon ? "1.8rem" : "0.2rem"}
                 textTransform={isCapitalized ? "uppercase" : "none"}
                 placeholder={placeholder}
                 onChange={handleChange}

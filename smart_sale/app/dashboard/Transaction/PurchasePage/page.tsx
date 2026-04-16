@@ -143,6 +143,11 @@ export default function PurchasePage() {
         }
     );
 
+    const METAL_RATE_KEYS = {
+        G: "GOLD 916.00",
+        S: "SILVER 916.00", // ✅ FIXED
+    };
+
     console.log(initialClosingRef.current, 'currentClosingRef');
 
     /* ================================
@@ -296,10 +301,12 @@ export default function PurchasePage() {
 
 
 
-
-
     const { data: pureStockList = [], refetch: goldStockRefetch } = usePureGoldData(filter, cleanedFilters);
     const { data: itemsStock, refetch: itemStockRefetch } = useOrnamentData(filter);
+
+    console.log(pureStockList,'pureStockListpureStockList')
+
+
 
 
 
@@ -374,9 +381,14 @@ export default function PurchasePage() {
         accode: headerForm.CUSTOMER ? Number(headerForm.CUSTOMER) : null
     });
 
+    const rateKey = METAL_RATE_KEYS[headerForm.METALTYPE as "G" | "S"];
+    const rate = rateKey ? metalRates?.[rateKey] : null;
 
-
-    useSyncPurchaseHeader(transactionHeaderDetail, metalRates);
+    useSyncPurchaseHeader(
+        transactionHeaderDetail,
+        metalRates,
+        headerForm.METALTYPE
+    );
 
 
     const transactionIdsList = useMemo(() => {
@@ -868,7 +880,7 @@ export default function PurchasePage() {
     /*--------------------------------STOCK CHECKING------------------------ */
 
     const {
-        transactionKey,
+        transactionKeys,
         isIssue,
         isPurchase,
         isPurchaseReturn,
@@ -882,7 +894,7 @@ export default function PurchasePage() {
         getEditAvailableWeightForISP,
         getEditAvailableWeightForPU,
     } = useStockAvailability({
-        transactionCode: (selectedTransactionTypes[0] ?? TRANSACTIONTYPES[0]).code,
+        transactionCodes: selectedTransactionTypes.map(t => t.code),
         pureStockList,
         itemsStockList,
         draftRows,
@@ -1020,13 +1032,16 @@ export default function PurchasePage() {
             localStorage.removeItem(TYPE_KEY);
             setSelectedTransactionId('');
         }
+
+        const safeRate = rate ?? 0;
+
         setHeaderForm({
             ENTRYNO: "",
             CUSTOMER: "",
             CUSTOMER_NAME: "",
             BILLNO: "",
             DATE: new Date().toISOString().split("T")[0],
-            RATEGM: metalRates ? formatToFixed(metalRates["GOLD 916.00"], 2) : "",
+            RATEGM: Number(formatToFixed(safeRate, 2)),
         });
 
         setDeselectFlag(true);
@@ -1049,6 +1064,7 @@ export default function PurchasePage() {
         }
 
         const result = buildTransactionRequest();
+        console.log("Create Transaction Payload:" , result.payload);
 
         if (!result.valid || !result.payload) {
             toaster.create({
@@ -1218,6 +1234,7 @@ export default function PurchasePage() {
     };
 
 
+  
     return (
         <>
 
@@ -1370,7 +1387,7 @@ export default function PurchasePage() {
                 </Box>
 
                 {/* RIGHT SIDE - Summary Panel */}
-                <Box width={'22%'}>
+                <Box width={'15%'}>
 
 
                     <BalanceSummary
@@ -1385,7 +1402,7 @@ export default function PurchasePage() {
 
                 </Box>
 
-                <Box width={'15%'}>
+                <Box width={'10%'} >
                     <TransactionListing
                         transactionIdsList={transactionIdsList}
                         handleEditTransaction={handleTransactionClick}

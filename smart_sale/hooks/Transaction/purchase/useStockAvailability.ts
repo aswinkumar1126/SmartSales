@@ -4,7 +4,7 @@ import { TransactionKey, TRANSACTION_KEY_MAP } from "@/types/transcation/Transac
 import { useEditStockCalculator } from './useEditStockCalculator';
 
 interface UseStockAvailabilityDeps {
-    transactionCode: string;
+    transactionCodes: string[];
     pureStockList: any[];
     itemsStockList: any[];
     draftRows: any[];
@@ -30,7 +30,7 @@ export interface QuantityDetail {
 export interface StockAvailability {
     stock: any;
     stockSource: 'pure' | 'items';
-    transactionKey: TransactionKey;
+    transactionKeys: Set<TransactionKey>;
     isIssue: boolean;
     isPurchase: boolean;
     isPurchaseReturn: boolean;
@@ -54,7 +54,7 @@ export interface ValidateOptions {
 }
 
 export function useStockAvailability({
-    transactionCode,
+    transactionCodes,
     pureStockList,
     itemsStockList,
     draftRows,
@@ -72,11 +72,15 @@ export function useStockAvailability({
         TRANSACTIONTYPES,
     });
 
-    const transactionKey = TRANSACTION_KEY_MAP[transactionCode];
-    const isIssue = transactionKey === 'issue';
-    const isReceipt = transactionKey === 'receipt';
-    const isPurchase = transactionKey === 'purchase';
-    const isPurchaseReturn = transactionKey === 'purchase_return';
+    const transactionKeys = new Set(
+        transactionCodes.map(code => TRANSACTION_KEY_MAP[code])
+    );
+   
+
+    const isIssue = transactionKeys.has('issue');
+    const isReceipt = transactionKeys.has('receipt');
+    const isPurchase = transactionKeys.has('purchase');
+    const isPurchaseReturn = transactionKeys.has('purchase_return');
    
 
     const getUsedQuantityById = useCallback((id: string | number, options?: {
@@ -133,14 +137,13 @@ export function useStockAvailability({
                 // For edit mode, get original usage from transaction being edited
                 if (isEditMode && originalTransactionData) {
                     originalUsage = editCalculator.getOriginalUsage(String(id), 'WT', 'ISP');
-                    console.log("Original usage for ISP:", originalUsage);
+           
                 }
 
 
                 totalAvailableWeight = Number(stock.weight ?? 0) + Number(originalUsage);
                 stockSource = 'pure';
 
-                console.log(totalAvailableWeight, originalUsage, 'totalweightdebug')
 
              
             } else if (isPurchase || isPurchaseReturn) {
@@ -197,12 +200,10 @@ export function useStockAvailability({
                 piecesRemaining = Math.max(totalAvailablePieces - usedPieces, 0);
             }
 
-            console.log("Stock Availability Debug:",
-                { id, totalAvailableWeight, usedWeight, weightRemaining, originalUsage })
             return {
                 stock,
                 stockSource,
-                transactionKey,
+                transactionKeys,
                 isIssue,
                 isPurchase,
                 isPurchaseReturn,
@@ -235,7 +236,7 @@ export function useStockAvailability({
             isPurchase,
             isPurchaseReturn,
             isReceipt,
-            transactionKey,
+            transactionKeys,
             isEditMode,
             originalTransactionData,
             editCalculator,
@@ -305,7 +306,7 @@ export function useStockAvailability({
     );
 
     return {
-        transactionKey,
+        transactionKeys,
         isIssue,
         isPurchase,
         isPurchaseReturn,

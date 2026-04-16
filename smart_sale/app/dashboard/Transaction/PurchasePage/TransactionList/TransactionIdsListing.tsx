@@ -117,8 +117,8 @@ export const TransactionListing: React.FC<TransactionListingProps> = ({
 
     return (
         <>
-            {/* 🔍 Search + Clear */}
-            <Box display="flex" alignItems="center" gap={1}>
+            {/* 🔍 Search + Clear */ }
+            <Box display="flex" alignItems="center" gap={1} >
                 <SearchBar
                     placeholder="Search Item..."
                     searchTerm={searchTerm}
@@ -126,13 +126,14 @@ export const TransactionListing: React.FC<TransactionListingProps> = ({
                     size="xs"
                     maxWidth="100%"
                     rounded="sm"
+
                 />
 
                 {selectedTransactionId && (
                     <Button
                         bg="red.600"
-                        size="xs"
-                        fontSize="xs"
+                        size="2xs"
+                        fontSize="2xs"
                         onClick={handleClear}
                     >
                         Clear
@@ -146,10 +147,11 @@ export const TransactionListing: React.FC<TransactionListingProps> = ({
                 tabIndex={0}
                 onKeyDown={handleKeyDown}
                 overflowY="auto"
+                maxH={'85vh'}
                 outline="none"
                 _focus={{ outline: "none" }}
-                bg={theme.colors.formColor}
                 p={2}
+                bg={'#E3C8F8'}
                 css={{
                     "&::-webkit-scrollbar": { width: "2px" },
                     "&::-webkit-scrollbar-track": {

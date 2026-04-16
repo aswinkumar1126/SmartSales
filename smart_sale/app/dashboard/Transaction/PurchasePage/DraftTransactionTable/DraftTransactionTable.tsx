@@ -29,6 +29,8 @@ import { CapitalizedInput } from "@/components/ui/CapitalizedInput";
 import { getIsTagEnabled } from "@/config/transaction/PurchaseConfig";
 import SalesBillViewModal from "../SaleModal/SaleModal";
 
+import { usePureGoldDataById } from "@/hooks/apiHooks/pureGoldMast/usePureGoldMastData";
+
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -200,6 +202,10 @@ export default function DraftTransactionTable({
 }: DraftTransactionTableProps) {
 
 
+
+
+
+
     // ── Editing state ──────────────────────────────────────────────────────────
     const currentEditingRowId = editingState?.rowId;
     const currentEditingTransactionType = editingState?.transactionType;
@@ -241,6 +247,7 @@ export default function DraftTransactionTable({
     const rowsRef = useRef(rows);
     useEffect(() => { rowsRef.current = rows; }, [rows]);
 
+    
     const { data: stoneItemsData } = useStoneItems({ STUDDED: "Y" });
     const [stoneItemsCollection, setStoneItemCollection] = useState<{ label: string; value: string }[]>([]);
     useEffect(() => {
@@ -278,6 +285,22 @@ export default function DraftTransactionTable({
         () => ({ items: [{ label: "TOUCH", value: "TOUCH" }] }),
         []
     );
+
+
+    const { data: pureStockData } = usePureGoldDataById(formData.PUREID);
+    console.log(pureStockData, 'pureStockData');
+
+    useEffect(()=>{
+        if (pureStockData){
+            setFormData(prev => ({
+                ...prev,
+                // WT: pureStockData.weight,
+                // AWT :pureStockData.weight,
+                TOUCH: pureStockData.actualTouch,
+                ATOUCH: pureStockData.actualTouch
+            }))
+        }
+    }, [pureStockData])
 
     const numericFields = useMemo(
         () => ["PCS", "GRSWT", "STNWT", "NETWT", "WASPER", "WASTAGE", "STNAMT",
@@ -317,6 +340,8 @@ export default function DraftTransactionTable({
                 isRequired,
                 allowFocus: col.allowFocus,
                 size: "xs",
+                dependsOn: col.dependsOn,
+                disabled:col.disabled,
                 ...("decimalScale" in col && typeof col.decimalScale === "number"
                     ? { decimalScale: col.decimalScale }
                     : {}),
@@ -343,6 +368,7 @@ export default function DraftTransactionTable({
             if (isIssue && ["WT", "AWT", "TOUCH", "ATOUCH"].includes(col.key))
                 return { ...base, dependsOn: "PUREID" };
 
+          
             if (!isIssue && col.key === "STNAMT")
                 return { ...base, type: "calculated", disabled: true };
 
@@ -505,11 +531,11 @@ export default function DraftTransactionTable({
                 next[keyOrObject] = value;
                 // Mirror WT → AWT and TOUCH → ATOUCH
                 if (keyOrObject === "WT") next.AWT = value;
-                if (keyOrObject === "TOUCH") next.ATOUCH = value;
+                // if (keyOrObject === "TOUCH") next.ATOUCH = value;
             } else {
                 next = { ...next, ...keyOrObject };
                 if ("WT" in keyOrObject) next.AWT = keyOrObject.WT;
-                if ("TOUCH" in keyOrObject) next.ATOUCH = keyOrObject.TOUCH;
+                // if ("TOUCH" in keyOrObject) next.ATOUCH = keyOrObject.TOUCH;
             }
 
             const wt = parseFloat(next.WT || 0);
@@ -961,7 +987,8 @@ export default function DraftTransactionTable({
     const renderFormCell = (field: FormField) => {
         const ref = fieldRefs.current[field.key];
         const isInvalid = !!errors[field.key] && !!touched[field.key];
-        const shouldDisable = field.disabled || (!!field.dependsOn && !formData[field.dependsOn]) ;
+        const shouldDisable = field.disabled || (!!field.dependsOn && !formData[field.dependsOn]);
+        
 
         if (field.key === "TAGNO") {
             return (
@@ -1076,7 +1103,7 @@ export default function DraftTransactionTable({
             );
         }
 
-        if (field.key === "ATOUCH") {
+        if (isIssue && field.key === "TOUCH") {
             return (
                 <Box position="relative" width="100%">
                     <CapitalizedInput
@@ -1116,7 +1143,7 @@ export default function DraftTransactionTable({
                         onEnter={() => moveNext(field.key)}
                         noBorder
                     />
-                    {availableStock && (
+                    {/* {availableStock && (
                         <Text
                             position="absolute" right="2px" top="0" fontSize="10px"
                             color={Number(formData.WT) > originalWeight ? "orange.500" : "green.500"}
@@ -1124,7 +1151,7 @@ export default function DraftTransactionTable({
                         >
                             {Number(formData.WT) > originalWeight ? "↑" : "↓"}
                         </Text>
-                    )}
+                    )} */}
                 </Box>
             );
         }

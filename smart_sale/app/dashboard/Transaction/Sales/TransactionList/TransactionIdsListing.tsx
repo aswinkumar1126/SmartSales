@@ -90,8 +90,8 @@ export const TransactionListing: React.FC<TransactionListingProps> = ({
                 />
                 {selectedIndex !== -1 && <Button
                     bg="red.600"
-                    size="xs"
-                    fontSize="xs"
+                    size="2xs"
+                    fontSize="2xs"
                     onClick={handleDeselect} // parent handles deselect
                 >
                     Clear
@@ -104,9 +104,10 @@ export const TransactionListing: React.FC<TransactionListingProps> = ({
                 onKeyDown={handleKeyDown}
                 minHeight="auto"
                 overflowY="auto"
+                maxH={'85vh'}
                 outline="none"
                 _focus={{ outline: "none" }}
-                bg={theme.colors.formColor}
+                bg={'#F2E3FD'}
                 p={2}
                 css={{
                     "&::-webkit-scrollbar": {

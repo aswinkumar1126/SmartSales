@@ -1,4 +1,5 @@
 export interface BankTransaction {
+    
     DRAFTROWID: string;
     ID: string;
     BANKID: string;
@@ -19,6 +20,7 @@ export interface BankTransactionPayload {
 }
 
 export interface BaseClosingFormDetails {
+
     CONVTYPE: "P" | "C" | "" | string;
     CONVAMT: string;
     CONVWT: string;
@@ -31,13 +33,14 @@ export interface BaseClosingFormDetails {
 }
 
 export interface BaseClosingPayloadDetails {
+    
     CONVTYPE: "P" | "C" | "" | string;
-    CONVAMT: string;
-    CONVWT: string;
-    CASHPAID: string;
-    CASHRCVD: string;
-    BANKPAID: string;
-    BANKRCVD: string;
+    CONVAMT: number;
+    CONVWT: number;
+    CASHPAID: number;
+    CASHRCVD: number;
+    BANKPAID: number;
+    BANKRCVD: number;
     BANKPAIDDETAILS: BankTransaction[];
     BANKRCVDDETAILS: BankTransaction[];
 }

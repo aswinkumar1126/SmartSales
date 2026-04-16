@@ -7,24 +7,38 @@ type TransactionHeaderDetail = {
     BILLNO?: number;
 };
 
-type metalRatesDetail = {
+type MetalRates = {
     "GOLD 916.00"?: number;
+    "SILVER 916.00"?: number;
 };
 
 export const useSyncPurchaseHeader = (
     transactionHeaderDetail?: TransactionHeaderDetail,
-    metalRates?: metalRatesDetail
+    metalRates?: MetalRates,
+    metalType?: string
 ) => {
     const { setHeaderForm, isEditing } = usePurchaseHeader();
 
     // 🔵 Metal rate sync
     useEffect(() => {
-        if (isEditing || !metalRates) return;
+        if (isEditing || !metalRates || !metalType) return;
+
+        const rateKey =
+            metalType === "G"
+                ? "GOLD 916.00"
+                : metalType === "S"
+                    ? "SILVER 916.00"
+                    : null;
+
+        const rateValue = rateKey ? metalRates[rateKey] : null;
 
         setHeaderForm({
-            RATEGM: formatToFixed(metalRates["GOLD 916.00"],2) ?? 0,
+            RATEGM:
+                rateValue != null
+                    ? Number(formatToFixed(rateValue, 2))
+                    : 0,
         });
-    }, [metalRates, isEditing, setHeaderForm]);
+    }, [metalRates, metalType, isEditing, setHeaderForm]);
 
     // 🔵 Entry + Bill sync
     useEffect(() => {
@@ -34,7 +48,6 @@ export const useSyncPurchaseHeader = (
             ENTRYNO: transactionHeaderDetail.ENTRYNO
                 ? String(transactionHeaderDetail.ENTRYNO)
                 : "",
-
             BILLNO: transactionHeaderDetail.BILLNO
                 ? String(transactionHeaderDetail.BILLNO)
                 : "",

@@ -14,7 +14,7 @@ import {
     Flex,
 } from "@chakra-ui/react";
 
-import { useItems } from "@/hooks/apiHooks/item/useItems";
+import { useItems, useStoneItems } from "@/hooks/apiHooks/item/useItems";
 import useTouchMastCreate from "@/hooks/apiHooks/touch/useTouchMastCreate";
 import { useModifyTouchMasterById } from "@/hooks/apiHooks/touch/useTouchMastModify";
 import { useTouchMastData } from "@/hooks/apiHooks/touch/useTouchMastData";
@@ -22,7 +22,6 @@ import { useTouchMastData } from "@/hooks/apiHooks/touch/useTouchMastData";
 import { TouchMaster } from "@/types/touch/touch";
 import { CustomTable } from "@/component/table/CustomTable";
 import { FiEdit } from "react-icons/fi";
-import { IoIosExit } from "react-icons/io";
 import { useTheme } from "@/context/theme/themeContext";
 import { toastLoaded } from "@/component/toast/toast";
 import { Toaster } from "@/components/ui/toaster";
@@ -31,15 +30,21 @@ import { formatToFixed } from "@/utils/format/numberFormat";
 import { FaPrint } from "react-icons/fa";
 import { useRouter } from "next/navigation";
 import { FaFileExcel } from "react-icons/fa";
-import { CapitalizedInput } from "@/components/ui/CapitalizedInput";
+
 import { AccountTypeList } from "@/data/ACCOUNTtYPE/AccountType";
-import { SelectCombobox } from "@/components/ui/selectComboBox";
+
 import { useAllAccountHead } from "@/hooks/apiHooks/accountHead/useAccountHead";
-import { CalTypeCollection } from "@/data/CalType/CalType";
+
 import { useTouchMasterDataById } from "@/hooks/apiHooks/touch/useTouchMastById";
-import { AiOutlineSave } from "react-icons/ai";
+
 import { usePrint } from "@/context/print/usePrintContext";
 import SearchBar from "@/component/search/SearchBar";
+
+import { TouchMasterFormConfig } from "@/config/master/TouchMaster";
+import { DynamicForm } from "@/component/form/DynamicForm";
+import { useEnterNavigation } from "@/component/form/useEnterNavigation";
+import { IoIosExit } from "react-icons/io";
+import { AiOutlineSave } from "react-icons/ai";
 
 /* ---------------- Initial State ---------------- */
 
@@ -48,7 +53,7 @@ const initialFormState: TouchMaster = {
     accode: "",
     itemId: "",
     touch: "",
-    calmode: "",
+    // calmode: "",
 };
 
 export type TouchTableRow = {
@@ -79,9 +84,10 @@ const TouchMasterForm = () => {
     const { data: touchDatabyId, refetch: touchDataRefetch } = useTouchMasterDataById(editId);
 
     const accountType = form.actype?.trim().toUpperCase() || undefined;
+  
 
     const { data: allAccounts, refetch: accountRefetch } = useAllAccountHead(accountType);
-    const { data: items } = useItems();
+    const { data: items } = useStoneItems();
 
     const createMutation = useTouchMastCreate();
     const updateMutation = useModifyTouchMasterById();
@@ -97,11 +103,26 @@ const TouchMasterForm = () => {
     }, [allAccounts]);
 
     const allItemsList = useMemo(() => {
-        return (items?.items ?? []).map((item: any) => ({
+        return (items ?? []).map((item: any) => ({
             label: item.itemName,
             value: String(item.itemId),
         }));
     }, [items]);
+
+    /* ---------------- FORM CONFIG ---------------- */
+   
+
+    const formConfig = TouchMasterFormConfig({
+        collection: {
+            actype: AccountTypeList,
+            accode: allAccountsList,
+            itemId: allItemsList
+        },
+        disabled: {
+            isAccode: form.actype ? false : true,
+        }
+    }
+    );
 
     /* ---------------- Form Handlers ---------------- */
 
@@ -119,6 +140,7 @@ const TouchMasterForm = () => {
         setForm(initialFormState);
         setEditId(null);
         setErrors({});
+        setTimeout(()=>focusFirst(),50);
     };
 
     /* ---------------- Sync Edit Data ---------------- */
@@ -172,7 +194,7 @@ const TouchMasterForm = () => {
         if (!form.actype) errs.actype = "Company type is required";
         if (!form.accode) errs.accode = "Company is required";
         if (!form.itemId) errs.itemId = "Item is required";
-        if (!form.calmode) errs.calmode = "Calculation Mode is required";
+        // if (!form.calmode) errs.calmode = "Calculation Mode is required";
 
         if (!form.touch) {
             errs.touch = "Touch is required";
@@ -196,6 +218,8 @@ const TouchMasterForm = () => {
     };
 
     const handleSubmit = () => {
+
+        console.log("triggers");
         const validationErrors = validateForm(form);
         if (Object.keys(validationErrors).length > 0) {
             setErrors(validationErrors);
@@ -212,10 +236,12 @@ const TouchMasterForm = () => {
                         setHighlightRowId(editId);
                         resetForm();
                         refetch();
+
                     },
                 }
             );
         } else {
+            console.log(payload,'payload')
             createMutation.mutate(payload, {
                 onSuccess: (res: any) => {
                     const createdId = res?.data?.id;
@@ -261,6 +287,16 @@ const TouchMasterForm = () => {
         return () => clearTimeout(timer);
     }, [highlightRowId]);
 
+    
+    const formFieldName = formConfig.map(field => field.name);
+
+    const { focusFirst, focusNext, register } = useEnterNavigation(formFieldName , ()=>handleSubmit());
+
+    useEffect(()=>{
+        
+            focusFirst();
+        
+    }, [focusFirst]) ;
     /* ---------------- UI ---------------- */
 
     return (
@@ -268,149 +304,38 @@ const TouchMasterForm = () => {
             <Toaster />
 
             {/* FORM */}
-            <GridItem>
-                <Box
-                    p={2}
-                    minW="full"
-                    fontWeight="semibold"
-                    borderRadius="lg"
-                    bg={theme.colors.formColor}
-                    boxShadow="sm"
-                >
-                    <Heading fontSize="small" textAlign="center" fontWeight='semibold'>
-                        TOUCH MASTER
-                    </Heading>
+            <GridItem bg={theme.colors.formColor} p={2} rounded={'xl'} gap={2}>
+                <DynamicForm 
+                    formData={form}
+                    onChange={handleChange}
+                    register={register}
+                    focusNext={focusNext}
+                    fields={formConfig}
+                    layout="vertical"
+                    errors={errors}
 
-                    <Box>
-                        <Grid
-                            css={{
-                                gridTemplateColumns: "repeat(1, 1fr)"
-                            }}
-                            gap={2}
-                        >
-                            {/* Company Type */}
-                            <Box>
-                                <Field.Root invalid={!!errors.actype}>
-                                    <Box display="flex" alignItems="center" gap={2}>
-                                        <Box minW="100px" fontSize="2xs">
-                                            COMPANY TYPE :
-                                        </Box>
-                                        <SelectCombobox
-                                            value={form.actype}
-                                            onChange={(val) => handleChange("actype", val)}
-                                            editId={editId ?? undefined}
-                                            items={AccountTypeList}
-                                            rounded="full"
-                                            placeholder="select company type"
 
-                                        />
-                                    </Box>
-                                    <Field.ErrorText>{errors.actype}</Field.ErrorText>
-                                </Field.Root>
-                            </Box>
-
-                            {/* Company */}
-                            <Box>
-                                <Field.Root invalid={!!errors.accode}>
-                                    <Box display="flex" alignItems="center" gap={2}>
-                                        <Box minW="100px" fontSize="2xs">
-                                            COMPANY NAME :
-                                        </Box>
-                                        <SelectCombobox
-                                            value={form.accode ? String(form.accode) : ""}
-                                            onChange={(val) => handleChange("accode", val)}
-                                            items={allAccountsList}
-                                            editId={editId ?? undefined}
-                                            rounded="full"
-                                            disable={!form.actype}
-                                            placeholder={!form.actype ? "Select Company Type First" : `select ${form.actype}`}
-                                        />
-                                    </Box>
-                                    <Field.ErrorText>{errors.accode}</Field.ErrorText>
-                                </Field.Root>
-                            </Box>
-
-                            {/* Item */}
-                            <Box>
-                                <Field.Root invalid={!!errors.itemId}>
-                                    <Box display="flex" alignItems="center" gap={2}>
-                                        <Box minW="100px" fontSize="2xs">
-                                            ITEM :
-                                        </Box>
-                                        <SelectCombobox
-                                            value={form.itemId ? String(form.itemId) : ""}
-                                            onChange={(val) => handleChange("itemId", val)}
-                                            editId={editId ?? undefined}
-                                            items={allItemsList}
-                                            rounded="full"
-                                            placeholder="select item"
-                                        />
-                                    </Box>
-                                    <Field.ErrorText>{errors.itemId}</Field.ErrorText>
-                                </Field.Root>
-                            </Box>
-
-                            {/* Touch */}
-                            <Box>
-                                <Field.Root invalid={!!errors.touch}>
-                                    <Box display="flex" alignItems="center" gap={2}>
-                                        <Box minW="100px" fontSize="2xs">
-                                            TOUCH :
-                                        </Box>
-                                        <CapitalizedInput
-                                            field="touch"
-                                            type="number"
-                                            value={form.touch}
-                                            onChange={handleChange}
-                                            size="2xs"
-                                            max={999}
-                                            decimalScale={2}
-                                            maxWidth="120px"
-                                            rounded="full"
-                                        />
-                                    </Box>
-                                    <Field.ErrorText>{errors.touch}</Field.ErrorText>
-                                </Field.Root>
-                            </Box>
-
-                            {/* Cal Mode */}
-                            <Box>
-                                <Field.Root invalid={!!errors.calmode}>
-                                    <Box display="flex" alignItems="center" gap={2}>
-                                        <Box minW="100px" fontSize="2xs">
-                                            CAL MODE :
-                                        </Box>
-                                        <SelectCombobox
-                                            value={form.calmode}
-                                            onChange={(val) => handleChange("calmode", val)}
-                                            editId={editId ?? undefined}
-                                            items={CalTypeCollection}
-                                            rounded="full"
-                                            placeholder="select cal mode"
-
-                                        />
-                                    </Box>
-                                    <Field.ErrorText>{errors.calmode}</Field.ErrorText>
-                                </Field.Root>
-                            </Box>
-                        </Grid>
-
-                        {/* Buttons */}
-                        <HStack pt={4} justifyContent="center">
-                            <Button
-                                colorPalette="blue"
-                                onClick={handleSubmit}
-                                loading={createMutation.isPending || updateMutation.isPending}
-                                size="xs"
-                            >
-                                <AiOutlineSave /> {editId ? "Update" : "Save"}
-                            </Button>
-
-                            <Button size="xs" colorPalette="blue" onClick={resetForm}>
-                                Clear <IoIosExit />
-                            </Button>
-                        </HStack>
-                    </Box>
+                />
+                <Box mt={2}>
+                <Flex justify={'center'} gap={2}>
+                    <Button
+                     
+                        size="xs"
+                        colorPalette={'blue'}
+                        onClick={() => resetForm()}
+                      
+                    >
+                            <IoIosExit /> Exit
+                    </Button>
+                    <Button
+                        size="xs"   
+                        colorPalette={'blue'}
+                        onClick={()=>handleSubmit()}
+                       
+                    >
+                           <AiOutlineSave /> {editId ? "Update" : "Save"}
+                    </Button>
+                </Flex>
                 </Box>
             </GridItem>
 
@@ -475,7 +400,7 @@ const TouchMasterForm = () => {
                                     {AccountTypeList.find((item) => item.value === row.actype)?.label || row.actype}
                                 </Table.Cell>
                                 <Table.Cell>{row.itemName}</Table.Cell>
-                                <Table.Cell textAlign="right">{formatToFixed(row.touch, 2)}</Table.Cell>
+                                <Table.Cell textAlign="right">{formatToFixed(row.touch, 1)}</Table.Cell>
                                 <Table.Cell align="center">
                                     <Box display="flex" justifyContent="center" alignItems="center">
                                         <FiEdit cursor="pointer" onClick={() => handleEdit(row)} />

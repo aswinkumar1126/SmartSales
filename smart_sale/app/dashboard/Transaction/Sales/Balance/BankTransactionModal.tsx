@@ -19,16 +19,18 @@ import { useGlobalKey } from "@/components/key/useGlobalKey";
 import { PaymentModes } from "@/data/bankDetails/BankDetailsData";
 
 export interface BankTransaction {
-    id: string;
-    draftRowId: string;
-    bankName: string;
-    tranMode: "C" | "F" | "I" | "N" | "R" | "U";
-    tranDate: string;
-    chqNo: string;
-    amount: number;
+
+    ID:         string;
+    DRAFTROWID: string;
+    BANKID:  string;
+    TRANMODE:  "C" | "F" | "I" | "N" | "R" | "U";
+    PAYDATE:  string;
+    CHQNO:     string;
+    AMOUNT:    number;
 }
 
 interface BankTransactionModalProps {
+    
     draftRowId: string;
     isOpen: boolean;
     onClose: () => void;
@@ -41,40 +43,26 @@ interface BankTransactionModalProps {
     bankAccList?:{label:string ,value:string}[]
 }
 
-// Bank names collection
-// const bankCollection = {
-//     items: [
-//         { label: "State Bank of India", value: "SBI" },
-//         { label: "HDFC Bank", value: "HDFC" },
-//         { label: "ICICI Bank", value: "ICICI" },
-//         { label: "Axis Bank", value: "AXIS" },
-//         { label: "Punjab National Bank", value: "PNB" },
-//         { label: "Bank of Baroda", value: "BOB" },
-//         { label: "Canara Bank", value: "CANARA" },
-//         { label: "Union Bank", value: "UNION" },
-//         { label: "Indian Bank", value: "INDIAN" },
-//         { label: "Other", value: "OTHER" },
-//     ]
-// };
+
 
 // Define table columns for bank transactions
 const bankTableCols = [
-    { key: "bankName", label: "BANK NAME", align: "left" as const },
-    { key: "tranMode", label: "MODE", align: "center" as const },
-    { key: "tranDate", label: "DATE", align: "center" as const },
-    { key: "chqNo", label: "CHEQUE NO.", align: "left" as const },
-    { key: "amount", label: "AMOUNT", align: "right" as const, decimalScale: 2 },
+    { key: "BANKID", label: "BANK NAME", align: "left" as const },
+    { key: "TRANMODE", label: "MODE", align: "center" as const },
+    { key: "PAYDATE", label: "DATE", align: "center" as const },
+    { key: "CHQNO", label: "CHEQUE NO.", align: "left" as const },
+    { key: "AMOUNT", label: "AMOUNT", align: "right" as const, decimalScale: 2 },
 ];
 
 // Column widths
 const COL_WIDTHS: Record<string, string> = {
     __sno: "40px",
-    bankName: "140px",
-    tranMode: "70px",
-    tranDate: "100px",
-    chqNo: "120px",
-    amount: "120px",
-    __actions: "60px",
+    BANKID: "140px",
+    TRANMODE: "70px",
+    PAYDATE: "100px",
+    CHQNO: "120px",
+    AMOUNT: "120px",
+    __ACTIONS: "60px",
 };
 
 const getWidth = (key: string) => COL_WIDTHS[key] || "100px";
@@ -105,11 +93,11 @@ export const BankTransactionModal = ({
     bankAccList
 }: BankTransactionModalProps) => {
     const emptyForm = {
-        bankName: "",
-        tranMode: "F",
-        tranDate: new Date().toISOString().split('T')[0],
-        chqNo: "",
-        amount: ""
+        BANKID: "",
+        TRANMODE: "F",
+        PAYDATE: new Date().toISOString().split('T')[0],
+        CHQNO: "",
+        AMOUNT: ""
     };
 
     // Local state only - no localStorage
@@ -125,24 +113,24 @@ export const BankTransactionModal = ({
 
     // Refs for field navigation
     const fieldRefs = {
-        bankName: useRef<any>(null),
-        tranMode: useRef<HTMLSelectElement>(null),
-        tranDate: useRef<HTMLInputElement>(null),
-        chqNo: useRef<HTMLInputElement>(null),
-        amount: useRef<HTMLInputElement>(null),
+        BANKID: useRef<any>(null),
+        TRANMODE: useRef<HTMLSelectElement>(null),
+        PAYDATE: useRef<HTMLInputElement>(null),
+        CHQNO: useRef<HTMLInputElement>(null),
+        AMOUNT: useRef<HTMLInputElement>(null),
     };
 
     // Field order for focus traversal
-    const fieldOrder = ["bankName", "tranMode", "tranDate", "chqNo", "amount"] as const;
+    const fieldOrder = ["BANKID", "TRANMODE", "PAYDATE", "CHQNO", "AMOUNT"] as const;
     type FieldKey = typeof fieldOrder[number];
 
     // Form fields definition
     const formFields = [
-        { key: "bankName", label: "Bank Name", type: "combobox", isRequired: true, collection: bankAccList || [] },
-        { key: "tranMode", label: "Mode", type: "select", isRequired: true },
-        { key: "tranDate", label: "Date", type: "date", isRequired: true },
-        { key: "chqNo", label: "Cheque No.", type: "text", isRequired: false, dependsOn: "tranMode" },
-        { key: "amount", label: "Amount", type: "number", isRequired: true, decimalScale: 2, allowNegative: false },
+        { key: "BANKID", label: "Bank Name", type: "combobox", isRequired: true, collection: bankAccList || [] },
+        { key: "TRANMODE", label: "Mode", type: "select", isRequired: true },
+        { key: "PAYDATE", label: "Date", type: "date", isRequired: true },
+        { key: "CHQNO",   label: "Cheque No.", type: "text", isRequired: false, dependsOn: "TRANMODE" },
+        { key: "AMOUNT", label: "AMOUNT", type: "number", isRequired: true, decimalScale: 2, allowNegative: false },
     ];
 
     // All display columns for the table
@@ -156,7 +144,7 @@ export const BankTransactionModal = ({
     useEffect(() => {
         if (isOpen) {
             setTransactions(initialTransactions);
-            setTimeout(() => { fieldRefs.bankName.current?.focus?.(); }, 100);
+            setTimeout(() => { fieldRefs.BANKID.current?.focus?.(); }, 100);
         }
     }, [isOpen, initialTransactions]);
 
@@ -191,21 +179,21 @@ export const BankTransactionModal = ({
         fieldOrder.forEach(k => { newTouched[k] = true; });
         console.log(formData ,'bankFormData')
 
-        if (!formData.bankName) {
-            newErrors.bankName = "Bank name is required";
+        if (!formData.BANKID) {
+            newErrors.BANKID = "Bank name is required";
         }
-        if (!formData.tranMode) {
-            newErrors.tranMode = "Mode is required";
+        if (!formData.TRANMODE) {
+            newErrors.TRANMODE = "Mode is required";
         }
-        if (!formData.tranDate) {
-            newErrors.tranDate = "Date is required";
+        if (!formData.PAYDATE) {
+            newErrors.PAYDATE = "Date is required";
         }
-        if (!formData.chqNo || formData.chqNo.trim() === "") {
-            newErrors.chqNo = "Cheque/Reference number is required";
+        if (!formData.CHQNO || formData.CHQNO.trim() === "") {
+            newErrors.CHQNO = "Cheque/Reference number is required";
         }
-        const amount = Number(formData.amount);
-        if (!formData.amount || isNaN(amount) || amount <= 0) {
-            newErrors.amount = "Amount must be greater than 0";
+        const AMOUNT = Number(formData.AMOUNT);
+        if (!formData.AMOUNT || isNaN(AMOUNT) || AMOUNT <= 0) {
+            newErrors.AMOUNT = "AMOUNT must be greater than 0";
         }
 
         setErrors(newErrors);
@@ -238,17 +226,17 @@ export const BankTransactionModal = ({
 
         try {
             const newTransaction: BankTransaction = {
-                id: editId || `bank-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
-                draftRowId: draftRowId,
-                bankName: formData.bankName,
-                tranMode: formData.tranMode as "C" | "F" | "I" | "N" | "R" | "U",
-                tranDate: formData.tranDate,
-                chqNo: formData.chqNo,
-                amount: Number(formData.amount)
+                ID: editId || `bank-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+                DRAFTROWID: draftRowId,
+                BANKID: formData.BANKID,
+                TRANMODE: formData.TRANMODE as "C" | "F" | "I" | "N" | "R" | "U",
+                PAYDATE: formData.PAYDATE,
+                CHQNO: formData.CHQNO,
+                AMOUNT: Number(formData.AMOUNT)
             };
 
             if (editId) {
-                setTransactions(prev => prev.map(t => t.id === editId ? newTransaction : t));
+                setTransactions(prev => prev.map(t => t.ID === editId ? newTransaction : t));
                 setEditId(null);
             } else {
                 setTransactions(prev => [...prev, newTransaction]);
@@ -281,38 +269,38 @@ export const BankTransactionModal = ({
         setErrors({});
         setTouched({});
         setEditId(null);
-        setTimeout(() => { fieldRefs.bankName.current?.focus(); }, 100);
+        setTimeout(() => { fieldRefs.BANKID.current?.focus(); }, 100);
     };
 
     // Edit row
     const handleEditRow = (row: BankTransaction) => {
         setFormData({
-            bankName: row.bankName,
-            tranMode: row.tranMode,
-            tranDate: row.tranDate,
-            chqNo: row.chqNo,
-            amount: row.amount.toString()
+            BANKID: row.BANKID,
+            TRANMODE: row.TRANMODE,
+            PAYDATE: row.PAYDATE,
+            CHQNO: row.CHQNO,
+            AMOUNT: row.AMOUNT.toString()
         });
-        setEditId(row.id);
+        setEditId(row.ID);
         setErrors({});
         setTouched({});
-        setTimeout(() => { fieldRefs.bankName.current?.focus(); }, 100);
+        setTimeout(() => { fieldRefs.BANKID.current?.focus(); }, 100);
     };
 
     // Delete row
     const handleDeleteRow = (row: BankTransaction) => {
         if (window.confirm("Delete this transaction?")) {
-            setTransactions(prev => prev.filter(t => t.id !== row.id));
-            if (editId === row.id) resetForm();
+            setTransactions(prev => prev.filter(t => t.ID !== row.ID));
+            if (editId === row.ID) resetForm();
         }
     };
 
     // Save and close — notify parent
     const handleSaveAndClose = () => {
         const nonEmptyRows = transactions.filter(t =>
-            t.bankName && t.bankName !== "" && t.amount > 0
+            t.BANKID && t.BANKID !== "" && t.AMOUNT > 0
         );
-        const total = nonEmptyRows.reduce((sum, t) => sum + t.amount, 0);
+        const total = nonEmptyRows.reduce((sum, t) => sum + t.AMOUNT, 0);
         onSave(nonEmptyRows, total);
         onClose();
     };
@@ -327,7 +315,7 @@ export const BankTransactionModal = ({
         const ref = fieldRefs[field.key as FieldKey];
         const value = formData[field.key as keyof typeof formData]?.toString() || "";
 
-        if (field.key === "bankName") {
+        if (field.key === "BANKID") {
             return (
                 <Box position="relative">
                     <SelectCombobox
@@ -346,7 +334,7 @@ export const BankTransactionModal = ({
             );
         }
 
-        if (field.key === "tranMode") {
+        if (field.key === "TRANMODE") {
             return (
                 <Box position="relative">
                     <NativeSelectWrapper
@@ -366,7 +354,7 @@ export const BankTransactionModal = ({
             );
         }
 
-        if (field.key === "tranDate") {
+        if (field.key === "PAYDATE") {
             return (
                 <Box position="relative">
                     <DatePickerInput
@@ -390,7 +378,7 @@ export const BankTransactionModal = ({
             );
         }
 
-        if (field.key === "chqNo") {
+        if (field.key === "CHQNO") {
             return (
                 <Box position="relative">
                     <CapitalizedInput
@@ -409,7 +397,7 @@ export const BankTransactionModal = ({
             );
         }
 
-        if (field.key === "amount") {
+        if (field.key === "AMOUNT") {
             return (
                 <Box position="relative">
                     <CapitalizedInput
@@ -434,16 +422,16 @@ export const BankTransactionModal = ({
 
     // Get cell value
     const getCellValue = (col: any, row: BankTransaction) => {
-        if (col.key === "tranMode") {
-            const mode = PaymentModes.find(m => m.value === row.tranMode);
-            return mode?.label || row.tranMode;
+        if (col.key === "TRANMODE") {
+            const mode = PaymentModes.find(m => m.value === row.TRANMODE);
+            return mode?.label || row.TRANMODE;
         }
-        if (col.key === "amount") {
-            return `₹${row.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        if (col.key === "AMOUNT") {
+            return `₹${row.AMOUNT.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
         }
-        if (col.key === "bankName") {
-            const item = bankAccList?.find(i => i.value === row.bankName);
-            return item?.label || row.bankName || "-";
+        if (col.key === "BANKID") {
+            const item = bankAccList?.find(i => i.value === row.BANKID);
+            return item?.label || row.BANKID || "-";
         }
         return row[col.key as keyof BankTransaction] || "-";
     };
@@ -453,7 +441,7 @@ export const BankTransactionModal = ({
     };
 
     const totals = {
-        amount: transactions.reduce((sum, t) => sum + t.amount, 0),
+        AMOUNT: transactions.reduce((sum, t) => sum + t.AMOUNT, 0),
     };
 
     if (!isOpen) return null;
@@ -536,7 +524,7 @@ export const BankTransactionModal = ({
                 {/* Action Buttons */}
                 <HStack justify="flex-end" gap={2} mt={4}>
                     <Text fontSize="small" fontWeight="500">
-                        Total: ₹{totals.amount.toFixed(2)}
+                        Total: ₹{totals.AMOUNT.toFixed(2)}
                     </Text>
                     <Button
                         size="xs"

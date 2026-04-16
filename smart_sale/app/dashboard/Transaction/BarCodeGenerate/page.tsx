@@ -9,8 +9,7 @@ import React, {
     useCallback,
 } from "react";
 import { Box, Table, Text, Button, Portal, Drawer, Icon, VStack, HStack, Spinner, Span } from "@chakra-ui/react";
-import JSZip from "jszip";
-import { saveAs } from "file-saver";
+
 
 
 /*-------------- COMPONENTS -----------------*/
@@ -30,7 +29,7 @@ import { getTagedEntryNoParams, getTagedEntryNoParamsForApi } from "@/types/tagg
 /*-------------- HOOKS ----------------------*/
 
 import { useAllAccountHead } from "@/hooks/apiHooks/accountHead/useAccountHead";
-import { useBarcodeItems, useCreateTag } from "@/hooks/apiHooks/barcode/useBarcodeItems";
+import { useBarcodeItems, useCreateTag, useUpdateTag } from "@/hooks/apiHooks/barcode/useBarcodeItems";
 import { useSessionStorage } from "@/hooks/apiHooks/storage/useSessionStorage";
 import { useTheme } from "@/context/theme/themeContext";
 import { useSoftControlById } from "@/hooks/apiHooks/softControl/useSoftControl";
@@ -120,7 +119,8 @@ type FieldKey = (typeof FIELD_ORDER)[number];
 const NUMERIC_FIELDS = new Set([
     "grsweight", "stoneWt", "salesStoneWt", "wastePercent", "diamondWt", "mc", "touch",
 ]);
-const REQUIRED_FIELDS = new Set(["grsweight", "stoneWt", "salesStoneWt"]);
+const REQUIRED_FIELDS_STN =  new Set(["grsweight", "stoneWt", "salesStoneWt"]);
+const REQUIRED_FIELDS =  new Set(["grsweight"]);
 
 
 const today = new Date().toISOString().split("T")[0];
@@ -221,6 +221,7 @@ function BarCodeGenerate() {
 
     /* -------- Mutation -------- */
     const { mutate: createTag } = useCreateTag();
+    const {mutate : updateTag} =useUpdateTag();
 
 
 
@@ -424,13 +425,16 @@ function BarCodeGenerate() {
         [barcodeHeaderForm.ITEMNAME, itemCollection]);
 
     const selectedItem = useMemo(() => barcodeItems?.SELECTED_ITEM ?? null, [barcodeItems?.SELECTED_ITEM]);
+
+    const hasStone = selectedItem?.STNPRESENT === "Y";
+
     const stockTableData = useMemo(() =>
         Array.isArray(selectedItem) ? selectedItem
             : selectedItem && typeof selectedItem === "object" ? [selectedItem]
                 : EMPTY_ARRAY,
         [selectedItem]);
 
-    console.log(selectedItem, 'selectedItemselectedItem');
+    console.log(selectedItem, 'selectedItem');
 
     useEffect(() => {
         if (!selectedItem?.ITEMID) return;
@@ -448,9 +452,20 @@ function BarCodeGenerate() {
        BARCODE REBUILD
        ============================================================ */
     const rebuildBarcodes = useCallback(
-        (rows: BarcodeTransactionItem[]): BarcodeTransactionItem[] =>
-            rows.map((row, i) => ({ ...row, barcode: `${baseBarcodePrefix}${startBarcodeNumber + i + 1}` })),
-        [baseBarcodePrefix, startBarcodeNumber]);
+        (rows: BarcodeTransactionItem[], preserveExisting = true): BarcodeTransactionItem[] => {
+            return rows.map((row, i) => {
+                if (preserveExisting && row.barcode) {
+                    return row; // 🔥 keep existing barcode in edit mode
+                }
+
+                return {
+                    ...row,
+                    barcode: `${baseBarcodePrefix}${startBarcodeNumber + i + 1}`,
+                };
+            });
+        },
+        [baseBarcodePrefix, startBarcodeNumber]
+    );
 
     /* ============================================================
          PRINT CONFING
@@ -506,7 +521,7 @@ function BarCodeGenerate() {
     };
 
     const handlePrintTagDetails = () => {
-        console.log("triggering the print");
+   
 
         if (!printDetails?.length) {
             console.warn("No print data available");
@@ -531,7 +546,7 @@ function BarCodeGenerate() {
     const transactionFormFields = useMemo(() =>
         transactionTableCols.map((col): any => {
             const isNum = NUMERIC_FIELDS.has(col.key);
-            const isRequired = REQUIRED_FIELDS.has(col.key);
+            const isRequired = hasStone ? REQUIRED_FIELDS_STN.has(col.key) : REQUIRED_FIELDS.has(col.key);
             const base: any = {
                 key: col.key,
                 label: col.label || col.key,
@@ -583,6 +598,7 @@ function BarCodeGenerate() {
         { key: "NETWT", label: "NET WT", align: "end" as const, decimalScale: 3 },
         { key: "WASTYPE", label: "WASTE TYPE", align: "center" as const },
         { key: "TOUCH", label: "TOUCH", align: "center" as const, decimalScale: 1 },
+        { key: "STNPRESENT", label: "STONE", align: "center" as const,},
     ], []);
 
     const summaryRowData = useMemo(() => [
@@ -716,7 +732,24 @@ function BarCodeGenerate() {
             }));
 
             // Merge with any manually-entered rows, then resequence barcodes
-            setTransactionRows(rebuildBarcodes([...rowsRef.current, ...newItems]));
+            setTransactionRows((prev) => {
+                const merged = [...prev, ...newItems];
+
+                if (isEditing) {
+                    let counter = startBarcodeNumber + prev.length;
+
+                    return merged.map((r, i) => {
+                        if (r.barcode) return r;
+
+                        return {
+                            ...r,
+                            barcode: `${baseBarcodePrefix}${counter + (i - prev.length + 1)}`,
+                        };
+                    });
+                }
+
+                return rebuildBarcodes(merged, false);
+            });
 
             toaster.create({
                 title: "Excel Imported",
@@ -765,12 +798,38 @@ function BarCodeGenerate() {
 
     const validateTransactionForm = useCallback((): Record<string, string> => {
         const e: Record<string, string> = {};
-        if (!transactionFormData.grsweight || Number(transactionFormData.grsweight) <= 0) e.grsweight = "Weight must be greater than 0";
-        if (!transactionFormData.stoneWt || Number(transactionFormData.stoneWt) < 0) e.stoneWt = "Stone weight must be 0 or greater";
-        if (!transactionFormData.salesStoneWt || Number(transactionFormData.salesStoneWt) < 0) e.salesStoneWt = "Sales stone weight must be 0 or greater";
-        return e;
-    }, [transactionFormData.grsweight, transactionFormData.stoneWt, transactionFormData.salesStoneWt]);
 
+        if (!transactionFormData.grsweight || Number(transactionFormData.grsweight) <= 0) {
+            e.grsweight = "Weight must be greater than 0";
+        }
+
+        // ✅ Only validate stone fields if STNPRESENT = 'Y'
+        if (hasStone) {
+
+            if (
+                transactionFormData.stoneWt === "" ||
+                transactionFormData.stoneWt === null ||
+                Number(transactionFormData.stoneWt) < 0
+            ) {
+                e.stoneWt = "Stone weight must be 0 or greater";
+            }
+
+            if (
+                transactionFormData.salesStoneWt === "" ||
+                transactionFormData.salesStoneWt === null ||
+                Number(transactionFormData.salesStoneWt) < 0
+            ) {
+                e.salesStoneWt = "Sales stone weight must be 0 or greater";
+            }
+        }
+
+        return e;
+    }, [
+        transactionFormData.grsweight,
+        transactionFormData.stoneWt,
+        transactionFormData.salesStoneWt,
+        selectedItem
+    ]);
     const validateTaggingHeaders = useCallback((): boolean => {
         const e: TaggingErrors = {};
         if (!barcodeHeaderForm.COMPANYNAME) e.COMPANYNAME = "Purchaser is required";
@@ -861,6 +920,7 @@ function BarCodeGenerate() {
 
 
     const handleTransactionSubmit = useCallback(() => {
+
         const newErrors = validateTransactionForm();
         if (Object.keys(newErrors).length) {
             setTouched(FIELD_ORDER.reduce((a, k) => ({ ...a, [k]: true }), {} as Record<string, boolean>));
@@ -886,7 +946,7 @@ function BarCodeGenerate() {
                     mc: Number(transactionFormData.mc),
                     touch: Number(transactionFormData.touch),
                 });
-                setTransactionRows(rebuildBarcodes(updated));
+                setTransactionRows(updated); // keep same barcodes
                 setEditId(null);
                 toaster.create({ title: "Row Updated", description: "Row has been updated successfully", type: "success", duration: 2000 });
             } else {
@@ -903,13 +963,25 @@ function BarCodeGenerate() {
                     touch: Number(transactionFormData.touch),
                     barcode: "",
                 };
-                setTransactionRows(rebuildBarcodes([...current, newRow]));
+                setTransactionRows((prev) => {
+                    const updated = [...prev, newRow];
+
+                    if (isEditing) {
+                        // only assign barcode to last row
+                        updated[updated.length - 1].barcode =
+                            `${baseBarcodePrefix}${startBarcodeNumber + updated.length}`;
+                        return updated;
+                    }
+
+                    return rebuildBarcodes(updated, false);
+                });
                 toaster.create({ title: "Row Added", description: "New row has been added successfully", type: "success", duration: 2000 });
             }
             resetTransactionForm();
-            setTimeout(() => focusField(FIELD_ORDER[0]), 100);
+           
         } finally {
             setIsSubmitting(false);
+            setTimeout(() => focusField(FIELD_ORDER[1]), 50);
 
         }
     }, [validateTransactionForm, editId, transactionFormData, barcodeHeaderForm.ENTRYNO, rebuildBarcodes, setTransactionRows, resetTransactionForm, focusField]);
@@ -944,7 +1016,7 @@ function BarCodeGenerate() {
         setEditId(row.id);
         setErrors({});
         setTouched({});
-        setTimeout(() => focusField(FIELD_ORDER[0]), 100);
+        setTimeout(() => focusField(FIELD_ORDER[1]), 50);
     }, [focusField]);
 
     const handleDeleteRow = useCallback((row: BarcodeTransactionItem) => {
@@ -958,16 +1030,8 @@ function BarCodeGenerate() {
         alert(`Printing barcode for item: ${row.barcode}`);
     }, []);
 
-    console.log(transactionRows, 'transactionRows')
 
-    const handleSaveTransaction = useCallback(() => {
-        if (!validateTaggingHeaders()) {
-            toaster.create({ title: "Validation Error", description: "Please fill all required header fields", type: "error", duration: 2000 });
-            return;
-        }
-        const limits = { PCS: safeNum(selectedItem?.PCS), STNWT: safeNum(selectedItem?.STNWT) };
-        if (!validateTaggingRows({ transactionRows, limitations: limits })) return;
-
+    const buildTaggingPayload = () => {
         const purchaseDetails = {
             TOTALPCS: transactionRows.length,
             ENTRYNO: Number(barcodeHeaderForm.ENTRYNO),
@@ -977,6 +1041,7 @@ function BarCodeGenerate() {
             PUSNO: barcodeHeaderForm.ITEMNAME,
             TAGDATE: barcodeHeaderForm.DATE || new Date().toISOString().split("T")[0],
         };
+
         const taggingDetails = transactionRows.map((row) => ({
             TAGNO: row.barcode,
             GRSWT: row.grsweight,
@@ -990,47 +1055,140 @@ function BarCodeGenerate() {
             SIZEID: Number(row.size),
         }));
 
-        createTag({ PURCHASEDETAILS: purchaseDetails, TAGGINGDETAILS: taggingDetails }, {
-            onSuccess: (res) => {
-                toaster.create({
-                    title: "Success",
-                    description: "Tagging created successfully",
-                    type: "success",
-                    duration: 2000
-                });
+        return { purchaseDetails, taggingDetails };
+    };
 
-                setBarcodeHeaderForm({ ...EMPTY_HEADER, DATE: new Date().toISOString().split("T")[0] });
-                setTransactionRows([]);
+    const handleSaveTagging = useCallback(() => {
 
-                console.log("API Response:", res);
+        if (!validateTaggingHeaders()) {
+            toaster.create({
+                title: "Validation Error",
+                description: "Please fill all required header fields",
+                type: "error",
+                duration: 2000
+            });
+            return;
+        }
 
-                // ✅ get printId from response
-                setPrintId(res?.data?.ENTRYNO);
+        const limits = {
+            PCS: safeNum(selectedItem?.PCS),
+            STNWT: safeNum(selectedItem?.STNWT)
+        };
 
-                setPrintDetails(res?.data?.TAGDETAILS);
-                setTimeout(() => {
-                    handlePrintTagDetails()
-                }, 500)
+        if (!validateTaggingRows({ transactionRows, limitations: limits })) return;
 
-            },
-            onError: (error: any) => {
-                const message =
-                    error?.response?.data?.message ||   // backend message
-                    error?.response?.data?.error ||     // alternative key
-                    error?.message ||                   // fallback
-                    "Something went wrong";
+        const { purchaseDetails, taggingDetails } = buildTaggingPayload();
 
-                toaster.create({
-                    title: "Error",
-                    description: message,
-                    type: "error",
-                    duration: 2000
-                });
+        createTag(
+            { PURCHASEDETAILS: purchaseDetails, TAGGINGDETAILS: taggingDetails },
+            {
+                onSuccess: (res) => {
+
+                    toaster.create({
+                        title: "Success",
+                        description: "Tagging created successfully",
+                        type: "success",
+                        duration: 2000
+                    });
+
+                    setBarcodeHeaderForm({
+                        ...EMPTY_HEADER,
+                        DATE: new Date().toISOString().split("T")[0]
+                    });
+
+                    setTransactionRows([]);
+
+                    setPrintId(res?.data?.ENTRYNO);
+                    setPrintDetails(res?.data?.TAGDETAILS);
+
+                    setTimeout(() => {
+                        handlePrintTagDetails();
+                    }, 500);
+                },
+
+                onError: (error: any) => {
+                    const message =
+                        error?.response?.data?.message ||
+                        error?.response?.data?.error ||
+                        error?.message ||
+                        "Something went wrong";
+
+                    toaster.create({
+                        title: "Error",
+                        description: message,
+                        type: "error",
+                        duration: 2000
+                    });
+                }
             }
-        });
-    }, [validateTaggingHeaders, validateTaggingRows, selectedItem, transactionRows, barcodeHeaderForm, itemId, createTag, setTransactionRows]);
+        );
 
+    }, [
+        validateTaggingHeaders,
+        validateTaggingRows,
+        selectedItem,
+        transactionRows,
+        barcodeHeaderForm,
+        itemId,
+        createTag
+    ]);
 
+    const handleUpdateTagging = useCallback(() => {
+
+        if (!validateTaggingHeaders()) {
+            toaster.create({
+                title: "Validation Error",
+                description: "Please fill all required header fields",
+                type: "error",
+                duration: 2000
+            });
+            return;
+        }
+
+        const limits = {
+            PCS: safeNum(selectedItem?.PCS),
+            STNWT: safeNum(selectedItem?.STNWT)
+        };
+
+        if (!validateTaggingRows({ transactionRows, limitations: limits })) return;
+
+        const { purchaseDetails, taggingDetails } = buildTaggingPayload();
+
+        console.log(purchaseDetails ,taggingDetails ,'buildedTaged');
+        
+
+        updateTag(
+            { PURCHASEDETAILS: purchaseDetails, TAGGINGDETAILS: taggingDetails , id: Number(barcodeHeaderForm.ENTRYNO)},
+            {
+                onSuccess: (res) => {
+                    console.log(res,'resres')
+                    toaster.create({
+                        title: "Updated",
+                        description: "Tagging updated successfully",
+                        type: "success",
+                        duration: 2000
+                    });
+                },
+                onError: (error: any) => {
+                    toaster.create({
+                        title: "Error",
+                        description: error?.message || "Update failed",
+                        type: "error",
+                        duration: 2000
+                    });
+                }
+            }
+        );
+
+    }, [
+        validateTaggingHeaders,
+        validateTaggingRows,
+        selectedItem,
+        transactionRows,
+        barcodeHeaderForm,
+        itemId,
+        isEditing
+    ]);
 
     /* ============================================================
        EDIT TAG TRANSACTION
@@ -1054,7 +1212,7 @@ function BarCodeGenerate() {
 
     const handleEditTagTransaction = (entryNo: string) => {
         if (selectedEntryNo === String(entryNo)) {
-            // Same ID clicked again — force re-fetch by resetting first
+            
             setSelectedEntryNo('');
             setTimeout(() => setSelectedEntryNo(String(entryNo)), 0);
             return;
@@ -1196,6 +1354,11 @@ function BarCodeGenerate() {
                 <Table.Cell textAlign="right">{formatToFixed(row.NETWT, 3) ?? "0.000"}</Table.Cell>
                 <Table.Cell textAlign="center">{row.WASTYPE || "-"}</Table.Cell>
                 <Table.Cell textAlign="center">{formatToFixed(row.TOUCH, 1) || "-"}</Table.Cell>
+                <Table.Cell textAlign="center"> 
+                    <Box bg={row.STNPRESENT === "Y" ? "green.100" : "red.100" } p={1} fontSize={'2xs'} rounded={'xl'}>
+                        {row.STNPRESENT === "Y" ? "Present" : "Not Present"}
+                    </Box> 
+                </Table.Cell>
             </>
         );
     }, []);
@@ -1443,7 +1606,7 @@ exit
                             <Button size="xs" fontSize="2xs" onClick={handleClear} variant="ghost" bg={theme.colors.formColor} p={0}>
                                 <Image src={clearIcon} width={58} alt="CLEAR" />
                             </Button>
-                            <Button size="xs" bg={theme.colors.formColor} onClick={handleSaveTransaction} loadingText="Saving..." variant="ghost" p={0}>
+                            <Button size="xs" bg={theme.colors.formColor} onClick={ isEditing ? handleUpdateTagging : handleSaveTagging} loadingText="Saving..." variant="ghost" p={0}>
                                 <Image src={isEditing ? updateIcon : saveIcon} width={60} alt="save" />
                             </Button>
                         </Box>

@@ -36,3 +36,18 @@ export const useCreateTag = () =>{
   )
 }
 
+export const useUpdateTag = () => {
+  const queryClient = useQueryClient();
+  return useApiMutation<CreateTagResponse, CreateTag & { id?: string | number }>(
+    {
+      url:({id})=>`/tagged/${id}`,
+      method:"PUT",
+      queryKey:['barcode-items-filter'],
+      // enabled: !!id ,
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ['tag-details']})
+      }
+    }
+  )
+}
+

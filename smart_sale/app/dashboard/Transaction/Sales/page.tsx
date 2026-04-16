@@ -78,10 +78,8 @@ import { useSaleTransactionStore } from "@/store/sales/useSaleTransactionStore";
 
 
 // Types & Constants
-import { ClosingDetails, WeightInfo,} from "@/types/transcation/Transaction";
 import { SALETRANSACTIONTYPES } from "@/data/Transaction/TransactionType";
-import { SaleTransactionType } from "@/types/transcation/SaleTransaction";
-import { SaleTransactionKey, SaleTransactionItems, SALE_TRANSACTION_KEY_MAP, SALESTRANSACTIONITEMS, CreateSaleTransaction } from "@/types/transcation/SaleTransaction";
+import { SaleTransactionKey, SaleTransactionItems, SALE_TRANSACTION_KEY_MAP, SALESTRANSACTIONITEMS, CreateSaleTransaction, ClosingDetails, SaleTransactionType } from "@/types/transcation/SaleTransaction";
 
 import { BaseClosingFormDetails } from "@/types/balanceSummary/BalanceSummary";
 //Utilities
@@ -746,10 +744,8 @@ export default function SalesPage() {
        ================================ */
     const { closingDetails, setClosingDetails, resetBalance } = useSalesBalanceSummary();
 
-    console.log(closingDetails, 'closingDetailsfromstore')
 
-
-
+    console.log(closingDetails,'closingDetailsdetails');
 
     useConversionSync(Number(headerForm.RATEGM || 0));
 
@@ -761,17 +757,17 @@ export default function SalesPage() {
         const d = closingDetails;
 
         return {
-            convType: d.convType,
-            convAmt: Number(d.convAmt || 0),
-            convWt: Number(d.convWt || 0),
-            // discAmt: Number(d.discAmt || 0),
-            // discWt: Number(d.discWt || 0),
-            cashPaid: Number(d.cashPaid || 0),
-            cashRcvd: Number(d.cashRcvd || 0),
-            bankPaid: Number(d.bankPaid || 0),
-            bankRcvd: Number(d.bankRcvd || 0),
-            bankPaidDetails: d.bankPaidDetails,
-            bankRcvdDetails: d.bankRcvdDetails,
+            CONVTYPE: d.CONVTYPE,
+            CONVAMT: Number(d.CONVAMT || 0),
+            CONVWT: Number(d.CONVWT || 0),
+            // DISCAMt: Number(d.discAmt || 0),
+            // DISCWT: Number(d.discWt || 0),
+            CASHPAID: Number(d.CASHPAID || 0),
+            CASHRCVD: Number(d.CASHRCVD || 0),
+            BANKPAID: Number(d.BANKPAID || 0),
+            BANKRCVD: Number(d.BANKRCVD || 0),
+            BANKPAIDDETAILS: d.BANKPAIDDETAILS,
+            BANKRCVDDETAILS: d.BANKRCVDDETAILS,
         };
     };
 
@@ -922,14 +918,14 @@ export default function SalesPage() {
             
     
             const hasAnyValue =
-                Number(closingDetails.convAmt || 0) > 0 ||
-                Number(closingDetails.convWt || 0) > 0 ||
-                Number(closingDetails.cashPaid || 0) > 0 ||
-                Number(closingDetails.cashRcvd || 0) > 0 ||
-                Number(closingDetails.bankPaid || 0) > 0 ||
-                Number(closingDetails.bankRcvd || 0) > 0 ||
-                (closingDetails.bankPaidDetails?.length ?? 0) > 0 ||
-                (closingDetails.bankRcvdDetails?.length ?? 0) > 0;
+                Number(closingDetails.CONVAMT || 0) > 0 ||
+                Number(closingDetails.CONVWT || 0) > 0 ||
+                Number(closingDetails.CASHPAID || 0) > 0 ||
+                Number(closingDetails.CASHRCVD || 0) > 0 ||
+                Number(closingDetails.BANKPAID || 0) > 0 ||
+                Number(closingDetails.BANKRCVD || 0) > 0 ||
+                (closingDetails.BANKPAIDDETAILS?.length ?? 0) > 0 ||
+                (closingDetails.BANKRCVDDETAILS?.length ?? 0) > 0;
                 
             return (!isBalanceSame && hasAnyValue);
         }, [closingDetails, getClosingDetailsPayload]);
@@ -980,6 +976,8 @@ export default function SalesPage() {
 
         return { valid: true, payload };
     };
+
+
     const handleSaveTransaction = () => {
 
         setEditingState({ rowId: null, transactionType: null });
@@ -995,6 +993,7 @@ export default function SalesPage() {
 
         const result = buildTransactionRequest();
 
+        console.log(result.payload ,'createTransactionPayload');
 
 
         if (!result.valid || !result.payload) {

@@ -7,23 +7,25 @@ export const useClosingCalculation = (
     rate: number
 ): ClosingCalculationResult => {
     return useMemo(() => {
-        const cashRcvd = Number(closingDetails.cashRcvd || 0);
-        const cashPaid = Number(closingDetails.cashPaid || 0);
 
-        const bankRcvd = closingDetails.bankRcvdDetails.reduce(
-            (sum, t) => sum + (t.amount || 0),
+
+        const cashRcvd = Number(closingDetails.CASHRCVD || 0);
+        const cashPaid = Number(closingDetails.CASHPAID || 0);
+
+        const bankRcvd = closingDetails.BANKRCVDDETAILS.reduce(
+            (sum, t) => sum + (t.AMOUNT || 0),
             0
         );
 
-        const bankPaid = closingDetails.bankPaidDetails.reduce(
-            (sum, t) => sum + (t.amount || 0),
+        const bankPaid = closingDetails.BANKPAIDDETAILS.reduce(
+            (sum, t) => sum + (t.AMOUNT || 0),
             0
         );
 
-        let convAmt = Number(closingDetails.convAmt || 0);
-        let convWt = Number(closingDetails.convWt || 0);
+        let convAmt = Number(closingDetails.CONVAMT || 0);
+        let convWt = Number(closingDetails.CONVWT || 0);
 
-        const type = closingDetails.convType;
+        const type = closingDetails.CONVTYPE;
 
         let closingCash =
             (openingBalances.openCash || 0) +

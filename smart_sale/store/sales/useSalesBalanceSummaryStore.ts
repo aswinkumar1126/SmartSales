@@ -32,6 +32,7 @@ type SalesBalanceSummaryStore = {
 };
 
 const initialClosingDetails: SalesClosingFormDetails = {
+  
     CONVTYPE: "",
     CONVAMT: "",
     CONVWT: "",
@@ -59,17 +60,34 @@ export const useSalesBalanceSummary = create<SalesBalanceSummaryStore>()(
                 set((state) => ({
                     closingDetails: {
                         ...state.closingDetails,
-                        ...data,
+
+                        // ✅ map only correct keys
+                        CONVTYPE: data.CONVTYPE ?? state.closingDetails.CONVTYPE,
+                        CONVAMT: data.CONVAMT ?? state.closingDetails.CONVAMT,
+                        CONVWT: data.CONVWT ?? state.closingDetails.CONVWT,
+                        CASHPAID: data.CASHPAID ?? state.closingDetails.CASHPAID,
+                        CASHRCVD: data.CASHRCVD ?? state.closingDetails.CASHRCVD,
+                        BANKPAID: data.BANKPAID ?? state.closingDetails.BANKPAID,
+                        BANKRCVD: data.BANKRCVD ?? state.closingDetails.BANKRCVD,
+                        BANKPAIDDETAILS:
+                            data.BANKPAIDDETAILS ?? state.closingDetails.BANKPAIDDETAILS,
+                        BANKRCVDDETAILS:
+                            data.BANKRCVDDETAILS ?? state.closingDetails.BANKRCVDDETAILS,
                     },
                 })),
-                
-            setClosingField: (field, value) =>
+            setClosingField: (field, value) => {
+                if (field !== field.toUpperCase()) {
+                    console.warn("❌ Invalid field key:", field);
+                    return;
+                }
+
                 set((state) => ({
                     closingDetails: {
                         ...state.closingDetails,
                         [field]: value,
                     },
-                })),
+                }));
+            },
 
             // =====================
             // MODAL
@@ -84,8 +102,8 @@ export const useSalesBalanceSummary = create<SalesBalanceSummaryStore>()(
                 set((state) => ({
                     closingDetails: {
                         ...state.closingDetails,
-                        bankPaidDetails: transactions,
-                        bankPaid: transactions
+                        BANKPAIDDETAILS: transactions,
+                        BANKPAID: transactions
                             .reduce((sum, t) => sum + Number(t.AMOUNT || 0), 0)
                             .toFixed(2),
                     },
@@ -98,8 +116,8 @@ export const useSalesBalanceSummary = create<SalesBalanceSummaryStore>()(
                 set((state) => ({
                     closingDetails: {
                         ...state.closingDetails,
-                        bankRcvdDetails: transactions,
-                        bankRcvd: transactions
+                        BANKRCVDDETAILS: transactions,
+                        BANKRCVD: transactions
                             .reduce((sum, t) => sum + Number(t.AMOUNT || 0), 0)
                             .toFixed(2),
                     },

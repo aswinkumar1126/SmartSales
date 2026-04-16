@@ -64,28 +64,29 @@ export const SALE_TRANSACTION_KEY_MAP: Record<string, SaleTransactionKey> = {
 };
 
 export interface BankTransactionDetails {
-    bankName: string,
-    tranMode: "C" | "F" | "I" | "N" | "R" | "U",
-    tranDate: string,
-    chqNo: string,
-    amount: number
+    
+    BANKID: string,
+    TRANMODE: "C" | "F" | "I" | "N" | "R" | "U",
+    PAYDATE: string,
+    CHQNO: string,
+    AMOUNT: number
 }
 
 export interface ClosingDetails {
 
-    convType: "" | "P" | "C" | string;
-    convAmt: number;
-    convWt: number;
-    discAmt?: number;
-    discWt?: number;
+    CONVTYPE: "" | "P" | "C" | string;
+    CONVAMT: number;
+    CONVWT: number;
+    DISCAMT?: number;
+    DISCWT?: number;
 
-    cashPaid: number;
-    cashRcvd: number;
+    CASHPAID: number;
+    CASHRCVD: number;
 
-    bankPaid: number;
-    bankRcvd: number;
-    bankPaidDetails: BankTransactionDetails[];
-    bankRcvdDetails: BankTransactionDetails[];
+    BANKPAID: number;
+    BANKRCVD: number;
+    BANKPAIDDETAILS: BankTransactionDetails[];
+    BANKRCVDDETAILS: BankTransactionDetails[];
 
 }
 
@@ -107,10 +108,11 @@ export interface CreateSaleTransaction {
 
 
 export type SalesBankTransaction = {
+
     AMOUNT: number;
-    BANKNAME: string | null;
+    BANKID: string | null;
     CHQNO: string | null;
-    TRANDATE: string | null;
+    PAYDATE: string | null;
     TRANMODE: string | null;
 }
 

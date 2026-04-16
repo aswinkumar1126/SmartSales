@@ -12,6 +12,7 @@ export const usePureGoldDataById = (id: number) => {
     return useQuery({
         queryKey: ["pureGoldData", id],
         queryFn: () => pureGoldMastService().getPureGoldMastDataById(id),
+        select: (data) => data.data,
     });
 };
 

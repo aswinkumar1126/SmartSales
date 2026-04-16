@@ -5,14 +5,14 @@ export const useConversionSync = (rate: number) => {
     const { closingDetails, setClosingField } = useSalesBalanceSummary();
 
     useEffect(() => {
-        const convType = closingDetails.convType;
+        const convType = closingDetails.CONVTYPE;
 
-        const convAmtStr = closingDetails.convAmt;
-        const convWtStr = closingDetails.convWt;
+        const convAmtStr = closingDetails.CONVAMT;
+        const convWtStr = closingDetails.CONVWT;
 
 
-        let convAmt = parseFloat(closingDetails.convAmt || "") || 0;
-        let convWt = parseFloat(closingDetails.convWt || "") || 0;
+        let convAmt = parseFloat(closingDetails.CONVAMT || "") || 0;
+        let convWt = parseFloat(closingDetails. CONVWT || "") || 0;
         
 
         console.log(convWt ,convAmt ,'conversions')
@@ -25,7 +25,7 @@ export const useConversionSync = (rate: number) => {
             // If weight is empty OR <= 0 → clear amount
             if (!convWtStr || convWt <= 0) {
                 if (convAmtStr !== "") {
-                    setClosingField("convAmt", "");
+                    setClosingField("CONVAMT", "");
                 }
                 return;
             }
@@ -35,7 +35,7 @@ export const useConversionSync = (rate: number) => {
             // If amount is empty OR <= 0 → clear weight
             if (!convAmtStr || convAmt <= 0) {
                 if (convWtStr !== "") {
-                    setClosingField("convWt", "");
+                    setClosingField("CONVWT", "");
                 }
                 return;
             }
@@ -46,23 +46,23 @@ export const useConversionSync = (rate: number) => {
         if (convType === "P" && convWt > 0) {
             const calculatedAmt = (convWt * rate).toFixed(2);
 
-            if (calculatedAmt !== closingDetails.convAmt) {
-                setClosingField("convAmt", calculatedAmt);
+            if (calculatedAmt !== closingDetails.CONVAMT) {
+                setClosingField("CONVAMT", calculatedAmt);
             }
         }
 
         if (convType === "C" && convAmt > 0) {
             const calculatedWt = (convAmt / rate).toFixed(3);
 
-            if (calculatedWt !== closingDetails.convWt) {
-                setClosingField("convWt", calculatedWt);
+            if (calculatedWt !== closingDetails.CONVWT) {
+                setClosingField("CONVWT", calculatedWt);
             }
         }
 
     }, [
-        closingDetails.convType,
-        closingDetails.convAmt,
-        closingDetails.convWt,
+        closingDetails.CONVTYPE,
+        closingDetails.CONVAMT,
+        closingDetails.CONVWT,
         rate,
     ]);
 };

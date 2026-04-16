@@ -70,6 +70,7 @@ export interface SELECTED_BARCODE_ITEM {
     WT: number | null;
     otherChargesDetails: any | null;
     stoneDetails: any | null;
+    STNPRESENT: "Y" | "N" | string;
 }
 
 export interface BarcodeDetails{

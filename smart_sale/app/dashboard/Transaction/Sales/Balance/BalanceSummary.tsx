@@ -53,8 +53,11 @@ const BalanceSummary = ({
         setBankRcvd,
     } = useSalesBalanceSummary();
 
-    const conversionType = closingDetails.convType;
-    console.log(closingDetails,'closingDetails')
+    console.log(closingDetails,'closingDetailsclosingDetails')
+
+
+    const conversionType = closingDetails.CONVTYPE;
+
 
     // =====================
     // REFS
@@ -83,9 +86,9 @@ const BalanceSummary = ({
     const handleConvTypeChange = (type: "P" | "C" | "") => {
         const newType = conversionType === type ? "" : type;
 
-        setClosingField("convType", newType);
-        setClosingField("convAmt", "");
-        setClosingField("convWt", "");
+        setClosingField("CONVTYPE", newType);
+        setClosingField("CONVAMT", "");
+        setClosingField("CONVWT", "");
     };
 
     const handleOpenBankPaidModal = () => {
@@ -192,9 +195,9 @@ const BalanceSummary = ({
                 </Text>
 
                 <CapitalizedInput
-                    field="convWt"
-                    value={closingDetails.convWt}
-                    onChange={(_, v) => handleChange("convWt", v)}
+                    field="CONVWT"
+                    value={closingDetails.CONVWT}
+                    onChange={(_, v) => handleChange("CONVWT", v)}
                     type="number"
                     allowDecimal
                     decimalScale={3}
@@ -206,9 +209,9 @@ const BalanceSummary = ({
                 />
 
                 <CapitalizedInput
-                    field="convAmt"
-                    value={closingDetails.convAmt}
-                    onChange={(_, v) => handleChange("convAmt", v)}
+                    field="CONVAMT"
+                    value={closingDetails.CONVAMT}
+                    onChange={(_, v) => handleChange("CONVAMT", v)}
                     type="number"
                     allowDecimal
                     decimalScale={2}
@@ -238,9 +241,9 @@ const BalanceSummary = ({
                         width="100%"
                     >
                         <CapitalizedInput
-                            field="bankRcvd"
+                            field="BANKRCVD"
                             onChange={() => null}
-                            value={closingDetails.bankRcvd}
+                            value={closingDetails.BANKRCVD}
                             type="number"
                             decimalScale={2}
                             size="xs"
@@ -249,9 +252,9 @@ const BalanceSummary = ({
                         />
                     </Box>
 
-                    {closingDetails.bankRcvdDetails.length > 0 && (
+                    {closingDetails.BANKRCVDDETAILS.length > 0 && (
                         <Badge size="xs" colorPalette="blue" fontSize="2xs">
-                            {closingDetails.bankRcvdDetails.length} transaction(s)
+                            {closingDetails.BANKRCVDDETAILS.length} transaction(s)
                         </Badge>
                     )}
                 </VStack>
@@ -264,9 +267,9 @@ const BalanceSummary = ({
                         Cash Received
                     </Text>
                     <CapitalizedInput
-                        field="cashRcvd"
-                        value={closingDetails.cashRcvd}
-                        onChange={(_, v) => handleChange("cashRcvd", v)}
+                        field="CASHRCVD"
+                        value={closingDetails.CASHRCVD}
+                        onChange={(_, v) => handleChange("CASHRCVD", v)}
                         type="number"
                         decimalScale={2}
                         size="xs"
@@ -290,8 +293,8 @@ const BalanceSummary = ({
                         width="100%"
                     >
                         <CapitalizedInput
-                            value={closingDetails.bankPaid}
-                            field="bankPaid"
+                            value={closingDetails.BANKPAID}
+                            field="BANKPAID"
                             onChange={() => null}
                             type="number"
                             decimalScale={2}
@@ -301,9 +304,9 @@ const BalanceSummary = ({
                         />
                     </Box>
 
-                    {closingDetails.bankPaidDetails.length > 0 && (
+                    {closingDetails.BANKPAIDDETAILS.length > 0 && (
                         <Badge size="xs" colorPalette="red" fontSize="2xs">
-                            {closingDetails.bankPaidDetails.length} transaction(s)
+                            {closingDetails.BANKPAIDDETAILS.length} transaction(s)
                         </Badge>
                     )}
                 </VStack>
@@ -316,9 +319,9 @@ const BalanceSummary = ({
                         Cash Paid
                     </Text>
                     <CapitalizedInput
-                        field="cashPaid"
-                        value={closingDetails.cashPaid}
-                        onChange={(_, v) => handleChange("cashPaid", v)}
+                        field="CASHPAID"
+                        value={closingDetails.CASHPAID}
+                        onChange={(_, v) => handleChange("CASHPAID", v)}
                         type="number"
                         decimalScale={2}
                         size="xs"
@@ -372,8 +375,8 @@ const BalanceSummary = ({
                 accCode={accCode}
                 initialTransactions={
                     bankModalType === "paid"
-                        ? closingDetails.bankPaidDetails
-                        : closingDetails.bankRcvdDetails
+                        ? closingDetails.BANKPAIDDETAILS
+                        : closingDetails.BANKRCVDDETAILS
                 }
                 bankAccList={bankAccList}
                 escapeId="bankModal"

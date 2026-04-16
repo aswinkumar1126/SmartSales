@@ -32,6 +32,7 @@ type PurchaseBalanceSummaryStore = {
 };
 
 const initialClosingDetails: PurchaseClosingFormDetails = {
+    
     CONVTYPE: "",
     CONVAMT: "",
     CONVWT: "",

@@ -4,16 +4,16 @@ import { ClosingDetails } from "@/types/transcation/SaleTransaction";
 // ✅ Check if closing details has ANY meaningful value
 const hasAnyClosingValue = (payload: ClosingDetails): boolean => {
     return (
-        (payload.convAmt ?? 0) !== 0 ||
-        (payload.convWt ?? 0) !== 0 ||
-        (payload.discAmt ?? 0) !== 0 ||
-        (payload.discWt ?? 0) !== 0 ||
-        (payload.cashPaid ?? 0) !== 0 ||
-        (payload.cashRcvd ?? 0) !== 0 ||
-        (payload.bankPaid ?? 0) !== 0 ||
-        (payload.bankRcvd ?? 0) !== 0 ||
-        (payload.bankPaidDetails?.length ?? 0) > 0 ||
-        (payload.bankRcvdDetails?.length ?? 0) > 0
+        (payload.CONVAMT ?? 0) !== 0 ||
+        (payload.CONVWT ?? 0) !== 0 ||
+        (payload.DISCAMT ?? 0) !== 0 ||
+        (payload.DISCWT ?? 0) !== 0 ||
+        (payload.CASHPAID ?? 0) !== 0 ||
+        (payload.CASHRCVD ?? 0) !== 0 ||
+        (payload.BANKPAID ?? 0) !== 0 ||
+        (payload.BANKRCVD ?? 0) !== 0 ||
+        (payload.BANKPAIDDETAILS?.length ?? 0) > 0 ||
+        (payload.BANKRCVDDETAILS?.length ?? 0) > 0
     );
 };
 
