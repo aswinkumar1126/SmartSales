@@ -144,18 +144,10 @@ const sheetToExcelData = (worksheet: XLSX.WorkSheet): ExcelData => {
    ============================================================ */
 
 type BarCodeExcelProps = {
-    /** Raw grid data (rows × cols). Parent owns this state. */
+
     data: ExcelData;
-    /** Called whenever a cell is edited by the user. */
     onChange: (changes: CellChange[] | null, source: ChangeSource) => void;
-    /** Called when "Load into Table" is clicked — receives parsed non-empty rows. */
     onLoad: (rows: ExcelRowData[]) => void;
-    /**
-     * Called after the grid data changes (user edit OR file upload).
-     * Use this to keep parent state in sync.
-     * NOTE: Do NOT update `data` prop from this in a way that causes a
-     * re-render loop — store in a separate ref or debounce if needed.
-     */
     onFileParsed?: (data: ExcelData) => void;
 };
 

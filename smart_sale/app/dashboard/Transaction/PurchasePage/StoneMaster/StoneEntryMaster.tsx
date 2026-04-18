@@ -204,6 +204,12 @@ export default function StoneEnterMaster({
         }
     }, [formData]);
 
+    useEffect(() => {
+        if (stoneIdRef.current) {
+            stoneIdRef.current.focus();
+        }
+    }, [])
+
     const validateForm = useCallback((): boolean => {
         const newErrors: Record<string, string> = {};
         const newTouched: Record<string, boolean> = {};

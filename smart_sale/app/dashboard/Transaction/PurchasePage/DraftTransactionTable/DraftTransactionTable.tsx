@@ -330,7 +330,8 @@ export default function DraftTransactionTable({
             const isNum = numericFields.includes(col.key);
             const isRequired = isIssue
                 ? ["PUREID", "TOUCH", "WT"].includes(col.key)
-                : ["ITEMID", "PCS", "GRSWT", "TOUCH", "HMC"].includes(col.key);
+                : ["ITEMID", "PCS", "GRSWT", "TOUCH"].includes(col.key);
+
 
             const base: FormField = {
                 key: col.key,
@@ -348,7 +349,7 @@ export default function DraftTransactionTable({
             };
 
             if (col.key === "ITEMID" || col.key === "PUREID")
-                return { ...base, type: "combobox", collection: itemsCollection || { items: [] }, isRequired: true };
+                return { ...base, type: "combobox", collection: itemsCollection || { items: [] }, isRequired: true  , disabled:isEditing};
 
             if (col.key === "WASTYPE")
                 return { ...base, type: "select", collection: wastypecollection, isRequired: true, dependsOn: "ITEMID", defaultValue: "TOUCH" };
@@ -379,7 +380,7 @@ export default function DraftTransactionTable({
 
             return base;
         });
-    }, [tableCols, itemsCollection, isIssue, isTag, transactionTitle]);
+    }, [tableCols, itemsCollection, isIssue, isTag, transactionTitle,isEditing]);
 
     // ── Visible fields (excludes auto-calculated display-only fields) ─────────
     const visibleFormFields = useMemo(

@@ -1176,19 +1176,27 @@ export default function PurchasePage() {
         }
     };
 
-
+  
 
     const handleTransactionClick = useCallback((transactionId: string) => {
-        if (transactionId === String(transactionId)) {
 
-            setSelectedTransactionId('');
-            setTimeout(() => setSelectedTransactionId(String(transactionId)), 0);
+        if (draftRows.length > 0 && !isEditing) {
+            toaster.create({
+                title: "Warning",
+                description: "You have unsaved changes in the draft. Please save or reset before switching transactions.",
+                type: "warning",
+                duration: 3000
+            });
+            setDeselectFlag(true);
+            setTimeout(() => setDeselectFlag(false), 100);
             return;
         }
-        setSelectedTransactionId(transactionId);
 
+        setSelectedTransactionId(prev =>
+            prev === transactionId ? '' : transactionId
+        );
 
-    }, []);
+    }, [draftRows]);
 
     const handleSingleSearch = (term: string) => {
         setSingleSearch(term);
@@ -1199,26 +1207,26 @@ export default function PurchasePage() {
     /* ================================
        Calculate Overall Totals
     ================================ */
-    const totals = useMemo(() => {
-        return draftRows.reduce((acc, row) => {
-            acc.PCS += Number(row.PCS || 0);
-            acc.GRSWT += Number(row.GRSWT || 0);
-            acc.STNWT += Number(row.STNWT || 0);
-            acc.NETWT += Number(row.NETWT || 0);
-            acc.PUREWT += Number(row.PUREWT || 0);
-            acc.MC += Number(row.MC || 0);
+    // const totals = useMemo(() => {
+    //     return draftRows.reduce((acc, row) => {
+    //         acc.PCS += Number(row.PCS || 0);
+    //         acc.GRSWT += Number(row.GRSWT || 0);
+    //         acc.STNWT += Number(row.STNWT || 0);
+    //         acc.NETWT += Number(row.NETWT || 0);
+    //         acc.PUREWT += Number(row.PUREWT || 0);
+    //         acc.MC += Number(row.MC || 0);
 
 
-            return acc;
-        }, {
-            PCS: 0,
-            GRSWT: 0,
-            STNWT: 0,
-            NETWT: 0,
-            PUREWT: 0,
-            MC: 0,
-        });
-    }, [draftRows]);
+    //         return acc;
+    //     }, {
+    //         PCS: 0,
+    //         GRSWT: 0,
+    //         STNWT: 0,
+    //         NETWT: 0,
+    //         PUREWT: 0,
+    //         MC: 0,
+    //     });
+    // }, [draftRows]);
 
     /* ================================
        Render

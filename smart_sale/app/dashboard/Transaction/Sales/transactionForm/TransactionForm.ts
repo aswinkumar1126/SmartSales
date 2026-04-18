@@ -210,7 +210,10 @@ export const issueColumns = [
         type: "number" as const,
         align: "right" as const,
         max: 999,
-        decimalScale: 3
+        decimalScale: 3,
+        allowFocus: true,
+        editable: false,
+        disabled: true,
 
     },
     {

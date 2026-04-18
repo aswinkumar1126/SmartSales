@@ -32,6 +32,8 @@ function BarcodeHeaderForm({
     isDisabled = false,
     validationError,
 }: BarcodeHeaderFormProps) {
+
+
     const { theme } = useTheme();
     const barcodeHeaderField = barcodeHeaderFields({
         vendorCollection: purchaserCollection,
@@ -41,11 +43,10 @@ function BarcodeHeaderForm({
 
     const { register, focusNext } = useEnterNavigation(
         barcodeHeaderField.map((f) => f.name),
-        // () => handleSubmit()
+
     );
 
-  
-
+    console.log("header form", form, purchaserCollection)
 
 
     return (
@@ -68,8 +69,6 @@ function BarcodeHeaderForm({
                     INWARDNO: isDisabled,
                 }}
             />
-
-            {/* Submit button */}
          
         </Box>
     );

@@ -15,8 +15,7 @@ export type InputModeType =
     | "pan"
     | "email"
     | "pincode"
-    | "image"; // 🔥 NEW: Added image type
-
+    | "image" ;
 type CapitalizedInputProps<T> = {
     value: string | undefined;
     field: any;

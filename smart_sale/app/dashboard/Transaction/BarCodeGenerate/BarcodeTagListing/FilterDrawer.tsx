@@ -19,7 +19,7 @@ export interface SearchFilters {
     fromDate: string;
     toDate: string;
     entryNo: string;
-    lotNumber: string;
+    // lotNumber: string;
     tagNumber: string;
     weight: string;
     itemId: string;
@@ -46,12 +46,13 @@ export const SearchDrawer: React.FC<SearchDrawerProps> = ({
     initialFilters = {},
 }) => {
     const { theme } = useTheme();
+    const today = new Date().toISOString().split('T')[0]
     const [internalIsOpen, setInternalIsOpen] = useState(false);
     const [formData, setFormData] = useState<SearchFilters>({
         fromDate: initialFilters.fromDate || "",
         toDate: initialFilters.toDate || "",
         entryNo: initialFilters.entryNo || "",
-        lotNumber: initialFilters.lotNumber || "",
+        // lotNumber: initialFilters.lotNumber || "",
         tagNumber: initialFilters.tagNumber || "",
         weight: initialFilters.weight || "",
         itemId: initialFilters.itemId || "",
@@ -66,7 +67,7 @@ export const SearchDrawer: React.FC<SearchDrawerProps> = ({
             fromDate: initialFilters.fromDate || "",
             toDate: initialFilters.toDate || "",
             entryNo: initialFilters.entryNo || "",
-            lotNumber: initialFilters.lotNumber || "",
+            // lotNumber: initialFilters.lotNumber || "",
             tagNumber: initialFilters.tagNumber || "",
             weight: initialFilters.weight || "",
             itemId: initialFilters.itemId || "",
@@ -82,7 +83,8 @@ export const SearchDrawer: React.FC<SearchDrawerProps> = ({
             type: "date",
             maxWidth: "100%",
             colSpan: 2,
-            size: 'xs'
+            size: 'xs',
+            maxDate: formData.toDate || today 
           
         },
         {
@@ -92,6 +94,8 @@ export const SearchDrawer: React.FC<SearchDrawerProps> = ({
             maxWidth: "100%",
             size: 'xs',
             colSpan: 2,
+            maxDate: today,
+            minDate:formData.fromDate || "",
         },
         {
             name: "entryNo",
@@ -103,15 +107,15 @@ export const SearchDrawer: React.FC<SearchDrawerProps> = ({
             maxWidth: "100%",
             colSpan: 1,
         },
-        {
-            name: "lotNumber",
-            label: "Lot Number",
-            type: "text",
-            placeholder: "Lot Number",
-            size: "sm",
-            maxWidth: "100%",
-            colSpan: 1,
-        },
+        // {
+        //     name: "lotNumber",
+        //     label: "Lot Number",
+        //     type: "text",
+        //     placeholder: "Lot Number",
+        //     size: "sm",
+        //     maxWidth: "100%",
+        //     colSpan: 1,
+        // },
         {
             name: "tagNumber",
             label: "Tag Number",
@@ -175,7 +179,7 @@ export const SearchDrawer: React.FC<SearchDrawerProps> = ({
             fromDate: "",
             toDate: "",
             entryNo: "",
-            lotNumber: "",
+            // lotNumber: "",
             tagNumber: "",
             weight: "",
             itemId: "",

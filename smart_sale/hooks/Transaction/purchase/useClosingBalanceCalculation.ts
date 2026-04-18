@@ -10,15 +10,15 @@ export const useClosingCalculation = (
         const cashRcvd = Number(closingDetails.CASHRCVD || 0);
         const cashPaid = Number(closingDetails.CASHPAID || 0);
 
-        const bankRcvd = closingDetails.BANKRCVDDETAILS.reduce(
+        const bankRcvd = closingDetails.BANKRCVDDETAILS.length > 0 ? closingDetails.BANKRCVDDETAILS.reduce(
             (sum, t) => sum + (t.AMOUNT || 0),
             0
-        );
+        ) : 0;
 
-        const bankPaid = closingDetails.BANKPAIDDETAILS.reduce(
+        const bankPaid = closingDetails.BANKPAIDDETAILS.length > 0 ? closingDetails.BANKPAIDDETAILS.reduce(
             (sum, t) => sum + (t.AMOUNT || 0),
             0
-        );
+        ) : 0;
 
         let convAmt = Number(closingDetails.CONVAMT || 0);
         let convWt = Number(closingDetails.CONVWT || 0);

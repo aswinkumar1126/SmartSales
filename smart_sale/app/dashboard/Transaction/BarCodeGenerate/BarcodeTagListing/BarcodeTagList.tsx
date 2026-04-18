@@ -8,6 +8,7 @@ import { useSessionStorage } from "@/hooks/apiHooks/storage/useSessionStorage";
 import { SearchDrawer } from "./FilterDrawer";
 import { getTagedEntryNoParams } from "@/types/tagging/Tag";
 import { useStoneItems } from "@/hooks/apiHooks/item/useItems";
+import { TagFilterParams } from "@/store/barcode/useBarcodeStore";
 
 export interface TagItem {
     ITEMNAME: string;
@@ -25,7 +26,7 @@ export interface TagListProps {
     handleEditTagTransaction?: (entryNo: string) => void;
     handleDeselect?: () => void;
     deselectFlag?: boolean;
-    onFilterChange: (field: string, value: any) => void;
+    onFilterChange: (field: string , value: any) => void;
     filterParams: getTagedEntryNoParams;
     collections?: searchOptions;
 }
@@ -41,6 +42,9 @@ export const BarcodeTagListing: React.FC<TagListProps> = ({
     collections,
     onFilterChange, // Make sure this is received
 }) => {
+
+    console.log(filterParams, 'filterParams in list')
+
     const today = new Date().toISOString().split('T')[0]
     const { theme } = useTheme();
     const { data: items, isLoading, isError } = useStoneItems();
@@ -152,8 +156,7 @@ export const BarcodeTagListing: React.FC<TagListProps> = ({
             ref={containerRef}
             tabIndex={0}
             onKeyDown={handleKeyDown}
-            maxHeight="300px"
-            overflowY="auto"
+           
             outline="none"
             _focus={{ outline: "none" }}
             bg={theme.colors.formColor}
@@ -169,7 +172,7 @@ export const BarcodeTagListing: React.FC<TagListProps> = ({
                     fromDate: filterParams.FROMDATE || today || "",
                     toDate: filterParams.TODATE || today || "",
                     entryNo: filterParams.ENTRYNO || "",
-                    lotNumber: filterParams.PUENTRYNO || "",
+                    // lotNumber: filterParams.PUENTRYNO || "",
                     tagNumber: filterParams.TAGNO || "",
                     weight: filterParams.WEIGHT || "",
                     itemId: filterParams.ITEMID || "",
@@ -197,35 +200,41 @@ export const BarcodeTagListing: React.FC<TagListProps> = ({
                     </Button>
                 )}
             </Box>
+            <Box 
+                maxHeight="90vh"
+                overflowY="auto"
+            >
+                {tagListItems.length > 0 ? (
+                    tagListItems.map((item, index) => (
+                        <HStack
+                            key={item.ENTRYNO}
+                            data-index={index}
+                            justify="space-between"
+                            p={1.5}
+                            bg={selectedIndex === index ? "cyan.100" : "gray.50"}
+                            border="1px solid"
+                            borderColor={selectedIndex === index ? "cyan.400" : "gray.200"}
+                            _hover={{ bg: "cyan.50" }}
+                            cursor="pointer"
+                            onClick={() => {
+                                setSelectedIndex(index);
+                                handleEditTagTransaction?.(String(item.ENTRYNO));
+                            }}
 
-            {tagListItems.length > 0 ? (
-                tagListItems.map((item, index) => (
-                    <HStack
-                        key={item.ENTRYNO}
-                        data-index={index}
-                        justify="space-between"
-                        p={1.5}
-                        bg={selectedIndex === index ? "cyan.100" : "gray.50"}
-                        border="1px solid"
-                        borderColor={selectedIndex === index ? "cyan.400" : "gray.200"}
-                        _hover={{ bg: "cyan.50" }}
-                        cursor="pointer"
-                        onClick={() => {
-                            setSelectedIndex(index);
-                            handleEditTagTransaction?.(String(item.ENTRYNO));
-                        }}
-                    >
-                        <Text fontWeight="semibold" color="gray.700" fontSize="xs">
-                            {item.ENTRYNO}
-                        </Text>
-                        <Text fontWeight="semibold" color="gray.600" fontSize="xs">
-                            {item.ITEMNAME}
-                        </Text>
-                    </HStack>
-                ))
-            ) : (
-                <Text p={2}>No Entries Available</Text>
-            )}
+                        >
+                            <Text fontWeight="semibold" color="gray.700" fontSize="xs">
+                                {item.ENTRYNO}
+                            </Text>
+                            <Text fontWeight="semibold" color="gray.600" fontSize="xs">
+                                {item.ITEMNAME}
+                            </Text>
+                        </HStack>
+                    ))
+                ) : (
+                    <Text p={2}>No Entries Available</Text>
+                )}
+            </Box>
+           
         </Box>
     );
 };

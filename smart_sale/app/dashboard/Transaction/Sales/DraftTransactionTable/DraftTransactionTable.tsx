@@ -28,6 +28,7 @@ import { CapitalizedInput } from "@/components/ui/CapitalizedInput";
 
 import { getIsTagEnabled, getIsBillModalEnabled } from "@/config/transaction/SalesConfig";
 import SalesBillViewModal from "../SaleModal/SaleModal";
+import { usePureGoldDataById } from "@/hooks/apiHooks/pureGoldMast/usePureGoldMastData";
 
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -286,6 +287,22 @@ export default function DraftTransactionTable({
         []
     );
 
+
+      const { data: pureStockData } = usePureGoldDataById(formData.PUREID);
+        console.log(pureStockData, 'pureStockData');
+    
+        useEffect(()=>{
+            if (pureStockData){
+                setFormData(prev => ({
+                    ...prev,
+                    // WT: pureStockData.weight,
+                    // AWT :pureStockData.weight,
+                    TOUCH: pureStockData.actualTouch,
+                    ATOUCH: pureStockData.actualTouch
+                }))
+            }
+        }, [pureStockData])
+
     const orderedKeys = useMemo(() => {
         if (isIssue) return ["PUREID", "WT", "AWT", "TOUCH", "ATOUCH", "PUREWT", "APUREWT"];
         return isTag
@@ -301,6 +318,8 @@ export default function DraftTransactionTable({
         () => orderedKeys.map((k) => colMap.get(k)).filter(Boolean) as any[],
         [isIssue, colMap]
     );
+
+
 
     // ── Form fields definition ────────────────────────────────────────────────
     const formFields = useMemo<FormField[]>(() => {
@@ -321,6 +340,7 @@ export default function DraftTransactionTable({
                 ...("decimalScale" in col && typeof col.decimalScale === "number"
                     ? { decimalScale: col.decimalScale }
                     : {}),
+                disabled: col.disabled ||  false,
             };
 
             if (col.key === "ITEMID" || col.key === "PUREID")
@@ -351,6 +371,8 @@ export default function DraftTransactionTable({
                 const isReturn = transactionTitle?.toLowerCase() === "return";
                 return { ...base, type: "text", isRequired: isReturn && isTag, disabled: false };
             }
+
+            
 
             return base;
         });
@@ -478,6 +500,7 @@ export default function DraftTransactionTable({
         });
     }, [formData.GRSWT, formData.STNWT, formData.TOUCH]);
 
+
     useEffect(() => {
         if (pureValue) setFormData((p) => ({ ...p, PUREWT: pureValue }));
         if (altPureValue) setFormData((p) => ({ ...p, APUREWT: altPureValue }));
@@ -506,11 +529,11 @@ export default function DraftTransactionTable({
                 next[keyOrObject] = value;
                 // Mirror WT → AWT and TOUCH → ATOUCH
                 if (keyOrObject === "WT") next.AWT = value;
-                if (keyOrObject === "TOUCH") next.ATOUCH = value;
+                // if (keyOrObject === "TOUCH") next.ATOUCH = value;
             } else {
                 next = { ...next, ...keyOrObject };
                 if ("WT" in keyOrObject) next.AWT = keyOrObject.WT;
-                if ("TOUCH" in keyOrObject) next.ATOUCH = keyOrObject.TOUCH;
+                // if ("TOUCH" in keyOrObject) next.ATOUCH = keyOrObject.TOUCH;
             }
 
             const wt = parseFloat(next.WT || 0);
@@ -959,7 +982,10 @@ export default function DraftTransactionTable({
     const renderFormCell = (field: FormField) => {
         const ref = fieldRefs.current[field.key];
         const isInvalid = !!errors[field.key] && !!touched[field.key];
+        console.log(field, 'formdata')
         const shouldDisable = field.disabled || (!!field.dependsOn && !formData[field.dependsOn]) ;
+
+      
 
         if (field.key === "TAGNO") {
             return (
@@ -1074,7 +1100,7 @@ export default function DraftTransactionTable({
             );
         }
 
-        if (field.key === "ATOUCH") {
+        if (field.key === "TOUCH" && isIssue ) {
             return (
                 <Box position="relative" width="100%">
                     <CapitalizedInput
@@ -1094,6 +1120,8 @@ export default function DraftTransactionTable({
                 </Box>
             );
         }
+
+       
 
         if (field.key === "WT") {
             const availableStock = formData._availableStock;
