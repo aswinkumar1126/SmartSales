@@ -57,6 +57,10 @@ interface TransactionTableProps {
     formBackground?:string;
     totalBG?:string;
     totalColor?:string;
+
+
+    //Height
+    maxBodyHeight?:string
 }
 
 
@@ -87,7 +91,8 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
     showTableForm=true,
     formBackground = '#FFF',
     totalBG='#888',
-    totalColor ='#FFF'
+    totalColor ='#FFF',
+    maxBodyHeight = '250px',
 
 }) => {
 
@@ -97,7 +102,6 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
 
     const enableScroll = rows.length > 10;
     const rowHeight = 40; // approx for size="sm"
-    const maxBodyHeight = rowHeight * 4;
     
     return (
         <Box
@@ -112,7 +116,7 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
         >
             <Box overflowX="auto" 
                  position="relative" 
-                 maxH={enableScroll ? `${maxBodyHeight}px` : "auto"}
+                 maxH={enableScroll ? `${maxBodyHeight}` : "auto"}
                  overflowY={enableScroll ? "auto" : "visible"}>
                 <table style={{
                     tableLayout: "fixed",

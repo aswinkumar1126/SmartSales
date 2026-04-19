@@ -96,6 +96,10 @@ export function useTaggingValidation() {
         errors.stoneWt = "Stone weight must be ≥ 0";
       }
 
+      if(balance && stn > balance.STNWT ){
+        errors.stonWt = `Only ${balance.STNWT} remaining`
+      }
+
       if (sales < 0) {
         errors.salesStoneWt = "Sales stone weight must be ≥ 0";
       }

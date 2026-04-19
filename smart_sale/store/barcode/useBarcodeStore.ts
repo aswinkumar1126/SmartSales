@@ -79,6 +79,7 @@ export const EMPTY_FILTER_PARAMS: TagFilterParams = {
    ============================================================ */
 
 interface BarcodeState {
+
   headerForm: BarcodeHeaderForm;
   setHeaderField: (field: keyof BarcodeHeaderForm, value: string) => void;
   setHeaderForm: (form: BarcodeHeaderForm) => void;
@@ -104,6 +105,9 @@ interface BarcodeState {
   setSingleSearch: (val: string) => void;
   tagFilterParams: TagFilterParams;
   setTagFilterField: (field: string, value: string) => void;
+
+  hasHydrated: boolean;
+  setHasHydrated: (val: boolean) => void;
 
   clearAll: () => void;
 }
@@ -149,6 +153,9 @@ export const useBarcodeStore = create<BarcodeState>()(
       tagFilterParams: EMPTY_FILTER_PARAMS,
       setTagFilterField: (field, value) =>
         set((s) => ({ tagFilterParams: { ...s.tagFilterParams, [field]: value } })),
+
+      hasHydrated: false,
+      setHasHydrated: (val: boolean) => set({ hasHydrated: val }),
 
       clearAll: () =>
         set({

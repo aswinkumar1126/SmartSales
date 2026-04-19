@@ -1,15 +1,8 @@
-/**
- * useBarcodeNumbering.ts
- * Manages barcode prefix + sequential numbering.
- * Keeps isNew rows' barcodes in sync when rows are added/deleted.
- */
-
 import { useCallback } from "react";
 import type { BarcodeTransactionRow } from "@/store/barcode/useBarcodeStore";
 
 interface BarcodeNumberingOptions {
   prefix: string;
-  /** The TAGNO value from the API — the last used number */
   startNumber: number;
   isEditing: boolean;
 }
@@ -19,24 +12,35 @@ export function useBarcodeNumbering({
   startNumber,
   isEditing,
 }: BarcodeNumberingOptions) {
+
  
-console.log(prefix ,startNumber ,'numbering');
+  const isReady =
+    typeof prefix === "string" &&
+    prefix.trim().length > 0 &&
+    typeof startNumber === "number" &&
+    !isNaN(startNumber);
+
+  console.log(isReady, prefix, startNumber ,'isReady');
+ 
   const assignBarcodes = useCallback(
     (rows: BarcodeTransactionRow[]): BarcodeTransactionRow[] => {
+
+      // 🔥 IMPORTANT: prevent running before Zustand hydration completes
+      if (!isReady) return rows;
+
       if (!isEditing) {
-        // Create mode: assign all sequentially
         return rows.map((row, i) => ({
           ...row,
           barcode: `${prefix}${startNumber + i + 1}`,
         }));
       }
 
-      // Edit mode: only touch isNew rows
       let newRowCounter = 0;
       const savedCount = rows.filter((r) => !r.isNew).length;
 
       return rows.map((row) => {
-        if (!row.isNew) return row; // preserve existing barcode
+        if (!row.isNew) return row;
+
         newRowCounter++;
         return {
           ...row,
@@ -44,15 +48,19 @@ console.log(prefix ,startNumber ,'numbering');
         };
       });
     },
-    [prefix, startNumber, isEditing]
+    [prefix, startNumber, isEditing, isReady]
   );
 
-  
+  /**
+   * Assign single barcode
+   */
   const assignSingleBarcode = useCallback(
     (existingCount: number): string => {
+      if (!isReady) return "";
+
       return `${prefix}${startNumber + existingCount + 1}`;
     },
-    [prefix, startNumber]
+    [prefix, startNumber, isReady]
   );
 
   return { assignBarcodes, assignSingleBarcode };

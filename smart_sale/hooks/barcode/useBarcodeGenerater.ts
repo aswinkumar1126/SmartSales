@@ -196,7 +196,7 @@ export function useBarcodeGenerate() {
 
   console.log(barcodeItems,'barcodeItems');
 
-  const baseBarcodePrefix = barcodeItems?.TAGNO?.PREFIX ?? "";
+  const baseBarcodePrefix =  barcodeItems?.TAGNO?.PREFIX ?? "";
   const startBarcodeNumber = Number(barcodeItems?.TAGNO?.TAGNO ?? 0);
 
   const itemId = useMemo(
@@ -225,11 +225,20 @@ export function useBarcodeGenerate() {
 
 
   const { printAll, printSingle, downloadSetupFiles } = usePrintHandler();
+
   const { assignBarcodes, assignSingleBarcode } = useBarcodeNumbering({
     prefix: baseBarcodePrefix,
     startNumber: startBarcodeNumber,
     isEditing,
   });
+
+  const assignSingleBarcodeRef = useRef(assignSingleBarcode);
+
+  useEffect(() => {
+    assignSingleBarcodeRef.current = assignSingleBarcode;
+  }, [assignSingleBarcode]);
+
+
 
   /* ── Mutations ── */
   const { mutate: createTag } = useCreateTag();
@@ -272,7 +281,6 @@ export function useBarcodeGenerate() {
   /* ── Row submit ── */
   const handleRowSubmit = useCallback(() => {
 
-
     // Get the current form state from ref
     const currentForm = transactionFormRef.current;
     const editingRowId = editingRowIdRef.current;
@@ -314,6 +322,7 @@ export function useBarcodeGenerate() {
     }
 
     setIsSubmittingRow(true);
+    
     try {
       // Use currentForm consistently throughout
       const formValues = {
@@ -331,10 +340,32 @@ export function useBarcodeGenerate() {
         updateRow(editingRowId, formValues);
         toaster.create({ title: "Row Updated", type: "success", duration: 2000 });
         setEditRowId(null);
-      } else {
-        const barcode = assignSingleBarcode(rowsRef.current.length);
-        addRow({ ...formValues, barcode, draftRowId: headerForm.ENTRYNO || String(Date.now()) });
-        toaster.create({ title: "Row Added", type: "success", duration: 2000 });
+      } 
+
+        else {
+        const barcode = assignSingleBarcodeRef.current(rowsRef.current.length); 
+        
+        if (!barcode) {
+          toaster.create({
+            title: "Barcode not ready",
+            description: "Please wait for initialization",
+            type: "warning",
+            duration: 2000,
+          });
+          return;
+        }
+
+        addRow({
+          ...formValues,
+          barcode,
+          draftRowId: headerForm.ENTRYNO || String(Date.now()),
+        });
+
+        toaster.create({
+          title: "Row Added",
+          type: "success",
+          duration: 2000,
+        });
       }
       resetForm();
       setTimeout(() => focusField(FIELD_ORDER[1]), 50);
@@ -351,6 +382,7 @@ export function useBarcodeGenerate() {
     resetForm,
     focusField,
     headerForm.ENTRYNO,
+
   ]);
 
   const handleEditRow = useCallback((row: BarcodeTransactionRow) => {

@@ -380,6 +380,9 @@ function BarCodeGenerate() {
           transactionType="barcode"
           showTotal
           showTableForm={showTableForm}
+
+          maxBodyHeight= "400px"
+          
           /* isNew badge slot */
           // renderRowLabel={isEditing ? renderRowLabel : undefined}
         />
@@ -399,7 +402,7 @@ function BarCodeGenerate() {
                   </Drawer.Header>
                   <Drawer.Body p={0}>
                     <BarCodeExcel
-                      data={excelData}  // Add initial empty data
+                      data={excelData}
                       onChange={handleExcelChange}
                       onLoad={handleExcelLoad}
                       onFileParsed={setExcelData}
