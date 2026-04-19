@@ -83,16 +83,21 @@ export const validateTransactions = ({
         );
         if (!transactionType) return;
 
-        const isIssue = isIssueType(transactionType);
+        console.log(transactionType ,'trantype');
+        
+        const isIssue = isIssueType(transactionType) && transactionType.value === 'IS';
+
         if (isIssue && row.PUREID) {
             const key = String(row.PUREID);
             usedByPureId[key] = (usedByPureId[key] || 0) + Number(row.WT || 0);
         }
     });
 
+
     for (const pureId in usedByPureId) {
+
         const availability = getStockAvailability(pureId);
-        console.log(availability, 'availabilityofstock');
+
 
         if (availability && usedByPureId[pureId] > availability.total) {
             return {

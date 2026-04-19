@@ -14,7 +14,6 @@ export interface StockSummaryRow {
   key: string;
   label: string;
   total: string;
-  saved: string;
   newRows: string;
   balance: string;
 }
@@ -46,18 +45,8 @@ export function useStockLimits(
     return rows.filter((r) => r.id !== editId);
   }, [rows, editId]);
 
-  const savedRows = useMemo(
-    () => effectiveRows.filter((r) => !r.isNew),
-    [effectiveRows]
-  );
-
-  const newRows = useMemo(
-    () => effectiveRows.filter((r) => r.isNew),
-    [effectiveRows]
-  );
-
-  console.log(newRows,'newRows');
-
+  
+ 
   /* ================= LOT ================= */
   const lot = useMemo(
     () => ({
@@ -70,25 +59,17 @@ export function useStockLimits(
   );
 
   /* ================= SAVED ================= */
-  const saved = useMemo(
-    () => ({
-      PCS: savedRows.length,
-      GRSWT: savedRows.reduce((s, r) => s + r.grsweight, 0),
-      STNWT: savedRows.reduce((s, r) => s + r.stoneWt, 0),
-      NETWT: savedRows.reduce((s, r) => s + (r.grsweight - r.stoneWt), 0),
-    }),
-    [savedRows]
-  );
+ 
 
   /* ================= NEW ================= */
   const added = useMemo(
     () => ({
-      PCS: newRows.length,
-      GRSWT: newRows.reduce((s, r) => s + r.grsweight, 0),
-      STNWT: newRows.reduce((s, r) => s + r.stoneWt, 0),
-      NETWT: newRows.reduce((s, r) => s + (r.grsweight - r.stoneWt), 0),
+      PCS: effectiveRows.length,
+      GRSWT: effectiveRows.reduce((s, r) => s + r.grsweight, 0),
+      STNWT: effectiveRows.reduce((s, r) => s + r.stoneWt, 0),
+      NETWT: effectiveRows.reduce((s, r) => s + (r.grsweight - r.stoneWt), 0),
     }),
-    [newRows]
+    [effectiveRows]
   );
 
   /* ================= SUMMARY ================= */
@@ -104,7 +85,7 @@ export function useStockLimits(
       ];
     return keys.map(({ key, label, isPCS }) => {
       const t = lot[key];
-      const sv = saved[key];
+
       const nw = added[key];
       const bal = Math.max(0, t - nw);
 
@@ -115,13 +96,13 @@ export function useStockLimits(
         key,
         label,
         total: fmt(t),
-        saved: fmt(sv),
+
         newRows: fmt(nw),
         balance: fmt(bal,
         ),
       };
     });
-  }, [lot, saved, added]);
+  }, [lot, added]);
 
   /* ================= LIMITS ================= */
   const limits = useMemo(
@@ -140,7 +121,7 @@ export function useStockLimits(
       GRSWT: Math.max(0, lot.GRSWT - added.GRSWT), // 🔥 ADDED
       STNWT: Math.max(0, lot.STNWT - added.STNWT),
     }),
-    [lot, saved, added]
+    [lot, added]
   );
 
 

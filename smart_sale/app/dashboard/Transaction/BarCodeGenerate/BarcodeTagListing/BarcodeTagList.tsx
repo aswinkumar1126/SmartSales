@@ -29,6 +29,7 @@ export interface TagListProps {
     onFilterChange: (field: string , value: any) => void;
     filterParams: getTagedEntryNoParams;
     collections?: searchOptions;
+    isEditing?: boolean;
 }
 
 export const BarcodeTagListing: React.FC<TagListProps> = ({
@@ -41,22 +42,30 @@ export const BarcodeTagListing: React.FC<TagListProps> = ({
     filterParams,
     collections,
     onFilterChange, // Make sure this is received
+    isEditing
 }) => {
 
-    console.log(filterParams, 'filterParams in list')
+    console.log(filterParams, 'filterParams in list');
 
     const today = new Date().toISOString().split('T')[0]
     const { theme } = useTheme();
     const { data: items, isLoading, isError } = useStoneItems();
     console.log(items, 'items')
 
-    const [selectedIndex, setSelectedIndex] = useSessionStorage<number>('selectedTagKey', -1);
+    const [selectedTransactionId, setSelectedTransactionId] = useSessionStorage<number | null>('selectedTagTransaction', null);
     const containerRef = useRef<HTMLDivElement>(null);
+
+      // ✅ Derive index safely (for keyboard nav)
+        const selectedIndex = useMemo(() => {
+            return tagListItems.findIndex(
+                (item) => item.ENTRYNO === selectedTransactionId
+            );
+        }, [tagListItems, selectedTransactionId]);
 
     // Deselect if parent tells us to
     useEffect(() => {
         if (deselectFlag) {
-            setSelectedIndex(-1);
+            setSelectedTransactionId(null);
         }
     }, [deselectFlag]);
 
@@ -69,38 +78,59 @@ export const BarcodeTagListing: React.FC<TagListProps> = ({
         })) : [];
     }, [items]);
 
-    // Keyboard navigation
-    const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-        if (tagListItems.length === 0) return;
+    // ✅ Keyboard navigation
+       const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+           if (tagListItems.length === 0) return;
+   
+           let nextIndex = selectedIndex;
+   
+           if (e.key === "ArrowDown") {
+               e.preventDefault();
+               nextIndex =
+                   selectedIndex < tagListItems.length - 1
+                       ? selectedIndex + 1
+                       : 0;
+           }
+   
+           if (e.key === "ArrowUp") {
+               e.preventDefault();
+               nextIndex =
+                   selectedIndex > 0
+                       ? selectedIndex - 1
+                       : tagListItems.length - 1;
+           }
+   
+           if (e.key === "Enter") {
+               if (selectedIndex >= 0) {
+                   handleEditTagTransaction?.(String(selectedTransactionId));
+               }
+               return;
+           }
+   
+           // ✅ Update selection
+           if (nextIndex !== selectedIndex && nextIndex >= 0) {
+               const nextItem = tagListItems[nextIndex];
+               setSelectedTransactionId(nextItem.ENTRYNO);
+               handleEditTagTransaction?.(String(nextItem.ENTRYNO));
+           }
+       };
+   
 
-        if (e.key === "ArrowDown") {
-            e.preventDefault();
-            const next = selectedIndex < tagListItems.length - 1 ? selectedIndex + 1 : 0;
-            setSelectedIndex(next);
-            handleEditTagTransaction?.(String(tagListItems[next].ENTRYNO));
-        }
-
-        if (e.key === "ArrowUp") {
-            e.preventDefault();
-            const next = selectedIndex > 0 ? selectedIndex - 1 : tagListItems.length - 1;
-            setSelectedIndex(next);
-            handleEditTagTransaction?.(String(tagListItems[next].ENTRYNO));
-        }
-
-        // if (e.key === "Enter" && selectedIndex >= 0) {
-        //     handleEditTagTransaction?.(String(tagListItems[selectedIndex].ENTRYNO));
-        // }
-    };
-
-    // Auto-scroll active item into view
+ // ✅ Auto-scroll active item
     useEffect(() => {
-        if (selectedIndex < 0) return;
+        if (!selectedTransactionId) return;
+
         const container = containerRef.current;
-        if (container) {
-            const activeEl = container.querySelectorAll("div[data-index]")[selectedIndex] as HTMLDivElement;
-            activeEl?.scrollIntoView({ block: "nearest" });
-        }
-    }, [selectedIndex]);
+        if (!container) return;
+
+        const activeEl = container.querySelector(
+            `[data-id="${selectedTransactionId}"]`
+        ) as HTMLDivElement;
+
+        activeEl?.scrollIntoView({
+            block: "nearest",
+        });
+    }, [selectedTransactionId]);
 
     // Handle search from drawer - maps drawer filter names to API parameter names
     const handleSearchApply = (filters: any) => {
@@ -217,7 +247,7 @@ export const BarcodeTagListing: React.FC<TagListProps> = ({
                             _hover={{ bg: "cyan.50" }}
                             cursor="pointer"
                             onClick={() => {
-                                setSelectedIndex(index);
+                                setSelectedTransactionId(item.ENTRYNO);
                                 handleEditTagTransaction?.(String(item.ENTRYNO));
                             }}
 

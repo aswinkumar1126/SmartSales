@@ -57,6 +57,7 @@ export interface TagFilterParams {
   PUENTRYNO: string;
   TAGNO: string;
   SEARCH: string;
+  
 }
 
 /* ============================================================

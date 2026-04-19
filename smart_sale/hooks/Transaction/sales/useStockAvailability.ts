@@ -114,7 +114,7 @@ export function useStockAvailability({
         ): StockAvailability | undefined => {
             if (!id) return undefined;
 
-            console.log("getStockAvailability called with:", { id, options })
+            // console.log("getStockAvailability called with:", { id, options })
             const { excludeRowId, originalValue } = options ?? {};
 
             let stock: any = null;
@@ -166,13 +166,14 @@ export function useStockAvailability({
                 field: 'PCS',
             });
 
+          
             // Apply edit mode calculation
             let weightRemaining: number;
             let piecesRemaining: number;
 
             if (isEditMode) {
                 // Edit mode formula: Base Stock + Original - Current Draft
-                weightRemaining = Math.max(totalAvailableWeight + originalUsage - usedWeight, 0);
+                weightRemaining = Math.max(totalAvailableWeight - usedWeight, 0);
                 piecesRemaining = Math.max(totalAvailablePieces + (isSales || isSalesReturn ? originalUsage : 0) - usedPieces, 0);
             } else {
                 // Normal mode formula: Base Stock - Current Draft

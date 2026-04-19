@@ -164,31 +164,18 @@ const BarCodeExcel: React.FC<BarCodeExcelProps> = ({
     const hotRef = useRef<HotTableClass>(null);
     const fileRef = useRef<HTMLInputElement>(null);
 
-    // ── FIX FOR INFINITE LOOP ────────────────────────────────────────────────
-    // The loop was: edit → afterChange → onFileParsed → parent setState →
-    // new `data` prop → HotTable re-render → afterChange("loadData") →
-    // onFileParsed again → ...
-    //
-    // Solution: keep an INTERNAL copy of grid data in local state.
-    // We only sync FROM the parent `data` prop on mount and on explicit
-    // file-driven updates. User edits mutate internalData directly via
-    // afterChange, and we notify the parent WITHOUT feeding data back in.
-    // ─────────────────────────────────────────────────────────────────────────
 
     const [internalData, setInternalData] = useState<ExcelData>(() =>
         data.length > 0 ? data : makeEmptyRows()
     );
 
-    // Track whether the parent passed in brand-new data from outside
-    // (e.g. clearing / resetting), so we can sync once without looping.
     const prevDataRef = useRef<ExcelData>(data);
     useEffect(() => {
-        // Only sync if the parent reference actually changed AND it's
-        // not the same object we just sent up via onFileParsed.
+
         if (data !== prevDataRef.current) {
             prevDataRef.current = data;
             setInternalData(data.length > 0 ? data : makeEmptyRows());
-            // Do NOT call onFileParsed here — parent already owns this data.
+            
         }
     }, [data]);
 
@@ -215,14 +202,7 @@ const BarCodeExcel: React.FC<BarCodeExcelProps> = ({
 
             onChange(changes, source);
 
-            // Notify parent with latest snapshot — but this must NOT cause
-            // parent to immediately set the `data` prop back (would loop).
-            // if (onFileParsed && hotRef.current?.hotInstance) {
-            //     const snapshot = hotRef.current.hotInstance.getData() as ExcelData;
-            //     // Update our own ref so the useEffect above doesn't re-sync
-            //     prevDataRef.current = snapshot;
-            //     onFileParsed(snapshot);
-            // }
+        
         },
         [onChange, onFileParsed]
     );
@@ -379,7 +359,7 @@ const BarCodeExcel: React.FC<BarCodeExcelProps> = ({
                     manualColumnResize={true}
                     manualRowResize={true}
                     allowRemoveRow={true}
-                    minSpareRows={3}
+                    minSpareRows={5}
                     wordWrap={false}
                     stretchH="last"
                 />

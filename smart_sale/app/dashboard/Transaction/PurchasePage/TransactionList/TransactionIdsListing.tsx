@@ -114,6 +114,7 @@ export const TransactionListing: React.FC<TransactionListingProps> = ({
         setSelectedTransactionId("");
         handleDeselect?.();
     };
+    console.log(selectedTransactionId,'selectedTransactionId');
 
     return (
         <>
@@ -129,7 +130,7 @@ export const TransactionListing: React.FC<TransactionListingProps> = ({
 
                 />
 
-                {selectedTransactionId && (
+                {selectedTransactionId && Number(selectedTransactionId) !==  -1 && (
                     <Button
                         bg="red.600"
                         size="2xs"

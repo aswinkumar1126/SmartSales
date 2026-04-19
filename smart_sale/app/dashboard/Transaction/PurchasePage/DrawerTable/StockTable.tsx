@@ -99,7 +99,7 @@ export default function StockDrawer({
                 { key: "STOCKSTATUS", label: "Stock Status", align: "end" },
                 { key: "TOUCH", label: "Touch", align: "end" },
                 { key: "PUREWT", label: "Pure Wt", align: "end" },
-                { key: "ACTION", label: "Action", align: "center" },
+                // { key: "ACTION", label: "Action", align: "center" },
             ];
     }, [showStock]);
 
@@ -232,8 +232,8 @@ export default function StockDrawer({
                                                         </Text>
                                                     </Stack>
                                                 </Box>
-                                                <Box as="td" textAlign="end">{row.actualTouch}</Box>
-                                                <Box as="td" textAlign="end">
+                                                <Box as="td" textAlign="end" fontWeight="medium">{row.actualTouch}</Box>
+                                                <Box as="td" textAlign="end" fontWeight="medium">
                                                     {Number(row.actualPure).toFixed(3)}
                                                 </Box>
                                                 <Box as="td" textAlign="end">
@@ -273,11 +273,11 @@ export default function StockDrawer({
                                         const netwt = getNetWeight(row);
                                         return (
                                             <>
-                                                <Box as="td">{row.ITEMNAME}</Box>
+                                                <Box as="td" px={1}>{row.ITEMNAME}</Box>
                                                 <Box as="td">{row.METALNAME}</Box>
                                                 <Box as="td" textAlign="end">
                                                     <Stack gap={0}>
-                                                        <Text fontWeight="medium">
+                                                        <Text fontWeight="bold">
                                                             {row.PCS} pcs
                                                         </Text>
                                                     </Stack>
@@ -289,7 +289,7 @@ export default function StockDrawer({
                                                     {Number(row.STNWT || 0).toFixed(3)}g
                                                 </Box>
                                                 <Box as="td" textAlign="end">
-                                                    <Text fontWeight="bold" color="blue.600">
+                                                    <Text fontWeight="bold" >
                                                         {netwt.toFixed(3)}g
                                                     </Text>
                                                 </Box>
@@ -326,10 +326,10 @@ export default function StockDrawer({
                                                 <Box as="td" textAlign="end">
                                                     {row.TOUCH || row.touch || ""}
                                                 </Box>
-                                                <Box as="td" textAlign="end">
+                                                <Box as="td" textAlign="end" fontWeight={'bold'} color="blue.600" px={1}>
                                                     {Number(row.PUREWT || row.purewt || 0).toFixed(3)}g
                                                 </Box>
-                                                <Box as="td" textAlign="center">
+                                                {/* <Box as="td" textAlign="center">
                                                     <IconButton
                                                         size="2xs"
                                                         onClick={() => onIssue(row)}
@@ -339,7 +339,7 @@ export default function StockDrawer({
                                                     >
                                                         <FaArrowUp />
                                                     </IconButton>
-                                                </Box>
+                                                </Box> */}
                                             </>
                                         );
                                     }

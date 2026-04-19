@@ -10,6 +10,7 @@ import {
     HStack,
     Text,
     IconButton,
+    Span,
 } from "@chakra-ui/react";
 import { useMemo } from "react";
 import { FaArrowUp } from "react-icons/fa";
@@ -225,15 +226,15 @@ export default function StockDrawer({
                                             <>
                                                 <Box as="td">{row.pureGoldName}</Box>
                                                 <Box as="td">{row.metalName}</Box>
-                                                <Box as="td" textAlign="end">
+                                                <Box as="td" textAlign="end" >
                                                     <Stack gap={0}>
                                                         <Text fontWeight="medium">
                                                             {Number(row.weight).toFixed(3)}g
                                                         </Text>
                                                     </Stack>
                                                 </Box>
-                                                <Box as="td" textAlign="end">{row.actualTouch}</Box>
-                                                <Box as="td" textAlign="end">
+                                                <Box as="td" textAlign="end" fontWeight="medium">{row.actualTouch}</Box>
+                                                <Box as="td" textAlign="end" fontWeight="medium">
                                                     {Number(row.actualPure).toFixed(3)}
                                                 </Box>
                                                 <Box as="td" textAlign="end">
@@ -288,8 +289,8 @@ export default function StockDrawer({
                                                 <Box as="td" textAlign="end">
                                                     {Number(row.STNWT || 0).toFixed(3)}g
                                                 </Box>
-                                                <Box as="td" textAlign="end">
-                                                    <Text fontWeight="bold" color="blue.600">
+                                                <Box as="td" textAlign="end" fontWeight="medium">
+                                                    <Text >
                                                         {netwt.toFixed(3)}g
                                                     </Text>
                                                 </Box>
@@ -314,8 +315,8 @@ export default function StockDrawer({
                                                         </Stack>
                                                     ) : (
                                                         <Stack gap={0} align="end">
-                                                            <Text fontSize="sm" color="gray.500">
-                                                                {row.pcs} pcs available
+                                                            <Text fontSize="xs" color="gray.500">
+                                                                    {row.PCS ? `${row.PCS} pcs available` : "0 pcs available"}
                                                             </Text>
                                                             <Text fontSize="xs" color="gray.400">
                                                                 Net Wt: {netwt.toFixed(3)}g
@@ -326,10 +327,10 @@ export default function StockDrawer({
                                                 <Box as="td" textAlign="end">
                                                     {row.TOUCH || row.touch || ""}
                                                 </Box>
-                                                <Box as="td" textAlign="end">
+                                                <Box as="td" textAlign="end" fontWeight="bold" color="blue.600">
                                                     {Number(row.PUREWT || row.purewt || 0).toFixed(3)}g
                                                 </Box>
-                                                <Box as="td" textAlign="center">
+                                                {/* <Box as="td" textAlign="center">
                                                     <IconButton
                                                         size="2xs"
                                                         onClick={() => onIssue(row)}
@@ -339,7 +340,7 @@ export default function StockDrawer({
                                                     >
                                                         <FaArrowUp />
                                                     </IconButton>
-                                                </Box>
+                                                </Box> */}
                                             </>
                                         );
                                     }

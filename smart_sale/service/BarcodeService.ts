@@ -18,6 +18,8 @@ export const getBarcodeItemsDetails = async (
         console.log(params, 'filtered service params');
 
         const response = await axiosInstance.get('/purchase/untagged', { params });
+
+        console.log("responsedata" ,response);
         return response.data;
     } catch (error) {
         console.error(error);
@@ -30,9 +32,10 @@ export const getBarcodeFilters = async (
 ): Promise<ApiResponse<any>> => {
     try {
 
-        console.log(params, 'filtered service params');
+        console.log(params, 'tagged params');
 
         const response = await axiosInstance.get('/tagged', { params });
+        console.log(response ,'taggedResponse');
         return response.data;
     } catch (error) {
         console.error(error);

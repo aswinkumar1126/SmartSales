@@ -5,11 +5,11 @@ import type { StockSummaryRow } from "@/hooks/barcode/useStockLimits";
 
 interface Props {
     summary: StockSummaryRow[];
-    isEditing: boolean;
+   
     headerBg?: string;
 }
 
-export default function StockSummaryPanel({ summary, isEditing, headerBg = "#4A5568" }: Props) {
+export default function StockSummaryPanel({ summary, headerBg = "#4A5568" }: Props) {
     const thStyle: React.CSSProperties = {
         background: headerBg,
         color: "white",
@@ -44,14 +44,8 @@ export default function StockSummaryPanel({ summary, isEditing, headerBg = "#4A5
                         </Table.ColumnHeader>
                         <Table.ColumnHeader style={thStyle}>LOT</Table.ColumnHeader>
 
-                        {isEditing && (
-                            <Table.ColumnHeader style={{ ...thStyle, background: "#2B6CB0" }}>
-                                SAVED
-                            </Table.ColumnHeader>
-                        )}
-
-                        <Table.ColumnHeader style={{ ...thStyle, background: isEditing ? "#276749" : headerBg }}>
-                            {isEditing ? "NEW" : "COMPLETED"}
+                        <Table.ColumnHeader style={{ ...thStyle, background: "#276749" }}>
+                          COMPLETED
                         </Table.ColumnHeader>
 
                         <Table.ColumnHeader style={{ ...thStyle, background: "#C53030" }}>
@@ -68,15 +62,9 @@ export default function StockSummaryPanel({ summary, isEditing, headerBg = "#4A5
                             <Table.Cell style={labelStyle}>{row.label}</Table.Cell>
                             <Table.Cell style={tdStyle}>{row.total}</Table.Cell>
 
-                            
-                            {isEditing && (
-                                <Table.Cell style={{ ...tdStyle, color: "#2B6CB0" }}>
-                                    {row.saved}
-                                </Table.Cell>
-                            )}
+                         
 
-                            <Table.Cell style={{ ...tdStyle, color: isEditing ? "#276749" : "inherit" }}>
-                                {/* {isEditing ? row.saved: row.newRows /* in create mode "completed" = newRows   */}
+                            <Table.Cell style={{ ...tdStyle, color:"inherit" }}>
                                 {row.newRows}   
                             </Table.Cell>
 

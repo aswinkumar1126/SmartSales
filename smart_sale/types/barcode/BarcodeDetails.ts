@@ -15,6 +15,7 @@ export interface BarCodeFilter{
     PURCHASE_ENTRYNO?:number;
     SNO?:string;
     ISEDITING?:boolean;
+    ENTRYNO?:number;
 
 }
 export interface BarcodeItemList {

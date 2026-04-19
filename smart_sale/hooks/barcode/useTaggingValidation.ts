@@ -23,6 +23,11 @@ export interface RowValidationOptions {
   countOnlyNew?: boolean;
   
   incomingRows?: Pick<BarcodeTransactionRow, "grsweight" | "stoneWt" | "salesStoneWt">[];
+  balance ?: {
+    PCS: number;
+    STNWT: number;
+    GRSWT: number;
+  },
 }
 
 /* ============================================================
@@ -70,59 +75,53 @@ export function useTaggingValidation() {
         PCS: number;
         STNWT: number;
         GRSWT: number;
-      }
+      },
     ): Record<string, string> => {
-
-    console.log(balance,'limitsinvalidate');
 
       const errors: Record<string, string> = {};
 
-    const grs = Number(data.grsweight || 0);
-    const stn = Number(data.stoneWt || 0);
-    const sales = Number(data.salesStoneWt || 0);
+      const grs = Number(data.grsweight || 0);
+      const stn = Number(data.stoneWt || 0);
+      const sales = Number(data.salesStoneWt || 0);
 
-    // 🔹 Gross weight
-    if (!grs || grs <= 0) {
-      errors.grsweight = "Weight must be greater than 0";
-    }
+      /* =========================
+         GROSS WEIGHT VALIDATION
+      ========================= */
 
-    // ✅ ADD THIS (your missing logic)
-    if (balance && grs > balance.GRSWT) {
-      errors.grsweight = `Only ${balance.GRSWT} remaining`;
-    }
-
-    if (hasStone) {
-      if (stn < 0) {
-        errors.stoneWt = "Stone weight must be ≥ 0";
+      if (!grs || grs <= 0) {
+        errors.grsweight = "Weight must be greater than 0";
+      } else if (balance && grs > balance.GRSWT) {
+        errors.grsweight = `Only ${balance.GRSWT} remaining`;
       }
 
-      if(balance && stn > balance.STNWT ){
-        errors.stonWt = `Only ${balance.STNWT} remaining`
+      /* =========================
+         STONE VALIDATION
+      ========================= */
+
+      if (hasStone) {
+        if (stn < 0) {
+          errors.stoneWt = "Stone weight must be ≥ 0";
+        } else if (stn > grs) {
+          errors.stoneWt = "Stone weight cannot exceed gross weight";
+        } else if (balance && stn > balance.STNWT) {
+          errors.stoneWt = `Only ${balance.STNWT} remaining`;
+        }
+
+        /* =========================
+           SALES STONE VALIDATION
+        ========================= */
+
+        if (sales < 0) {
+          errors.salesStoneWt = "Sales stone weight must be ≥ 0";
+        } else if (sales > stn) {
+          errors.salesStoneWt = "Sales stone weight cannot exceed stone weight";
+        }
       }
 
-      if (sales < 0) {
-        errors.salesStoneWt = "Sales stone weight must be ≥ 0";
-      }
-
-      if (stn > grs) {
-        errors.stoneWt = "Stone weight cannot exceed gross weight";
-      }
-
-      if (sales > stn) {
-        errors.salesStoneWt = "Sales stone weight cannot exceed stone weight";
-      }
-
-      // ✅ ALSO ADD THIS
-      if (balance && stn > balance.STNWT) {
-        errors.stoneWt = `Only ${balance.STNWT} stone weight remaining`;
-      }
-    }
-
-    return errors;
-  },
-  []
-);
-
+      return errors;
+    },
+    []
+  );
   
   const validateRows = useCallback(
     ({
@@ -130,6 +129,7 @@ export function useTaggingValidation() {
       limits,
       countOnlyNew = false,
       incomingRows = [],
+      balance
     }: RowValidationOptions): boolean => {
       const allRows = [...rows, ...incomingRows];
 
@@ -157,6 +157,8 @@ export function useTaggingValidation() {
             duration: 2000,
           });
         }
+
+
 
         if (row.stoneWt < 0) {
           hasError = true;
@@ -199,11 +201,25 @@ export function useTaggingValidation() {
 
       const totalPCS = rowsForLimitCheck.length;
       const totalStoneWt = rowsForLimitCheck.reduce((s, r) => s + r.stoneWt, 0);
+      const totalGrsWt = rowsForLimitCheck.reduce((s, r) => s + r.grsweight, 0);
+
+      console.log(totalPCS, totalGrsWt,totalStoneWt, limits, 'limit check');
+
 
       if (limits.PCS && totalPCS > limits.PCS) {
         toaster.create({
           title: "Lot PCS Exceeded",
           description: `${totalPCS} pieces exceed the allowed ${limits.PCS}`,
+          type: "error",
+          duration: 2000,
+        });
+        return false;
+      }
+
+      if(limits.GRSWT && totalGrsWt > limits.GRSWT) {
+        toaster.create({
+          title: "Lot GrsWt Exceeded",
+          description: `${totalGrsWt} wt exceed the allowed ${limits.GRSWT}`,
           type: "error",
           duration: 2000,
         });
@@ -219,6 +235,27 @@ export function useTaggingValidation() {
         });
         return false;
       }
+
+      if(balance && balance.PCS > 0 && balance.GRSWT === 0 ) {
+        toaster.create({
+          title: "Invalid Entry",
+          description: "Gross weight cannot be 0 when pieces are present",
+          type: "error",
+          duration: 2000,
+        });
+        return false;
+      }
+      
+      if(balance && balance.GRSWT > 0 && balance.PCS === 0) {
+        toaster.create({
+          title: "Invalid Entry",
+          description: "Pcs cannot be 0 when GrsWt are present",
+          type: "error",
+          duration: 2000,
+        });
+        return false;
+      }
+
 
       return true;
     },

@@ -36,7 +36,7 @@ import { formatToFixed } from "@/utils/format/numberFormat";
 
 import type { BarcodeTransactionRow } from "@/store/barcode/useBarcodeStore";
 
-import { CellChange ,ChangeSource } from "handsontable/common";
+
 
 /* ============================================================
    STOCK TABLE HEADER (static config, fine to keep in UI file)
@@ -78,7 +78,9 @@ function BarCodeGenerate() {
     excelDrawerOpen, 
     setExcelDrawerOpen,
     deselectFlag,
-
+    excelData,
+    setExcelData,
+    handleExcelChange,
     /* collections */
     purchaserCollection, 
     inwardCollection, 
@@ -127,9 +129,10 @@ function BarCodeGenerate() {
 
   } = useBarcodeGenerate();
   
+  console.log(stockSummary,'stockSummary')
 
 
-  const [excelData ,setExcelData] =useState<ExcelData>([]);
+  
 
   /* ── Stock row renderer ── */
   const renderStockRow = useCallback((row: any) => {
@@ -242,20 +245,7 @@ function BarCodeGenerate() {
 
 
   console.log(rows,'isSubmittingRow');
-  const handleExcelChange = useCallback(
-    (changes: CellChange[] | null, _source: ChangeSource) => {
-      if (!changes) return;
-      setExcelData((prev) => {
-        const next = prev.map((row) => [...row]);        // shallow-clone each row
-        changes.forEach(([row, col, , newVal]) => {
-          while (next.length <= row) next.push([]);    // grow if HOT added a spare row
-          next[row][col as number] = newVal as string | number | null;
-        });
-        return next;
-      });
-    },
-    []
-  );
+
   /* ============================================================
      RENDER
      ============================================================ */
@@ -321,8 +311,8 @@ function BarCodeGenerate() {
          
           {/* StockSummaryPanel receives the new 4-column summary (lot/saved/new/balance) */}
           <StockSummaryPanel
+
             summary={stockSummary}
-            isEditing={isEditing}
             headerBg={theme.colors.accient}
           />
         </Box>
@@ -404,7 +394,7 @@ function BarCodeGenerate() {
                     <BarCodeExcel
                       data={excelData}
                       onChange={handleExcelChange}
-                      onLoad={handleExcelLoad}
+                      onLoad={ handleExcelLoad }
                       onFileParsed={setExcelData}
                     />
                   </Drawer.Body>
@@ -427,6 +417,7 @@ function BarCodeGenerate() {
           onFilterChange={setTagFilterField}
           filterParams={tagFilterParams}
           collections={{ acCodeCollection: purchaserCollection }}
+          isEditing={isEditing}
         />
       </Box>
     </Box>
@@ -434,9 +425,3 @@ function BarCodeGenerate() {
 }
 
 export default BarCodeGenerate;
-
-
-
-
-
-

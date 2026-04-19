@@ -1137,18 +1137,26 @@ export default function SalesPage() {
 
     };
 
+   const handleTransactionClick = useCallback((transactionId: string) => {
 
-    const handleTransactionClick = useCallback((transactionId: string) => {
-        if (transactionId === String(transactionId)) {
-
-            setSelectedTransactionId('');
-            setTimeout(() => setSelectedTransactionId(String(transactionId)), 0);
+        if (draftRows.length > 0 && !isEditing) {
+            toaster.create({
+                title: "Warning",
+                description: "You have unsaved changes in the draft. Please save or reset before switching transactions.",
+                type: "warning",
+                duration: 3000
+            });
+            setDeselectFlag(true);
+            setTimeout(() => setDeselectFlag(false), 100);
             return;
         }
-        setSelectedTransactionId(transactionId);
 
+        setSelectedTransactionId(prev =>
+            prev === transactionId ? '' : transactionId
+        );
 
-    }, []);
+    }, [draftRows]);
+
 
     const handleSingleSearch = (term: string) => {
         setSingleSearch(term);

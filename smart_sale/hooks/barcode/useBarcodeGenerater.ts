@@ -6,8 +6,8 @@ import { toaster } from "@/components/ui/toaster";
 /* ── Store ── */
 import {
   useBarcodeStore,
-  useSavedRows, 
-  useNewRows,    
+  useSavedRows,
+  useNewRows,
   type BarcodeTransactionRow,
 } from "@/store/barcode/useBarcodeStore";
 
@@ -27,6 +27,9 @@ import { useSize } from "@/hooks/apiHooks/size/useSize";
 /* ── Utils ── */
 import { formatToFixed } from "@/utils/format/numberFormat";
 import { transactionTableCols } from "@/data/barcodeGenerate/barcodeFormFields";
+
+import { CellChange, ChangeSource } from "handsontable/common";
+import { ExcelData } from "@/app/dashboard/Transaction/BarCodeGenerate/excel/BarCodeExcel";
 
 /* ============================================================
    CONSTANTS
@@ -81,7 +84,7 @@ export function useBarcodeGenerate() {
   const setTagFilterField = useBarcodeStore((s) => s.setTagFilterField);
   const clearAll = useBarcodeStore((s) => s.clearAll);
 
- 
+
   const savedRows = useSavedRows();
   const newRows = useNewRows();
 
@@ -96,15 +99,23 @@ export function useBarcodeGenerate() {
   const [excelDrawerOpen, setExcelDrawerOpen] = useState(false);
   const [deselectFlag, setDeselectFlag] = useState(false);
   const [selectedItemId, setSelectedItemId] = useState<number | undefined>(undefined);
+  const [excelData, setExcelData] = useState<ExcelData>([]);
+
+  const [originalRow, setOriginalRow] = useState<BarcodeTransactionRow | null>(null);
+  console.log(originalRow, 'originalRow');
 
 
   /* ── Refs ── */
   const transactionFormRef = useRef(transactionForm);
   const rowsRef = useRef<BarcodeTransactionRow[]>([]);
   const editingRowIdRef = useRef(editRowId);
+  const originalRowRef = useRef(originalRow);
+
+
   useEffect(() => { rowsRef.current = rows; }, [rows]);
-  useEffect(() => { transactionFormRef.current = transactionForm ;},[transactionForm] )
+  useEffect(() => { transactionFormRef.current = transactionForm; }, [transactionForm])
   useEffect(() => { editingRowIdRef.current = editRowId; }, [editRowId]);
+  useEffect(() => { originalRowRef.current = originalRow; }, [originalRow]);
 
   const fieldRefs = useRef(
     Object.fromEntries(
@@ -122,21 +133,22 @@ export function useBarcodeGenerate() {
     PURCHASE_ENTRYNO: Number(headerForm.INWARDNO),
     SNO: String(headerForm.ITEMNAME),
     ISEDITING: isEditing,
-  }), [headerForm.COMPANYNAME, headerForm.INWARDNO, headerForm.ITEMNAME, isEditing]);
+    ENTRYNO: isEditing ? Number(selectedEntryNo) : undefined,
+  }), [headerForm.COMPANYNAME, headerForm.INWARDNO, headerForm.ITEMNAME, isEditing , selectedEntryNo ]);
 
-  const { data: barcodeItems  } = useBarcodeItems(barcodeQueryParams);
+  const { data: barcodeItems } = useBarcodeItems(barcodeQueryParams);
 
   const isFirstRender = useRef(true);
 
   useEffect(() => {
-    if(!isEditing){
+    if (!isEditing) {
       if (isFirstRender.current) { isFirstRender.current = false; return; }
       if (barcodeItems?.ENTRY_NO) {
         setHeaderField("ENTRYNO", String(barcodeItems.ENTRY_NO));
       }
     }
-   
-  }, [barcodeItems?.ENTRY_NO, setHeaderField ,isEditing]);
+
+  }, [barcodeItems?.ENTRY_NO, setHeaderField, isEditing]);
 
 
   const { data: sizes } = useSize("", selectedItemId);
@@ -148,7 +160,7 @@ export function useBarcodeGenerate() {
     [sizes]);
 
   /* ── Tag listing ── */
-  
+
   const filteredTagParams = useMemo(() => {
     const out: Record<string, string> = {};
     Object.entries(tagFilterParams).forEach(([k, v]) => {
@@ -159,8 +171,9 @@ export function useBarcodeGenerate() {
   }, [JSON.stringify(tagFilterParams)]); // stringify → stable primitive dep
 
   const { data: tagEntryNos, refetch: refetchTagList } = useTagEntryNos(filteredTagParams);
+  console.log(tagEntryNos,'tagEntryNos');
 
- 
+
   const tagFilterParamsKey = JSON.stringify(tagFilterParams);
   useEffect(() => {
     refetchTagList();
@@ -168,6 +181,8 @@ export function useBarcodeGenerate() {
   }, [tagFilterParamsKey]);
 
   const { data: tagDetails } = useTagedDetailsByEntryNo(selectedEntryNo);
+
+  // console.log(tagDetails,'tagDetails');
 
   /* ── Collections ── */
   const purchaserCollection = useMemo(() =>
@@ -194,9 +209,9 @@ export function useBarcodeGenerate() {
       : EMPTY_ARRAY,
     [barcodeItems?.SIZELIST]);
 
-  console.log(barcodeItems,'barcodeItems');
+  console.log(barcodeItems, 'barcodeItems');
 
-  const baseBarcodePrefix =  barcodeItems?.TAGNO?.PREFIX ?? "";
+  const baseBarcodePrefix = barcodeItems?.TAGNO?.PREFIX ?? "";
   const startBarcodeNumber = Number(barcodeItems?.TAGNO?.TAGNO ?? 0);
 
   const itemId = useMemo(
@@ -218,6 +233,7 @@ export function useBarcodeGenerate() {
 
   /* ── Logic hooks ── */
   const { validateHeaderWithToast, validateSingleRow, validateRows } = useTaggingValidation();
+  
   const { summary: stockSummary, limits, remaining } = useStockLimits(selectedItem, rows);
 
   const remainingRef = useRef(remaining);
@@ -237,6 +253,23 @@ export function useBarcodeGenerate() {
   useEffect(() => {
     assignSingleBarcodeRef.current = assignSingleBarcode;
   }, [assignSingleBarcode]);
+
+
+  /*---------EXCEL IMPORT DATA ----------------*/
+    const handleExcelChange = useCallback(
+      (changes: CellChange[] | null, _source: ChangeSource) => {
+        if (!changes) return;
+        setExcelData((prev) => {
+          const next = prev.map((row) => [...row]);        // shallow-clone each row
+          changes.forEach(([row, col, , newVal]) => {
+            while (next.length <= row) next.push([]);    // grow if HOT added a spare row
+            next[row][col as number] = newVal as string | number | null;
+          });
+          return next;
+        });
+      },
+      []
+    );
 
 
 
@@ -284,20 +317,23 @@ export function useBarcodeGenerate() {
     // Get the current form state from ref
     const currentForm = transactionFormRef.current;
     const editingRowId = editingRowIdRef.current;
-    const remainingByRef = remainingRef.current; 
+    const remainingByRef = remainingRef.current;
+    const originalRow = originalRowRef.current;
+
+    console.log(remainingByRef,'remainingByRef');
 
     const editingRow = rowsRef.current.find(r => r.id === editingRowId);
 
     let effectiveBalance = { ...remainingByRef };
 
-    if (editingRow) {
+    if (editingRowId && originalRow) {
       effectiveBalance = {
         PCS: effectiveBalance.PCS + 1,
-        GRSWT: effectiveBalance.GRSWT + Number(editingRow.grsweight || 0),
-        STNWT: effectiveBalance.STNWT + Number(editingRow.stoneWt || 0),
+        GRSWT: effectiveBalance.GRSWT + Number(originalRow.grsweight || 0),
+        STNWT: effectiveBalance.STNWT + Number(originalRow.stoneWt || 0),
       };
     }
-
+    console.log(effectiveBalance, 'effectiveBalance');
 
     // Use currentForm instead of transactionForm for validation
     const errors = validateSingleRow(
@@ -322,7 +358,7 @@ export function useBarcodeGenerate() {
     }
 
     setIsSubmittingRow(true);
-    
+
     try {
       // Use currentForm consistently throughout
       const formValues = {
@@ -340,11 +376,12 @@ export function useBarcodeGenerate() {
         updateRow(editingRowId, formValues);
         toaster.create({ title: "Row Updated", type: "success", duration: 2000 });
         setEditRowId(null);
-      } 
+        setOriginalRow(null);
+      }
 
-        else {
-        const barcode = assignSingleBarcodeRef.current(rowsRef.current.length); 
-        
+      else {
+        const barcode = assignSingleBarcodeRef.current(rowsRef.current.length);
+
         if (!barcode) {
           toaster.create({
             title: "Barcode not ready",
@@ -398,6 +435,7 @@ export function useBarcodeGenerate() {
       mc: row.mc.toString(),
       touch: row.touch.toString(),
     });
+    setOriginalRow(row); // ✅ store original
     setEditRowId(row.id);
     setFieldErrors({});
     setTouched({});
@@ -430,8 +468,11 @@ export function useBarcodeGenerate() {
       })),
     ];
     setRows(assignBarcodes(merged));
+    
     toaster.create({ title: "Excel Imported", description: `${parsedRows.length} row(s) added`, type: "success", duration: 2500 });
+    setExcelData([]);
     setExcelDrawerOpen(false);
+
   }, [headerForm, rows, limits, isEditing, validateHeaderWithToast, validateRows, assignBarcodes, setRows]);
 
   /* ── Save / Update ── */
@@ -455,8 +496,13 @@ export function useBarcodeGenerate() {
   }, [rows, headerForm, itemId]);
 
   const handleSave = useCallback(() => {
+
+    const remainingByRef = remainingRef.current;
+
+    let effectiveBalance = { ...remainingByRef };
+
     if (!validateHeaderWithToast(headerForm)) return;
-    if (!validateRows({ rows, limits })) return;
+    if (!validateRows({ rows, limits, balance:effectiveBalance })) return;
     const { purchaseDetails, taggingDetails } = buildPayload();
     setIsSubmittingTag(true);
     createTag(
@@ -480,10 +526,18 @@ export function useBarcodeGenerate() {
   }, [headerForm, rows, limits, validateHeaderWithToast, validateRows, buildPayload, createTag, setPrintId, setPrintDetails, clearAll, printAll]);
 
   const handleUpdate = useCallback(() => {
+
+    const remainingByRef = remainingRef.current;
+
+    let effectiveBalance = { ...remainingByRef };
+
     if (!validateHeaderWithToast(headerForm)) return;
-    if (!validateRows({ rows, limits, countOnlyNew: true })) return;
+    if (!validateRows({ rows, limits, balance: effectiveBalance, countOnlyNew: false })) return;
     const { purchaseDetails, taggingDetails } = buildPayload();
-    setIsSubmittingTag(true);
+    // setIsSubmittingTag(true);
+
+return;
+
     updateTag(
       { PURCHASEDETAILS: purchaseDetails, TAGGINGDETAILS: taggingDetails, id: Number(headerForm.ENTRYNO) },
       {
@@ -539,28 +593,42 @@ export function useBarcodeGenerate() {
 
   /* ── Tag selection ── */
   const handleSelectTag = useCallback((entryNo: string) => {
-    if (selectedEntryNo === entryNo) {
-      setSelectedEntryNo("");
-      setTimeout(() => setSelectedEntryNo(entryNo), 0);
-    } else {
-      setSelectedEntryNo(entryNo);
+    console.log(rowsRef.current ,editingRowIdRef.current ,isEditing ,'hanldeSelect');
+    
+    if (rowsRef.current.length > 0 && !isEditing) {
+      toaster.create(
+        {
+          title: 'Clear Tags Or Save Tags',
+          type: 'info',
+          description: 'Please clear the current tag before selecting a new one.',
+        }
+      )
     }
-  }, [selectedEntryNo, setSelectedEntryNo]);
+    else {
+      if (selectedEntryNo === entryNo) {
+        setSelectedEntryNo("");
+        setTimeout(() => setSelectedEntryNo(entryNo), 10);
+      } else {
+        setSelectedEntryNo(entryNo);
+      }
+    }
+
+  }, [selectedEntryNo, setSelectedEntryNo ,isEditing]);
 
   /* ── Clear ── */
   const handleClear = useCallback(() => {
     clearAll();
     resetForm();
     setDeselectFlag(true);
-    
+
     setTimeout(() => setDeselectFlag(false), 50);
-    
-  
+
+
     if (barcodeItems?.ENTRY_NO) {
       setHeaderField("ENTRYNO", String(barcodeItems.ENTRY_NO));
     }
- 
-  }, [clearAll ,barcodeItems]);
+
+  }, [clearAll, barcodeItems]);
 
   /* ── Table config ── */
   const transactionFormFields = useMemo(() =>
@@ -638,6 +706,10 @@ export function useBarcodeGenerate() {
     isSubmittingRow, isSubmittingTag,
     excelDrawerOpen, setExcelDrawerOpen,
     deselectFlag,
+
+    excelData,
+    setExcelData,
+    handleExcelChange,
 
     purchaserCollection, inwardCollection, itemCollection, itemSizeCollection, itemSizeList,
     stockTableData,

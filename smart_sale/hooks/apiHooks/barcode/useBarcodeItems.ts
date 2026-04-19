@@ -5,6 +5,7 @@ import { useApiQuery ,useApiMutation } from "../apiHook/ApiHook";
 import { CreateTag, CreateTagResponse } from "@/types/tagging/Tag";
 
 export const useBarcodeItems = (data:BarCodeFilter) => {
+  console.log(data,'paramsforuntaged')
   return useQuery({
     queryKey: ["barcode-items", data],
     queryFn: () => getBarcodeItemsDetails(data),
