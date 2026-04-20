@@ -40,6 +40,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/hooks/apiHooks/auth/useAuth";
 import { usePageName } from "@/context/header/PageNameContext";
 import { useSessionStorage } from "@/hooks/apiHooks/storage/useSessionStorage";
+import Logout from "@/component/logout/Logout";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Motion-wrapped Chakra primitives
@@ -119,6 +120,8 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
     const [isHovered, setIsHovered] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
     const [showSearch, setShowSearch] = useState(false);
+
+    const [logoutOpen,setLogoutOpen] = useState(false);
 
     const { collapsedWidth, expandedWidth } = sidebarConfig;
 
@@ -756,6 +759,7 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
                 bg={theme.colors.sideBar}
                 backdropFilter="blur(8px)"
                 p={2}
+         
             >
                 <Tooltip content="User Profile" disabled={isExpanded} showArrow>
                     <MotionHStack
@@ -769,6 +773,8 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
                         whileTap={{ scale: 0.98 }}
                         justify={isExpanded ? "flex-start" : "center"}
                         width="100%"
+                        onClick={() => setLogoutOpen(true)}
+                 
                     >
                         <Box
                             position="relative"
@@ -777,6 +783,7 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
                             borderRadius="full"
                             bg="gray.200"
                             flexShrink={0}
+                           
                         >
                             <Icon as={UserCircle} w="full" h="full" />
                             <Box
@@ -792,7 +799,7 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
                             />
                         </Box>
                         {isExpanded && (
-                            <Box display={'flex'} alignItems={'center'}>
+                            <Box display={'flex'} alignItems={'center'} >
                                 <Text fontSize="sm" fontWeight="500">
                                     {user?.USERNAME ?? "ADMIN"}
                                 </Text>
@@ -803,8 +810,9 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
                     </MotionHStack>
 
                 </Tooltip>
-
+                <Logout isOpen={logoutOpen}  onClose={()=>setLogoutOpen(false)}/>       
             </Box>
+            
         </MotionBox>
     );
 
