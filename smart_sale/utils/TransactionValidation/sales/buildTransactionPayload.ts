@@ -1,3 +1,4 @@
+
 export const buildTransactionPayload = ({
     draftRows,
     SALE_TRANSACTION_KEY_MAP,

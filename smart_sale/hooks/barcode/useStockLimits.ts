@@ -1,7 +1,6 @@
 
 
 import { useMemo } from "react";
-import { formatToFixed } from "@/utils/format/numberFormat";
 import type { BarcodeTransactionRow } from "@/store/barcode/useBarcodeStore";
 import { SELECTED_BARCODE_ITEM } from "@/types/barcode/BarcodeDetails";
 /* ============================================================
@@ -25,6 +24,19 @@ export interface StockSummaryRow {
 const safeNum = (v: unknown) => {
   const n = Number(v);
   return isNaN(n) ? 0 : n;
+};
+const normalize = (v: number, precision = 6) =>
+  parseFloat(v.toFixed(precision));
+
+const formatToFixed = (val: number, digits = 3) => {
+  const num = Number(val);
+
+  // preserve very small values
+  if (Math.abs(num) < 0.0005 && num !== 0) {
+    return num.toExponential(6); 
+  }
+
+  return num.toFixed(digits);
 };
 
 export function useStockLimits(
@@ -58,7 +70,7 @@ export function useStockLimits(
     [itemList]
   );
 
-  /* ================= SAVED ================= */
+
  
 
   /* ================= NEW ================= */
@@ -71,6 +83,8 @@ export function useStockLimits(
     }),
     [effectiveRows]
   );
+
+  console.log(lot,added , 'addedandlot');
 
   /* ================= SUMMARY ================= */
   const summary: StockSummaryRow[] = useMemo(() => {
@@ -87,7 +101,7 @@ export function useStockLimits(
       const t = lot[key];
 
       const nw = added[key];
-      const bal = Math.max(0, t - nw);
+      const bal = formatToFixed(Math.max(0, normalize(t) - normalize(nw)),3);
 
       const fmt = (v: number) =>
         isPCS ? Math.round(v).toString() : formatToFixed(v, 3);
@@ -98,8 +112,7 @@ export function useStockLimits(
         total: fmt(t),
 
         newRows: fmt(nw),
-        balance: fmt(bal,
-        ),
+        balance: fmt(Number(bal)),
       };
     });
   }, [lot, added]);
@@ -123,6 +136,7 @@ export function useStockLimits(
     }),
     [lot, added]
   );
+  console.log(remaining,'remainingremaining')
 
 
 

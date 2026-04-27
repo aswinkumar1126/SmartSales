@@ -229,7 +229,7 @@ export default function PurchasePage() {
         itemId: '',
         accode: ''
     });
-    console.log(deselectFlag, 'deselectFlag');
+    console.log(printData, 'printData');
 
     const filter = ''
 
@@ -677,9 +677,6 @@ export default function PurchasePage() {
     const getActiveCollectionForType = (transactionType: TransactionType) => {
         return isIssueType(transactionType) ? pureNameCollection : itemsCollection;
     };
-
-
-
 
     /* ================================
        Load Transaction Data When Selected
@@ -1185,10 +1182,10 @@ export default function PurchasePage() {
                 title: "Warning",
                 description: "You have unsaved changes in the draft. Please save or reset before switching transactions.",
                 type: "warning",
-                duration: 3000
+                duration: 2000
             });
             setDeselectFlag(true);
-            setTimeout(() => setDeselectFlag(false), 100);
+            setTimeout(() => setDeselectFlag(false), 50);
             return;
         }
 

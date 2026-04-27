@@ -119,6 +119,8 @@ function AccountHeadMaster() {
     const accountList = Array.isArray(allAccountHead?.data?.acheads)
         ? allAccountHead.data.acheads
         : [];
+    
+    console.log(accountList,'accountList');
 
 
     const safeValue = (
@@ -373,6 +375,19 @@ function AccountHeadMaster() {
         //     }
         // }
 
+        console.log(editId,form.ACCODE , 'editId')
+
+        const isDuplicate = accountList.some(
+            (acc) =>
+                acc.ACNAME?.toLowerCase() === form.ACNAME?.toLowerCase() &&
+                Number(acc.ACCODE) !== Number(editId) // 🔥 exclude current editing row
+        );
+
+        if (isDuplicate) {
+            toastError("Account name already exists");
+            return;
+        }
+
 
         if (editId) {
             updateAccountHead(
@@ -390,14 +405,7 @@ function AccountHeadMaster() {
             );
         } else {
 
-            const isDuplicate = accountList.some(
-                (acc) => acc.ACNAME?.toLowerCase() === form.ACNAME?.toLowerCase()
-            );
-
-            if (isDuplicate) {
-                toastError("Account name already exists");
-                return;
-            }
+          
 
             createAccountHead(form, {
                 onSuccess: () => {

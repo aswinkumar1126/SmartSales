@@ -156,7 +156,7 @@ export default function SalesPage() {
    Session Storage Keys (All in one place)
 ================================ */
 
-    const TYPE_KEY = "sale_transaction_type";
+    const TYPE_KEY = "sales_transaction_type";
 
 
     const EDITING_SNO_KEY = "sale_editing_sno";
@@ -193,7 +193,7 @@ export default function SalesPage() {
     const [isFilterOpen, setIsFilterOpen] = useState(false);
     const [apiBalanceOpening, setApiBalanceOpening] = useState({ openPure: 0, openCash: 0 });
 
-    const [selectedTransactionId, setSelectedTransactionId] = useState<string | null>(null)
+    const [selectedTransactionId, setSelectedTransactionId] = useState<string | null>(null);
 
     const [baseOpening, setBaseOpening] = useSessionStorage<{ openPure: number, openCash: number }>('sales-openingBalance', {
         openPure: 0,
@@ -489,9 +489,8 @@ export default function SalesPage() {
         tagedItems?.map((item: any) => ({
             label: item.itemName,
             value: item.itemId.toString(),
-        })) ?? [], []);
+        })) ?? [], [tagedItems]);
 
-    console.log(tagedItemsList, 'tagedItemsList')
 
     const { collection: itemsCollection, filter: itemsFilter, set } = useListCollection({
         initialItems: mappedItems,
@@ -709,7 +708,7 @@ export default function SalesPage() {
         const result = loadTransaction(data, sno, isTagedItem);
         if (!result) return;
 
-
+        console.log(data,'datadata')
 
         setSelectedTransactionTypes(result.selectedTransactionTypes);
         setDraftRows(result.rows);
@@ -1063,6 +1062,8 @@ export default function SalesPage() {
             return;
         }
 
+        console.log(result.payload ,'updateTransaction');
+
         try {
             await updateTransaction.mutateAsync({
                 entryNo: Number(headerForm.ENTRYNO),
@@ -1098,6 +1099,8 @@ export default function SalesPage() {
 
     const handleResetDraft = () => {
 
+        setSelectedTransactionId(null);
+
         setEditingState({ rowId: null, transactionType: null });
         resetDraftRowTempId();
 
@@ -1123,6 +1126,7 @@ export default function SalesPage() {
             });
         } else {
             localStorage.removeItem(TYPE_KEY);
+            setSelectedTransactionId(null);
         }
         setHeaderForm({
             ENTRYNO: "",
@@ -1144,16 +1148,18 @@ export default function SalesPage() {
                 title: "Warning",
                 description: "You have unsaved changes in the draft. Please save or reset before switching transactions.",
                 type: "warning",
-                duration: 3000
+                duration: 2000
             });
             setDeselectFlag(true);
-            setTimeout(() => setDeselectFlag(false), 100);
+            setTimeout(() => setDeselectFlag(false), 10);
+
             return;
         }
+        console.log("triggers the click")
 
-        setSelectedTransactionId(prev =>
-            prev === transactionId ? '' : transactionId
-        );
+       setSelectedTransactionId(prev =>
+           prev === transactionId ? '' : transactionId
+       );
 
     }, [draftRows]);
 

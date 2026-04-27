@@ -200,7 +200,7 @@ export default function DraftTransactionTable({
     onSaleReturnModal,
 }: DraftTransactionTableProps) {
 
-    console.log(rows,'rowsrowsrows')
+    // console.log(rows,'rowsrowsrows')
 
     // ── Editing state ──────────────────────────────────────────────────────────
     const currentEditingRowId = editingState?.rowId;
@@ -287,6 +287,7 @@ export default function DraftTransactionTable({
         []
     );
 
+    console.log(formData, 'formData');
 
       const { data: pureStockData } = usePureGoldDataById(formData.PUREID);
         console.log(pureStockData, 'pureStockData');
@@ -598,7 +599,13 @@ export default function DraftTransactionTable({
                 errs[f.key] = `${f.label} is required`;
                 valid = false;
             }
+          
         });
+        if (formData.TOUCH && formData.TOUCH <= 0) {
+            toaster.create({ title: "Validation Error", description: "Touch must be greater than 0", type: "error" });
+            errs.TOUCH = "Touch must be greater than 0";
+            valid = false;
+        }
         const allTouched: Record<string, boolean> = {};
         visibleFormFields.forEach((f) => { allTouched[f.key] = true; });
         setTouched(allTouched);

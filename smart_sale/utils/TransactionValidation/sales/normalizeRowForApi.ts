@@ -15,8 +15,8 @@ import { SaleTransactionKey, SALESTRANSACTIONITEMS } from "@/types/transcation/S
             ...rest
         } = row;
 
-     
 
+     console.log(row,rest, 'taggedtagged');
         // ---------------- ISSUE / RECEIPT ----------------
         if (tranType === "issue" || tranType === "receipt") {
             return {
@@ -34,7 +34,9 @@ import { SaleTransactionKey, SALESTRANSACTIONITEMS } from "@/types/transcation/S
         if (tranType === "sales") {
             const itemId = rest.ITEMID ? Number(rest.ITEMID) : null;
 
-            const tagged = rest.__isTaged ;
+            const tagged = rest.__isTaged || rest.ITEM_TYPE === "TAGGED";
+            console.log(tagged,'taggedtagged');
+       
 
             const payload: SALESTRANSACTIONITEMS = {
                 ITEMID: itemId,

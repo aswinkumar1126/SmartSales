@@ -167,6 +167,8 @@ const buildThermalHTML = (p: PurchaseReceiptProps, is50: boolean): string => {
   const showTransactions = hasTransactions(D);
   const showClosingSection = hasClosingDetails(C);
 
+  console.log(D,'Detailsoftran');
+
 
 
   const convTypeLabel = getConvTypeLabel(C.CONVTYPE);

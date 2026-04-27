@@ -237,6 +237,9 @@ export function useBarcodeGenerate() {
   const { summary: stockSummary, limits, remaining } = useStockLimits(selectedItem, rows);
 
   const remainingRef = useRef(remaining);
+
+  console.log(remainingRef,'remainingRef');
+
   useEffect(() => { remainingRef.current = remaining; }, [remaining])
 
 
@@ -317,6 +320,7 @@ export function useBarcodeGenerate() {
     // Get the current form state from ref
     const currentForm = transactionFormRef.current;
     const editingRowId = editingRowIdRef.current;
+
     const remainingByRef = remainingRef.current;
     const originalRow = originalRowRef.current;
 
@@ -505,6 +509,7 @@ export function useBarcodeGenerate() {
     if (!validateRows({ rows, limits, balance:effectiveBalance })) return;
     const { purchaseDetails, taggingDetails } = buildPayload();
     setIsSubmittingTag(true);
+    console.log('createTag', purchaseDetails, taggingDetails);
     createTag(
       { PURCHASEDETAILS: purchaseDetails, TAGGINGDETAILS: taggingDetails },
       {
@@ -528,15 +533,14 @@ export function useBarcodeGenerate() {
   const handleUpdate = useCallback(() => {
 
     const remainingByRef = remainingRef.current;
+    console.log(remainingByRef, 'remainingByRef in update')
 
     let effectiveBalance = { ...remainingByRef };
 
     if (!validateHeaderWithToast(headerForm)) return;
     if (!validateRows({ rows, limits, balance: effectiveBalance, countOnlyNew: false })) return;
     const { purchaseDetails, taggingDetails } = buildPayload();
-    // setIsSubmittingTag(true);
-
-return;
+    setIsSubmittingTag(true);
 
     updateTag(
       { PURCHASEDETAILS: purchaseDetails, TAGGINGDETAILS: taggingDetails, id: Number(headerForm.ENTRYNO) },

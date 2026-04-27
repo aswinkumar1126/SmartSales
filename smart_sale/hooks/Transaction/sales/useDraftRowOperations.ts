@@ -20,10 +20,7 @@ export const useDraftRowOperations = (isTagedItem: (id: number) => boolean) => {
       
     } = useSaleTransactionStore();
 
-    /**
-     * Called for NEW rows only (formData has no permanent __rowId).
-     * The table passes submitData which may carry _stones, _misc etc.
-     */
+   
     const handleAddRow = useCallback(
         (transactionType: SaleTransactionType, formData?: any) => {
             if (!formData) {
@@ -46,10 +43,12 @@ export const useDraftRowOperations = (isTagedItem: (id: number) => boolean) => {
             const isTagged = formData.ITEMID
                 ? isTagedItem(Number(formData.ITEMID))
                 : false;
+            
+            console.log(isTagged,'isTaggedisTagged');
 
             const ITEM_TYPE = isTagged ? "TAGGED" : "NON_TAGGED";
 
-                console.log(isTagged, 'visTagged')
+             
             const newRow = {
                 ...formData,
                 __rowId: permanentId,
@@ -72,10 +71,7 @@ export const useDraftRowOperations = (isTagedItem: (id: number) => boolean) => {
         [addDraftRow, setEditingState, draftRows ,isTagedItem]
     );
 
-    /**
-     * Called for EDITS only — replaces an existing row by its __rowId.
-     * submitData comes from DraftTransactionTable's handleSubmit.
-     */
+   
     const handleEditRow = useCallback(
         (rowId: string, submitData: any) => {
             const isTagged = submitData.ITEMID

@@ -310,58 +310,58 @@ const STATIC_MENU: SidebarMenu = {
     //   description: "Create and manage purchase transactions",
     // },
 
-    Transaction: {
-      icon: Layers,
-      items: [
-        {
-          type: "parent",
-          label: "Approval",
-          icon: BadgeCheck,
-          title: "Approval Module",
-          description: "Approve or reject pending transactions",
-          children: [
-            {
-              label: "Pending",
-              route: "/dashboard/Transaction/Transaction/Approval/pending",
-              icon: HiArrowDownCircle,
-              title: "Pending Approvals",
-              description: "View transactions waiting for approval",
-            },
-            {
-              label: "Completed",
-              route: "/dashboard/Transaction/Transaction/Approval/completed",
-              icon: BadgeCheck,
-              title: "Completed Approvals",
-              description: "View approved transactions",
-            },
-          ],
-        },
-        {
-          type: "direct",
-          label: "Bank Transaction",
-          route: "/dashboard/Transaction/Transaction/BankTransaction",
-          icon: Landmark,
-          title: "Bank Transaction",
-          description: "Manage bank transactions",
-        },
-        {
-          type: "direct",
-          label: "Expenses",
-          route: "/dashboard/Transaction/Transaction/Expenses",
-          icon: TrendingDown,
-          title: "Expenses",
-          description: "Track and manage expenses",
-        },
-        {
-          type: "direct",
-          label: "Income",
-          route: "/dashboard/Transaction/Transaction/Income",
-          icon: TrendingUp,
-          title: "Income",
-          description: "Track income entries",
-        },
-      ],
-    },
+    // Transaction: {
+    //   icon: Layers,
+    //   items: [
+    //     {
+    //       type: "parent",
+    //       label: "Approval",
+    //       icon: BadgeCheck,
+    //       title: "Approval Module",
+    //       description: "Approve or reject pending transactions",
+    //       children: [
+    //         {
+    //           label: "Pending",
+    //           route: "/dashboard/Transaction/Transaction/Approval/pending",
+    //           icon: HiArrowDownCircle,
+    //           title: "Pending Approvals",
+    //           description: "View transactions waiting for approval",
+    //         },
+    //         {
+    //           label: "Completed",
+    //           route: "/dashboard/Transaction/Transaction/Approval/completed",
+    //           icon: BadgeCheck,
+    //           title: "Completed Approvals",
+    //           description: "View approved transactions",
+    //         },
+    //       ],
+    //     },
+    //     {
+    //       type: "direct",
+    //       label: "Bank Transaction",
+    //       route: "/dashboard/Transaction/Transaction/BankTransaction",
+    //       icon: Landmark,
+    //       title: "Bank Transaction",
+    //       description: "Manage bank transactions",
+    //     },
+    //     {
+    //       type: "direct",
+    //       label: "Expenses",
+    //       route: "/dashboard/Transaction/Transaction/Expenses",
+    //       icon: TrendingDown,
+    //       title: "Expenses",
+    //       description: "Track and manage expenses",
+    //     },
+    //     {
+    //       type: "direct",
+    //       label: "Income",
+    //       route: "/dashboard/Transaction/Transaction/Income",
+    //       icon: TrendingUp,
+    //       title: "Income",
+    //       description: "Track income entries",
+    //     },
+    //   ],
+    // },
 
     Settings: {
       icon: Settings,

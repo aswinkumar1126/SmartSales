@@ -258,20 +258,23 @@ export function CapitalizedInput<T>({
         if (mode === "email") {
             inputValue = inputValue.toLowerCase();
 
+            // allow only valid characters
             if (!/^[a-z0-9@._-]*$/.test(inputValue)) return;
 
-            if (inputValue.includes("@")) {
-                if (inputValue.split("@").length > 2) return;
-                const [localPart, domain] = inputValue.split("@");
-                if (domain && !"gmail.com".startsWith(domain)) {
-                    return;
-                }
-                if (domain.length >= 9 && domain !== "gmail.com") {
+            const parts = inputValue.split("@");
+
+            // ❌ more than one @
+            if (parts.length > 2) return;
+
+            if (parts.length === 2) {
+                const domain = parts[1];
+
+                // ✅ allow typing like g, gm, gma...
+                if (!"gmail.com".startsWith(domain)) {
                     return;
                 }
             }
         }
-
         if (type === "number") {
             if (inputValue === "-") {
                 if (!allowNegative) return;

@@ -85,8 +85,8 @@ export const getCompanyFormFields = (stateOptions: any[], editId: string | null)
         label: 'EMAIL',
         type: 'text',
         inputModeType: 'email',
-        maxLength: 15,
-        size: 'xs'
+        size: 'xs',
+        isCapitalized:false,
     },
     {
         name: 'PANNO',
