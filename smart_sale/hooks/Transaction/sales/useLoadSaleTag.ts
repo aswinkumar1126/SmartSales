@@ -27,7 +27,7 @@ export const useLoadSaleTag = () => {
             const response = await getTagDetails(
                 tagNo,
                 customerId,
-                false
+                true
             );
 
             const data = response?.data;

@@ -803,6 +803,8 @@ export default function SalesPage() {
             console.log(stockRow, 'vstockRow')
             const pureId = stockRow.pureId;
 
+            console.log(pureId,'pureIdpureId')
+
             availability = getStockAvailability(pureId);
 
             console.log(availability, 'availability')
@@ -848,7 +850,7 @@ export default function SalesPage() {
     /*--------------------------------STOCK CHECKING------------------------ */
 
     const {
-        transactionKey,
+        transactionKeys,
         isIssue,
         isSales,
         isSalesReturn,
@@ -862,7 +864,7 @@ export default function SalesPage() {
         getEditAvailableWeightForIS,
         getEditAvailableWeightForSA,
     } = useStockAvailability({
-        transactionCode: (selectedTransactionTypes[0] ?? SALETRANSACTIONTYPES[0]).code,
+        transactionCode: selectedTransactionTypes.map(t => t.code),
         pureStockList,
         itemsStockList,
         draftRows,
@@ -993,6 +995,7 @@ export default function SalesPage() {
         const result = buildTransactionRequest();
 
         console.log(result.payload ,'createTransactionPayload');
+
 
 
         if (!result.valid || !result.payload) {

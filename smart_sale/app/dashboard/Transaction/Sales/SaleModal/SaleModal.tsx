@@ -110,6 +110,7 @@ export default function SalesBillViewModal({
     return (
         <Dialog.Root open={isOpen}
             onOpenChange={(e) => {
+                
                 if (!e.open) onClose?.();
             }}
             
@@ -219,6 +220,7 @@ export default function SalesBillViewModal({
                                     loadSalesReturnItems(selectedItems)
                                     setSelectedItems([]);
                                     setSelectedItemIds([]);
+                               
                                     onClose();
                                 }
                             } />

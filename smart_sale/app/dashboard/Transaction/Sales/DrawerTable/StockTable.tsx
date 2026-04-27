@@ -100,7 +100,7 @@ export default function StockDrawer({
                 { key: "STOCKSTATUS", label: "Stock Status", align: "end" },
                 { key: "TOUCH", label: "Touch", align: "end" },
                 { key: "PUREWT", label: "Pure Wt", align: "end" },
-                { key: "ACTION", label: "Action", align: "center" },
+                // { key: "ACTION", label: "Action", align: "center" },
             ];
     }, [showStock]);
 
@@ -215,7 +215,7 @@ export default function StockDrawer({
                                         })
                                         : undefined;
 
-                                    console.log(availability ,'avaliableinstocktable')
+                                    console.log(availability, stockId, 'availability');
 
                                     const isOutOfStock = showStock === "PURE"
                                         ? (availability?.remaining ?? 0) <= 0

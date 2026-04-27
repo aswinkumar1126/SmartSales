@@ -80,7 +80,7 @@ import { SaleTransactionKey, SALESTRANSACTIONITEMS } from "@/types/transcation/S
 
                 // ✅ Flexible return logic
                 ...(rest.TAGNO && { TAGNO: rest.TAGNO }),
-                ...(rest.BILLNO && { BILLNO: rest.BILLNO }),
+                // ...(rest.BILLNO && { BILLNO: rest.BILLNO }),
 
                 ...(editTransaction && { SNO: String(rest.SNO || "") }),
                 ...(rest.DESCRIPTION && { DESCRIPTION: rest.DESCRIPTION }),

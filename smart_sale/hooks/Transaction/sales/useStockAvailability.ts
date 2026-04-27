@@ -4,7 +4,7 @@ import { SaleTransactionKey, SALE_TRANSACTION_KEY_MAP } from "@/types/transcatio
 import { useEditStockCalculator } from './useEditStockCalculator';
 
 interface UseStockAvailabilityDeps {
-    transactionCode: string;
+    transactionCode: string[];
     pureStockList: any[];
     itemsStockList: any[];
     draftRows: any[];
@@ -30,7 +30,7 @@ export interface QuantityDetail {
 export interface StockAvailability {
     stock: any;
     stockSource: 'pure' | 'items';
-    transactionKey: SaleTransactionKey;
+  transactionKeys: Set<SaleTransactionKey>;
     isIssue: boolean;
     isSales: boolean;
     isSalesReturn: boolean;
@@ -62,6 +62,7 @@ export function useStockAvailability({
     isEditMode = false,
     originalTransactionData,
 }: UseStockAvailabilityDeps) {
+    console.log("useStockAvailability initialized with:", transactionCode);
 
     // Initialize edit calculator if in edit mode
     const editCalculator = useEditStockCalculator({
@@ -72,11 +73,15 @@ export function useStockAvailability({
         SALETRANSACTIONTYPES,
     });
 
-    const transactionKey = SALE_TRANSACTION_KEY_MAP[transactionCode];
-    const isIssue = transactionKey === 'issue';
-    const isSales = transactionKey === 'sales';
-    const isSalesReturn = transactionKey === 'sales_return';
-    const isReceipt = transactionKey === 'receipt';
+
+     const transactionKeys = new Set(
+         transactionCode.map(code => SALE_TRANSACTION_KEY_MAP[code])
+        );
+
+    const isIssue = transactionKeys.has('issue');
+    const isSales = transactionKeys.has('sales');
+    const isSalesReturn = transactionKeys.has('sales_return');
+    const isReceipt = transactionKeys.has('receipt');
 
     const getUsedQuantityById = useCallback((id: string | number, options?: {
         excludeRowId?: string,
@@ -114,7 +119,7 @@ export function useStockAvailability({
         ): StockAvailability | undefined => {
             if (!id) return undefined;
 
-            // console.log("getStockAvailability called with:", { id, options })
+        console.log("getStockAvailability called with:", isIssue ,isReceipt ,isSales ,isSalesReturn , { id, options })
             const { excludeRowId, originalValue } = options ?? {};
 
             let stock: any = null;
@@ -180,11 +185,12 @@ export function useStockAvailability({
                 weightRemaining = Math.max(totalAvailableWeight - usedWeight, 0);
                 piecesRemaining = Math.max(totalAvailablePieces - usedPieces, 0);
             }
+            console.log(stock ,stockSource ,weightRemaining , 'instockdetails');
 
             return {
                 stock,
                 stockSource,
-                transactionKey,
+                transactionKeys,
                 isIssue,
                 isSales,
                 isSalesReturn,
@@ -217,7 +223,7 @@ export function useStockAvailability({
             isSales,
             isSalesReturn,
             isReceipt,
-            transactionKey,
+            transactionKeys,
             isEditMode,
             originalTransactionData,
             editCalculator,
@@ -287,7 +293,7 @@ export function useStockAvailability({
     );
 
     return {
-        transactionKey,
+        transactionKeys,
         isIssue,
         isSales,
         isSalesReturn,

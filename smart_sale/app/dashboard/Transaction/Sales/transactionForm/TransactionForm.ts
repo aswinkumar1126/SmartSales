@@ -143,7 +143,7 @@ export const saleColumns = (isTag: boolean) => [
   
     {
         key: "DESCRIPTION",
-        label: "DESCRIPTION",
+        label: "DESC",
         width: "50px",
         align: "left" as const,
         type: "text" as const,
