@@ -374,6 +374,8 @@ export const BankTransactionModal = ({
                             }
                         }}
                         maxDate={new Date()}
+                        isRoot
+
                     />
                 </Box>
             );
@@ -455,7 +457,7 @@ export const BankTransactionModal = ({
             right={0}
             bottom={0}
             bg="rgba(0,0,0,0.5)"
-            zIndex={9998}
+            zIndex={50}
             display="flex"
             alignItems="center"
             justifyContent="center"
@@ -471,7 +473,7 @@ export const BankTransactionModal = ({
                 overflow="auto"
                 onClick={e => e.stopPropagation()}
                 p={4}
-                zIndex={9999}
+                zIndex={99}
                 position="relative"
                 boxShadow="xl"
             >

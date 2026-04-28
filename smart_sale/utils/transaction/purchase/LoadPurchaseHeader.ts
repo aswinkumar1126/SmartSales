@@ -9,6 +9,8 @@ export const loadPurchaseHeader = (header: any, setHeaderForm: any, setAccCode: 
         BILLNO: header.BILLNO || "",
         ENTRYNO: header.ENTRYNO || "",
         RATEGM: header.RATE || header.RATEGM || "",
+        REMARK : header.REMARK || "",
+        THRU : header.THRU || "",
     });
 
     setAccCode(header.ACCODE);

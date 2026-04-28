@@ -84,6 +84,7 @@ import { SaleTransactionKey, SaleTransactionItems, SALE_TRANSACTION_KEY_MAP, SAL
 import { BaseClosingFormDetails } from "@/types/balanceSummary/BalanceSummary";
 //Utilities
 import { formatToFixed } from '@/utils/format/numberFormat';
+import SalesSaveModal from "./SaveModal/SaveModal";
 
 
 //Icons
@@ -234,6 +235,7 @@ export default function SalesPage() {
         setShowBillModal(prev => !prev);
     };
 
+    const [openSalesSaveModal ,setIsOpenSalesSaveModal] = useState<boolean>(false);
 
     /*-------------------PERSISTENT STATE-------------------------------*/
 
@@ -324,8 +326,8 @@ export default function SalesPage() {
         if (Array.isArray(bankAccounts.data)) {
             return bankAccounts.data.map((b) => {
                 return {
-                    label: b.BANKNAME, // fix typo
-                    value: b.ENTRYNO,
+                    label: String(b.BANKNAME), // fix typo
+                    value: String(b.ENTRYNO),
                 };
             });
         }
@@ -543,6 +545,27 @@ export default function SalesPage() {
         });
     }, [today]);
 
+
+    /* ================================
+        SALES SAVE MODAL MANAGE
+   ================================ */
+
+   const openSaleSaveModal = ()=>{
+    setIsOpenSalesSaveModal(true);
+   }
+   const closeSalesSaveModal = ()=>{
+    setIsOpenSalesSaveModal(false);
+   }
+
+   const confirmSalesSaveModal = ()=>{
+        if(isEditing){
+            handleUpdateTransaction()
+        } 
+        else{
+            handleSaveTransaction()
+        }
+      
+   }
 
     // KEY TO ACCESS
 
@@ -970,6 +993,8 @@ export default function SalesPage() {
                 TRANDATE: headerForm.DATE,
                 BILLNO: headerForm.BILLNO ? Number(headerForm.BILLNO) : undefined,
                 RATE: headerForm.RATEGM ? Number(headerForm.RATEGM) : undefined,
+                REMARK:headerForm.REMARK,
+                THRU:headerForm.THRU
             },
             TRANSACTION_DETAILS: transactionDetails,
             CLOSING_DETAILS: getClosingDetailsPayload(),
@@ -1007,6 +1032,8 @@ export default function SalesPage() {
             return;
         }
 
+    
+
         createTransaction.mutate(
             { payload: result.payload, TRANTYPE: "sales" },
             {
@@ -1026,6 +1053,7 @@ export default function SalesPage() {
 
                     resetStore();
                     resetBalance();
+                    setIsOpenSalesSaveModal(false);
                 },
 
                 onError: (error: any) => {
@@ -1036,6 +1064,7 @@ export default function SalesPage() {
                     });
 
                     openingBalanceRefetch();
+                    setIsOpenSalesSaveModal(false);
                 }
             }
         );
@@ -1088,6 +1117,7 @@ export default function SalesPage() {
 
             resetStore();
             resetBalance();
+            setIsOpenSalesSaveModal(false);
 
         } catch (error: any) {
             toaster.create({
@@ -1096,6 +1126,7 @@ export default function SalesPage() {
                 type: "error",
             });
 
+            setIsOpenSalesSaveModal(false);
             openingBalanceRefetch();
         }
     };
@@ -1248,7 +1279,7 @@ export default function SalesPage() {
                             setIsStockDrawerOpen={setIsStockDrawerOpen}
                             handleShowFilter={openFilter}
                             isEditing={isEditing}
-                            onSave={isEditing ? handleUpdateTransaction : handleSaveTransaction}
+                            onSave={openSaleSaveModal}
                             onReset={handleResetDraft}
                             isSaving={
                                 createTransaction.isPending || updateTransaction.isPending
@@ -1418,6 +1449,14 @@ export default function SalesPage() {
                 </Box>
 
             )}
+
+            <SalesSaveModal 
+                headerForm={headerForm}
+                isOpen={openSalesSaveModal}
+                isClose={closeSalesSaveModal}
+                onConfirm={confirmSalesSaveModal}
+                onFormChange={setHeaderField}
+            />
 
         </>
 

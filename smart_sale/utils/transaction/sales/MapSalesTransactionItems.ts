@@ -5,12 +5,43 @@ import { SALE_TRANSACTION_TYPES } from "./SaleTransactionKeyMap";
 const mapSalesItems = (list: any[] = [], type: string, isTagedItem: any) => {
     return list.map((item, index) => {
 
+        console.log(list,'listlist');
+           const rowId = `edit-${item.SNO || Date.now()}-${index}`;
+
         const stones = item.STONEDETAILS || [];
+
+     
+        // ---------------- MISC CHARGES (HMC) ----------------
+        const miscChargesRaw = item.OTHERCHARGESDETAILS || [];
+
+        const normalizedMisc = miscChargesRaw.map((c: any, i: number) => ({
+            id: `misc-${rowId}-${i}`,
+
+            draftRowId: rowId,
+
+            chargeName: String(c.chargeId || 0),
+            amount: Number(c.chargeAmount || 0),
+
+            itemId: Number(c.itemId || item.ITEMID || 0),
+        }));
+
+        const totalHMC =
+            normalizedMisc.length > 0
+                ? normalizedMisc.reduce(
+                    (sum: number, c: any) => sum + c.amount,
+                    0
+                )
+                : Number(item.HMC || item.MC || 0);
+
+
 
         const totalStoneWeight = stones.reduce(
             (sum: number, s: any) => sum + Number(s.STNWT || 0),
             0
         );
+
+      
+
         const isTagged = item.ITEMID
             ? isTagedItem(Number(item.ITEMID))
             : false;
@@ -42,11 +73,14 @@ const mapSalesItems = (list: any[] = [], type: string, isTagedItem: any) => {
             TOUCH: Number(item.TOUCH || 0),
             PUREWT: Number(item.PUREWT || 0),
 
+            HMC : totalHMC,
             MC: Number(item.MC || 0),
+           
             DESCRIPTION: item.DESCRIPTION || "",
 
             _stones: stones,
-            _miscCharges: item.OTHERCHARGESDETAILS || [],
+            _miscCharges: normalizedMisc || [],
+            
         };
     });
 };

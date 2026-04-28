@@ -25,7 +25,7 @@ import Loader from "@/component/loader/Loader";
 import BalanceSummary from "./Balance/BalanceSummary";
 import { TransactionListing } from "./TransactionList/TransactionIdsListing";
 import { SalesSearch } from "./Search/SalesSearch";
-import SalesReceipt from "@/component/ReceiptPrint/SalesPrint";
+import SaveModal from "./SaveModal/SaveModal";
 
 //Key Management
 import { useGlobalKey } from "@/components/key/useGlobalKey";
@@ -251,6 +251,9 @@ export default function PurchasePage() {
         setShowBillModal(prev => !prev);
     };
 
+    const [openRemarkModal ,setIsOpenRemarkModal ] = useState<boolean>(false);
+
+
 
     /*-------------------PERSISTENT STATE-------------------------------*/
 
@@ -344,7 +347,7 @@ export default function PurchasePage() {
             return bankAccounts.data.map((b) => {
                 return {
                     label: b.BANKNAME, // fix typo
-                    value: b.ENTRYNO,
+                    value: String(b.ENTRYNO),
                 };
             });
         }
@@ -568,6 +571,27 @@ export default function PurchasePage() {
         });
     }, [today]);
 
+
+
+    /* ================================
+      Manage Remark Modal On Save
+   ================================ */
+
+   const handleOpenRemarkModal = ()=>{
+        setIsOpenRemarkModal(true);
+   }
+    const handleCloseRemarkModal = () => {
+        setIsOpenRemarkModal(false);
+    }
+
+    const handleConfirmRemarkModal = () => {
+        if (isEditing) {
+            handleUpdateTransaction();
+        } else {
+            handleSaveTransaction();
+        }
+
+    };
 
     // KEY TO ACCESS
 
@@ -992,6 +1016,8 @@ export default function PurchasePage() {
                 TRANDATE: headerForm.DATE,
                 BILLNO: headerForm.BILLNO ? Number(headerForm.BILLNO) : undefined,
                 RATE: headerForm.RATEGM ? Number(headerForm.RATEGM) : undefined,
+                REMARK:headerForm.REMARK,
+                THRU:headerForm.THRU
             },
             TRANSACTION_DETAILS: transactionDetails,
             CLOSING_DETAILS: getClosingDetailsPayload(),
@@ -1071,7 +1097,8 @@ export default function PurchasePage() {
             });
             return;
         }
-
+     
+    
         createTransaction.mutate(
             { payload: result.payload, TRANTYPE: "purchase" },
             {
@@ -1091,6 +1118,7 @@ export default function PurchasePage() {
 
                     resetStore();
                     resetBalance();
+                    setIsOpenRemarkModal(false);
                 },
 
                 onError: (error: any) => {
@@ -1101,6 +1129,7 @@ export default function PurchasePage() {
                     });
 
                     openingBalanceRefetch();
+                    setIsOpenRemarkModal(false);
                 }
             }
         );
@@ -1132,6 +1161,7 @@ export default function PurchasePage() {
             return;
         }
 
+     
 
         try {
 
@@ -1161,6 +1191,7 @@ export default function PurchasePage() {
             resetBalance();
             setDeselectFlag(true);
             handleResetDraft();
+            setIsOpenRemarkModal(false);
 
         } catch (error: any) {
             toaster.create({
@@ -1170,6 +1201,7 @@ export default function PurchasePage() {
             });
 
             openingBalanceRefetch();
+            setIsOpenRemarkModal(false);
         }
     };
 
@@ -1201,30 +1233,7 @@ export default function PurchasePage() {
     };
 
 
-    /* ================================
-       Calculate Overall Totals
-    ================================ */
-    // const totals = useMemo(() => {
-    //     return draftRows.reduce((acc, row) => {
-    //         acc.PCS += Number(row.PCS || 0);
-    //         acc.GRSWT += Number(row.GRSWT || 0);
-    //         acc.STNWT += Number(row.STNWT || 0);
-    //         acc.NETWT += Number(row.NETWT || 0);
-    //         acc.PUREWT += Number(row.PUREWT || 0);
-    //         acc.MC += Number(row.MC || 0);
-
-
-    //         return acc;
-    //     }, {
-    //         PCS: 0,
-    //         GRSWT: 0,
-    //         STNWT: 0,
-    //         NETWT: 0,
-    //         PUREWT: 0,
-    //         MC: 0,
-    //     });
-    // }, [draftRows]);
-
+    
     /* ================================
        Render
     ================================ */
@@ -1277,7 +1286,7 @@ export default function PurchasePage() {
                             setIsStockDrawerOpen={setIsStockDrawerOpen}
                             handleShowFilter={openFilter}
                             isEditing={isEditing}
-                            onSave={isEditing ? handleUpdateTransaction : handleSaveTransaction}
+                            onSave={handleOpenRemarkModal}
                             onReset={handleResetDraft}
                             isSaving={
                                 createTransaction.isPending || updateTransaction.isPending
@@ -1403,6 +1412,7 @@ export default function PurchasePage() {
                         closingCash={closingCash}
                         closingPure={closingPure}
                         bankAccList={allBankAccounts}
+                        headerForm ={headerForm}
                     />
 
                 </Box>
@@ -1447,6 +1457,17 @@ export default function PurchasePage() {
                 </Box>
 
             )}
+            <Box>
+
+            <SaveModal 
+                isOpen={openRemarkModal}
+                isClose={handleCloseRemarkModal}
+                onConfirm={handleConfirmRemarkModal}
+                headerForm={headerForm}
+                onFormChange={setHeaderField}
+               
+            />
+            </Box>
 
         </>
 

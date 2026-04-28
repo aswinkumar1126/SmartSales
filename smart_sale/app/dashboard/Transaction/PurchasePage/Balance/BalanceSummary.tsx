@@ -17,6 +17,7 @@ import { formatToFixed } from "@/utils/format/numberFormat";
 import { BankTransactionModal } from "./BankTransactionModal";
 
 import { usePurchaseBalanceSummary } from "@/store/purchase/useBalanceSummaryStore";
+import { PurchaseHeaderForm } from "@/types/TransactionTypes/purchase/PurchaseHeaderType";
 
 
 
@@ -29,6 +30,7 @@ interface BalanceSummaryProps {
     closingPure: number;
     transactionResetSignal?: boolean;
     bankAccList?: { label: string; value: string }[];
+    headerForm:PurchaseHeaderForm
 }
 
 const BalanceSummary = ({
@@ -39,6 +41,7 @@ const BalanceSummary = ({
     closingCash,
     closingPure,
     bankAccList,
+    headerForm
 }: BalanceSummaryProps) => {
     // =====================
     // ZUSTAND STORE
@@ -354,6 +357,33 @@ const BalanceSummary = ({
                     disabled
                 />
             </Grid>
+
+            <Box
+                mt={2}
+                p={1}
+                bg="gray.50"
+                borderRadius="md"
+                border="1px solid"
+                borderColor="gray.200"
+            >
+                {headerForm.REMARK && (
+                    <Text fontSize="2xs" color="gray.900" mb={1}>
+                        <Text as="span" fontWeight="semibold" fontSize={'xs'}>
+                            Remark:
+                        </Text>{" "}
+                        {headerForm.REMARK}
+                    </Text>
+                )}
+
+                {headerForm.THRU && (
+                    <Text fontSize="2xs" color="gray.900" >
+                        <Text as="span" fontWeight="semibold" fontSize={'xs'}>
+                            Thru:
+                        </Text>{" "}
+                        {headerForm.THRU}
+                    </Text>
+                )}
+            </Box>
 
             {/* =====================
           MODAL (ZUSTAND CONTROLLED)

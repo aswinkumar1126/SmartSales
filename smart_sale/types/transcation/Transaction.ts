@@ -135,6 +135,9 @@ export interface TransactionHeader {
     ENTRYNO?: number;
     BILLNO?: number;
     RATE?: number;
+
+    REMARK:string;
+    THRU:string;
 }
 
 export interface BankTransactionDetails {

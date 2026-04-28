@@ -4,7 +4,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { PurchaseHeaderState, PurchaseHeaderForm } from '@/types/TransactionTypes/purchase/PurchaseHeaderType';
 
-type SalesHeaderActions = {
+type PurchaseHeaderActions = {
     setHeaderField: <K extends keyof PurchaseHeaderForm>(
         field: K,
         value: PurchaseHeaderForm[K]
@@ -30,9 +30,11 @@ const initialHeader: PurchaseHeaderForm = {
     ENTRYNO: "",
     RATEGM: "",
     METALTYPE: "G",
+    REMARK : "",
+    THRU:"",
 };
 
-export const usePurchaseHeader = create<PurchaseHeaderState & SalesHeaderActions>()(
+export const usePurchaseHeader = create<PurchaseHeaderState & PurchaseHeaderActions>()(
     persist(
         (set) => ({
             // STATE

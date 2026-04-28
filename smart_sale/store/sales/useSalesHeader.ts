@@ -29,6 +29,8 @@ const initialHeader: SalesHeaderForm = {
     BILLNO: "",
     ENTRYNO: "",
     RATEGM: "",
+    REMARK:"",
+    THRU:""
 };
 
 export const useSalesHeader = create<SalesHeaderState & SalesHeaderActions>()(

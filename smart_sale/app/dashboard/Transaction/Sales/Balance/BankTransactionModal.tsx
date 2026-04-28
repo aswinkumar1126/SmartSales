@@ -56,13 +56,13 @@ const bankTableCols = [
 
 // Column widths
 const COL_WIDTHS: Record<string, string> = {
-    __sno: "40px",
-    BANKID: "140px",
-    TRANMODE: "70px",
-    PAYDATE: "100px",
-    CHQNO: "120px",
-    AMOUNT: "120px",
-    __ACTIONS: "60px",
+    __sno: "30px",
+    BANKID: "160px",
+    TRANMODE: "120px",
+    PAYDATE: "80px",
+    CHQNO: "80px",
+    AMOUNT: "100px",
+    __ACTIONS: "30px",
 };
 
 const getWidth = (key: string) => COL_WIDTHS[key] || "100px";
@@ -373,6 +373,7 @@ export const BankTransactionModal = ({
                             }
                         }}
                         maxDate={new Date()}
+                        isRoot
                     />
                 </Box>
             );
@@ -454,7 +455,7 @@ export const BankTransactionModal = ({
             right={0}
             bottom={0}
             bg="rgba(0,0,0,0.5)"
-            zIndex={9998}
+            zIndex={50}
             display="flex"
             alignItems="center"
             justifyContent="center"
@@ -470,7 +471,7 @@ export const BankTransactionModal = ({
                 overflow="auto"
                 onClick={e => e.stopPropagation()}
                 p={4}
-                zIndex={9999}
+                zIndex={99}
                 position="relative"
                 boxShadow="xl"
             >

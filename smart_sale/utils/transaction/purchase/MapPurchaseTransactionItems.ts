@@ -147,7 +147,7 @@ const mapPurchaseItems = (list: any[] = [], type: string) => {
         const netwt = grswt - stnwt;
 
         // ---------------- MISC CHARGES (HMC) ----------------
-        const miscChargesRaw = item.PURCHASEOTHERCHARGESDETAILS || [];
+        const miscChargesRaw = item.OTHERCHARGESDETAILS || [];
 
         const normalizedMisc = miscChargesRaw.map((c: any, i: number) => ({
             id: `misc-${rowId}-${i}`,

@@ -7,6 +7,8 @@ export interface SalesHeaderForm {
     BILLNO: string;
     ENTRYNO: string;
     RATEGM: string | number;
+    REMARK:string;
+    THRU:string;
 }
 
 export interface SalesHeaderState {

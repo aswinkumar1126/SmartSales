@@ -27,6 +27,8 @@ export interface SalesTransactionItems {
   MC?: number | null;
   STNAMT?: number | null;
   AMOUNT?: number | null;
+
+  
   RATE?: number | null;
   TRANTYPE?: string | null;
   BATCHNO?: string | null;
@@ -102,6 +104,8 @@ const fmtWt = (n: number | null | undefined) =>
 const fmtAmt = (n: number | null | undefined) =>
   "₹" + Number(n || 0).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
+const fmtNormalAmt = (n: number | null | undefined) =>
+  Number(n || 0).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const formatDate = (d: string | null | undefined) => {
   if (!d) return "—";
   try { return new Date(d).toLocaleDateString("en-IN"); } catch { return d; }
@@ -115,9 +119,9 @@ const getConvTypeLabel = (type: string | null | undefined): string => {
 
 // ─── Styling Constants ────────────────────────────────────────────────────────
 
-const FONT_SHOP = "Arial, 'Helvetica Neue', sans-serif";
-const FONT_BODY = "Arial, 'Helvetica Neue', sans-serif";
-const FONT_AMOUNT = "Arial, 'Helvetica Neue', sans-serif";
+const FONT_SHOP = " 'Roboto', 'Arial', sans-serif";
+const FONT_BODY =  "'Roboto', 'Arial', sans-serif";
+const FONT_AMOUNT = "'Roboto', 'Arial', sans-serif";
 
 const baseStyle: React.CSSProperties = {
   fontFamily: FONT_BODY,
@@ -127,15 +131,14 @@ const baseStyle: React.CSSProperties = {
   width: "100%",
   margin: "0",
   boxSizing: "border-box",
-  maxWidth: "72mm",
   padding: "4px 2px",
-  fontSize: "12px",
+
   lineHeight: "1.4",
+  letterSpacing:"0.3px",
 };
 
 const thStyle: React.CSSProperties = {
   padding: "2px 2px",
-  fontSize: "10px",
   fontWeight: "bold",
   borderBottom: "1px solid #000",
   fontFamily: FONT_BODY,
@@ -143,14 +146,12 @@ const thStyle: React.CSSProperties = {
 
 const tdStyle: React.CSSProperties = {
   padding: "1px 2px",
-  fontSize: "10px",
   fontWeight: "medium",
   fontFamily: FONT_BODY,
 };
 
 const tdAmtStyle: React.CSSProperties = {
   padding: "3px 4px",
-  fontSize: "10px",
   fontWeight: "medium",
   fontFamily: FONT_AMOUNT,
   textAlign: "right",
@@ -215,12 +216,17 @@ const buildThermalHTML = (p: SalesReceiptConfig, is50: boolean): string => {
       if (isSalesType) {
         // ✅ FULL TOTALS (purchase + purchase return)
         totals = {
-          pcs: rows.reduce((sum, item) => sum + (Number(item.PCS) || 0), 0),
-          grswt: rows.reduce((sum, item) => sum + (Number(item.GRSWT) || 0), 0),
-          stnwt: rows.reduce((sum, item) => sum + (Number(item.STNWT) || 0), 0),
-          netwt: rows.reduce((sum, item) => sum + (Number(item.NETWT) || 0), 0),
-          purewt: rows.reduce((sum, item) => sum + (Number(item.PUREWT) || 0), 0),
-        };
+  pcs: rows.reduce((sum, item) => sum + (Number(item.PCS) || 0), 0),
+  grswt: rows.reduce((sum, item) => sum + (Number(item.GRSWT) || 0), 0),
+  stnwt: rows.reduce((sum, item) => sum + (Number(item.STNWT) || 0), 0),
+  netwt: rows.reduce((sum, item) => sum + (Number(item.NETWT) || 0), 0),
+  purewt: rows.reduce((sum, item) => sum + (Number(item.PUREWT) || 0), 0),
+
+
+  hmc: rows.reduce((sum, item) => sum + (Number(item.HMC) || 0), 0),
+  mc: rows.reduce((sum, item) => sum + (Number(item.MC) || 0), 0),
+  stoneAmt: rows.reduce((sum, item) => sum + (Number(item.STNAMT) || 0), 0),
+};
       } else {
         // ✅ ISSUE / RECEIPT TOTALS
         totals = {
@@ -281,47 +287,101 @@ const buildThermalHTML = (p: SalesReceiptConfig, is50: boolean): string => {
       })
       .join("");
 
+
+    const extraChargesTable = totals &&
+      isSalesType && (totals.hmc || totals.mc || totals.stoneAmt)
+      ? `
+<div style="width:100%; display:flex; justify-content:flex-end; margin-top:2px;">
+  <table style="border-collapse:collapse;" class="no-border">
+
+    <!-- ✅ DATA ROW -->
+    <tr style="width:100%;">
+      ${totals.hmc ? `
+      <td style="padding:2px;">HMC :</td>
+      <td style="padding:2px; text-align:right;">${fmtNormalAmt(totals.hmc)}</td>
+      ` : ''}
+
+      ${totals.mc ? `
+      <td style="padding:2px;">MC :</td>
+      <td style="padding:2px; text-align:right;">${fmtNormalAmt(totals.mc)}</td>
+      ` : ''}
+
+      ${totals.stoneAmt ? `
+      <td style="padding:2px;">STN :</td>
+      <td style="padding:2px; text-align:right;">${fmtNormalAmt(totals.stoneAmt)}</td>
+      ` : ''}
+    </tr>
+
+    <!-- ✅ TOTAL ROW (aligned to right) -->
+    <tr>
+      <td colspan="${(
+        (totals.hmc ? 2 : 0) +
+        (totals.mc ? 2 : 0) +
+        (totals.stoneAmt ? 2 : 0) - 2
+      )}" style="padding:2px;"></td>
+
+      <td style="padding:2px; font-weight:600;">TOTAL :</td>
+      <td style="padding:2px; text-align:right; font-weight:600;">
+        ${fmtNormalAmt(
+        (totals.hmc || 0) +
+        (totals.mc || 0) +
+        (totals.stoneAmt || 0)
+      )}
+      </td>
+    </tr>
+
+  </table>
+</div>
+`
+      : '';
+
+
     const totalsRow = totals
       ? isSalesType
         ? `
 <tr>
-  <td style="border:1px solid #000; padding:2px; text-align:right;"><strong>TOTAL</strong></td>
-  <td style="border:1px solid #000; padding:2px; text-align:right;">${totals.pcs}</td>
-  <td style="border:1px solid #000; padding:2px; text-align:right;">${fmtWt(totals.grswt)}</td>
-  <td style="border:1px solid #000; padding:2px; text-align:right;">${fmtWt(totals.stnwt)}</td>
-  <td style="border:1px solid #000; padding:2px; text-align:right;">${fmtWt(totals.netwt)}</td>
+  <td style="border:1px solid #000; padding:2px; text-align:center;"><strong>TOTAL</strong></td>
+  <td style="border:1px solid #000; padding:2px; text-align:right;"><strong>${totals.pcs}</strong></td>
+  <td style="border:1px solid #000; padding:2px; text-align:right;"><strong>${fmtWt(totals.grswt)}</strong></td>
+  <td style="border:1px solid #000; padding:2px; text-align:right;"><strong>${fmtWt(totals.stnwt)}</strong></td>
+  <td style="border:1px solid #000; padding:2px; text-align:right;"><strong>${fmtWt(totals.netwt)}</strong></td>
   <td style="border:1px solid #000; padding:2px;"></td>
-  <td style="border:1px solid #000; padding:2px; text-align:right;">${fmtWt(totals.purewt)}</td>
+  <td style="border:1px solid #000; padding:2px; text-align:right;"><strong>${fmtWt(totals.purewt)}</strong></td>
 </tr>
 `
         : `
 <tr>
-  <td style="border:1px solid #000; padding:2px; text-align:right;"><strong>TOTAL</strong></td>
-  <td style="border:1px solid #000; padding:2px; text-align:right;">${fmtWt(totals.wt)}</td>
+  <td style="border:1px solid #000; padding:2px; text-align:center;"><strong>TOTAL</strong></td>
+  <td style="border:1px solid #000; padding:2px; text-align:right;"><strong>${fmtWt(totals.wt)}</strong></td>
   <td style="border:1px solid #000; padding:2px;"></td>
-  <td style="border:1px solid #000; padding:2px; text-align:right;">${fmtWt(totals.purewt)}</td>
+  <td style="border:1px solid #000; padding:2px; text-align:right;"><strong>${fmtWt(totals.purewt)}</strong></td>
 </tr>
 `
       : '';
 
     return `
     <div class="sec-title">${label}</div>
-    <table style="width:100%; border-collapse:collapse; font-size:12px; border:1px solid #000;" class="with-border">
+    <table style="width:100%; border-collapse:collapse;  border:1px solid #000;" class="with-border">
       <thead style=${thStyle}>
         ${headers}
       </thead>
       <tbody style=${tdStyle}>
         ${rowsHtml}
+ 
         ${totalsRow}
+     
       </tbody>
+            
     </table>
+    ${extraChargesTable} 
+
   `;
   }).join("");
 
   // Build closing details section
   const closingDetailsHtml = showClosingSection ? `
     <div class="sec-title">CLOSING DETAILS</div>
-    <table style="width:100%; font-size:12px; margin:4px 0;" class="no-border">
+    <table style="width:100%; margin:4px 0;" class="no-border">
       ${C.CONVTYPE && convTypeLabel ? `
       <tr>
         <td>CONVERSION TYPE :</td>
@@ -345,8 +405,8 @@ const buildThermalHTML = (p: SalesReceiptConfig, is50: boolean): string => {
 
   // Build payments section
   const paymentsHtml = (C.CASHRCVD > 0 || C.CASHPAID > 0 || C.BANKRCVD > 0 || C.BANKPAID > 0) ? `
-  <div class="sec-title">PAYMENTS</div>
-  <table style="width:100%; font-size:12px; margin:4px 0; border-collapse: collapse;" class="with-border">
+
+  <table style="width:100%;  margin:4px 0; border-collapse: collapse;" class="with-border">
     <thead>
       <tr>
         <th></th>
@@ -377,14 +437,13 @@ const buildThermalHTML = (p: SalesReceiptConfig, is50: boolean): string => {
   // Opening balance always shows
   const openingBalanceHtml = `
     <div class="sec-title">OPENING BALANCE</div>
-    <table style="width:100%; font-size:12px; margin:4px 0;" class="no-border">
-      <tr>
-        <td>CASH :</td>
-        <td style="text-align:right;">${fmtAmt(B.openingCash)}</td>
-      </tr>
-      <tr>
-        <td>PURE :</td>
-        <td style="text-align:right;">${fmtWt(B.openingPure)}</td>
+    <table style="width:100%;  margin:4px 0;" class="no-border">
+    <tr  style="display:flex; justify-content:space-between; gap:10px; width:100%; font-weight:bold;">
+        <td style="width:25%;">CASH :</td>
+        <td style="width:25%; text-align:right;">${fmtAmt(B.openingCash)}</td>
+     
+        <td style="width:25%;">PURE :</td>
+        <td style="width:25%; text-align:right;">${fmtWt(B.openingPure)}</td>
       </tr>
     </table>
   `;
@@ -399,39 +458,36 @@ const buildThermalHTML = (p: SalesReceiptConfig, is50: boolean): string => {
   // Closing balance always shows
   const closingBalanceHtml = `
     <div class="sec-title">CLOSING BALANCE</div>
-    <table style="width:100%; font-size:12px; margin:4px 0;" class="no-border">
-      <tr>
-        <td>CASH :</td>
-        <td style="text-align:right;">${fmtAmt(B.closingCash)}</td>
-      </tr>
-      <tr>
-        <td>PURE :</td>
-        <td style="text-align:right;">${fmtWt(B.closingPure)}</td>
-      </tr>
-    </table>
+    <table style="width:100%;  margin:4px 0;" class="no-border">
+  <tr  style="display:flex; justify-content:space-between; gap:10px; width:100%; font-weight:bold;">
+    <!-- CASH (50%) -->
+    <td style="width:25%;">CASH :</td>
+    <td style="width:25%; text-align:right;">
+      ${fmtAmt(B.closingCash)}
+    </td>
+
+    <!-- PURE (50%) -->
+    <td style="width:25%;">PURE :</td>
+    <td style="width:25%; text-align:right;">
+      ${fmtWt(B.closingPure)}
+    </td>
+  </tr>
+</table>
   `;
 
   return `
 <div class="pr-thermal">
-  <div style="text-align:center; margin-bottom:6px;">
-    <img src="/printImg.jpeg" alt="logo" style="height:100px; object-fit:contain;" />
+  <div style="text-align:center; margin-bottom:2px;">
+    <img src="/printImg.jpeg" alt="logo" style="height:80px; object-fit:contain;" />
   </div>
-  <div style="text-align:center; margin-bottom:6px;">
-    <div style="font-size:15px; font-weight:bold; text-transform:uppercase; letter-spacing:0.5px;">${CD.COMPANYNAME}</div>
-    <div style="font-size:12px;">${CD.ADDRESS1}</div>
-    ${CD.ADDRESS2 ? `<div style="font-size:12px;">${CD.ADDRESS2}</div>` : ""}
-    ${CD.ADDRESS3 ? `<div style="font-size:12px;">${CD.ADDRESS3}</div>` : ""}
-    <div style="font-size:12px;">MOBILE: ${CD.PHONE}</div>
-    <div style="font-size:12px;">GST NO: ${CD.GSTNO}</div>
-  </div>
-  <div class="dashed-line"></div>
-  <div style="text-align:center; font-size:14px; font-weight:bold; letter-spacing:1px; margin:4px 0;">SALE RECEIPT</div>
-  <div class="dashed-line"></div>
 
-  <table style="width:100%; font-size:12px; margin:4px 0;" class="no-border">
+  <div style="text-align:center; font-weight:bold; letter-spacing:1px; margin:2px 0;">SALE RECEIPT</div>
+
+
+  <table style="width:100%;  margin:2px 0;" class="no-border">
     <tr>
       <td style="width:55%; vertical-align:top;">
-        <table style="width:100%; font-size:12px;" class="no-border">
+        <table style="width:100%; " class="no-border">
           <tr>
             <td style="font-weight:bold; width:40%;">PARTY :</td>
             <td>${partyName}</td>
@@ -444,7 +500,7 @@ const buildThermalHTML = (p: SalesReceiptConfig, is50: boolean): string => {
         </table>
       </td>
       <td style="width:45%; vertical-align:top; text-align:right;">
-        <table style="width:100%; font-size:12px; text-align:right;" class="no-border"">
+        <table style="width:100%;  text-align:start;" class="no-border"">
           <tr>
             <td style="font-weight:bold; width:42%;">BILL NO :</td>
             <td>${H.BILLNO}</td>
@@ -453,34 +509,23 @@ const buildThermalHTML = (p: SalesReceiptConfig, is50: boolean): string => {
             <td style="font-weight:bold; width:42%;">DATE :</td>
             <td>${formatDate(H.TRANDATE)}</td>
           </tr>
-          <tr>
-            <td style="font-weight:bold; width:42%;">BATCH :</td>
-            <td>${H.BATCHNO}</td>
-          </tr>
+         
         </table>
       </td>
     </tr>
   </table>
 
-  <div class="dashed-line"></div>
-
   ${openingBalanceHtml}
   
   ${transactionsHtml}
   
-
-  
-  ${showClosingSection ? '<div class="dashed-line"></div>' : ''}
   ${closingDetailsHtml}
   
-  ${(C.CASHRCVD > 0 || C.CASHPAID > 0 || C.BANKRCVD > 0 || C.BANKPAID > 0) ? '<div class="dashed-line"></div>' : ''}
   ${paymentsHtml}
 
-    ${closingBalanceHtml}
+  ${closingBalanceHtml}
   
-  <div class="double-line"></div>
-  <div class="greeting">THANK YOU FOR YOUR BUSINESS!</div>
-  <div class="double-line"></div>
+
 </div>`;
 };
 
@@ -488,14 +533,14 @@ const buildThermalHTML = (p: SalesReceiptConfig, is50: boolean): string => {
 
 const buildPrintCSS = (is50: boolean): string => {
   const pageW = is50 ? "100mm" : "90mm";
-  const bodyW = is50 ? "96mm" : "80mm";
-  const margin = is50 ? "2mm 1mm" : "1mm";
+  const bodyW = is50 ? "95mm" : "82mm";
+  const margin = is50 ? "1mm" : "0.5mm";
   return `
 @page { size: ${pageW} auto; margin: ${margin}; }
 * { margin:0; padding:0; box-sizing:border-box; }
 html, body { width:${pageW}; background:#fff; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
 .pr-thermal {
-  font-family: 'Arial', 'Helvetica Neue', sans-serif;
+  font-family: 'Roboto', 'Helvetica Neue', sans-serif;
   font-weight: normal;
   color: #000;
   background: #fff;
@@ -507,15 +552,15 @@ html, body { width:${pageW}; background:#fff; -webkit-print-color-adjust:exact; 
 }
 .pr-thermal .co-name, .pr-thermal .sec-title { text-align:center; font-weight:bold; margin:6px 0 4px; }
 .pr-thermal .co-name { font-size:16px; text-transform:uppercase; letter-spacing:0.5px; }
-.pr-thermal .sec-title { font-size:12px; text-transform:uppercase; }
+.pr-thermal .sec-title { font-size:12px; text-transform:uppercase; margin:5px 0; }
 .pr-thermal .dashed-line { border-top: 1px dashed #000; margin: 4px 0; }
 .pr-thermal .double-line { border-top: 3px double #000; margin: 4px 0; }
 .pr-thermal .lr { display:flex; justify-content:space-between; font-size:12px; margin:2px 0; }
 .pr-thermal table { width:100%; margin:4px 0;}
 .pr-thermal table.no-border { width:100%; border-collapse:collapse; margin:4px 0;}
 .pr-thermal table.with-border { width:100%; border-collapse:collapse; margin:4px 0; border:1px solid #222;}
-.pr-thermal table th { padding:2px; font-size:10px; font-weight:bold; color:'#000';  }
-.pr-thermal table td { padding:2px; font-size:10px; vertical-align:top; color:'#000'; }
+.pr-thermal table th { padding:2px; font-size:12px; font-weight:bold; color:'#000';  }
+.pr-thermal table td { padding:2px; font-size:12px; vertical-align:top; color:'#000'; }
 .pr-thermal table td.r { text-align:right; font-family: 'Arial', 'Helvetica Neue', sans-serif; color:'#000';  }
 .pr-thermal .tran-table { margin: 10px 0px 10px 0px;}
 .pr-thermal .closing-table{ margin: 10px 0px ;}

@@ -113,6 +113,7 @@ export const DatePickerInput = React.forwardRef<
                     if (!date) return;
                     setSelected(date);
                     onChange(formatDateToISO(date));
+                    setIsOpen(false);
                     
                 }}
                 open={isOpen}
@@ -128,6 +129,7 @@ export const DatePickerInput = React.forwardRef<
                 portalId={isRoot ? "root" :''}
                 popperClassName="chakra-datepicker-popper"
                 popperContainer={({ children }) => children}
+        
                 
             />
         </Box>

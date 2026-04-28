@@ -9,6 +9,8 @@ export interface PurchaseHeaderForm {
     ENTRYNO: string;
     RATEGM: string | number;
     METALTYPE: "S" | "G" | string;
+    REMARK:string;
+    THRU:string;
 }
 
 export interface PurchaseHeaderState {
