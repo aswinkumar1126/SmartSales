@@ -3,22 +3,26 @@ export interface ItemStockEntry {
   ITEMNAME: string|null;
   PUREID: number | null;
   PUREGOLDNAME: string|null;
-  OP_PCS: number;
-  OP_GRSWT: number;
-  OP_NETWT: number;
-  OP_STNWT: number;
-  RE_PCS: number;
-  RE_GRSWT: number;
-  RE_NETWT: number;
-  RE_STNWT: number;
-  IS_PCS: number;
-  IS_GRSWT: number;
-  IS_NETWT: number;
-  IS_STNWT: number;
-  CL_PCS: number;
-  CL_GRSWT: number;
-  CL_NETWT: number;
-  CL_STNWT: number;
+  OP_PCS:  number | String | null;
+  OP_GRSWT:  number | String | null;
+  OP_NETWT:  number | String | null;
+  OP_STNWT:  number | String | null;
+  RE_PCS:  number | String | null;
+  RE_GRSWT:  number | String | null;
+  RE_NETWT:  number | String | null;
+  RE_STNWT:  number | String | null;
+  IS_PCS:  number | String | null;
+  IS_GRSWT:  number | String | null;
+  IS_NETWT:  number | String | null;
+  IS_STNWT:  number | String | null;
+  CL_PCS: number | String | null;
+  CL_GRSWT:  number | String | null;
+  CL_NETWT:  number | String | null;
+  CL_STNWT:  number | String | null;
+  METALID: number | String | null;
+  METALNAME: string | null;
+  STOCKTYPE: string | null;
+  SRC: string | null;
 }
 
 export interface ItemStockReportResponse {

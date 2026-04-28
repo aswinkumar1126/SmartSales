@@ -92,12 +92,7 @@ const parseGridRow = (row: (string | number | null)[]): ExcelRowData | null => {
     };
 };
 
-/**
- * Convert a raw XLSX worksheet into ExcelData aligned with EXCEL_COLUMNS order.
- * Handles:
- *  - Sheets with no header row (columns assumed to match EXCEL_COLUMNS order)
- *  - Sheets with a header row  → auto-mapped via HEADER_ALIAS_MAP
- */
+
 const sheetToExcelData = (worksheet: XLSX.WorkSheet): ExcelData => {
     const rawRows: (string | number | null)[][] = XLSX.utils.sheet_to_json(worksheet, {
         header: 1,
