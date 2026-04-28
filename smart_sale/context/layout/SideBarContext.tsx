@@ -398,6 +398,15 @@ const STATIC_MENU: SidebarMenu = {
           title: "PURE WISE STOCK REPORT",
           description: "View stock and item summary reports",
         },
+      
+         {
+          type: "direct",
+          label: "Achead Stock Report",
+          route: "/dashboard/Reports/TagReport/AcheadStockReport",
+          icon: Layers,
+          title: "ACHEAD STOCK REPORT",
+          description: "View stock and item summary reports",
+        },
         // {
         //   type: "direct",
         //   label: "DESIGNER Stock Report",
