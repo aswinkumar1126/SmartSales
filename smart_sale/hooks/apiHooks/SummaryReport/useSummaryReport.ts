@@ -51,6 +51,31 @@ export const usePureStockReport = ({ date, columns, groupBy }: {
 // };
 /* ---------------- HOOK ---------------- */
 
+export const useTranReport = ({
+  stage,
+  date,
+  tranType,
+  entryNo,
+}: {
+  stage?: number;
+  date?: string;
+  tranType?: string;
+  entryNo?: number;
+}) => {
+  return useApiQuery<Record<string, any>[]>({
+    queryKey: ["tran_report", stage?.toString() ?? "1", date ?? "", tranType ?? "", entryNo?.toString() ?? ""],
+    url: "/report/tran",
+    method: "GET",
+    params: {
+      STAGE: stage,
+      DATE: date,
+      TRANTYPE: tranType,
+      ENTRYNO: entryNo !== undefined ? entryNo : undefined,
+    },
+    select: (res) => res.data,
+    enabled: false,
+  });
+};
 export const useItemStockReport = ({ date, columns, groupBy }: {
   date?: string,
   columns?: string[],
