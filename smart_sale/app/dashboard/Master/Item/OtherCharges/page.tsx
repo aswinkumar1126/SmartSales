@@ -67,6 +67,7 @@ const OtherCharges = () => {
     const [editId, setEditId] = useState<number | null>(null);
     const [highlightRowId, setHighlightRowId] = useState<number | null>(null);
     const [originalName, setOriginalName] = useState<string | null>(null);
+    
     type FormErrors = Partial<Record<keyof OtherChargeForm, string>>;
     const [errors, setErrors] = useState<FormErrors>({});
 
@@ -138,7 +139,7 @@ const OtherCharges = () => {
         originalName?: string
     ): FormErrors => {
 
-        console.log(editId, 'editId')
+      
         const errors: FormErrors = {};
 
         const normalize = (v?: string) => v?.trim().toLowerCase();

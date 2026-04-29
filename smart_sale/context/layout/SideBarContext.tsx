@@ -194,6 +194,14 @@ const STATIC_MENU: SidebarMenu = {
           title: "SIZE MASTER",
           description: "Define item size standards",
         },
+        {
+          type: "direct",
+          label: "Expense Master",
+          route: "/dashboard/Master/Item/Expense",
+          icon: Users,
+          title: "EXPENSE MASTER",
+          description: "Define Expense Name",
+        },
       ],
     },
 
@@ -344,14 +352,7 @@ const STATIC_MENU: SidebarMenu = {
     //       title: "Bank Transaction",
     //       description: "Manage bank transactions",
     //     },
-    //     {
-    //       type: "direct",
-    //       label: "Expenses",
-    //       route: "/dashboard/Transaction/Transaction/Expenses",
-    //       icon: TrendingDown,
-    //       title: "Expenses",
-    //       description: "Track and manage expenses",
-    //     },
+    //     
     //     {
     //       type: "direct",
     //       label: "Income",
@@ -375,6 +376,14 @@ const STATIC_MENU: SidebarMenu = {
           description: "Configure printing options",
         },
       ],
+    },
+    Expenses:{
+      type: "direct",
+      label: "Expenses",
+      route: "/dashboard/Transaction/Expenses",
+      icon: TrendingDown,
+      title: "Expenses",
+      description: "Track and manage expenses",
     },
   },
 

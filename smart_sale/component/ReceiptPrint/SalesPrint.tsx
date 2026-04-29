@@ -2,8 +2,8 @@
 import React, { useRef, useCallback, useState, useEffect } from "react";
 import { Company } from "@/service/CompanyService";
 import { SalesCLosing } from "@/types/transcation/SaleTransaction";
-import { Caprasimo } from "@/context/theme/font";
-import { TransactionHeader } from "@/types/transcation/SaleTransaction";
+import { useSoftControlById } from "@/hooks/apiHooks/softControl/useSoftControl";
+import { SoftControl } from "@/types/softcontrol/SoftControl";
 
 // ─── API Data Types ───────────────────────────────────────────────────────────
 export interface SalesTransactionItems {
@@ -185,9 +185,9 @@ const hasClosingDetails = (closing: SalesReceiptConfig['CLOSING_DETAILS']): bool
 
 // ─── Thermal HTML Builder ─────────────────────────────────────────────────────
 
-const buildThermalHTML = (p: SalesReceiptConfig, is50: boolean): string => {
+const buildThermalHTML = (p: SalesReceiptConfig, softData?:SoftControl, is50?: boolean): string => {
   const { TRANSACTION_HEADER: H, TRANSACTION_DETAILS: D, BALANCE: B, CLOSING_DETAILS: C, ACHEAD_DETAILS: A, COMPANY_DETAILS: CD } = p;
-  console.log(p,'salesfullprint')
+ 
 
   const partyName = A?.ACNAME || `AC #${H.ACCODE}`;
   const partyAddress = A?.ADDRESS ? A.ADDRESS.replace(/null/g, "") : "";
@@ -394,6 +394,11 @@ const buildThermalHTML = (p: SalesReceiptConfig, is50: boolean): string => {
         <td style="text-align:right;">${fmtWt(C.CONVWT)}</td>
       </tr>
       ` : ''}
+
+       ${H.RATE > 0 && C.CONVTYPE ? `  <tr>
+        <td>CONVERSION RATE :</td>
+        <td style="text-align:right; font-weight:600;">${fmtNormalAmt(H.RATE)}</td>
+      </tr>` : ''}
       ${C.CONVAMT > 0 ? `
       <tr>
         <td>CONVERSION AMOUNT :</td>
@@ -477,11 +482,11 @@ const buildThermalHTML = (p: SalesReceiptConfig, is50: boolean): string => {
 
   return `
 <div class="pr-thermal">
-  <div style="text-align:center; margin-bottom:2px;">
-    <img src="/printImg.jpeg" alt="logo" style="height:80px; object-fit:contain;" />
-  </div>
+   ${softData && softData.CTLTEXT === "Y" ? `<div style="text-align:center; margin-bottom:4px;">
+    <img src="/printImg.jpeg" alt="logo" style="height:60px; object-fit:contain;" />
+  </div>` : '' }
 
-  <div style="text-align:center; font-weight:bold; letter-spacing:1px; margin:2px 0;">SALE RECEIPT</div>
+  <div style="text-align:center; font-weight:bold; letter-spacing:0.5px; margin:2px 0; font-size:16px;">SALE ESTIMATION</div>
 
 
   <table style="width:100%;  margin:2px 0;" class="no-border">
@@ -572,13 +577,15 @@ html, body { width:${pageW}; background:#fff; -webkit-print-color-adjust:exact; 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 const SalesReceipt: React.FC<SalesReceiptConfig> = (props) => {
-  const { columnSize = "40",} = props;
+  const { columnSize = "40"} = props;
   const is50 = columnSize === "50";
+
+  const { data: softData } = useSoftControlById('RECEIPT_PRINT_LOGO');
  
   const hasPrintedRef = useRef(false);
 
   const handlePrint = useCallback(() => {
-    const thermalHTML = buildThermalHTML(props, is50);
+    const thermalHTML = buildThermalHTML(props, softData, is50);
     const css = buildPrintCSS(is50);
 
     const iframe = document.createElement("iframe");

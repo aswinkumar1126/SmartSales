@@ -31,7 +31,8 @@ interface DynamicFormProps {
     layout?: "vertical" | "horizontal" | "grid" | "verticalCombine" | "horizontalCombine"; 
     minLabelWidth?:string;
     labelFontSize?:string;
-    gap?:number
+    gap?:number,
+    errorToShow?:boolean
 }
 
 export const DynamicForm: React.FC<DynamicFormProps> = ({
@@ -45,7 +46,8 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
     layout,
     minLabelWidth = "100px",
     labelFontSize = "x-small",
-    gap= 4
+    gap= 4,
+    errorToShow = true
    
 }) => {
 
@@ -459,11 +461,11 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
                         flex={layout !== "verticalCombine" && layout !== "horizontalCombine" ? "1" : undefined}
                     >
                         {renderField(field)}
-                        {/* {errors?.[field.name] && (
+                         {/* {errorToShow ? errors?.[field.name] && (
                             <Box fontSize="xs" color="red" mt={1}>
                                 {errors[field.name]}
                             </Box>
-                        )} */}
+                        ) : null} */}
                     </Box>
                 </Box>
             ))}
