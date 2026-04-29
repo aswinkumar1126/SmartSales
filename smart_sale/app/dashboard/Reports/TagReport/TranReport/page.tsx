@@ -8,6 +8,9 @@ import {
   Text,
   Spinner,
   HStack,
+  Input,
+  Field,
+  
 } from "@chakra-ui/react";
 import { DownloadIcon } from "@chakra-ui/icons";
 import { useTheme } from "@/context/theme/themeContext";
@@ -155,6 +158,10 @@ function TranReport() {
 
   // ── Filter state ──────────────────────────────────────
   const [tranType, setTranType]   = useState<string>("PU");
+const getToday = () => new Date().toISOString().split("T")[0];
+
+const [fromDate, setFromDate] = useState<string>(getToday());
+const [toDate, setToDate] = useState<string>(getToday());
   const [stage, setStage]         = useState<number>(1);
   const [date, setDate]           = useState<string>("");
   const [entryNo, setEntryNo]     = useState<number | undefined>(undefined);
@@ -178,9 +185,11 @@ function TranReport() {
   // ── API hook ──────────────────────────────────────────
   const { data: rawData, refetch, isFetching, isError } = useTranReport({
     stage,
-    date:    date     || undefined,
+    fromDate: fromDate || undefined,
+    toDate: toDate || undefined,
     tranType,
-    entryNo: entryNo  ?? undefined,
+    date: date || undefined,
+    entryNo: entryNo ?? undefined,
   });
 
   // Type assertion: ensure rawData is treated as array
@@ -258,12 +267,15 @@ function TranReport() {
 
   // ── Fetch trigger ─────────────────────────────────────
   const fetchReport = async (
-    s: number, d?: string, en?: number,
+    s: number, 
+    d?: string, 
+    en?: number,
   ) => {
     setStage(s);
-    if (d  !== undefined) setDate(d);
+    if (d !== undefined) setDate(d);
     if (en !== undefined) setEntryNo(en);
     setStickyKeys(new Set());
+    setColOrder([]);
 
     // Wait for state to settle — refetch picks up latest params via queryKey
     setTimeout(async () => {
@@ -273,10 +285,39 @@ function TranReport() {
     }, 0);
   };
 
+  // ── Get Report Button (Original Function) ──
   const handleGetReport = () => {
+    if (!fromDate || !toDate) {
+      alert("Please select both From Date and To Date");
+      return;
+    }
     setDate("");
     setEntryNo(undefined);
     fetchReport(1);
+  };
+
+  // ── Show ALL Button (Adaptive based on stage) ──
+  const handleShowAll = () => {
+    if (!fromDate || !toDate) {
+      alert("Please select both From Date and To Date");
+      return;
+    }
+
+    if (stage === 2) {
+      // At Stage 2: Show ALL means go back to Stage 1 (Summary)
+      // Reset date and entryNo, fetch summary with fromDate/toDate only
+      setDate("");
+      setEntryNo(undefined);
+      fetchReport(2, undefined, undefined);
+    } else if (stage === 3) {
+      // At Stage 3: Show ALL means go to Stage 2 (Date Detail)
+      // Keep the current date, reset entryNo, fetch date detail
+      setEntryNo(undefined);
+      fetchReport(3, date, undefined);
+    } else {
+      // At Stage 1: Show ALL means refresh current Summary
+      fetchReport(3);
+    }
   };
 
   // ── Row click: drill down ─────────────────────────────
@@ -287,10 +328,10 @@ function TranReport() {
     if (val === undefined || val === null) return;
 
     if (stage === 1) {
-      // Extract date → go to stage 2
+      // Extract date → go to stage 2 (pass the clicked date)
       fetchReport(2, String(val), undefined);
     } else if (stage === 2) {
-      // Extract entryNo → go to stage 3
+      // Extract entryNo → go to stage 3 (pass the clicked entry number)
       fetchReport(3, date, Number(val));
     }
   };
@@ -331,17 +372,16 @@ function TranReport() {
         )
       ),
       startY: 22,
-      styles:       { fontSize: 7, cellPadding: 2 },
-      headStyles:   { fillColor: [43, 108, 176], textColor: 255, fontStyle: "bold" },
-      bodyStyles:   { fontSize: 7 },
+      styles:       { fontSize: 7, cellPadding: 2, halign: "right" },
+      headStyles:   { fillColor: [43, 108, 176], textColor: 255, fontStyle: "bold", halign: "center" },
+      bodyStyles:   { fontSize: 7, halign: "right" },
       alternateRowStyles: { fillColor: [240, 248, 255] },
       margin:       { top: 22, right: 8, bottom: 14, left: 8 },
-didParseCell: (d) => {
-  if (d.section === "body") {
-    // Force ALL cells to right align
-    d.cell.styles.halign = "right";
-  }
-},
+      didParseCell: (d) => {
+        if (d.section === "body") {
+          d.cell.styles.halign = "right";
+        }
+      },
       didDrawPage: (d) => {
         doc.setFontSize(12); doc.setFont("helvetica", "bold");
         doc.text(
@@ -351,12 +391,20 @@ didParseCell: (d) => {
         doc.setFontSize(7); doc.setFont("helvetica", "normal");
         doc.text(`Generated: ${now}`, pW - 8, 8, { align: "right" });
         doc.text(
-          `Page ${d.pageNumber}`, pW / 2, pH - 5, { align: "right" }
+          `Page ${d.pageNumber}`, pW / 2, pH - 5, { align: "center" }
         );
+        doc.setFontSize(8);
+        doc.text(`Period: ${fromDate} to ${toDate}`, pW / 2, 17, { align: "center" });
+        if (stage >= 2 && date) {
+          doc.text(`Date: ${date}`, pW / 2, 21, { align: "center" });
+        }
+        if (stage >= 3 && entryNo) {
+          doc.text(`Entry No: ${entryNo}`, pW / 2, 25, { align: "center" });
+        }
       },
     });
 
-    doc.save(`TranReport_${tranType}_Stage${stage}_${date || "all"}.pdf`);
+    doc.save(`TranReport_${tranType}_Stage${stage}_${fromDate}_to_${toDate}.pdf`);
   };
 
   // ── Excel export ──────────────────────────────────────
@@ -373,7 +421,7 @@ didParseCell: (d) => {
     const ws = XLSX.utils.aoa_to_sheet([header, ...rows]);
     ws["!cols"] = activeCols.map((k) => ({ wch: Math.ceil((widthMap[k] || 80) / 7) }));
 
-    // Style header row
+    // Style header row (center aligned)
     activeCols.forEach((_, ci) => {
       const ref = XLSX.utils.encode_cell({ r: 0, c: ci });
       if (ws[ref]) {
@@ -385,11 +433,23 @@ didParseCell: (d) => {
       }
     });
 
+    // Style all data rows to be right-aligned
+    for (let ri = 1; ri <= tableData.length; ri++) {
+      activeCols.forEach((_, ci) => {
+        const ref = XLSX.utils.encode_cell({ r: ri, c: ci });
+        if (ws[ref]) {
+          ws[ref].s = {
+            alignment: { horizontal: "right", vertical: "center" },
+          };
+        }
+      });
+    }
+
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Tran Report");
     saveAs(
       new Blob([XLSX.write(wb, { bookType: "xlsx", type: "array" })]),
-      `TranReport_${tranType}_Stage${stage}.xlsx`
+      `TranReport_${tranType}_Stage${stage}_${fromDate}_to_${toDate}.xlsx`
     );
   };
 
@@ -411,99 +471,157 @@ didParseCell: (d) => {
           border="1px solid"
           borderColor="gray.100"
           borderRadius="lg"
-          px={3} py={2}
+          px={4} py={3}
           boxShadow="0 1px 4px rgba(0,0,0,0.06)"
         >
-          <HStack justify="space-between" align="center" flexWrap="wrap" gap={2}>
-            <Text fontWeight={700} fontSize="13px" color="gray.700" whiteSpace="nowrap">
+          <VStack gap={3} align="stretch">
+            <Text fontWeight={700} fontSize="13px" color="gray.700">
               Transaction Report
             </Text>
 
-            <HStack gap={2} flexWrap="wrap" align="center">
-
+            <HStack gap={3} flexWrap="wrap" align="flex-end">
               {/* TRANTYPE Dropdown */}
-              <select
-                value={tranType}
-                onChange={(e) => setTranType(e.target.value)}
-                style={{
-                  height: "28px",
-                  borderRadius: "6px",
-                  fontSize: "12px",
-                  padding: "0 8px",
-                  border: "1px solid #CBD5E0",
-                  background: "white",
-                  cursor: "pointer",
-                  color: "#2D3748",
-                  fontWeight: 600,
-                  minWidth: "140px",
-                }}
-              >
-                {TRAN_TYPES.map((t) => (
-                  <option key={t.value} value={t.value}>
-                    {t.label}
-                  </option>
-                ))}
-              </select>
+              <Field.Root width="auto" minW="150px">
+                <Field.Label fontSize="11px" mb={1} color="gray.600">Transaction Type</Field.Label>
+                <select
+                  value={tranType}
+                  onChange={(e) => setTranType(e.target.value)}
+                  style={{
+                    height: "32px",
+                    borderRadius: "6px",
+                    fontSize: "12px",
+                    padding: "0 8px",
+                    border: "1px solid #CBD5E0",
+                    background: "white",
+                    cursor: "pointer",
+                    color: "#2D3748",
+                    fontWeight: 500,
+                    width: "100%",
+                  }}
+                >
+                  {TRAN_TYPES.map((t) => (
+                    <option key={t.value} value={t.value}>
+                      {t.label}
+                    </option>
+                  ))}
+                </select>
+              </Field.Root>
 
-              <Button
-                size="xs"
-                onClick={handleGetReport}
-                loading={isFetching}
-                loadingText="Loading…"
-                style={{
-                  background: "linear-gradient(135deg,#2B6CB0 0%,#2C5282 100%)",
-                  color: "#fff",
-                  fontWeight: 600,
-                  borderRadius: "6px",
-                  fontSize: "12px",
-                  padding: "0 14px",
-                  height: "28px",
-                  border: "none",
-                  cursor: "pointer",
-                  boxShadow: "0 2px 6px rgba(43,108,176,0.3)",
-                }}
-              >
-                Get Report
-              </Button>
+              {/* From Date */}
+              <Field.Root width="auto" minW="150px">
+                <Field.Label fontSize="11px" mb={1} color="gray.600">From Date</Field.Label>
+                <Input
+                  type="date"
+                  value={fromDate}
+                  onChange={(e) => setFromDate(e.target.value)}
+                  size="sm"
+                  height="32px"
+                  fontSize="12px"
+                  borderColor="gray.300"
+                  _hover={{ borderColor: "blue.400" }}
+                  _focus={{ borderColor: "blue.500", boxShadow: "0 0 0 1px #4299e1" }}
+                />
+              </Field.Root>
 
-              {/* Export buttons */}
-              {showReport && tableData.length > 0 && (
-                <HStack gap="6px">
-                  <button
-                    onClick={exportExcel}
+              {/* To Date */}
+              <Field.Root width="auto" minW="150px">
+                <Field.Label fontSize="11px" mb={1} color="gray.600">To Date</Field.Label>
+                <Input
+                  type="date"
+                  value={toDate}
+                  onChange={(e) => setToDate(e.target.value)}
+                  size="sm"
+                  height="32px"
+                  fontSize="12px"
+                  borderColor="gray.300"
+                  _hover={{ borderColor: "blue.400" }}
+                  _focus={{ borderColor: "blue.500", boxShadow: "0 0 0 1px #4299e1" }}
+                />
+              </Field.Root>
+
+              {/* Buttons */}
+              <HStack gap={2}>
+                <Button
+                  size="sm"
+                  onClick={handleGetReport}
+                  loading={isFetching}
+                  loadingText="Loading…"
+                  style={{
+                    background: "linear-gradient(135deg,#2B6CB0 0%,#2C5282 100%)",
+                    color: "#fff",
+                    fontWeight: 600,
+                    borderRadius: "6px",
+                    fontSize: "12px",
+                    padding: "0 16px",
+                    height: "32px",
+                    border: "none",
+                    cursor: "pointer",
+                    boxShadow: "0 2px 6px rgba(43,108,176,0.3)",
+                  }}
+                >
+                  GET REPORT
+                </Button>
+
+                {showReport && stage !== 1 && (
+                  <Button
+                    size="sm"
+                    onClick={handleShowAll}
                     style={{
-                      display: "inline-flex", alignItems: "center", gap: "4px",
-                      background: "linear-gradient(135deg,#276749 0%,#1C4532 100%)",
-                      color: "#fff", border: "none", borderRadius: "6px",
-                      fontSize: "11.5px", fontWeight: 600,
-                      padding: "0 12px", height: "28px", width: "70px",
-                      cursor: "pointer", boxShadow: "0 2px 5px rgba(39,103,73,0.3)",
+                      background: "linear-gradient(135deg,#805AD5 0%,#6B46C1 100%)",
+                      color: "#fff",
+                      fontWeight: 600,
+                      borderRadius: "6px",
+                      fontSize: "12px",
+                      padding: "0 16px",
+                      height: "32px",
+                      border: "none",
+                      cursor: "pointer",
+                      boxShadow: "0 2px 6px rgba(128,90,213,0.3)",
                     }}
                   >
-                    <DownloadIcon style={{ fontSize: "10px", width: "16px" }} />
-                    Excel
-                  </button>
-                  <button
-                    onClick={exportPDF}
-                    style={{
-                      display: "inline-flex", alignItems: "center", gap: "4px",
-                      background: "linear-gradient(135deg,#C05621 0%,#9C4221 100%)",
-                      color: "#fff", border: "none", borderRadius: "6px",
-                      fontSize: "11.5px", fontWeight: 600,
-                      padding: "0 12px", height: "28px", width: "70px",
-                      cursor: "pointer", boxShadow: "0 2px 5px rgba(192,86,33,0.3)",
-                    }}
-                  >
-                    <DownloadIcon style={{ fontSize: "10px", width: "16px" }} />
-                    PDF
-                  </button>
-                </HStack>
-              )}
+                    SHOW ALL
+                  </Button>
+                )}
+              </HStack>
             </HStack>
-          </HStack>
+
+            {/* Export buttons - show after report is loaded */}
+            {showReport && tableData.length > 0 && !isFetching && (
+              <HStack gap="6px" justify="flex-end">
+                <button
+                  onClick={exportExcel}
+                  style={{
+                    display: "inline-flex", alignItems: "center", gap: "4px",
+                    background: "linear-gradient(135deg,#276749 0%,#1C4532 100%)",
+                    color: "#fff", border: "none", borderRadius: "6px",
+                    fontSize: "11.5px", fontWeight: 600,
+                    padding: "0 12px", height: "28px",
+                    cursor: "pointer", boxShadow: "0 2px 5px rgba(39,103,73,0.3)",
+                  }}
+                >
+                  <DownloadIcon style={{ fontSize: "10px", width: "16px" }} />
+                  Export Excel
+                </button>
+                <button
+                  onClick={exportPDF}
+                  style={{
+                    display: "inline-flex", alignItems: "center", gap: "4px",
+                    background: "linear-gradient(135deg,#C05621 0%,#9C4221 100%)",
+                    color: "#fff", border: "none", borderRadius: "6px",
+                    fontSize: "11.5px", fontWeight: 600,
+                    padding: "0 12px", height: "28px",
+                    cursor: "pointer", boxShadow: "0 2px 5px rgba(192,86,33,0.3)",
+                  }}
+                >
+                  <DownloadIcon style={{ fontSize: "10px", width: "16px" }} />
+                  Export PDF
+                </button>
+              </HStack>
+            )}
+          </VStack>
         </Box>
 
-        {/* ── Breadcrumb + Stage hint ── */}
+        {/* ── Breadcrumb ── */}
         {showReport && (
           <HStack justify="space-between" px={1} flexWrap="wrap" gap={2}>
             <Breadcrumb
@@ -698,7 +816,7 @@ didParseCell: (d) => {
               </tbody>
 
               {/* ── Totals Row ── */}
-              {Object.keys(totals).length > 0 && (
+              {Object.keys(totals).length > 0 && stage === 1 && (
                 <tfoot>
                   <tr style={{ backgroundColor: COLORS.subBg }}>
                     {activeCols.map((k, i) => {
@@ -744,7 +862,7 @@ didParseCell: (d) => {
         {/* ── Empty ── */}
         {showReport && tableData.length === 0 && !isFetching && (
           <Box p={8} textAlign="center" bg="gray.50" borderRadius="md" border="1px solid" borderColor="gray.200">
-            <Text fontSize="13px" color="gray.500">No data for the selected filter</Text>
+            <Text fontSize="13px" color="gray.500">No data found for the selected period</Text>
           </Box>
         )}
 
@@ -753,10 +871,10 @@ didParseCell: (d) => {
           <Box p={14} textAlign="center" bg="gray.50" borderRadius="xl" border="2px dashed" borderColor="gray.200">
             <Text fontSize="28px" mb={3}>🧾</Text>
             <Text fontSize="14px" color="gray.600" fontWeight={500} mb={1}>
-              Select a transaction type and click "Get Report"
+              Select transaction type, date range and click "GET REPORT"
             </Text>
             <Text fontSize="12px" color="gray.400">
-              Click any row to drill down by date, then by entry
+              Click any row to drill down by date, then by entry | Use "SHOW ALL" to navigate back
             </Text>
           </Box>
         )}

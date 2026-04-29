@@ -53,23 +53,29 @@ export const usePureStockReport = ({ date, columns, groupBy }: {
 
 export const useTranReport = ({
   stage,
-  date,
+  fromDate,
+  toDate,
   tranType,
+  date,
   entryNo,
 }: {
   stage?: number;
-  date?: string;
+  fromDate?: string;
+  toDate?: string;
   tranType?: string;
+  date?: string;
   entryNo?: number;
 }) => {
   return useApiQuery<Record<string, any>[]>({
-    queryKey: ["tran_report", stage?.toString() ?? "1", date ?? "", tranType ?? "", entryNo?.toString() ?? ""],
+    queryKey: ["tran_report", stage?.toString() ?? "1", fromDate ?? "", toDate ?? "", tranType ?? "", date ?? "", entryNo?.toString() ?? ""],
     url: "/report/tran",
     method: "GET",
     params: {
       STAGE: stage,
-      DATE: date,
+      FROMDATE: fromDate,
+      TODATE: toDate,
       TRANTYPE: tranType,
+      DATE: date,
       ENTRYNO: entryNo !== undefined ? entryNo : undefined,
     },
     select: (res) => res.data,
