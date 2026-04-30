@@ -416,6 +416,14 @@ const STATIC_MENU: SidebarMenu = {
           title: "ACHEAD STOCK REPORT",
           description: "View stock and item summary reports",
         },
+                 {
+          type: "direct",
+          label: "Transaction Report",
+          route: "/dashboard/Reports/TagReport/TranReport",
+          icon: Layers,
+          title: "TRANSACTION REPORT",
+          description: "View Transaction summary reports",
+        },
         // {
         //   type: "direct",
         //   label: "DESIGNER Stock Report",
