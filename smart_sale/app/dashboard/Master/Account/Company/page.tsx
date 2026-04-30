@@ -215,11 +215,17 @@ function CompanyMaster() {
         } else {
             createCompany({
                 payload: form,
-                logo: logoFile, // Pass the file separately
+                logo: logoFile,
             }, {
                 onSuccess: () => {
                     companyRefetch();
                     resetForm();
+                },
+                onError:(err:any) =>{
+                    if(err){
+                        const message = err.response.data.message ;
+                        toastError (message ??  "Something went wrong")
+                    }
                 }
             });
         }

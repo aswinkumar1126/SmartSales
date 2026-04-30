@@ -166,11 +166,11 @@ export default function StoneEnterMaster({
     const formFields = [
         { key: "stoneId", label: "Stone", type: "combobox" as const, isRequired: true, collection: { items: stoneItems }, ref: stoneIdRef },
         //{ key: "subStoneId", label: "Sub Stone", type: "combobox" as const, isRequired: true, collection: { items: subStoneItems }, ref: subStoneIdRef },
-        { key: "stonePcs", label: "Pcs", type: "number" as const, isRequired: true, decimalScale: 0, ref: stonePcsRef },
+        { key: "stonePcs", label: "Pcs", type: "number" as const, isRequired: false, decimalScale: 0, ref: stonePcsRef },
         { key: "stoneWeight", label: "Weight", type: "number" as const, isRequired: true, decimalScale: 3, ref: stoneWeightRef },
         { key: "stoneUnit", label: "Unit", type: "select" as const, isRequired: true, collection: { items: [{ label: "Gram", value: "g" }, { label: "Carat", value: "c" }] }, ref: stoneUnitRef },
         { key: "stoneCalculation", label: "Cal", type: "select" as const, isRequired: true, collection: { items: [{ label: "Weight", value: "w" }, { label: "Piece", value: "p" }] }, ref: stoneCalculationRef },
-        { key: "stoneRate", label: "Rate", type: "number" as const, isRequired: true, decimalScale: 2, ref: stoneRateRef },
+        { key: "stoneRate", label: "Rate", type: "number" as const, isRequired: false, decimalScale: 2, ref: stoneRateRef },
         { key: "stoneAmount", label: "Amount", type: "number" as const, isRequired: false, decimalScale: 2, ref: stoneRateRef, disabled: true },
     ];
 
@@ -219,17 +219,17 @@ export default function StoneEnterMaster({
         if (!formData.stoneId) newErrors.stoneId = "Stone is required";
         // if (!formData.subStoneId) newErrors.subStoneId = "Sub Stone is required";
 
-        const pcs = Number(formData.stonePcs);
-        if (!formData.stonePcs || isNaN(pcs) || pcs <= 0)
-            newErrors.stonePcs = "Pcs must be greater than 0";
+        // const pcs = Number(formData.stonePcs);
+        // if (!formData.stonePcs || isNaN(pcs) || pcs <= 0)
+        //     newErrors.stonePcs = "Pcs must be greater than 0";
 
         const weight = Number(formData.stoneWeight);
         if (!formData.stoneWeight || isNaN(weight) || weight <= 0)
             newErrors.stoneWeight = "Weight must be greater than 0";
 
-        const rate = Number(formData.stoneRate);
-        if (!formData.stoneRate || isNaN(rate) || rate <= 0)
-            newErrors.stoneRate = "Rate must be greater than 0";
+        // const rate = Number(formData.stoneRate);
+        // if (!formData.stoneRate || isNaN(rate) || rate <= 0)
+        //     newErrors.stoneRate = "Rate must be greater than 0";
 
         setErrors(newErrors);
         setTouched(newTouched);

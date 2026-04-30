@@ -33,11 +33,11 @@ export const useCreateSoftControl = () => {
 };
 
 // Update an existing SoftControl
-export const useUpdateSoftControl = (id:number|string) => {
+export const useUpdateSoftControl = () => {
     return useApiMutation<SoftControl, SoftControl & {id : string|number}>({
         url: ({id}) => `/softcontrol/${id}`,
         method: "PUT",
-        queryKey: ["softcontrol" ,String(id)],
+        queryKey: ["softcontrol" ],
     });
 };
 

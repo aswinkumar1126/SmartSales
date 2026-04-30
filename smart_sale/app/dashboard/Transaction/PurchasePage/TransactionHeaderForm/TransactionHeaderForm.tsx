@@ -81,13 +81,12 @@ export default function TransactionHeaderForm({
             justifyContent="space-between"
             alignItems="center"
             bg={theme.colors.formColor}
-            p={2}
-            rounded="xl"
+            p={1}
         >
 
             <Box
                 display="flex"
-                gap={2}
+                gap={1}
                 flexDirection={{ base: "column", md: "row" }}
                 fontWeight='semibold'
                 w={{ base: '100%', md: 'fit-content' }}
@@ -191,13 +190,7 @@ export default function TransactionHeaderForm({
                 {openingBalance && openingData && (
 
                     <>
-                        <Box
-                            bg={theme.colors.formColor}
-
-                            gap={1}
-                            rounded="sm"
-
-                        >
+                        <Box>
                             <Text fontSize="xs" fontWeight='semibold' >
                                 OPENING PURE :
                             </Text>
@@ -214,13 +207,7 @@ export default function TransactionHeaderForm({
                         </Box>
 
 
-                        <Box
-                            alignItems="center"
-                            bg={theme.colors.formColor}
-                            gap={1}
-                            rounded="sm"
-                            justifyContent="space-between"
-                        >
+                        <Box>
                             <Text fontSize="xs" fontWeight='semibold'>
                                 OPENING CASH :
                             </Text>

@@ -405,13 +405,21 @@ function AccountHeadMaster() {
             );
         } else {
 
-          
 
             createAccountHead(form, {
                 onSuccess: () => {
                     refetch();
                     resetForm();
                 },
+                onError: (error: any) => {
+                    console.log("Error creating account head:", error);
+                    if(error){
+                        const message = error.response.data.message;
+                     
+                        toastError(message ?? "Failed to create account head");
+                    }
+              
+                }
             });
         }
     };

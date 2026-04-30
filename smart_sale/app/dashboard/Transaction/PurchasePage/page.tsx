@@ -5,7 +5,7 @@ import {
     Text,
     Box,
     Flex,
-    VStack,
+    Stack,
 } from "@chakra-ui/react";
 import lodash from "lodash";
 import { useRouter } from "next/navigation";
@@ -1252,11 +1252,11 @@ export default function PurchasePage() {
     return (
         <>
 
-            <Flex gap={1} >
+            <Flex gap={1}>
 
                 {/* LEFT – 70% */}
-                <Box display='flex' gap={1} w='80%' >
-                    <VStack align="stretch" gap={1} w='100%'>
+                <Box display='flex' gap={1} width='100%' >
+                    <Stack flex={1}>
 
                         {/* 1. Transaction Header Form */}
 
@@ -1382,7 +1382,7 @@ export default function PurchasePage() {
                         )}
 
 
-                    </VStack>
+                    </Stack>
 
 
 
@@ -1401,7 +1401,7 @@ export default function PurchasePage() {
                 </Box>
 
                 {/* RIGHT SIDE - Summary Panel */}
-                <Box width={'15%'}>
+                <Box width={'30%'}>
 
 
                     <BalanceSummary
@@ -1417,7 +1417,7 @@ export default function PurchasePage() {
 
                 </Box>
 
-                <Box width={'10%'} >
+                <Box width={'12%'} >
                     <TransactionListing
                         transactionIdsList={transactionIdsList}
                         handleEditTransaction={handleTransactionClick}

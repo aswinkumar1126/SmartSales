@@ -25,6 +25,7 @@ import { useGlobalKey } from "@/components/key/useGlobalKey";
 import TransactionTable from "@/component/table/TransactionTable";
 import { toaster } from "@/components/ui/toaster";
 import { CapitalizedInput } from "@/components/ui/CapitalizedInput";
+import { TextareaField } from "@/components/ui/CapitalizesTextArea";
 
 import { getIsTagEnabled, getIsBillModalEnabled } from "@/config/transaction/SalesConfig";
 import SalesBillViewModal from "../SaleModal/SaleModal";
@@ -292,17 +293,26 @@ export default function DraftTransactionTable({
       const { data: pureStockData } = usePureGoldDataById(formData.PUREID);
         console.log(pureStockData, 'pureStockData');
     
-        useEffect(()=>{
-            if (pureStockData){
-                setFormData(prev => ({
-                    ...prev,
-                    // WT: pureStockData.weight,
-                    // AWT :pureStockData.weight,
-                    TOUCH: pureStockData.actualTouch,
-                    ATOUCH: pureStockData.actualTouch
-                }))
-            }
-        }, [pureStockData])
+    useEffect(() => {
+        if (!formData.PUREID) {
+            setFormData((prev) => ({
+                ...prev,
+                WT: "",
+                AWT: "",
+                TOUCH: "",
+                ATOUCH: "",
+            }));
+            return;
+        }
+
+        if (!pureStockData) return;
+
+        setFormData((prev) => ({
+            ...prev,
+            TOUCH: pureStockData.actualTouch ?? "",
+            ATOUCH: pureStockData.actualTouch ?? "",
+        }));
+    }, [pureStockData, formData.PUREID]);
 
     const orderedKeys = useMemo(() => {
         if (isIssue) return ["PUREID", "WT", "AWT", "TOUCH", "ATOUCH", "PUREWT", "APUREWT"];
@@ -578,6 +588,8 @@ export default function DraftTransactionTable({
     const moveNext = useCallback(
         (key: string) => {
             const idx = visibleFormFields.findIndex((f) => f.key === key);
+
+            console.log(idx, visibleFormFields,'idxforvisble')
             let next = idx + 1;
             // Only skip fields that are hard-disabled (calculated, explicitly disabled prop)
             while (next < visibleFormFields.length && visibleFormFields[next].disabled === true) {
@@ -756,6 +768,8 @@ export default function DraftTransactionTable({
             pendingStoneData.current = null;
             pendingMiscData.current = null;
             setIsSubmitting(false);
+            isTag ? setTimeout( ()=> focusIdx(1),50) : setTimeout(() => focusIdx(0), 50);
+            
         }
     }, [
         formData, calcNet, calcPure, validateForm, isIssue, pureValue,
@@ -815,7 +829,7 @@ export default function DraftTransactionTable({
             setTouched({});
             onRowClick(row, tranType || "");
             pendingStoneData.current = null;
-            setTimeout(() => focusIdx(0), 100);
+            setTimeout(() => focusIdx(0), 50);
         },
         [formFields, focusIdx, onRowClick, isIssue, getStockAvailability]
     );
@@ -854,7 +868,7 @@ export default function DraftTransactionTable({
 
     const closeStoneModal = () => {
         setIsStoneModalOpen(false);
-        // Do NOT clear stoneDraftRowId here — resetForm() handles it
+ 
     };
 
     // ── Misc / other-charges modal ────────────────────────────────────────────
@@ -1003,11 +1017,13 @@ export default function DraftTransactionTable({
                         onChange={(_, v) => handleChange(field.key, v)}
                         type="text"
                         isCapitalized
-                        size="xs"
+                        size="2xs"
                         rounded="sm"
                         inputRef={ref}
                         noBorder
                         disabled
+                        
+                        
                     />
                 </Box>
             );
@@ -1032,7 +1048,7 @@ export default function DraftTransactionTable({
                         onChange={(_, v) => handleChange(field.key, v)}
                         type="number"
                         isCapitalized={false}
-                        size="xs"
+                        size="2xs"
                         rounded="sm"
                         decimalScale={field.decimalScale}
                         disabled={shouldDisable}
@@ -1058,7 +1074,7 @@ export default function DraftTransactionTable({
                         onChange={(_, v) => handleChange(field.key, v)}
                         type="number"
                         isCapitalized={false}
-                        size="xs"
+                        size="2xs"
                         rounded="sm"
                         decimalScale={2}
                         inputRef={ref}
@@ -1083,28 +1099,27 @@ export default function DraftTransactionTable({
                     decimalScale={2}
                     allowFocus
                     disabled
+                    size="2xs"
                 />
             )
         } 
 
+    
+    
         if (field.key === "DESCRIPTION") {
             return (
-                <Box position="relative" width="100%">
-                    <CapitalizedInput
-                        field={field.key}
-                        value={formData[field.key] || ""}
-                        onChange={(_, v) => handleChange(field.key, v)}
-                        type="text"
-                        isCapitalized
-                        size="xs"
-                        rounded="sm"
-                        disabled={shouldDisable}
-                        inputRef={ref}
-                        onEnter={() => handleSubmit()}
-                        noBorder
-                    />
-                </Box>
-            );
+            <TextareaField
+                value={formData.DESCRIPTION}
+                field={"DESCRIPTION"}
+                onChange={(_, v) => handleChange(field.key, v)}
+                onEnter={() => handleSubmit()}
+                mode="dialog" // 🔥 or "inline"
+                rows={3}
+                dialogInputRef={ref}
+                
+            />
+        );
+     
         }
 
         if (field.key === "TOUCH" && isIssue ) {
@@ -1116,7 +1131,7 @@ export default function DraftTransactionTable({
                         onChange={(_, v) => handleChange(field.key, v)}
                         type="text"
                         isCapitalized
-                        size="xs"
+                        size="2xs"
                         rounded="sm"
                         decimalScale={field.decimalScale}
                         disabled={shouldDisable}
@@ -1124,10 +1139,12 @@ export default function DraftTransactionTable({
                         onEnter={() => handleSubmit()}
                         noBorder
                     />
+
                 </Box>
             );
         }
 
+        
        
 
         if (field.key === "WT") {
@@ -1141,7 +1158,7 @@ export default function DraftTransactionTable({
                         onChange={(_, v) => handleChange(field.key, v)}
                         type="number"
                         isCapitalized={false}
-                        size="xs"
+                        size="2xs"
                         rounded="sm"
                         decimalScale={field.decimalScale}
                         disabled={shouldDisable}
@@ -1196,7 +1213,7 @@ export default function DraftTransactionTable({
                         onChange={(_, v) => handleChange(field.key, v)}
                         type="number"
                         isCapitalized
-                        size="sm"
+                        size="2xs"
                         rounded="sm"
                         inputRef={ref}
                         onEnter={() => moveNext(field.key)}
@@ -1211,7 +1228,7 @@ export default function DraftTransactionTable({
                         onChange={(_, v) => handleChange(field.key, v)}
                         type="text"
                         isCapitalized
-                        size="sm"
+                        size="2xs"
                         rounded="sm"
                         inputRef={ref}
                         onEnter={() => moveNext(field.key)}
@@ -1225,7 +1242,7 @@ export default function DraftTransactionTable({
                         value={formData[field.key] || ""}
                         onChange={(_, v) => handleChange(field.key, v)}
                         type="number"
-                        size="sm"
+                        size="2xs"
                         rounded="sm"
                         decimalScale={field.decimalScale}
                         disabled={shouldDisable}

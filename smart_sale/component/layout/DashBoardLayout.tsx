@@ -47,7 +47,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
             <Box
                 ml={getMainContentMargin()}
                 transition="margin-left 0.25s ease"
-                p={2}
+                p={1}
                 bg={theme.colors.primary}
             >
                 {children}

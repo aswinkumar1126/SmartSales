@@ -79,13 +79,13 @@ export default function TransactionHeaderForm({
             justifyContent="space-between"
             alignItems="center"
             bg={theme.colors.formColor}
-            p={2}
-            rounded="xl"
+            p={1}
+         
         >
 
             <Box
                 display="flex"
-                gap={2}
+                gap={1}
                 flexDirection={{ base: "column", md: "row" }}
                 fontWeight='semibold'
                 w={{ base: '100%', md: 'fit-content' }}
@@ -166,18 +166,12 @@ export default function TransactionHeaderForm({
                 </Box>
 
             </Box>
-            <Box display='flex' gap={2}  >
+            <Box display='flex' gap={1}  >
                 {openingBalance && openingData && (
 
                     <>
-                        <Box
-                            bg={theme.colors.formColor}
-
-                            gap={1}
-                            rounded="sm"
-
-                        >
-                            <Text fontSize="xs" fontWeight='semibold' >
+                        <Box>
+                            <Text fontSize="x-small" fontWeight='semibold' >
                                 OPENING PURE :
                             </Text>
                             <Text
@@ -193,14 +187,8 @@ export default function TransactionHeaderForm({
                         </Box>
 
 
-                        <Box
-                            alignItems="center"
-                            bg={theme.colors.formColor}
-                            gap={1}
-                            rounded="sm"
-                            justifyContent="space-between"
-                        >
-                            <Text fontSize="xs" fontWeight='semibold'>
+                        <Box>
+                            <Text fontSize="x-small" fontWeight='semibold'>
                                 OPENING CASH :
                             </Text>
                             <Text
@@ -208,6 +196,7 @@ export default function TransactionHeaderForm({
                                 bg={theme.colors.accient}
                                 p={1}
                                 rounded="sm"
+                                fontWeight='semibold'
                                 color={theme.colors.whiteColor}
                             >
                                 {openingCash}

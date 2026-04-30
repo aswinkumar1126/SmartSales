@@ -11,17 +11,9 @@ type ExpensesCollections ={
 }
 
 export const getExpenseFields = (collections:ExpensesCollections):FormField[] => [
+   
     {
-        name: "ENTRYNO",
-        label: "ENTRYNO",
-        type: "text",
-        disabled:true,
-        required :true,
-        maxWidth : '120px',
-
-    },
-    {
-        name: "DATE",
+        name: "date",
         label: "DATE",
         type: "date",
         required: true,
@@ -30,45 +22,45 @@ export const getExpenseFields = (collections:ExpensesCollections):FormField[] =>
 
     },
     {
-        name: "EXPENSESID",
+        name: "expId",
         label: "EXPENSES TYPE",
         type: "combobox",
         items: collections.expense || []
     },
 
     {
-        name: "USERID",
+        name: "userName",
         label: "MADE BY",
         type: "text",
         disabled:true,
     },
 
     {
-        name: "CASHAMT",
+        name: "cashAmt",
         label: "CASH",
         type: "number",
     },
 
     {
-        name: "BANKAMT",
+        name: "bankAmt",
         label: "BANK",
         type: "number",
     },
 
     {
-        name: "REMARKS",
+        name: "remarks",
         label: "REMARKS",
         type: "text",
     },
     {
-        name: "BANKID",
+        name: "bankId",
         label: "BANK ACCOUNT TYPE",
         type: "combobox",
         items: collections.bank || []
     },
 
     {
-        name: "CHEQUENO",
+        name: "chequeNo",
         label: "CHEQUE NO",
         type: "text",
     },

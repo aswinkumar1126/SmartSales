@@ -75,7 +75,7 @@ export default function StockDrawer({
     getStockAvailability
 }: StockDrawerProps) {
 
-    console.log(stockData,'stockData')
+  
 
     const { theme } = useTheme();
 

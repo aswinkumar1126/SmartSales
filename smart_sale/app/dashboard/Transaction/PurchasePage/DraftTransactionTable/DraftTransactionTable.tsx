@@ -30,7 +30,7 @@ import { getIsTagEnabled } from "@/config/transaction/PurchaseConfig";
 import SalesBillViewModal from "../SaleModal/SaleModal";
 
 import { usePureGoldDataById } from "@/hooks/apiHooks/pureGoldMast/usePureGoldMastData";
-
+import { TextareaField } from "@/components/ui/CapitalizesTextArea";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -754,6 +754,8 @@ export default function DraftTransactionTable({
             pendingStoneData.current = null;
             pendingMiscData.current = null;
             setIsSubmitting(false);
+            isTag ? setTimeout(() => focusIdx(1), 50) : setTimeout(() => focusIdx(0), 50);
+
         }
     }, [
         formData, calcNet, calcPure, validateForm, isIssue, pureValue,
@@ -814,7 +816,7 @@ export default function DraftTransactionTable({
             setTouched({});
             onRowClick(row, tranType || "");
             pendingStoneData.current = null;
-            setTimeout(() => focusIdx(0), 100);
+            setTimeout(() => focusIdx(0), 50);
         },
         [formFields, focusIdx, onRowClick, isIssue, getStockAvailability]
     );
@@ -1061,6 +1063,8 @@ export default function DraftTransactionTable({
                         inputRef={ref}
                         onEnter={() => moveNext(field.key)}
                         noBorder
+                        disabled={shouldDisable}
+                        
                     />
                     <Button
                         size="2xs" position="absolute" right="0" top="0" height="100%"
@@ -1084,25 +1088,23 @@ export default function DraftTransactionTable({
             )
         } 
 
-        if (field.key === "DESCRIPTION") {
-            return (
-                <Box position="relative" width="100%">
-                    <CapitalizedInput
-                        field={field.key}
-                        value={formData[field.key] || ""}
+          if (field.key === "DESCRIPTION") {
+                    return (
+                    <TextareaField
+                        value={formData.DESCRIPTION}
+                        field={"DESCRIPTION"}
                         onChange={(_, v) => handleChange(field.key, v)}
-                        type="text"
-                        isCapitalized
-                        size="xs"
-                        rounded="sm"
-                        disabled={shouldDisable}
-                        inputRef={ref}
                         onEnter={() => handleSubmit()}
-                        noBorder
+                        mode="dialog" // 🔥 or "inline"
+                        rows={3}
+                        dialogInputRef={ref}
+                        disable={shouldDisable}
+                        
+                        
                     />
-                </Box>
-            );
-        }
+                );
+             
+                }
 
         if (isIssue && field.key === "TOUCH") {
             return (
@@ -1432,7 +1434,7 @@ export default function DraftTransactionTable({
                                 };
 
                                 setIsStoneModalOpen(false);
-                                setTimeout(() => focusIdx(5), 50);
+                                setTimeout(() => focusIdx(4), 50);
                             }}
                             stoneItems={stoneItemsCollection}
                         />

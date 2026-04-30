@@ -373,11 +373,11 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
         return (
             <Box width="100%">
                 {fieldComponent()}
-                {showError && (
+                {/* {showError && (
                     <Text color="red.500" fontSize="2xs" mt={1} ml={1}>
                         {errors[field.name]}
                     </Text>
-                )}
+                )} */}
             </Box>
         );
     }
@@ -461,11 +461,11 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
                         flex={layout !== "verticalCombine" && layout !== "horizontalCombine" ? "1" : undefined}
                     >
                         {renderField(field)}
-                         {/* {errorToShow ? errors?.[field.name] && (
-                            <Box fontSize="xs" color="red" mt={1}>
+                         {errorToShow ? errors?.[field.name] && (
+                            <Box fontSize="2xs" color="red" mt={1} ml={1}>
                                 {errors[field.name]}
                             </Box>
-                        ) : null} */}
+                        ) : null}
                     </Box>
                 </Box>
             ))}

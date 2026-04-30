@@ -5,7 +5,7 @@ import {
     Text,
     Box,
     Flex,
-    VStack,
+    Stack,
 } from "@chakra-ui/react";
 import lodash from "lodash";
 import { useRouter } from "next/navigation";
@@ -1245,11 +1245,11 @@ export default function SalesPage() {
     return (
         <>
 
-            <Flex gap={1} >
+            <Flex gap={1}>
 
                 {/* LEFT – 70% */}
-                <Box display='flex' gap={1} w='80%' >
-                    <VStack align="stretch" gap={1} w='100%'>
+                <Box display='flex' gap={1} width={'100%'}>
+                    <Stack flex={1}>
 
                         {/* 1. Transaction Header Form */}
 
@@ -1292,21 +1292,11 @@ export default function SalesPage() {
                         />
 
 
-                        {/* Show transaction info when editing */}
-                        {isEditing && selectedTransactionTypes.length > 0 && (
-                            <Box p={2} bg={theme.colors.formColor} borderRadius="md" display='flex' gap={2}>
-                                <Text fontSize='xs' color={theme.colors.primaryText}>
-                                    {selectedTransactionTypes.map(t => t.label).join(", ")} - {editingSno}
-                                </Text>
-                                <Text fontSize="xs"> <strong>Customer: </strong>{headerForm.CUSTOMER_NAME}</Text>
-                                <Text fontSize="xs"> <strong>Date:</strong> {headerForm.DATE}</Text>
-                            </Box>
-                        )}
-
+                    
 
                         {/* Draft Section - show separate tables for each transaction type */}
                         {(selectedTransactionTypes?.length > 0) && (
-                            <Box display="flex" gap={2} flexWrap="wrap">
+                            <Box display="flex"  flexWrap="wrap">
                                 {/* Map selected transaction types in order */}
                                 {TRANSACTIONTYPES_ORDER
                                     .map(code => selectedTransactionTypes?.find(t => t.value === code))
@@ -1322,8 +1312,6 @@ export default function SalesPage() {
                                         return (
                                             <Box
                                                 key={transactionType.value}
-                                                borderWidth="1px"
-                                                borderRadius="md"
                                                 borderColor={theme.colors.greyColor}
                                                 flex={'100%'}
                                             >
@@ -1375,7 +1363,7 @@ export default function SalesPage() {
                         )}
 
 
-                    </VStack>
+                    </Stack>
 
 
 
@@ -1394,7 +1382,7 @@ export default function SalesPage() {
                 </Box>
 
                 {/* RIGHT SIDE - Summary Panel */}
-                <Box width={'22%'}>
+                <Box width={'30%'}>
 
 
                     <BalanceSummary

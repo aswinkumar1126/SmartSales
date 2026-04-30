@@ -133,8 +133,8 @@ export default function TransactionTypeSelector({
                         <Button
                             key={btn.value}
                             size="xs"
-                            fontSize="2xs"
-                            px={3}
+                            fontSize="9px"
+                            px={2}
                             rounded="full"
                             onClick={() => handleTypeClick(btn)}
                             display="flex"
@@ -142,6 +142,7 @@ export default function TransactionTypeSelector({
                             gap={1}
                             transition="all .15s ease"
                             bg={selected ? colors.active : colors.bg}
+                            fontWeight={selected ? 'bold' : 'semibold'}
                             color={selected ? "white" : colors.text}
                             borderWidth="1px"
                             borderColor={selected ? colors.active : "transparent"}
@@ -153,7 +154,7 @@ export default function TransactionTypeSelector({
                                 transform: "scale(.96)"
                             }}
                         >
-                            <Icon size={12} />
+                            <Icon size={10} />
                             {btn.label}
                         </Button>
                     );
@@ -170,7 +171,7 @@ export default function TransactionTypeSelector({
                         bg={theme.colors.formColor}
                         p={0}
                     >
-                        <Image src={clearIcon} width={58} alt="clear" />
+                        <Image src={clearIcon} width={54} alt="clear" />
                     </Button>
 
                     <Button
@@ -182,7 +183,7 @@ export default function TransactionTypeSelector({
                         variant='ghost'
                         p={0}
                     >
-                        <Image src={isEditing ? updateIcon : saveIcon} width={60} alt="save" />
+                        <Image src={isEditing ? updateIcon : saveIcon} width={55} alt="save" />
                     </Button>
                 </Box>
             }
@@ -193,8 +194,8 @@ export default function TransactionTypeSelector({
                     className="flex flex-col items-center cursor-pointer gap-1"
                     onClick={() => setIsStockDrawerOpen(true)}
                 >
-                    <GiGoldBar size={20} />
-                    <Text fontSize="x-small" fontWeight="semibold">
+                    <GiGoldBar size={18} />
+                    <Text fontSize="2xs" fontWeight="semibold">
                         ALL STOCK
                     </Text>
                 </Box>
@@ -205,8 +206,8 @@ export default function TransactionTypeSelector({
                                         className="flex flex-col items-center cursor-pointer gap-1"
                                         onClick={onPrint}
                                     >
-                                        <HiPrinter size={20} className="text-gray-600" />
-                                        <Text fontSize="x-small" fontWeight="semibold">
+                                        <HiPrinter size={18} className="text-gray-600" />
+                                        <Text fontSize="2xs" fontWeight="semibold">
                                             PRINT
                                         </Text>
                                     </Box>
@@ -217,8 +218,8 @@ export default function TransactionTypeSelector({
                     className="flex flex-col items-center cursor-pointer animate__animated animate__fadeInUp gap-1"
                     onClick={() => handleShowFilter(!showFilter)}
                 >
-                    {showFilter ? <HiX size={20} className="text-red-500" /> : <HiFilter size={20} className="text-blue-500" />}
-                    <Text fontSize="x-small" fontWeight="semibold">
+                    {showFilter ? <HiX size={18} className="text-red-500" /> : <HiFilter size={15} className="text-blue-500" />}
+                    <Text fontSize="2xs" fontWeight="semibold">
                         {showFilter ? "HIDE FILTER" : "SHOW FILTER"}
                     </Text>
                 </Box>

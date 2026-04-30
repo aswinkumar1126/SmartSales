@@ -40,7 +40,8 @@ export const getAccountHeadFields = ( collections : {accountTypeCollection :{lab
         name:'OPENING_PURE',
         type:'number',
         allowDecimal:true,
-        size:'xs'
+        size:'xs',
+        allowNegative : true
     },
     {
         label: 'OPENING CASH',
@@ -48,6 +49,7 @@ export const getAccountHeadFields = ( collections : {accountTypeCollection :{lab
         type: 'number',
         allowDecimal: true,
         size: 'xs',
+        allowNegative: true
     },
 
     {

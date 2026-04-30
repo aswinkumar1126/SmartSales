@@ -61,14 +61,14 @@ export const purchaseColumns = (isTag: boolean) => [
         max: 999999,
    
     },
-    {
-        key: "WASTYPE",
-        label: "W.TYPE",
-        width: "40px",
-        type: "select" as const,
-        align: "right" as const,
+    // {
+    //     key: "WASTYPE",
+    //     label: "W.TYPE",
+    //     width: "40px",
+    //     type: "select" as const,
+    //     align: "right" as const,
 
-    },
+    // },
     // {
     //     key: "WASPER",
     //     label: "WAS %",
