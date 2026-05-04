@@ -64,18 +64,17 @@ interface StockReportData {
 /* ==================== CONSTANTS ==================== */
 
 const INFO_COLUMNS = new Set([
-  "ACCODE",
-  "PURENAME",
   "METALID",
   "METALNAME",
   "STOCKTYPE",
   "SRC",
-  "ACCODE",
-  "ACNAME",
+  "ACTYPE",
+  "OPENPURE",
+  "OPENCASH",
 ]);
 
 const groupColors: Record<string, GroupColors> = {
-  PURE: {
+  ACHEAD: {
     bg: "#2B6CB0",
     color: "#ffffff",
     subBg: "#BEE3F8",
@@ -162,7 +161,7 @@ const groupColors: Record<string, GroupColors> = {
 };
 
 const groupLabels: Record<string, string> = {
-  PURE: "Pure Information",
+  ACHEAD: "ACHEAD Information",
   OP: "Opening Balance",
   RE: "Received",
   IS: "Issued",
@@ -194,6 +193,9 @@ const getInfoLabel = (col: string): string => {
     METALID: "Metal ID",
     METALNAME: "Metal",
     SRC: "Source",
+    ACTYPE: "AC Type",
+    OPENPURE: "Open Pure",
+    OPENCASH: "Open Cash",
   };
   return labels[col] ?? col;
 };
@@ -206,7 +208,7 @@ const formatStockType = (value: any): string => {
 
 const groupColumnsByPrefix = (columns: string[]): Record<string, string[]> => {
   const groups: Record<string, string[]> = {
-    PURE: [],
+    ACHEAD: [],
     OP: [],
     IS: [],
     RE: [],
@@ -218,7 +220,7 @@ const groupColumnsByPrefix = (columns: string[]): Record<string, string[]> => {
     else if (col.startsWith("IS_")) groups["IS"].push(col);
     else if (col.startsWith("RE_")) groups["RE"].push(col);
     else if (col.startsWith("CL_")) groups["CL"].push(col);
-    else if (col === "ACCODE" || col === "ACNAME") groups["PURE"].push(col);
+    else if (col === "ACCODE" || col === "ACNAME") groups["ACHEAD"].push(col);
     else if (INFO_COLUMNS.has(col)) groups["OTHER"].push(col);
   });
   return groups;
@@ -241,9 +243,9 @@ const CheckboxDropdown: React.FC<CheckboxDropdownProps> = ({
 }) => {
   const [isOpen, setIsOpen] = useState(false);
 
-  const toggle = (pure: string) => {
+  const toggle = (ACHEAD: string) => {
     onChange(
-      value.includes(pure) ? value.filter((v) => v !== pure) : [...value, pure]
+      value.includes(ACHEAD) ? value.filter((v) => v !== ACHEAD) : [...value, ACHEAD]
     );
   };
 
@@ -350,12 +352,18 @@ function StockReport() {
     new Date().toISOString().split("T")[0]
   );
   const [selectedColumns, setSelectedColumns] = useState<string[]>([
+    "GRSWT",
+    "STNWT",
+    "NETWT",
     "WT",
     "PUREWT",
   ]);
   const [selectedGroupBy, setSelectedGroupBy] = useState<string[]>([
     "ACCODE",
     "ACNAME",
+    "ACTYPE",
+    "OPENPURE",
+    "OPENCASH",
   ]);
   const [showReport, setShowReport] = useState(false);
   const [stickyGroups, setStickyGroups] = useState<StickyGroups>({});
@@ -371,8 +379,8 @@ function StockReport() {
     groupBy: selectedGroupBy,
   });
 
-  const columnOptions = [ "WT", "PUREWT"];
-  const groupByOptions = [ "METALNAME", "SRC","TOUCH"];
+  const columnOptions = ["GRSWT", "STNWT", "NETWT", "WT", "PUREWT"];
+  const groupByOptions = ["ITEMNAME", "PUREWT", "METALNAME", "SRC", "TOUCH"];
 
   const handleGetReport = async () => {
     const res = await refetch();
@@ -398,10 +406,10 @@ function StockReport() {
     const allColumns = Object.keys(reportData[0]);
     const columnsToShow: string[] = [];
 
-    ["ACCODE", "PURENAME"].forEach((c) => {
+    ["ACCODE", "ACNAME"].forEach((c) => {
       if (allColumns.includes(c)) columnsToShow.push(c);
     });
-    ["ACCODE", "ACNAME", "METALID", "METALNAME",  "SRC"].forEach(
+    ["ACCODE", "ACNAME", "ACTYPE", "OPENPURE", "OPENCASH", "METALID", "METALNAME", "SRC"].forEach(
       (c) => {
         if (allColumns.includes(c)) columnsToShow.push(c);
       }
@@ -424,7 +432,7 @@ function StockReport() {
       generatedHeaders.push({ key, label: groupLabels[key], align: "center" });
 
       const sorted =
-        key === "PURE" || key === "OTHER"
+        key === "ACHEAD" || key === "OTHER"
           ? cols
           : [...cols].sort((a, b) => {
               const aT = a.split("_").slice(1).join("_");
@@ -439,20 +447,20 @@ function StockReport() {
         generatedSubHeaders.push({
           key: col,
           label:
-            key === "PURE" || key === "OTHER"
+            key === "ACHEAD" || key === "OTHER"
               ? getInfoLabel(col)
               : formatColumnLabel(col),
           headerKey: key,
-          align: key === "PURE" || key === "OTHER" ? "left" : "right",
+          align: "right", // Changed to right align for all columns
         });
       });
     };
 
-    ["PURE", "OTHER", "OP", "RE", "IS", "CL"].forEach(addGroup);
+    ["ACHEAD", "OTHER", "OP", "RE", "IS", "CL"].forEach(addGroup);
 
-    const formattedData = reportData.map((pure: any, index: number) => ({
-      ...pure,
-      _id: pure.ACCODE ? `${pure.ACCODE}_${index}` : `row_${index}`,
+    const formattedData = reportData.map((ACHEAD: any, index: number) => ({
+      ...ACHEAD,
+      _id: ACHEAD.ACCODE ? `${ACHEAD.ACCODE}_${index}` : `row_${index}`,
     }));
 
     // Calculate dynamic column widths based on content
@@ -465,6 +473,9 @@ function StockReport() {
       const columnValues = formattedData.map((row) => {
         let val = row[sh.key];
         if (sh.key === "STOCKTYPE") val = formatStockType(val);
+        if (sh.key === "OPENPURE" || sh.key === "OPENCASH") {
+          val = val?.toString() || "-";
+        }
         if (val === undefined || val === null) return "-";
         return val.toString();
       });
@@ -544,10 +555,11 @@ function StockReport() {
       colMeta.map(({ sh, isInfo }) => {
         const val = row[sh.key];
         if (sh.key === "STOCKTYPE") return formatStockType(val);
+        if (sh.key === "OPENPURE" || sh.key === "OPENCASH") return val?.toString() || "-";
         if (isInfo) return val ?? "-";
-        if (typeof val === "number") return val.toFixed(3);
+        if (typeof val === "number") return val.toFixed(2);
         if (typeof val === "string" && !isNaN(parseFloat(val)))
-          return parseFloat(val).toFixed(3);
+          return parseFloat(val).toFixed(2);
         return val ?? "-";
       })
     );
@@ -561,12 +573,12 @@ function StockReport() {
 
     const MM_PER_COL = 22;
     const PAGE_W = pageWidth - 16;
-    const PURE_COLS = subHeaders.filter((sh) => sh.headerKey === "PURE");
-    const OTHER_GROUPS = headers.filter((h) => h.key !== "PURE");
+    const ACHEAD_COLS = subHeaders.filter((sh) => sh.headerKey === "ACHEAD");
+    const OTHER_GROUPS = headers.filter((h) => h.key !== "ACHEAD");
 
     const chunks: SubHeaderType[][] = [];
-    let current = [...PURE_COLS];
-    let currentW = PURE_COLS.length * MM_PER_COL;
+    let current = [...ACHEAD_COLS];
+    let currentW = ACHEAD_COLS.length * MM_PER_COL;
 
     for (const grp of OTHER_GROUPS) {
       const grpCols = subHeaders.filter((sh) => sh.headerKey === grp.key);
@@ -575,12 +587,12 @@ function StockReport() {
         current.push(...grpCols);
         currentW += grpW;
       } else {
-        if (current.length > PURE_COLS.length) chunks.push([...current]);
-        current = [...PURE_COLS, ...grpCols];
-        currentW = PURE_COLS.length * MM_PER_COL + grpW;
+        if (current.length > ACHEAD_COLS.length) chunks.push([...current]);
+        current = [...ACHEAD_COLS, ...grpCols];
+        currentW = ACHEAD_COLS.length * MM_PER_COL + grpW;
       }
     }
-    if (current.length > PURE_COLS.length) chunks.push(current);
+    if (current.length > ACHEAD_COLS.length) chunks.push(current);
     if (chunks.length === 0 && current.length > 0) chunks.push(current);
 
     chunks.forEach((chunkCols, chunkIdx) => {
@@ -597,7 +609,7 @@ function StockReport() {
       });
 
       const row2 = chunkCols.map((sh) =>
-        sh.headerKey === "PURE" || sh.headerKey === "OTHER"
+        sh.headerKey === "ACHEAD" || sh.headerKey === "OTHER"
           ? getInfoLabel(sh.key)
           : formatColumnLabel(sh.key)
       );
@@ -649,7 +661,7 @@ function StockReport() {
             data.cell.styles.fillColor = gc.pdfSubRgb;
             data.cell.styles.textColor = [30, 30, 30];
             data.cell.styles.fontStyle = "bold";
-            data.cell.styles.halign = sh.headerKey === "PURE" || sh.headerKey === "OTHER" ? "left" : "center";
+            data.cell.styles.halign = "right"; // Right align for all subheaders in PDF
           }
         },
 
@@ -661,7 +673,7 @@ function StockReport() {
           const blend = (c: number) => Math.round(c + (255 - c) * 0.55);
           const lightRgb = gc.pdfCellRgb.map(blend) as [number, number, number];
           data.cell.styles.fillColor = lightRgb;
-          data.cell.styles.halign = INFO_COLUMNS.has(sh.key) ? "left" : "right";
+          data.cell.styles.halign = "right"; // Right align for all body cells in PDF
         },
 
         didDrawPage: (data) => {
@@ -699,7 +711,7 @@ function StockReport() {
   const exportExcel = () => {
     const row1: string[] = [];
     const row2: string[] = subHeaders.map((sh) =>
-      sh.headerKey === "PURE" || sh.headerKey === "OTHER"
+      sh.headerKey === "ACHEAD" || sh.headerKey === "OTHER"
         ? getInfoLabel(sh.key)
         : formatColumnLabel(sh.key)
     );
@@ -713,10 +725,11 @@ function StockReport() {
       subHeaders.map((sh) => {
         const val = row[sh.key];
         if (sh.key === "STOCKTYPE") return formatStockType(val);
+        if (sh.key === "OPENPURE" || sh.key === "OPENCASH") return val?.toString() || "";
         if (INFO_COLUMNS.has(sh.key)) return val ?? "";
-        if (typeof val === "number") return parseFloat(val.toFixed(3));
+        if (typeof val === "number") return parseFloat(val.toFixed(2));
         if (typeof val === "string" && !isNaN(parseFloat(val)))
-          return parseFloat(parseFloat(val).toFixed(3));
+          return parseFloat(parseFloat(val).toFixed(2));
         return val ?? "";
       })
     );
@@ -772,7 +785,7 @@ function StockReport() {
           fill: { patternType: "solid", fgColor: { rgb: gc.xlsSubHex } },
           font: { bold: true, sz: 9 },
           alignment: {
-            horizontal: sh.headerKey === "PURE" || sh.headerKey === "OTHER" ? "left" : "center",
+            horizontal: "right", // Right align for all subheaders in Excel
             vertical: "center",
           },
           border: {
@@ -792,7 +805,7 @@ function StockReport() {
             fill: { patternType: "solid", fgColor: { rgb: gc.xlsCellHex } },
             font: { sz: 9 },
             alignment: {
-              horizontal: INFO_COLUMNS.has(sh.key) ? "left" : "right",
+              horizontal: "right", // Right align for all body cells in Excel
               vertical: "center",
             },
             border: {
@@ -874,7 +887,7 @@ function StockReport() {
             <th
               key={sh.key}
               style={{
-                textAlign: sh.align,
+                textAlign: "right", // Right align for all subheaders in UI
                 backgroundColor: gc.subBg,
                 color: gc.subColor,
                 fontWeight: 600,
@@ -926,6 +939,7 @@ function StockReport() {
 
           let rawVal = row[sh.key];
           if (sh.key === "STOCKTYPE") rawVal = formatStockType(rawVal);
+          if (sh.key === "OPENPURE" || sh.key === "OPENCASH") rawVal = rawVal?.toString() || "-";
 
           const isNumeric =
             !isInfoCol &&
@@ -936,7 +950,7 @@ function StockReport() {
                 rawVal !== "Non Tagged"));
 
           const display = isNumeric
-            ? getNumericValue(rawVal).toFixed(3)
+            ? getNumericValue(rawVal).toFixed(1)
             : rawVal ?? "-";
 
           const numVal = isNumeric ? getNumericValue(rawVal) : null;
@@ -945,7 +959,7 @@ function StockReport() {
             <td
               key={sh.key}
               style={{
-                textAlign: isNumeric ? "right" : "left",
+                textAlign: "right", // Right align for all body cells in UI
                 padding: "6px 10px",
                 fontSize: "11.5px",
                 backgroundColor: gc.cellBg,
@@ -984,8 +998,8 @@ function StockReport() {
   const summaryStats = useMemo(() => {
     if (!tableData.length) return null;
     const sum = (key: string) =>
-      tableData.reduce((acc, pure) => {
-        const v = pure[key];
+      tableData.reduce((acc, ACHEAD) => {
+        const v = ACHEAD[key];
         return acc + (typeof v === "number" ? v : parseFloat(v) || 0);
       }, 0);
     return {
@@ -1287,7 +1301,7 @@ function StockReport() {
               Click "Get Report" to view the stock report
             </Text>
             <Text fontSize="12px" color="gray.400">
-              Shows opening, issued, received and closing balances per pure
+              Shows opening, issued, received and closing balances per ACHEAD
             </Text>
           </Box>
         )}

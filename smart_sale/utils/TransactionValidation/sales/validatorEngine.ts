@@ -1,4 +1,3 @@
-
 export const validateSales = (row: any) => {
 
     console.log("VALIDATING ROW:", row);
@@ -23,12 +22,14 @@ export const validateSales = (row: any) => {
 
     return null;
 };
-export const validateSalesReturn = (row: any) => {
-    if (!row.TAGNO && !row.BILLNO) {
-        return "Provide TAG NO or BILL NO";
-    }
-    return null;
-};
+
+// export const validateSalesReturn = (row: any) => {
+
+//     if (!row.TAGNO && !row.BILLNO ) {
+//         return "Provide TAG NO or BILL NO";
+//     }
+//     return null;
+// };
 
 export const validateIssue = (row: any) => {
     if (!row.PUREID || row.WT == null || row.TOUCH == null) {
@@ -44,7 +45,7 @@ export const validateReceipt = validateIssue;
 
 export const VALIDATORS: Record<string, Function> = {
     sales: validateSales,
-    sales_return: validateSalesReturn,
+   // sales_return: validateSalesReturn,
     issue: validateIssue,
     receipt: validateReceipt,
 };

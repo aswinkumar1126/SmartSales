@@ -115,6 +115,33 @@ export const useItemStockReport = ({ date, columns, groupBy }: {
     enabled: false // important (manual trigger)
   });
 };
+
+
+
+
+// In your useSummaryReport.ts file, add this hook:
+
+// Add this to your useSummaryReport.ts file
+
+export const useAgeReport = ({
+  fromAge,
+  toAge,
+}: {
+  fromAge?: number;
+  toAge?: number;
+}) => {
+  return useApiQuery<Record<string, any>[]>({
+    queryKey: ["age_report", fromAge?.toString() ?? "", toAge?.toString() ?? ""],
+    url: "/report/age", // Adjust the endpoint URL as needed
+    method: "GET",
+    params: {
+      FROMAGE: fromAge,
+      TOAGE: toAge,
+    },
+    select: (res) => res.data,
+    enabled: false,
+  });
+};
     // return useApiQuery<ItemStockEntry[]>({
     //     queryKey: ["item_stock_report", date ?? ""],
     //     url: "/report/itemwise",
