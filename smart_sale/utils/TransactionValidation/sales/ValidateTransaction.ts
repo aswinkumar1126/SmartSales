@@ -26,6 +26,7 @@ export const validateTransactions = ({
     SALETRANSACTIONTYPES,
     getStockAvailability,
     isIssueType,
+    isSRBillTag
 }: any): { valid: boolean; error?: string } => {
 
     const draftChanged = isDraftRowsChanged();
@@ -33,7 +34,7 @@ export const validateTransactions = ({
     const closingPayload = getClosingDetailsPayload();
     const closingHasValues = hasAnyClosingValue(closingPayload);
 
-    console.log({ draftChanged, closingChanged, closingHasValues }, 'changesMade');
+  
 
     // ✅ Must have EITHER draft rows with changes OR closing details with any value
     const hasSomethingToSave = draftChanged || closingChanged || closingHasValues;
@@ -66,8 +67,8 @@ export const validateTransactions = ({
 
         const validator = VALIDATORS[mappedType];
         if (validator) {
-            const error = validator(row);
-            console.log(error,'errorerror')
+            const error = validator(row, isSRBillTag );
+       
             if (error) {
                 return { valid: false, error: `Row ${i + 1}: ${error}` };
             }

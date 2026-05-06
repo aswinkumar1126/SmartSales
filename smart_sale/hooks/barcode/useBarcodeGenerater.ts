@@ -295,6 +295,7 @@ export function useBarcodeGenerate() {
   }, [setHeaderField]);
 
   const handleFormChange = useCallback((key: string, value: unknown) => {
+    console.log(key,value ,'onchange')
     setTransactionForm((p) => ({ ...p, [key]: value }));
     setTouched((p) => ({ ...p, [key]: true }));
     setFieldErrors((p) => { const n = { ...p }; delete n[key]; return n; });
@@ -448,6 +449,7 @@ export function useBarcodeGenerate() {
 
   const handleDeleteRow = useCallback((row: BarcodeTransactionRow) => {
     if (!window.confirm("Delete this item?")) return;
+    console.log(row, rowsRef.current,'ondelete');
     const remaining = rowsRef.current.filter((r) => r.id !== row.id);
     setRows(assignBarcodes(remaining));
     if (editRowId === row.id) resetForm();

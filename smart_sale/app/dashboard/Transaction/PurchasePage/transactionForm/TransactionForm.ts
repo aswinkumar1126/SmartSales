@@ -4,7 +4,7 @@ export const purchaseColumns = (isTag: boolean) => [
     ...(isTag ? [{
         key: "TAGNO",
         label: "TAGNO",
-        width: "65px",
+        width: "60px",
         align: "left" as const,
         editable: true,
     }] : []),
@@ -12,7 +12,7 @@ export const purchaseColumns = (isTag: boolean) => [
     {
         key: "ITEMID",
         label: "ITEM",
-        width: "120px",
+        width: "110px",
         align: "left" as const,
         type: "combobox" as const,
         
@@ -21,7 +21,7 @@ export const purchaseColumns = (isTag: boolean) => [
     {
         key: "PCS",
         label: "PCS",
-        width: "25px",
+        width: "30px",
         type: "number" as const,
         align: "right" as const,
         decimalScale:0
@@ -120,7 +120,7 @@ export const purchaseColumns = (isTag: boolean) => [
     {
         key: "MC",
         label: "M.C",
-        width: "35px",
+        width: "40px",
         type: "number" as const,
         align: "right" as const,
         decimalScale: 2,
@@ -141,7 +141,7 @@ export const purchaseColumns = (isTag: boolean) => [
     {
         key: "STNAMT",
         label: "STN AMT",
-        width: "45px",
+        width: "40px",
         type: "number" as const,
         align: "right" as const,
         max: 999999,

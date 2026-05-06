@@ -6,11 +6,6 @@ export const validatePurchase = (row: any) => {
         return "Please select an item";
     }
 
-    if (row.ITEM_TYPE === "TAGGED" && !row.TAGNO?.trim()) {
-    
-        return "it's a Taged Item Please enter tag no";
-    }
-
     if (Number(row.GRSWT) <= 0) {
         return "Gross weight must be > 0";
     }
@@ -22,10 +17,10 @@ export const validatePurchase = (row: any) => {
 
     return null;
 };
-export const validatePurchaseReturn = (row: any) => {
+export const validatePurchaseReturn = (row: any, validations:any ) => {
 
-    
-    if (row.ITEM_TYPE === "TAGGED" && !row.TAGNO?.trim()) {
+    // console.log(validations ,row ,'purchase return validations')
+    if ( validations && row.ITEM_TYPE === "TAGGED" && !row.TAGNO?.trim()) {
 
         return "it's a Taged Item Please enter tag no";
     }
@@ -45,8 +40,8 @@ export const validateReceipt = validateIssue;
 
 
 export const VALIDATORS: Record<string, Function> = {
-    Purchase: validatePurchase,
-    Purchase_return: validatePurchaseReturn,
+    purchase: validatePurchase,
+    purchase_return: validatePurchaseReturn,
     issue: validateIssue,
     receipt: validateReceipt,
 };

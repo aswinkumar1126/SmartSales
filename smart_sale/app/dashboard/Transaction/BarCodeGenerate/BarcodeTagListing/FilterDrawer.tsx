@@ -64,8 +64,8 @@ export const SearchDrawer: React.FC<SearchDrawerProps> = ({
     // Update formData when initialFilters changes from parent
     useEffect(() => {
         setFormData({
-            fromDate: initialFilters.fromDate || "",
-            toDate: initialFilters.toDate || "",
+            fromDate: initialFilters.fromDate ||today ||  "",
+            toDate: initialFilters.toDate || today || "",
             entryNo: initialFilters.entryNo || "",
             // lotNumber: initialFilters.lotNumber || "",
             tagNumber: initialFilters.tagNumber || "",
@@ -78,13 +78,26 @@ export const SearchDrawer: React.FC<SearchDrawerProps> = ({
     // Search form fields configuration
     const searchFields: FormField[] = [
         {
+            name: "accode",
+            label: "Account Code",
+            type: "combobox",
+            placeholder: "Select Account",
+            items: accodeOptions,
+            size: "sm",
+            maxWidth: "100%",
+            rounded: 'sm',
+            colSpan: 2,
+        },
+        {
             name: "fromDate",
             label: "From Date",
             type: "date",
             maxWidth: "100%",
             colSpan: 2,
             size: 'xs',
-            maxDate: formData.toDate || today 
+            maxDate: formData.toDate && !isNaN(new Date(formData.toDate).getTime())
+                ? formData.toDate
+                : today,
           
         },
         {
@@ -148,17 +161,7 @@ export const SearchDrawer: React.FC<SearchDrawerProps> = ({
             rounded: 'sm',
             colSpan: 2,
         },
-        {
-            name: "accode",
-            label: "Account Code",
-            type: "combobox",
-            placeholder: "Select Account",
-            items: accodeOptions,
-            size: "sm",
-            maxWidth: "100%",
-            rounded: 'sm',
-            colSpan: 2,
-        },
+        
     ];
 
     const handleClose = () => {
@@ -188,6 +191,12 @@ export const SearchDrawer: React.FC<SearchDrawerProps> = ({
         setFormData(emptyFilters);
         onSearch(emptyFilters); // This will clear filters in parent
         onClear?.(); // Call additional clear handler if provided
+
+        if (onClose) {
+            onClose();
+        } else {
+            setInternalIsOpen(false);
+        }
     };
 
     const handleFieldChange = (fieldName: string, value: any) => {
@@ -218,9 +227,9 @@ export const SearchDrawer: React.FC<SearchDrawerProps> = ({
 
             <Drawer.Root open={isOpen} onOpenChange={handleClose} size={'sm'}>
                 <Portal>
-                    <Drawer.Backdrop pointerEvents="none" />  {/* 🔥 FIX */}
+                    <Drawer.Backdrop pointerEvents="none" />
                     <Drawer.Positioner>
-                        <Drawer.Content pointerEvents="auto"> {/* 🔥 FIX */}
+                        <Drawer.Content pointerEvents="auto">
                             <Drawer.Header>
                                 <Drawer.Title>Search Filters</Drawer.Title>
                             </Drawer.Header>

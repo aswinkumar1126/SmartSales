@@ -16,7 +16,7 @@ import { TransactionKey, PurchasePayload } from "@/types/transcation/Transaction
             ...rest
         } = row;
 
-        console.log(rest ,'rowscolumns');
+        // console.log(rest ,'rowscolumns');
      
 
         // ---------------- ISSUE / RECEIPT ----------------

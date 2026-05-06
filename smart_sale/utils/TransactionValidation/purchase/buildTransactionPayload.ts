@@ -5,7 +5,7 @@ export const buildTransactionPayload = ({
 }: any) => {
     const transactionDetails: Record<string, any[]> = {};
 
-    console.log(draftRows,'draftRowsforupdates')
+    // console.log(draftRows,'draftRowsforupdates')
     draftRows.forEach((row: any) => {
         const mappedType = TRANSACTION_KEY_MAP[row.TRANSACTION_TYPE];
         if (!mappedType) return;
@@ -26,8 +26,10 @@ export const buildTransactionPayload = ({
         );
 
         const validCharges = rowCharges.filter((charge: any) =>
-            charge.id && Number(charge.amount) > 0
+            charge.chargeName && Number(charge.amount) > 0
         );
+
+        // console.log(validCharges,'validCharges');
 
         const normalized = normalizeRowForApi(row, mappedType);
 
@@ -50,7 +52,7 @@ export const buildTransactionPayload = ({
             ...(validCharges.length > 0 && {
                 OTHERCHARGESDETAILS: validCharges.map((charge: any) => ({
                     chargeId: Number(charge.chargeName),
-                    chargeAmount: charge.amount,
+                    chargeAmount: Number(charge.amount),
                 })),
             }),
         };

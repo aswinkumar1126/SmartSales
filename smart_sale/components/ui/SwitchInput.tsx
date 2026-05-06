@@ -11,6 +11,7 @@ interface SwitchInputProps {
     labels?: { on: string; off: string };
     size?: "xs" | "sm" | "md" | "lg";
     onBlur?: () => void;
+    labelFontSize?: string;
 }
 
 export const SwitchInput = React.forwardRef<HTMLDivElement, SwitchInputProps>(({
@@ -21,6 +22,8 @@ export const SwitchInput = React.forwardRef<HTMLDivElement, SwitchInputProps>(({
     falseValue = false,
     labels = { on: 'YES', off: 'NO' },
     size = "sm",
+    labelFontSize = "sm",
+
     onBlur
 }, ref) => {
     const isChecked = value === trueValue;
@@ -39,7 +42,7 @@ export const SwitchInput = React.forwardRef<HTMLDivElement, SwitchInputProps>(({
             >
                 <Switch.HiddenInput />
                 <Switch.Control />
-                <Switch.Label>{isChecked ? labels.on : labels.off}</Switch.Label>
+                <Switch.Label fontSize={labelFontSize}>{isChecked ? labels.on : labels.off}</Switch.Label>
             </Switch.Root>
         </HStack>
     );

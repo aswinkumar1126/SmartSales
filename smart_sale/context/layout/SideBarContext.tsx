@@ -93,6 +93,8 @@ export type SidebarConfig = {
 export type SidebarContextType = {
   currentSection: string;
   setCurrentSection: (section: string) => void;
+  multiWindow: boolean ;
+  handleMultiWindow: () => void;
   expandedNodes: Record<string, boolean>;
   toggleNode: (key: string) => void;
   menuData: SidebarMenu;
@@ -388,9 +390,8 @@ const STATIC_MENU: SidebarMenu = {
   },
 
   Reports: {
-    SummaryReport: {
-      icon: Layers,
-      items: [
+   
+      ITEMReport : 
         {
           type: "direct",
           label: "ITEM Stock Report",
@@ -399,7 +400,7 @@ const STATIC_MENU: SidebarMenu = {
           title: "ITEM WISE STOCK REPORT",
           description: "View stock and item summary reports",
         },
-         {
+    PUREReport: {
           type: "direct",
           label: "PURE Stock Report",
           route: "/dashboard/Reports/TagReport/PureStockReport",
@@ -408,7 +409,7 @@ const STATIC_MENU: SidebarMenu = {
           description: "View stock and item summary reports",
         },
       
-         {
+    CSHEADReport :{
           type: "direct",
           label: "Achead Stock Report",
           route: "/dashboard/Reports/TagReport/AcheadStockReport",
@@ -416,7 +417,7 @@ const STATIC_MENU: SidebarMenu = {
           title: "ACHEAD STOCK REPORT",
           description: "View stock and item summary reports",
         },
-                 {
+      TRANReport:  {
           type: "direct",
           label: "Transaction Report",
           route: "/dashboard/Reports/TagReport/TranReport",
@@ -432,9 +433,7 @@ const STATIC_MENU: SidebarMenu = {
         //   title: "PURE WISE STOCK REPORT",
         //   description: "View stock and item summary reports",
         // },
-      ],
-    },
-  },
+  }
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -447,6 +446,7 @@ const LS_COLLAPSED_KEY = "sidebar-collapsed";
 export const SidebarProvider = ({ children }: { children: ReactNode }) => {
   const [menuData] = useState<SidebarMenu>(STATIC_MENU);
 
+  const [multiWindow , setMultiWindow] = useState<boolean>(false);
 
   const [currentSection, _setCurrentSection] = useState<string>("Master");
 
@@ -473,6 +473,9 @@ export const SidebarProvider = ({ children }: { children: ReactNode }) => {
     setIsHydrated(true);
   }, []);
 
+  const handleMultiWindow = () => {
+    setMultiWindow(prev => !prev);
+  };
 
   const setCurrentSection = useCallback(
     (section: string) => {
@@ -508,6 +511,8 @@ export const SidebarProvider = ({ children }: { children: ReactNode }) => {
       value={{
         currentSection,
         setCurrentSection,
+        multiWindow,
+        handleMultiWindow,
         expandedNodes,
         toggleNode,
         menuData,

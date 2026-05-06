@@ -162,8 +162,8 @@ export const BarcodeTagListing: React.FC<TagListProps> = ({
         console.log("Clearing all filters");
 
         const emptyFilters = {
-            FROMDATE: today,
-            TODATE: today,
+            FROMDATE: '',
+            TODATE: '',
             ITEMID: '',
             ACCODE: '',
             ENTRYNO: '',
@@ -199,8 +199,8 @@ export const BarcodeTagListing: React.FC<TagListProps> = ({
                 itemOptions={itemOptions}
                 accodeOptions={collections?.acCodeCollection || []}
                 initialFilters={{
-                    fromDate: filterParams.FROMDATE || today || "",
-                    toDate: filterParams.TODATE || today || "",
+                    fromDate: filterParams.FROMDATE || "",
+                    toDate: filterParams.TODATE  || "",
                     entryNo: filterParams.ENTRYNO || "",
                     // lotNumber: filterParams.PUENTRYNO || "",
                     tagNumber: filterParams.TAGNO || "",

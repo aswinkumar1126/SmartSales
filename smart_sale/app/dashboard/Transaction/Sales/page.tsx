@@ -43,6 +43,7 @@ import { useOrnamentData } from "@/hooks/apiHooks/ornament/useOrnamentData";
 import { useAllBankAccounts } from "@/hooks/apiHooks/bankAccount/useBankAccount";
 import { useBillDetails } from "@/hooks/apiHooks/transaction/useTransactions";
 import { useCompanyById } from "@/hooks/apiHooks/company/useCompany";
+import { useSoftControlById } from "@/hooks/apiHooks/softControl/useSoftControl";
 
 /*-------------------  *VALIDATION HOOKS*  --------------------------*/
 
@@ -178,6 +179,12 @@ export default function SalesPage() {
 
 
 
+
+    /* ================================
+    VALIDATOR FROM SOFT CONTROL
+================================ */
+    const isBillTag = '	SR-TAGNO-REQ';
+
     /*------------------- LOCAL STATE NON-PERSISTENT -------------------------------*/
 
 
@@ -207,8 +214,8 @@ export default function SalesPage() {
     const [printData, setPrintData] = useState<any>(null);
 
     const [saleFilter, setSaleFilter] = useState<SalesFilter>({
-        fromDate: today,
-        toDate: today,
+        fromDate: '',
+        toDate: '',
         weight: '',
         pureId: '',
         itemId: '',
@@ -392,6 +399,12 @@ export default function SalesPage() {
 
     }, [openingBalance]);
 
+    const { data: salesReturnTagValidation } = useSoftControlById(isBillTag);
+
+    const isSRBillTag = salesReturnTagValidation ?  salesReturnTagValidation.CTLTEXT === "Y" : false ; 
+ 
+ 
+
     const createTransaction = useCreateTransactions();
     const { contains } = useFilter({ sensitivity: "base" });
 
@@ -536,14 +549,14 @@ export default function SalesPage() {
 
     const handleSearchFilterClear = useCallback(() => {
         setSaleFilter({
-            fromDate: today,
-            toDate: today,
+            fromDate: '',
+            toDate: '',
             weight: '',
             pureId: '',
             itemId: '',
             accode: ''
         });
-    }, [today]);
+    }, []);
 
 
     /* ================================
@@ -975,6 +988,8 @@ export default function SalesPage() {
             SALETRANSACTIONTYPES,
             getStockAvailability,
             isIssueType,
+            isSRBillTag
+
         });
 
         if (!validation.valid) {
@@ -1020,7 +1035,6 @@ export default function SalesPage() {
         const result = buildTransactionRequest();
 
         console.log(result.payload ,'createTransactionPayload');
-
 
 
         if (!result.valid || !result.payload) {
@@ -1096,6 +1110,7 @@ export default function SalesPage() {
 
         console.log(result.payload ,'updateTransaction');
 
+    
         try {
             await updateTransaction.mutateAsync({
                 entryNo: Number(headerForm.ENTRYNO),
@@ -1393,6 +1408,7 @@ export default function SalesPage() {
                         closingCash={closingCash}
                         closingPure={closingPure}
                         bankAccList={allBankAccounts}
+                        headerForm={headerForm}
                     />
 
                 </Box>

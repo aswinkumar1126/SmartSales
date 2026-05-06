@@ -43,6 +43,7 @@ import { useOrnamentData } from "@/hooks/apiHooks/ornament/useOrnamentData";
 import { useAllBankAccounts } from "@/hooks/apiHooks/bankAccount/useBankAccount";
 import { useBillDetails } from "@/hooks/apiHooks/transaction/useTransactions";
 import { useCompanyById } from "@/hooks/apiHooks/company/useCompany";
+import { useSoftControlById } from "@/hooks/apiHooks/softControl/useSoftControl";
 
 /*-------------------  *VALIDATION HOOKS*  --------------------------*/
 
@@ -167,6 +168,11 @@ export default function PurchasePage() {
         isEditing
     } = usePurchaseHeader();
 
+    /* ================================
+    VALIDATION FROM SOFT CONTROL
+================================ */
+
+    const isPRTag = 'PR-TAGNO-REQ';
 
     /* ================================
    Session Storage Keys (All in one place)
@@ -222,8 +228,8 @@ export default function PurchasePage() {
     const [printData, setPrintData] = useState<any>(null);
 
     const [purchaseFilter, setPurchaseFilter] = useState<PurchaseFilter>({
-        fromDate: today,
-        toDate: today,
+        fromDate: "",
+        toDate: "",
         weight: '',
         pureId: '',
         itemId: '',
@@ -562,14 +568,14 @@ export default function PurchasePage() {
 
     const handleSearchFilterClear = useCallback(() => {
         setPurchaseFilter({
-            fromDate: today,
-            toDate: today,
+            fromDate: '',
+            toDate: '',
             weight: '',
             pureId: '',
             itemId: '',
             accode: ''
         });
-    }, [today]);
+    },[]);
 
 
 
@@ -768,6 +774,15 @@ export default function PurchasePage() {
     }, []);
 
 
+
+    /* ================================
+      SOFT CONTROL CHECKING
+    ================================ */
+
+    const {data : softControlData } = useSoftControlById(isPRTag);
+
+    const isTagedPR = softControlData ? softControlData.CTLTEXT === "Y" : false ;
+ 
     /* ================================
        Transaction Type Handlers
     ================================ */
@@ -998,6 +1013,7 @@ export default function PurchasePage() {
             TRANSACTIONTYPES,
             getStockAvailability,
             isIssueType,
+            isTagedPR
         });
 
         if (!validation.valid) {
@@ -1097,7 +1113,7 @@ export default function PurchasePage() {
             });
             return;
         }
-     
+      
     
         createTransaction.mutate(
             { payload: result.payload, TRANTYPE: "purchase" },
@@ -1417,7 +1433,7 @@ export default function PurchasePage() {
 
                 </Box>
 
-                <Box width={'12%'} >
+                <Box width={'15%'} >
                     <TransactionListing
                         transactionIdsList={transactionIdsList}
                         handleEditTransaction={handleTransactionClick}

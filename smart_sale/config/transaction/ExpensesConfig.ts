@@ -28,12 +28,7 @@ export const getExpenseFields = (collections:ExpensesCollections):FormField[] =>
         items: collections.expense || []
     },
 
-    {
-        name: "userName",
-        label: "MADE BY",
-        type: "text",
-        disabled:true,
-    },
+
 
     {
         name: "cashAmt",

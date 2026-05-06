@@ -27,21 +27,29 @@ export const useDraftRowOperations = (isTagedItem: (id: number) => boolean) => {
     const handleAddRow = useCallback(
         (transactionType: TransactionType, formData?: any) => {
             if (!formData) {
+                // ── Navigation blank row — guard against double-blank ─────────────
+                const existingRows = draftRows.filter(
+                    (r) => r.TRANSACTION_TYPE === transactionType.value
+                );
+                const last = existingRows[existingRows.length - 1];
+                const lastIsBlank = !last?.ITEMID && !last?.PUREID
+                    && !last?.WT && !last?.GRSWT;
+
+                if (lastIsBlank) return; // already has a blank trailing row, do nothing
+
                 const tempId = getDraftRowTempId(transactionType.key);
                 const newRow = {
                     ...createEmptyRowForType(transactionType),
                     __rowId: tempId,
                     __isNew: true,
                     __tempId: tempId,
-                   
                 };
                 addDraftRow(newRow);
                 return;
             }
 
-            const permanentId = `row-${Date.now()}-${Math.random()
-                .toString(36)
-                .substr(2, 5)}`;
+            // ── Real row commit — reuse existing __rowId from draft ───────────────
+            const rowId = formData.__rowId;
 
             const isTagged = formData.ITEMID
                 ? isTagedItem(Number(formData.ITEMID))
@@ -49,10 +57,9 @@ export const useDraftRowOperations = (isTagedItem: (id: number) => boolean) => {
 
             const ITEM_TYPE = isTagged ? "TAGGED" : "NON_TAGGED";
 
-                console.log(isTagged, 'visTagged')
             const newRow = {
                 ...formData,
-                __rowId: permanentId,
+                __rowId: rowId,
                 __isTaged: isTagged,
                 ITEM_TYPE,
                 __isNew: false,
@@ -67,9 +74,9 @@ export const useDraftRowOperations = (isTagedItem: (id: number) => boolean) => {
             setEditingState({ rowId: null, transactionType: null });
             resetDraftRowTempId();
 
-            return { type: "new", rowId: permanentId, row: newRow };
+            return { type: "new", rowId: rowId, row: newRow };
         },
-        [addDraftRow, setEditingState, draftRows ,isTagedItem]
+        [addDraftRow, setEditingState, draftRows, isTagedItem]
     );
 
     /**

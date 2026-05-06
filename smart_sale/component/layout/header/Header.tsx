@@ -20,14 +20,20 @@ import { usePageName } from "@/context/header/PageNameContext";
 const Header = ({ onOpenMenu }: any) => {
 
     const { theme, mode, toggleTheme } = useTheme();
+
     
     const {pageName ,description} =usePageName();
 
 
     const {
         sidebarCollapsed,
-        toggleSidebar
+        toggleSidebar,
+        multiWindow, 
+        handleMultiWindow
+
     } = useSidebar();
+
+    console.log(multiWindow,'multiWindow')
     const { data: metalRates, isLoading, isError } = useRates();
 
 
@@ -220,6 +226,24 @@ const Header = ({ onOpenMenu }: any) => {
                         >
                             {mode === "light" ? <FiMoon size={16} /> : <FiSun size={16} />}
                         </IconButton>
+                      
+                    </Tooltip>
+
+                    <Tooltip content={ multiWindow ? "Switch to Normal Window" : "Switch to Multi Window"} showArrow>
+                        <IconButton
+                            aria-label="Toggle theme"
+                            variant="ghost"
+                            onClick={() => handleMultiWindow()}
+                            color="inherit"
+                            _hover={{
+                                bg: "gray.100",
+                                color: "#222",
+                            }}
+                            size="sm"
+                        >
+                            {multiWindow ? <FiMoon size={16} /> : <FiSun size={16} />}
+                        </IconButton>
+
                     </Tooltip>
                 </HStack>
             </Box>

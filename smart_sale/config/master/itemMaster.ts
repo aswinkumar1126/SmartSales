@@ -84,16 +84,7 @@ export const ItemMasterFields = (collections: itemMasterProps): FormField[] =>
             minWidth: '200px'
 
         },
-        
-        {
-            name: 'stnPresent',
-            label: 'STONE PRESENT',
-            type: 'select',
-            items: collections.activeTypeCollection,
-            defaultValue:"Y"
-
-
-        },
+       
         {
             name: 'studded',
             label: 'STUDDED',
@@ -109,6 +100,18 @@ export const ItemMasterFields = (collections: itemMasterProps): FormField[] =>
             items: collections.studdedStoneCollection,
             disabled: collections.isDisabelStudded ?? false,
             
+        },
+
+
+        {
+            name: 'stnPresent',
+            label: 'STONE PRESENT',
+            type: 'select',
+            items: collections.activeTypeCollection,
+            defaultValue: "N",
+            disabled: collections.isDisabelStudded ?? false,
+
+
         },
         
         {

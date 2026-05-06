@@ -41,6 +41,7 @@ import { useAuth } from "@/hooks/apiHooks/auth/useAuth";
 import { usePageName } from "@/context/header/PageNameContext";
 import { useSessionStorage } from "@/hooks/apiHooks/storage/useSessionStorage";
 import Logout from "@/component/logout/Logout";
+import { setStorage } from "@/utils/storage/storage";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Motion-wrapped Chakra primitives
@@ -103,6 +104,7 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
         sidebarConfig,
         sidebarCollapsed,
         toggleSidebar,
+        multiWindow
     } = useSidebar();
 
     const { user, logout } = useAuth();
@@ -188,11 +190,24 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
 
     // ── Navigation ─────────────────────────────────────────────────────────────
     const navigate = useCallback(
-        (route: string ,meta?:any) => {
-            router.push(route);
-        
-            console.log("Navigating to:", route,meta);
+        (route: string, meta?: any) => {
 
+            console.log("Navigating to:", route, meta);
+
+            if (multiWindow) {
+                const userId = user?.USERID;
+
+                if (userId) {
+                    setStorage(`userId`, true )
+                }
+
+                const url = `${window.location.origin}${route}`;
+
+                window.open(url, "_blank", "noopener,noreferrer");
+                return;
+            }
+
+            router.push(route);
 
             if (meta?.title) {
                 setTitle(meta.title);
@@ -202,8 +217,9 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
 
             if (!isDesktop) onClose();
         },
-        [router, isDesktop, onClose]
+        [router, isDesktop, onClose, multiWindow, user]
     );
+
 
     // ── Item renderers ─────────────────────────────────────────────────────────
     const renderDirectItem = useCallback(

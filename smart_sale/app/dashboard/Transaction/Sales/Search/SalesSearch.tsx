@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState ,useEffect} from "react";
 import {
     Button,
     Drawer,
@@ -61,6 +61,18 @@ export const SalesSearch: React.FC<salesSearchProps> = ({
     const isOpen = externalIsOpen !== undefined ? externalIsOpen : internalIsOpen;
 
     const searchFields: FormField[] = [
+
+        {
+            name: "accode",
+            label: "PURCHASER",
+            type: "combobox",
+            placeholder: "Select Account",
+            items: accodeOptions,
+            size: "sm",
+            maxWidth: "100%",
+            rounded: 'sm',
+            colSpan: 2,
+        },
         {
             name: "fromDate",
             label: "FROM DATE",
@@ -68,7 +80,9 @@ export const SalesSearch: React.FC<salesSearchProps> = ({
             maxWidth: "120px",
             colSpan: 1,
             size: 'xs',
-            maxDate: formData.toDate ??today
+            maxDate: formData.toDate && !isNaN(new Date(formData.toDate).getTime())
+                ? formData.toDate
+                : today,
         },
         {
             name: "toDate",
@@ -114,17 +128,7 @@ export const SalesSearch: React.FC<salesSearchProps> = ({
             rounded: 'sm',
             colSpan: 2,
         },
-        {
-            name: "accode",
-            label: "PURCHASER",
-            type: "combobox",
-            placeholder: "Select Account",
-            items: accodeOptions,
-            size: "sm",
-            maxWidth: "100%",
-            rounded: 'sm',
-            colSpan: 2,
-        },
+       
     ];
 
     const handleClose = () => {
@@ -171,6 +175,25 @@ export const SalesSearch: React.FC<salesSearchProps> = ({
     const { register, focusFirst, focusNext } = useEnterNavigation(searchFieldsNames ,
         // () => handleSubmit()
     );
+
+    useEffect(() => {
+            console.log('isopens');
+            if (!isOpen) return;
+            console.log('isopensinside');
+            focusFirst();
+    
+            console.log('form date effect', today)
+            setFormData((prev) => ({
+                ...prev,
+                fromDate: prev.fromDate && !isNaN(new Date(prev.fromDate).getTime())
+                    ? prev.fromDate
+                    : today,
+                toDate: prev.toDate && !isNaN(new Date(prev.toDate).getTime())
+                    ? prev.toDate
+                    : today,
+            }));
+    
+        }, [isOpen, focusFirst]);
 
     return (
         <>

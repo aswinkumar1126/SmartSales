@@ -1,12 +1,12 @@
 "use client";
 
 import React from "react";
-import { Box , Dialog ,Portal ,Button, Text} from "@chakra-ui/react";
+import { Box , Dialog ,Portal ,Button, Text , CloseButton} from "@chakra-ui/react";
 import { CapitalizedInput } from "@/components/ui/CapitalizedInput";
 import { SalesHeaderForm } from "@/types/TransactionTypes/sales/SalesHeaderType";
 
 
-type SaveModalProps ={
+type SalesSaveModalProps ={
     headerForm: SalesHeaderForm;
     onFormChange: <K extends keyof SalesHeaderForm>(
         field: K,
@@ -23,17 +23,19 @@ function SalesSaveModal({
     isOpen,
     isClose,
     onConfirm
-}: SaveModalProps) {
+}: SalesSaveModalProps) {
     return (
       
 
-        <Dialog.Root open={isOpen} >
-            <Portal>
+        <Dialog.Root open={isOpen} placement={'center'}>
+            <Portal >
                 <Dialog.Backdrop />
                 <Dialog.Positioner>
-                <Dialog.Content>
+                <Dialog.Content p={0}>
                     <Dialog.Header>
                         Are you sure you want to save this transaction?
+
+                        
                     </Dialog.Header>
 
                     <Dialog.Body>
@@ -63,14 +65,32 @@ function SalesSaveModal({
                         </Box>
                     </Dialog.Body>
 
-                    <Dialog.Footer gapX="3">
+                    <Dialog.Footer>
                         <Dialog.CloseTrigger asChild>
-                            <Button onClick={isClose}>Cancel</Button>
+                                <Dialog.CloseTrigger asChild>
+                                    <CloseButton size="sm" onClick={isClose}/>
+                                </Dialog.CloseTrigger>
                         </Dialog.CloseTrigger>
 
-                        <Button colorScheme="green" onClick={onConfirm}>
-                            Continue
-                        </Button>
+                            <Button
+                                colorScheme="green"
+                                size="xs"
+                                onClick={onConfirm}
+                                px={2}
+                                fontWeight="semibold"
+                                borderRadius="lg"
+                                boxShadow="md"
+                                _hover={{
+                                    bg: "green.600",
+                                    transform: "translateY(-1px)",
+                                    boxShadow: "lg"
+                                }}
+                                _active={{
+                                    transform: "scale(0.96)"
+                                }}
+                            >
+                                Continue ➠
+                            </Button>
                     </Dialog.Footer>
                 </Dialog.Content>
                 </Dialog.Positioner>

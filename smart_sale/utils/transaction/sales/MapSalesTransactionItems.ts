@@ -49,8 +49,11 @@ const mapSalesItems = (list: any[] = [], type: string, isTagedItem: any) => {
         const ITEM_TYPE = isTagged ? "TAGGED" : "NON_TAGGED";
 
 
+
         const grswt = Number(item.GRSWT || 0);
         const stnwt = stones.length > 0 ? totalStoneWeight : Number(item.STNWT || 0);
+
+        const SNO = item.SNO;
 
         return {
             __rowId: `edit-${item.SNO || Date.now()}-${index}`,
@@ -80,7 +83,8 @@ const mapSalesItems = (list: any[] = [], type: string, isTagedItem: any) => {
 
             _stones: stones,
             _miscCharges: normalizedMisc || [],
-            
+              
+            SNO: SNO
         };
     });
 };
@@ -89,6 +93,8 @@ const mapIssueItems = (list: any[] = [], type: string) => {
     return list.map((item, index) => {
 
         const wt = Number(item.WT || 0);
+
+        const SNO = item.SNO;
 
         return {
             __rowId: `edit-${item.SNO || Date.now()}-${index}`,
@@ -109,6 +115,9 @@ const mapIssueItems = (list: any[] = [], type: string) => {
             APUREWT: Number(item.PUREWT || 0),
 
             DESCRIPTION: item.DESCRIPTION || "",
+
+
+            SNO: SNO
         };
     });
 };

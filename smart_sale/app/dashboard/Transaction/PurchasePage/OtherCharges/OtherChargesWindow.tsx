@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import {
     Box,
     Text,
@@ -8,415 +8,256 @@ import {
     HStack,
 } from "@chakra-ui/react";
 import { SelectCombobox, SelectItem } from "@/components/ui/selectComboBox";
-import TransactionTable from "@/component/table/TransactionTable";
 import { CapitalizedInput } from "@/components/ui/CapitalizedInput";
 import { toaster } from "@/components/ui/toaster";
 import { useGlobalKey } from "@/components/key/useGlobalKey";
+import ExcelGrid, { ColumnDef, RenderCellParams } from "@/component/table/ExcelGrid";
+
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 type MiscChargeRow = {
-    id: string;
+    __id: string;
     draftRowId: string;
     chargeName: string;
-    amount: number;
+    amount: string; // keep as string — ExcelGrid is value-agnostic
 };
 
 type Props = {
     draftRowId: string;
     onClose: () => void;
-    onSave: (rows: MiscChargeRow[]) => void;
-    initialRows?: MiscChargeRow[];
+    onSave: (rows: Omit<MiscChargeRow, '__id'>[]) => void;
+    initialRows?: { id?: string; draftRowId?: string; chargeName: string; amount: number }[];
     chargeItems?: SelectItem[];
     otherChargesData?: any;
 };
 
-const COL_WIDTHS: Record<string, string> = {
-    __sno: "40px",
-    chargeName: "200px",
-    amount: "120px",
-    __actions: "60px",
-};
+// ─── Column definitions ───────────────────────────────────────────────────────
 
-const getWidth = (key: string) => COL_WIDTHS[key] || "100px";
+const COLUMNS: ColumnDef[] = [
+    { key: "chargeName", label: "MISCELLANEOUS", width: 200, required: true },
+    { key: "amount", label: "AMOUNT", width: 120, align: "right", decimalScale: 2, required: true },
+];
 
-const getCellStyle = (col: any, extra?: React.CSSProperties): React.CSSProperties => ({
-    width: getWidth(col.key),
-    minWidth: getWidth(col.key),
-    maxWidth: getWidth(col.key),
-    padding: "4px 6px",
-    borderRight: "1px solid #E2E8F0",
-    textAlign: col.align === "right" ? "right" : col.align === "center" ? "center" : "left",
-    overflow: "hidden",
-    boxSizing: "border-box",
-    fontSize: "12px",
-    ...extra,
-});
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+let _uid = 0;
+function uid() { return `mc_${++_uid}_${Date.now()}`; }
+
+function emptyRow(draftRowId: string): MiscChargeRow {
+    return { __id: uid(), draftRowId, chargeName: "", amount: "" };
+}
+
+// ─── Component ────────────────────────────────────────────────────────────────
 
 export default function OtherChargesWindow({
     draftRowId,
     onClose,
     onSave,
     initialRows = [],
-    chargeItems,
-    otherChargesData
+    chargeItems = [],
+    otherChargesData,
 }: Props) {
-
-    console.log(initialRows,'initialRowsinitialRows')
-
-    const prevInitialRowsRef = useRef<string>('');
-
-    const tableCols = [
-        { key: "chargeName", label: "MISCELLANEOUS", align: "left" as const },
-        { key: "amount", label: "AMOUNT", align: "right" as const, decimalScale: 2, allowFocus: true },
-    ];
-
-    const allDisplayCols = [
-        { key: "__sno", label: "#", align: "center" as const },
-        ...tableCols,
-        { key: "__actions", label: "ACTION", align: "center" as const },
-    ];
-
-    const emptyForm = { chargeName: "", amount: "" };
-
-    const [formData, setFormData] = useState<{ chargeName: string; amount: string }>(emptyForm);
-    const [rows, setRows] = useState<MiscChargeRow[]>([]);
-    const [editId, setEditId] = useState<string | null>(null);
-    const [errors, setErrors] = useState<Record<string, string>>({});
-    const [touched, setTouched] = useState<Record<string, boolean>>({});
-    const [isSubmitting] = useState(false);
-    const [isAmountManuallyChanged, setIsAmountManuallyChanged] = useState(false);
-
-    const chargeNameRef = useRef<any>(null);
-    const amountRef = useRef<HTMLInputElement>(null);
-
-    const fieldRefs = {
-        chargeName: chargeNameRef,
-        amount: amountRef,
-    };
-
-    const fieldOrder = ["chargeName", "amount"] as const;
-
-  
-
-    useEffect(() => {
-        const currentRowsString = JSON.stringify(initialRows);
-
-        // Only update if initialRows actually changed
-        if (prevInitialRowsRef.current !== currentRowsString) {
-            prevInitialRowsRef.current = currentRowsString;
-
-            if (initialRows && initialRows.length > 0) {
-                const mappedRows = initialRows.map(r => ({ ...r, draftRowId }));
-                setRows(mappedRows);
-            } else {
-                setRows([]);
-            }
+    // ── Rows — ExcelGrid is fully controlled ──────────────────────────────────
+    const [rows, setRows] = useState<MiscChargeRow[]>(() => {
+        if (initialRows.length > 0) {
+            return initialRows.map(r => ({
+                __id: r.id ?? uid(),
+                draftRowId: r.draftRowId ?? draftRowId,
+                chargeName: r.chargeName ?? "",
+                amount: r.amount != null ? String(r.amount) : "",
+            }));
         }
+        return [emptyRow(draftRowId)];
+    });
 
-        setTimeout(() => { chargeNameRef.current?.focus?.(); }, 100);
+    // Sync when initialRows prop changes (e.g. modal re-opened for same row)
+    const prevInitialRef = useRef("");
+    useEffect(() => {
+        const key = JSON.stringify(initialRows);
+        if (key === prevInitialRef.current) return;
+        prevInitialRef.current = key;
+
+        if (initialRows.length > 0) {
+            setRows(initialRows.map(r => ({
+                __id: r.id ?? uid(),
+                draftRowId: r.draftRowId ?? draftRowId,
+                chargeName: r.chargeName ?? "",
+                amount: r.amount != null ? String(r.amount) : "",
+            })));
+        } else {
+            setRows([emptyRow(draftRowId)]);
+        }
     }, [initialRows, draftRowId]);
 
-    // ✅ FIXED: Auto-fill amount when charge name changes (if not manually changed)
-    useEffect(() => {
-        // Only auto-fill if:
-        // 1. Not in edit mode
-        // 2. Has a charge name selected
-        // 3. Amount has NOT been manually changed
-        if (!editId && formData.chargeName && !isAmountManuallyChanged) {
-            if (otherChargesData && Array.isArray(otherChargesData)) {
-                const selectedCharge = otherChargesData.find(
-                    (item: any) => Number(item.chargeId) === Number(formData.chargeName)
-                );
+    // ── Validation ────────────────────────────────────────────────────────────
+    const [touched, setTouched] = useState<Record<string, boolean>>({});
 
-                if (selectedCharge && selectedCharge.chargeAmount) {
-                    setFormData(prev => ({
-                        ...prev,
-                        amount: String(selectedCharge.chargeAmount)
-                    }));
-                    // Keep isAmountManuallyChanged as false since this is auto-filled
+    const errors = useMemo<Record<string, string>>(() => {
+        const errs: Record<string, string> = {};
+        rows.forEach((row, ri) => {
+            if(row.chargeName){
+                const amt = Number(row.amount);
+                if (!row.amount || isNaN(amt) || amt <= 0)
+                    errs[`${ri}_amount`] = "Must be > 0";
+            }
+           
+        });
+        return errs;
+    }, [rows]);
+
+    // ── Cell change — fully controlled ────────────────────────────────────────
+    const handleCellChange = useCallback((ri: number, colKey: string, value: any) => {
+        setRows(prev => {
+            const next = [...prev];
+            const updated = { ...next[ri], [colKey]: value };
+
+            // Auto-fill amount when chargeName changes (if amount is still empty)
+            if (colKey === "chargeName" && !next[ri].amount) {
+                const match = otherChargesData?.find(
+                    (item: any) => Number(item.chargeId) === Number(value)
+                );
+                if (match?.chargeAmount) {
+                    updated.amount = String(match.chargeAmount);
                 }
             }
-        }
-    }, [formData.chargeName, editId, otherChargesData, isAmountManuallyChanged]);
 
-    const formFields = [
-        {
-            key: "chargeName",
-            label: "Charge Name",
-            type: "combobox" as const,
-            isRequired: true,
-            collection: { items: chargeItems || [] },
-            ref: chargeNameRef,
-        },
-        {
-            key: "amount",
-            label: "Amount",
-            type: "number" as const,
-            isRequired: true,
-            decimalScale: 2,
-            placeholder: "0.00",
-            ref: amountRef,
-            allowFocus: true
-        },
-    ];
+            next[ri] = updated;
+            return next;
+        });
+        setTouched(prev => ({ ...prev, [`${ri}_${colKey}`]: true }));
+    }, [otherChargesData]);
 
-    const focusField = useCallback((key: typeof fieldOrder[number]) => {
-        setTimeout(() => {
-            const ref = fieldRefs[key];
-            ref?.current?.focus?.();
-            ref?.current?.select?.();
-        }, 50);
-    }, []);
+    // ── Row management ────────────────────────────────────────────────────────
+    const handleRowAdd = useCallback(() => {
+        setRows(prev => [...prev, emptyRow(draftRowId)]);
+    }, [draftRowId]);
 
-    const validateForm = useCallback((): boolean => {
-        const newErrors: Record<string, string> = {};
-        const newTouched: Record<string, boolean> = {};
+    const handleRowDelete = useCallback((ri: number) => {
+        setRows(prev => {
+            const next = prev.filter((_, i) => i !== ri);
+            return next.length === 0 ? [emptyRow(draftRowId)] : next;
+        });
+    }, [draftRowId]);
 
-        if (!formData.chargeName || formData.chargeName.trim() === "") {
-            newErrors.chargeName = "Charge name is required";
-        }
-        newTouched.chargeName = true;
+    // ── renderCell — our own components, no wrappers ──────────────────────────
+    const renderCell = useCallback((params: RenderCellParams) => {
+        const { col, value, isEditing, isFocused, isError, errorMessage, onChange, onCommit, inputRef, row, rowIndex } = params;
 
-        const amount = Number(formData.amount);
-        if (!formData.amount || isNaN(amount) || amount <= 0) {
-            newErrors.amount = "Amount must be greater than 0";
-        }
-        newTouched.amount = true;
-
-        setErrors(newErrors);
-        setTouched(newTouched);
-
-        if (Object.keys(newErrors).length > 0) {
-            const firstError = fieldOrder.find(k => newErrors[k]);
-            if (firstError) {
-                focusField(firstError);
-                toaster.create({
-                    title: "Validation Error",
-                    description: newErrors[firstError],
-                    type: "error",
-                    duration: 2000,
-                });
-            }
-            return false;
-        }
-
-        return true;
-    }, [formData, focusField]);
-
-    const handleChange = (key: string, value: any) => {
-        setFormData(prev => ({ ...prev, [key]: value }));
-        setTouched(prev => ({ ...prev, [key]: true }));
-        setErrors(prev => ({ ...prev, [key]: "" }));
-
-        // ✅ FIXED: If user manually changes amount, set the flag
-        if (key === 'amount') {
-            setIsAmountManuallyChanged(true);
-        }
-
-        // If user changes charge name, reset the manual change flag
-        if (key === 'chargeName') {
-            setIsAmountManuallyChanged(false);
-        }
-    };
-
-    const handleSubmit = useCallback(() => {
-        if (!validateForm()) return;
-
-        const newRow: MiscChargeRow = {
-            id: editId ?? `charge-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
-            draftRowId: draftRowId,
-            chargeName: formData.chargeName,
-            amount: Number(formData.amount),
-        };
-
-        if (editId) {
-            setRows(prev => prev.map(r => r.id === editId ? newRow : r));
-            setEditId(null);
-        } else {
-            setRows(prev => [...prev, newRow]);
-        }
-
-        resetForm();
-    }, [formData, editId, draftRowId, validateForm]);
-
-    const moveToNext = useCallback((currentKey: typeof fieldOrder[number]) => {
-        const idx = fieldOrder.indexOf(currentKey);
-        if (idx < fieldOrder.length - 1) {
-            focusField(fieldOrder[idx + 1]);
-        } else {
-            handleSubmit();
-        }
-    }, [focusField, handleSubmit]);
-
-    const resetForm = () => {
-        setFormData(emptyForm);
-        setErrors({});
-        setTouched({});
-        setIsAmountManuallyChanged(false);
-        setTimeout(() => { chargeNameRef.current?.focus(); }, 100);
-    };
-
-    const handleEditRow = (row: MiscChargeRow) => {
-        setFormData({ chargeName: row.chargeName, amount: row.amount.toString() });
-        setEditId(row.id);
-        setErrors({});
-        setTouched({});
-        setIsAmountManuallyChanged(true); // When editing, treat as manually set
-        setTimeout(() => { chargeNameRef.current?.focus(); }, 100);
-    };
-
-    const handleDeleteRow = (row: MiscChargeRow) => {
-        if (confirm("Delete this charge?")) {
-            setRows(prev => prev.filter(r => r.id !== row.id));
-            if (editId === row.id) resetForm();
-        }
-    };
-
-    const handleSaveAndClose = () => {
-        const nonEmptyRows = rows.filter(r => r.chargeName && r.chargeName !== "" && r.amount > 0);
-        onSave(nonEmptyRows);
-        onClose();
-    };
-
-    useGlobalKey('Escape', () => {
-        handleSaveAndClose();
-    }, "other-charges-window");
-
-    const handleResetToDefault = () => {
-        if (formData.chargeName && otherChargesData) {
-            const selectedCharge = otherChargesData.find(
-                (item: any) => Number(item.chargeId) === Number(formData.chargeName)
-            );
-
-            if (selectedCharge && selectedCharge.chargeAmount) {
-                setFormData(prev => ({
-                    ...prev,
-                    amount: selectedCharge.chargeAmount.toString()
-                }));
-                setIsAmountManuallyChanged(false);
-            }
-        }
-    };
-
-    const renderFormCell = (field: any) => {
-        const ref = fieldRefs[field.key as keyof typeof fieldRefs];
-        const value = formData[field.key as keyof typeof formData]?.toString() || "";
-        const isInvalid = !!errors[field.key] && !!touched[field.key];
-
-        if (field.type === "combobox") {
+        // ── chargeName — SelectCombobox ───────────────────────────────────────
+        if (col.key === "chargeName") {
             return (
-                <Box position="relative">
-                    <SelectCombobox
-                        value={value}
-                        items={field.collection?.items || []}
-                        onChange={val => {
-                            handleChange(field.key, val);
-                            if (val) moveToNext(field.key);
-                        }}
-                        ref={ref as React.RefObject<HTMLInputElement>}
-                        onEnter={() => moveToNext(field.key)}
-                        rounded="sm"
-                        placeholder={`Select ${field.label}`}
-                    />
-                    {isInvalid && (
-                        <Text fontSize="9px" color="red.500" position="absolute" bottom="-13px" left="2px" whiteSpace="nowrap">
-                            {errors[field.key]}
-                        </Text>
-                    )}
-                </Box>
+                <SelectCombobox
+                    value={value}
+                    items={chargeItems}
+                    onChange={(val) => {
+                        onChange(val);
+                        if (val) onCommit(); // move to next cell on selection
+                    }}
+                    ref={inputRef}
+                    onEnter={onCommit}
+                    rounded="sm"
+                    placeholder="Select charge"
+                />
             );
         }
 
-        return (
-            <Box position="relative">
+        // ── amount — CapitalizedInput ─────────────────────────────────────────
+        if (col.key === "amount") {
+            // View mode — show formatted value
+            if (!isEditing && !isFocused) {
+                const n = parseFloat(value);
+                return (
+                    <div style={{ padding: "0 6px", fontSize: 11, textAlign: "right", width: "100%" }}>
+                        {isNaN(n) ? "—" : n.toFixed(2)}
+                    </div>
+                );
+            }
+
+            return (
                 <CapitalizedInput
+                    field={col.key}
                     value={value}
-                    field={field.key}
                     type="number"
-                    allowDecimal={field.decimalScale > 0}
-                    onChange={(f, v) => handleChange(f, v)}
-                    inputRef={ref}
-                    onEnter={() => moveToNext(field.key)}
+                    allowDecimal
+                    decimalScale={2}
+                    onChange={(_, v) => onChange(v)}
+                    inputRef={inputRef}
+                    onEnter={onCommit}
                     size="xs"
                     rounded="sm"
                     noBorder
-                    allowFocus={true}
+                    allowFocus
                 />
-                {isInvalid && (
-                    <Text fontSize="9px" color="red.500" position="absolute" bottom="-13px" left="2px" whiteSpace="nowrap">
-                        {errors[field.key]}
-                    </Text>
-                )}
-            </Box>
-        );
-    };
-
-    const getCellValue = (col: any, row: MiscChargeRow) => {
-        if (col.key === "amount") {
-            return `${formatTotal(row.amount, 2)}`;
+            );
         }
-        if (col.key === "chargeName") {
-            const item = chargeItems?.find(i => i.value === row.chargeName);
-            return item?.label || row.chargeName || "-";
+
+        return null;
+    }, [chargeItems]);
+
+    // ── Totals ────────────────────────────────────────────────────────────────
+    const totalAmount = useMemo(
+        () => rows.reduce((sum, r) => sum + (parseFloat(r.amount) || 0), 0),
+        [rows]
+    );
+
+    const renderTotalCell = useCallback((col: ColumnDef) => {
+        if (col.key === "chargeName") return <span style={{ fontSize: 11 }}>TOTAL</span>;
+        if (col.key === "amount") return <span style={{ fontSize: 11 }}>{totalAmount.toFixed(2)}</span>;
+        return null;
+    }, [totalAmount]);
+
+    // ── Save & close ──────────────────────────────────────────────────────────
+    const handleSaveAndClose = useCallback(() => {
+        // Touch all cells to surface errors
+        const allTouched: Record<string, boolean> = {};
+        rows.forEach((_, ri) => COLUMNS.forEach(c => { allTouched[`${ri}_${c.key}`] = true; }));
+        setTouched(allTouched);
+
+        const hasErrors = Object.keys(errors).length > 0;
+        if (hasErrors) {
+            toaster.create({ title: "Fix errors before saving", type: "error", duration: 2000 });
+            return;
         }
-        return row[col.key as keyof MiscChargeRow];
-    };
 
-    const formatTotal = (value: any, decimalScale?: number) => {
-        if (value == null) return "";
-        return Number(value).toFixed(decimalScale || 0);
-    };
+        const nonEmpty = rows.filter(r => r.chargeName && parseFloat(r.amount) > 0);
+        onSave(nonEmpty.map(({ __id, ...rest }) => rest));
+        onClose();
+    }, [rows, errors, onSave, onClose]);
 
-    const totals = {
-        amount: rows.reduce((sum, r) => sum + r.amount, 0),
-    };
+    useGlobalKey("Escape", handleSaveAndClose, "other-charges-window");
 
+    // ─── Render ───────────────────────────────────────────────────────────────
     return (
-        <Box p={2} minW="600px">
+        <Box p={2} minW="420px">
             <HStack justify="center" mb={2}>
                 <Text fontSize="smaller" fontWeight="semibold">
                     OTHER CHARGES DETAILS
                 </Text>
             </HStack>
 
-            <TransactionTable
-                theme={{ colors: { borderColor: "#CBD5E0", formColor: "#EDF2F7" } }}
-                tableCols={tableCols}
-                formFields={formFields}
+            <ExcelGrid
+                columns={COLUMNS}
                 rows={rows}
-                formData={formData}
+                renderCell={renderCell}
+                onCellChange={handleCellChange}
+                onRowAdd={handleRowAdd}
+                onRowDelete={handleRowDelete}
                 errors={errors}
                 touched={touched}
-                localEditId={editId}
-                isSubmitting={isSubmitting}
-                totals={totals}
-                stripedBg="#F7FAFC"
-                allDisplayCols={allDisplayCols}
-                resetForm={resetForm}
-                handleSubmit={handleSubmit}
-                handleEditRow={handleEditRow}
-                handleDeleteRow={handleDeleteRow}
-                renderFormCell={renderFormCell}
-                getCellValue={getCellValue}
-                formatTotal={formatTotal}
-                getCellStyle={getCellStyle}
+                showTotals
+                showAddRow
+                showDeleteRow
+                renderTotalCell={renderTotalCell}
+                maxVisibleRows={10}
+                accentColor="#185FA5"
             />
 
-            <HStack justify="flex-end" gap={2} mt={4}>
-                {isAmountManuallyChanged && formData.chargeName && (
-                    <Button
-                        variant="ghost"
-                        size="xs"
-                        onClick={handleResetToDefault}
-                        colorScheme="orange"
-                    >
-                        Reset to Default
-                    </Button>
-                )}
-                <Text m={2} fontSize="small" fontWeight="500">
-                    Total: ₹{totals.amount.toFixed(2)}
+            <HStack justify="flex-end" gap={2} mt={3}>
+                <Text fontSize="small" fontWeight="500">
+                    Total: ₹{totalAmount.toFixed(2)}
                 </Text>
                 <Button colorPalette="blue" size="xs" onClick={handleSaveAndClose}>
-                    Save & Close
+                    Save &amp; Close
                 </Button>
             </HStack>
         </Box>

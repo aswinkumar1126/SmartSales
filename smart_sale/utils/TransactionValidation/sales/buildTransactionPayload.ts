@@ -26,7 +26,7 @@ export const buildTransactionPayload = ({
         );
 
         const validCharges = rowCharges.filter((charge: any) =>
-            charge.id && Number(charge.amount) > 0
+            charge.chargeName && Number(charge.amount) > 0
         );
 
         const normalized = normalizeRowForApi(row, mappedType);
@@ -50,7 +50,7 @@ export const buildTransactionPayload = ({
             ...(validCharges.length > 0 && {
                 OTHERCHARGESDETAILS: validCharges.map((charge: any) => ({
                     chargeId: Number(charge.chargeName),
-                    chargeAmount: charge.amount,
+                    chargeAmount: Number(charge.amount),
                 })),
             }),
         };

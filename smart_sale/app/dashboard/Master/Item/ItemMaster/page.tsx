@@ -71,7 +71,7 @@ export default function ItemMasterPage() {
         studdedStone: "",
         active: "Y",
         companyId: "",
-        stnPresent:"Y",
+        stnPresent:"N",
 
     } as ItemMast);
 
@@ -142,9 +142,10 @@ export default function ItemMasterPage() {
         studdedStoneCollection: studdedStoneCollection,
         calTypeCollection: calTypeOptions,
         activeTypeCollection: yesNoOptions,
-        isDisabelStudded: isDisabelStudded
+        isDisabelStudded: isDisabelStudded,
+        // isStnPrensetDisabled 
     });
-    console.log(formFields, 'formFields')
+
 
     /* ===================== AUTO ITEM ID ===================== */
     useEffect(() => {
@@ -160,7 +161,7 @@ export default function ItemMasterPage() {
                 active: "Y",
                 studded: "N",
                 studdedStone: "T",
-                stnPresent:"Y",
+                stnPresent:"N",
                 companyId: companies[0]?.value ?? "",
             }));
             setAutoItemId(itemsData?.nextId ?? '0');
@@ -201,7 +202,7 @@ export default function ItemMasterPage() {
             active: "Y",
             studded: "N",
             studdedStone: "T",
-            stnPresent:"Y",
+            stnPresent:"N",
             companyId: companies[0]?.value ?? "",
         }));
     };
@@ -240,6 +241,12 @@ export default function ItemMasterPage() {
         };
     }, [highlightId]);
 
+    useEffect(()=>{
+        if(form.studded){
+
+        }
+    },[])
+
     const handleSave = () => {
         const newErrors: typeof errors = {};
 
@@ -277,7 +284,7 @@ export default function ItemMasterPage() {
             studded: form.studded,
             studdedStone: form.studded === "Y" ? form.studdedStone : null,
             companyId: form.companyId,
-            stnPresent:form.stnPresent,
+            stnPresent: form.studded === "Y" ? form.stnPresent : "N",
         };
 
         if (editingId) {

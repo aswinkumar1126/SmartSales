@@ -5,12 +5,18 @@ import { AuthContext, AuthUser } from "./AuthContext";
 import { authService, LoginPayload, ApiResponse as AuthApiResponse } from "@/service/AuthService";
 import { CompanyService, Company, ApiResponse } from "@/service/CompanyService";
 import { getStorage, removeStorage, setStorage } from "@/utils/storage/storage";
+import { usePathname ,useSearchParams} from "next/navigation";
 
 export default function AuthProvider({ children }: { children: React.ReactNode }) {
     const [user, setUser] = useState<AuthUser | null>(null);
     const [userId, setUserId] = useState<number | null>(null);
     const [loading, setLoading] = useState(true);
     const [companiesData, setCompaniesData] = useState<Company[]>([]);
+
+    const path =usePathname();
+    const searchParams = useSearchParams();
+ 
+    console.log(Object.fromEntries(searchParams.entries()),'searchParams');
 
     // 🔄 fetch user
     const refreshUser = async (uid: number) => {

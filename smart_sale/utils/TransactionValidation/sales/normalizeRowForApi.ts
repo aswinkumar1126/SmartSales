@@ -27,6 +27,7 @@ import { SaleTransactionKey, SALESTRANSACTIONITEMS } from "@/types/transcation/S
                 AWT: Number(rest.AWT || 0),
                 ATOUCH: Number(rest.ATOUCH || 0),
                 APUREWT: Number(rest.APUREWT || 0),
+                ...(rest.SNO && { SNO: String(rest.SNO) }) // ✅ only added if exists
             };
         }
 
@@ -57,6 +58,8 @@ import { SaleTransactionKey, SALESTRANSACTIONITEMS } from "@/types/transcation/S
 
                 ...(editTransaction && { SNO: String(rest.SNO || "") }),
                 ...(rest.DESCRIPTION && { DESCRIPTION: rest.DESCRIPTION }),
+
+                ...(rest.SNO && { SNO: String(rest.SNO) }) // ✅ only added if exists
             };
 
             return payload;
@@ -84,6 +87,8 @@ import { SaleTransactionKey, SALESTRANSACTIONITEMS } from "@/types/transcation/S
 
                 ...(editTransaction && { SNO: String(rest.SNO || "") }),
                 ...(rest.DESCRIPTION && { DESCRIPTION: rest.DESCRIPTION }),
+
+                ...(rest.SNO && { SNO: String(rest.SNO) }) // ✅ only added if exists
             };
 
             return payload;
