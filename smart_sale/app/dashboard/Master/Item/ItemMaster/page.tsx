@@ -57,6 +57,8 @@ export default function ItemMasterPage() {
 
     const [isDisabelStudded, setIsDisableStudded] = useState<boolean>(false);
 
+    const [isStnPrensetDisabled ,setIsStnPrensetDisabled] = useState<boolean>(false);
+
     const controller = new AbortController();
 
     const [form, setForm] = useState<ItemMast>({
@@ -71,7 +73,7 @@ export default function ItemMasterPage() {
         studdedStone: "",
         active: "Y",
         companyId: "",
-        stnPresent:"N",
+        stnPresent:"Y",
 
     } as ItemMast);
 
@@ -143,7 +145,7 @@ export default function ItemMasterPage() {
         calTypeCollection: calTypeOptions,
         activeTypeCollection: yesNoOptions,
         isDisabelStudded: isDisabelStudded,
-        // isStnPrensetDisabled 
+        isStnPrensetDisabled : isStnPrensetDisabled
     });
 
 
@@ -161,7 +163,7 @@ export default function ItemMasterPage() {
                 active: "Y",
                 studded: "N",
                 studdedStone: "T",
-                stnPresent:"N",
+                stnPresent:"Y",
                 companyId: companies[0]?.value ?? "",
             }));
             setAutoItemId(itemsData?.nextId ?? '0');
@@ -173,7 +175,11 @@ export default function ItemMasterPage() {
 
     useEffect(() => {
         setIsDisableStudded(form.studded === 'N');
+        setIsStnPrensetDisabled(form.studded === "Y");
     }, [form.studded]);
+
+
+
     /* ===================== LOAD ITEM FOR EDIT ===================== */
 
     const handleEdit = (id: number, row: any) => {
@@ -202,7 +208,7 @@ export default function ItemMasterPage() {
             active: "Y",
             studded: "N",
             studdedStone: "T",
-            stnPresent:"N",
+            stnPresent:"Y",
             companyId: companies[0]?.value ?? "",
         }));
     };
@@ -241,11 +247,14 @@ export default function ItemMasterPage() {
         };
     }, [highlightId]);
 
-    useEffect(()=>{
-        if(form.studded){
-
-        }
-    },[])
+  useEffect(() => {
+    if (form.studded === "Y") {
+        setForm((prev) => ({
+            ...prev,
+            stnPresent: "N",
+        }));
+    }
+}, [form.studded]);
 
     const handleSave = () => {
         const newErrors: typeof errors = {};
@@ -284,7 +293,7 @@ export default function ItemMasterPage() {
             studded: form.studded,
             studdedStone: form.studded === "Y" ? form.studdedStone : null,
             companyId: form.companyId,
-            stnPresent: form.studded === "Y" ? form.stnPresent : "N",
+            stnPresent: form.studded === "Y" ? "N" : form.stnPresent 
         };
 
         if (editingId) {

@@ -45,6 +45,7 @@ import { useBillDetails } from "@/hooks/apiHooks/transaction/useTransactions";
 import { useCompanyById } from "@/hooks/apiHooks/company/useCompany";
 import { useSoftControlById } from "@/hooks/apiHooks/softControl/useSoftControl";
 
+
 /*-------------------  *VALIDATION HOOKS*  --------------------------*/
 
 import { useIsTaggedItem } from "@/utils/TransactionValidation/purchase/TagNumberValidation";
@@ -1013,7 +1014,9 @@ export default function PurchasePage() {
             TRANSACTIONTYPES,
             getStockAvailability,
             isIssueType,
-            isTagedPR
+            isTagedPR,
+    
+
         });
 
         if (!validation.valid) {
@@ -1041,6 +1044,7 @@ export default function PurchasePage() {
 
         return { valid: true, payload };
     };
+
 
 
     const handleResetDraft = () => {
@@ -1114,7 +1118,8 @@ export default function PurchasePage() {
             return;
         }
       
-    
+
+    // return;
         createTransaction.mutate(
             { payload: result.payload, TRANTYPE: "purchase" },
             {
@@ -1302,7 +1307,7 @@ export default function PurchasePage() {
                             setIsStockDrawerOpen={setIsStockDrawerOpen}
                             handleShowFilter={openFilter}
                             isEditing={isEditing}
-                            onSave={handleOpenRemarkModal}
+                            onSave={isEditing ? handleUpdateTransaction : handleSaveTransaction}
                             onReset={handleResetDraft}
                             isSaving={
                                 createTransaction.isPending || updateTransaction.isPending
@@ -1316,7 +1321,7 @@ export default function PurchasePage() {
 
 
                         {/* Show transaction info when editing */}
-                        {isEditing && selectedTransactionTypes.length > 0 && (
+                        {/* {isEditing && selectedTransactionTypes.length > 0 && (
                             <Box p={2} bg={theme.colors.formColor} borderRadius="md" display='flex' gap={2}>
                                 <Text fontSize='xs' color={theme.colors.primaryText}>
                                     {selectedTransactionTypes.map(t => t.label).join(", ")} - {editingSno}
@@ -1324,7 +1329,7 @@ export default function PurchasePage() {
                                 <Text fontSize="xs"> <strong>Customer: </strong>{headerForm.CUSTOMER_NAME}</Text>
                                 <Text fontSize="xs"> <strong>Date:</strong> {headerForm.DATE}</Text>
                             </Box>
-                        )}
+                        )} */}
 
 
                         {/* Draft Section - show separate tables for each transaction type */}
@@ -1429,6 +1434,8 @@ export default function PurchasePage() {
                         closingPure={closingPure}
                         bankAccList={allBankAccounts}
                         headerForm ={headerForm}
+                  
+                        onFormChange={setHeaderField}
                     />
 
                 </Box>
@@ -1475,14 +1482,14 @@ export default function PurchasePage() {
             )}
             <Box>
 
-            <SaveModal 
+            {/* <SaveModal 
                 isOpen={openRemarkModal}
                 isClose={handleCloseRemarkModal}
                 onConfirm={handleConfirmRemarkModal}
                 headerForm={headerForm}
                 onFormChange={setHeaderField}
                
-            />
+            /> */}
             </Box>
 
         </>

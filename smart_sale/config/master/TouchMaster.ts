@@ -5,6 +5,9 @@ type TouchMasterCollections = {
         actype: { label: string; value: string }[];
         accode: { label: string; value: string }[];
         itemId: { label: string; value: string }[];
+        calMode: { label: string; value: string }[];
+
+        
     },
     disabled:{
         isAccode:boolean
@@ -12,7 +15,7 @@ type TouchMasterCollections = {
 
 };
 
-export const TouchMasterFormConfig = ({collection:{actype,accode ,itemId} , disabled:{isAccode}}:TouchMasterCollections):FormField[]  => [
+export const TouchMasterFormConfig = ({collection:{actype,accode ,itemId ,calMode} , disabled:{isAccode}}:TouchMasterCollections):FormField[]  => [
     {
         name: "actype",
         label: "PARTY TYPE",
@@ -40,7 +43,8 @@ export const TouchMasterFormConfig = ({collection:{actype,accode ,itemId} , disa
         size: "sm",
         required: true,
         rounded: "sm",
-        items: itemId || []
+        items: itemId || [],
+        disabled: isAccode
     },
     {
         name: "touch",
@@ -50,6 +54,17 @@ export const TouchMasterFormConfig = ({collection:{actype,accode ,itemId} , disa
         required: true,
         rounded:"sm",
         decimalScale: 1,
-        allowFocus: true
+        allowFocus: true,
+        disabled: isAccode
+    },
+    {
+        name: "calType",
+        label: "CAL MODE",
+        type: "select",
+        size: "sm",
+        required: true,
+        rounded: "sm",
+        items: calMode || [],
+        disabled: isAccode
     },
 ];

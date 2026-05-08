@@ -15,6 +15,7 @@ type itemMasterProps = {
     activeTypeCollection:collection[],
     stockTypeCollection:collection[]
     isDisabelStudded?:boolean
+    isStnPrensetDisabled?:boolean
 }
 
 
@@ -109,7 +110,7 @@ export const ItemMasterFields = (collections: itemMasterProps): FormField[] =>
             type: 'select',
             items: collections.activeTypeCollection,
             defaultValue: "N",
-            disabled: collections.isDisabelStudded ?? false,
+            disabled: collections.isStnPrensetDisabled ?? false,
 
 
         },

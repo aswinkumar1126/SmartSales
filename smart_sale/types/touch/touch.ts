@@ -25,3 +25,12 @@ export interface TouchMaster {
     calmode?:string
 }
 
+export interface TouchFilter {
+    ACCODE : number;
+    ITEMID : number;
+}
+
+export interface GetTouchByFilter {
+    TOUCH: number;
+    CALMODE:string;
+}

@@ -26,8 +26,10 @@ export const buildTransactionPayload = ({
         );
 
         const validCharges = rowCharges.filter((charge: any) =>
-            charge.chargeName && Number(charge.amount) > 0
+            charge.chargeId && Number(charge.finalAmount) > 0
         );
+
+        console.log(validCharges,'validCharges')
 
         // console.log(validCharges,'validCharges');
 
@@ -51,8 +53,8 @@ export const buildTransactionPayload = ({
 
             ...(validCharges.length > 0 && {
                 OTHERCHARGESDETAILS: validCharges.map((charge: any) => ({
-                    chargeId: Number(charge.chargeName),
-                    chargeAmount: Number(charge.amount),
+                    chargeId: Number(charge.chargeId),
+                    chargeAmount: Number(charge.finalAmount),
                 })),
             }),
         };

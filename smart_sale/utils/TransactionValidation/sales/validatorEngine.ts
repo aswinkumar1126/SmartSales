@@ -1,7 +1,7 @@
 
-export const validateSales = (row: any, validationCheck?: any ) => {
+export const validateSales = (row: any) => {
 
-    console.log("VALIDATING ROW:", row);
+   
 
     if (!row.ITEMID) {
         return "Please select an item";
@@ -19,6 +19,20 @@ export const validateSales = (row: any, validationCheck?: any ) => {
     if (Number(row.TOUCH) <= 0) {
         return "TOUCH must be > 0";
     }
+
+    if (!row._miscCharges || row._miscCharges.length <= 0) {
+        return "Other charges are required";
+    }
+
+    const hasHmc = row._miscCharges.some((charge: any) =>
+        charge.chargeName.trim().toUpperCase() === "HMC"
+    );
+
+    if (!hasHmc) {
+        return "HMC charge is required in other charges";
+    }
+
+    return null;
  
 
     return null;

@@ -24,7 +24,8 @@ export const purchaseColumns = (isTag: boolean) => [
         width: "30px",
         type: "number" as const,
         align: "right" as const,
-        decimalScale:0
+        decimalScale:0,
+
    
     },
     {
@@ -95,6 +96,7 @@ export const purchaseColumns = (isTag: boolean) => [
         max: 9999,
         decimalScale: 1,
         allowFocus: true,
+        disabled :true
 
     },
     {
@@ -214,6 +216,7 @@ export const issueColumns = [
         max: 999,
         decimalScale: 3,
         allowFocus: true,
+        disabled: true
 
     },
     {

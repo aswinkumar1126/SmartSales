@@ -21,6 +21,8 @@ import { usePureGoldDataById } from "@/hooks/apiHooks/pureGoldMast/usePureGoldMa
 import { TextareaField } from "@/components/ui/CapitalizesTextArea";
 import { ExcelGrid, ColumnDef, RenderCellParams } from "@/component/table/ExcelGrid";
 
+import { useTouchByFilter } from "@/hooks/apiHooks/touch/useTouchMastData";
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type StoneRow = {
@@ -34,6 +36,11 @@ type StoneRow = {
     stoneRate: number;
     stoneAmount: number;
 };
+
+type TouchFilter ={
+    ACCODE :String;
+    ITEMID:string;
+}
 
 export interface FormField {
     key: string;
@@ -106,7 +113,11 @@ interface DraftTransactionTableProps {
 const newRowId = () => `row-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
 
 /** Recalculate derived fields for a row object in-place */
-function recalcRow(row: Record<string, any>, isIssue: boolean) {
+function recalcRow(
+    row: Record<string, any>,
+    isIssue: boolean,
+  
+) {
     const g = parseFloat(row.GRSWT) || 0;
     const s = parseFloat(row.STNWT) || 0;
     const touch = parseFloat(row.TOUCH) || 0;
@@ -114,14 +125,23 @@ function recalcRow(row: Record<string, any>, isIssue: boolean) {
     const awt = parseFloat(row.AWT) || 0;
     const atouch = parseFloat(row.ATOUCH) || 0;
 
-    row.NETWT = (g - s).toFixed(3);
+    const calMode = row.CALMODE 
+
+    console.log(calMode, "calMode");
+
+    const baseWt =
+        calMode === "GRSWT"
+            ? (g - s)
+            : (g-s);
+
     row.PUREWT = isIssue
         ? ((wt * touch) / 100).toFixed(3)
-        : (((g - s) * touch) / 100).toFixed(3);
+        : ((baseWt * touch) / 100).toFixed(3);
+
     row.APUREWT = ((awt * atouch) / 100).toFixed(3);
+
     return row;
 }
-
 /** Create a blank row with default values */
 function makeEmptyRow(formFields: FormField[], isIssue: boolean): Record<string, any> {
     const row: Record<string, any> = { __rowId: newRowId() };
@@ -171,8 +191,7 @@ export default function DraftTransactionTable({
     useEffect(() => { draftRowsRef.current = draftRows; }, [draftRows]);
 
 
-    console.log(draftRowsRef.current, 'rows');
-    console.log(rows, 'rows');
+    const [calculationMode ,setCalculationMode] = useState<string>('');
 
     // ── Stable refs declared early so all callbacks below can reference them ──
     const committedRowIdsRef = useRef<Set<string>>(new Set());
@@ -181,6 +200,13 @@ export default function DraftTransactionTable({
     // This is the key pattern to avoid calling Zustand setState during React render
     const pendingParentCallRef = useRef<(() => void) | null>(null);
     const appliedPureIdRef = useRef<Record<string, string>>({});
+    const appliedItemIdRef = useRef<Record<string, string>>({});
+
+    console.log(pendingParentCallRef.current ,  'draftRows length')
+
+    // ── Local State ────────────────────────────────────────────────────────────
+
+    const touchNotFoundRef = useRef<Set<string>>(new Set());
 
     // ── Stone / misc modal state ───────────────────────────────────────────────
     const [stoneModalRowId, setStoneModalRowId] = useState<string | null>(null);
@@ -224,6 +250,8 @@ export default function DraftTransactionTable({
                 "WASTAGE", "TOUCH", "PUREWT", "HMC", "MC", "STNAMT", "DESCRIPTION"];
     }, [isIssue, isTag, transactionType]);
 
+  
+
     const baseColumns = isIssue ? issueColumns : purchaseColumns(isTag);
     const colMap = useMemo(() => new Map(baseColumns.map((c) => [c.key, c])), [baseColumns]);
     const tableCols = useMemo(
@@ -236,7 +264,8 @@ export default function DraftTransactionTable({
             const isNum = numericFields.includes(col.key);
             const isRequired = isIssue
                 ? ["PUREID", "TOUCH", "WT"].includes(col.key)
-                : ["ITEMID", "PCS", "GRSWT", "TOUCH"].includes(col.key);
+                : ["ITEMID", "PCS", "GRSWT", "TOUCH" ,"HMC"].includes(col.key);
+            
 
             const base: FormField = {
                 key: col.key,
@@ -246,7 +275,7 @@ export default function DraftTransactionTable({
                 isRequired,
                 allowFocus: col.allowFocus,
                 size: "xs",
-                // dependsOn: col.dependsOn,
+                dependsOn: col.dependsOn,
                 disabled: col.disabled,
                 ...("decimalScale" in col && typeof col.decimalScale === "number"
                     ? { decimalScale: col.decimalScale }
@@ -256,8 +285,8 @@ export default function DraftTransactionTable({
             if (col.key === "ITEMID" || col.key === "PUREID")
                 return { ...base, type: "combobox", collection: itemsCollection || { items: [] }, isRequired: true };
 
-            if (col.key === "WASTYPE")
-                return { ...base, type: "select", collection: wastypecollection, isRequired: true, defaultValue: "TOUCH" };
+            // if (col.key === "WASTYPE")
+            //     return { ...base, type: "select", collection: wastypecollection, isRequired: true, defaultValue: "TOUCH" };
 
             if (!isIssue && ["NETWT", "PUREWT"].includes(col.key))
                 return { ...base, type: "calculated", disabled: true };
@@ -285,6 +314,7 @@ export default function DraftTransactionTable({
                 decimalScale: f.decimalScale,
                 computed: f.type === "calculated" || f.disabled === true,
                 disabled: f.type === "calculated" || f.disabled === true,
+                
             };
         });
     }, [formFields, tableCols]);
@@ -293,6 +323,8 @@ export default function DraftTransactionTable({
     const parentRowsRef = useRef(rows);
     const isFirstSyncRef = useRef(true);
     const prevRowIdsRef = useRef<Set<string>>(new Set());
+
+    
 
     useEffect(() => {
         parentRowsRef.current = rows;
@@ -392,6 +424,9 @@ export default function DraftTransactionTable({
         const current = draftRowsRef.current;
 
         current.forEach((row, rowIndex) => {
+
+            
+
             const isMeaningful = !!(row.ITEMID || row.PUREID || row.WT || row.GRSWT);
             if (!isMeaningful) return;
 
@@ -407,6 +442,8 @@ export default function DraftTransactionTable({
 
             // Mark as synced
             lastSyncedRowsRef.current[row.__rowId] = rowHash;
+
+            console.log(current, row,rowIndex,'currentrowIndeds');
 
             if (isCommitted) {
                 // Already in store — push all fields including _stones/_miscCharges
@@ -495,6 +532,44 @@ export default function DraftTransactionTable({
 
     // ── Cell change → recalc locally, then notify parent OUTSIDE setState ─────
     const handleCellChange = useCallback((rowIndex: number, colKey: string, value: any) => {
+        // ── Block navigation if TOUCH is required but missing ─────────────────
+        if (colKey === "TOUCH") {
+            const row = draftRowsRef.current[rowIndex];
+            const rowId = row?.__rowId;
+            const touchMissing = touchNotFoundRef.current.has(rowId);
+
+            if (touchMissing && !value) {
+                toaster.create({
+                    title: "Touch Required",
+                    description: "No touch found for this selection. Please enter touch manually.",
+                    type: "error",
+                    duration: 3000,
+                });
+                return; // ← block, don't update state
+            }
+
+            // Touch entered manually — clear the not-found flag
+            if (value) {
+                touchNotFoundRef.current.delete(rowId);
+            }
+        }
+
+        // ── Block moving past ITEMID/PUREID if touch not yet resolved ─────────
+        if ((colKey === "GRSWT" || colKey === "WT") && !isIssue) {
+            const row = draftRowsRef.current[rowIndex];
+            const rowId = row?.__rowId;
+
+            if (touchNotFoundRef.current.has(rowId) && !row?.TOUCH) {
+                toaster.create({
+                    title: "Enter Touch First",
+                    description: "Please enter touch before proceeding.",
+                    type: "warning",
+                    duration: 2500,
+                });
+                return;
+            }
+        }
+
         let rowAfterUpdate: Record<string, any> | null = null;
         let shouldAdd = false;
         let shouldUpdate = false;
@@ -503,7 +578,7 @@ export default function DraftTransactionTable({
             const next = prev.map((r, i) => {
                 if (i !== rowIndex) return r;
                 const updated = { ...r, [colKey]: value };
-                if (colKey === "WT") updated.AWT = value; // mirror WT → AWT
+                if (colKey === "WT") updated.AWT = value;
                 recalcRow(updated, !!isIssue);
                 return updated;
             });
@@ -513,16 +588,12 @@ export default function DraftTransactionTable({
             const isMeaningful = !!(rowAfterUpdate.ITEMID || rowAfterUpdate.PUREID
                 || rowAfterUpdate.WT || rowAfterUpdate.GRSWT);
 
-            if (isCommitted) {
-                shouldUpdate = true;
-            } else if (isMeaningful) {
-                shouldAdd = true;
-            }
+            if (isCommitted) shouldUpdate = true;
+            else if (isMeaningful) shouldAdd = true;
 
             return next;
         });
 
-        // Schedule parent notification for AFTER React finishes this render cycle
         pendingParentCallRef.current = () => {
             if (!rowAfterUpdate) return;
             if (shouldAdd && !committedRowIdsRef.current.has(rowAfterUpdate!.__rowId)) {
@@ -549,32 +620,132 @@ export default function DraftTransactionTable({
     const [activeRowIndex, setActiveRowIndex] = useState<number | null>(null);
 
     const activeRowPureId = activeRowIndex !== null ? draftRows[activeRowIndex]?.PUREID : undefined;
+    const activeRowItemId = activeRowIndex !== null ? draftRows[activeRowIndex]?.ITEMID : undefined;
     const activeRowId = activeRowIndex !== null ? draftRows[activeRowIndex]?.__rowId : undefined;
-    const { data: pureStockData } = usePureGoldDataById(activeRowPureId);
+    const activeRowDetail =  draftRowsRef.current.find(r => r.__rowId === activeRowId) ;
 
+    
+    
+    //TO SET THE TOUCH FOR PURE ID
+    const { data: pureStockData ,isLoading : pureGoldLoading} = usePureGoldDataById(activeRowPureId);
+
+
+    const shouldFetchTouch = !!activeRowItemId && !!acCode;
+    const { data: touchData, isLoading: touchDataLoading } = useTouchByFilter(
+        { ITEMID: Number(activeRowItemId), ACCODE: Number(acCode) },
+        shouldFetchTouch  // ← enabled only when both exist
+    );
+
+
+
+
+    // ── Touch data effect (sales) ─────────────────────────────────────────────
     useEffect(() => {
-        if (!pureStockData || activeRowIndex === null || !activeRowId || !activeRowPureId) return;
+        if (activeRowIndex === null || !activeRowId || !activeRowItemId) return;
+        if (touchDataLoading) return;
+
+        const key = `${activeRowId}::${activeRowItemId}`;
+        if (appliedItemIdRef.current[activeRowId] === key) return;
+        appliedItemIdRef.current[activeRowId] = key;
+
+        const rowIndex = activeRowIndex;
+
+        if (!touchData || !touchData.TOUCH) {
+            touchNotFoundRef.current.add(activeRowId);
+
+            // ✅ Defer toast — outside render cycle
+            setTimeout(() => {
+                toaster.create({
+                    title: "No Touch Found",
+                    description: "No touch configured for this item & customer. Please enter manually.",
+                    type: "warning",
+                    duration: 3000,
+                });
+            }, 0);
+            return;
+        }
+
+        touchNotFoundRef.current.delete(activeRowId);
+        const touch = touchData.TOUCH;
+        const calMode = touchData.CALMODE;
+        setCalculationMode(calMode)
+
+        setDraftRows((prev) => {
+            const next = [...prev];
+            const row = { ...next[rowIndex], TOUCH: touch };
+            recalcRow(row, false);
+            next[rowIndex] = row;
+            return next;
+        });
+
+        // ✅ Defer toast — outside render cycle
+        setTimeout(() => {
+            toaster.create({
+                title: "Touch Applied",
+                description: `Touch ${touch} applied for selected item.`,
+                type: "success",
+                duration: 2000,
+            });
+        }, 0);
+
+        const wasCommitted = committedRowIdsRef.current.has(activeRowId);
+        if (wasCommitted) {
+            pendingParentCallRef.current = () => {
+                onUpdateRow(rowIndex, "TOUCH", touch);
+                onUpdateRow(rowIndex, "CALMODE", calMode);
+            };
+        }
+    }, [touchData, touchDataLoading ,calculationMode]);
+
+    console.log(calculationMode,'calculationMode');
+
+    // ── Pure gold effect (issue) ──────────────────────────────────────────────
+    useEffect(() => {
+        if (activeRowIndex === null || !activeRowId || !activeRowPureId) return;
+        if (!pureStockData) return;
 
         const key = `${activeRowId}::${activeRowPureId}`;
         if (appliedPureIdRef.current[activeRowId] === key) return;
         appliedPureIdRef.current[activeRowId] = key;
 
-        // Capture index before setState (safe — activeRowIndex is stable here)
         const rowIndex = activeRowIndex;
-        const touch = pureStockData.actualTouch;
 
+        if (!pureStockData.actualTouch) {
+            touchNotFoundRef.current.add(activeRowId);
+
+            // ✅ Defer toast
+            setTimeout(() => {
+                toaster.create({
+                    title: "No Touch Found",
+                    description: "No touch found for this pure gold item. Please enter manually.",
+                    type: "warning",
+                    duration: 3000,
+                });
+            }, 0);
+            return;
+        }
+
+        touchNotFoundRef.current.delete(activeRowId);
+        const touch = pureStockData.actualTouch;
+     
         setDraftRows((prev) => {
             const next = [...prev];
-            const row = { ...next[rowIndex] };
-            row.TOUCH = touch;
-            row.ATOUCH = touch;
-            recalcRow(row, !!isIssue);
+            const row = { ...next[rowIndex], TOUCH: touch, ATOUCH: touch };
+            recalcRow(row, !!isIssue ,);
             next[rowIndex] = row;
             return next;
         });
 
-        // Notify parent store AFTER render — same pattern as handleCellChange
-        // Must notify for both TOUCH and ATOUCH so the store stays in sync
+        // ✅ Defer toast
+        setTimeout(() => {
+            toaster.create({
+                title: "Touch Applied",
+                description: `Touch ${touch} applied from pure gold data.`,
+                type: "success",
+                duration: 2000,
+            });
+        }, 0);
+
         const wasCommitted = committedRowIdsRef.current.has(activeRowId);
         if (wasCommitted) {
             pendingParentCallRef.current = () => {
@@ -582,8 +753,8 @@ export default function DraftTransactionTable({
                 onUpdateRow(rowIndex, "ATOUCH", touch);
             };
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [pureStockData]);// intentionally narrow — only re-run when API data changes
+    }, [pureStockData]);
+
 
     // ── Stone modal handlers ───────────────────────────────────────────────────
     const handleOpenStoneModal = useCallback((rowId: string, grsWeight: number) => {
@@ -612,6 +783,7 @@ export default function DraftTransactionTable({
         () => draftRows.find((r) => r.__rowId === miscModalRowId),
         [draftRows, miscModalRowId]
     );
+    console.log(miscModalRow,'miscModalRow')
     const otherChargesInitialRows = miscModalRow?._miscCharges || [];
 
     // ── Tag lookup ─────────────────────────────────────────────────────────────
@@ -854,6 +1026,8 @@ export default function DraftTransactionTable({
                 inputRef={inputRef}
                 onEnter={onCommit}
                 noBorder
+                disabled={col.disabled}
+                
             />
         );
     }, [formFields, wastypecollection, isIssue, handleOpenStoneModal, handleOpenMiscModal]);
@@ -971,6 +1145,7 @@ export default function DraftTransactionTable({
                         const isEmpty = !row.ITEMID && !row.PUREID && !row.WT && !row.GRSWT;
                         return isEmpty ? { opacity: 0.6 } : {};
                     }}
+                    // initialFocusCell={{ rowIndex: 0, colKey: isIssue ? "PUREID"  :"ITEMID" }}  // ✅ clean
                 />
             </Box>
 
@@ -996,9 +1171,12 @@ export default function DraftTransactionTable({
                                 const updatedStones = stoneRows.map((s) => ({
                                     ...s, draftRowId: stoneModalRowId,
                                 }));
-                                const stoneWtTotal = updatedStones.reduce(
-                                    (sum, r) => sum + r.stoneWeight, 0
-                                );
+                        
+                                const stoneWtTotal = updatedStones.reduce((sum, r) => {
+                                    const wt = Number(r.stoneWeight || 0);
+
+                                    return sum + (r.stoneUnit === "c" ? wt / 5 : wt);
+                                }, 0);
                                 const stnAmtTotal = updatedStones.reduce(
                                     (sum, r) => sum + r.stoneAmount, 0
                                 );
@@ -1016,16 +1194,16 @@ export default function DraftTransactionTable({
                                     return recalcRow({
                                         ...r,
                                         _stones: updatedStones,
-                                        STNWT: stoneWtTotal.toFixed(3),
-                                        STNAMT: stnAmtTotal.toFixed(2),
+                                        STNWT: stoneWtTotal?.toFixed(3),
+                                        STNAMT: stnAmtTotal?.toFixed(2),
                                     }, !!isIssue);
                                 }));
 
                                 // Notify parent AFTER render via pending ref
                                 if (stoneWasCommitted && stoneRowIndex >= 0) {
                                     pendingParentCallRef.current = () => {
-                                        onUpdateRow(stoneRowIndex, "STNWT", stoneWtTotal.toFixed(3));
-                                        onUpdateRow(stoneRowIndex, "STNAMT", stnAmtTotal.toFixed(2));
+                                        onUpdateRow(stoneRowIndex, "STNWT", stoneWtTotal?.toFixed(3));
+                                        onUpdateRow(stoneRowIndex, "STNAMT", stnAmtTotal?.toFixed(2));
                                         onUpdateRow(stoneRowIndex, "_stones", updatedStones); // ← add this
                                     };
                                 }
@@ -1054,7 +1232,7 @@ export default function DraftTransactionTable({
                 >
                     <Box
                         bg={theme?.colors?.formColor || "white"} borderRadius="lg"
-                        maxW="600px" width="100%" maxH="90vh" overflow="auto"
+                        maxW="700px" width="100%" maxH="90vh" overflow="auto"
                         onClick={(e) => e.stopPropagation()}
                     >
                         <OtherChargesWindow
@@ -1065,8 +1243,9 @@ export default function DraftTransactionTable({
                                 const updatedCharges = chargeRows.map((c) => ({
                                     ...c, draftRowId: miscModalRowId,
                                 }));
+                                console.log(updatedCharges,'updatedCharges');
                                 const total = updatedCharges.reduce(
-                                    (sum, c) => sum + (Number(c.amount) || 0), 0
+                                    (sum, c) => sum + (Number(c.finalAmount) || 0), 0
                                 );
 
                                 // Capture committed status BEFORE setState
@@ -1100,6 +1279,7 @@ export default function DraftTransactionTable({
                             }}
                             chargeItems={otherChargesList}
                             otherChargesData={otherChargesData}
+                            enteredPieces={miscModalRow?.PCS}
                         />
                     </Box>
                 </Box>

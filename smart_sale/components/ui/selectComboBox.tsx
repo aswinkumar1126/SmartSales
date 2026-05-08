@@ -204,8 +204,8 @@ export const SelectCombobox = forwardRef<HTMLInputElement, SelectComboboxProps>(
                 </Combobox.Control>
                 {!disable && (
                     <Portal>
-                        <Combobox.Positioner mt={-1.5}>
-                            <Combobox.Content>
+                        <Combobox.Positioner mt={-1.5}  >
+                            <Combobox.Content overflowY="auto" maxHeight={'100px'}  border={'1px solid #AAA'}>
                                 <Combobox.Empty fontSize={fontSize}>
                                     No items found
                                 </Combobox.Empty>
@@ -215,6 +215,7 @@ export const SelectCombobox = forwardRef<HTMLInputElement, SelectComboboxProps>(
                                         item={item}
                                         fontSize={fontSize}
                                         textTransform="uppercase"
+                                
                                     >
                                         {String(item.label).toUpperCase()}
                                         <Combobox.ItemIndicator />

@@ -68,14 +68,37 @@ function emptyRow(draftRowId: string): StoneRow {
     };
 }
 
-function calculateAmount(weight: string, pcs: string, rate: string, calculation: "w" | "p"): number {
+function calculateStoneAmount(
+    unit: "g" | "c",
+    weight: string,
+    pcs: string,
+    rate: string,
+    calculation: "w" | "p" | "c"
+): number {
     const w = parseFloat(weight) || 0;
     const p = parseFloat(pcs) || 0;
     const r = parseFloat(rate) || 0;
-    if (calculation === "w") return w * r;
-    if (calculation === "p") return p * r;
+
+    if (unit === "g") {
+        if (calculation === "w") return w * r;
+        if (calculation === "p") return p * r;
+        if (calculation === "c") return w * r * 5;
+    } else {
+        if (calculation === "w") return (w / 5) * r;
+        if (calculation === "p") return p * r;
+        if (calculation === "c") return (w / 5) * r * 5;
+    }
+
     return 0;
 }
+
+const RECALC_FIELDS = new Set([
+    "stoneUnit",
+    "stoneWeight",
+    "stonePcs",
+    "stoneRate",
+    "stoneCalculation",
+]);
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
@@ -132,17 +155,7 @@ export default function StoneEnterMaster({
         }
     }, [initialRows, draftRowId]);
 
-    // ── Auto-focus first row's stoneId on mount ───────────────────────────────
-    useEffect(() => {
-        setTimeout(() => {
-            // Focus the first row's stoneId input if it exists
-            const firstStoneInput = document.querySelector('[data-cell="0-stoneId"] input');
-            if (firstStoneInput) {
-                (firstStoneInput as HTMLElement).focus();
-            }
-        }, 100);
-    }, []);
-
+    
     // ── Validation ────────────────────────────────────────────────────────────
     const [touched, setTouched] = useState<Record<string, boolean>>({});
 
@@ -179,26 +192,29 @@ export default function StoneEnterMaster({
 
     // ── Cell change handler ───────────────────────────────────────────────────
     const handleCellChange = useCallback((ri: number, colKey: string, value: any) => {
-        setRows(prev => {
-            const next = [...prev];
-            const updated = { ...next[ri], [colKey]: value };
-
-            // Recalculate amount when relevant fields change
-            if (["stoneWeight", "stonePcs", "stoneRate", "stoneCalculation"].includes(colKey)) {
-                const amount = calculateAmount(
-                    colKey === "stoneWeight" ? value : updated.stoneWeight,
-                    colKey === "stonePcs" ? value : updated.stonePcs,
-                    colKey === "stoneRate" ? value : updated.stoneRate,
-                    colKey === "stoneCalculation" ? value : updated.stoneCalculation
-                );
-                updated.stoneAmount = String(amount);
-            }
-
-            next[ri] = updated;
-            return next;
-        });
-        setTouched(prev => ({ ...prev, [`${ri}_${colKey}`]: true }));
-    }, []);
+          setRows(prev => {
+              const next = [...prev];
+              const updated = { ...next[ri], [colKey]: value };
+  
+              if (RECALC_FIELDS.has(colKey)) {
+                  // Always use latest value for the changed field
+                  const amount = calculateStoneAmount(
+                      (colKey === "stoneUnit" ? value : updated.stoneUnit) as "g" | "c",
+                      colKey === "stoneWeight" ? value : updated.stoneWeight,
+                      colKey === "stonePcs" ? value : updated.stonePcs,
+                      colKey === "stoneRate" ? value : updated.stoneRate,
+                      (colKey === "stoneCalculation" ? value : updated.stoneCalculation) as "w" | "p" | "c",
+                  );
+                  updated.stoneAmount = amount > 0 ? String(amount) : "";
+              }
+  
+              next[ri] = updated;
+              return next;
+          });
+  
+          setTouched(prev => ({ ...prev, [`${ri}_${colKey}`]: true }));
+      }, []);
+  
 
     // ── Row management ────────────────────────────────────────────────────────
     const handleRowAdd = useCallback(() => {
@@ -226,6 +242,7 @@ export default function StoneEnterMaster({
                         onChange(val);
                         if (val) onCommit();
                     }}
+                    // ✅ First row gets the focus ref, rest get normal inputRef
                     ref={inputRef}
                     onEnter={onCommit}
                     rounded="sm"
@@ -268,8 +285,9 @@ export default function StoneEnterMaster({
                         }}
                         css={{ height: "28px", fontSize: "11px" }}
                     >
-                        <option value="w">Weight</option>
+                        <option value="w">Weight (gm)</option>
                         <option value="p">Piece</option>
+                        <option value="c">Carat</option>
                     </NativeSelect.Field>
                     <NativeSelect.Indicator />
                 </NativeSelect.Root>
@@ -441,6 +459,8 @@ export default function StoneEnterMaster({
                 renderTotalCell={renderTotalCell}
                 maxVisibleRows={10}
                 accentColor="#185FA5"
+                // initialFocusCell={{ rowIndex: 0, colKey: "stoneId" }}  // ✅ clean
+  
 
 
             />
