@@ -375,7 +375,7 @@ function StockReport() {
     groupBy: selectedGroupBy,
   });
 
-  const columnOptions = ["PCS", "GRSWT", "NETWT", "STNWT", "PUREWT"];
+  const columnOptions = ["PCS", "GRSWT", "NETWT", "STNWT", "STNAMT", "PUREWT"];
   const groupByOptions = ["STOCKTYPE", "METALNAME", "SRC"];
 
   const handleGetReport = async () => {
@@ -417,7 +417,7 @@ function StockReport() {
     const unique = [...new Set(columnsToShow)];
     const grouped = groupColumnsByPrefix(unique);
 
-    const colOrder = ["PCS", "GRSWT", "NETWT", "PUREWT", "STNWT"];
+    const colOrder = ["PCS", "GRSWT", "NETWT", "PUREWT", "STNWT","STNAMT"];
     const generatedHeaders: HeaderType[] = [];
     const generatedSubHeaders: SubHeaderType[] = [];
 
