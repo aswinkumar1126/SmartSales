@@ -254,8 +254,21 @@ export function useTaggingValidation() {
           duration: 2000,
         });
         return false;
+
+        
       }
 
+       if(balance && balance.STNWT > 0 && balance.PCS === 0) {
+        toaster.create({
+          title: "Invalid Entry",
+          description: "Pcs cannot be 0 when Stone Weight are present",
+          type: "error",
+          duration: 2000,
+        });
+        return false;
+
+        
+      }
 
       return true;
     },
