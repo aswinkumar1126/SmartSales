@@ -409,7 +409,7 @@ const STATIC_MENU: SidebarMenu = {
           description: "View stock and item summary reports",
         },
       
-    CSHEADReport :{
+    ACHEADReport :{
           type: "direct",
           label: "Achead Stock Report",
           route: "/dashboard/Reports/TagReport/AcheadStockReport",
@@ -425,6 +425,15 @@ const STATIC_MENU: SidebarMenu = {
           title: "TRANSACTION REPORT",
           description: "View Transaction summary reports",
         },
+        AgeReport:  {
+          type: "direct",
+          label: "Age Report",
+          route: "/dashboard/Reports/TagReport/AgeReport",
+          icon: Layers,
+          title: "AGE REPORT",
+          description: "View Tagwise-age reports",
+        },
+
         // {
         //   type: "direct",
         //   label: "DESIGNER Stock Report",

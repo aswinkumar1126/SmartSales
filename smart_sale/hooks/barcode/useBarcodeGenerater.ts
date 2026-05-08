@@ -424,7 +424,6 @@ export function useBarcodeGenerate() {
     resetForm,
     focusField,
     headerForm.ENTRYNO,
-
   ]);
 
   const handleEditRow = useCallback((row: BarcodeTransactionRow) => {
