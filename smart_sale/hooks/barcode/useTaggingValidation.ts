@@ -2,10 +2,13 @@
 import { useCallback } from "react";
 import { toaster } from "@/components/ui/toaster";
 import type { BarcodeHeaderForm, BarcodeTransactionRow } from '@/store/barcode/useBarcodeStore';
+import { useSoftControlById } from "../apiHooks/softControl/useSoftControl";
 
 /* ============================================================
    TYPES
    ============================================================ */
+
+
 
 export type HeaderErrors = Partial<Record<keyof BarcodeHeaderForm, string>>;
 
@@ -35,7 +38,14 @@ export interface RowValidationOptions {
    ============================================================ */
 
 export function useTaggingValidation() {
- 
+   
+
+  
+const { data } = useSoftControlById("LOT-TOLERANCE");
+
+    // CHECK Y / N
+ const Tolerance =
+                    data?.CTLTEXT?Number(data?.CTLTEXT):0;
 
   const validateHeader = useCallback(
     (form: BarcodeHeaderForm): HeaderErrors => {
@@ -90,7 +100,7 @@ export function useTaggingValidation() {
 
       if (!grs || grs <= 0) {
         errors.grsweight = "Weight must be greater than 0";
-      } else if (balance && grs > balance.GRSWT) {
+      } else if (balance && grs > balance.GRSWT + Tolerance) {
         errors.grsweight = `Only ${balance.GRSWT} remaining`;
       }
 
@@ -216,10 +226,10 @@ export function useTaggingValidation() {
         return false;
       }
 
-      if(limits.GRSWT && totalGrsWt > limits.GRSWT) {
+      if(limits.GRSWT && totalGrsWt > limits.GRSWT+Tolerance) {
         toaster.create({
           title: "Lot GrsWt Exceeded",
-          description: `${totalGrsWt} wt exceed the allowed ${limits.GRSWT}`,
+          description: `${totalGrsWt} wt exceed the allowed ${limits.GRSWT}+ tolerance ${Tolerance}g`,
           type: "error",
           duration: 2000,
         });
@@ -246,7 +256,7 @@ export function useTaggingValidation() {
         return false;
       }
       
-      if(balance && balance.GRSWT > 0 && balance.PCS === 0) {
+      if(balance && balance.GRSWT > 0+Tolerance && balance.PCS === 0) {
         toaster.create({
           title: "Invalid Entry",
           description: "Pcs cannot be 0 when GrsWt are present",
@@ -254,8 +264,6 @@ export function useTaggingValidation() {
           duration: 2000,
         });
         return false;
-
-        
       }
 
        if(balance && balance.STNWT > 0 && balance.PCS === 0) {
