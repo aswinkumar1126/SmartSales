@@ -96,7 +96,7 @@ export const purchaseColumns = (isTag: boolean) => [
         max: 9999,
         decimalScale: 1,
         allowFocus: true,
-        disabled :true
+       
 
     },
     {

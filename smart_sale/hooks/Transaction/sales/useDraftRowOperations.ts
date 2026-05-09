@@ -8,7 +8,6 @@ import {
 } from "@/utils/transaction/sales/DraftRowsHandling";
 import { SaleTransactionType } from "@/types/transcation/SaleTransaction";
 
-
 export const useDraftRowOperations = (isTagedItem: (id: number) => boolean) => {
     const {
         draftRows,
@@ -17,10 +16,8 @@ export const useDraftRowOperations = (isTagedItem: (id: number) => boolean) => {
         removeDraftRow,
         setEditingState,
         editingState,
-      
     } = useSaleTransactionStore();
 
-   
     const handleAddRow = useCallback(
         (transactionType: SaleTransactionType, formData?: any) => {
             if (!formData) {
@@ -30,7 +27,6 @@ export const useDraftRowOperations = (isTagedItem: (id: number) => boolean) => {
                     __rowId: tempId,
                     __isNew: true,
                     __tempId: tempId,
-                   
                 };
                 addDraftRow(newRow);
                 return;
@@ -43,12 +39,9 @@ export const useDraftRowOperations = (isTagedItem: (id: number) => boolean) => {
             const isTagged = formData.ITEMID
                 ? isTagedItem(Number(formData.ITEMID))
                 : false;
-            
-            console.log(isTagged,'isTaggedisTagged');
 
             const ITEM_TYPE = isTagged ? "TAGGED" : "NON_TAGGED";
 
-             
             const newRow = {
                 ...formData,
                 __rowId: permanentId,
@@ -56,7 +49,7 @@ export const useDraftRowOperations = (isTagedItem: (id: number) => boolean) => {
                 ITEM_TYPE,
                 __isNew: false,
                 __previewSno:
-                    draftRows.filter(
+                    useSaleTransactionStore.getState().draftRows.filter(
                         (r) => r.TRANSACTION_TYPE === transactionType.value
                     ).length + 1,
                 TRANSACTION_TYPE: transactionType.value,
@@ -68,10 +61,9 @@ export const useDraftRowOperations = (isTagedItem: (id: number) => boolean) => {
 
             return { type: "new", rowId: permanentId, row: newRow };
         },
-        [addDraftRow, setEditingState, draftRows ,isTagedItem]
+        [addDraftRow, setEditingState, isTagedItem]  // ✅ removed draftRows — using getState()
     );
 
-   
     const handleEditRow = useCallback(
         (rowId: string, submitData: any) => {
             const isTagged = submitData.ITEMID
@@ -80,13 +72,13 @@ export const useDraftRowOperations = (isTagedItem: (id: number) => boolean) => {
             const ITEM_TYPE = isTagged ? "TAGGED" : "NON_TAGGED";
             updateDraftRow(rowId, {
                 ...submitData,
-                __rowId: rowId, // ensure ID is never overwritten
-                __isTaged:isTagged,
-                ITEM_TYPE
+                __rowId: rowId,
+                __isTaged: isTagged,
+                ITEM_TYPE,
             });
             setEditingState({ rowId: null, transactionType: null });
         },
-        [updateDraftRow, setEditingState ,isTagedItem]
+        [updateDraftRow, setEditingState, isTagedItem]
     );
 
     const handleRemoveRow = useCallback(
@@ -99,11 +91,11 @@ export const useDraftRowOperations = (isTagedItem: (id: number) => boolean) => {
         [removeDraftRow, editingState, setEditingState]
     );
 
+    // ✅ Now takes rowId directly — no index, no typeRows needed
     const handleUpdateRow = useCallback(
-        (rowIndex: number, field: string, value: any, typeRows: any[]) => {
-            const targetRow = typeRows[rowIndex];
-            if (!targetRow) return;
-            updateDraftRow(targetRow.__rowId, { [field]: value });
+        (rowId: string, field: string, value: any) => {
+            if (!rowId) return;
+            updateDraftRow(rowId, { [field]: value });
         },
         [updateDraftRow]
     );

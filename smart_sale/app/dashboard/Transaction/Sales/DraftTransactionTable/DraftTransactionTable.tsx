@@ -21,20 +21,8 @@ import { getIsTagEnabled, getIsBillModalEnabled } from "@/config/transaction/Sal
 import SalesBillViewModal from "../SaleModal/SaleModal";
 import { usePureGoldDataById } from "@/hooks/apiHooks/pureGoldMast/usePureGoldMastData";
 import { ExcelGrid, ColumnDef, RenderCellParams } from "@/component/table/ExcelGrid";
-
-// ─── Types ────────────────────────────────────────────────────────────────────
-
-type StoneRow = {
-    id: string;
-    draftRowId: string;
-    stoneId: string;
-    stonePcs: number;
-    stoneWeight: number;
-    stoneUnit: "g" | "c";
-    stoneCalculation: "w" | "p";
-    stoneRate: number;
-    stoneAmount: number;
-};
+import { useSaleTransactionStore } from "@/store/sales/useSaleTransactionStore";
+import { useTouchByFilter } from "@/hooks/apiHooks/touch/useTouchMastData";
 
 export interface FormField {
     key: string;
@@ -60,7 +48,7 @@ interface DraftTransactionTableProps {
     editingState: { rowId: string | null; transactionType: string | null };
     onEditRow: (rowId: string, submitData: any) => void;
     onAddRow: (formData?: any) => void;
-    onUpdateRow: (rowIndex: number, field: string, value: any) => void;
+    onUpdateRow: (rowId: string, field: string, value: any) => void;
     onRemoveRow: (rowId: string) => void;
     onRowClick: (row: any, transactionType: string) => void;
     onCancelEdit: (rowId?: string) => void;
@@ -101,8 +89,6 @@ interface DraftTransactionTableProps {
     };
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
 const newRowId = () => `row-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
 
 function recalcRow(row: Record<string, any>, isIssue: boolean) {
@@ -112,11 +98,16 @@ function recalcRow(row: Record<string, any>, isIssue: boolean) {
     const wt = parseFloat(row.WT) || 0;
     const awt = parseFloat(row.AWT) || 0;
     const atouch = parseFloat(row.ATOUCH) || 0;
+    const calMode = row.CAL_MODE || "NETWT";
 
     row.NETWT = (g - s).toFixed(3);
+
+    const baseWt = calMode === "NETWT" ? (g - s) : g;
+
     row.PUREWT = isIssue
         ? ((wt * touch) / 100).toFixed(3)
-        : (((g - s) * touch) / 100).toFixed(3);
+        : ((baseWt * touch) / 100).toFixed(3);
+
     row.APUREWT = ((awt * atouch) / 100).toFixed(3);
     return row;
 }
@@ -130,11 +121,8 @@ function makeEmptyRow(formFields: FormField[], isIssue: boolean): Record<string,
     return recalcRow(row, isIssue);
 }
 
-// ─── Component ────────────────────────────────────────────────────────────────
-
 export default function DraftTransactionTable({
     rows,
-    editingState,
     onEditRow,
     onAddRow,
     onUpdateRow,
@@ -151,7 +139,6 @@ export default function DraftTransactionTable({
     onClear,
     transactionType,
     initialFormData,
-    getStockAvailability,
     otherChargesList,
     otherChargesData,
     getAvailablePieces,
@@ -162,23 +149,25 @@ export default function DraftTransactionTable({
     onSaleReturnModal,
 }: DraftTransactionTableProps) {
 
-    // ── Draft rows (local spreadsheet state) ──────────────────────────────────
     const [draftRows, setDraftRows] = useState<Record<string, any>[]>([]);
     const draftRowsRef = useRef(draftRows);
     useEffect(() => { draftRowsRef.current = draftRows; }, [draftRows]);
 
     const committedRowIdsRef = useRef<Set<string>>(new Set());
-    const pendingParentCallRef = useRef<(() => void) | null>(null);
+    const syncedRowIdsRef = useRef<Set<string>>(new Set()); // Track which rows are synced to parent
     const appliedPureIdRef = useRef<Record<string, string>>({});
+    const appliedItemIdRef = useRef<Record<string, string>>({});
+    const touchNotFoundRef = useRef<Set<string>>(new Set());
+    const lastAppliedTouchRef = useRef<Record<string, string>>({});
+    const lastAppliedPureRef = useRef<Record<string, string>>({});
 
-    // ── Stone / misc modal state ───────────────────────────────────────────────
     const [stoneModalRowId, setStoneModalRowId] = useState<string | null>(null);
     const [miscModalRowId, setMiscModalRowId] = useState<string | null>(null);
     const [currentGRSWT, setCurrentGRSWT] = useState<number>(0);
     const [isStoneModalOpen, setIsStoneModalOpen] = useState(false);
+    const [stoneModalInitialRows, setStoneModalInitialRows] = useState<any[]>([]);
     const [isMiscModalOpen, setIsMiscModalOpen] = useState(false);
 
-    // ── Stone items ────────────────────────────────────────────────────────────
     const { data: stoneItemsData } = useStoneItems({ STUDDED: "Y" });
     const [stoneItemsCollection, setStoneItemCollection] = useState<{ label: string; value: string }[]>([]);
     useEffect(() => {
@@ -189,10 +178,8 @@ export default function DraftTransactionTable({
         })));
     }, [stoneItemsData]);
 
-    // ── Tag input ──────────────────────────────────────────────────────────────
     const [tagNo, setTagNo] = useState<string>("");
 
-    // ── Column / field setup ───────────────────────────────────────────────────
     const wastypecollection = useMemo(
         () => ({ items: [{ label: "TOUCH", value: "TOUCH" }] }),
         []
@@ -243,24 +230,21 @@ export default function DraftTransactionTable({
 
             if (col.key === "ITEMID" || col.key === "PUREID")
                 return { ...base, type: "combobox", collection: itemsCollection || { items: [] }, isRequired: true };
-
             if (col.key === "WASTYPE")
                 return { ...base, type: "select", collection: wastypecollection, isRequired: true, defaultValue: "TOUCH" };
-
             if (!isIssue && ["NETWT", "PUREWT"].includes(col.key))
                 return { ...base, type: "calculated", disabled: true };
-
             if (isIssue && ["PUREWT", "APUREWT"].includes(col.key))
                 return { ...base, type: "calculated", disabled: true };
-
             if (!isIssue && col.key === "STNAMT")
                 return { ...base, type: "calculated", disabled: true };
+            if (!isIssue && col.key === "TOUCH" && transactionType === "SA")
+                return { ...base, disabled: true };
 
             return base;
         });
-    }, [tableCols, itemsCollection, isIssue, wastypecollection, numericFields]);
+    }, [tableCols, itemsCollection, isIssue, wastypecollection, numericFields, transactionType]);
 
-    // ── ExcelGrid column definitions ───────────────────────────────────────────
     const gridColumns = useMemo<ColumnDef[]>(() => {
         return formFields.map((f): ColumnDef => {
             const baseCol = tableCols.find((c) => c.key === f.key);
@@ -277,213 +261,147 @@ export default function DraftTransactionTable({
         });
     }, [formFields, tableCols]);
 
-    // ── Sync parent rows → draftRows ──────────────────────────────────────────
+    // ── Sync to parent function (immediate, called directly) ──────────────────
+    const syncRowToParent = useCallback((row: Record<string, any>) => {
+        const isMeaningful = !!(row.ITEMID || row.PUREID || row.WT || row.GRSWT);
+        if (!isMeaningful) return;
+
+        const isSynced = syncedRowIdsRef.current.has(row.__rowId);
+
+        if (isSynced) {
+            // Update existing
+            Object.keys(row).forEach((field) => {
+                if (field === "__rowId" || field.startsWith("_")) return;
+                onUpdateRow(row.__rowId, field, row[field]);
+            });
+            // Sync meta fields
+            if (row._stones !== undefined) onUpdateRow(row.__rowId, "_stones", row._stones);
+            if (row._miscCharges !== undefined) onUpdateRow(row.__rowId, "_miscCharges", row._miscCharges);
+        } else {
+            // Add new
+            syncedRowIdsRef.current.add(row.__rowId);
+            committedRowIdsRef.current.add(row.__rowId);
+            onAddRow(row);
+        }
+    }, [onUpdateRow, onAddRow]);
+
+    // ── Sync parent rows → draftRows ─────────────────────────────────────────────
     const parentRowsRef = useRef(rows);
-    const isFirstSyncRef = useRef(true);
-    const prevRowIdsRef = useRef<Set<string>>(new Set());
+    const isInitializedRef = useRef(false);
 
     useEffect(() => {
         parentRowsRef.current = rows;
-        rows.forEach((r) => committedRowIdsRef.current.add(r.__rowId));
 
-        // ── Case 1: First mount ───────────────────────────────────────────────
-        if (isFirstSyncRef.current) {
-            isFirstSyncRef.current = false;
-            const converted = rows.map((r) => recalcRow({ ...r }, !!isIssue));
-            if (converted.length === 0) converted.push(makeEmptyRow(formFields, !!isIssue));
+        // ── Initial load ──────────────────────────────────────────────────────────
+        if (!isInitializedRef.current) {
+            isInitializedRef.current = true;
+            rows.forEach((r) => {
+                syncedRowIdsRef.current.add(r.__rowId);
+                committedRowIdsRef.current.add(r.__rowId);
+            });
+            const converted = rows.length > 0
+                ? rows.map((r) => recalcRow({ ...r }, !!isIssue))
+                : [makeEmptyRow(formFields, !!isIssue)];
             setDraftRows(converted);
-            prevRowIdsRef.current = new Set(rows.map((r) => r.__rowId));
             return;
         }
 
-        // ── Case 2: Transaction switch ────────────────────────────────────────
+        // ── Detect transaction switch ─────────────────────────────────────────────
         const currentDraftIds = new Set(draftRowsRef.current.map((r) => r.__rowId));
         const hasOverlap = rows.some((r) => currentDraftIds.has(r.__rowId));
-        if (!hasOverlap && rows.length > 0) {
+        const isTransactionSwitch = !hasOverlap && rows.length > 0;
+
+        if (isTransactionSwitch) {
+            syncedRowIdsRef.current = new Set();
             committedRowIdsRef.current = new Set();
             appliedPureIdRef.current = {};
             const converted = rows.map((r) => recalcRow({ ...r }, !!isIssue));
-            if (converted.length === 0) converted.push(makeEmptyRow(formFields, !!isIssue));
-            setDraftRows(converted);
-            rows.forEach((r) => committedRowIdsRef.current.add(r.__rowId));
-            prevRowIdsRef.current = new Set(rows.map((r) => r.__rowId));
+            const final = converted.length === 0 ? [makeEmptyRow(formFields, !!isIssue)] : converted;
+            rows.forEach((r) => {
+                syncedRowIdsRef.current.add(r.__rowId);
+                committedRowIdsRef.current.add(r.__rowId);
+            });
+            setDraftRows(final);
             return;
         }
 
-        // ── Case 3: Same transaction — Smart sync (replace existing or append new) ──
-        // const newRows = rows.filter((r) => !prevRowIdsRef.current.has(r.__rowId));
-        // ── Case 3: Same transaction — Smart sync ──────────────────────────────
-        const newRows = rows.filter((r) => !prevRowIdsRef.current.has(r.__rowId));
-
-        if (newRows.length > 0) {
-            setDraftRows((prev) => {
-                const next = [...prev];
-
-                newRows.forEach((newParentRow) => {
-                    const existingIndex = next.findIndex(r => r.__rowId === newParentRow.__rowId);
-
-                    if (existingIndex !== -1) {
-                        // Replace existing row, preserve local stones/misc
-                        next[existingIndex] = recalcRow({
-                            ...newParentRow,
-                            _stones: next[existingIndex]._stones || [],
-                            _miscCharges: next[existingIndex]._miscCharges || [],
-                        }, !!isIssue);
-                    } else {
-                        // Brand new row from tag lookup — append it
-                        // But first remove any empty placeholder row
-                        const emptyIndex = next.findIndex(
-                            r => !r.ITEMID && !r.PUREID && !r.WT && !r.GRSWT
-                        );
-                        if (emptyIndex !== -1) next.splice(emptyIndex, 1);
-
-                        next.push(recalcRow({
-                            ...newParentRow,
-                            _stones: [],
-                            _miscCharges: [],
-                        }, !!isIssue));
-                    }
-
-                    committedRowIdsRef.current.add(newParentRow.__rowId);
-                });
-
-                return next.length === 0 ? [makeEmptyRow(formFields, !!isIssue)] : next;
-            });
-        }
-
-        // Handle deletions from parent
+        // ── Incremental sync: merge parent changes into draft ────────────────────
+        // Only pull in rows that are NOT locally dirty (i.e. not yet committed/new)
         setDraftRows((prev) => {
-            const parentIds = new Set(rows.map(r => r.__rowId));
-            const filtered = prev.filter(row =>
-                parentIds.has(row.__rowId) || !committedRowIdsRef.current.has(row.__rowId)
-            );
-            return filtered.length === 0 ? [makeEmptyRow(formFields, !!isIssue)] : filtered;
+            const parentMap = new Map(rows.map((r) => [r.__rowId, r]));
+            const localMap = new Map(prev.map((r) => [r.__rowId, r]));
+
+            const next: Record<string, any>[] = [];
+
+            prev.forEach((localRow) => {
+                if (parentMap.has(localRow.__rowId)) {
+                    // Row exists in both — local edits win, but pull parent-only fields
+                    next.push(recalcRow(
+                        { ...parentMap.get(localRow.__rowId)!, ...localRow },
+                        !!isIssue
+                    ));
+                } else {
+                    // Keep uncommitted local rows; drop committed rows deleted externally
+                    const isUncommitted = !committedRowIdsRef.current.has(localRow.__rowId);
+                    if (isUncommitted) next.push(localRow);
+                }
+            });
+
+            // Pull in rows that appeared externally (e.g. initialFormData load)
+            rows.forEach((r) => {
+                if (!localMap.has(r.__rowId)) {
+                    next.push(recalcRow({ ...r }, !!isIssue));
+                    syncedRowIdsRef.current.add(r.__rowId);
+                    committedRowIdsRef.current.add(r.__rowId);
+                }
+            });
+
+            return next.length === 0 ? [makeEmptyRow(formFields, !!isIssue)] : next;
         });
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [rows]); // intentionally broad — we want to react to all parent changes
 
-        prevRowIdsRef.current = new Set(rows.map((r) => r.__rowId));
-
-    }, [rows]);
-
-
-    useEffect(() => {
-        rows.forEach((r) => committedRowIdsRef.current.add(r.__rowId));
-    }, [rows]);
-
+    // ── Reset on transaction type change ─────────────────────────────────────────
     const prevTransactionTypeRef = useRef(transactionType);
     useEffect(() => {
         if (prevTransactionTypeRef.current !== transactionType) {
             prevTransactionTypeRef.current = transactionType;
-            isFirstSyncRef.current = true;
+            isInitializedRef.current = false; // next rows effect = fresh init
+            syncedRowIdsRef.current = new Set();
+            committedRowIdsRef.current = new Set();
+            appliedPureIdRef.current = {};
+            appliedItemIdRef.current = {};
+            touchNotFoundRef.current = new Set();
+            lastAppliedTouchRef.current = {};
+            lastAppliedPureRef.current = {};
         }
     }, [transactionType]);
 
-    // ── initialFormData support (e.g. tag lookup populating a row) ────────────
+    // ── Handle initialFormData ────────────────────────────────────────────────────
     useEffect(() => {
-        if (!initialFormData) return;
+        if (!initialFormData?.__rowId) return;
         const rowId = initialFormData.__rowId;
-
         setDraftRows((prev) => {
             const existsIdx = prev.findIndex((r) => r.__rowId === rowId);
             if (existsIdx >= 0) {
-                // Update existing row
                 const next = [...prev];
                 next[existsIdx] = recalcRow({ ...next[existsIdx], ...initialFormData }, !!isIssue);
                 return next;
             }
-            // Append as new row
-            return [...prev, recalcRow({ ...initialFormData }, !!isIssue)];
+            const newRow = recalcRow({ ...initialFormData }, !!isIssue);
+            syncedRowIdsRef.current.add(newRow.__rowId);
+            committedRowIdsRef.current.add(newRow.__rowId);
+            return [...prev, newRow];
         });
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [initialFormData]);
 
-    // ── Add empty row ──────────────────────────────────────────────────────────
+    // ── Add empty row ─────────────────────────────────────────────────────────────
     const handleAddRow = useCallback(() => {
         setDraftRows((prev) => [...prev, makeEmptyRow(formFields, !!isIssue)]);
     }, [formFields, isIssue]);
 
-    // ── Auto-sync draftRows → parent store ────────────────────────────────────
-    const lastSyncedRowsRef = useRef<Record<string, string>>({});
 
-    // Keep a ref to the sync function so we can call it on unmount
-    const syncToStoreRef = useRef<() => void>(() => { });
-
-    const syncToStore = useCallback((rows: Record<string, any>[]) => {
-        rows.forEach((row, rowIndex) => {
-            const isMeaningful = !!(row.ITEMID || row.PUREID || row.WT || row.GRSWT);
-            if (!isMeaningful) return;
-
-            const isCommitted = committedRowIdsRef.current.has(row.__rowId);
-
-            const { __rowId, ...syncableFields } = row;
-            const rowHash = JSON.stringify(syncableFields);
-            const lastHash = lastSyncedRowsRef.current[row.__rowId];
-            const hasChanged = rowHash !== lastHash;
-
-            if (!hasChanged) return;
-
-            lastSyncedRowsRef.current[row.__rowId] = rowHash;
-
-            if (isCommitted) {
-                Object.keys(row).forEach((field) => {
-                    if (field === "__rowId") return;
-                    onUpdateRow(rowIndex, field, row[field]);
-                });
-            } else {
-                committedRowIdsRef.current.add(row.__rowId);
-                onAddRow(row);
-            }
-        });
-
-        // Clean up hashes for deleted rows
-        const currentIds = new Set(rows.map((r) => r.__rowId));
-        Object.keys(lastSyncedRowsRef.current).forEach((id) => {
-            if (!currentIds.has(id)) delete lastSyncedRowsRef.current[id];
-        });
-    }, [onUpdateRow, onAddRow]);
-
-    // Keep ref always up to date so unmount cleanup uses latest version
-    useEffect(() => {
-        syncToStoreRef.current = () => syncToStore(draftRowsRef.current);
-    });
-
-    // ── Auto-sync on every draftRows change ───────────────────────────────────
-    useEffect(() => {
-        syncToStore(draftRowsRef.current);
-    }, [draftRows]); // draftRows change triggers sync
-
-    // ── Flush on unmount — catches the last entry ─────────────────────────────
-    useEffect(() => {
-        return () => {
-            syncToStoreRef.current(); // runs with latest draftRows via ref
-        };
-    }, []); // empty deps — runs only on unmount
-
-    // ── Manual sync ────────────────────────────────────────────────────────────
-    const handleSyncAll = useCallback(() => {
-        const current = draftRowsRef.current;
-        current.forEach((row, rowIndex) => {
-            const isMeaningful = !!(row.ITEMID || row.PUREID || row.WT || row.GRSWT );
-            if (!isMeaningful) return;
-            const isCommitted = committedRowIdsRef.current.has(row.__rowId);
-    
-            if (isCommitted) {
-                Object.keys(row).forEach((field) => {
-                    if (field.startsWith("_") || field === "__rowId") return;
-                    onUpdateRow(rowIndex, field, row[field]);
-                });
-            } else {
-                committedRowIdsRef.current.add(row.__rowId);
-                onAddRow(row);
-            }
-        });
-        toaster.create({
-            title: "Synced",
-            description: `${current.filter(r => !!(r.ITEMID || r.PUREID || r.WT || r.GRSWT)).length} row(s) synced`,
-            type: "success",
-            duration: 1500,
-        });
-    }, [onUpdateRow, onAddRow]);
-
-    // ── Delete row ─────────────────────────────────────────────────────────────
     const handleDeleteRow = useCallback((rowIndex: number) => {
         const row = draftRowsRef.current[rowIndex];
         if (!row) return;
@@ -491,11 +409,16 @@ export default function DraftTransactionTable({
         const isBlank = !row.ITEMID && !row.PUREID && !row.WT && !row.GRSWT;
         if (!isBlank && !window.confirm("Delete this row?")) return;
 
-        const wasCommitted = parentRowsRef.current.some((r) => r.__rowId === row.__rowId);
+        const wasSynced = syncedRowIdsRef.current.has(row.__rowId);
         const rowIdToRemove = row.__rowId;
 
+        syncedRowIdsRef.current.delete(rowIdToRemove);
         committedRowIdsRef.current.delete(rowIdToRemove);
         delete appliedPureIdRef.current[rowIdToRemove];
+        delete appliedItemIdRef.current[rowIdToRemove];
+        touchNotFoundRef.current.delete(rowIdToRemove);
+        delete lastAppliedTouchRef.current[rowIdToRemove];
+        delete lastAppliedPureRef.current[rowIdToRemove];
 
         setDraftRows((prev) => {
             const next = prev.filter((_, i) => i !== rowIndex);
@@ -503,16 +426,60 @@ export default function DraftTransactionTable({
             return next;
         });
 
-        if (wasCommitted) {
-            pendingParentCallRef.current = () => onRemoveRow(rowIdToRemove);
+        if (wasSynced) {
+            onRemoveRow(rowIdToRemove);
         }
     }, [formFields, isIssue, onRemoveRow]);
 
-    // ── Cell change with stock validation (sales-specific) ────────────────────
+    // ── Cell change ───────────────────────────────────────────────────────────────
     const handleCellChange = useCallback((rowIndex: number, colKey: string, value: any) => {
-        let rowAfterUpdate: Record<string, any> | null = null;
-        let shouldAdd = false;
-        let shouldUpdate = false;
+        // Reset touch/pure guards on item change
+        if (colKey === "ITEMID") {
+            const row = draftRowsRef.current[rowIndex];
+            if (row) {
+                delete appliedItemIdRef.current[row.__rowId];
+                delete lastAppliedTouchRef.current[row.__rowId];
+                touchNotFoundRef.current.delete(row.__rowId);
+            }
+        }
+        if (colKey === "PUREID") {
+            const row = draftRowsRef.current[rowIndex];
+            if (row) {
+                delete appliedPureIdRef.current[row.__rowId];
+                delete lastAppliedPureRef.current[row.__rowId];
+            }
+        }
+
+        // ── TOUCH guard ───────────────────────────────────────────────────────────
+        if (colKey === "TOUCH") {
+            const row = draftRowsRef.current[rowIndex];
+            const rowId = row?.__rowId;
+            const touchMissing = touchNotFoundRef.current.has(rowId);
+            if (touchMissing && !value) {
+                toaster.create({
+                    title: "Touch Required",
+                    description: "No touch found for this selection. Please enter touch manually.",
+                    type: "error",
+                    duration: 3000,
+                });
+                return;
+            }
+            if (value) touchNotFoundRef.current.delete(rowId);
+        }
+
+        if ((colKey === "GRSWT" || colKey === "WT") && !isIssue) {
+            const row = draftRowsRef.current[rowIndex];
+            const rowId = row?.__rowId;
+            if (touchNotFoundRef.current.has(rowId) && !row?.TOUCH) {
+                toaster.create({
+                    title: "Enter Touch First",
+                    description: "Please enter touch before proceeding.",
+                    type: "warning",
+                    duration: 2500,
+                });
+                return;
+            }
+        }
 
         setDraftRows((prev) => {
             const next = prev.map((r, i) => {
@@ -523,153 +490,181 @@ export default function DraftTransactionTable({
                 return updated;
             });
 
-            rowAfterUpdate = next[rowIndex];
-            const isCommitted = committedRowIdsRef.current.has(rowAfterUpdate.__rowId);
-            const isMeaningful = !!(rowAfterUpdate.ITEMID || rowAfterUpdate.PUREID
-                || rowAfterUpdate.WT || rowAfterUpdate.GRSWT);
+            const updatedRow = next[rowIndex];
+            // ── Only sync when the row is already committed (synced) OR
+            //    when a weight/qty field is filled — NOT on ITEMID/PUREID select alone.
+            //    This prevents premature onAddRow calls that cause duplicate rows.
+            const isAlreadySynced = syncedRowIdsRef.current.has(updatedRow.__rowId);
+            const isWeightOrQty = colKey === "GRSWT" || colKey === "WT"
+                || colKey === "PCS" || colKey === "NETWT";
+            const isMeaningful = !!(updatedRow.ITEMID || updatedRow.PUREID)
+                && !!(updatedRow.WT || updatedRow.GRSWT);
 
-            if (isCommitted) {
-                shouldUpdate = true;
-            } else if (isMeaningful) {
-                shouldAdd = true;
+            if (isAlreadySynced || (isMeaningful && isWeightOrQty)) {
+                setTimeout(() => syncRowToParent(updatedRow), 0);
             }
 
             return next;
         });
 
-        // Sales-specific: stock validation after ITEMID / PCS / GRSWT change
+        // ── Stock validation (unchanged) ──────────────────────────────────────────
         if ((colKey === "PCS" || colKey === "NETWT") && transactionType === "SA") {
-            pendingParentCallRef.current = () => {
-                if (!rowAfterUpdate) return;
-                const itemId = rowAfterUpdate.ITEMID;
-                if (!itemId) {
-                    if (shouldAdd && !committedRowIdsRef.current.has(rowAfterUpdate!.__rowId)) {
-                        committedRowIdsRef.current.add(rowAfterUpdate!.__rowId);
-                        onAddRow(rowAfterUpdate);
-                    } else if (shouldUpdate) {
-                        onUpdateRow(rowIndex, colKey, value);
-                    }
-                    return;
-                }
+            const row = draftRowsRef.current[rowIndex];
+            if (!row?.ITEMID) return;
 
-                const availablePieces = getAvailablePieces?.(itemId, {
-                    excludeRowId: committedRowIdsRef.current.has(rowAfterUpdate!.__rowId)
-                        ? rowAfterUpdate!.__rowId : undefined,
-                    isEditing: committedRowIdsRef.current.has(rowAfterUpdate!.__rowId),
-                    originalPieces: Number(rowAfterUpdate!._originalPieces) || 0,
-                    transactionTypeCode: transactionType,
-                }) ?? null;
+            const availablePieces = getAvailablePieces?.(row.ITEMID, {
+                excludeRowId: syncedRowIdsRef.current.has(row.__rowId) ? row.__rowId : undefined,
+                isEditing: syncedRowIdsRef.current.has(row.__rowId),
+                originalPieces: Number(row._originalPieces) || 0,
+                transactionTypeCode: transactionType,
+            }) ?? null;
 
-                if (availablePieces !== null && colKey === "PCS" && Number(value) > availablePieces) {
+            if (availablePieces !== null && colKey === "PCS" && Number(value) > availablePieces) {
+                setTimeout(() => {
                     toaster.create({
                         title: "Insufficient Stock",
                         description: `Requested ${value} pcs exceeds available ${availablePieces} pcs`,
                         type: "error",
                     });
-                    return;
-                }
+                }, 0);
+                return;
+            }
 
-                const availableWeight = getAvailableWeight?.(itemId, {
-                    excludeRowId: committedRowIdsRef.current.has(rowAfterUpdate!.__rowId)
-                        ? rowAfterUpdate!.__rowId : undefined,
-                    isEditing: committedRowIdsRef.current.has(rowAfterUpdate!.__rowId),
-                    originalWeight: Number(rowAfterUpdate!._originalNetwt) || 0,
-                    transactionTypeCode: transactionType,
-                }) ?? null;
+            const availableWeight = getAvailableWeight?.(row.ITEMID, {
+                excludeRowId: syncedRowIdsRef.current.has(row.__rowId) ? row.__rowId : undefined,
+                isEditing: syncedRowIdsRef.current.has(row.__rowId),
+                originalWeight: Number(row._originalNetwt) || 0,
+                transactionTypeCode: transactionType,
+            }) ?? null;
 
-                const netwt = parseFloat(rowAfterUpdate!.NETWT) || 0;
-                if (availableWeight !== null && netwt > availableWeight) {
+            const netwt = parseFloat(row.NETWT) || 0;
+            if (availableWeight !== null && netwt > availableWeight) {
+                setTimeout(() => {
                     toaster.create({
                         title: "Insufficient Stock",
                         description: `Net weight ${netwt.toFixed(3)}g exceeds available ${availableWeight.toFixed(3)}g`,
                         type: "error",
                     });
-                    return;
-                }
-
-                if (shouldAdd && !committedRowIdsRef.current.has(rowAfterUpdate!.__rowId)) {
-                    committedRowIdsRef.current.add(rowAfterUpdate!.__rowId);
-                    onAddRow(rowAfterUpdate);
-                } else if (shouldUpdate) {
-                    onUpdateRow(rowIndex, colKey, value);
-                }
-            };
-        } else {
-            pendingParentCallRef.current = () => {
-                if (!rowAfterUpdate) return;
-                if (shouldAdd && !committedRowIdsRef.current.has(rowAfterUpdate!.__rowId)) {
-                    committedRowIdsRef.current.add(rowAfterUpdate!.__rowId);
-                    onAddRow(rowAfterUpdate);
-                } else if (shouldUpdate) {
-                    onUpdateRow(rowIndex, colKey, value);
-                }
-            };
+                }, 0);
+            }
         }
-    }, [isIssue, onAddRow, onUpdateRow, transactionType, getAvailablePieces, getAvailableWeight]);
+    }, [isIssue, transactionType, getAvailablePieces, getAvailableWeight, syncRowToParent]);
 
-    // ── Flush pending parent calls after every render ─────────────────────────
-    useEffect(() => {
-        if (pendingParentCallRef.current) {
-            const call = pendingParentCallRef.current;
-            pendingParentCallRef.current = null;
-            call();
-        }
-    });
-
-    // ── Pure gold data for issue rows ──────────────────────────────────────────
+    // ── Active row tracking ───────────────────────────────────────────────────
     const [activeRowIndex, setActiveRowIndex] = useState<number | null>(null);
     const activeRowPureId = activeRowIndex !== null ? draftRows[activeRowIndex]?.PUREID : undefined;
     const activeRowId = activeRowIndex !== null ? draftRows[activeRowIndex]?.__rowId : undefined;
+    const activeRowItemId = activeRowIndex !== null ? draftRows[activeRowIndex]?.ITEMID : undefined;
+
     const { data: pureStockData } = usePureGoldDataById(activeRowPureId);
 
+    const shouldFetchTouch = !!activeRowItemId && !!acCode;
+    const { data: touchData, isLoading: touchDataLoading } = useTouchByFilter(
+        { ITEMID: Number(activeRowItemId), ACCODE: Number(acCode) },
+        shouldFetchTouch
+    );
+
+    // ── Touch data effect ─────────────────────────────────────────────────────
+    useEffect(() => {
+        if (activeRowIndex === null || !activeRowId || !activeRowItemId) return;
+        if (touchDataLoading) return;
+
+        const key = `${activeRowId}::${activeRowItemId}`;
+        if (lastAppliedTouchRef.current[activeRowId] === key) return;
+
+        if (!touchData || !touchData.TOUCH) {
+            if (!touchNotFoundRef.current.has(activeRowId)) {
+                touchNotFoundRef.current.add(activeRowId);
+                setTimeout(() => {
+                    toaster.create({
+                        title: "No Touch Found",
+                        description: "No touch configured for this item & customer. Please enter manually.",
+                        type: "warning",
+                        duration: 3000,
+                    });
+                }, 0);
+            }
+            return;
+        }
+
+        lastAppliedTouchRef.current[activeRowId] = key;
+        appliedItemIdRef.current[activeRowId] = key;
+        touchNotFoundRef.current.delete(activeRowId);
+
+        const touch = touchData.TOUCH;
+        const calMode = touchData.CALMODE || "NETWT";
+        const targetRowId = activeRowId;
+
+        setDraftRows((prev) => {
+            const rowIndex = prev.findIndex(r => r.__rowId === targetRowId);
+            if (rowIndex === -1) return prev;
+            const next = [...prev];
+            const row = { ...next[rowIndex], TOUCH: touch, ATOUCH: touch, CAL_MODE: calMode };
+            recalcRow(row, false);
+            next[rowIndex] = row;
+
+            // Sync touch update to parent
+            setTimeout(() => syncRowToParent(row), 0);
+
+            return next;
+        });
+
+        setTimeout(() => {
+            toaster.create({
+                title: "Touch Applied",
+                description: `Touch ${touch} applied for selected item.`,
+                type: "success",
+                duration: 1500,
+            });
+        }, 10);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [touchData, touchDataLoading]);
+
+    // ── Pure gold effect ──────────────────────────────────────────────────────
     useEffect(() => {
         if (!pureStockData || activeRowIndex === null || !activeRowId || !activeRowPureId) return;
 
         const key = `${activeRowId}::${activeRowPureId}`;
-        if (appliedPureIdRef.current[activeRowId] === key) return;
+        if (lastAppliedPureRef.current[activeRowId] === key) return;
+
+        lastAppliedPureRef.current[activeRowId] = key;
         appliedPureIdRef.current[activeRowId] = key;
 
-        const rowIndex = activeRowIndex;
         const touch = pureStockData.actualTouch;
+        const targetRowId = activeRowId;
 
         setDraftRows((prev) => {
+            const rowIndex = prev.findIndex(r => r.__rowId === targetRowId);
+            if (rowIndex === -1) return prev;
             const next = [...prev];
-            const row = { ...next[rowIndex] };
-            row.TOUCH = touch;
-            row.ATOUCH = touch;
+            const row = { ...next[rowIndex], TOUCH: touch, ATOUCH: touch };
             recalcRow(row, !!isIssue);
             next[rowIndex] = row;
+
+            // Sync pure gold touch update
+            setTimeout(() => syncRowToParent(row), 0);
+
             return next;
         });
-
-        const wasCommitted = committedRowIdsRef.current.has(activeRowId);
-        if (wasCommitted) {
-            pendingParentCallRef.current = () => {
-                onUpdateRow(rowIndex, "TOUCH", touch);
-                onUpdateRow(rowIndex, "ATOUCH", touch);
-            };
-        }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [pureStockData]);
 
-    // ── Stone modal ────────────────────────────────────────────────────────────
+    // ── Stone modal ───────────────────────────────────────────────────────────
     const handleOpenStoneModal = useCallback((rowId: string, grsWeight: number) => {
         if (!grsWeight || grsWeight <= 0) {
             toaster.create({ title: "Enter GRSWT first", type: "warning" });
             return;
         }
+        const freshRow = useSaleTransactionStore.getState().draftRows.find(
+            (r) => r.__rowId === rowId
+        );
         setStoneModalRowId(rowId);
         setCurrentGRSWT(grsWeight);
+        setStoneModalInitialRows(freshRow?._stones || []);
         setIsStoneModalOpen(true);
     }, []);
 
-    const stoneModalRow = useMemo(
-        () => draftRows.find((r) => r.__rowId === stoneModalRowId),
-        [draftRows, stoneModalRowId]
-    );
-    const stoneModalInitialRows = stoneModalRow?._stones || [];
-
-    // ── Misc modal ─────────────────────────────────────────────────────────────
+    // ── Misc modal ────────────────────────────────────────────────────────────
     const handleOpenMiscModal = useCallback((rowId: string) => {
         setMiscModalRowId(rowId);
         setIsMiscModalOpen(true);
@@ -681,19 +676,17 @@ export default function DraftTransactionTable({
     );
     const otherChargesInitialRows = miscModalRow?._miscCharges || [];
 
-    // ── Tag lookup ─────────────────────────────────────────────────────────────
+    // ── Tag lookup ────────────────────────────────────────────────────────────
     const handleTagNoKeyDown = async () => {
         if (!tagNo.trim()) return;
         try {
-            await onTagNoLookup?.(tagNo); // ← this updates parent rows
+            await onTagNoLookup?.(tagNo);
             setTagNo("");
-            // ✅ Don't touch prevRowIdsRef here — let the useEffect handle it
         } catch (error) {
             toaster.create({ title: "Error", description: "Failed to process tag", type: "error" });
         }
     };
 
-    // ── Totals row renderer ────────────────────────────────────────────────────
     const renderTotalCell = useCallback((col: ColumnDef, gridRows: Record<string, any>[]) => {
         const numericTotalKeys = isIssue
             ? ["WT", "AWT", "PUREWT", "APUREWT"]
@@ -707,207 +700,114 @@ export default function DraftTransactionTable({
         );
     }, [isIssue]);
 
-    // ── Cell renderer ──────────────────────────────────────────────────────────
     const renderCell = useCallback((params: RenderCellParams) => {
         const { row, col, value, isEditing, isFocused, onChange, onCommit, inputRef } = params;
         const field = formFields.find((f) => f.key === col.key);
         if (!field) return <span style={{ padding: "0 4px", fontSize: 11 }}>{value ?? ""}</span>;
 
-        // ── Computed / read-only ───────────────────────────────────────────────
         if (col.computed || col.disabled) {
             let displayValue = value ?? "";
             if (col.decimalScale) displayValue = Number(value || 0).toFixed(col.decimalScale);
             return (
-                <span style={{
-                    padding: "0 6px", fontSize: 11, color: "#555",
-                    width: "100%", display: "block", textAlign: col.align || "left",
-                }}>
+                <span style={{ padding: "0 6px", fontSize: 11, color: "#555", width: "100%", display: "block", textAlign: col.align || "left" }}>
                     {displayValue}
                 </span>
             );
         }
 
-        // ── STNWT — opens stone modal on focus ────────────────────────────────
         if (col.key === "STNWT") {
             const stonesCount = (row._stones || []).length;
             return (
                 <div
                     style={{ display: "flex", alignItems: "center", width: "100%", padding: "0 2px" }}
                     onFocus={() => handleOpenStoneModal(row.__rowId, parseFloat(row.GRSWT) || 0)}
+                    onClick={() => handleOpenStoneModal(row.__rowId, parseFloat(row.GRSWT) || 0)}
                 >
                     <CapitalizedInput
-                        field={col.key}
-                        value={value || ""}
-                        onChange={(_, v) => onChange(v)}
-                        type="number"
-                        isCapitalized={false}
-                        size="xs"
-                        rounded="sm"
-                        decimalScale={field.decimalScale}
-                        inputRef={inputRef}
-                        onEnter={onCommit}
-                        noBorder
+                        field={col.key} value={value || ""} onChange={(_, v) => onChange(v)}
+                        type="number" isCapitalized={false} size="xs" rounded="sm"
+                        decimalScale={field.decimalScale} inputRef={inputRef} onEnter={onCommit} noBorder
                     />
-                    {stonesCount > 0 && (
-                        <span style={{ fontSize: 10, color: "#805AD5", flexShrink: 0, paddingRight: 2 }}>💎</span>
-                    )}
+                    {stonesCount > 0 && <span style={{ fontSize: 10, color: "#805AD5", flexShrink: 0, paddingRight: 2 }}>💎</span>}
                 </div>
             );
         }
 
-        // ── HMC — opens other charges modal on focus ──────────────────────────
         if (col.key === "HMC") {
             const chargesCount = (row._miscCharges || []).length;
             return (
                 <div
                     style={{ display: "flex", alignItems: "center", width: "100%", padding: "0 2px" }}
                     onFocus={() => handleOpenMiscModal(row.__rowId)}
+                    onClick={() => handleOpenMiscModal(row.__rowId)}
                 >
                     <CapitalizedInput
-                        field={col.key}
-                        value={value || ""}
-                        onChange={(_, v) => onChange(v)}
-                        type="number"
-                        isCapitalized={false}
-                        size="xs"
-                        rounded="sm"
-                        decimalScale={2}
-                        inputRef={inputRef}
-                        onEnter={onCommit}
-                        noBorder
+                        field={col.key} value={value || ""} onChange={(_, v) => onChange(v)}
+                        type="number" isCapitalized={false} size="xs" rounded="sm"
+                        decimalScale={2} inputRef={inputRef} onEnter={onCommit} noBorder
                     />
-                    {chargesCount > 0 && (
-                        <span style={{ fontSize: 10, color: "#C05621", flexShrink: 0, paddingRight: 2 }}>📋</span>
-                    )}
+                    {chargesCount > 0 && <span style={{ fontSize: 10, color: "#C05621", flexShrink: 0, paddingRight: 2 }}>📋</span>}
                 </div>
             );
         }
 
-        // ── STNAMT — derived from stones ──────────────────────────────────────
         if (col.key === "STNAMT") {
-            const stonesTotal = (row._stones || []).reduce(
-                (s: number, st: any) => s + (Number(st.stoneAmount) || 0), 0
-            );
+            const stonesTotal = (row._stones || []).reduce((s: number, st: any) => s + (Number(st.stoneAmount) || 0), 0);
             return (
-                <span style={{
-                    padding: "0 6px", fontSize: 11, color: "#333",
-                    width: "100%", display: "block", textAlign: "right",
-                }}>
+                <span style={{ padding: "0 6px", fontSize: 11, color: "#333", width: "100%", display: "block", textAlign: "right" }}>
                     {stonesTotal > 0 ? stonesTotal.toFixed(2) : value || ""}
                 </span>
             );
         }
 
-        // ── DESCRIPTION ───────────────────────────────────────────────────────
-        if (col.key === "DESCRIPTION") {
-            return (
-                <TextareaField
-                    value={value || ""}
-                    field="DESCRIPTION"
-                    onChange={(_, v) => onChange(v)}
-                    onEnter={onCommit}
-                    mode="dialog"
-                    rows={3}
-                    dialogInputRef={inputRef}
-                    disable={false}
-                />
-            );
-        }
+        // if (col.key === "DESCRIPTION") {
+        //     return (
+        //         <TextareaField value={value || ""} field="DESCRIPTION" onChange={(_, v) => onChange(v)}
+        //             onEnter={onCommit} mode="dialog" rows={3} dialogInputRef={inputRef} disable={false} />
+        //     );
+        // }
 
-        // ── TAGNO — read-only (filled by tag lookup) ──────────────────────────
         if (col.key === "TAGNO") {
             return (
-                <CapitalizedInput
-                    field={col.key}
-                    value={value || ""}
-                    onChange={(_, v) => onChange(v)}
-                    type="text"
-                    isCapitalized
-                    size="xs"
-                    rounded="sm"
-                    inputRef={inputRef}
-                    onEnter={onCommit}
-                    noBorder
-                    disabled
-                />
+                <CapitalizedInput field={col.key} value={value || ""} onChange={(_, v) => onChange(v)}
+                    type="text" isCapitalized size="xs" rounded="sm" inputRef={inputRef} onEnter={onCommit} noBorder disabled />
             );
         }
 
-        // ── ITEMID / PUREID combobox ───────────────────────────────────────────
         if (col.key === "ITEMID" || col.key === "PUREID") {
             const items = field.collection?.items || [];
             if (!isEditing && !isFocused) {
                 const item = items.find((i) => i.value === value?.toString());
                 return (
-                    <span style={{
-                        padding: "0 6px", fontSize: 11, overflow: "hidden",
-                        textOverflow: "ellipsis", whiteSpace: "nowrap", display: "block",
-                    }}>
+                    <span style={{ padding: "0 6px", fontSize: 11, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", display: "block" }}>
                         {item?.label || value || ""}
                     </span>
                 );
             }
             return (
-                <SelectCombobox
-                    value={value || ""}
-                    onChange={(v) => { onChange(v); if (v) onCommit(); }}
-                    items={items}
-                    placeholder={field.placeholder || `Select ${field.label}`}
-                    ref={inputRef as React.RefObject<HTMLInputElement>}
-                    rounded="sm"
-                    disable={false}
-                    onEnter={onCommit}
-                />
+                <SelectCombobox value={value || ""} onChange={(v) => { onChange(v); if (v) onCommit(); }}
+                    items={items} placeholder={field.placeholder || `Select ${field.label}`}
+                    ref={inputRef as React.RefObject<HTMLInputElement>} rounded="sm" disable={false} onEnter={onCommit} />
             );
         }
 
-        // ── TOUCH in issue mode ────────────────────────────────────────────────
         if (isIssue && col.key === "TOUCH") {
             return (
-                <CapitalizedInput
-                    field={col.key}
-                    value={value || ""}
-                    onChange={(_, v) => onChange(v)}
-                    type="number"
-                    isCapitalized
-                    size="xs"
-                    rounded="sm"
-                    decimalScale={field.decimalScale}
-                    inputRef={inputRef}
-                    onEnter={onCommit}
-                    noBorder
-                />
+                <CapitalizedInput field={col.key} value={value || ""} onChange={(_, v) => onChange(v)}
+                    type="number" isCapitalized size="xs" rounded="sm"
+                    decimalScale={field.decimalScale} inputRef={inputRef} onEnter={onCommit} noBorder />
             );
         }
 
-        // ── Default number / text ──────────────────────────────────────────────
         return (
-            <CapitalizedInput
-                field={col.key}
-                value={value || ""}
-                onChange={(_, v) => onChange(v)}
-                type={field.type === "number" ? "number" : "text"}
-                isCapitalized={field.type !== "number"}
-                size="xs"
-                rounded="sm"
-                decimalScale={field.decimalScale}
-                inputRef={inputRef}
-                onEnter={onCommit}
-                noBorder
-            />
+            <CapitalizedInput field={col.key} value={value || ""} onChange={(_, v) => onChange(v)}
+                type={field.type === "number" ? "number" : "text"} isCapitalized={field.type !== "number"}
+                size="xs" rounded="sm" decimalScale={field.decimalScale} inputRef={inputRef} onEnter={onCommit} noBorder />
         );
     }, [formFields, isIssue, handleOpenStoneModal, handleOpenMiscModal]);
 
-    // ── Colors ─────────────────────────────────────────────────────────────────
-   
-
-    const TYPE_COLORS: Record<string, string> = {
-        SA: "#b7fff1", SR: "#ffc4c4", IS: "#ffd9a4", RE: "#ffcafb",
-    };
-    const accentColor = {
-        SA: "#2F855A", SR: "#C53030", IS: "#DD6B20", RE: "#c729ba",
-    }[transactionType ?? ""] ?? "#185FA5";
-
+    const TYPE_COLORS: Record<string, string> = { SA: "#b7fff1", SR: "#ffc4c4", IS: "#ffd9a4", RE: "#ffcafb" };
+    const accentColor = { SA: "#2F855A", SR: "#C53030", IS: "#DD6B20", RE: "#c729ba" }[transactionType ?? ""] ?? "#185FA5";
     const showTag = getIsTagEnabled(transactionType);
     const showBill = getIsBillModalEnabled(transactionType);
     const { showBillModal, handleBillShow } = onSaleReturnModal;
@@ -916,20 +816,14 @@ export default function DraftTransactionTable({
 
     const committedRows = draftRows.filter((r) => !!(r.ITEMID || r.PUREID || r.WT || r.GRSWT || r.PCS));
 
-    // ── Render ─────────────────────────────────────────────────────────────────
     return (
         <Box display="flex" flexDirection="column" gap={0}>
-            {/* ── Header bar ──────────────────────────────────────────────── */}
-            <Flex
-                justifyContent="space-between" alignItems="center"
-                px={2} py={1} bg="#FFF" color="#222" rounded="md"
-                borderWidth="1px" borderColor={theme?.colors?.borderColor || "#CBD5E0"}
-            >
+            <Flex justifyContent="space-between" alignItems="center" px={2} py={1} bg="#FFF" color="#222"
+                rounded="md" borderWidth="1px" borderColor={theme?.colors?.borderColor || "#CBD5E0"}>
                 <HStack gap={2}>
                     <Text fontSize="xs" fontWeight="semibold" color={theme?.colors?.primaryText || "#1a202c"}>
                         {transactionTitle || "Transaction"} Items
                     </Text>
-
                     {showTag && (
                         <>
                             <Button size="2xs" bg="yellow.subtle" color="blackAlpha.800" onClick={handleTagChange}>
@@ -937,80 +831,56 @@ export default function DraftTransactionTable({
                             </Button>
                             {isTag && (
                                 <Box display="flex" alignItems="center">
-                                    <CapitalizedInput
-                                        field="tagNo"
-                                        value={tagNo}
-                                        onChange={(_, value) => setTagNo(value)}
-                                        size="xs"
-                                        onEnter={handleTagNoKeyDown}
-                                    />
+                                    <CapitalizedInput field="tagNo" value={tagNo}
+                                        onChange={(_, value) => setTagNo(value)} size="xs" onEnter={handleTagNoKeyDown} />
                                 </Box>
                             )}
                         </>
                     )}
-
                     {showBill && (
-                        <Button
-                            size="2xs" bg="blue.subtle"
-                            color={theme.colors.primaryText}
-                            onClick={() => handleBillShow()}
-                        >
+                        <Button size="2xs" bg="blue.subtle" color={theme?.colors?.primaryText || "#1a202c"} onClick={() => handleBillShow()}>
                             Bills 📄
                         </Button>
                     )}
-
-                    <Badge
-                        colorPalette={committedRows.length > 0 ? "green" : "gray"}
-                        variant="subtle" fontSize="2xs" px={2}
-                    >
+                    <Badge colorPalette={committedRows.length > 0 ? "green" : "gray"} variant="subtle" fontSize="2xs" px={2}>
                         {committedRows.length} item{committedRows.length !== 1 ? "s" : ""}
                     </Badge>
-
-                    <Button
-                        size="2xs" colorPalette="blue" variant="subtle" fontSize="2xs"
-                        onClick={handleSyncAll} title="Sync all local changes to store"
-                    >
-                        ↑ Sync
-                    </Button>
+                  
                 </HStack>
-
                 {!isEditing && (
-                    <Button
-                        size="2xs" colorPalette="red" variant="outline" fontSize="2xs"
+                    <Button size="2xs" colorPalette="red" variant="outline" fontSize="2xs"
                         onClick={() => {
                             onClear?.();
                             setDraftRows([makeEmptyRow(formFields, !!isIssue)]);
-                        }}
-                    >
+                            syncedRowIdsRef.current = new Set();
+                            committedRowIdsRef.current = new Set();
+                            appliedPureIdRef.current = {};
+                            appliedItemIdRef.current = {};
+                            touchNotFoundRef.current = new Set();
+                            lastAppliedTouchRef.current = {};
+                            lastAppliedPureRef.current = {};
+                        }}>
                         <Icon as={LuX} boxSize={2} /> Clear All
                     </Button>
                 )}
             </Flex>
 
-            {/* ── ExcelGrid ───────────────────────────────────────────────── */}
-            <Box
-                bg={TYPE_COLORS[transactionType ?? ""] || "#FFF"}
-                borderWidth="1px"
-                borderColor={theme?.colors?.borderColor || "#CBD5E0"}
-                borderRadius="md"
-                overflow="hidden"
-            >
+            <Box bg={TYPE_COLORS[transactionType ?? ""] || "#FFF"} borderWidth="1px"
+                borderColor={theme?.colors?.borderColor || "#CBD5E0"} borderRadius="md" overflow="hidden">
                 <ExcelGrid
                     columns={gridColumns}
-                    rows={draftRows}
+                    rows={draftRows} 
                     renderCell={renderCell}
-                    onCellChange={handleCellChange}
-                    onRowAdd={handleAddRow}
+                    onCellChange={handleCellChange} 
+                    onRowAdd={handleAddRow} 
                     onRowDelete={handleDeleteRow}
-                    onActiveChange={(coord) => {
-                        setActiveRowIndex(coord?.rowIndex ?? null);
-                    }}
-                    errors={{}}
-                    touched={{}}
+                    onActiveChange={(coord) => setActiveRowIndex(coord?.rowIndex ?? null)}
+                    errors={{}} 
+                    touched={{}} 
                     showTotals={committedRows.length > 0}
-                    showAddRow
-                    showDeleteRow
-                    maxVisibleRows={5}
+                    showAddRow 
+                    showDeleteRow 
+                    maxVisibleRows={3} 
                     accentColor={accentColor}
                     renderTotalCell={renderTotalCell}
                     getRowStyle={(ri, row) => {
@@ -1024,66 +894,46 @@ export default function DraftTransactionTable({
                 />
             </Box>
 
-            {/* ── Stone modal ──────────────────────────────────────────────── */}
+            {/* ── Stone modal ───────────────────────────────────────────────── */}
             {isStoneModalOpen && stoneModalRowId && (
-                <Box
-                    position="fixed" top={0} left={0} right={0} bottom={0}
-                    bg="rgba(0,0,0,0.5)" zIndex={100}
-                    display="flex" alignItems="center" justifyContent="center"
-                    onClick={() => setIsStoneModalOpen(false)}
-                >
-                    <Box
-                        bg={theme?.colors?.formColor || "white"} borderRadius="lg"
+                <Box position="fixed" top={0} left={0} right={0} bottom={0} bg="rgba(0,0,0,0.5)"
+                    zIndex={100} display="flex" alignItems="center" justifyContent="center"
+                    onClick={() => setIsStoneModalOpen(false)}>
+                    <Box bg={theme?.colors?.formColor || "white"} borderRadius="lg"
                         maxW="1200px" width="100%" maxH="90vh" overflow="auto"
-                        onClick={(e) => e.stopPropagation()}
-                    >
+                        onClick={(e) => e.stopPropagation()}>
                         <StoneEnterMaster
                             grsWeight={currentGRSWT}
                             onClose={() => setIsStoneModalOpen(false)}
                             draftRowId={stoneModalRowId}
                             initialRows={stoneModalInitialRows}
                             onSave={(stoneRows) => {
-                                const updatedStones = stoneRows.map((s) => ({
-                                    ...s, draftRowId: stoneModalRowId,
-                                }));
+                                const updatedStones = stoneRows.map((s) => ({ ...s, draftRowId: stoneModalRowId }));
                                 const stoneWtTotal = updatedStones.reduce((sum, r) => {
                                     const wt = Number(r.stoneWeight || 0);
-
                                     return sum + (r.stoneUnit === "c" ? wt / 5 : wt);
                                 }, 0);
                                 const stnAmtTotal = updatedStones.reduce((sum, r) => sum + r.stoneAmount, 0);
-
-                                const stoneRowIndex = draftRowsRef.current.findIndex(
-                                    (x) => x.__rowId === stoneModalRowId
-                                );
-                                const stoneWasCommitted = parentRowsRef.current.some(
-                                    (pr) => pr.__rowId === stoneModalRowId
-                                );
+                                const targetId = stoneModalRowId;
 
                                 setDraftRows((prev) => prev.map((r) => {
-                                    if (r.__rowId !== stoneModalRowId) return r;
-                                    return recalcRow({
+                                    if (r.__rowId !== targetId) return r;
+                                    const updated = recalcRow({
                                         ...r,
                                         _stones: updatedStones,
                                         STNWT: stoneWtTotal.toFixed(3),
                                         STNAMT: stnAmtTotal.toFixed(2),
                                     }, !!isIssue);
+                                    // Sync stone update
+                                    setTimeout(() => syncRowToParent(updated), 0);
+                                    return updated;
                                 }));
-
-                                if (stoneWasCommitted && stoneRowIndex >= 0) {
-                                    pendingParentCallRef.current = () => {
-                                        onUpdateRow(stoneRowIndex, "STNWT", stoneWtTotal.toFixed(3));
-                                        onUpdateRow(stoneRowIndex, "STNAMT", stnAmtTotal.toFixed(2));
-                                        onUpdateRow(stoneRowIndex, "_stones", updatedStones);
-                                    };
-                                }
 
                                 setIsStoneModalOpen(false);
                                 toaster.create({
                                     title: "Stones Updated",
                                     description: `Total stone weight: ${stoneWtTotal.toFixed(3)}g`,
-                                    type: "success",
-                                    duration: 2000,
+                                    type: "success", duration: 2000,
                                 });
                             }}
                             stoneItems={stoneItemsCollection}
@@ -1092,56 +942,35 @@ export default function DraftTransactionTable({
                 </Box>
             )}
 
-            {/* ── Misc / Other-charges modal ───────────────────────────────── */}
+            {/* ── Misc modal ────────────────────────────────────────────────── */}
             {isMiscModalOpen && miscModalRowId && (
-                <Box
-                    position="fixed" top={0} left={0} right={0} bottom={0}
-                    bg="rgba(0,0,0,0.5)" zIndex={100}
-                    display="flex" alignItems="center" justifyContent="center"
-                    onClick={() => setIsMiscModalOpen(false)}
-                >
-                    <Box
-                        bg={theme?.colors?.formColor || "white"} borderRadius="lg"
+                <Box position="fixed" top={0} left={0} right={0} bottom={0} bg="rgba(0,0,0,0.5)"
+                    zIndex={100} display="flex" alignItems="center" justifyContent="center"
+                    onClick={() => setIsMiscModalOpen(false)}>
+                    <Box bg={theme?.colors?.formColor || "white"} borderRadius="lg"
                         maxW="600px" width="100%" maxH="90vh" overflow="auto"
-                        onClick={(e) => e.stopPropagation()}
-                    >
+                        onClick={(e) => e.stopPropagation()}>
                         <OtherChargesWindow
                             draftRowId={miscModalRowId}
                             onClose={() => setIsMiscModalOpen(false)}
                             initialRows={otherChargesInitialRows}
                             onSave={(chargeRows) => {
-                                const updatedCharges = chargeRows.map((c) => ({
-                                    ...c, draftRowId: miscModalRowId,
-                                }));
-                                const total = updatedCharges.reduce(
-                                
-                                    (sum, c) => sum + (Number(c.finalAmount) || 0), 0
-                                );
-
-                                const miscRowIndex = draftRowsRef.current.findIndex(
-                                    (x) => x.__rowId === miscModalRowId
-                                );
-                                const miscWasCommitted = parentRowsRef.current.some(
-                                    (pr) => pr.__rowId === miscModalRowId
-                                );
+                                const updatedCharges = chargeRows.map((c) => ({ ...c, draftRowId: miscModalRowId }));
+                                const total = updatedCharges.reduce((sum, c) => sum + (Number(c.finalAmount) || 0), 0);
+                                const targetId = miscModalRowId;
 
                                 setDraftRows((prev) => prev.map((r) => {
-                                    if (r.__rowId !== miscModalRowId) return r;
-                                    return { ...r, _miscCharges: updatedCharges, HMC: total.toFixed(2) };
+                                    if (r.__rowId !== targetId) return r;
+                                    const updated = { ...r, _miscCharges: updatedCharges, HMC: total.toFixed(2) };
+                                    // Sync misc charges update
+                                    setTimeout(() => syncRowToParent(updated), 0);
+                                    return updated;
                                 }));
-
-                                if (miscWasCommitted && miscRowIndex >= 0) {
-                                    pendingParentCallRef.current = () => {
-                                        onUpdateRow(miscRowIndex, "HMC", total.toFixed(2));
-                                        onUpdateRow(miscRowIndex, "_miscCharges", updatedCharges);
-                                    };
-                                }
 
                                 toaster.create({
                                     title: "Charges Updated",
                                     description: `Total charges: Rs.${total.toFixed(2)}`,
-                                    type: "success",
-                                    duration: 2000,
+                                    type: "success", duration: 2000,
                                 });
                                 setIsMiscModalOpen(false);
                             }}
@@ -1153,10 +982,8 @@ export default function DraftTransactionTable({
                 </Box>
             )}
 
-            {/* ── Sales bill modal ─────────────────────────────────────────── */}
             <SalesBillViewModal
-                isOpen={showBillModal}
-                onClose={handleBillShow}
+                isOpen={showBillModal} onClose={handleBillShow}
                 billParams={onSaleReturnModal.billParams}
                 onBillParamChange={onSaleReturnModal.onBillParamChange}
                 billDetails={onSaleReturnModal.billDetails}

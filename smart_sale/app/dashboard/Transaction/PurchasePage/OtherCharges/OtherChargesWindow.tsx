@@ -12,6 +12,7 @@ import { CapitalizedInput } from "@/components/ui/CapitalizedInput";
 import { toaster } from "@/components/ui/toaster";
 import { useGlobalKey } from "@/components/key/useGlobalKey";
 import ExcelGrid, { ColumnDef, RenderCellParams } from "@/component/table/ExcelGrid";
+import { useSoftControlById } from "@/hooks/apiHooks/softControl/useSoftControl";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -42,6 +43,7 @@ const COLUMNS: ColumnDef[] = [
     { key: "finalAmount", label: "FINAL AMOUNT", width: 100, align: "right", decimalScale: 2, required: true , disabled:true },
 ];
 
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 let _uid = 0;
@@ -63,7 +65,15 @@ export default function OtherChargesWindow({
     enteredPieces
 }: Props) {
 
-    console.log(enteredPieces,'enteredPieces')
+    console.log(enteredPieces,'enteredPieces');
+  
+
+    const { data: softControlData } = useSoftControlById('PU_HMC_FINALAMT');
+
+    const isHmcFinalAmt = softControlData?.CTLTEXT === 'Y'? true : false;
+
+
+
     // ── Rows — ExcelGrid is fully controlled ──────────────────────────────────
     const [rows, setRows] = useState<MiscChargeRow[]>(() => {
         if (initialRows.length > 0) {
@@ -113,7 +123,7 @@ export default function OtherChargesWindow({
             const amt = Number(row.amount || 0);
             return {
                 ...row,
-                finalAmount: String(isHmc ? amt * Number(enteredPieces || 1) : amt)
+                finalAmount: String(isHmc && isHmcFinalAmt ? amt * Number(enteredPieces || 1) : amt)
             };
         }));
     }, [enteredPieces]); // ✅ Remove otherChargesData — only re-derive when pieces change
@@ -134,18 +144,7 @@ export default function OtherChargesWindow({
         return errs;
     }, [rows]);
 
-    // const containerRef = useRef<HTMLDivElement>(null);
-
-    // useEffect(() => {
-    //     // Give ExcelGrid one tick to render its first cell
-    //     const id = requestAnimationFrame(() => {
-    //         const input = containerRef.current?.querySelector<HTMLElement>(
-    //             'input, button[role="combobox"]'
-    //         );
-    //         input?.focus();
-    //     });
-    //     return () => cancelAnimationFrame(id);
-    // }, []);
+ 
 
     // ── Cell change — fully controlled ────────────────────────────────────────
     const handleCellChange = useCallback(
@@ -206,7 +205,7 @@ export default function OtherChargesWindow({
                 );
 
                 updated.finalAmount = String(
-                    isHmc ? amt * Number(enteredPieces || 1) : amt
+                    isHmc && isHmcFinalAmt ? amt * Number(enteredPieces || 1) : amt
                 );
 
                 next[ri] = updated;

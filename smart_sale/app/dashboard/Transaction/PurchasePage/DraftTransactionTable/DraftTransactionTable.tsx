@@ -22,6 +22,7 @@ import { TextareaField } from "@/components/ui/CapitalizesTextArea";
 import { ExcelGrid, ColumnDef, RenderCellParams } from "@/component/table/ExcelGrid";
 
 import { useTouchByFilter } from "@/hooks/apiHooks/touch/useTouchMastData";
+import { usePurchaseTransactionStore } from "@/store/purchase/usePurchaseTransactionStore";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -125,14 +126,15 @@ function recalcRow(
     const awt = parseFloat(row.AWT) || 0;
     const atouch = parseFloat(row.ATOUCH) || 0;
 
-    const calMode = row.CALMODE 
+    const calMode = row.CAL_MODE || "NETWT";
 
+    row.NETWT = (g - s).toFixed(3);
     console.log(calMode, "calMode");
 
     const baseWt =
-        calMode === "GRSWT"
+        calMode === "NETWT"
             ? (g - s)
-            : (g-s);
+            : (g);
 
     row.PUREWT = isIssue
         ? ((wt * touch) / 100).toFixed(3)
@@ -213,6 +215,7 @@ export default function DraftTransactionTable({
     const [miscModalRowId, setMiscModalRowId] = useState<string | null>(null);
     const [currentGRSWT, setCurrentGRSWT] = useState<number>(0);
     const [isStoneModalOpen, setIsStoneModalOpen] = useState(false);
+    const [stoneModalInitialRows, setStoneModalInitialRows] = useState<any[]>([]);
     const [isMiscModalOpen, setIsMiscModalOpen] = useState(false);
 
     // ── Stone items ────────────────────────────────────────────────────────────
@@ -250,7 +253,7 @@ export default function DraftTransactionTable({
                 "WASTAGE", "TOUCH", "PUREWT", "HMC", "MC", "STNAMT", "DESCRIPTION"];
     }, [isIssue, isTag, transactionType]);
 
-  
+    console.log(transactionType,'transactionType');
 
     const baseColumns = isIssue ? issueColumns : purchaseColumns(isTag);
     const colMap = useMemo(() => new Map(baseColumns.map((c) => [c.key, c])), [baseColumns]);
@@ -296,6 +299,9 @@ export default function DraftTransactionTable({
 
             if (!isIssue && col.key === "STNAMT")
                 return { ...base, type: "calculated", disabled: true };
+
+            if (!isIssue && col.key === "TOUCH" && transactionType === "PU") 
+                return { ...base, disabled : true };
 
             return base;
         });
@@ -465,36 +471,29 @@ export default function DraftTransactionTable({
         });
     }, [draftRows]);
 
-    // ── Manual sync: push all local draft rows to parent store ────────────────
-    const handleSyncAll = useCallback(() => {
-        const current = draftRowsRef.current;
 
-        current.forEach((row, rowIndex) => {
-            const isMeaningful = !!(row.ITEMID || row.PUREID || row.WT || row.GRSWT);
-            if (!isMeaningful) return;
 
-            const isCommitted = committedRowIdsRef.current.has(row.__rowId);
 
-            if (isCommitted) {
-                // Row already in store — update every field
-                Object.keys(row).forEach((field) => {
-                    if (field.startsWith("_") || field === "__rowId") return; // skip meta
-                    onUpdateRow(rowIndex, field, row[field]);
-                });
-            } else {
-                // New row — add it to the store and mark committed
-                committedRowIdsRef.current.add(row.__rowId);
-                onAddRow(row);
+    const [touched, setTouched] = useState<Record<string, boolean>>({});
+    const errors = useMemo<Record<string, string>>(() => {
+        const errs: Record<string, string> = {};
+        rows.forEach((row, ri) => {
+            if (row.ITEMID) {
+                
+                if (!row.TOUCH || row.TOUCH === "")
+                    errs[`${ri}_TOUCH`] = "TOUCH is required";
+                if( row.TOUCH <= row.ATOUCH && row.ITEMTYPE === "PR") 
+                    errs[`${ri}_TOUCH`] = "TOUCH must be a number";
+                const weight = Number(row.GRSWT);
+                if (!row.GRSWT || isNaN(weight) || weight < 0)
+                    errs[`${ri}_GRSWT`] = "GRS Weight must be > 0";
             }
-        });
 
-        toaster.create({
-            title: "Synced",
-            description: `${current.filter(r => !!(r.ITEMID || r.PUREID || r.WT || r.GRSWT)).length} row(s) synced to store`,
-            type: "success",
-            duration: 1500,
         });
-    }, [onUpdateRow, onAddRow]);
+        return errs;
+    }, [rows]);
+
+    console.log(errors,'errors')
 
     // ── Delete row ─────────────────────────────────────────────────────────────
     // FIX: onRemoveRow (Zustand store update) must NOT be called inside
@@ -603,6 +602,7 @@ export default function DraftTransactionTable({
                 onUpdateRow(rowIndex, colKey, value);
             }
         };
+        setTouched(prev => ({ ...prev, [`${rowIndex}_${colKey}`]: true }));
     }, [isIssue, onAddRow, onUpdateRow]);
 
     // ── Flush pending parent calls after every render (safe — runs after paint)
@@ -639,21 +639,17 @@ export default function DraftTransactionTable({
 
 
 
-    // ── Touch data effect (sales) ─────────────────────────────────────────────
+    // ── Touch data effect ─────────────────────────────────────────────
     useEffect(() => {
         if (activeRowIndex === null || !activeRowId || !activeRowItemId) return;
         if (touchDataLoading) return;
 
         const key = `${activeRowId}::${activeRowItemId}`;
         if (appliedItemIdRef.current[activeRowId] === key) return;
-        appliedItemIdRef.current[activeRowId] = key;
-
-        const rowIndex = activeRowIndex;
 
         if (!touchData || !touchData.TOUCH) {
             touchNotFoundRef.current.add(activeRowId);
-
-            // ✅ Defer toast — outside render cycle
+            // ✅ Don't mark as applied — let it retry when data arrives
             setTimeout(() => {
                 toaster.create({
                     title: "No Touch Found",
@@ -665,20 +661,25 @@ export default function DraftTransactionTable({
             return;
         }
 
+        // ✅ Only mark as applied when we actually have data
+        appliedItemIdRef.current[activeRowId] = key;
         touchNotFoundRef.current.delete(activeRowId);
+
         const touch = touchData.TOUCH;
-        const calMode = touchData.CALMODE;
-        setCalculationMode(calMode)
+        const calMode = touchData.CALMODE || "NETWT";
+
+        setCalculationMode(calMode); // ✅ no longer in deps so no loop
+
+        const rowIndex = activeRowIndex;
 
         setDraftRows((prev) => {
             const next = [...prev];
-            const row = { ...next[rowIndex], TOUCH: touch };
+            const row = { ...next[rowIndex], TOUCH: touch, ATOUCH: touch, CAL_MODE: calMode };
             recalcRow(row, false);
             next[rowIndex] = row;
             return next;
         });
 
-        // ✅ Defer toast — outside render cycle
         setTimeout(() => {
             toaster.create({
                 title: "Touch Applied",
@@ -692,12 +693,13 @@ export default function DraftTransactionTable({
         if (wasCommitted) {
             pendingParentCallRef.current = () => {
                 onUpdateRow(rowIndex, "TOUCH", touch);
-                onUpdateRow(rowIndex, "CALMODE", calMode);
+                onUpdateRow(rowIndex, "ATOUCH", touch);
+                onUpdateRow(rowIndex, "CAL_MODE", calMode);
             };
         }
-    }, [touchData, touchDataLoading ,calculationMode]);
+    }, [touchData, touchDataLoading]); // ✅ no calculationMode
 
-    console.log(calculationMode,'calculationMode');
+
 
     // ── Pure gold effect (issue) ──────────────────────────────────────────────
     useEffect(() => {
@@ -762,16 +764,21 @@ export default function DraftTransactionTable({
             toaster.create({ title: "Enter GRSWT first", type: "warning" });
             return;
         }
+
+        // ✅ Read fresh from store, not from stale local draftRows
+        const freshRow = usePurchaseTransactionStore.getState().draftRows.find(
+            (r) => r.__rowId === rowId
+        );
+
+        console.log(freshRow,'freshRow' ,rowId);
+        console.log(usePurchaseTransactionStore.getState(),'usePurchaseTransactionStore')
         setStoneModalRowId(rowId);
         setCurrentGRSWT(grsWeight);
+        setStoneModalInitialRows(freshRow?._stones || []); // ✅ set explicitly
         setIsStoneModalOpen(true);
     }, []);
 
-    const stoneModalRow = useMemo(
-        () => draftRows.find((r) => r.__rowId === stoneModalRowId),
-        [draftRows, stoneModalRowId]
-    );
-    const stoneModalInitialRows = stoneModalRow?._stones || [];
+ 
 
     // ── Misc modal handlers ────────────────────────────────────────────────────
     const handleOpenMiscModal = useCallback((rowId: string) => {
@@ -838,6 +845,7 @@ export default function DraftTransactionTable({
                 <div
                     style={{ display: "flex", alignItems: "center", width: "100%", padding: "0 2px" }}
                     onFocus={() => handleOpenStoneModal(row.__rowId, parseFloat(row.GRSWT) || 0)}
+                    onClick={() => handleOpenStoneModal(row.__rowId, parseFloat(row.GRSWT) || 0)}
                 >
                     <CapitalizedInput
                         field={col.key}
@@ -869,6 +877,7 @@ export default function DraftTransactionTable({
                 <div
                     style={{ display: "flex", alignItems: "center", width: "100%", padding: "0 2px" }}
                     onFocus={() => handleOpenMiscModal(row.__rowId)}
+                    onClick={() => handleOpenMiscModal(row.__rowId)}
                 >
                     <CapitalizedInput
                         field={col.key}
@@ -994,23 +1003,23 @@ export default function DraftTransactionTable({
         }
 
         // ── TOUCH in issue mode ────────────────────────────────────────────────
-        if (isIssue && col.key === "TOUCH") {
-            return (
-                <CapitalizedInput
-                    field={col.key}
-                    value={value || ""}
-                    onChange={(_, v) => onChange(v)}
-                    type="number"
-                    isCapitalized
-                    size="xs"
-                    rounded="sm"
-                    decimalScale={field.decimalScale}
-                    inputRef={inputRef}
-                    onEnter={onCommit}
-                    noBorder
-                />
-            );
-        }
+        // if (isIssue && col.key === "TOUCH") {
+        //     return (
+        //         <CapitalizedInput
+        //             field={col.key}
+        //             value={value || ""}
+        //             onChange={(_, v) => onChange(v)}
+        //             type="number"
+        //             isCapitalized
+        //             size="xs"
+        //             rounded="sm"
+        //             decimalScale={field.decimalScale}
+        //             inputRef={inputRef}
+        //             onEnter={onCommit}
+        //             noBorder
+        //         />
+        //     );
+        // }
 
         // ── Default number / text ──────────────────────────────────────────────
         return (
@@ -1086,16 +1095,7 @@ export default function DraftTransactionTable({
                     >
                         {committedRows.length} item{committedRows.length !== 1 ? "s" : ""}
                     </Badge>
-                    <Button
-                        size="2xs"
-                        colorPalette="blue"
-                        variant="subtle"
-                        fontSize="2xs"
-                        onClick={handleSyncAll}
-                        title="Sync all local changes to store"
-                    >
-                        ↑ Sync
-                    </Button>
+                  
                 </HStack>
 
                 {!isEditing && (
@@ -1129,8 +1129,8 @@ export default function DraftTransactionTable({
                     onActiveChange={(coord) => {
                         setActiveRowIndex(coord?.rowIndex ?? null);
                     }}
-                    errors={{}}
-                    touched={{}}
+                    errors={errors}
+                    touched={touched}
                     showTotals={committedRows.length > 0}
                     showAddRow
                     showDeleteRow

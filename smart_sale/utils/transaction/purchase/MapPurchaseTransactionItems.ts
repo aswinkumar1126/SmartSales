@@ -1,5 +1,6 @@
 import { TransactionType } from "@/types/transcation/Transaction";
 import { TRANSACTIONTYPES } from "@/data/Transaction/TransactionType";
+import { MapOtherCharges } from "./MapOtherCharges";
 
 // ─── Pure calculation function ────────────────────────────────────────────────
 function calculateStoneAmount(
@@ -22,123 +23,91 @@ function calculateStoneAmount(
         if (calculation === "p") return p * r;
         if (calculation === "c") return (w / 5) * r * 5;
     }
-
     return 0;
 }
 
 
-
-const mapPurchaseReturnItems = (list: any[] = [], type: string, isTagedItem?: any) => {
+// ─── Purchase return items ────────────────────────────────────────────────────
+const mapPurchaseReturnItems = (
+    list: any[] = [],
+    type: string,
+    isTagedItem: (id: number) => boolean,
+    isUseFinalAmount: boolean        // ✅ passed in
+) => {
     return list.map((item, index) => {
-
         const rowId = `edit-${item.SNO || Date.now()}-${index}`;
 
-     
-
-        const isTagged = item.ITEMID
-            ? isTagedItem(Number(item.ITEMID))
-            : false;
+        const isTagged = item.ITEMID ? isTagedItem(Number(item.ITEMID)) : false;
         const ITEM_TYPE = isTagged ? "TAGGED" : "NON_TAGGED";
-
-
 
         // ---------------- STONES ----------------
         const stonesRaw = item.STONEDETAILS || [];
-
         const normalizedStones = stonesRaw.map((s: any, i: number) => ({
             id: `stone-${rowId}-${i}`,
-
             draftRowId: rowId,
-
             stoneId: String(s.stoneId || s.STNITEMID || ""),
             subStoneId: String(s.substoneId || s.STNSUBITEMID || ""),
-
             stonePcs: Number(s.stonepcs || s.STNPCS || 1),
             stoneWeight: Number(s.stoneWeight || s.STNWT || 0),
-
             stoneUnit: s.stoneUnit || "g",
-            stoneCalculation: s.stoneCalculation || s.stoneCalculation || "w",
-
+            stoneCalculation: s.stoneCalculation || "w",
             stoneRate: Number(s.stoneRate || s.STNRATE || 0),
             stoneAmount: Number(s.stoneAmount || s.STNAMT || 0),
         }));
 
         const totalStoneWeight = normalizedStones.reduce(
-            (sum: number, s: any) => sum + s.stoneWeight,
-            0
+            (sum: number, s: any) => sum + s.stoneWeight, 0
         );
-     
+        const totalStoneAmount = normalizedStones.length > 0
+            ? normalizedStones.reduce((sum: number, s: any) => sum + Number(s.stoneAmount), 0)
+            : item.STNAMT || 0;
+
         const grswt = Number(item.GRSWT || 0);
         const stnwt = normalizedStones.length > 0 ? totalStoneWeight : Number(item.STNWT || 0);
-        const totalStoneAmount = normalizedStones.length > 0 ? normalizedStones.reduce((sum:number ,s:any) => sum + Number(s.stoneAmount), 0) : item.STNAMT || 0 ;
 
-
-        // ---------------- MISC CHARGES (HMC) ----------------
-        const miscChargesRaw = item.PURCHASEOTHERCHARGESDETAILS || [];
-
-        const normalizedMisc = miscChargesRaw.map((c: any, i: number) => ({
-            id: `misc-${rowId}-${i}`,
-
-            draftRowId: rowId,
-
-            chargeName: String(c.chargeId || 0),
-            amount: Number(c.chargeAmount || 0),
-
-            itemId: Number(c.itemId || item.ITEMID || 0),
-        }));
-
-        const totalHMC =
-            normalizedMisc.length > 0
-                ? normalizedMisc.reduce(
-                    (sum: number, c: any) => sum + c.amount,
-                    0
-                )
-                : Number(item.HMC || item.MC || 0);
+        // ---------------- MISC CHARGES ----------------
+        const { normalizedMisc, totalHMC } = MapOtherCharges(
+            item, rowId, isUseFinalAmount  // ✅
+        );
 
         return {
-            __rowId: `edit-${item.SNO || Date.now()}-${index}`,
+            __rowId: rowId,
             __isNew: false,
-            __isTagged:isTagged,
-
+            __isTagged: isTagged,
             ITEM_TYPE,
-
             TRANSACTION_TYPE: type,
             _type: type,
-
             ITEMID: String(item.ITEMID || ""),
-            TAGNO : item.TAGNO || "",
-
+            TAGNO: item.TAGNO || "",
             PCS: Number(item.PCS || 0),
             GRSWT: grswt,
             STNWT: stnwt,
             NETWT: grswt - stnwt,
-
             TOUCH: Number(item.TOUCH || 0),
             PUREWT: Number(item.PUREWT || 0),
-
             STNAMT: totalStoneAmount,
             HMC: totalHMC,
             MC: Number(item.MC || 0),
             DESCRIPTION: item.DESCRIPTION || "",
             SNO: item.SNO || "",
-
             _stones: normalizedStones,
-            _miscCharges: normalizedMisc || [],
+            _miscCharges: normalizedMisc,
         };
     });
 };
 
-
-const mapPurchaseItems = (list: any[] = [], type: string) => {
+// ─── Purchase items ───────────────────────────────────────────────────────────
+const mapPurchaseItems = (
+    list: any[] = [],
+    type: string,
+    isUseFinalAmount: boolean        // ✅ passed in
+) => {
+    // console.log(isUseFinalAmount,'isUseFinalAmount')
     return list.map((item, index) => {
-
-        console.log(list,'purchaseitems');
-
         const rowId = `edit-${item.SNO || Date.now()}-${index}`;
 
         // ---------------- STONES ----------------
         const stonesRaw = item.STONEDETAILS || [];
-
         const normalizedStones = stonesRaw.map((s: any, i: number) => {
             const unit = (s.stoneUnit || "g") as "g" | "c";
             const calculation = (s.stoneCalculation || "w") as "w" | "p" | "c";
@@ -146,177 +115,106 @@ const mapPurchaseItems = (list: any[] = [], type: string) => {
             const stonePcs = String(s.stonePcs || s.STNPCS || 1);
             const stoneRate = String(s.stoneRate || s.STNRATE || 0);
 
-            const stoneAmount = calculateStoneAmount(
-                unit,
-                stoneWeight,
-                stonePcs,
-                stoneRate,
-                calculation
-            );
+            const stoneAmount = calculateStoneAmount(unit, stoneWeight, stonePcs, stoneRate, calculation);
 
             return {
                 id: `stone-${rowId}-${i}`,
                 draftRowId: rowId,
-
                 stoneId: String(s.stoneId || s.STNITEMID || ""),
                 subStoneId: String(s.substoneId || s.STNSUBITEMID || ""),
-
                 stonePcs,
                 stoneWeight,
                 stoneUnit: unit,
                 stoneCalculation: calculation,
                 stoneRate,
-
-                // ✅ Always derived — never trust stored value
                 stoneAmount: stoneAmount > 0 ? String(stoneAmount) : "",
             };
         });
+
         const totalStoneWeight = normalizedStones.reduce((sum: number, s: any) => {
             const w = parseFloat(s.stoneWeight) || 0;
             return sum + (s.stoneUnit === "c" ? w / 5 : w);
         }, 0);
-        // ---------------- BASIC WEIGHTS ----------------
+
         const grswt = Number(item.GRSWT || 0);
-
-        const stnwt =
-            normalizedStones.length > 0
-                ? totalStoneWeight
-                : Number(item.STNWT || 0);
-
+        const stnwt = normalizedStones.length > 0 ? totalStoneWeight : Number(item.STNWT || 0);
         const netwt = grswt - stnwt;
 
-        // ---------------- MISC CHARGES (HMC) ----------------
-        const miscChargesRaw = item.OTHERCHARGESDETAILS || [];
+        // ---------------- MISC CHARGES ----------------
+        const { normalizedMisc, totalHMC } = MapOtherCharges(
+            item, rowId, isUseFinalAmount           // ✅
+        );
 
-        const normalizedMisc = miscChargesRaw.map((c: any, i: number) => {
+        console.log(totalHMC,'totalHMC')
 
-            const isHmc =
-                c?.chargeName?.trim().toUpperCase() === "HMC";
-
-            const finalAmt = Number(c.chargeAmount || 0);
-            return {
-                id: `misc-${rowId}-${i}`,
-
-                draftRowId: rowId,
-
-                chargeId: String(c.chargeId || 0),
-                chargeName: c.chargeName ,
-                amount: isHmc
-                    ? finalAmt / Number(item.PCS || 1)
-                    : finalAmt,
-                finalAmount: finalAmt,
-                itemId: Number(c.itemId || item.ITEMID || 0),
-                
-            }
-          
-        });
-
-        const totalHMC =
-            normalizedMisc.length > 0
-                ? normalizedMisc.reduce(
-                    (sum: number, c: any) => sum + c.finalAmount,
-                    0
-                )
-                : Number(item.HMC || item.MC || 0);
-
-        // ---------------- FINAL ROW ----------------
         return {
             __rowId: rowId,
             __isNew: false,
             __isEditing: false,
-
             TRANSACTION_TYPE: type,
             _type: type,
-
             ITEMID: String(item.ITEMID || ""),
             TAGNO: item.TAGNO || "",
-
             PCS: Number(item.PCS || 0),
-
             GRSWT: grswt.toFixed(3),
             STNWT: stnwt.toFixed(3),
             NETWT: netwt,
-
-            TOUCH: item.TOUCH || 'TOUCH',
+            TOUCH: item.TOUCH || "TOUCH",
             PUREWT: Number(item.PUREWT || 0),
-
             MC: Number(item.MC || 0),
             HMC: totalHMC,
-            STNAMT:item.STNAMT || 0,
-
+            STNAMT: item.STNAMT || 0,
             DESCRIPTION: item.DESCRIPTION || "",
             SNO: item.SNO || "",
-
-            // ✅ MATCHES SALE TAG STRUCTURE
             _stones: normalizedStones,
-
             _miscCharges: normalizedMisc,
         };
     });
 };
 
+// ─── Issue / receipt items ────────────────────────────────────────────────────
 const mapIssueItems = (list: any[] = [], type: string) => {
     return list.map((item, index) => {
-
         const wt = Number(item.WT || 0);
-
         return {
             __rowId: `edit-${item.SNO || Date.now()}-${index}`,
             __isNew: false,
-
             TRANSACTION_TYPE: type,
             _type: type,
-
             PUREID: String(item.PUREID || ""),
-
             WT: wt,
             AWT: wt,
-
             TOUCH: Number(item.TOUCH || 0),
             ATOUCH: Number(item.TOUCH || 0),
-
             PUREWT: Number(item.PUREWT || 0),
             APUREWT: Number(item.PUREWT || 0),
-
             DESCRIPTION: item.DESCRIPTION || "",
-            SNO : item.SNO || "",
+            SNO: item.SNO || "",
         };
     });
 };
 
-
+// ─── Main export ──────────────────────────────────────────────────────────────
 export const mapPurchaseTransactionItems = (
     transactionData: any,
-    isTagedItem: (id: number | null) => boolean
+    isTagedItem: (id: number | null) => boolean,
+    isUseFinalAmount: boolean = false   // ✅ passed from component after hook call
 ) => {
     const details = transactionData?.TRANSACTION_DETAILS;
 
-
     if (!details) {
-        return {
-            rows: [],
-            selectedTransactionTypes: [],
-        };
+        return { rows: [], selectedTransactionTypes: [] };
     }
 
-    const purchase = mapPurchaseItems(details.purchase, "PU");
-    const purchaseReturn = mapPurchaseReturnItems(details.purchase_return, "PR", isTagedItem);
-
+    const purchase = mapPurchaseItems(details.purchase, "PU", isUseFinalAmount);
+    const purchaseReturn = mapPurchaseReturnItems(details.purchase_return, "PR", isTagedItem, isUseFinalAmount);
     const issue = mapIssueItems(details.issue, "ISP");
     const receipt = mapIssueItems(details.receipt, "REC");
 
-    const rows = [
-        ...purchase,
-        ...purchaseReturn,
-        ...issue,
-        ...receipt,
-    ].map((item, index) => ({
-        ...item,
-        __previewSno: index + 1,
-    }));
+    const rows = [...purchase, ...purchaseReturn, ...issue, ...receipt]
+        .map((item, index) => ({ ...item, __previewSno: index + 1 }));
 
     const selectedTransactionTypesSet = new Set<string>();
-
     rows.forEach(r => selectedTransactionTypesSet.add(r.TRANSACTION_TYPE));
 
     const selectedTransactionTypes: TransactionType[] =
@@ -324,8 +222,5 @@ export const mapPurchaseTransactionItems = (
             .map(code => TRANSACTIONTYPES.find(t => t.code === code))
             .filter((t): t is TransactionType => !!t);
 
-    return {
-        rows,
-        selectedTransactionTypes,
-    };
+    return { rows, selectedTransactionTypes };
 };

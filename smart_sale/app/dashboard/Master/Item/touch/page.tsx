@@ -53,7 +53,7 @@ const initialFormState: TouchMaster = {
     accode: "",
     itemId: "",
     touch: "",
-    calmode: "",
+    calmode: "NETWT",
 };
 
 export type TouchTableRow = {
@@ -153,6 +153,7 @@ const TouchMasterForm = () => {
 
     useEffect(() => {
         if (!touchDatabyId || editId === null) return;
+        console.log(touchDatabyId,'touchDatabyId')
 
         setForm((prev) => {
             const next = {
@@ -160,8 +161,9 @@ const TouchMasterForm = () => {
                 actype: touchDatabyId.actype ?? "",
                 itemId: touchDatabyId.itemId ?? "",
                 touch: String(touchDatabyId.touch ?? ""),
-                calmode: touchDatabyId.calmode ?? "",
+                calmode: touchDatabyId.calmode || "NETWT",
             };
+            console.log(next, 'nexttouchDatabyId');
 
             // Prevent unnecessary update → helps avoid loops
             if (
@@ -185,6 +187,7 @@ const TouchMasterForm = () => {
     }, [editId, touchDataRefetch]);
 
     /* ---------------- Validation & Submit ---------------- */
+
 
     const payload = {
         actype: form.actype,
@@ -233,6 +236,8 @@ const TouchMasterForm = () => {
         }
 
         setErrors({});
+        console.log(payload, form,'touchpayload')
+
 
         if (editId) {
             updateMutation.mutate(

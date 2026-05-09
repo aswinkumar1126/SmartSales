@@ -405,8 +405,8 @@ export const ExcelGrid: React.FC<ExcelGridProps> = ({
         },
         th: {
         
-            position: 'sticky' as const, top: 0, zIndex: 4,
-            // background: '#f1f3f5',
+            position: 'sticky' as const, top: 0, zIndex: 100,
+            background: '#f7e0d1',
             fontSize: 11, fontWeight: 600, color: '#495057',
             padding: '5px 5px',
             borderBottom: '2px solid #dee2e6',
@@ -627,7 +627,12 @@ export const ExcelGrid: React.FC<ExcelGridProps> = ({
             <div style={S.wrap}>
                 <div style={S.scrollArea}>
                     <table style={S.table}>
-                        <thead>
+                        <thead style={{
+                            ...S.th,
+                       
+                            textAlign: 'center',
+
+                        }}>
                             <tr >
                                 <th style={{ ...S.th, width: 10, textAlign: 'center' }}>#</th>
                                 {columns.map(col => (

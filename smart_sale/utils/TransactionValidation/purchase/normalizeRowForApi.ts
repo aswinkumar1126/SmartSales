@@ -54,7 +54,6 @@ import { TransactionKey, PurchasePayload } from "@/types/transcation/Transaction
                 MC: Number(rest.MC || 0),
                
 
-
                 ...(editTransaction && { SNO: String(rest.SNO || "") }),
                 ...(rest.DESCRIPTION && { DESCRIPTION: rest.DESCRIPTION }),
                 ...(rest.SNO && { SNO: String(rest.SNO) }) // ✅ only added if exists

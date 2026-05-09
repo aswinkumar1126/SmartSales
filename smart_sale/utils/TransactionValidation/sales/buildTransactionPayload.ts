@@ -17,16 +17,17 @@ export const buildTransactionPayload = ({
         // ✅ DIRECT ACCESS
         const rowStones = row._stones || [];
         const rowCharges = row._miscCharges || [];
+        console.log('rowStones', rowCharges,rowStones)
 
         const validStones = rowStones.filter((stone: any) =>
             stone.stoneId &&
-            stone.stonePcs > 0 &&
+            stone.stonePcs >= 0 &&
             stone.stoneWeight > 0 &&
-            stone.stoneRate > 0
+            stone.stoneRate >= 0
         );
 
         const validCharges = rowCharges.filter((charge: any) =>
-            charge.chargeName && Number(charge.amount) > 0
+            charge.chargeId && Number(charge.finalAmount) >= 0
         );
 
         const normalized = normalizeRowForApi(row, mappedType);

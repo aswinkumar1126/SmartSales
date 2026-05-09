@@ -139,6 +139,7 @@ export const useLoadPurchaseTag = () => {
                 newRow._stones= stonesWithId;
             }
 
+     
             // ---------------- STORE UPDATE ----------------
        
             addDraftRow(newRow);

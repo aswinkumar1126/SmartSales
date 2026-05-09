@@ -1245,6 +1245,9 @@ export default function PurchasePage() {
         setSelectedTransactionId(prev =>
             prev === transactionId ? '' : transactionId
         );
+        if(isEditing){
+            setDraftRows([]);
+        }
 
     }, [draftRows]);
 

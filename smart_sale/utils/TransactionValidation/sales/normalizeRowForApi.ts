@@ -6,6 +6,8 @@ import { SaleTransactionKey, SALESTRANSACTIONITEMS } from "@/types/transcation/S
      editTransaction?: boolean
  ): any => {
 
+        console.log(row ,'row for saving')
+
         const {
             __rowId,
             __isNew,
@@ -16,7 +18,9 @@ import { SaleTransactionKey, SALESTRANSACTIONITEMS } from "@/types/transcation/S
         } = row;
 
 
-     console.log(row,rest, 'taggedtagged');
+
+
+     console.log(rest, 'taggedtagged');
         // ---------------- ISSUE / RECEIPT ----------------
         if (tranType === "issue" || tranType === "receipt") {
             return {
@@ -60,6 +64,8 @@ import { SaleTransactionKey, SALESTRANSACTIONITEMS } from "@/types/transcation/S
                 ...(rest.DESCRIPTION && { DESCRIPTION: rest.DESCRIPTION }),
 
                 ...(rest.SNO && { SNO: String(rest.SNO) }) // ✅ only added if exists
+
+
             };
 
             return payload;
@@ -88,6 +94,7 @@ import { SaleTransactionKey, SALESTRANSACTIONITEMS } from "@/types/transcation/S
                 ...(editTransaction && { SNO: String(rest.SNO || "") }),
                 ...(rest.DESCRIPTION && { DESCRIPTION: rest.DESCRIPTION }),
 
+                
                 ...(rest.SNO && { SNO: String(rest.SNO) }) // ✅ only added if exists
             };
 

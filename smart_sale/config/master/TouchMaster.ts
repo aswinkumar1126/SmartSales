@@ -58,13 +58,14 @@ export const TouchMasterFormConfig = ({collection:{actype,accode ,itemId ,calMod
         disabled: isAccode
     },
     {
-        name: "calType",
+        name: "calmode",
         label: "CAL MODE",
         type: "select",
         size: "sm",
         required: true,
         rounded: "sm",
         items: calMode || [],
-        disabled: isAccode
+        disabled: isAccode,
+     
     },
 ];

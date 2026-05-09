@@ -12,6 +12,7 @@ import { CapitalizedInput } from "@/components/ui/CapitalizedInput";
 import { toaster } from "@/components/ui/toaster";
 import { useGlobalKey } from "@/components/key/useGlobalKey";
 import ExcelGrid, { ColumnDef, RenderCellParams } from "@/component/table/ExcelGrid";
+import { useSoftControlById } from "@/hooks/apiHooks/softControl/useSoftControl";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -64,6 +65,10 @@ export default function OtherChargesWindow({
 }: Props) {
 
 
+    const { data: SoftControl } = useSoftControlById('SA_HMC_FINALAMT');
+
+
+    const isHmcFinalAmt = SoftControl?.CTLTEXT === "Y" ;
 
     // ── Rows — ExcelGrid is fully controlled ──────────────────────────────────
     const [rows, setRows] = useState<MiscChargeRow[]>(() => {
@@ -134,7 +139,7 @@ export default function OtherChargesWindow({
             const amt = Number(row.amount || 0);
             return {
                 ...row,
-                finalAmount: String(isHmc ? amt * Number(pcs || 1) : amt)
+                finalAmount: String(isHmc && isHmcFinalAmt ? amt * Number(pcs || 1) : amt)
             };
         }));
     }, [pcs]); 
@@ -197,7 +202,7 @@ export default function OtherChargesWindow({
                 );
 
                 updated.finalAmount = String(
-                    isHmc ? amt * Number(pcs || 1) : amt
+                    isHmc && isHmcFinalAmt ? amt * Number(pcs || 1) : amt
                 );
 
                 next[ri] = updated;

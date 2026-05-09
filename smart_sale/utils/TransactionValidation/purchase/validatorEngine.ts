@@ -28,12 +28,49 @@ export const validatePurchase = (row: any  ) => {
 
     return null;
 };
-export const validatePurchaseReturn = (row: any, validations:any ,  ) => {
+export const validatePurchaseReturn = (row: any  ) => {
 
-    // console.log(validations ,row ,'purchase return validations')
-    if ( validations && row.ITEM_TYPE === "TAGGED" && !row.TAGNO?.trim()) {
+
+    if (row.ITEM_TYPE === "TAGGED" && !row.TAGNO?.trim()) {
 
         return "it's a Taged Item Please enter tag no";
+    }
+    if(Number(row.PCS) <= 0){
+        return "Pcs are required"
+    }
+    if (Number(row.GRSWT) <= 0) {
+        return "Gross weight must be > 0";
+    }
+
+    if (Number(row.TOUCH) <= 0) {
+        return "TOUCH must be > 0";
+    }
+  
+    const touch = Number(row.TOUCH);
+    const actualTouch =Number(row.ATOUCH);
+
+    console.log(touch, actualTouch, row,"touch and actaul touch")
+
+    if (!touch) {
+        return "TOUCH is required";
+    }
+    if (touch <= 0) {
+        return "TOUCH must be > 0";
+    }
+ 
+    if (touch > actualTouch) 
+        return `Touch do not exists the Actual Touch ${row.ATOUCH}`
+    
+    if (!row._miscCharges || row._miscCharges.length <= 0) {
+        return "Other charges are required";
+    }
+
+    const hasHmc = row._miscCharges.some((charge: any) =>
+        charge.chargeName.trim().toUpperCase() === "HMC"
+    );
+
+    if (!hasHmc) {
+        return "HMC charge is required in other charges";
     }
     return null;
 };

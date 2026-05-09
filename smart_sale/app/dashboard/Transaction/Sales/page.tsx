@@ -1338,8 +1338,8 @@ export default function SalesPage() {
                                                     onAddRow={(formData) => {
                                                         handleAddRow(transactionType, formData);
                                                     }}
-                                                    onUpdateRow={(rowIndex, field, value) => {
-                                                        handleUpdateRow(rowIndex, field, value, typeRows);
+                                                    onUpdateRow={(rowId, field, value) => {
+                                                        handleUpdateRow(rowId, field, value);
                                                     }}
                                                     onRemoveRow={(rowId) => {
                                                         handleRemoveRow(rowId);
