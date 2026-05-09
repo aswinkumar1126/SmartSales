@@ -312,60 +312,56 @@ export default function DraftTransactionTable({
 
         // ── Case 3: Same transaction — Smart sync (replace existing or append new) ──
         // const newRows = rows.filter((r) => !prevRowIdsRef.current.has(r.__rowId));
+        // ── Case 3: Same transaction — Smart sync ──────────────────────────────
+        const newRows = rows.filter((r) => !prevRowIdsRef.current.has(r.__rowId));
 
-        // if (newRows.length > 0) {
-        //     setDraftRows((prev) => {
-        //         const next = [...prev];
+        if (newRows.length > 0) {
+            setDraftRows((prev) => {
+                const next = [...prev];
 
-        //         newRows.forEach((newParentRow) => {
-        //             // Check if this row already exists in draft
-        //             const existingIndex = next.findIndex(r => r.__rowId === newParentRow.__rowId);
+                newRows.forEach((newParentRow) => {
+                    const existingIndex = next.findIndex(r => r.__rowId === newParentRow.__rowId);
 
-        //             if (existingIndex !== -1) {
-        //                 // 🔥 REPLACE existing row (preserve local stones/misc charges)
-        //                 // This handles user-created rows that parent added at wrong position
-        //                 next[existingIndex] = recalcRow({
-        //                     ...newParentRow,
-        //                     _stones: next[existingIndex]._stones || [],
-        //                     _miscCharges: next[existingIndex]._miscCharges || [],
-        //                 }, !!isIssue);
-        //             } else {
-        //                 // 🔥 APPEND brand new row from external source (tag/bill)
-        //                 next.push(recalcRow({ ...newParentRow }, !!isIssue));
-        //             }
+                    if (existingIndex !== -1) {
+                        // Replace existing row, preserve local stones/misc
+                        next[existingIndex] = recalcRow({
+                            ...newParentRow,
+                            _stones: next[existingIndex]._stones || [],
+                            _miscCharges: next[existingIndex]._miscCharges || [],
+                        }, !!isIssue);
+                    } else {
+                        // Brand new row from tag lookup — append it
+                        // But first remove any empty placeholder row
+                        const emptyIndex = next.findIndex(
+                            r => !r.ITEMID && !r.PUREID && !r.WT && !r.GRSWT
+                        );
+                        if (emptyIndex !== -1) next.splice(emptyIndex, 1);
 
-        //             committedRowIdsRef.current.add(newParentRow.__rowId);
-        //         });
+                        next.push(recalcRow({
+                            ...newParentRow,
+                            _stones: [],
+                            _miscCharges: [],
+                        }, !!isIssue));
+                    }
 
-        //         // Clean up: Remove any rows that were deleted from parent
-        //         const parentIds = new Set(rows.map(r => r.__rowId));
-        //         const filteredNext = next.filter(row => {
-        //             // Keep if: 1) In parent, OR 2) Not committed (still being edited)
-        //             return parentIds.has(row.__rowId) || !committedRowIdsRef.current.has(row.__rowId);
-        //         });
+                    committedRowIdsRef.current.add(newParentRow.__rowId);
+                });
 
-        //         if (filteredNext.length === 0) {
-        //             return [makeEmptyRow(formFields, !!isIssue)];
-        //         }
-        //         return filteredNext;
-        //     });
-        // } else {
-        //     // No new rows, but still need to remove rows deleted from parent
-        //     setDraftRows((prev) => {
-        //         const parentIds = new Set(rows.map(r => r.__rowId));
-        //         const filtered = prev.filter(row => {
-        //             return parentIds.has(row.__rowId) || !committedRowIdsRef.current.has(row.__rowId);
-        //         });
+                return next.length === 0 ? [makeEmptyRow(formFields, !!isIssue)] : next;
+            });
+        }
 
-        //         if (filtered.length === 0 && prev.length > 0) {
-        //             return [makeEmptyRow(formFields, !!isIssue)];
-        //         }
-        //         return filtered;
-        //     });
-        // }
+        // Handle deletions from parent
+        setDraftRows((prev) => {
+            const parentIds = new Set(rows.map(r => r.__rowId));
+            const filtered = prev.filter(row =>
+                parentIds.has(row.__rowId) || !committedRowIdsRef.current.has(row.__rowId)
+            );
+            return filtered.length === 0 ? [makeEmptyRow(formFields, !!isIssue)] : filtered;
+        });
 
         prevRowIdsRef.current = new Set(rows.map((r) => r.__rowId));
-        // eslint-disable-next-line react-hooks/exhaustive-deps
+
     }, [rows]);
 
 
@@ -687,10 +683,11 @@ export default function DraftTransactionTable({
 
     // ── Tag lookup ─────────────────────────────────────────────────────────────
     const handleTagNoKeyDown = async () => {
-        if (!tagNo) return;
+        if (!tagNo.trim()) return;
         try {
-            await onTagNoLookup?.(tagNo);
+            await onTagNoLookup?.(tagNo); // ← this updates parent rows
             setTagNo("");
+            // ✅ Don't touch prevRowIdsRef here — let the useEffect handle it
         } catch (error) {
             toaster.create({ title: "Error", description: "Failed to process tag", type: "error" });
         }
@@ -1049,7 +1046,11 @@ export default function DraftTransactionTable({
                                 const updatedStones = stoneRows.map((s) => ({
                                     ...s, draftRowId: stoneModalRowId,
                                 }));
-                                const stoneWtTotal = updatedStones.reduce((sum, r) => sum + r.stoneWeight, 0);
+                                const stoneWtTotal = updatedStones.reduce((sum, r) => {
+                                    const wt = Number(r.stoneWeight || 0);
+
+                                    return sum + (r.stoneUnit === "c" ? wt / 5 : wt);
+                                }, 0);
                                 const stnAmtTotal = updatedStones.reduce((sum, r) => sum + r.stoneAmount, 0);
 
                                 const stoneRowIndex = draftRowsRef.current.findIndex(
@@ -1113,7 +1114,8 @@ export default function DraftTransactionTable({
                                     ...c, draftRowId: miscModalRowId,
                                 }));
                                 const total = updatedCharges.reduce(
-                                    (sum, c) => sum + (Number(c.amount) || 0), 0
+                                
+                                    (sum, c) => sum + (Number(c.finalAmount) || 0), 0
                                 );
 
                                 const miscRowIndex = draftRowsRef.current.findIndex(
@@ -1145,6 +1147,7 @@ export default function DraftTransactionTable({
                             }}
                             chargeItems={otherChargesList}
                             otherChargesData={otherChargesData}
+                            pcs={Number(miscModalRow?.PCS)}
                         />
                     </Box>
                 </Box>

@@ -67,16 +67,37 @@ function emptyRow(draftRowId: string): StoneRow {
         stoneAmount: "0",
     };
 }
-
-function calculateAmount(weight: string, pcs: string, rate: string, calculation: "w" | "p"): number {
+function calculateStoneAmount(
+    unit: "g" | "c",
+    weight: string,
+    pcs: string,
+    rate: string,
+    calculation: "w" | "p" | "c"
+): number {
     const w = parseFloat(weight) || 0;
     const p = parseFloat(pcs) || 0;
     const r = parseFloat(rate) || 0;
-    if (calculation === "w") return w * r;
-    if (calculation === "p") return p * r;
+
+    if (unit === "g") {
+        if (calculation === "w") return w * r;
+        if (calculation === "p") return p * r;
+        if (calculation === "c") return w * r * 5;
+    } else {
+        if (calculation === "w") return (w / 5) * r;
+        if (calculation === "p") return p * r;
+        if (calculation === "c") return (w / 5) * r * 5;
+    }
+
     return 0;
 }
 
+const RECALC_FIELDS = new Set([
+    "stoneUnit",
+    "stoneWeight",
+    "stonePcs",
+    "stoneRate",
+    "stoneCalculation",
+]);
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function StoneEnterMaster({
@@ -168,22 +189,25 @@ export default function StoneEnterMaster({
             const next = [...prev];
             const updated = { ...next[ri], [colKey]: value };
 
-            // Recalculate amount when relevant fields change
-            if (["stoneWeight", "stonePcs", "stoneRate", "stoneCalculation"].includes(colKey)) {
-                const amount = calculateAmount(
+            if (RECALC_FIELDS.has(colKey)) {
+                // Always use latest value for the changed field
+                const amount = calculateStoneAmount(
+                    (colKey === "stoneUnit" ? value : updated.stoneUnit) as "g" | "c",
                     colKey === "stoneWeight" ? value : updated.stoneWeight,
                     colKey === "stonePcs" ? value : updated.stonePcs,
                     colKey === "stoneRate" ? value : updated.stoneRate,
-                    colKey === "stoneCalculation" ? value : updated.stoneCalculation
+                    (colKey === "stoneCalculation" ? value : updated.stoneCalculation) as "w" | "p" | "c",
                 );
-                updated.stoneAmount = String(amount);
+                updated.stoneAmount = amount > 0 ? String(amount) : "";
             }
 
             next[ri] = updated;
             return next;
         });
+
         setTouched(prev => ({ ...prev, [`${ri}_${colKey}`]: true }));
     }, []);
+
 
     // ── Row management ────────────────────────────────────────────────────────
     const handleRowAdd = useCallback(() => {
@@ -196,6 +220,9 @@ export default function StoneEnterMaster({
             return next.length === 0 ? [emptyRow(draftRowId)] : next;
         });
     }, [draftRowId]);
+
+
+   
 
     // ── Render cell ───────────────────────────────────────────────────────────
     const renderCell = useCallback((params: RenderCellParams) => {
@@ -253,8 +280,9 @@ export default function StoneEnterMaster({
                         }}
                         css={{ height: "28px", fontSize: "11px" }}
                     >
-                        <option value="w">Weight</option>
+                        <option value="w">Weight (gm)</option>
                         <option value="p">Piece</option>
+                        <option value="c">Carat</option>
                     </NativeSelect.Field>
                     <NativeSelect.Indicator />
                 </NativeSelect.Root>
@@ -316,14 +344,14 @@ export default function StoneEnterMaster({
     // ── Totals ────────────────────────────────────────────────────────────────
     const totals = useMemo(() => ({
         stonePcs: rows.reduce((sum, r) => sum + (parseInt(r.stonePcs) || 0), 0),
-        stoneWeight: rows.reduce((sum, r) => sum + (parseFloat(r.stoneWeight) || 0), 0),
+        // stoneWeight: rows.reduce((sum, r) => sum + (parseFloat(r.stoneWeight) || 0), 0),
         stoneAmount: rows.reduce((sum, r) => sum + (parseFloat(r.stoneAmount) || 0), 0),
     }), [rows]);
 
     const renderTotalCell = useCallback((col: ColumnDef) => {
         if (col.key === "stoneId") return <span style={{ fontSize: 11 }}>TOTAL</span>;
         if (col.key === "stonePcs") return <span style={{ fontSize: 11 }}>{totals.stonePcs}</span>;
-        if (col.key === "stoneWeight") return <span style={{ fontSize: 11 }}>{totals.stoneWeight.toFixed(3)}</span>;
+        // if (col.key === "stoneWeight") return <span style={{ fontSize: 11 }}>{totals.stoneWeight.toFixed(3)}</span>;
         if (col.key === "stoneAmount") return <span style={{ fontSize: 11 }}>{totals.stoneAmount.toFixed(2)}</span>;
         return null;
     }, [totals]);
@@ -399,6 +427,7 @@ export default function StoneEnterMaster({
                 renderTotalCell={renderTotalCell}
                 maxVisibleRows={10}
                 accentColor="#185FA5"
+                // initialFocusCell={{ rowIndex: 0, colKey: "stoneId" }}  // ✅ clean
             />
 
             <HStack justify="flex-end" gap={2} mt={4}>

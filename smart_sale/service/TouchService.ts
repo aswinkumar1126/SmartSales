@@ -1,6 +1,6 @@
 import { axiosInstance } from "@/api/axiosInstance";
 import { ApiResponse } from "@/types/api/apiResponse";
-import { TouchForm ,Touch} from "@/types/touch/touch";
+import { TouchForm ,Touch, TouchFilter, GetTouchByFilter} from "@/types/touch/touch";
 
 
 export const TouchMastService = () => ({
@@ -15,6 +15,22 @@ export const TouchMastService = () => ({
             throw error;
         }
     },
+
+    getTouchByFilter: async (filter: TouchFilter) : Promise<ApiResponse<GetTouchByFilter>> => {
+        try {
+            console.log(filter,'filterfortouch')
+            const response = await axiosInstance.get("/touch/filter", {
+                params: filter
+            });
+            return response.data;
+        } catch (error: any) {
+            console.error("Error fetching TouchMast data:", error?.response?.data || error.message);
+            throw error;
+        }
+    },
+    
+
+
     getTouchMastDataById: async (id:number|null): Promise<ApiResponse<Touch>> => {
         if(!id) return Promise.reject('Invalid ID Provided');
 

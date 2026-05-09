@@ -18,24 +18,28 @@ import ExcelGrid, { ColumnDef, RenderCellParams } from "@/component/table/ExcelG
 type MiscChargeRow = {
     __id: string;
     draftRowId: string;
+    chargeId: string;
     chargeName: string;
-    amount: string; // keep as string — ExcelGrid is value-agnostic
+    amount: string;
+    finalAmount: string; 
 };
 
 type Props = {
     draftRowId: string;
     onClose: () => void;
     onSave: (rows: Omit<MiscChargeRow, '__id'>[]) => void;
-    initialRows?: { id?: string; draftRowId?: string; chargeName: string; amount: number }[];
+    initialRows?: { id?: string; chargeId:string , draftRowId?: string; chargeName: string; amount: number; finalAmount:string }[];
     chargeItems?: SelectItem[];
     otherChargesData?: any;
+    enteredPieces?: number;
 };
 
 // ─── Column definitions ───────────────────────────────────────────────────────
 
 const COLUMNS: ColumnDef[] = [
-    { key: "chargeName", label: "MISCELLANEOUS", width: 200, required: true },
-    { key: "amount", label: "AMOUNT", width: 120, align: "right", decimalScale: 2, required: true },
+    { key: "chargeId", label: "MISCELLANEOUS", width: 150, required: true },
+    { key: "amount", label: "AMOUNT", width: 100, align: "right", decimalScale: 2, required: true },
+    { key: "finalAmount", label: "FINAL AMOUNT", width: 100, align: "right", decimalScale: 2, required: true , disabled:true },
 ];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -44,7 +48,7 @@ let _uid = 0;
 function uid() { return `mc_${++_uid}_${Date.now()}`; }
 
 function emptyRow(draftRowId: string): MiscChargeRow {
-    return { __id: uid(), draftRowId, chargeName: "", amount: "" };
+    return { __id: uid(),chargeId:"",  draftRowId, chargeName: "", amount: "" ,finalAmount:"" };
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -56,15 +60,20 @@ export default function OtherChargesWindow({
     initialRows = [],
     chargeItems = [],
     otherChargesData,
+    enteredPieces
 }: Props) {
+
+    console.log(enteredPieces,'enteredPieces')
     // ── Rows — ExcelGrid is fully controlled ──────────────────────────────────
     const [rows, setRows] = useState<MiscChargeRow[]>(() => {
         if (initialRows.length > 0) {
             return initialRows.map(r => ({
                 __id: r.id ?? uid(),
                 draftRowId: r.draftRowId ?? draftRowId,
+                chargeId: r.chargeId ?? "",
                 chargeName: r.chargeName ?? "",
                 amount: r.amount != null ? String(r.amount) : "",
+                finalAmount: r.finalAmount ?? ""
             }));
         }
         return [emptyRow(draftRowId)];
@@ -81,13 +90,33 @@ export default function OtherChargesWindow({
             setRows(initialRows.map(r => ({
                 __id: r.id ?? uid(),
                 draftRowId: r.draftRowId ?? draftRowId,
+                chargeId: r.chargeId ?? "",
                 chargeName: r.chargeName ?? "",
                 amount: r.amount != null ? String(r.amount) : "",
+                finalAmount: r.finalAmount ?? ""
             })));
         } else {
             setRows([emptyRow(draftRowId)]);
         }
     }, [initialRows, draftRowId]);
+
+    // Add this effect to re-derive finalAmount when enteredPieces changes
+    useEffect(() => {
+        setRows(prev => prev.map(row => {
+            const match = otherChargesData?.find(
+                (item: any) => Number(item.chargeId) === Number(row.chargeId)
+            );
+
+            // ✅ Use same isHmc logic as handleCellChange
+            const isHmc = String(match?.chargeName || "").trim().toUpperCase() === "HMC";
+
+            const amt = Number(row.amount || 0);
+            return {
+                ...row,
+                finalAmount: String(isHmc ? amt * Number(enteredPieces || 1) : amt)
+            };
+        }));
+    }, [enteredPieces]); // ✅ Remove otherChargesData — only re-derive when pieces change
 
     // ── Validation ────────────────────────────────────────────────────────────
     const [touched, setTouched] = useState<Record<string, boolean>>({});
@@ -95,37 +124,102 @@ export default function OtherChargesWindow({
     const errors = useMemo<Record<string, string>>(() => {
         const errs: Record<string, string> = {};
         rows.forEach((row, ri) => {
-            if(row.chargeName){
+            if(row.chargeId){
                 const amt = Number(row.amount);
-                if (!row.amount || isNaN(amt) || amt <= 0)
-                    errs[`${ri}_amount`] = "Must be > 0";
+                if (!row.amount || isNaN(amt) || amt < 0)
+                    errs[`${ri}_amount`] = "Must be >= 0";
             }
            
         });
         return errs;
     }, [rows]);
 
+    // const containerRef = useRef<HTMLDivElement>(null);
+
+    // useEffect(() => {
+    //     // Give ExcelGrid one tick to render its first cell
+    //     const id = requestAnimationFrame(() => {
+    //         const input = containerRef.current?.querySelector<HTMLElement>(
+    //             'input, button[role="combobox"]'
+    //         );
+    //         input?.focus();
+    //     });
+    //     return () => cancelAnimationFrame(id);
+    // }, []);
+
     // ── Cell change — fully controlled ────────────────────────────────────────
-    const handleCellChange = useCallback((ri: number, colKey: string, value: any) => {
-        setRows(prev => {
-            const next = [...prev];
-            const updated = { ...next[ri], [colKey]: value };
+    const handleCellChange = useCallback(
+        (ri: number, colKey: string, value: any) => {
+            setRows(prev => {
+                const next = [...prev];
+                const updated = { ...next[ri], [colKey]: value };
 
-            // Auto-fill amount when chargeName changes (if amount is still empty)
-            if (colKey === "chargeName" && !next[ri].amount) {
+                // ------------------------------------------------
+                // Find selected charge
+                // ------------------------------------------------
+                const selectedChargeId =
+                    colKey === "chargeId"
+                        ? value
+                        : updated.chargeId;
+
+                console.log(selectedChargeId,'selectedChargeId');
+
                 const match = otherChargesData?.find(
-                    (item: any) => Number(item.chargeId) === Number(value)
+                    (item: any) =>
+                        Number(item.chargeId) === Number(selectedChargeId)
                 );
-                if (match?.chargeAmount) {
-                    updated.amount = String(match.chargeAmount);
-                }
-            }
+                console.log(match ,'matching')
 
-            next[ri] = updated;
-            return next;
-        });
-        setTouched(prev => ({ ...prev, [`${ri}_${colKey}`]: true }));
-    }, [otherChargesData]);
+              
+                // ------------------------------------------------
+                // Check whether this charge is HMC
+                // ------------------------------------------------
+                const isHmc =
+                  
+                    String(match?.chargeName || "")
+                        .trim()
+                        .toUpperCase() === "HMC" 
+
+       
+                if (colKey === "chargeId") {
+                    if (!value) {
+                        // ✅ Charge cleared — reset both amount and finalAmount
+                        updated.amount = "";
+                        updated.finalAmount = "";
+                        next[ri] = updated;
+                        return next;
+                    }
+                    // ✅ Always overwrite amount when charge changes (not just when empty)
+                    if (match?.chargeAmount != null) {
+                        updated.amount = String(match.chargeAmount);
+                        updated.chargeName = String(match?.chargeName);
+                    } else {
+                        updated.amount = ""; // charge has no default amount
+                        updated.chargeName = String(match?.chargeName);
+                    }
+                }
+                // ── Calculate final amount ──────────────────────────────────────────
+                const amt = Number(
+                    colKey === "amount"
+                        ? value
+                        : updated.amount || 0
+                );
+
+                updated.finalAmount = String(
+                    isHmc ? amt * Number(enteredPieces || 1) : amt
+                );
+
+                next[ri] = updated;
+                return next;
+            });
+
+            setTouched(prev => ({
+                ...prev,
+                [`${ri}_${colKey}`]: true
+            }));
+        },
+        [otherChargesData, enteredPieces]
+    );
 
     // ── Row management ────────────────────────────────────────────────────────
     const handleRowAdd = useCallback(() => {
@@ -144,7 +238,7 @@ export default function OtherChargesWindow({
         const { col, value, isEditing, isFocused, isError, errorMessage, onChange, onCommit, inputRef, row, rowIndex } = params;
 
         // ── chargeName — SelectCombobox ───────────────────────────────────────
-        if (col.key === "chargeName") {
+        if (col.key === "chargeId") {
             return (
                 <SelectCombobox
                     value={value}
@@ -190,19 +284,46 @@ export default function OtherChargesWindow({
                 />
             );
         }
+        if (col.key === "finalAmount") {
+            // View mode — show formatted value
+            if (!isEditing && !isFocused) {
+                const n = parseFloat(value);
+                return (
+                    <div style={{ padding: "0 6px", fontSize: 11, textAlign: "right", width: "100%" }}>
+                        {isNaN(n) ? "—" : n.toFixed(2)}
+                    </div>
+                );
+            }
+
+            return (
+                <CapitalizedInput
+                    field={col.key}
+                    value={value}
+                    type="number"
+                    allowDecimal
+                    decimalScale={2}
+                    onChange={(_, v) => onChange(v)}
+                    inputRef={inputRef}
+                    onEnter={onCommit}
+                    size="xs"
+                    rounded="sm"
+                    disabled
+                />
+            );
+        }
 
         return null;
     }, [chargeItems]);
 
     // ── Totals ────────────────────────────────────────────────────────────────
     const totalAmount = useMemo(
-        () => rows.reduce((sum, r) => sum + (parseFloat(r.amount) || 0), 0),
+        () => rows.reduce((sum, r) => sum + (parseFloat(r.finalAmount) || 0), 0),
         [rows]
     );
 
     const renderTotalCell = useCallback((col: ColumnDef) => {
-        if (col.key === "chargeName") return <span style={{ fontSize: 11 }}>TOTAL</span>;
-        if (col.key === "amount") return <span style={{ fontSize: 11 }}>{totalAmount.toFixed(2)}</span>;
+        if (col.key === "chargeId") return <span style={{ fontSize: 11 }}>TOTAL</span>;
+        if (col.key === "finalAmount") return <span style={{ fontSize: 11 }}>{totalAmount.toFixed(2)}</span>;
         return null;
     }, [totalAmount]);
 
@@ -219,7 +340,8 @@ export default function OtherChargesWindow({
             return;
         }
 
-        const nonEmpty = rows.filter(r => r.chargeName && parseFloat(r.amount) > 0);
+
+        const nonEmpty = rows.filter(r => r.chargeId && parseFloat(r.amount) >= 0);
         onSave(nonEmpty.map(({ __id, ...rest }) => rest));
         onClose();
     }, [rows, errors, onSave, onClose]);
@@ -250,6 +372,7 @@ export default function OtherChargesWindow({
                 renderTotalCell={renderTotalCell}
                 maxVisibleRows={10}
                 accentColor="#185FA5"
+                // initialFocusCell={{ rowIndex: 0, colKey: "chargeId" }}  // ✅ clean
             />
 
             <HStack justify="flex-end" gap={2} mt={3}>

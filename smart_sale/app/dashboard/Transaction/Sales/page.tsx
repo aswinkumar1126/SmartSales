@@ -465,8 +465,8 @@ export default function SalesPage() {
     }, [metalsData]);
 
     useEffect(() => {
-        if (!otherChargesData) return;
-        const otherCharges = otherChargesData.data.map((charges: any) => {
+        if (!otherChargesData) return ;
+        const otherCharges = otherChargesData?.data?.map((charges: any) => {
             return {
                 label: charges.chargeName,
                 value: charges.chargeId.toString()
@@ -563,22 +563,22 @@ export default function SalesPage() {
         SALES SAVE MODAL MANAGE
    ================================ */
 
-   const openSaleSaveModal = ()=>{
-    setIsOpenSalesSaveModal(true);
-   }
-   const closeSalesSaveModal = ()=>{
-    setIsOpenSalesSaveModal(false);
-   }
+//    const openSaleSaveModal = ()=>{
+//     setIsOpenSalesSaveModal(true);
+//    }
+//    const closeSalesSaveModal = ()=>{
+//     setIsOpenSalesSaveModal(false);
+//    }
 
-   const confirmSalesSaveModal = ()=>{
-        if(isEditing){
-            handleUpdateTransaction()
-        } 
-        else{
-            handleSaveTransaction()
-        }
+//    const confirmSalesSaveModal = ()=>{
+//         if(isEditing){
+//             handleUpdateTransaction()
+//         } 
+//         else{
+//             handleSaveTransaction()
+//         }
       
-   }
+//    }
 
     // KEY TO ACCESS
 
@@ -1035,6 +1035,7 @@ export default function SalesPage() {
         const result = buildTransactionRequest();
 
         console.log(result.payload ,'createTransactionPayload');
+        
 
 
         if (!result.valid || !result.payload) {
@@ -1046,7 +1047,7 @@ export default function SalesPage() {
             return;
         }
 
-    
+        // return;
 
         createTransaction.mutate(
             { payload: result.payload, TRANTYPE: "sales" },
@@ -1294,7 +1295,7 @@ export default function SalesPage() {
                             setIsStockDrawerOpen={setIsStockDrawerOpen}
                             handleShowFilter={openFilter}
                             isEditing={isEditing}
-                            onSave={openSaleSaveModal}
+                            onSave={isEditing ? handleUpdateTransaction : handleSaveTransaction}
                             onReset={handleResetDraft}
                             isSaving={
                                 createTransaction.isPending || updateTransaction.isPending
@@ -1409,6 +1410,7 @@ export default function SalesPage() {
                         closingPure={closingPure}
                         bankAccList={allBankAccounts}
                         headerForm={headerForm}
+                        onFormChange={setHeaderField}
                     />
 
                 </Box>
@@ -1453,14 +1455,14 @@ export default function SalesPage() {
                 </Box>
 
             )}
-
+{/* 
             <SalesSaveModal 
                 headerForm={headerForm}
                 isOpen={openSalesSaveModal}
                 isClose={closeSalesSaveModal}
                 onConfirm={confirmSalesSaveModal}
                 onFormChange={setHeaderField}
-            />
+            /> */}
 
         </>
 

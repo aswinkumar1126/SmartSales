@@ -14,16 +14,28 @@ const mapSalesItems = (list: any[] = [], type: string, isTagedItem: any) => {
         // ---------------- MISC CHARGES (HMC) ----------------
         const miscChargesRaw = item.OTHERCHARGESDETAILS || [];
 
-        const normalizedMisc = miscChargesRaw.map((c: any, i: number) => ({
-            id: `misc-${rowId}-${i}`,
+        const normalizedMisc = miscChargesRaw.map((c: any, i: number) => {
 
-            draftRowId: rowId,
+            const isHmc =
+                c?.chargeName?.trim().toUpperCase() === "HMC";
+                
+            const finalAmt = Number(c.chargeAmount || 0);
 
-            chargeName: String(c.chargeId || 0),
-            amount: Number(c.chargeAmount || 0),
+            return{
+                id: `misc-${rowId}-${i}`,
 
-            itemId: Number(c.itemId || item.ITEMID || 0),
-        }));
+                draftRowId: rowId,
+
+                chargeId: String(c.chargeId || 0),
+                chargeName: c.chargeName || "",
+                amount: isHmc
+                    ? finalAmt / Number(item.PCS || 1)
+                    : finalAmt,
+                finalAmount: finalAmt,
+                itemId: Number(c.itemId || item.ITEMID || 0),
+            }
+           
+        });
 
         const totalHMC =
             normalizedMisc.length > 0

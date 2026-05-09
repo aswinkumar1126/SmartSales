@@ -49,8 +49,8 @@ export const buildTransactionPayload = ({
 
             ...(validCharges.length > 0 && {
                 OTHERCHARGESDETAILS: validCharges.map((charge: any) => ({
-                    chargeId: Number(charge.chargeName),
-                    chargeAmount: Number(charge.amount),
+                    chargeId: Number(charge.chargeId),
+                    chargeAmount: Number(charge.finalAmount),
                 })),
             }),
         };

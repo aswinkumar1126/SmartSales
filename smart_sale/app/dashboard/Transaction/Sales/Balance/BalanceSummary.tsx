@@ -30,7 +30,11 @@ interface BalanceSummaryProps {
     closingPure: number;
     transactionResetSignal?: boolean;
     bankAccList?: { label: string; value: string }[];
-    headerForm: SalesHeaderForm
+    headerForm: SalesHeaderForm;
+    onFormChange: <K extends keyof SalesHeaderForm>(
+        field: K,
+        value: SalesHeaderForm[K]
+    ) => void;
 }
 
 const BalanceSummary = ({
@@ -41,7 +45,8 @@ const BalanceSummary = ({
     closingCash,
     closingPure,
     bankAccList,
-    headerForm
+    headerForm,
+    onFormChange
 
 }: BalanceSummaryProps) => {
     // =====================
@@ -360,33 +365,47 @@ const BalanceSummary = ({
                     disabled
                 />
             </Grid>
-             <Box
-                            mt={2}
-                            p={1}
-                            bg="gray.50"
-                            borderRadius="md"
-                            border="1px solid"
-                            borderColor="gray.200"
-                        >
-                            {headerForm.REMARK && (
-                                <Text fontSize="2xs" color="gray.900" mb={1}>
-                                    <Text as="span" fontWeight="semibold" fontSize={'xs'}>
-                                        Remark:
-                                    </Text>{" "}
-                                    {headerForm.REMARK}
-                                </Text>
-                            )}
-            
-                            {headerForm.THRU && (
-                                <Text fontSize="2xs" color="gray.900" >
-                                    <Text as="span" fontWeight="semibold" fontSize={'xs'}>
-                                        Thru:
-                                    </Text>{" "}
-                                    {headerForm.THRU}
-                                </Text>
-                            )}
-                        </Box>
-
+                 {headerForm.CUSTOMER && 
+                           <Box
+                               display={'flex'}
+                               flexDirection={'column'}
+                               mt={2}
+                               p={1}
+                               bg="gray.50"
+                               borderRadius="md"
+                               border="1px solid"
+                               borderColor="gray.200"
+                               gap={2}
+                           >
+           
+                               <Box display={'flex'} alignItems={'center'} >
+                                   <Text as="span" fontWeight="semibold" fontSize={'xs'} minW={'70px'}>
+                                       REMARK:
+                                   </Text>
+                                   <CapitalizedInput
+                                       value={headerForm.REMARK}
+                                       onChange={(_, value) => onFormChange("REMARK", value)}
+                                       field={"REMARK"}
+                                       size="xs"
+           
+                                   />
+                               </Box>
+                               <Box display={'flex'} alignItems={'center'}>
+                                   <Text as="span" fontWeight="semibold" fontSize={'xs'} minW={'70px'}>
+           
+                                       THRU:
+                                   </Text>
+                                   <CapitalizedInput
+                                       value={headerForm.THRU}
+                                       onChange={(_, value) => onFormChange("THRU", value)}
+                                       field={"THRU"}
+                                       size="xs"
+                                   />
+                               </Box>
+           
+                           </Box>
+           }
+                 
             {/* =====================
           MODAL (ZUSTAND CONTROLLED)
       ===================== */}

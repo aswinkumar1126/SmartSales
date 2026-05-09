@@ -53,7 +53,7 @@ const initialFormState: TouchMaster = {
     accode: "",
     itemId: "",
     touch: "",
-    // calmode: "",
+    calmode: "",
 };
 
 export type TouchTableRow = {
@@ -62,6 +62,7 @@ export type TouchTableRow = {
     actype: string;
     itemName: string;
     touch: number;
+    calmode : string;
 };
 
 /* ---------------- Component ---------------- */
@@ -85,6 +86,7 @@ const TouchMasterForm = () => {
 
     const accountType = form.actype?.trim().toUpperCase() || undefined;
   
+    console.log(touchData,'touchData')
 
     const { data: allAccounts, refetch: accountRefetch } = useAllAccountHead(accountType);
     const { data: items } = useStoneItems();
@@ -116,7 +118,11 @@ const TouchMasterForm = () => {
         collection: {
             actype: AccountTypeList,
             accode: allAccountsList,
-            itemId: allItemsList
+            itemId: allItemsList,
+            calMode: [
+                { label: "GRS WT", value: "GRSWT" },
+                { label: "NET WT", value: "NETWT" },
+            ]
         },
         disabled: {
             isAccode: form.actype ? false : true,
@@ -261,6 +267,8 @@ const TouchMasterForm = () => {
         { key: "actype", label: "Company Type" },
         { key: "itemName", label: "Item Name" },
         { key: "touch", label: "Touch", align: "center" as const },
+        { key: "calmode", label: "Cal Mode", align: "center" as const },
+
         { key: "action", label: "Action", align: "center" as const },
     ];
 
@@ -271,6 +279,7 @@ const TouchMasterForm = () => {
             { key: "actype", label: "Company Type" },
             { key: "itemName", label: "Item Name" },
             { key: "touch", label: "Touch", align: "center" as const },
+            { key: "calmode", label: "Cal Mode", align: "center" as const },
             { key: "active", label: "Active" },
         ]);
         setShowSno(true)
@@ -318,15 +327,7 @@ const TouchMasterForm = () => {
                 />
                 <Box mt={2}>
                 <Flex justify={'center'} gap={2}>
-                    <Button
-                     
-                        size="xs"
-                        colorPalette={'blue'}
-                        onClick={() => resetForm()}
-                      
-                    >
-                            <IoIosExit /> Exit
-                    </Button>
+                  
                     <Button
                         size="xs"   
                         colorPalette={'blue'}
@@ -335,6 +336,15 @@ const TouchMasterForm = () => {
                     >
                            <AiOutlineSave /> {editId ? "Update" : "Save"}
                     </Button>
+                        <Button
+
+                            size="xs"
+                            colorPalette={'blue'}
+                            onClick={() => resetForm()}
+
+                        >
+                            <IoIosExit /> Exit
+                        </Button>
                 </Flex>
                 </Box>
             </GridItem>
@@ -401,6 +411,7 @@ const TouchMasterForm = () => {
                                 </Table.Cell>
                                 <Table.Cell>{row.itemName}</Table.Cell>
                                 <Table.Cell textAlign="right">{formatToFixed(row.touch, 1)}</Table.Cell>
+                                <Table.Cell textAlign="left">{row.calmode}</Table.Cell>
                                 <Table.Cell align="center">
                                     <Box display="flex" justifyContent="center" alignItems="center">
                                         <FiEdit cursor="pointer" onClick={() => handleEdit(row)} />

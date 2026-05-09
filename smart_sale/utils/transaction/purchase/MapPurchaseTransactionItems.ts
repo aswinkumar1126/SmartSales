@@ -1,6 +1,32 @@
 import { TransactionType } from "@/types/transcation/Transaction";
 import { TRANSACTIONTYPES } from "@/data/Transaction/TransactionType";
 
+// ─── Pure calculation function ────────────────────────────────────────────────
+function calculateStoneAmount(
+    unit: "g" | "c",
+    weight: string,
+    pcs: string,
+    rate: string,
+    calculation: "w" | "p" | "c"
+): number {
+    const w = parseFloat(weight) || 0;
+    const p = parseFloat(pcs) || 0;
+    const r = parseFloat(rate) || 0;
+
+    if (unit === "g") {
+        if (calculation === "w") return w * r;
+        if (calculation === "p") return p * r;
+        if (calculation === "c") return w * r * 5;
+    } else {
+        if (calculation === "w") return (w / 5) * r;
+        if (calculation === "p") return p * r;
+        if (calculation === "c") return (w / 5) * r * 5;
+    }
+
+    return 0;
+}
+
+
 
 const mapPurchaseReturnItems = (list: any[] = [], type: string, isTagedItem?: any) => {
     return list.map((item, index) => {
@@ -113,29 +139,42 @@ const mapPurchaseItems = (list: any[] = [], type: string) => {
         // ---------------- STONES ----------------
         const stonesRaw = item.STONEDETAILS || [];
 
-        const normalizedStones = stonesRaw.map((s: any, i: number) => ({
-            id: `stone-${rowId}-${i}`,
+        const normalizedStones = stonesRaw.map((s: any, i: number) => {
+            const unit = (s.stoneUnit || "g") as "g" | "c";
+            const calculation = (s.stoneCalculation || "w") as "w" | "p" | "c";
+            const stoneWeight = String(s.stoneWeight || s.STNWT || 0);
+            const stonePcs = String(s.stonePcs || s.STNPCS || 1);
+            const stoneRate = String(s.stoneRate || s.STNRATE || 0);
 
-            draftRowId: rowId,
+            const stoneAmount = calculateStoneAmount(
+                unit,
+                stoneWeight,
+                stonePcs,
+                stoneRate,
+                calculation
+            );
 
-            stoneId: String(s.stoneId || s.STNITEMID || ""),
-            subStoneId: String(s.substoneId || s.STNSUBITEMID || ""),
+            return {
+                id: `stone-${rowId}-${i}`,
+                draftRowId: rowId,
 
-            stonePcs: Number(s.stonepcs || s.STNPCS || 1),
-            stoneWeight: Number(s.stoneWeight || s.STNWT || 0),
+                stoneId: String(s.stoneId || s.STNITEMID || ""),
+                subStoneId: String(s.substoneId || s.STNSUBITEMID || ""),
 
-            stoneUnit: s.stoneUnit || "g",
-            stoneCalculation: s.stoneCalculation || s.stoneCalculation || "w",
+                stonePcs,
+                stoneWeight,
+                stoneUnit: unit,
+                stoneCalculation: calculation,
+                stoneRate,
 
-            stoneRate: Number(s.stoneRate || s.STNRATE || 0),
-            stoneAmount: Number(s.stoneAmount || s.STNAMT || 0),
-        }));
-
-        const totalStoneWeight = normalizedStones.reduce(
-            (sum: number, s: any) => sum + s.stoneWeight,
-            0
-        );
-
+                // ✅ Always derived — never trust stored value
+                stoneAmount: stoneAmount > 0 ? String(stoneAmount) : "",
+            };
+        });
+        const totalStoneWeight = normalizedStones.reduce((sum: number, s: any) => {
+            const w = parseFloat(s.stoneWeight) || 0;
+            return sum + (s.stoneUnit === "c" ? w / 5 : w);
+        }, 0);
         // ---------------- BASIC WEIGHTS ----------------
         const grswt = Number(item.GRSWT || 0);
 
@@ -149,21 +188,33 @@ const mapPurchaseItems = (list: any[] = [], type: string) => {
         // ---------------- MISC CHARGES (HMC) ----------------
         const miscChargesRaw = item.OTHERCHARGESDETAILS || [];
 
-        const normalizedMisc = miscChargesRaw.map((c: any, i: number) => ({
-            id: `misc-${rowId}-${i}`,
+        const normalizedMisc = miscChargesRaw.map((c: any, i: number) => {
 
-            draftRowId: rowId,
+            const isHmc =
+                c?.chargeName?.trim().toUpperCase() === "HMC";
 
-            chargeName: String(c.chargeId || 0),
-            amount: Number(c.chargeAmount || 0),
+            const finalAmt = Number(c.chargeAmount || 0);
+            return {
+                id: `misc-${rowId}-${i}`,
 
-            itemId: Number(c.itemId || item.ITEMID || 0),
-        }));
+                draftRowId: rowId,
+
+                chargeId: String(c.chargeId || 0),
+                chargeName: c.chargeName ,
+                amount: isHmc
+                    ? finalAmt / Number(item.PCS || 1)
+                    : finalAmt,
+                finalAmount: finalAmt,
+                itemId: Number(c.itemId || item.ITEMID || 0),
+                
+            }
+          
+        });
 
         const totalHMC =
             normalizedMisc.length > 0
                 ? normalizedMisc.reduce(
-                    (sum: number, c: any) => sum + c.amount,
+                    (sum: number, c: any) => sum + c.finalAmount,
                     0
                 )
                 : Number(item.HMC || item.MC || 0);
@@ -182,8 +233,8 @@ const mapPurchaseItems = (list: any[] = [], type: string) => {
 
             PCS: Number(item.PCS || 0),
 
-            GRSWT: grswt,
-            STNWT: stnwt,
+            GRSWT: grswt.toFixed(3),
+            STNWT: stnwt.toFixed(3),
             NETWT: netwt,
 
             TOUCH: item.TOUCH || 'TOUCH',
@@ -240,7 +291,6 @@ export const mapPurchaseTransactionItems = (
 ) => {
     const details = transactionData?.TRANSACTION_DETAILS;
 
-    console.log(details,'detailsdetails')
 
     if (!details) {
         return {

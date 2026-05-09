@@ -18,24 +18,28 @@ import ExcelGrid, { ColumnDef, RenderCellParams } from "@/component/table/ExcelG
 type MiscChargeRow = {
     __id: string;
     draftRowId: string;
+    chargeId:String;
     chargeName: string;
     amount: string; // keep as string — ExcelGrid is value-agnostic
+    finalAmount:string;
 };
 
 type Props = {
     draftRowId: string;
     onClose: () => void;
     onSave: (rows: MiscChargeRow[]) => void;
-    initialRows?: { id?: string; draftRowId?: string; chargeName: string; amount: number }[];
+    initialRows?: { id?: string; draftRowId?: string; chargeId:string; chargeName: string; amount: number ; finalAmount: string}[];
     chargeItems?: SelectItem[];
     otherChargesData?: any;
+    pcs?: number
 };
 
 // ─── Column definitions ───────────────────────────────────────────────────────
 
 const COLUMNS: ColumnDef[] = [
-    { key: "chargeName", label: "MISCELLANEOUS", width: 200, required: true },
-    { key: "amount", label: "AMOUNT", width: 120, align: "right", decimalScale: 2, required: true },
+    { key: "chargeId", label: "MISCELLANEOUS", width: 120, required: true },
+    { key: "amount", label: "AMOUNT", width: 80, align: "right", decimalScale: 2, required: true },
+    { key: "finalAmount", label: "AMOUNT", width: 80, align: "right", decimalScale: 2, required: true , disabled :true },
 ];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -44,7 +48,7 @@ let _uid = 0;
 function uid() { return `mc_${++_uid}_${Date.now()}`; }
 
 function emptyRow(draftRowId: string): MiscChargeRow {
-    return { __id: uid(), draftRowId, chargeName: "", amount: "" };
+    return { __id: uid(), chargeId : "" ,draftRowId, chargeName: "", amount: "" , finalAmount :"" };
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -56,8 +60,10 @@ export default function OtherChargesWindow({
     initialRows = [],
     chargeItems = [],
     otherChargesData,
+    pcs
 }: Props) {
-    console.log(initialRows, 'initialRowsinitialRows');
+
+
 
     // ── Rows — ExcelGrid is fully controlled ──────────────────────────────────
     const [rows, setRows] = useState<MiscChargeRow[]>(() => {
@@ -65,8 +71,10 @@ export default function OtherChargesWindow({
             return initialRows.map(r => ({
                 __id: r.id ?? uid(),
                 draftRowId: r.draftRowId ?? draftRowId,
+                chargeId : r.chargeId ?? "",
                 chargeName: r.chargeName ?? "",
                 amount: r.amount != null ? String(r.amount) : "",
+                finalAmount: r.finalAmount != null ? String(r.finalAmount) : ""
             }));
         }
         return [emptyRow(draftRowId)];
@@ -83,8 +91,10 @@ export default function OtherChargesWindow({
             setRows(initialRows.map(r => ({
                 __id: r.id ?? uid(),
                 draftRowId: r.draftRowId ?? draftRowId,
+                chargeId: r.chargeId ?? "",
                 chargeName: r.chargeName ?? "",
                 amount: r.amount != null ? String(r.amount) : "",
+                finalAmount: r.finalAmount != null ? String(r.finalAmount) : ""
             })));
         } else {
             setRows([emptyRow(draftRowId)]);
@@ -104,52 +114,104 @@ export default function OtherChargesWindow({
                 // if (!row.chargeName || row.chargeName.trim() === "")
                 //     errs[`${ri}_chargeName`] = "Charge name is required";
                 const amt = Number(row.amount);
-                if (!row.amount || isNaN(amt) || amt <= 0)
-                    errs[`${ri}_amount`] = "Must be > 0";
+                if (!row.amount || isNaN(amt) || amt < 0)
+                    errs[`${ri}_amount`] = "Must be >= 0";
             }
         });
         return errs;
     }, [rows]);
+    
+    // Add this effect to re-derive finalAmount when enteredPieces changes
+    useEffect(() => {
+        setRows(prev => prev.map(row => {
+            const match = otherChargesData?.find(
+                (item: any) => Number(item.chargeId) === Number(row.chargeId)
+            );
 
+            // ✅ Use same isHmc logic as handleCellChange
+            const isHmc = String(match?.chargeName || "").trim().toUpperCase() === "HMC";
+
+            const amt = Number(row.amount || 0);
+            return {
+                ...row,
+                finalAmount: String(isHmc ? amt * Number(pcs || 1) : amt)
+            };
+        }));
+    }, [pcs]); 
     // ── Cell change — fully controlled ────────────────────────────────────────
-    const handleCellChange = useCallback((ri: number, colKey: string, value: any) => {
-        setRows(prev => {
-            const next = [...prev];
-            const updated = { ...next[ri], [colKey]: value };
+    const handleCellChange = useCallback(
+        (ri: number, colKey: string, value: any) => {
+            setRows(prev => {
+                const next = [...prev];
+                const updated = { ...next[ri], [colKey]: value };
 
-            // Auto-fill amount when chargeName changes (if not manually changed)
-            if (colKey === "chargeName") {
-                // Reset manual change flag for this row when charge name changes
-                setManuallyChangedAmounts(prev => {
-                    const next = new Set(prev);
-                    next.delete(ri);
-                    return next;
-                });
+                // ------------------------------------------------
+                // Find selected charge
+                // ------------------------------------------------
+                const selectedChargeId =
+                    colKey === "chargeId"
+                        ? value
+                        : updated.chargeId;
 
-                if (!next[ri].amount) {
-                    const match = otherChargesData?.find(
-                        (item: any) => Number(item.chargeId) === Number(value)
-                    );
-                    if (match?.chargeAmount) {
+                console.log(selectedChargeId, 'selectedChargeId');
+
+                const match = otherChargesData?.find(
+                    (item: any) =>
+                        Number(item.chargeId) === Number(selectedChargeId)
+                );
+                console.log(match, 'matching')
+
+
+                // ------------------------------------------------
+                // Check whether this charge is HMC
+                // ------------------------------------------------
+                const isHmc =
+
+                    String(match?.chargeName || "")
+                        .trim()
+                        .toUpperCase() === "HMC"
+
+
+                if (colKey === "chargeId") {
+                    if (!value) {
+                        // ✅ Charge cleared — reset both amount and finalAmount
+                        updated.amount = "";
+                        updated.finalAmount = "";
+                        next[ri] = updated;
+                        return next;
+                    }
+                    // ✅ Always overwrite amount when charge changes (not just when empty)
+                    if (match?.chargeAmount != null) {
                         updated.amount = String(match.chargeAmount);
+                        updated.chargeName = String(match?.chargeName);
+                    } else {
+                        updated.amount = ""; // charge has no default amount
+                        updated.chargeName = String(match?.chargeName);
                     }
                 }
-            }
+                // ── Calculate final amount ──────────────────────────────────────────
+                const amt = Number(
+                    colKey === "amount"
+                        ? value
+                        : updated.amount || 0
+                );
 
-            // Track manual amount changes
-            if (colKey === "amount") {
-                setManuallyChangedAmounts(prev => {
-                    const next = new Set(prev);
-                    next.add(ri);
-                    return next;
-                });
-            }
+                updated.finalAmount = String(
+                    isHmc ? amt * Number(pcs || 1) : amt
+                );
 
-            next[ri] = updated;
-            return next;
-        });
-        setTouched(prev => ({ ...prev, [`${ri}_${colKey}`]: true }));
-    }, [otherChargesData]);
+                next[ri] = updated;
+                return next;
+            });
+
+            setTouched(prev => ({
+                ...prev,
+                [`${ri}_${colKey}`]: true
+            }));
+        },
+        [otherChargesData, pcs]
+    );
+
 
     // ── Row management ────────────────────────────────────────────────────────
     const handleRowAdd = useCallback(() => {
@@ -173,10 +235,10 @@ export default function OtherChargesWindow({
     const handleResetToDefault = useCallback((ri: number) => {
         setRows(prev => {
             const row = prev[ri];
-            if (!row.chargeName) return prev;
+            if (!row.chargeId) return prev;
 
             const match = otherChargesData?.find(
-                (item: any) => Number(item.chargeId) === Number(row.chargeName)
+                (item: any) => Number(item.chargeId) === Number(row.chargeId)
             );
 
             if (match?.chargeAmount) {
@@ -200,7 +262,7 @@ export default function OtherChargesWindow({
         const { col, value, isEditing, isFocused, isError, errorMessage, onChange, onCommit, inputRef, row, rowIndex } = params;
 
         // ── chargeName — SelectCombobox ───────────────────────────────────────
-        if (col.key === "chargeName") {
+        if (col.key === "chargeId") {
             return (
                 <SelectCombobox
                     value={value}
@@ -261,6 +323,8 @@ export default function OtherChargesWindow({
                 );
             }
 
+           
+
             // Edit mode
             return (
                 <div style={{ display: "flex", alignItems: "center", gap: "4px", width: "100%" }}>
@@ -301,19 +365,48 @@ export default function OtherChargesWindow({
                 </div>
             );
         }
+        if (col.key === "finalAmount") {
+            // View mode — show formatted value
+            if (!isEditing && !isFocused) {
+                const n = parseFloat(value);
+                return (
+                    <div style={{ padding: "0 6px", fontSize: 11, textAlign: "right", width: "100%" }}>
+                        {isNaN(n) ? "—" : n.toFixed(2)}
+                    </div>
+                );
+            }
+
+            return (
+                <CapitalizedInput
+                    field={col.key}
+                    value={value}
+                    type="number"
+                    allowDecimal
+                    decimalScale={2}
+                    onChange={(_, v) => onChange(v)}
+                    inputRef={inputRef}
+                    onEnter={onCommit}
+                    size="xs"
+                    rounded="sm"
+                    disabled
+                />
+            );
+        }
+
 
         return null;
     }, [chargeItems, manuallyChangedAmounts, handleResetToDefault]);
 
     // ── Totals ────────────────────────────────────────────────────────────────
     const totalAmount = useMemo(
-        () => rows.reduce((sum, r) => sum + (parseFloat(r.amount) || 0), 0),
+        () => rows.reduce((sum, r) => sum + (parseFloat(r.finalAmount) || 0), 0),
         [rows]
     );
 
     const renderTotalCell = useCallback((col: ColumnDef) => {
         if (col.key === "chargeName") return <span style={{ fontSize: 11 }}>TOTAL</span>;
-        if (col.key === "amount") return <span style={{ fontSize: 11 }}>{totalAmount.toFixed(2)}</span>;
+        // if (col.key === "amount") return <span style={{ fontSize: 11 }}>{totalAmount.toFixed(2)}</span>;
+        if (col.key === "finalAmount") return <span style={{ fontSize: 11 }}>{totalAmount.toFixed(2)}</span>;
         return null;
     }, [totalAmount]);
 
@@ -330,14 +423,16 @@ export default function OtherChargesWindow({
             return;
         }
 
-        const nonEmpty = rows.filter(r => r.chargeName && parseFloat(r.amount) > 0);
+        const nonEmpty = rows.filter(r => r.chargeName && parseFloat(r.amount) >= 0);
 
         // Convert to the format expected by the parent component
-        const saveRows = nonEmpty.map(({ __id, draftRowId, chargeName, amount }) => ({
+        const saveRows = nonEmpty.map(({ __id, draftRowId,chargeId , chargeName, amount ,finalAmount }) => ({
             __id:__id,
             draftRowId,
+            chargeId,
             chargeName,
-            amount: String(parseFloat(amount))
+            amount: String(parseFloat(amount)),
+            finalAmount
         }));
 
         onSave(saveRows);
