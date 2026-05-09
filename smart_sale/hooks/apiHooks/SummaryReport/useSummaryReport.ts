@@ -142,6 +142,17 @@ export const useAgeReport = ({
     enabled: false,
   });
 };
+
+
+export const useOutstandingStockReport = () => {
+  return useApiQuery<Record<string, any>[]>({
+    queryKey: ["outstanding_stock_report"],
+    url: "/report/outstanding",
+    method: "GET",
+    select: (res) => res.data,
+    enabled: false, // Call refetch() manually to execute the request
+  });
+};
     // return useApiQuery<ItemStockEntry[]>({
     //     queryKey: ["item_stock_report", date ?? ""],
     //     url: "/report/itemwise",

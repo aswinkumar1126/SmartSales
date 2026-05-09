@@ -16,6 +16,7 @@ export interface BarCodeFilter{
     SNO?:string;
     ISEDITING?:boolean;
     ENTRYNO?:number;
+    RETAG?:boolean;
 
 }
 export interface BarcodeItemList {
@@ -48,6 +49,7 @@ export interface SELECTED_BARCODE_ITEM {
     DESCRIPTION: string | null;
     ENTRY_NO: number | null;
     GRSWT: number;
+    TOLERANCE:number;
     HMC: number | null;
     ITEMID: number | null;
     MC: number | null;

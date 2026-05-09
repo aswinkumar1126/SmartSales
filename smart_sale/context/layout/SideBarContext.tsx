@@ -390,7 +390,15 @@ const STATIC_MENU: SidebarMenu = {
   },
 
   Reports: {
-   
+         OutstandingReport : 
+        {
+          type: "direct",
+          label: "Outstanding Report",
+          route: "/dashboard/Reports/TagReport/OutstandingReport",
+          icon: Layers,
+          title: "  OUTSTANDING REPORT",
+          description: "View stock   OUTSTANDING reports",
+        },
       ITEMReport : 
         {
           type: "direct",

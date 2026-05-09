@@ -1,4 +1,3 @@
-
 import { useCallback } from "react";
 import { toaster } from "@/components/ui/toaster";
 import type { BarcodeHeaderForm, BarcodeTransactionRow } from '@/store/barcode/useBarcodeStore';
@@ -8,29 +7,22 @@ import { useSoftControlById } from "../apiHooks/softControl/useSoftControl";
    TYPES
    ============================================================ */
 
-
-
 export type HeaderErrors = Partial<Record<keyof BarcodeHeaderForm, string>>;
 
 export interface RowValidationOptions {
-  /** All rows in the current session (saved + new, or just new for add-only check) */
   rows: BarcodeTransactionRow[];
- 
-
   limits: {
     PCS: number;
     STNWT: number;
     GRSWT: number;
   };
- 
   countOnlyNew?: boolean;
-  
   incomingRows?: Pick<BarcodeTransactionRow, "grsweight" | "stoneWt" | "salesStoneWt">[];
-  balance ?: {
+  balance?: {
     PCS: number;
     STNWT: number;
     GRSWT: number;
-  },
+  };
 }
 
 /* ============================================================
@@ -38,14 +30,9 @@ export interface RowValidationOptions {
    ============================================================ */
 
 export function useTaggingValidation() {
-   
+  const { data } = useSoftControlById("LOT-TOLERANCE");
 
-  
-const { data } = useSoftControlById("LOT-TOLERANCE");
-
-    // CHECK Y / N
- const Tolerance =
-                    data?.CTLTEXT?Number(data?.CTLTEXT):0;
+  const Tolerance = data?.CTLTEXT ? Number(data?.CTLTEXT) : 0;
 
   const validateHeader = useCallback(
     (form: BarcodeHeaderForm): HeaderErrors => {
@@ -57,7 +44,6 @@ const { data } = useSoftControlById("LOT-TOLERANCE");
     },
     []
   );
-
 
   const validateHeaderWithToast = useCallback(
     (form: BarcodeHeaderForm): boolean => {
@@ -76,7 +62,6 @@ const { data } = useSoftControlById("LOT-TOLERANCE");
     [validateHeader]
   );
 
-  
   const validateSingleRow = useCallback(
     (
       data: { grsweight: string; stoneWt: string; salesStoneWt: string },
@@ -85,9 +70,8 @@ const { data } = useSoftControlById("LOT-TOLERANCE");
         PCS: number;
         STNWT: number;
         GRSWT: number;
-      },
+      }
     ): Record<string, string> => {
-
       const errors: Record<string, string> = {};
 
       const grs = Number(data.grsweight || 0);
@@ -130,16 +114,16 @@ const { data } = useSoftControlById("LOT-TOLERANCE");
 
       return errors;
     },
-    []
+    [Tolerance] // ✅ fixed
   );
-  
+
   const validateRows = useCallback(
     ({
       rows,
       limits,
       countOnlyNew = false,
       incomingRows = [],
-      balance
+      balance,
     }: RowValidationOptions): boolean => {
       const allRows = [...rows, ...incomingRows];
 
@@ -167,8 +151,6 @@ const { data } = useSoftControlById("LOT-TOLERANCE");
             duration: 2000,
           });
         }
-
-
 
         if (row.stoneWt < 0) {
           hasError = true;
@@ -204,7 +186,7 @@ const { data } = useSoftControlById("LOT-TOLERANCE");
       if (hasError) return false;
 
       // ── Limit checks ──
-      
+
       const rowsForLimitCheck = countOnlyNew
         ? allRows.filter((r) => ("isNew" in r ? r.isNew : true))
         : allRows;
@@ -213,8 +195,7 @@ const { data } = useSoftControlById("LOT-TOLERANCE");
       const totalStoneWt = rowsForLimitCheck.reduce((s, r) => s + r.stoneWt, 0);
       const totalGrsWt = rowsForLimitCheck.reduce((s, r) => s + r.grsweight, 0);
 
-      console.log(totalPCS, totalGrsWt,totalStoneWt, limits, 'limit check');
-
+      console.log(totalPCS, totalGrsWt, totalStoneWt, limits, 'limit check');
 
       if (limits.PCS && totalPCS > limits.PCS) {
         toaster.create({
@@ -226,10 +207,10 @@ const { data } = useSoftControlById("LOT-TOLERANCE");
         return false;
       }
 
-      if(limits.GRSWT && totalGrsWt > limits.GRSWT+Tolerance) {
+      if (limits.GRSWT && totalGrsWt > limits.GRSWT + Tolerance) {
         toaster.create({
           title: "Lot GrsWt Exceeded",
-          description: `${totalGrsWt} wt exceed the allowed ${limits.GRSWT}+ tolerance ${Tolerance}g`,
+          description: `${totalGrsWt} wt exceed the allowed ${limits.GRSWT} + tolerance ${Tolerance}g`,
           type: "error",
           duration: 2000,
         });
@@ -246,7 +227,7 @@ const { data } = useSoftControlById("LOT-TOLERANCE");
         return false;
       }
 
-      if(balance && balance.PCS > 0 && balance.GRSWT === 0 ) {
+      if (balance && balance.PCS > 0 && balance.GRSWT === 0) {
         toaster.create({
           title: "Invalid Entry",
           description: "Gross weight cannot be 0 when pieces are present",
@@ -255,8 +236,8 @@ const { data } = useSoftControlById("LOT-TOLERANCE");
         });
         return false;
       }
-      
-      if(balance && balance.GRSWT > 0+Tolerance && balance.PCS === 0) {
+
+      if (balance && balance.GRSWT > 0 + Tolerance && balance.PCS === 0) {
         toaster.create({
           title: "Invalid Entry",
           description: "Pcs cannot be 0 when GrsWt are present",
@@ -266,7 +247,7 @@ const { data } = useSoftControlById("LOT-TOLERANCE");
         return false;
       }
 
-       if(balance && balance.STNWT > 0 && balance.PCS === 0) {
+      if (balance && balance.STNWT > 0 && balance.PCS === 0) {
         toaster.create({
           title: "Invalid Entry",
           description: "Pcs cannot be 0 when Stone Weight are present",
@@ -274,13 +255,11 @@ const { data } = useSoftControlById("LOT-TOLERANCE");
           duration: 2000,
         });
         return false;
-
-        
       }
 
       return true;
     },
-    []
+    [Tolerance] // ✅ fixed
   );
 
   return { validateHeader, validateHeaderWithToast, validateSingleRow, validateRows };
