@@ -193,7 +193,7 @@ export default function DraftTransactionTable({
     useEffect(() => { draftRowsRef.current = draftRows; }, [draftRows]);
 
 
-    const [calculationMode ,setCalculationMode] = useState<string>('');
+
 
     // ── Stable refs declared early so all callbacks below can reference them ──
     const committedRowIdsRef = useRef<Set<string>>(new Set());
@@ -217,6 +217,9 @@ export default function DraftTransactionTable({
     const [isStoneModalOpen, setIsStoneModalOpen] = useState(false);
     const [stoneModalInitialRows, setStoneModalInitialRows] = useState<any[]>([]);
     const [isMiscModalOpen, setIsMiscModalOpen] = useState(false);
+
+    const [modalTrigger, setModalTrigger] = useState(0);
+    const [lastClosedModal, setLastClosedModal] = useState<'stoneMaster' | 'hmc' | null>(null);
 
     // ── Stone items ────────────────────────────────────────────────────────────
     const { data: stoneItemsData } = useStoneItems({ STUDDED: "Y" });
@@ -302,6 +305,9 @@ export default function DraftTransactionTable({
 
             if (!isIssue && col.key === "TOUCH" && transactionType === "PU") 
                 return { ...base, disabled : true };
+
+            // if (isIssue && col.key === "ATOUCH" && transactionType === "IS")
+            //     return { ...base, disabled: true };
 
             return base;
         });
@@ -668,7 +674,6 @@ export default function DraftTransactionTable({
         const touch = touchData.TOUCH;
         const calMode = touchData.CALMODE || "NETWT";
 
-        setCalculationMode(calMode); // ✅ no longer in deps so no loop
 
         const rowIndex = activeRowIndex;
 
@@ -784,6 +789,7 @@ export default function DraftTransactionTable({
     const handleOpenMiscModal = useCallback((rowId: string) => {
         setMiscModalRowId(rowId);
         setIsMiscModalOpen(true);
+
     }, []);
 
     const miscModalRow = useMemo(
@@ -1036,6 +1042,7 @@ export default function DraftTransactionTable({
                 onEnter={onCommit}
                 noBorder
                 disabled={col.disabled}
+                allowFocus
                 
             />
         );
@@ -1051,10 +1058,23 @@ export default function DraftTransactionTable({
 
     const showTag = getIsTagEnabled(transactionType);
 
-    useGlobalKey("Escape", () => setIsMiscModalOpen(false), "close-modal");
+    useGlobalKey("Escape", () => 
+        {   setIsMiscModalOpen(false);
+        setLastClosedModal('hmc');
+        setModalTrigger(t => t + 1); 
+
+
+
+    }, "close-modal");
 
     // Committed (non-empty) rows for the badge count
     const committedRows = draftRows.filter((r) => !!(r.ITEMID || r.PUREID || r.WT || r.GRSWT));
+
+    const focusColAfterModal = useMemo(() => {
+        if (lastClosedModal === 'stoneMaster') return 'TOUCH';
+        if (lastClosedModal === 'hmc') return 'MC';
+        return isIssue ? 'PUREID' : 'ITEMID'; // fallback
+    }, [lastClosedModal, isIssue]);
 
     // ── Render ─────────────────────────────────────────────────────────────────
     return (
@@ -1134,7 +1154,7 @@ export default function DraftTransactionTable({
                     showTotals={committedRows.length > 0}
                     showAddRow
                     showDeleteRow
-                    maxVisibleRows={5}
+                    maxVisibleRows={4}
                     accentColor={accentColor}
                     renderTotalCell={renderTotalCell}
                     getRowStyle={(ri, row) => {
@@ -1145,7 +1165,13 @@ export default function DraftTransactionTable({
                         const isEmpty = !row.ITEMID && !row.PUREID && !row.WT && !row.GRSWT;
                         return isEmpty ? { opacity: 0.6 } : {};
                     }}
-                    // initialFocusCell={{ rowIndex: 0, colKey: isIssue ? "PUREID"  :"ITEMID" }}  // ✅ clean
+                    initialFocusCell={{ rowIndex: 0, colKey: isIssue ? "PUREID"  :"ITEMID" }}  // ✅ clean
+
+                    focusAfterModal={{
+                        cell: { rowIndex: activeRowIndex ?? 0, colKey: focusColAfterModal },
+                        trigger: modalTrigger,
+                    }}
+                    showEnterNavigate = {false}
                 />
             </Box>
 
@@ -1155,7 +1181,7 @@ export default function DraftTransactionTable({
                     position="fixed" top={0} left={0} right={0} bottom={0}
                     bg="rgba(0,0,0,0.5)" zIndex={100}
                     display="flex" alignItems="center" justifyContent="center"
-                    onClick={() => setIsStoneModalOpen(false)}
+                    onClick={() => { setLastClosedModal("stoneMaster"); setModalTrigger(t => t + 1); setIsStoneModalOpen(false)}}
                 >
                     <Box
                         bg={theme?.colors?.formColor || "white"} borderRadius="lg"
@@ -1164,7 +1190,7 @@ export default function DraftTransactionTable({
                     >
                         <StoneEnterMaster
                             grsWeight={currentGRSWT}
-                            onClose={() => setIsStoneModalOpen(false)}
+                            onClose={() => { setLastClosedModal("stoneMaster"); setModalTrigger(t => t + 1); setIsStoneModalOpen(false) }}
                             draftRowId={stoneModalRowId}
                             initialRows={stoneModalInitialRows}
                             onSave={(stoneRows) => {
@@ -1228,7 +1254,7 @@ export default function DraftTransactionTable({
                     position="fixed" top={0} left={0} right={0} bottom={0}
                     bg="rgba(0,0,0,0.5)" zIndex={100}
                     display="flex" alignItems="center" justifyContent="center"
-                    onClick={() => setIsMiscModalOpen(false)}
+                    onClick={() => { setLastClosedModal("hmc"); setModalTrigger(t => t + 1); setIsStoneModalOpen(false) }}
                 >
                     <Box
                         bg={theme?.colors?.formColor || "white"} borderRadius="lg"
@@ -1237,7 +1263,7 @@ export default function DraftTransactionTable({
                     >
                         <OtherChargesWindow
                             draftRowId={miscModalRowId}
-                            onClose={() => setIsMiscModalOpen(false)}
+                            onClose={() => { setLastClosedModal("hmc"); setModalTrigger(t => t + 1); setIsStoneModalOpen(false) }}
                             initialRows={otherChargesInitialRows}
                             onSave={(chargeRows) => {
                                 const updatedCharges = chargeRows.map((c) => ({

@@ -45,6 +45,7 @@ import { DynamicForm } from "@/component/form/DynamicForm";
 import { useEnterNavigation } from "@/component/form/useEnterNavigation";
 import { IoIosExit } from "react-icons/io";
 import { AiOutlineSave } from "react-icons/ai";
+import { useGlobalKey } from "@/components/key/useGlobalKey";
 
 /* ---------------- Initial State ---------------- */
 
@@ -292,7 +293,8 @@ const TouchMasterForm = () => {
         router.push(`/print?export=${option}`);
     }
 
-
+    useGlobalKey("Alt+s" , ()=>handleSubmit() , "saveTransaction");
+    useGlobalKey("Alt+c", () => resetForm() ,"ClearTransaction");
     /* ------------ Highlight Timeout ---------------- */
 
     useEffect(() => {

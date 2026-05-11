@@ -42,6 +42,7 @@ import { formatToFixed } from "@/utils/format/numberFormat";
 import { usePrint } from "@/context/print/usePrintContext";
 import { useRouter } from "next/navigation";
 import { CapitalizedInput } from "@/components/ui/CapitalizedInput";
+import { useGlobalKey } from "@/components/key/useGlobalKey";
 
 const initialFormState: PartyForm = {
     companyType: "",
@@ -242,6 +243,9 @@ function PartyMaster() {
         title?.("Party Master ")
 
     }
+
+        useGlobalKey("Alt+s" , ()=>handleSave() , "saveTransaction");
+        useGlobalKey("Alt+c", () => resetForm() ,"ClearTransaction");
 
     return (
         <Box

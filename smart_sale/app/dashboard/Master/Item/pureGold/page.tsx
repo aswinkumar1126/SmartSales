@@ -42,6 +42,8 @@ import { useEnterNavigation } from "@/component/form/useEnterNavigation";
 import { DynamicForm } from "@/component/form/DynamicForm";
 import { pureGoldNameFields } from "@/config/master/PureGoldMaster";
 
+import { useGlobalKey } from "@/components/key/useGlobalKey";
+
 /* ---------------- Initial Form State ---------------- */
 
 const initialFormState: pureGoldMastForm = {
@@ -245,6 +247,8 @@ const PureGoldMaster = () => {
     };
 
 
+        useGlobalKey("Alt+s" , ()=>handleSubmit() , "saveTransaction");
+        useGlobalKey("Alt+c", () => resetForm() ,"ClearTransaction");
 
     /* ---------------- Table Columns ---------------- */
 

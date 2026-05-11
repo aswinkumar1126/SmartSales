@@ -35,6 +35,7 @@ import { FaPrint, FaFileExcel } from "react-icons/fa";
 import { useEnterNavigation } from "@/component/form/useEnterNavigation";
 import { DynamicForm } from "@/component/form/DynamicForm";
 import { getCompanyFormFields } from "@/config/master/CompanyMaster";
+import { useGlobalKey } from "@/components/key/useGlobalKey";
 
 
 function CompanyMaster() {
@@ -266,6 +267,8 @@ function CompanyMaster() {
         handleSave();
     });
 
+    useGlobalKey("Alt+s" , ()=>handleSave() , "saveTransaction");
+    useGlobalKey("Alt+c", () => resetForm() ,"ClearTransaction");
     /* -------------------- UI -------------------- */
     return (
         <Box fontWeight="semibold" bg={theme.colors.primary} color={theme.colors.secondary}>

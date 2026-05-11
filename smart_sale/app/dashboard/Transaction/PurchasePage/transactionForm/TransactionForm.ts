@@ -216,7 +216,7 @@ export const issueColumns = [
         max: 999,
         decimalScale: 3,
         allowFocus: true,
-        disabled: true
+      
 
     },
     {
@@ -229,7 +229,7 @@ export const issueColumns = [
         decimalScale: 3,
         allowFocus: true,
         editable:false,
-        disabled:true,
+ 
 
     },
     {

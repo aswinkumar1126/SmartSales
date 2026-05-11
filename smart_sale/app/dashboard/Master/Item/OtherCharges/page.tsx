@@ -40,6 +40,7 @@ import { DynamicForm } from "@/component/form/DynamicForm";
 import { OtherMasterFields } from "@/config/master/OtherChargesMaster";
 import { useEnterNavigation } from "@/component/form/useEnterNavigation";
 
+import { useGlobalKey } from "@/components/key/useGlobalKey";
 
 /* ---------------- Initial Form State ---------------- */
 
@@ -257,7 +258,10 @@ const OtherCharges = () => {
     );
     useEffect(() => {
         focusFirst()
-    }, [])
+    }, []);
+
+        useGlobalKey("Alt+s" , ()=>handleSubmit() , "saveTransaction");
+        useGlobalKey("Alt+c", () => resetForm() ,"ClearTransaction");
 
     /* ---------------- UI ---------------- */
 

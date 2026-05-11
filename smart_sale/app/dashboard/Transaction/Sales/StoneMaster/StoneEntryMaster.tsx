@@ -16,7 +16,7 @@ import ExcelGrid, { ColumnDef, RenderCellParams } from "@/component/table/ExcelG
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type StoneRow = {
+export type StoneRow = {
     __id: string;
     draftRowId: string;
     stoneId: string;

@@ -44,6 +44,9 @@ import SearchBar from "@/component/search/SearchBar";
 import { DynamicForm } from "@/component/form/DynamicForm";
 import { useEnterNavigation } from "@/component/form/useEnterNavigation";
 import { ItemMasterFields } from "@/config/master/itemMaster";
+import { useGlobalKey } from "@/components/key/useGlobalKey";
+
+
 export default function ItemMasterPage() {
 
     
@@ -354,6 +357,9 @@ export default function ItemMasterPage() {
     useEffect(() => {
         focusFirst()
     }, [focusFirst]);
+
+        useGlobalKey("Alt+s" , ()=>handleSave() , "saveTransaction");
+        useGlobalKey("Alt+c", () => resetForm() ,"ClearTransaction");
 
 
     /* ===================== UI ===================== */

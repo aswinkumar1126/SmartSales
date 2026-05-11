@@ -79,6 +79,15 @@ export const validateIssue = (row: any) => {
     if (!row.PUREID || row.WT == null || row.TOUCH == null) {
         return "PUREID, WT, TOUCH required";
     }
+    if (row.WT <= 0) {
+        return "WEIGHT MUST BE REQUIRED"
+    }
+    if (row.TOUCH <= 0) {
+        return "TOUCH MUST BE REQUIRED"
+    }
+    if (row.ATOUCH <= 0) {
+        return "ATOUCH MUST BE REQUIRED"
+    }
     return null;
 };
 

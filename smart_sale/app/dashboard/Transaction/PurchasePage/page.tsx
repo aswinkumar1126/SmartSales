@@ -603,6 +603,8 @@ export default function PurchasePage() {
     // KEY TO ACCESS
 
     useGlobalKey("F1", () => openFilter(), "openFilter");
+    useGlobalKey("Alt+s" , ()=>handleSaveTransaction() , "saveTransaction");
+    useGlobalKey("Alt+c", () => handleResetDraft() ,"ClearTransaction");
 
     const handleBillParamChange = useCallback((field: any, value: any) => {
         setBillParams(prev => ({

@@ -41,6 +41,7 @@ import { getAccountHeadFields } from "@/config/master/AccountHeadMaster";
 import { useEnterNavigation } from "@/component/form/useEnterNavigation";
 
 import { DynamicForm } from "@/component/form/DynamicForm";
+import { useGlobalKey } from "@/components/key/useGlobalKey";
 
 
 function AccountHeadMaster() {
@@ -423,6 +424,9 @@ function AccountHeadMaster() {
             });
         }
     };
+
+        useGlobalKey("Alt+s" , ()=>handleSave() , "saveTransaction");
+        useGlobalKey("Alt+c", () => resetForm() ,"ClearTransaction");
 
     /* -------------------- EDIT -------------------- */
     const handleEdit = (account: AccountHead) => {

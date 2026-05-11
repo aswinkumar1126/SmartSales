@@ -8,6 +8,9 @@ import {
 } from "@chakra-ui/react";
 import { LuX } from "react-icons/lu";
 
+import { MiscChargeRow } from "../OtherCharges/OtherChargesWindow";
+import { StoneRow } from "../StoneMaster/StoneEntryMaster";
+
 import { issueColumns, saleColumns } from "../transactionForm/TransactionForm";
 import { useStoneItems } from "@/hooks/apiHooks/item/useItems";
 import StoneEnterMaster from "../StoneMaster/StoneEntryMaster";
@@ -178,6 +181,10 @@ export default function DraftTransactionTable({
     const [stoneModalInitialRows, setStoneModalInitialRows] = useState<any[]>([]);
     const [isMiscModalOpen, setIsMiscModalOpen] = useState(false);
 
+    const [modalTrigger, setModalTrigger] = useState(0);
+    const [lastClosedModal, setLastClosedModal] = useState<'stoneMaster' | 'hmc' | null>(null);
+    
+
     // ── Stone items ────────────────────────────────────────────────────────────
     const { data: stoneItemsData } = useStoneItems({ STUDDED: "Y" });
     const [stoneItemsCollection, setStoneItemCollection] =
@@ -252,7 +259,7 @@ export default function DraftTransactionTable({
                 return { ...base, type: "calculated", disabled: true };
             if (!isIssue && col.key === "STNAMT")
                 return { ...base, type: "calculated", disabled: true };
-            // if (!isIssue && col.key === "TOUCH" && transactionType === "SA")
+            // if (isIssue && col.key === "ATOUCH" && transactionType === "IS")
             //     return { ...base, disabled: true };
 
             return base;
@@ -620,35 +627,21 @@ export default function DraftTransactionTable({
         if (appliedItemIdRef.current[activeRowId] === key) return; // already applied
 
         // ── Touch NOT found → clear ITEMID, warn ──────────────────────────────
-        // if (!touchData || !touchData.TOUCH) {
-        //     if (!touchNotFoundRef.current.has(activeRowId)) {
-        //         touchNotFoundRef.current.add(activeRowId);
-
-        //         setDraftRows((prev) => {
-        //             const idx = prev.findIndex((r) => r.__rowId === activeRowId);
-        //             if (idx === -1) return prev;
-        //             const next = [...prev];
-        //             const row = { ...next[idx] };
-        //             row.ITEMID = "";
-        //             row.TOUCH = "";
-        //             row.ATOUCH = "";
-        //             row.CAL_MODE = "";
-        //             recalcRow(row, !!isIssue);
-        //             next[idx] = row;
-        //             return next;
-        //         });
-
-        //         setTimeout(() => {
-        //             toaster.create({
-        //                 title: "No Touch Found",
-        //                 description: "No touch configured for this item & customer. Item cleared.",
-        //                 type: "warning",
-        //                 duration: 3000,
-        //             });
-        //         }, 0);
-        //     }
-        //     return;
-        // }
+        // ── Touch NOT found → info only, keep ITEMID ─────────────────────────────
+        if (!touchData || !touchData.TOUCH) {
+            if (!touchNotFoundRef.current.has(activeRowId)) {
+                touchNotFoundRef.current.add(activeRowId);
+                setTimeout(() => {
+                    toaster.create({
+                        title: "Touch Not Configured",
+                        description: "No touch found for this item. Please set touch in Touch Master.",
+                        type: "info",
+                        duration: 4000,
+                    });
+                }, 0);
+            }
+            return;
+        }
 
         // ── Touch found → apply ────────────────────────────────────────────────
         appliedItemIdRef.current[activeRowId] = key;
@@ -706,21 +699,7 @@ export default function DraftTransactionTable({
             if (!touchNotFoundRef.current.has(activeRowId)) {
                 touchNotFoundRef.current.add(activeRowId);
 
-                setDraftRows((prev) => {
-                    const idx = prev.findIndex((r) => r.__rowId === targetId);
-                    if (idx === -1) return prev;
-                    const next = [...prev];
-                    const row = { ...next[idx] };
-                    row.PUREID = "";
-                    row.TOUCH = "";
-                    row.ATOUCH = "";
-                    row.WT = "";
-                    row.AWT = "";
-                    recalcRow(row, !!isIssue);
-                    next[idx] = row;
-                    return next;
-                });
-
+            
                 setTimeout(() => {
                     toaster.create({
                         title: "No Touch Found",
@@ -952,6 +931,68 @@ export default function DraftTransactionTable({
         setDraftRows([makeEmptyRow(formFields, !!isIssue)]);
     }, [onClear, formFields, isIssue]);
 
+     const focusColAfterModal = useMemo(() => {
+            if (lastClosedModal === 'stoneMaster') return 'TOUCH';
+            if (lastClosedModal === 'hmc') return 'MC';
+            return isIssue ? 'PUREID' : 'ITEMID'; // fallback
+        }, [lastClosedModal, isIssue]);
+
+
+    const handleStonesSave = useCallback((stoneRows: StoneRow[]) => {
+        const updatedStones = stoneRows.map((s) => ({ ...s, draftRowId: stoneModalRowId }));
+        const stoneWtTotal = updatedStones.reduce((sum, r) => {
+            const wt = Number(r.stoneWeight || 0);
+            return sum + (r.stoneUnit === "c" ? wt / 5 : wt);
+        }, 0);
+        const stnAmtTotal = updatedStones.reduce((sum, r) => sum + Number(r.stoneAmount), 0);
+        const targetId = stoneModalRowId;
+
+        setDraftRows((prev) => prev.map((r) => {
+            if (r.__rowId !== targetId) return r;
+            return recalcRow({
+                ...r,
+                _stones: updatedStones,
+                STNWT: stoneWtTotal.toFixed(3),
+                STNAMT: stnAmtTotal.toFixed(2),
+            }, !!isIssue);
+        }));
+
+        setIsStoneModalOpen(false);
+        setLastClosedModal('stoneMaster');   // ← focus back to TOUCH after close
+        setModalTrigger(t => t + 1);
+
+        toaster.create({
+            title: "Stones Updated",
+            description: `Total stone weight: ${stoneWtTotal.toFixed(3)}g`,
+            type: "success",
+            duration: 2000,
+        });
+    }, [stoneModalRowId, isIssue]);         // ← recalcRow uses isIssue so include it
+
+
+    const handleOtherChargesSave = useCallback((rows: MiscChargeRow[]) => {
+        const updatedCharges = rows.map((c) => ({ ...c, draftRowId: miscModalRowId }));
+        const total = updatedCharges.reduce((sum, c) => sum + (Number(c.finalAmount) || 0), 0);
+        const targetId = miscModalRowId;  // capture at call time via dep
+
+        setDraftRows((prev) => prev.map((r) => {
+            if (r.__rowId !== targetId) return r;
+            return { ...r, _miscCharges: updatedCharges, HMC: total.toFixed(2) };
+        }));
+
+        toaster.create({
+            title: "Charges Updated",
+            description: `Total charges: Rs.${total.toFixed(2)}`,
+            type: "success",
+            duration: 2000,
+        });
+
+        setIsMiscModalOpen(false);
+        setLastClosedModal('hmc');          // ← if you're using the modal focus pattern
+        setModalTrigger(t => t + 1);        // ← focus back to MC after close
+    }, [miscModalRowId]);   
+    
+    // ← re-creates only when target row changes
     // ─── Render ────────────────────────────────────────────────────────────────
     return (
         <Box display="flex" flexDirection="column" gap={0}>
@@ -1016,6 +1057,11 @@ export default function DraftTransactionTable({
                         const isEmpty = !row.ITEMID && !row.PUREID && !row.WT && !row.GRSWT;
                         return isEmpty ? { opacity: 0.6 } : {};
                     }}
+                    focusAfterModal={{
+                        cell: { rowIndex: activeRowIndex ?? 0, colKey: focusColAfterModal },
+                        trigger: modalTrigger,
+                    }}
+                    initialFocusCol={isIssue ? "PUREID" : "ITEMID"} 
                 />
             </Box>
 
@@ -1032,33 +1078,7 @@ export default function DraftTransactionTable({
                             onClose={() => setIsStoneModalOpen(false)}
                             draftRowId={stoneModalRowId}
                             initialRows={stoneModalInitialRows}
-                            onSave={(stoneRows) => {
-                                const updatedStones = stoneRows.map((s) => ({ ...s, draftRowId: stoneModalRowId }));
-                                const stoneWtTotal = updatedStones.reduce((sum, r) => {
-                                    const wt = Number(r.stoneWeight || 0);
-                                    return sum + (r.stoneUnit === "c" ? wt / 5 : wt);
-                                }, 0);
-                                const stnAmtTotal = updatedStones.reduce((sum, r) => sum + r.stoneAmount, 0);
-                                const targetId = stoneModalRowId;
-
-                                setDraftRows((prev) => prev.map((r) => {
-                                    if (r.__rowId !== targetId) return r;
-                                    return recalcRow({
-                                        ...r,
-                                        _stones: updatedStones,
-                                        STNWT: stoneWtTotal.toFixed(3),
-                                        STNAMT: stnAmtTotal.toFixed(2),
-                                    }, !!isIssue);
-                                    // hash-based effect will detect the change and sync to parent
-                                }));
-
-                                setIsStoneModalOpen(false);
-                                toaster.create({
-                                    title: "Stones Updated",
-                                    description: `Total stone weight: ${stoneWtTotal.toFixed(3)}g`,
-                                    type: "success", duration: 2000,
-                                });
-                            }}
+                            onSave={handleStonesSave}
                             stoneItems={stoneItemsCollection}
                         />
                     </Box>
@@ -1077,24 +1097,7 @@ export default function DraftTransactionTable({
                             draftRowId={miscModalRowId}
                             onClose={() => setIsMiscModalOpen(false)}
                             initialRows={otherChargesInitialRows}
-                            onSave={(chargeRows) => {
-                                const updatedCharges = chargeRows.map((c) => ({ ...c, draftRowId: miscModalRowId }));
-                                const total = updatedCharges.reduce((sum, c) => sum + (Number(c.finalAmount) || 0), 0);
-                                const targetId = miscModalRowId;
-
-                                setDraftRows((prev) => prev.map((r) => {
-                                    if (r.__rowId !== targetId) return r;
-                                    return { ...r, _miscCharges: updatedCharges, HMC: total.toFixed(2) };
-                                    // hash-based effect will detect the change and sync to parent
-                                }));
-
-                                toaster.create({
-                                    title: "Charges Updated",
-                                    description: `Total charges: Rs.${total.toFixed(2)}`,
-                                    type: "success", duration: 2000,
-                                });
-                                setIsMiscModalOpen(false);
-                            }}
+                            onSave={handleOtherChargesSave}
                             chargeItems={otherChargesList}
                             otherChargesData={otherChargesData}
                             pcs={Number(miscModalRow?.PCS)}

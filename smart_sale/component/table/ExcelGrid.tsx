@@ -87,13 +87,18 @@ export interface ExcelGridProps {
     getCellStyle?: (rowIndex: number, col: ColumnDef) => React.CSSProperties;
     getRowStyle?: (rowIndex: number, row: Record<string, any>) => React.CSSProperties;
     getHeaderStyle?: (rowIndex: number, row: Record<string, any>) => React.CSSProperties;
+
     // Computed column values — parent provides the formula
     computeCell?: (colKey: string, row: Record<string, any>) => any;
 
     // Totals — parent decides what to show
     renderTotalCell?: (col: ColumnDef, rows: Record<string, any>[]) => React.ReactNode;
-    initialFocusCell?: CellCoord;       // ← NEW: focus this cell on mount
-    disableEnterOnMount?: boolean;
+
+    // Focus control
+    initialFocusCell?: CellCoord;        // focus this cell on mount
+    initialFocusCol?: string;            // colKey to focus on new row add; falls back to initialFocusCell?.colKey then first navigable col
+    focusAfterModal?: { cell: CellCoord; trigger: number }; // focus after modal closes; trigger increments on each close
+    disableEnterOnMount?: boolean;       // block Enter for 300ms after mount (prevents modal-open Enter bleed)
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -125,7 +130,7 @@ export const ExcelGrid: React.FC<ExcelGridProps> = ({
     onActiveChange,
     errors = {},
     touched = {},
-    showEnterNavigate = true,
+    showEnterNavigate = false,
     title,
     showTotals = false,
     showAddRow = true,
@@ -139,11 +144,10 @@ export const ExcelGrid: React.FC<ExcelGridProps> = ({
     computeCell,
     renderTotalCell,
     initialFocusCell,
+    initialFocusCol,
+    focusAfterModal,
     disableEnterOnMount = false,
-    
-
 }) => {
-
 
     const [activeCell, setActiveCell] = useState<CellCoord | null>(null);
     const [enterNavigation, setEnterNavigation] = useState<"column" | "row">("column");
@@ -156,18 +160,6 @@ export const ExcelGrid: React.FC<ExcelGridProps> = ({
         const t = setTimeout(() => { enterBlockedRef.current = false; }, 300);
         return () => clearTimeout(t);
     }, [disableEnterOnMount]);
-
-    // ── Initial focus ─────────────────────────────────────────────────────────
-    useEffect(() => {
-        if (!initialFocusCell) return;
-        // Delay slightly to let the grid finish rendering / modal finish opening
-        const t = setTimeout(() => {
-            focusCell(initialFocusCell.rowIndex, initialFocusCell.colKey);
-        }, 150);
-        return () => clearTimeout(t);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []); // run once on mount only
-
 
     // inputRefs keyed by `${rowIndex}_${colKey}` — stable across renders
     const inputRefs = useRef<Record<string, React.RefObject<any>>>({});
@@ -183,6 +175,14 @@ export const ExcelGrid: React.FC<ExcelGridProps> = ({
         [columns]
     );
 
+    // ── Resolve which col to focus on new row ─────────────────────────────────
+    // Priority: initialFocusCol → initialFocusCell.colKey → first navigable col
+    const newRowFocusCol = useMemo(() => {
+        if (initialFocusCol) return initialFocusCol;
+        if (initialFocusCell?.colKey) return initialFocusCell.colKey;
+        return navigableCols.find(c => !c.disabled)?.key ?? navigableCols[0]?.key;
+    }, [initialFocusCol, initialFocusCell, navigableCols]);
+
     // ── Focus a cell ──────────────────────────────────────────────────────────
     const focusCell = useCallback((ri: number, colKey: string, delay = 20) => {
         const coord: CellCoord = { rowIndex: ri, colKey };
@@ -195,69 +195,81 @@ export const ExcelGrid: React.FC<ExcelGridProps> = ({
         }, delay);
     }, [onActiveChange]);
 
+    // ── Initial focus on mount ────────────────────────────────────────────────
+    useEffect(() => {
+        if (!initialFocusCell) return;
+        const t = setTimeout(() => {
+            focusCell(initialFocusCell.rowIndex, initialFocusCell.colKey);
+        }, 100);
+        return () => clearTimeout(t);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []); // run once on mount only
+
+    // ── Focus cell after modal closes ─────────────────────────────────────────
+    useEffect(() => {
+        if (!focusAfterModal) return;
+        const t = setTimeout(() => {
+            focusCell(focusAfterModal.cell.rowIndex, focusAfterModal.cell.colKey);
+        }, 150);
+        return () => clearTimeout(t);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [focusAfterModal?.trigger]);
+
+    // ── Auto-focus when a new row is added ────────────────────────────────────
+    // rowAddedByNavigationRef: moveNext already scheduled its own focusCell,
+    // so the effect skips to avoid double-firing / racing.
+    const prevRowCountRef = useRef(rows.length);
+    const rowAddedByNavigationRef = useRef(false);
+
+    useEffect(() => {
+        const prev = prevRowCountRef.current;
+        const curr = rows.length;
+        prevRowCountRef.current = curr;
+
+        if (curr <= prev) return; // not a new row addition
+
+        // moveNext already handled focus — skip
+        if (rowAddedByNavigationRef.current) {
+            rowAddedByNavigationRef.current = false;
+            return;
+        }
+
+        // External add: toolbar "+ Add Row" or programmatic parent add
+        if (newRowFocusCol) {
+            focusCell(curr - 1, newRowFocusCol);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [rows.length]);
+
     // ── Navigate: Enter / Tab ─────────────────────────────────────────────────
     const moveNext = useCallback((ri: number, colKey: string) => {
         const ci = navigableCols.findIndex(c => c.key === colKey);
 
-        console.log(ci, ri, enterNavigation,rows, 'stoneMaster');
-
         if (enterNavigation === 'column') {
             // COLUMN MODE: Find next focusable column to the right
             let nextColIdx = ci + 1;
-
-            // Skip disabled columns
             while (nextColIdx < navigableCols.length && navigableCols[nextColIdx].disabled === true) {
-                console.log(`Skipping disabled column at index ${nextColIdx}:`, navigableCols[nextColIdx].key);
                 nextColIdx++;
             }
 
             if (nextColIdx < navigableCols.length) {
                 // Found a focusable column in current row
-                console.log(`Moving to column ${nextColIdx}:`, navigableCols[nextColIdx].key);
                 focusCell(ri, navigableCols[nextColIdx].key);
             } else if (ri < rows.length - 1) {
-                // Move to next row, find first focusable column
-                let firstFocusableIdx = 0;
-                while (firstFocusableIdx < navigableCols.length && navigableCols[firstFocusableIdx].disabled === true) {
-                    firstFocusableIdx++;
-                }
-
-                if (firstFocusableIdx < navigableCols.length) {
-                    console.log(`Moving to next row ${ri + 1}, first focusable column:`, navigableCols[firstFocusableIdx].key);
-                    focusCell(ri + 1, navigableCols[firstFocusableIdx].key);
-                } else {
-                    // All columns are disabled - add new row
-                    console.log('All columns disabled, adding new row');
-                  
-                    onRowAdd?.();
-                    setTimeout(() => focusCell(rows.length, navigableCols[0].key), 20);
-                }
+                // Move to next row, first focusable column
+                focusCell(ri + 1, newRowFocusCol ?? navigableCols[0].key);
             } else {
-                // Last row - add new row
-                console.log('Last row, adding new row');
+                // Last row — add new row, moveNext owns the focus
+                rowAddedByNavigationRef.current = true;
                 onRowAdd?.();
                 setTimeout(() => {
-                    let firstFocusableIdx = 0;
-                    while (firstFocusableIdx < navigableCols.length && navigableCols[firstFocusableIdx].disabled === true) {
-                        firstFocusableIdx++;
-                    }
-                    focusCell(rows.length, navigableCols[firstFocusableIdx]?.key || navigableCols[0].key);
+                    focusCell(rows.length, newRowFocusCol ?? navigableCols[0].key);
                 }, 20);
             }
         } else {
             // ROW MODE: Move down within column
-            let nextRowIdx = ri + 1;
-
-            // Check if current column in next rows is disabled
-            while (nextRowIdx < rows.length && navigableCols[ci]?.disabled === true) {
-                console.log(`Skipping disabled column at row ${nextRowIdx}, col:`, colKey);
-                nextRowIdx++;
-            }
-
-            if (nextRowIdx < rows.length && !navigableCols[ci]?.disabled) {
-                // Found focusable cell in same column, next row
-                console.log(`Moving down to row ${nextRowIdx}, same column`);
-                focusCell(nextRowIdx, colKey);
+            if (ri < rows.length - 1 && !navigableCols[ci]?.disabled) {
+                focusCell(ri + 1, colKey);
             } else {
                 // Find next focusable column
                 let nextColIdx = ci + 1;
@@ -266,17 +278,16 @@ export const ExcelGrid: React.FC<ExcelGridProps> = ({
                 }
 
                 if (nextColIdx < navigableCols.length) {
-                    console.log(`Moving to next column:`, navigableCols[nextColIdx].key);
                     focusCell(0, navigableCols[nextColIdx].key);
                 } else {
-                    // No more focusable columns
-                    console.log('No more focusable columns, adding new row');
+                    // No more — add new row, moveNext owns the focus
+                    rowAddedByNavigationRef.current = true;
                     onRowAdd?.();
-                    setTimeout(() => focusCell(rows.length, colKey), 20);
+                    setTimeout(() => focusCell(rows.length, newRowFocusCol ?? colKey), 20);
                 }
             }
         }
-    }, [navigableCols, enterNavigation, rows.length, focusCell, onRowAdd]);
+    }, [navigableCols, enterNavigation, rows.length, focusCell, onRowAdd, newRowFocusCol]);
 
     const movePrev = useCallback((ri: number, colKey: string) => {
         const ci = navigableCols.findIndex(c => c.key === colKey);
@@ -287,7 +298,7 @@ export const ExcelGrid: React.FC<ExcelGridProps> = ({
         }
     }, [navigableCols, focusCell]);
 
-    // Arrow key navigation
+    // ── Arrow key navigation ──────────────────────────────────────────────────
     const moveArrow = useCallback((ri: number, colKey: string, dir: 'up' | 'down' | 'left' | 'right') => {
         const ci = columns.findIndex(c => c.key === colKey);
         if (dir === 'up' && ri > 0) focusCell(ri - 1, colKey);
@@ -312,18 +323,12 @@ export const ExcelGrid: React.FC<ExcelGridProps> = ({
         const tagName = target.tagName;
         const inputType = target.type?.toLowerCase() ?? "";
 
-        // Is it any kind of input we should be careful with
         const isNumberInput = tagName === 'INPUT' && inputType === 'number';
         const isTextInput = tagName === 'INPUT' && (inputType === 'text' || inputType === '');
         const isComboboxInput = isTextInput && target.getAttribute('role') === 'combobox';
         const isSelect = tagName === 'SELECT';
         const isTextArea = tagName === 'TEXTAREA';
 
-        // For ArrowUp/Down:
-        // - Number input: browser uses arrows to increment/decrement — don't hijack
-        // - Combobox input: browser uses arrows to navigate dropdown — don't hijack  
-        // - Select: browser uses arrows to navigate options — don't hijack
-        // - Plain text input: arrows move cursor left/right only, so Up/Down is safe to hijack
         const shouldBlockArrowUpDown = isNumberInput || isComboboxInput || isSelect;
 
         switch (e.key) {
@@ -351,7 +356,6 @@ export const ExcelGrid: React.FC<ExcelGridProps> = ({
                     e.preventDefault();
                     moveArrow(ri, colKey, 'up');
                 }
-                // else: let number input increment / combobox navigate dropdown
                 break;
 
             case 'ArrowDown':
@@ -366,7 +370,6 @@ export const ExcelGrid: React.FC<ExcelGridProps> = ({
                     e.preventDefault();
                     moveArrow(ri, colKey, 'left');
                 } else if (isTextInput || isTextArea) {
-                    // Only navigate left if cursor is at position 0
                     const atStart = target.selectionStart === 0 && target.selectionEnd === 0;
                     if (atStart) {
                         e.preventDefault();
@@ -381,7 +384,6 @@ export const ExcelGrid: React.FC<ExcelGridProps> = ({
                     e.preventDefault();
                     moveArrow(ri, colKey, 'right');
                 } else if (isTextInput || isTextArea) {
-                    // Only navigate right if cursor is at end
                     const atEnd = target.selectionStart === target.value.length
                         && target.selectionEnd === target.value.length;
                     if (atEnd) {
@@ -425,7 +427,6 @@ export const ExcelGrid: React.FC<ExcelGridProps> = ({
             tableLayout: 'fixed' as const,
         },
         th: {
-        
             position: 'sticky' as const, top: 0, zIndex: 10,
             background: '#f7e0d1',
             fontSize: 11, fontWeight: 600, color: '#495057',
@@ -435,7 +436,6 @@ export const ExcelGrid: React.FC<ExcelGridProps> = ({
             textAlign: 'left' as const,
             whiteSpace: 'nowrap' as const,
             userSelect: 'none' as const,
-            
         },
         td: {
             borderBottom: '1px solid #e9ecef',
@@ -476,7 +476,6 @@ export const ExcelGrid: React.FC<ExcelGridProps> = ({
         const isError = !!errors[k] && !!touched[k];
         const inputRef = getInputRef(ri, col.key);
 
-        // Resolve computed value
         const value = col.computed && computeCell
             ? computeCell(col.key, row)
             : row[col.key] ?? '';
@@ -492,7 +491,6 @@ export const ExcelGrid: React.FC<ExcelGridProps> = ({
         };
 
         const content = col.computed || col.disabled
-            // Computed / disabled: parent still renders, just can't edit
             ? (
                 <div style={{ height: ROW_H, display: 'flex', alignItems: 'center', padding: '0 5px' }}>
                     {renderCell({
@@ -641,36 +639,28 @@ export const ExcelGrid: React.FC<ExcelGridProps> = ({
                             labelFontSize='xs'
                         />
                     )}
-
                 </div>
             )}
 
             <div style={S.wrap}>
                 <div style={S.scrollArea}>
                     <table style={S.table}>
-                        <thead style={{
-                            ...S.th,
-                       
-                            textAlign: 'center',
-
-                        }}>
-                            <tr >
+                        <thead style={{ ...S.th, textAlign: 'center' }}>
+                            <tr>
                                 <th style={{ ...S.th, width: 10, textAlign: 'center' }}>#</th>
                                 {columns.map(col => (
                                     <th key={col.key} style={{
                                         ...S.th,
                                         width: col.width ?? 100,
-                                        textAlign:'center',
-                                        
+                                        textAlign: 'center',
                                     }}>
                                         {col.label}
                                         {col.required && <span style={{ color: '#e03131', marginLeft: 2 }}>*</span>}
-                                        {/* {col.computed && <span style={{ color: '#adb5bd', marginLeft: 3, fontSize: 9 }}>fx</span>} */}
                                     </th>
                                 ))}
                                 {(showDeleteRow || showDuplicateRow) && (
                                     <th style={{ ...S.th, width: actionColWidth, textAlign: 'center', borderRight: 'none' }}>
-                                       DEL
+                                        DEL
                                     </th>
                                 )}
                             </tr>
@@ -704,7 +694,6 @@ export const ExcelGrid: React.FC<ExcelGridProps> = ({
                         <tbody>
                             <tr>
                                 <td style={{ ...S.tfootTd, width: 10 }} />
-                                {/* <td style={{ ...S.tfootTd, width: 30 }} >TOTAL </td> */}
                                 {columns.map((col, ci) => (
                                     <td key={col.key} style={{
                                         ...S.tfootTd,

@@ -525,7 +525,7 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
                 borderColor="gray.200"
                 bg={theme.colors.sideBar}
                 backdropFilter="blur(8px)"
-                zIndex={2}
+                zIndex={10}
             >
                 <HStack
                     h="64px"
@@ -853,7 +853,7 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
             left={0}
             sm={{ h: '100vh' }}
             md={{ h: '93vh' }}
-            zIndex={50}
+            zIndex={9999}
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
         >

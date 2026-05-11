@@ -16,7 +16,7 @@ import { useSoftControlById } from "@/hooks/apiHooks/softControl/useSoftControl"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type MiscChargeRow = {
+export type MiscChargeRow = {
     __id: string;
     draftRowId: string;
     chargeId:String;
@@ -471,6 +471,21 @@ export default function OtherChargesWindow({
                 renderTotalCell={renderTotalCell}
                 maxVisibleRows={10}
                 accentColor="#185FA5"
+                getRowStyle={(ri, row) => {
+                    const isEmpty = !row.chargeName && !row.amount;
+                    return isEmpty ? { opacity: 0.6 } : {};
+                }}
+                getHeaderStyle={(ri, row) => {
+                    const isEmpty = !row.chargeName && !row.amount;
+                    return isEmpty ? { opacity: 0.6 } : {};
+                }}
+                getCellStyle={(ri, col) => {
+                    if (col.key === "amount" || col.key === "finalAmount") {
+                        return { textAlign: "right" as const };
+                    }
+                    return {};
+                }}
+                initialFocusCell={{ rowIndex: 0, colKey: "chargeId" }}  // ✅ clean
             />
 
             <HStack justify="flex-end" gap={2} mt={3}>

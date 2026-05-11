@@ -458,14 +458,14 @@ export default function StoneEnterMaster({
                 onRowDelete={handleRowDelete}
                 errors={errors}
                 touched={touched}
-                showEnterNavigate
+                showEnterNavigate = {false}
                 showTotals
                 showAddRow
                 showDeleteRow
                 renderTotalCell={renderTotalCell}
                 maxVisibleRows={10}
                 accentColor="#185FA5"
-                // initialFocusCell={{ rowIndex: 0, colKey: "stoneId" }}  // ✅ clean
+                initialFocusCell={{ rowIndex: 0, colKey: "stoneId" }}  // ✅ clean
   
 
 

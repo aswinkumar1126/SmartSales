@@ -33,6 +33,9 @@ import { getItemSizeFields } from "@/config/master/itemSize";
 
 import { ItemSize, ItemSizePayload } from "@/types/size/Size";
 import SearchBar from "@/component/search/SearchBar";
+import { useGlobalKey } from "@/components/key/useGlobalKey";
+
+
 function ItemSizeMaster() {
 
     const { theme } = useTheme();
@@ -216,6 +219,9 @@ function ItemSizeMaster() {
     useEffect(() => {
         focusFirst();
     }, []);
+
+        useGlobalKey("Alt+s" , ()=>handleSave() , "saveTransaction");
+        useGlobalKey("Alt+c", () => resetForm() ,"ClearTransaction");
 
     /* -------------------- UI -------------------- */
     return (

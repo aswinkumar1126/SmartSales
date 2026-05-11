@@ -213,7 +213,7 @@ export const issueColumns = [
         decimalScale: 3,
         allowFocus: true,
         editable: false,
-        disabled: true,
+        // disabled: true,
 
     },
     {

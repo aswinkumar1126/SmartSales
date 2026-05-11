@@ -12,6 +12,7 @@ import { usePurchaseTransactionStore } from "@/store/purchase/usePurchaseTransac
 import { toaster } from "@/components/ui/toaster";
 import { HiPrinter } from "react-icons/hi2";
 
+
 export default function TransactionTypeSelector({
     transactionTypes,
     theme,

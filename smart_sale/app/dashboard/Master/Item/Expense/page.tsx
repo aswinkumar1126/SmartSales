@@ -32,6 +32,8 @@ import {
 } from "@/hooks/apiHooks/expenseMast/useExpenseMaster";
 
 import { useTheme } from "@/context/theme/themeContext";
+import { useGlobalKey } from "@/components/key/useGlobalKey";
+
 
 type FormErrors = Partial<Record<keyof CreateExpenseMast, string>>;
 
@@ -195,6 +197,9 @@ function ExpenseMaster() {
     useEffect(() => {
         focusFirst();
     }, []);
+
+        useGlobalKey("Alt+s" , ()=>handleSubmit() , "saveTransaction");
+        useGlobalKey("Alt+c", () => resetForm() ,"ClearTransaction");
 
     /* ---------------- HIGHLIGHT EFFECT ---------------- */
 

@@ -78,14 +78,22 @@ export const validateSalesReturn = (row: any, validationCheck?: any) => {
     }
 
 
-
-  
     return null;
 };
 
 export const validateIssue = (row: any) => {
     if (!row.PUREID || row.WT == null || row.TOUCH == null) {
         return "PUREID, WT, TOUCH required";
+    }
+    console.log("SAles row at issue" , row)
+    if(row.WT <= 0){
+        return "WEIGHT MUST BE REQUIRED"
+    }
+    if (row.TOUCH <= 0) {
+        return "TOUCH MUST BE REQUIRED"
+    }
+    if (row.ATOUCH <= 0) {
+        return "ATOUCH MUST BE REQUIRED"
     }
     return null;
 };

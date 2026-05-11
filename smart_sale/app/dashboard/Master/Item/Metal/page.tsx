@@ -42,6 +42,7 @@ import { metalMasterFields } from "@/config/master/MetalMaster";
 import { useEnterNavigation } from "@/component/form/useEnterNavigation";
 import { DynamicForm } from "@/component/form/DynamicForm";
 
+import { useGlobalKey } from "@/components/key/useGlobalKey";
 
 function MetalMaster() {
     const { theme } = useTheme();
@@ -251,7 +252,10 @@ function MetalMaster() {
     });
     useEffect(() => {
         focusFirst()
-    }, [])
+    }, []);
+
+    useGlobalKey("Alt+s" , ()=>handleSave() , "saveTransaction");
+    useGlobalKey("Alt+c", () => resetForm() ,"ClearTransaction");
 
     return (
         <Box

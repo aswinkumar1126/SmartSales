@@ -371,7 +371,7 @@ export default function OtherChargesWindow({
                 renderTotalCell={renderTotalCell}
                 maxVisibleRows={10}
                 accentColor="#185FA5"
-                // initialFocusCell={{ rowIndex: 0, colKey: "chargeId" }}  // ✅ clean
+                initialFocusCell={{ rowIndex: 0, colKey: "chargeId" }}  // ✅ clean
             />
 
             <HStack justify="flex-end" gap={2} mt={3}>
