@@ -114,7 +114,7 @@ export function useBarcodeGenerate() {
   const originalRowRef = useRef(originalRow);
 
 useEffect(() => {
-  setHeaderField("RETAG", isretag);
+  setHeaderField("RETAG",  isretag ? "true" : "false");
 }, [isretag, setHeaderField]);
   useEffect(() => { rowsRef.current = rows; }, [rows]);
   useEffect(() => { transactionFormRef.current = transactionForm; }, [transactionForm])
