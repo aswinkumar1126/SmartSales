@@ -13,6 +13,7 @@ import { SelectCombobox, SelectItem } from "@/components/ui/selectComboBox";
 import { toaster } from "@/components/ui/toaster";
 import { useGlobalKey } from "@/components/key/useGlobalKey";
 import ExcelGrid, { ColumnDef, RenderCellParams } from "@/component/table/ExcelGrid";
+import { NativeSelectWrapper } from "@/components/ui/NativeSelectWrapper";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -205,7 +206,7 @@ export default function StoneEnterMaster({
                       colKey === "stoneRate" ? value : updated.stoneRate,
                       (colKey === "stoneCalculation" ? value : updated.stoneCalculation) as "w" | "p" | "c",
                   );
-                  updated.stoneAmount = amount > 0 ? String(amount) : "";
+                  updated.stoneAmount = amount > 0 ? String(Math.round(amount)) : "";
               }
   
               next[ri] = updated;
@@ -260,7 +261,7 @@ export default function StoneEnterMaster({
                         value={value || "g"}
                         onChange={(e) => {
                             onChange(e.target.value);
-                            onCommit();
+                            // onCommit();
                         }}
                         css={{ height: "28px", fontSize: "11px" }}
                     >
@@ -275,22 +276,27 @@ export default function StoneEnterMaster({
         // ── stoneCalculation — NativeSelect ───────────────────────────────────
         if (col.key === "stoneCalculation") {
             return (
-                <NativeSelect.Root size="xs">
-                    <NativeSelect.Field
-                        ref={inputRef as any}
-                        value={value || "w"}
-                        onChange={(e) => {
-                            onChange(e.target.value);
-                            onCommit();
-                        }}
-                        css={{ height: "28px", fontSize: "11px" }}
-                    >
-                        <option value="w">Weight (gm)</option>
-                        <option value="p">Piece</option>
-                        <option value="c">Carat</option>
-                    </NativeSelect.Field>
-                    <NativeSelect.Indicator />
-                </NativeSelect.Root>
+                <>
+                
+                    <NativeSelect.Root size="xs">
+                        <NativeSelect.Field
+                            ref={inputRef as any}
+                            value={value || "w"}
+                            onChange={(e) => {
+                                onChange(e.target.value);
+                                // onCommit();
+                            }}
+                          
+                            css={{ height: "28px", fontSize: "11px" }}
+                        >
+                            <option value="w">Weight (gm)</option>
+                            <option value="p">Piece</option>
+                            <option value="c">Carat</option>
+                        </NativeSelect.Field>
+                        <NativeSelect.Indicator />
+                    </NativeSelect.Root>
+                </>
+               
             );
         }
 

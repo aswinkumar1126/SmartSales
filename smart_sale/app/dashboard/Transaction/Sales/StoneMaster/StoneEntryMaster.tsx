@@ -198,7 +198,7 @@ export default function StoneEnterMaster({
                     colKey === "stoneRate" ? value : updated.stoneRate,
                     (colKey === "stoneCalculation" ? value : updated.stoneCalculation) as "w" | "p" | "c",
                 );
-                updated.stoneAmount = amount > 0 ? String(amount) : "";
+                updated.stoneAmount = amount > 0 ? String(Math.round(amount)) : "";
             }
 
             next[ri] = updated;
@@ -255,7 +255,7 @@ export default function StoneEnterMaster({
                         value={value || "g"}
                         onChange={(e) => {
                             onChange(e.target.value);
-                            onCommit();
+                            // onCommit();
                         }}
                         css={{ height: "28px", fontSize: "11px" }}
                     >
@@ -276,7 +276,7 @@ export default function StoneEnterMaster({
                         value={value || "w"}
                         onChange={(e) => {
                             onChange(e.target.value);
-                            onCommit();
+                           
                         }}
                         css={{ height: "28px", fontSize: "11px" }}
                     >
@@ -427,7 +427,7 @@ export default function StoneEnterMaster({
                 renderTotalCell={renderTotalCell}
                 maxVisibleRows={10}
                 accentColor="#185FA5"
-                // initialFocusCell={{ rowIndex: 0, colKey: "stoneId" }}  // ✅ clean
+                initialFocusCell={{ rowIndex: 0, colKey: "stoneId" }}  // ✅ clean
             />
 
             <HStack justify="flex-end" gap={2} mt={4}>

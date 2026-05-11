@@ -92,7 +92,7 @@ export const SelectCombobox = forwardRef<HTMLInputElement, SelectComboboxProps>(
     }, [value, items]);
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
-        if (e.key === "Enter") {
+        if (e.key === "Enter" || e.key === "Tab") {
             e.preventDefault();
             e.stopPropagation();
 
@@ -189,7 +189,7 @@ export const SelectCombobox = forwardRef<HTMLInputElement, SelectComboboxProps>(
                 
                         onKeyDown={handleKeyDown} // Use our combined handler
                         onFocus={() => {
-                            if (typedInput.length > 0) {
+                            if (typedInput.length >= 0) {
                                 setIsOpen(true);
                             }
                         }}

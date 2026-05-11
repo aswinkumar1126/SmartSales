@@ -92,6 +92,8 @@ export interface ExcelGridProps {
 
     // Totals — parent decides what to show
     renderTotalCell?: (col: ColumnDef, rows: Record<string, any>[]) => React.ReactNode;
+    initialFocusCell?: CellCoord;       // ← NEW: focus this cell on mount
+    disableEnterOnMount?: boolean;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -136,20 +138,35 @@ export const ExcelGrid: React.FC<ExcelGridProps> = ({
     getHeaderStyle,
     computeCell,
     renderTotalCell,
+    initialFocusCell,
+    disableEnterOnMount = false,
+    
 
 }) => {
 
 
-    // ── Active cell state (table owns this, not values) ───────────────────────
     const [activeCell, setActiveCell] = useState<CellCoord | null>(null);
-
-
-
     const [enterNavigation, setEnterNavigation] = useState<"column" | "row">("column");
 
-    // const handleEnterNavigation = () => {
-    //     setEnterNavigation(prev => prev === "column" ? "row" : "column");
-    // }
+    // ── Block Enter briefly after mount (modal open Enter bleed-through) ──────
+    const enterBlockedRef = useRef(false);
+    useEffect(() => {
+        if (!disableEnterOnMount) return;
+        enterBlockedRef.current = true;
+        const t = setTimeout(() => { enterBlockedRef.current = false; }, 300);
+        return () => clearTimeout(t);
+    }, [disableEnterOnMount]);
+
+    // ── Initial focus ─────────────────────────────────────────────────────────
+    useEffect(() => {
+        if (!initialFocusCell) return;
+        // Delay slightly to let the grid finish rendering / modal finish opening
+        const t = setTimeout(() => {
+            focusCell(initialFocusCell.rowIndex, initialFocusCell.colKey);
+        }, 150);
+        return () => clearTimeout(t);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []); // run once on mount only
 
 
     // inputRefs keyed by `${rowIndex}_${colKey}` — stable across renders
@@ -311,6 +328,10 @@ export const ExcelGrid: React.FC<ExcelGridProps> = ({
 
         switch (e.key) {
             case 'Enter':
+                if (enterBlockedRef.current) {
+                    e.preventDefault(); // swallow the modal-open Enter
+                    break;
+                }
                 e.preventDefault();
                 moveNext(ri, colKey);
                 break;
@@ -405,7 +426,7 @@ export const ExcelGrid: React.FC<ExcelGridProps> = ({
         },
         th: {
         
-            position: 'sticky' as const, top: 0, zIndex: 100,
+            position: 'sticky' as const, top: 0, zIndex: 10,
             background: '#f7e0d1',
             fontSize: 11, fontWeight: 600, color: '#495057',
             padding: '5px 5px',
@@ -513,7 +534,7 @@ export const ExcelGrid: React.FC<ExcelGridProps> = ({
                         position: 'absolute', bottom: '100%', left: 0,
                         background: '#c0392b', color: 'white',
                         fontSize: 10, padding: '2px 6px', borderRadius: 3,
-                        zIndex: 20, whiteSpace: 'nowrap', pointerEvents: 'none',
+                        zIndex: 10, whiteSpace: 'nowrap', pointerEvents: 'none',
                     }}>
                         {errors[k]}
                     </div>
