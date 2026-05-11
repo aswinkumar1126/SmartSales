@@ -59,7 +59,12 @@ const STOCK_TABLE_HEADER = [
 
 function BarCodeGenerate() {
   const { theme } = useTheme();
-
+const {
+  // ...other values
+  isretag,
+  setIsRetag,
+  // ...other values
+} = useBarcodeGenerate();
   const {
     /* state */
     headerForm, 
@@ -266,8 +271,14 @@ function BarCodeGenerate() {
             itemCollection={itemCollection}
             isDisabled={rows.length > 0}
             validationError={headerErrors}
-          />
-
+          /> 
+<SingleCheckbox
+  label="RETAG"
+  checked={isretag}
+  onChange={() => setIsRetag((prev) => !prev)}
+  size="sm"
+  fontSize="xs"
+/>
           <Box display="flex" alignItems="start" flexDirection="column" gap={2}>
             <SingleCheckbox
               label="EXCEL IMPORT"
