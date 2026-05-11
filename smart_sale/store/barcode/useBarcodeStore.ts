@@ -13,6 +13,7 @@ export interface BarcodeHeaderForm {
   COMPANYNAME: string;
   INWARDNO: string;
   ITEMNAME: string;
+  RETAG: boolean;
 }
 
 
@@ -67,7 +68,7 @@ export interface TagFilterParams {
 const today = new Date().toISOString().split("T")[0];
 
 export const EMPTY_HEADER: BarcodeHeaderForm = {
-  ENTRYNO: "", DATE: today, COMPANYNAME: "", INWARDNO: "", ITEMNAME: "",
+  ENTRYNO: "", DATE: today, COMPANYNAME: "", INWARDNO: "", ITEMNAME: "", RETAG: false,
 };
 
 export const EMPTY_FILTER_PARAMS: TagFilterParams = {

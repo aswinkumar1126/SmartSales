@@ -30,6 +30,7 @@ import { transactionTableCols } from "@/data/barcodeGenerate/barcodeFormFields";
 
 import { CellChange, ChangeSource } from "handsontable/common";
 import { ExcelData } from "@/app/dashboard/Transaction/BarCodeGenerate/excel/BarCodeExcel";
+import Header from "@/component/layout/header/Header";
 
 /* ============================================================
    CONSTANTS
@@ -97,6 +98,7 @@ export function useBarcodeGenerate() {
   const [isSubmittingRow, setIsSubmittingRow] = useState(false);
   const [isSubmittingTag, setIsSubmittingTag] = useState(false);
   const [excelDrawerOpen, setExcelDrawerOpen] = useState(false);
+  const [isretag, setIsRetag] = useState<boolean>(false);
   const [deselectFlag, setDeselectFlag] = useState(false);
   const [selectedItemId, setSelectedItemId] = useState<number | undefined>(undefined);
   const [excelData, setExcelData] = useState<ExcelData>([]);
@@ -111,7 +113,9 @@ export function useBarcodeGenerate() {
   const editingRowIdRef = useRef(editRowId);
   const originalRowRef = useRef(originalRow);
 
-
+useEffect(() => {
+  setHeaderField("RETAG", isretag);
+}, [isretag, setHeaderField]);
   useEffect(() => { rowsRef.current = rows; }, [rows]);
   useEffect(() => { transactionFormRef.current = transactionForm; }, [transactionForm])
   useEffect(() => { editingRowIdRef.current = editRowId; }, [editRowId]);
@@ -122,6 +126,7 @@ export function useBarcodeGenerate() {
       FIELD_ORDER.map((k) => [k, { current: null as HTMLInputElement | null }])
     ) as Record<FieldKey, React.MutableRefObject<HTMLInputElement | null>>
   );
+  
 
   /* ── API ── */
   const { data: allPurchaseAccount } = useAllAccountHead("", { accountType: "PR" });
@@ -134,7 +139,8 @@ export function useBarcodeGenerate() {
     SNO: String(headerForm.ITEMNAME),
     ISEDITING: isEditing,
     ENTRYNO: isEditing ? Number(selectedEntryNo) : undefined,
-  }), [headerForm.COMPANYNAME, headerForm.INWARDNO, headerForm.ITEMNAME, isEditing , selectedEntryNo ]);
+     RETAG: isretag,
+  }), [headerForm.COMPANYNAME, headerForm.INWARDNO, headerForm.ITEMNAME, isEditing, selectedEntryNo,isretag]);
 
   const { data: barcodeItems } = useBarcodeItems(barcodeQueryParams);
 
@@ -490,6 +496,7 @@ export function useBarcodeGenerate() {
       ACCODE: Number(headerForm.COMPANYNAME),
       PUSNO: headerForm.ITEMNAME,
       TAGDATE: headerForm.DATE || new Date().toISOString().split("T")[0],
+       RETAG: isretag,
     };
     const taggingDetails = rows.map((r) => ({
       TAGNO: r.barcode, GRSWT: r.grsweight, STNWT: r.stoneWt,
@@ -498,7 +505,7 @@ export function useBarcodeGenerate() {
       NETWT: r.grsweight - r.stoneWt, SIZEID: Number(r.size),
     }));
     return { purchaseDetails, taggingDetails };
-  }, [rows, headerForm, itemId]);
+  }, [rows, headerForm, itemId,isretag]);
 
   const handleSave = useCallback(() => {
 
@@ -575,6 +582,7 @@ export function useBarcodeGenerate() {
       INWARDNO: String(purchase.PUENTRYNO ?? ""),
       ITEMNAME: String(purchase.PUSNO ?? ""),
       DATE: purchase.TAGDATE ?? "",
+      RETAG: false,
     });
 
     loadApiRows(
@@ -625,7 +633,7 @@ export function useBarcodeGenerate() {
     clearAll();
     resetForm();
     setDeselectFlag(true);
-
+    setIsRetag(false);
     setTimeout(() => setDeselectFlag(false), 50);
 
 
@@ -710,6 +718,7 @@ export function useBarcodeGenerate() {
     transactionForm, editRowId, fieldErrors, touched, headerErrors,
     isSubmittingRow, isSubmittingTag,
     excelDrawerOpen, setExcelDrawerOpen,
+    isretag, setIsRetag,
     deselectFlag,
 
     excelData,
