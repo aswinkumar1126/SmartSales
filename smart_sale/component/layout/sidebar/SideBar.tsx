@@ -700,7 +700,7 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
                                     )}
 
                                     <AnimatePresence initial={false}>
-                                        {(isExpanded ? isSectionOpen : true) && (
+                                        {(isExpanded ? isSectionOpen :true) && (
                                             <MotionVStack
                                                 align="stretch"
                                                 gap={2}
@@ -853,7 +853,7 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
             left={0}
             sm={{ h: '100vh' }}
             md={{ h: '93vh' }}
-            zIndex={9999}
+            zIndex={99}
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
         >

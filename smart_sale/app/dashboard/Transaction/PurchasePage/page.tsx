@@ -441,6 +441,9 @@ export default function PurchasePage() {
             : itemsStockList;
     }, [showStock, pureStockList, itemsStockList]);
 
+    console.log(selectedStockData ,'selectedStock');
+    console.log(pureStockList ,'pureStockList');
+
 
     /* ================================
        Customer Data
@@ -606,6 +609,8 @@ export default function PurchasePage() {
     useGlobalKey("Alt+s" , ()=>handleSaveTransaction() , "saveTransaction");
     useGlobalKey("Alt+c", () => handleResetDraft() ,"ClearTransaction");
 
+  
+
     const handleBillParamChange = useCallback((field: any, value: any) => {
         setBillParams(prev => ({
             ...prev,
@@ -630,8 +635,106 @@ export default function PurchasePage() {
 
     const { handleAddRow, handleEditRow, handleRemoveRow, handleUpdateRow } = useDraftRowOperations(isTagedItem);
 
-
-
+useGlobalKey(
+    "alt+p",
+    () => {
+        if(headerForm.CUSTOMER){
+            setSelectedTransactionTypes( [
+                ...selectedTransactionTypes,
+                {
+                    code: "PU",
+                    key: "purchase",
+                    label: "PURCHASE",
+                    value: "PU"
+                }
+        ]);
+        }
+        else{
+            toaster.create({
+                title: "Customer Required",
+                description: "Select customer first.",
+                type: "warning"
+            });
+        }
+         
+        
+    }
+);
+useGlobalKey(
+    "alt+r",
+    () => {
+        if(headerForm.CUSTOMER){
+            setSelectedTransactionTypes( [
+                ...selectedTransactionTypes,
+                {
+                    code: "PR",
+                    key: "purchase_return",
+                    label: "PURCHASE_RETURN",
+                    value: "PR"
+                }
+        ]);
+        }
+        else{
+            toaster.create({
+                title: "Customer Required",
+                description: "Select customer first.",
+                type: "warning"
+            });
+        }
+         
+        
+    }
+);
+useGlobalKey(
+    "alt+i",
+    () => {
+        if(headerForm.CUSTOMER){
+            setSelectedTransactionTypes( [
+                ...selectedTransactionTypes,
+                {
+                    code: "ISP",
+                    key: "issue",
+                    label: "ISSUE",
+                    value: "ISP"
+                }
+        ]);
+        }
+        else{
+            toaster.create({
+                title: "Customer Required",
+                description: "Select customer first.",
+                type: "warning"
+            });
+        }
+         
+        
+    }
+);
+useGlobalKey(
+    "alt+t",
+    () => {
+        if(headerForm.CUSTOMER){
+            setSelectedTransactionTypes( [
+                ...selectedTransactionTypes,
+                {
+                    code: "REC",
+                    key: "receipt",
+                    label: "RECEIPT",
+                    value: "REC"
+                }
+        ]);
+        }
+        else{
+            toaster.create({
+                title: "Customer Required",
+                description: "Select customer first.",
+                type: "warning"
+            });
+        }
+         
+        
+    }
+);
 
     // Handle clear rows for type
     const handleClearRowsForType = (transactionType: any) => {
@@ -873,8 +976,9 @@ export default function PurchasePage() {
         if (issueStock) {
             console.log(stockRow, 'vstockRow')
             const pureId = stockRow.pureId;
+            const touch = stockRow.aTouch;
 
-            availability = getStockAvailability(pureId);
+            availability = getStockAvailability(pureId ,touch);
 
             console.log(availability, 'availability')
 
@@ -1296,8 +1400,8 @@ export default function PurchasePage() {
                             openingBalance={baseOpening}
                             openingData={openingBalance}
                             isEditing={isEditing}
-                        // isClosingChanged={closingChanged}
-                        // isDraftRowChanged ={draftChanged}
+                            isClosingChanged={isClosingChanged()}
+                            isDraftRowChanged ={isDraftRowsChanged()}
 
                         />
 

@@ -608,7 +608,107 @@ export default function SalesPage() {
 
     const { handleAddRow, handleEditRow, handleRemoveRow, handleUpdateRow } = useDraftRowOperations(isTagedItem);
 
-    console.log(draftRows, 'draftRowsssssss')
+    console.log(draftRows, 'draftRowsssssss');
+    useGlobalKey(
+    "alt+p",
+    () => {
+        if(headerForm.CUSTOMER){
+            setSelectedTransactionTypes( [
+                ...selectedTransactionTypes,
+                {
+                    code: "SA",
+                    key: "sales",
+                    label: "SALES",
+                    value: "SA"
+                }
+        ]);
+        }
+        else{
+            toaster.create({
+                title: "Customer Required",
+                description: "Select customer first.",
+                type: "warning"
+            });
+        }
+         
+        
+    }
+);
+useGlobalKey(
+    "alt+r",
+    () => {
+        if(headerForm.CUSTOMER){
+            setSelectedTransactionTypes( [
+                ...selectedTransactionTypes,
+                {
+                    code: "SR",
+                    key: "sales_return",
+                    label: "SALES_RETURN",
+                    value: "SR"
+                }
+        ]);
+        }
+        else{
+            toaster.create({
+                title: "Customer Required",
+                description: "Select customer first.",
+                type: "warning"
+            });
+        }
+         
+        
+    }
+);
+useGlobalKey(
+    "alt+i",
+    () => {
+        if(headerForm.CUSTOMER){
+            setSelectedTransactionTypes( [
+                ...selectedTransactionTypes,
+                {
+                    code: "IS",
+                    key: "issue",
+                    label: "ISSUE",
+                    value: "IS"
+                }
+        ]);
+        }
+        else{
+            toaster.create({
+                title: "Customer Required",
+                description: "Select customer first.",
+                type: "warning"
+            });
+        }
+         
+        
+    }
+);
+useGlobalKey(
+    "alt+t",
+    () => {
+        if(headerForm.CUSTOMER){
+            setSelectedTransactionTypes( [
+                ...selectedTransactionTypes,
+                {
+                    code: "RE",
+                    key: "receipt",
+                    label: "RECEIPT",
+                    value: "RE"
+                }
+        ]);
+        }
+        else{
+            toaster.create({
+                title: "Customer Required",
+                description: "Select customer first.",
+                type: "warning"
+            });
+        }
+         
+        
+    }
+);
 
 
     // Handle clear rows for type
@@ -840,10 +940,12 @@ export default function SalesPage() {
         if (issueStock) {
             console.log(stockRow, 'vstockRow')
             const pureId = stockRow.pureId;
+            const touch =stockRow.aTouch;
 
-            console.log(pureId,'pureIdpureId')
+            console.log(pureId,'pureIdpureId');
 
-            availability = getStockAvailability(pureId);
+
+            availability = getStockAvailability(pureId,touch);
 
             console.log(availability, 'availability')
 
@@ -911,8 +1013,8 @@ export default function SalesPage() {
         originalTransactionData, // Pass the original transaction data
     });
 
-    const editavailable = getAvailableWeight('5');
-    console.log(editavailable, 'editavailable');
+    // const editavailable = getAvailableWeight('5');
+    // console.log(editavailable, 'editavailable');
 
 
     /* ================================
@@ -1281,8 +1383,8 @@ export default function SalesPage() {
                             openingBalance={baseOpening}
                             openingData={openingBalance}
                             isEditing={isEditing}
-                        // isClosingChanged={closingChanged}
-                        // isDraftRowChanged ={draftChanged}
+                            isClosingChanged={isClosingChanged()}
+                            isDraftRowChanged ={isDraftRowsChanged()}
 
                         />
 

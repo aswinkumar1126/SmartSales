@@ -33,9 +33,9 @@ export interface pureGoldMastForm{
 
 export interface pureGoldMastOpenForm {
 
-    pureId?: string;
-    weight?: string;
-    actualPure?: string;
-    actualTouch?: string;
+    pureId?: string; 
+    aWt?: string; 
+    aPureWt?: string; 
+    aTouch?: string; 
     metalId?: string
 }

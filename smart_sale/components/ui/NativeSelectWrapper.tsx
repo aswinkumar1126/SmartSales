@@ -67,7 +67,7 @@ export const NativeSelectWrapper = forwardRef<
                 React.FocusEvent<HTMLSelectElement>
         ) => {
             // open native select options
-            e.currentTarget.size = items.length;
+            //e.currentTarget.size = items.length;
 
             if ("blur" in e.currentTarget) {
                 e.currentTarget.focus();

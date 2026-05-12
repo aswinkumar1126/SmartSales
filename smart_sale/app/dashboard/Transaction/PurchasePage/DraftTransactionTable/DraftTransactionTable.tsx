@@ -79,6 +79,7 @@ interface DraftTransactionTableProps {
     isIssue?: boolean;
     getAvailableWeight?: (
         id: string | number,
+        touch:number|null,
         options?: { excludeRowId?: string; isEditing?: boolean; originalWeight?: number; transactionTypeCode?: string }
     ) => number | null;
     onClear?: () => void;
@@ -86,12 +87,14 @@ interface DraftTransactionTableProps {
     initialFormData?: any;
     getStockAvailability?: (
         id: string,
+        touch :number|null,
         options?: { excludeRowId?: string; transactionTypeCode: string; isEditing?: boolean; originalWeight?: number }
     ) => any | undefined;
     otherChargesList: { label: string; value: string }[];
     otherChargesData: any;
     getAvailablePieces?: (
         id: string,
+        touch:number|null,
         options?: { excludeRowId?: string; transactionTypeCode: string; isEditing?: boolean; originalPieces?: number }
     ) => any | undefined;
     handleTagChange: () => void;
@@ -283,6 +286,7 @@ export default function DraftTransactionTable({
                 size: "xs",
                 dependsOn: col.dependsOn,
                 disabled: col.disabled,
+                // align : "right",
                 ...("decimalScale" in col && typeof col.decimalScale === "number"
                     ? { decimalScale: col.decimalScale }
                     : {}),
@@ -303,11 +307,11 @@ export default function DraftTransactionTable({
             if (!isIssue && col.key === "STNAMT")
                 return { ...base, type: "calculated", disabled: true };
 
-            if (!isIssue && col.key === "TOUCH" && transactionType === "PU") 
-                return { ...base, disabled : true };
+            // if (!isIssue && col.key === "TOUCH" && transactionType === "PU") 
+            //     return { ...base, disabled : true };
 
-            // if (isIssue && col.key === "ATOUCH" && transactionType === "IS")
-            //     return { ...base, disabled: true };
+            if (isIssue && col.key === "ATOUCH" && transactionType === "ISP")
+                return { ...base, disabled: true };
 
             return base;
         });
@@ -321,7 +325,7 @@ export default function DraftTransactionTable({
                 key: f.key,
                 label: f.label || f.key,
                 width: baseCol?.width || 80,
-                align: baseCol?.align || (f.type === "number" ? "right" : "left"),
+                align: "right",
                 required: f.isRequired,
                 decimalScale: f.decimalScale,
                 computed: f.type === "calculated" || f.disabled === true,
@@ -559,31 +563,18 @@ export default function DraftTransactionTable({
             }
         }
 
-        // ── Block moving past ITEMID/PUREID if touch not yet resolved ─────────
-        if ((colKey === "GRSWT" || colKey === "WT") && !isIssue) {
-            const row = draftRowsRef.current[rowIndex];
-            const rowId = row?.__rowId;
-
-            if (touchNotFoundRef.current.has(rowId) && !row?.TOUCH) {
-                toaster.create({
-                    title: "Enter Touch First",
-                    description: "Please enter touch before proceeding.",
-                    type: "warning",
-                    duration: 2500,
-                });
-                return;
-            }
-        }
 
         let rowAfterUpdate: Record<string, any> | null = null;
         let shouldAdd = false;
         let shouldUpdate = false;
+
 
         setDraftRows((prev) => {
             const next = prev.map((r, i) => {
                 if (i !== rowIndex) return r;
                 const updated = { ...r, [colKey]: value };
                 if (colKey === "WT") updated.AWT = value;
+                if(colKey === "TOUCH" && transactionType === "REC") updated.ATOUCH = value;
                 recalcRow(updated, !!isIssue);
                 return updated;
             });
@@ -673,6 +664,7 @@ export default function DraftTransactionTable({
 
         const touch = touchData.TOUCH;
         const calMode = touchData.CALMODE || "NETWT";
+        // const stnPresent = touchData.stnPrenset || true ;
 
 
         const rowIndex = activeRowIndex;
@@ -680,6 +672,7 @@ export default function DraftTransactionTable({
         setDraftRows((prev) => {
             const next = [...prev];
             const row = { ...next[rowIndex], TOUCH: touch, ATOUCH: touch, CAL_MODE: calMode };
+            //const row = { ...next[rowIndex], TOUCH: touch, ATOUCH: touch, CAL_MODE: calMode , STN_PRESENT : stnPresent};
             recalcRow(row, false);
             next[rowIndex] = row;
             return next;
@@ -700,6 +693,7 @@ export default function DraftTransactionTable({
                 onUpdateRow(rowIndex, "TOUCH", touch);
                 onUpdateRow(rowIndex, "ATOUCH", touch);
                 onUpdateRow(rowIndex, "CAL_MODE", calMode);
+                // onUpdateRow(rowIndex , "STN_PRESENT" ,stnPresent)
             };
         }
     }, [touchData, touchDataLoading]); // ✅ no calculationMode
@@ -769,14 +763,17 @@ export default function DraftTransactionTable({
             toaster.create({ title: "Enter GRSWT first", type: "warning" });
             return;
         }
+        // if()
 
         // ✅ Read fresh from store, not from stale local draftRows
         const freshRow = usePurchaseTransactionStore.getState().draftRows.find(
             (r) => r.__rowId === rowId
         );
+// console.log(freshRow ,'openingRow');
+//         if(freshRow.STN_PRESENT){
 
-        console.log(freshRow,'freshRow' ,rowId);
-        console.log(usePurchaseTransactionStore.getState(),'usePurchaseTransactionStore')
+//         }
+    
         setStoneModalRowId(rowId);
         setCurrentGRSWT(grsWeight);
         setStoneModalInitialRows(freshRow?._stones || []); // ✅ set explicitly
@@ -924,20 +921,20 @@ export default function DraftTransactionTable({
         }
 
         // ── DESCRIPTION ───────────────────────────────────────────────────────
-        if (col.key === "DESCRIPTION") {
-            return (
-                <TextareaField
-                    value={value || ""}
-                    field="DESCRIPTION"
-                    onChange={(_, v) => onChange(v)}
-                    onEnter={onCommit}
-                    mode="dialog"
-                    rows={3}
-                    dialogInputRef={inputRef}
-                    disable={false}
-                />
-            );
-        }
+        // if (col.key === "DESCRIPTION") {
+        //     return (
+        //         <TextareaField
+        //             value={value || ""}
+        //             field="DESCRIPTION"
+        //             onChange={(_, v) => onChange(v)}
+        //             onEnter={onCommit}
+        //             mode="dialog"
+        //             rows={3}
+        //             dialogInputRef={inputRef}
+        //             disable={false}
+        //         />
+        //     );
+        // }
 
         // ── TAGNO ─────────────────────────────────────────────────────────────
         if (col.key === "TAGNO") {

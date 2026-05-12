@@ -1,4 +1,5 @@
-"use client";
+"use client"
+
 import React, { useRef, useEffect } from "react";
 import {
     Box,
@@ -210,6 +211,7 @@ export default function LoginPage() {
                                                     icon
                                                     iconElement="Password"
                                                     placeholder="enter password"
+                                                    type = "password"
                                                 />
                                             )}
                                         />

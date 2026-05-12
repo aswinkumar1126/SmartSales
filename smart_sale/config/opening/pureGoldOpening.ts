@@ -11,7 +11,7 @@ export const PureGoldMastForm = (pureCollection: { label: string; value: string 
         items: pureCollection, 
     },
     {
-        name: "weight",
+        name: "aWt",
         label: "Weight",
         type: "number",
         size: "sm",
@@ -21,7 +21,7 @@ export const PureGoldMastForm = (pureCollection: { label: string; value: string 
         decimalScale: 3,
     },
     {
-        name: "actualTouch",
+        name: "aTouch",
         label: "Actual Touch",
         type: "number",
         size: "sm",
@@ -31,7 +31,7 @@ export const PureGoldMastForm = (pureCollection: { label: string; value: string 
         decimalScale: 1,
     },
     {
-        name: "actualPure",
+        name: "aPureWt",
         label: "Actual Pure",
         type: "number",
         size: "sm",

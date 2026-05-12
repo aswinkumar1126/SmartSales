@@ -204,7 +204,7 @@ export const SelectCombobox = forwardRef<HTMLInputElement, SelectComboboxProps>(
                 </Combobox.Control>
                 {!disable && (
                     <Portal>
-                        <Combobox.Positioner mt={-1.5}  >
+                        <Combobox.Positioner mt={-1.5}  zIndex = {50}>
                             <Combobox.Content overflowY="auto" maxHeight={'100px'}  border={'1px solid #AAA'}>
                                 <Combobox.Empty fontSize={fontSize}>
                                     No items found

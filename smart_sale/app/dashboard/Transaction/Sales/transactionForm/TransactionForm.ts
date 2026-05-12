@@ -5,7 +5,7 @@ export const saleColumns = (isTag: boolean) => [
         key: "TAGNO",
         label: "TAGNO",
         width: "50px",
-        align: "left" as const,
+        align: "left" ,
         editable: true,
     }] : []),
     
@@ -13,16 +13,16 @@ export const saleColumns = (isTag: boolean) => [
         key: "ITEMID",
         label: "ITEM",
         width: "110px",
-        align: "left" as const,
-        type: "combobox" as const,
+        align: "left" ,
+        type: "combobox" ,
       
     },
     {
         key: "PCS",
         label: "PCS",
         width: "30px",
-        type: "number" as const,
-        align: "right" as const,
+        type: "number" ,
+        align: "right" ,
         decimalScale:0
    
     },
@@ -30,8 +30,8 @@ export const saleColumns = (isTag: boolean) => [
         key: "GRSWT",
         label: "GRS WT",
         width: "45px",
-        type: "number" as const,
-        align: "right" as const,
+        type: "number" ,
+        align: "right" ,
         decimalScale: 3
  
     },
@@ -39,8 +39,8 @@ export const saleColumns = (isTag: boolean) => [
         key: "STNWT",
         label: "STONE",
         width: "45px",
-        type: "number" as const,
-        align: "right" as const,
+        type: "number" ,
+        align: "right" ,
         decimalScale: 3
  
     },
@@ -48,8 +48,8 @@ export const saleColumns = (isTag: boolean) => [
         key: "NETWT",
         label: "NET WT",
         width: "45px",
-        type: "number" as const,
-        align: "right" as const,
+        type: "number" ,
+        align: "right" ,
         editable:false,
         decimalScale: 3
    
@@ -58,24 +58,24 @@ export const saleColumns = (isTag: boolean) => [
     //     key: "WASTYPE",
     //     label: "W.TYPE",
     //     width: "40px",
-    //     type: "select" as const,
-    //     align: "right" as const,
+    //     type: "select" ,
+    //     align: "right" ,
 
     // },
     // {
     //     key: "WASPER",
     //     label: "WAS %",
     //     width: "35px",
-    //     type: "number" as const,
-    //     align: "right" as const,
+    //     type: "number" ,
+    //     align: "right" ,
 
     // },
     // {
     //     key: "WASTAGE",
     //     label: "WASTAGE",
     //     width: "40px",
-    //     type: "number" as const,
-    //     align: "right" as const,
+    //     type: "number" ,
+    //     align: "right" ,
     //     decimalScale: 3
 
     // },
@@ -83,8 +83,8 @@ export const saleColumns = (isTag: boolean) => [
         key: "TOUCH",
         label: "TOUCH",
         width: "35px",
-        type: "number" as const,
-        align: "right" as const,
+        type: "number" ,
+        align: "right" ,
         max: 999,
         decimalScale: 1
 
@@ -93,8 +93,8 @@ export const saleColumns = (isTag: boolean) => [
         key: "PUREWT",
         label: "PURE WT",
         width: "45px",
-        type: "number" as const,
-        align: "right" as const,
+        type: "number" ,
+        align: "right" ,
         editable: false,
         decimalScale: 3
  
@@ -103,8 +103,8 @@ export const saleColumns = (isTag: boolean) => [
         key: "HMC",
         label: "HMC",
         width: "45px",
-        type: "number" as const,
-        align: "right" as const,
+        type: "number" ,
+        align: "right" ,
         decimalScale: 2,
         dependsOn:"ITEMID"
 
@@ -113,8 +113,8 @@ export const saleColumns = (isTag: boolean) => [
         key: "MC",
         label: "M.C",
         width: "35px",
-        type: "number" as const,
-        align: "right" as const,
+        type: "number" ,
+        align: "right" ,
         decimalScale: 2
   
     },
@@ -123,8 +123,8 @@ export const saleColumns = (isTag: boolean) => [
     //     key: "ATOUCH",
     //     label: "A.TOUCH",
     //     width: "45px",
-    //     type: "number" as const,
-    //     align: "right" as const,
+    //     type: "number" ,
+    //     align: "right" ,
     //     max: 999,
     //     decimalScale: 1
 
@@ -133,8 +133,8 @@ export const saleColumns = (isTag: boolean) => [
         key: "STNAMT",
         label: "STN AMT",
         width: "45px",
-        type: "number" as const,
-        align: "right" as const,
+        type: "number" ,
+        align: "right" ,
         max: 999999999,
         decimalScale: 2,
         editable:false
@@ -145,8 +145,8 @@ export const saleColumns = (isTag: boolean) => [
         key: "DESCRIPTION",
         label: "DESC",
         width: "30px",
-        align: "left" as const,
-        type: "text" as const,
+        align: "left" ,
+        type: "text" ,
 
     },
 ].filter(Boolean);
@@ -156,7 +156,7 @@ export const issueColumns = [
         key: "SNO",
         label: "S.N0",
         width: "40px",
-        align: "center" as const,
+        align: "center" ,
         editable: false,
 
     },
@@ -164,8 +164,8 @@ export const issueColumns = [
         key: "PUREID",
         label: "PURE GOLD NAME",
         width: "120px",
-        align: "left" as const,
-        type: "combobox" as const,
+        align: "left" ,
+        type: "combobox" ,
 
     },
     
@@ -174,8 +174,8 @@ export const issueColumns = [
         key: "WT",
         label: "WEIGHT",
         width: "30px",
-        type: "number" as const,
-        align: "right" as const,
+        type: "number" ,
+        align: "right" ,
         
         decimalScale:3,
         allowFocus:true,
@@ -187,8 +187,8 @@ export const issueColumns = [
         key: "AWT",
         label: "A.WEIGHT",
         width: "25px",
-        type: "number" as const,
-        align: "right" as const,
+        type: "number" ,
+        align: "right" ,
         max: 999,
         decimalScale: 3
 
@@ -197,20 +197,20 @@ export const issueColumns = [
         key: "TOUCH",
         label: "TOUCH",
         width: "30px",
-        type: "number" as const,
-        align: "right" as const,
+        type: "number" ,
+        align: "right" ,
         max: 999,
-        decimalScale: 3
+        decimalScale: 1
 
     },
     {
         key: "ATOUCH",
         label: "A.TOUCH",
         width: "30px",
-        type: "number" as const,
-        align: "right" as const,
+        type: "number" ,
+        align: "right",
         max: 999,
-        decimalScale: 3,
+        decimalScale: 1,
         allowFocus: true,
         editable: false,
         // disabled: true,
@@ -220,8 +220,8 @@ export const issueColumns = [
         key: "PUREWT",
         label: "PURE WT",
         width: "40px",
-        type: "number" as const,
-        align: "right" as const,
+        type: "number" ,
+        align: "right" ,
         editable: true,
         disabled: true,
         decimalScale: 3
@@ -231,8 +231,8 @@ export const issueColumns = [
         key: "APUREWT",
         label: "A.PURE WT",
         width: "40px",
-        type: "number" as const,
-        align: "right" as const,
+        type: "number" ,
+        align: "right" ,
         editable: false,
         disabled:true,
         decimalScale: 3

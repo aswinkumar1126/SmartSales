@@ -35,8 +35,8 @@ export const useLoadPurchaseStock = () => {
                 WT: availableWeight,
                 AWT: availableWeight,
 
-                TOUCH: stockRow.actualTouch || "",
-                ATOUCH: stockRow.actualTouch || "",
+                TOUCH: stockRow.aTouch || "",
+                ATOUCH: stockRow.aTouch || "",
 
                 PUREWT: stockRow.actualPure || 0,
                 APUREWT: stockRow.actualPure || 0,

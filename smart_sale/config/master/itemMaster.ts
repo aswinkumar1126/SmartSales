@@ -112,7 +112,6 @@ export const ItemMasterFields = (collections: itemMasterProps): FormField[] =>
             defaultValue: "N",
             disabled: collections.isStnPrensetDisabled ?? false,
 
-
         },
         
         {

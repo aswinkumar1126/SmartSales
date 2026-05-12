@@ -74,39 +74,35 @@ export const validateTransactions = ({
             }
         }
     }
+// ✅ Stock validation — keyed by "pureId_touch"
+const usedByPureIdAndTouch: Record<string, number> = {};
 
-    // ✅ Stock validation
-    const usedByPureId: Record<string, number> = {};
+draftRows.forEach((row: any) => {
+    const transactionType = SALETRANSACTIONTYPES.find(
+        (t: any) => t.value === row.TRANSACTION_TYPE
+    );
+    if (!transactionType) return;
 
-    draftRows.forEach((row: any) => {
-        const transactionType = SALETRANSACTIONTYPES.find(
-            (t: any) => t.value === row.TRANSACTION_TYPE
-        );
-        if (!transactionType) return;
+    const isIssue = isIssueType(transactionType) && transactionType.value === 'IS';
 
-        console.log(transactionType ,'trantype');
-        
-        const isIssue = isIssueType(transactionType) && transactionType.value === 'IS';
-
-        if (isIssue && row.PUREID) {
-            const key = String(row.PUREID);
-            usedByPureId[key] = (usedByPureId[key] || 0) + Number(row.WT || 0);
-        }
-    });
-
-
-    for (const pureId in usedByPureId) {
-
-        const availability = getStockAvailability(pureId);
-
-
-        if (availability && usedByPureId[pureId] > availability.total) {
-            return {
-                valid: false,
-                error: `Pure ID ${pureId} exceeds available stock`,
-            };
-        }
+    // ✅ Key includes both pureId AND touch
+    if (isIssue && row.PUREID && row.TOUCH) {
+        const key = `${row.PUREID}_${row.TOUCH}`;
+        usedByPureIdAndTouch[key] = (usedByPureIdAndTouch[key] || 0) + Number(row.WT || 0);
     }
+});
 
+for (const key in usedByPureIdAndTouch) {
+    const [pureId, touch] = key.split('_');
+    // ✅ Pass touch as second argument
+    const availability = getStockAvailability(pureId, Number(touch));
+
+    if (availability && usedByPureIdAndTouch[key] > availability.total) {
+        return {
+            valid: false,
+            error: `Pure ID ${pureId} (Touch: ${touch}) exceeds available stock`,
+        };
+    }
+}
     return { valid: true };
 };

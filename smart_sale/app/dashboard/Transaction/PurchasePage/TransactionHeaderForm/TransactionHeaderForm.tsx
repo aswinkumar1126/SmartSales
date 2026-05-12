@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect ,useRef} from "react";
 import { Box, Text, Flex, Button } from "@chakra-ui/react";
 import DatePicker from "react-datepicker";
 import { CapitalizedInput } from "@/components/ui/CapitalizedInput";
@@ -23,7 +23,8 @@ interface TransactionHeaderFormProps {
     openingData: any;
     isEditing?: boolean;
     isClosingChanged?: boolean;
-    isDraftRowChanged?: boolean
+    isDraftRowChanged?: boolean;
+
 }
 
 export default function TransactionHeaderForm({
@@ -72,7 +73,19 @@ export default function TransactionHeaderForm({
 
     console.log(isEditing, isDraftRowChanged, isClosingChanged, 'isChanged ')
 
-    const customerDisable = isEditing;
+    const customerDisable = isEditing || isDraftRowChanged || isClosingChanged ;
+
+ const customerRef = useRef<any>(null);
+
+   useEffect(() => {
+    const timer = setTimeout(() => {
+        if (customerRef.current && !isEditing && !form.CUSTOMER && customerCollection) {
+            customerRef.current.focus?.();
+        }
+    }, 200);
+
+    return () => clearTimeout(timer);
+}, []);
 
     return (
         <Box
@@ -136,7 +149,7 @@ export default function TransactionHeaderForm({
                 </Box>
 
                 {/* METAL TYPE */}
-                <Box w={{ base: '100%', md: '120px' }} display={{ base: 'flex', md: 'block' }} alignItems='center'>
+                {/* <Box w={{ base: '100%', md: '120px' }} display={{ base: 'flex', md: 'block' }} alignItems='center'>
                     <Text fontSize="2xs" mb={1} minW={{ base: '100px' }}>METAL TYPE:</Text>
                     <SelectCombobox
                         items={[
@@ -150,8 +163,10 @@ export default function TransactionHeaderForm({
                         }
                         placeholder="Select Metal"
                         rounded="sm"
+                      
+
                     />
-                </Box>
+                </Box> */}
 
 
                 {/* RATE / GM */}
@@ -182,6 +197,7 @@ export default function TransactionHeaderForm({
                         placeholder="Select Customer"
                         rounded="md"
                         disable={customerDisable}
+                        ref={customerRef}
                     />
                 </Box>
 

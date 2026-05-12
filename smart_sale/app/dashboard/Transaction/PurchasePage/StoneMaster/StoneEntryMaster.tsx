@@ -261,7 +261,7 @@ export default function StoneEnterMaster({
                         value={value || "g"}
                         onChange={(e) => {
                             onChange(e.target.value);
-                            // onCommit();
+                           
                         }}
                         css={{ height: "28px", fontSize: "11px" }}
                     >
@@ -284,7 +284,7 @@ export default function StoneEnterMaster({
                             value={value || "w"}
                             onChange={(e) => {
                                 onChange(e.target.value);
-                                // onCommit();
+                              
                             }}
                           
                             css={{ height: "28px", fontSize: "11px" }}

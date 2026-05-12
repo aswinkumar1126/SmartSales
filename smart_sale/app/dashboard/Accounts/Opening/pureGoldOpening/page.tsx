@@ -48,8 +48,10 @@ import { DynamicForm } from "@/component/form/DynamicForm";
 const initialFormState: pureGoldMastOpenForm = {
     pureId: "",
     aWt: "",
+
     aTouch: "",
     aPureWt: "",
+ 
     // metalId:""
 };
 
@@ -212,9 +214,9 @@ const PureGoldOpening = () => {
 
         const payload = {
             pureId: Number(form.pureId),
-            weight: Number(form.aWt),
-            actualTouch: Number(form.aTouch),
-            actualPure: Number(form.aPureWt),
+            aWt: Number(form.aWt),
+            aTouch: Number(form.aTouch),
+            aPureWt: Number(form.aPureWt),
             // metalId: String(form.metalId),
         };
 

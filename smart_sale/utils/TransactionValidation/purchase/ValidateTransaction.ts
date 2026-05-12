@@ -76,33 +76,36 @@ export const validateTransactions = ({
     }
 
     // ✅ Stock validation
-    const usedByPureId: Record<string, number> = {};
+// ✅ Stock validation — keyed by "pureId_touch"
+const usedByPureIdAndTouch: Record<string, number> = {};
 
-    draftRows.forEach((row: any) => {
-        const transactionType = TRANSACTIONTYPES.find(
-            (t: any) => t.value === row.TRANSACTION_TYPE
-        );
-        if (!transactionType) return;
+draftRows.forEach((row: any) => {
+    const transactionType = TRANSACTIONTYPES.find(
+        (t: any) => t.value === row.TRANSACTION_TYPE
+    );
+    if (!transactionType) return;
 
-        const isIssue = isIssueType(transactionType);
-        console.log(isIssue, row.PUREID, transactionType, 'isIssuecheck')
-        if (transactionType.value === "ISP" && row.PUREID) {
-            const key = String(row.PUREID);
-            usedByPureId[key] = (usedByPureId[key] || 0) + Number(row.WT || 0);
-        }
-    });
-
-    for (const pureId in usedByPureId) {
-        const availability = getStockAvailability(pureId);
-        console.log(availability, 'availabilityofstock');
-
-        if ( availability && usedByPureId[pureId] >  availability.total) {
-            return {
-                valid: false,
-                error: `Pure ID ${pureId} exceeds available stock`,
-            };
-        }
+    if (transactionType.value === "ISP" && row.PUREID && row.TOUCH) {
+        // ✅ Key includes both pureId AND touch
+        const key = `${row.PUREID}_${row.TOUCH}`;
+        usedByPureIdAndTouch[key] = (usedByPureIdAndTouch[key] || 0) + Number(row.WT || 0);
     }
+});
+
+for (const key in usedByPureIdAndTouch) {
+    const [pureId, touch] = key.split('_');
+    const availability = getStockAvailability(pureId, Number(touch));
+
+    console.log(key, availability, 'availabilityofstock');
+
+    // ✅ Reference the correct variable name
+    if (availability && usedByPureIdAndTouch[key] > availability.total) {
+        return {
+            valid: false,
+            error: `Pure ID ${pureId} (Touch: ${touch}) exceeds available stock`,
+        };
+    }
+}
 
     return { valid: true };
 };

@@ -349,66 +349,69 @@ export function CapitalizedInput<T>({
 
     return (
         <InputGroup startElement={inputIcon ? inputIcon : undefined}>
-            <Input
-                type={type === "number" ? "number" : type}
-                value={value ?? ""}
-                pl={icon ? "1.8rem" : "0.2rem"}
-                textTransform={isCapitalized ? "uppercase" : "none"}
-                placeholder={placeholder}
-                onChange={handleChange}
-                disabled={disabled}
-                max={type === "number" ? max : undefined}
-                maxLength={type === "text" ? max : undefined}
-                size={size}
-                autoFocus={autoFocus}
-                onKeyDown={handleKeyDown}
-                onBlur={(e) => {
-                    if (type === "number" && allowDecimal) {
-                        const formatted = formatDecimalOnBlur(e.target.value, decimalScale);
-                        onChange(field, formatted);
-                    }
-                    onBlur?.();
-                }}
-                ref={(el) => {
-                    if (inputRef) {
-                        if (typeof inputRef === 'function') {
-                            inputRef(el);
-                        } else if (inputRef.current !== undefined) {
-                            inputRef.current = el;
-                        }
-                    }
-                }}
-                className={onClassUse ? "type-inputs" : ""}
-                maxWidth={maxWidth}
-                bg={noBorder ? theme.colors.formColor : theme.colors.whiteColor}
-                fontSize='xs'
-                rounded={rounded}
-                minWidth={minWidth}
-                border="1px solid #DDD"
-                _focus={{
-                    border: "1px solid #FFF",
-                    boxShadow: "none",
-                }}
-                _hover={{
-                    border: "1px solid #BBB",
-                }}
-                css={type === "number" ? {
-                    WebkitAppearance: 'none',
-                    MozAppearance: 'textfield',
-                    '&::-webkit-outer-spin-button, &::-webkit-inner-spin-button': {
-                        WebkitAppearance: 'none',
-                        margin: 0,
-                    }
-                } : undefined}
-                _disabled={{
-                    opacity: 1,
-                    cursor: 'not-allowed',
-                    bg: noBorder ? '#ffffff' : theme.colors.greyColor,
-                    border: "1px solid transparent",
-                    color: theme.colors.green,
-                    fontWeight: 'bold'
-                }}
-            />
+           <Input
+    type={type === "number" ? "number" : type}
+    value={value ?? ""}
+    pl={icon ? "1.8rem" : "0.2rem"}
+    textTransform={isCapitalized ? "uppercase" : "none"}
+    placeholder={placeholder}
+    onChange={handleChange}
+    disabled={disabled}
+    max={type === "number" ? max : undefined}
+    maxLength={type === "text" ? max : undefined}
+    size={size}
+    autoFocus={autoFocus}
+    onKeyDown={handleKeyDown}
+    onBlur={(e) => {
+        if (type === "number" && allowDecimal) {
+            const formatted = formatDecimalOnBlur(e.target.value, decimalScale);
+            onChange(field, formatted);
+        }
+        onBlur?.();
+    }}
+    ref={(el) => {
+        if (inputRef) {
+            if (typeof inputRef === 'function') {
+                inputRef(el);
+            } else if (inputRef.current !== undefined) {
+                inputRef.current = el;
+            }
+        }
+    }}
+    className={onClassUse ? "type-inputs" : ""}
+    maxWidth={maxWidth}
+    bg={noBorder ? theme.colors.formColor : theme.colors.whiteColor}
+    fontSize='xs'
+    rounded={rounded}
+    minWidth={minWidth}
+    border="1px solid #DDD"
+    textAlign={type === "number" ? "right" : "left"} // 🔥 Add this
+    _focus={{
+        border: "1px solid #FFF",
+        boxShadow: "none",
+        textAlign: type === "number" ? "left" : undefined, // 🔥 Align left on focus
+    }}
+    _hover={{
+        border: "1px solid #BBB",
+    }}
+    css={type === "number" ? {
+        WebkitAppearance: 'none',
+        MozAppearance: 'textfield',
+        '&::-webkit-outer-spin-button, &::-webkit-inner-spin-button': {
+            WebkitAppearance: 'none',
+            margin: 0,
+        },
+        textAlign: 'right', // 🔥 Add this for right alignment when not focused
+    } : undefined}
+    _disabled={{
+        opacity: 1,
+        cursor: 'not-allowed',
+        bg: noBorder ? '#ffffff' : theme.colors.greyColor,
+        border: "1px solid transparent",
+        color: theme.colors.green,
+        fontWeight: 'bold'
+    }}
+/>
         </InputGroup>
     );
 }

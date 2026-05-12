@@ -45,7 +45,7 @@ export default function TransactionTypeSelector({
     /* ---------- CLICK HANDLER ---------- */
     const handleTypeClick = (clickedType: any) => {
 
-
+        console.log(clickedType ,'clickedType');
         if(!acCode) return toaster.create({ title: "Please select customer", type: "info" });
 
         const isSelected = selectedTransactionTypes.some(
@@ -82,6 +82,7 @@ export default function TransactionTypeSelector({
             setSelectedTransactionTypes([...selectedTransactionTypes, clickedType]);
         }
     };
+
 
     const isTypeSelected = (code: string) =>
         selectedTransactionTypes.some((type: any) => type.value === code);

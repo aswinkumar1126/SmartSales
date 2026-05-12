@@ -91,7 +91,7 @@ export type SidebarConfig = {
 
 /** Everything a consumer component can read / call. */
 export type SidebarContextType = {
-  currentSection: string;
+  currentSection: string|null;
   setCurrentSection: (section: string) => void;
   multiWindow: boolean ;
   handleMultiWindow: () => void;
@@ -465,7 +465,7 @@ export const SidebarProvider = ({ children }: { children: ReactNode }) => {
 
   const [multiWindow , setMultiWindow] = useState<boolean>(false);
 
-  const [currentSection, _setCurrentSection] = useState<string>("Master");
+  const [currentSection, _setCurrentSection] = useState<string|null>(null);
 
 
   const [expandedNodes, setExpandedNodes] = useState<Record<string, boolean>>(

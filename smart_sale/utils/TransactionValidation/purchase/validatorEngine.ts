@@ -14,17 +14,17 @@ export const validatePurchase = (row: any  ) => {
         return "TOUCH must be > 0";
     }
 
-    if (!row._miscCharges || row._miscCharges.length <= 0) {
-        return "Other charges are required";
-    }
+    // if (!row._miscCharges || row._miscCharges.length <= 0) {
+    //     return "Other charges are required";
+    // }
 
-    const hasHmc = row._miscCharges.some((charge: any) =>
-            charge.chargeName.trim().toUpperCase() === "HMC"
-    );
+    // const hasHmc = row._miscCharges.some((charge: any) =>
+    //         charge.chargeName.trim().toUpperCase() === "HMC"
+    // );
 
-    if (!hasHmc) {
-        return "HMC charge is required in other charges";
-    }
+    // if (!hasHmc) {
+    //     return "HMC charge is required in other charges";
+    // }
 
     return null;
 };
@@ -61,17 +61,17 @@ export const validatePurchaseReturn = (row: any  ) => {
     if (touch > actualTouch) 
         return `Touch do not exists the Actual Touch ${row.ATOUCH}`
     
-    if (!row._miscCharges || row._miscCharges.length <= 0) {
-        return "Other charges are required";
-    }
+    // if (!row._miscCharges || row._miscCharges.length <= 0) {
+    //     return "Other charges are required";
+    // }
 
-    const hasHmc = row._miscCharges.some((charge: any) =>
-        charge.chargeName.trim().toUpperCase() === "HMC"
-    );
+    // const hasHmc = row._miscCharges.some((charge: any) =>
+    //     charge.chargeName.trim().toUpperCase() === "HMC"
+    // );
 
-    if (!hasHmc) {
-        return "HMC charge is required in other charges";
-    }
+    // if (!hasHmc) {
+    //     return "HMC charge is required in other charges";
+    // }
     return null;
 };
 

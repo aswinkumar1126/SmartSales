@@ -61,21 +61,24 @@ interface DraftTransactionTableProps {
     theme: any;
     isEditing: boolean;
     isIssue?: boolean;
-    getAvailableWeight?: (
+    getAvailableWeight: (
         id: string | number,
-        options?: { excludeRowId?: string; isEditing?: boolean; originalWeight?: number; transactionTypeCode?: string }
+        touch:number|null,
+        options: { excludeRowId?: string; isEditing?: boolean; originalWeight?: number; transactionTypeCode?: string }
     ) => number | null;
     onClear?: () => void;
     transactionType?: string;
     initialFormData?: any;
     getStockAvailability?: (
         id: string,
+        touch:number|null,
         options?: { excludeRowId?: string; transactionTypeCode: string; isEditing?: boolean; originalWeight?: number }
     ) => any | undefined;
     otherChargesList: { label: string; value: string }[];
     otherChargesData: any;
     getAvailablePieces?: (
         id: string,
+        touch:number|null,
         options?: { excludeRowId?: string; transactionTypeCode: string; isEditing?: boolean; originalPieces?: number }
     ) => any | undefined;
     handleTagChange: () => void;
@@ -259,8 +262,8 @@ export default function DraftTransactionTable({
                 return { ...base, type: "calculated", disabled: true };
             if (!isIssue && col.key === "STNAMT")
                 return { ...base, type: "calculated", disabled: true };
-            // if (isIssue && col.key === "ATOUCH" && transactionType === "IS")
-            //     return { ...base, disabled: true };
+            if (isIssue && col.key === "ATOUCH" && transactionType === "IS")
+                return { ...base, disabled: true };
 
             return base;
         });
@@ -536,19 +539,19 @@ export default function DraftTransactionTable({
         }
 
         // ── Block GRSWT/WT if touch is still missing ───────────────────────────
-        if ((colKey === "GRSWT" || colKey === "WT") && !isIssue) {
-            const row = draftRowsRef.current[rowIndex];
-            const rowId = row?.__rowId;
-            if (touchNotFoundRef.current.has(rowId) && !row?.TOUCH) {
-                toaster.create({
-                    title: "Enter Touch First",
-                    description: "Please enter touch before proceeding.",
-                    type: "warning",
-                    duration: 2500,
-                });
-                return;
-            }
-        }
+        // if ((colKey === "GRSWT" || colKey === "WT") && !isIssue) {
+        //     const row = draftRowsRef.current[rowIndex];
+        //     const rowId = row?.__rowId;
+        //     if (touchNotFoundRef.current.has(rowId) && !row?.TOUCH) {
+        //         toaster.create({
+        //             title: "Enter Touch First",
+        //             description: "Please enter touch before proceeding.",
+        //             type: "warning",
+        //             duration: 2500,
+        //         });
+        //         return;
+        //     }
+        // }
 
         // ── Stock validation (SA transaction) ──────────────────────────────────
         if ((colKey === "PCS" || colKey === "NETWT") && transactionType === "SA") {
@@ -563,7 +566,7 @@ export default function DraftTransactionTable({
                 };
 
                 if (colKey === "PCS") {
-                    const available = getAvailablePieces?.(row.ITEMID, opts) ?? null;
+                    const available = getAvailablePieces?.(row.ITEMID,row.TOUCH, opts) ?? null;
                     if (available !== null && Number(value) > available) {
                         setTimeout(() => toaster.create({
                             title: "Insufficient Stock",
@@ -576,7 +579,7 @@ export default function DraftTransactionTable({
 
                 if (colKey === "NETWT") {
                     const wOpts = { ...opts, originalWeight: Number(row._originalNetwt) || 0 };
-                    const avWt = getAvailableWeight?.(row.ITEMID, wOpts) ?? null;
+                    const avWt = getAvailableWeight?.(row.ITEMID,row.TOUCH, wOpts) ?? null;
                     const netwt = parseFloat(row.NETWT) || 0;
                     if (avWt !== null && netwt > avWt) {
                         setTimeout(() => toaster.create({
@@ -594,8 +597,15 @@ export default function DraftTransactionTable({
             const next = prev.map((r, i) => {
                 if (i !== rowIndex) return r;
                 const updated = { ...r, [colKey]: value };
-                if (colKey === "WT") updated.AWT = value;
+                if(!updated.AWT){
+                    if (colKey === "WT") updated.AWT = value;
+                }
+                if(!updated.ATOUCH){
+                    if(colKey === "TOUCH") updated.ATOUCH = value;
+                }
+                
                 recalcRow(updated, !!isIssue);
+                
                 return updated;
             });
             return next;

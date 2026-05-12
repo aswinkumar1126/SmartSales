@@ -10,11 +10,12 @@ import {
     HStack,
     Text,
     IconButton,
+    Table
 } from "@chakra-ui/react";
 import { useMemo } from "react";
 import { FaArrowUp } from "react-icons/fa";
 import { GiGoldBar } from "react-icons/gi";
-import { CustomTable } from "@/component/table/CustomTable";
+import { CustomTable } from "@/component/table/CustomTable"; // Updated import path
 import { SelectCombobox } from "@/components/ui/selectComboBox";
 import { useTheme } from "@/context/theme/themeContext";
 
@@ -48,7 +49,7 @@ type StockDrawerProps = {
     setSelectedName: (val?: string) => void;
     pureGoldCollection?: any[];
     itemCollection?: any[];
-    getStockAvailability?: (id: string, options?: {
+    getStockAvailability?: (id: string, touch:number , options?: {
         excludeRowId?: string,
         transactionTypeCode: string,
         isEditing?: boolean,
@@ -132,6 +133,15 @@ export default function StockDrawer({
         }
     };
 
+    const getTouch = (row:any) =>{
+        if(showStock === "PURE"){
+            return row.aTouch || row.touch || row.at;
+        }
+        else{
+            return row.TOUCH || row.touch || row.ATOUCH
+        }
+    }
+
     return (
         <Drawer.Root open={open} onOpenChange={(e) => !e.open && onClose()} size="xl">
             <Portal>
@@ -191,30 +201,30 @@ export default function StockDrawer({
                                 />
                             </HStack>
 
-                            {/* Table */}
+                            {/* Updated Table with CustomTable component */}
                             <CustomTable
                                 columns={columns}
                                 data={stockData}
                                 rowIdKey="id"
                                 headerBg={theme.colors.accient}
                                 headerColor={theme.colors.whiteColor}
-                                renderRow={(row) => {
-
-                                    console.log(stockData,'stockDatastockData')
+                                renderRow={(row, index, isSelected) => {
+                                    console.log(stockData, 'stockDatastockData');
 
                                     const stockId = getStockId(row);
+                                    const touch = getTouch(row);
 
-                        
-                                 
+                                    console.log(stockId, 'stockId');
+                                    
                                     // Get availability for this row based on stock type
-                                    const availability = getStockAvailability && stockId
-                                        ? getStockAvailability(stockId, {
+                                    const availability = getStockAvailability && stockId && touch 
+                                        ? getStockAvailability(stockId, touch, {
                                             transactionTypeCode: showStock === "PURE" ? "ISP" : "PU",
                                             isEditing: false,
                                         })
                                         : undefined;
 
-                                    console.log(availability ,getStockAvailability , stockId,'availability');
+                                    console.log(availability, stockId, touch, 'availability');
 
                                     const isOutOfStock = showStock === "PURE"
                                         ? (availability?.remaining ?? 0) <= 0
@@ -223,20 +233,22 @@ export default function StockDrawer({
                                     if (showStock === "PURE") {
                                         return (
                                             <>
-                                                <Box as="td">{row.pureGoldName}</Box>
-                                                <Box as="td">{row.metalName}</Box>
-                                                <Box as="td" textAlign="end">
+                                                <Table.Cell as="td">{row.pureGoldName}</Table.Cell>
+                                                <Table.Cell as="td">{row.metalName}</Table.Cell>
+                                                <Table.Cell as="td" textAlign="end">
                                                     <Stack gap={0}>
                                                         <Text fontWeight="medium">
-                                                            {Number(row.weight).toFixed(3)}g
+                                                            {Number(row.aWt).toFixed(3)}g
                                                         </Text>
                                                     </Stack>
-                                                </Box>
-                                                <Box as="td" textAlign="end" fontWeight="medium">{row.actualTouch}</Box>
-                                                <Box as="td" textAlign="end" fontWeight="medium">
-                                                    {Number(row.actualPure).toFixed(3)}
-                                                </Box>
-                                                <Box as="td" textAlign="end">
+                                                </Table.Cell>
+                                                <Table.Cell as="td" textAlign="end" fontWeight="medium">
+                                                    {Number(row.aTouch).toFixed(1)}
+                                                </Table.Cell>
+                                                <Table.Cell as="td" textAlign="end" fontWeight="medium">
+                                                    {Number(row.aPureWt).toFixed(3)}
+                                                </Table.Cell>
+                                                <Table.Cell as="td" textAlign="end">
                                                     {availability ? (
                                                         <Stack gap={0} align="end">
                                                             <Text
@@ -252,11 +264,11 @@ export default function StockDrawer({
                                                         </Stack>
                                                     ) : (
                                                         <Text fontSize="sm" color="gray.500">
-                                                            {Number(row.weight).toFixed(3)}g available
+                                                            {Number(row.aWt).toFixed(3)}g available
                                                         </Text>
                                                     )}
-                                                </Box>
-                                                <Box as="td" textAlign="center">
+                                                </Table.Cell>
+                                                <Table.Cell as="td" textAlign="center">
                                                     <IconButton
                                                         size="2xs"
                                                         onClick={() => onIssue(row)}
@@ -266,34 +278,34 @@ export default function StockDrawer({
                                                     >
                                                         <FaArrowUp />
                                                     </IconButton>
-                                                </Box>
+                                                </Table.Cell>
                                             </>
                                         );
                                     } else {
                                         const netwt = getNetWeight(row);
                                         return (
                                             <>
-                                                <Box as="td" px={1}>{row.ITEMNAME}</Box>
-                                                <Box as="td">{row.METALNAME}</Box>
-                                                <Box as="td" textAlign="end">
+                                                <Table.Cell as="td" px={1}>{row.ITEMNAME}</Table.Cell>
+                                                <Table.Cell as="td">{row.METALNAME}</Table.Cell>
+                                                <Table.Cell as="td" textAlign="end">
                                                     <Stack gap={0}>
                                                         <Text fontWeight="bold">
                                                             {row.PCS} pcs
                                                         </Text>
                                                     </Stack>
-                                                </Box>
-                                                <Box as="td" textAlign="end">
+                                                </Table.Cell>
+                                                <Table.Cell as="td" textAlign="end">
                                                     {Number(row.GRSWT || 0).toFixed(3)}g
-                                                </Box>
-                                                <Box as="td" textAlign="end">
+                                                </Table.Cell>
+                                                <Table.Cell as="td" textAlign="end">
                                                     {Number(row.STNWT || 0).toFixed(3)}g
-                                                </Box>
-                                                <Box as="td" textAlign="end">
-                                                    <Text fontWeight="bold" >
+                                                </Table.Cell>
+                                                <Table.Cell as="td" textAlign="end">
+                                                    <Text fontWeight="bold">
                                                         {netwt.toFixed(3)}g
                                                     </Text>
-                                                </Box>
-                                                <Box as="td" textAlign="end">
+                                                </Table.Cell>
+                                                <Table.Cell as="td" textAlign="end">
                                                     {availability ? (
                                                         <Stack gap={0} align="end">
                                                             <Text
@@ -304,7 +316,7 @@ export default function StockDrawer({
                                                                 Available: {availability.remainingPieces || 0} pcs
                                                             </Text>
                                                             <Text fontSize="xs" color="gray.500">
-                                                                Total: {availability.pieces.total || 0} pcs | Used: {availability.pieces.used || 0} pcs
+                                                                Total: {availability.totalPieces || 0} pcs | Used: {availability.usedPieces || 0} pcs
                                                             </Text>
                                                             {availability.remaining > 0 && (
                                                                 <Text fontSize="xs" color="green.500">
@@ -315,20 +327,21 @@ export default function StockDrawer({
                                                     ) : (
                                                         <Stack gap={0} align="end">
                                                             <Text fontSize="sm" color="gray.500">
-                                                                {row.pcs} pcs available
+                                                                {row.PCS} pcs available
                                                             </Text>
                                                             <Text fontSize="xs" color="gray.400">
                                                                 Net Wt: {netwt.toFixed(3)}g
                                                             </Text>
                                                         </Stack>
                                                     )}
-                                                </Box>
-                                                <Box as="td" textAlign="end">
+                                                </Table.Cell>
+                                                <Table.Cell as="td" textAlign="end">
                                                     {row.TOUCH || row.touch || ""}
-                                                </Box>
-                                                <Box as="td" textAlign="end" fontWeight={'bold'} color="blue.600" px={1}>
+                                                </Table.Cell>
+                                                <Table.Cell as="td" textAlign="end" fontWeight={'bold'} color="blue.600" px={1}>
                                                     {Number(row.PUREWT || row.purewt || 0).toFixed(3)}g
-                                                </Box>
+                                                </Table.Cell>
+                                                {/* Uncomment if you want action button for items */}
                                                 {/* <Box as="td" textAlign="center">
                                                     <IconButton
                                                         size="2xs"

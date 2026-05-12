@@ -1,4 +1,3 @@
-// hooks/useEditStockCalculator.ts
 interface EditingStockProps {
     pureStockList: any[];
     itemsStockList: any[];
@@ -15,7 +14,8 @@ export function useEditStockCalculator({
     SALETRANSACTIONTYPES,
 }: EditingStockProps) {
 
-    const getOriginalUsage = (id: string, field: string, type: 'IS' | 'SA'): number => {
+    // ✅ Added touch param — filter original rows by both id AND touch
+    const getOriginalUsage = (id: string, touch: number | null, field: string, type: 'IS' | 'SA'): number => {
         const details = originalTransactionData?.TRANSACTION_DETAILS;
         if (!details) return 0;
 
@@ -24,42 +24,56 @@ export function useEditStockCalculator({
             : [...(details.sales || []), ...(details.sales_return || [])];
 
         return rows
-            .filter(r => String(r.PUREID || r.ITEMID) === String(id))
-            .reduce((sum, r) => sum + Number(r[field] || 0), 0);
-    };
-
-    const getDraftUsage = (id: string, field: string, type: 'IS' | 'SA'): number => {
-        return draftRows
             .filter(r => {
                 const matchId = String(r.PUREID || r.ITEMID) === String(id);
-                const isSaleType = SALETRANSACTIONTYPES.includes(r.TRANSACTION_TYPE);
-                const matchType = type === 'SA' ? isSaleType : !isSaleType;
-                return matchId && matchType;
+                // ✅ Only filter by touch for IS (pure stock)
+                const matchTouch = type === 'IS' && touch != null
+                    ? Number(r.TOUCH) === Number(touch)
+                    : true;
+                return matchId && matchTouch;
             })
             .reduce((sum, r) => sum + Number(r[field] || 0), 0);
     };
 
-    const getEditStock = (id: string, baseStock: number, type: 'IS' | 'SA'): number => {
-        const field = type === 'IS' ? 'WT' : 'NETWT';
-        const original = getOriginalUsage(id, field, type);
-        const draft = getDraftUsage(id, field, type);
+    // ✅ Added touch param
+    const getDraftUsage = (id: string, touch: number | null, field: string, type: 'IS' | 'SA'): number => {
+        return draftRows
+            .filter(r => {
+                const matchId = String(r.PUREID || r.ITEMID) === String(id);
+                const matchTouch = type === 'IS' && touch != null
+                    ? Number(r.TOUCH ?? r.ATOUCH) === Number(touch)
+                    : true;
+                const isSaleType = SALETRANSACTIONTYPES.includes(r.TRANSACTION_TYPE);
+                const matchType = type === 'SA' ? isSaleType : !isSaleType;
+                return matchId && matchTouch && matchType;
+            })
+            .reduce((sum, r) => sum + Number(r[field] || 0), 0);
+    };
 
-        // Formula: Base Stock + Original (return to stock) - Draft (current usage)
+    // ✅ Added touch param
+    const getEditStock = (id: string, touch: number | null, baseStock: number, type: 'IS' | 'SA'): number => {
+        const field = type === 'IS' ? 'WT' : 'NETWT';
+        const original = getOriginalUsage(id, touch, field, type);
+        const draft = getDraftUsage(id, touch, field, type);
         return baseStock + original - draft;
     };
 
-    const getAvailableWeightForIS = (pureId: string): number => {
-        const stock = pureStockList.find(s => String(s.pureId) === String(pureId));
+    // ✅ Find stock by pureId + touch
+    const getAvailableWeightForIS = (pureId: string, touch: number | null): number => {
+        const stock = pureStockList.find(
+            s => String(s.pureId) === String(pureId) && Number(s.aTouch) === Number(touch)
+        );
         if (!stock) return 0;
-        return getEditStock(pureId, Number(stock.weight || 0), 'IS');
+        return getEditStock(pureId, touch, Number(stock.aWt || 0), 'IS');
     };
 
+    // touch not needed for SA (items stock)
     const getAvailableWeightForSA = (itemId: string): number => {
         const stock = itemsStockList.find(s =>
             String(s.itemId) === String(itemId) || String(s.pureId) === String(itemId)
         );
         if (!stock) return 0;
-        return getEditStock(itemId, Number(stock.netwt || 0), 'SA');
+        return getEditStock(itemId, null, Number(stock.netwt || 0), 'SA');
     };
 
     return {

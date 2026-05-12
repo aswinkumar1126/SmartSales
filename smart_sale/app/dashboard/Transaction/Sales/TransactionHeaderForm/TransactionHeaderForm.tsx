@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect ,useRef} from "react";
 import { Box, Text, Flex, Button } from "@chakra-ui/react";
 import DatePicker from "react-datepicker";
 import { CapitalizedInput } from "@/components/ui/CapitalizedInput";
@@ -70,7 +70,20 @@ export default function TransactionHeaderForm({
 
     console.log(isEditing, isDraftRowChanged, isClosingChanged, 'isChanged ')
 
-    const customerDisable = isEditing;
+ 
+    const customerDisable = isEditing || isDraftRowChanged || isClosingChanged ;;
+
+     const customerRef = useRef<any>(null);
+
+   useEffect(() => {
+    const timer = setTimeout(() => {
+        if (customerRef.current && !isEditing && !form.CUSTOMER && customerCollection) {
+            customerRef.current.focus?.();
+        }
+    }, 200);
+
+    return () => clearTimeout(timer);
+}, []);
 
     return (
         <Box
@@ -162,6 +175,7 @@ export default function TransactionHeaderForm({
                         placeholder="Select Customer"
                         rounded="md"
                         disable={customerDisable}
+                        ref={customerRef}
                     />
                 </Box>
 
