@@ -299,13 +299,13 @@ export const ExcelGrid: React.FC<ExcelGridProps> = ({
     }, [navigableCols, focusCell]);
 
     // ── Arrow key navigation ──────────────────────────────────────────────────
-    const moveArrow = useCallback((ri: number, colKey: string, dir: 'up' | 'down' | 'left' | 'right') => {
-        const ci = columns.findIndex(c => c.key === colKey);
-        if (dir === 'up' && ri > 0) focusCell(ri - 1, colKey);
-        if (dir === 'down' && ri < rows.length - 1) focusCell(ri + 1, colKey);
-        if (dir === 'left' && ci > 0) focusCell(ri, columns[ci - 1].key);
-        if (dir === 'right' && ci < columns.length - 1) focusCell(ri, columns[ci + 1].key);
-    }, [columns, rows.length, focusCell]);
+    // const moveArrow = useCallback((ri: number, colKey: string, dir: 'up' | 'down' | 'left' | 'right') => {
+    //     const ci = columns.findIndex(c => c.key === colKey);
+    //     if (dir === 'up' && ri > 0) focusCell(ri - 1, colKey);
+    //     if (dir === 'down' && ri < rows.length - 1) focusCell(ri + 1, colKey);
+    //     if (dir === 'left' && ci > 0) focusCell(ri, columns[ci - 1].key);
+    //     if (dir === 'right' && ci < columns.length - 1) focusCell(ri, columns[ci + 1].key);
+    // }, [columns, rows.length, focusCell]);
 
     // ── Cancel / blur ─────────────────────────────────────────────────────────
     const cancelEdit = useCallback(() => {
@@ -351,50 +351,50 @@ export const ExcelGrid: React.FC<ExcelGridProps> = ({
                 cancelEdit();
                 break;
 
-            case 'ArrowUp':
-                if (!shouldBlockArrowUpDown) {
-                    e.preventDefault();
-                    moveArrow(ri, colKey, 'up');
-                }
-                break;
+            // case 'ArrowUp':
+            //     if (!shouldBlockArrowUpDown) {
+            //         e.preventDefault();
+            //         moveArrow(ri, colKey, 'up');
+            //     }
+            //     break;
 
-            case 'ArrowDown':
-                if (!shouldBlockArrowUpDown) {
-                    e.preventDefault();
-                    moveArrow(ri, colKey, 'down');
-                }
-                break;
+            // case 'ArrowDown':
+            //     if (!shouldBlockArrowUpDown) {
+            //         e.preventDefault();
+            //         moveArrow(ri, colKey, 'down');
+            //     }
+            //     break;
 
-            case 'ArrowLeft': {
-                if (!isTextInput && !isTextArea && !isComboboxInput) {
-                    e.preventDefault();
-                    moveArrow(ri, colKey, 'left');
-                } else if (isTextInput || isTextArea) {
-                    const atStart = target.selectionStart === 0 && target.selectionEnd === 0;
-                    if (atStart) {
-                        e.preventDefault();
-                        moveArrow(ri, colKey, 'left');
-                    }
-                }
-                break;
-            }
+            // case 'ArrowLeft': {
+            //     if (!isTextInput && !isTextArea && !isComboboxInput) {
+            //         e.preventDefault();
+            //         moveArrow(ri, colKey, 'left');
+            //     } else if (isTextInput || isTextArea) {
+            //         const atStart = target.selectionStart === 0 && target.selectionEnd === 0;
+            //         if (atStart) {
+            //             e.preventDefault();
+            //             moveArrow(ri, colKey, 'left');
+            //         }
+            //     }
+            //     break;
+            // }
 
-            case 'ArrowRight': {
-                if (!isTextInput && !isTextArea && !isComboboxInput) {
-                    e.preventDefault();
-                    moveArrow(ri, colKey, 'right');
-                } else if (isTextInput || isTextArea) {
-                    const atEnd = target.selectionStart === target.value.length
-                        && target.selectionEnd === target.value.length;
-                    if (atEnd) {
-                        e.preventDefault();
-                        moveArrow(ri, colKey, 'right');
-                    }
-                }
-                break;
-            }
+            // case 'ArrowRight': {
+            //     if (!isTextInput && !isTextArea && !isComboboxInput) {
+            //         e.preventDefault();
+            //         moveArrow(ri, colKey, 'right');
+            //     } else if (isTextInput || isTextArea) {
+            //         const atEnd = target.selectionStart === target.value.length
+            //             && target.selectionEnd === target.value.length;
+            //         if (atEnd) {
+            //             e.preventDefault();
+            //             moveArrow(ri, colKey, 'right');
+            //         }
+            //     }
+            //     break;
+            // }
         }
-    }, [moveNext, movePrev, cancelEdit, moveArrow]);
+    }, [moveNext, movePrev, cancelEdit]);
 
     // ── Styles ────────────────────────────────────────────────────────────────
     const ROW_H = 30;

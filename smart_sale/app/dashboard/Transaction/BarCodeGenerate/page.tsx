@@ -60,10 +60,9 @@ const STOCK_TABLE_HEADER = [
 function BarCodeGenerate() {
   const { theme } = useTheme();
 const {
-  // ...other values
+
   isretag,
   setIsRetag,
-  // ...other values
 } = useBarcodeGenerate();
   const {
     /* state */

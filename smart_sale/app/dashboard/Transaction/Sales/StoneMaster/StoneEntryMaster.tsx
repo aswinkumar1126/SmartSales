@@ -41,10 +41,10 @@ type Props = {
 
 const COLUMNS: ColumnDef[] = [
     { key: "stoneId", label: "STONE", width: 120, required: true },
-    { key: "stonePcs", label: "PCS", width: 70, align: "right", decimalScale: 0 },
-    { key: "stoneWeight", label: "WEIGHT", width: 90, align: "right", decimalScale: 3, required: true },
-    { key: "stoneUnit", label: "UNIT", width: 60, align: "center" },
-    { key: "stoneCalculation", label: "CAL", width: 60, align: "center" },
+    { key: "stonePcs", label: "PCS", width: 30, align: "right", decimalScale: 0 },
+    { key: "stoneWeight", label: "WEIGHT", width: 50, align: "right", decimalScale: 3, required: true },
+    { key: "stoneUnit", label: "UNIT", width: 50, align: "center" },
+    { key: "stoneCalculation", label: "CAL", width: 50, align: "center" },
     { key: "stoneRate", label: "RATE", width: 90, align: "right", decimalScale: 2 },
     { key: "stoneAmount", label: "AMOUNT", width: 100, align: "right", decimalScale: 2 ,disabled:true},
 ];

@@ -853,7 +853,7 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
             left={0}
             sm={{ h: '100vh' }}
             md={{ h: '93vh' }}
-            zIndex={99}
+            zIndex={9999}
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
         >

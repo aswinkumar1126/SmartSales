@@ -1,27 +1,15 @@
 "use client"
 
 import React, { useRef, useEffect } from "react";
-import {
-    Box,
-    Button,
-    VStack,
-    Text,
-    HStack,
-
-} from "@chakra-ui/react";
-
+import { Box, Button, VStack, Text, HStack } from "@chakra-ui/react";
 import { useTheme } from "@/context/theme/themeContext";
-
-import { useForm, Controller } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { loginSchema } from "@/utils/validation/authSchema";
-
 import { useAuth } from "@/hooks/apiHooks/auth/useAuth";
-
 import { Toaster, toaster } from "@/components/ui/toaster";
-import { RiLockPasswordLine } from 'react-icons/ri'
+import { RiLockPasswordLine } from 'react-icons/ri';
 import { useRouter } from "next/navigation";
-import { CapitalizedInput } from "@/components/ui/CapitalizedInput";
 
 export default function LoginPage() {
     const { theme } = useTheme();
@@ -35,66 +23,59 @@ export default function LoginPage() {
         usernameRef.current?.focus();
     }, []);
 
-    const carouselImages = [
-        "https://www.canadianminingjournal.com/wp-content/uploads/2021/09/Polyus_Olympiada_20180915_img_7698.jpg",
-        "https://cdn1.matadornetwork.com/blogs/1/2022/11/alaska-gold-pan-close-up.jpg",
-        "https://www.goldmarket.fr/wp-content/uploads/2025/09/44dd529dthumbnail-1110x550.jpeg.webp",
-        "https://img.freepik.com/premium-photo/molten-gold-being-carefully-poured-into-mold_68708-11243.jpg",
-        "https://media.istockphoto.com/id/617896650/photo/craft-jewelery-making.jpg?s=612x612&w=0&k=20&c=UFruy7o2mUEXsHVEWZ8kxv-eSuX_rxiJ6c4yvOtwWuU="
-    ];
-
-    // React Hook Form
-    const {
-
-        control,
-        handleSubmit,
-        formState: { errors, isSubmitting },
-    } = useForm({
+    const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm({
         resolver: yupResolver(loginSchema),
     });
 
-    // Handle submit
     const onSubmit = async (formData: any) => {
         const success = await login({
             username: formData.username,
             password: formData.password,
         });
-        console.log(success, 'success');
 
         if (!success?.success) {
-            toaster.create({
-                type: "error",
-                title: success.message,
-            });
+            toaster.create({ type: "error", title: success.message });
             return;
         }
 
-        toaster.create({
-            type: "success",
-            title: "Login successful",
-            duration: 1200,
-        });
-
-        setTimeout(() => {
-            router.replace("/");
-        }, 1500);
+        toaster.create({ type: "success", title: "Login successful", duration: 1200 });
+        setTimeout(() => router.replace("/"), 1500);
     };
 
     const handleKeyDown = (
-        e: React.KeyboardEvent,
+        e: React.KeyboardEvent<HTMLInputElement>,
         nextRef?: React.RefObject<HTMLInputElement | null>
     ) => {
+        console.log(e.key,"enteringKey");
+        
         if (e.key === "Enter") {
             e.preventDefault();
-
             if (nextRef?.current) {
-                nextRef.current.focus(); // move to next
+                nextRef.current.focus();
             } else {
-                handleSubmit(onSubmit)(); // submit if no next
+                handleSubmit(onSubmit)();
             }
         }
     };
 
+    // ✅ Uppercase directly on the input element — no setValue, no re-render
+    const handleUppercase = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const pos = e.target.selectionStart;
+        e.target.value = e.target.value.toUpperCase();
+        e.target.setSelectionRange(pos, pos); // keep cursor position
+    };
+
+    const inputStyle: React.CSSProperties = {
+        width: "100%",
+        padding: "8px 12px",
+        borderRadius: "4px",
+        border: "1px solid #CBD5E0",
+        fontSize: "14px",
+        outline: "none",
+    };
+
+    const { ref: usernameRHFRef, ...usernameRest } = register("username");
+    const { ref: passwordRHFRef, ...passwordRest } = register("password");
 
     return (
         <>
@@ -107,24 +88,11 @@ export default function LoginPage() {
                 bgRepeat="no-repeat"
                 display="flex"
                 alignItems="center"
-
             >
-                {/* Optional Dark Overlay */}
-                <Box
-                    position="absolute"
-
-
-                />
-
-                {/* Carousel */}
-
-
-                {/* Login Card */}
                 <VStack
                     zIndex={1}
                     w="full"
                     maxW="420px"
-
                     bg="whiteAlpha.900"
                     p={8}
                     borderRadius="xl"
@@ -132,95 +100,65 @@ export default function LoginPage() {
                     gap={4}
                     css={{ xs: { marginLeft: '0px' }, sm: { marginLeft: '80px' } }}
                 >
-                    {/* Title */}
                     <HStack>
                         <Box color="purple.500" bg='purple.200' p={2} rounded='full'>
                             <RiLockPasswordLine size={20} />
                         </Box>
-                        <Text
-                            fontSize="xl"
-                            fontWeight="bold"
-                            color="purple.600"
-                        >
+                        <Text fontSize="xl" fontWeight="bold" color="purple.600">
                             Secured Login
                         </Text>
                     </HStack>
 
-                    {/* FORM */}
-                    <VStack
-                        as="form"
-                        w="full"
-                        onSubmit={handleSubmit(onSubmit)}
-                        gap={4}
-                    >
+                    <VStack as="form" w="full" onSubmit={handleSubmit(onSubmit)} gap={4}>
+
                         {/* Username */}
                         <Box w="full">
                             <Text fontSize="sm" mb={1}>Username</Text>
-                            <Controller
-                                name="username"
-                                control={control}
-                                render={({ field }) => (
-                                    <>
-
-                                        <Controller
-                                            name="username"
-                                            control={control}
-                                            render={({ field }) => (
-                                                <CapitalizedInput
-                                                    field="username"
-                                                    value={field.value}
-                                                    inputRef={usernameRef}
-                                                    onKeyDown={(e: any) => handleKeyDown(e, passwordRef)}
-                                                    onChange={(fieldName, value) => {
-                                                        field.onChange(value.toUpperCase());
-                                                    }}
-                                                    rounded="sm"
-                                                    icon
-                                                    iconElement="User"
-                                                    placeholder="enter username"
-                                                />
-                                            )}
-                                        />
-                                    </>
-                                )}
+                            <input
+                                {...usernameRest}
+                                ref={(e) => {
+                                    usernameRHFRef(e);              // RHF ref
+                                    (usernameRef as any).current = e; // focus ref
+                                }}
+                                placeholder="Enter username"
+                                autoComplete="off"
+                                // ✅ uppercase mutates input value directly — no re-render
+                                onChange={handleUppercase}
+                                onKeyDown={(e) => handleKeyDown(e, passwordRef)}
+                                
+                                style={inputStyle}
                             />
+                            {errors.username && (
+                                <Text fontSize="xs" color="red.500" mt={1}>
+                                    {errors.username.message}
+                                </Text>
+                            )}
                         </Box>
 
                         {/* Password */}
                         <Box w="full">
                             <Text fontSize="sm" mb={1}>Password</Text>
-                            <Controller
-                                name="password"
-                                control={control}
-                                render={({ field }) => (
-                                    <>
-
-                                        <Controller
-                                            name="password"
-                                            control={control}
-                                            render={({ field }) => (
-                                                <CapitalizedInput
-                                                    field="password"
-                                                    value={field.value}
-                                                    inputRef={passwordRef}
-                                                    onKeyDown={(e: any) => handleKeyDown(e)} // no next → submit
-                                                    onChange={(fieldName, value) => {
-                                                        field.onChange(value.toUpperCase());
-                                                    }}
-                                                    rounded="sm"
-                                                    icon
-                                                    iconElement="Password"
-                                                    placeholder="enter password"
-                                                    type = "password"
-                                                />
-                                            )}
-                                        />
-                                    </>
-                                )}
+                            <input
+                                {...passwordRest}
+                                ref={(e) => {
+                                    passwordRHFRef(e);              // RHF ref
+                                    (passwordRef as any).current = e; // focus ref
+                                }}
+                                type="password"
+                                placeholder="Enter password"
+                                autoComplete="current-password"
+                                // ✅ uppercase mutates input value directly — no re-render
+                                onChange={handleUppercase}
+                                onKeyDown={(e) => handleKeyDown(e)} // Enter → submit
+                                style={inputStyle}
                             />
+                            {errors.password && (
+                                <Text fontSize="xs" color="red.500" mt={1}>
+                                    {errors.password.message}
+                                </Text>
+                            )}
                         </Box>
 
-                        {/* Button */}
                         <Button
                             type="submit"
                             w="full"
@@ -235,7 +173,6 @@ export default function LoginPage() {
                     </VStack>
                 </VStack>
             </Box>
-
         </>
     );
 }

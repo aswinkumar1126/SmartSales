@@ -176,7 +176,6 @@ export const issueColumns = [
         width: "30px",
         type: "number" ,
         align: "right" ,
-        
         decimalScale:3,
         allowFocus:true,
     
@@ -190,7 +189,8 @@ export const issueColumns = [
         type: "number" ,
         align: "right" ,
         max: 999,
-        decimalScale: 3
+        decimalScale: 3,
+        allowFocus:true
 
     },
     {
@@ -200,7 +200,8 @@ export const issueColumns = [
         type: "number" ,
         align: "right" ,
         max: 999,
-        decimalScale: 1
+        decimalScale: 1,
+        allowFocus:true
 
     },
     {

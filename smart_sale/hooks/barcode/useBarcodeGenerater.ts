@@ -531,6 +531,7 @@ useEffect(() => {
         },
         onError: (err: any) => {
           const msg = err?.response?.data?.message || err?.message || "Something went wrong";
+          console.log(msg ,err?.message?.data,'messageforerror')
           toaster.create({ title: "Error", description: msg, type: "error", duration: 2000 });
         },
         onSettled: () => setIsSubmittingTag(false),
@@ -654,7 +655,7 @@ useEffect(() => {
         align: isNum ? "right" : "left", allowFocus: col.allowFocus,
       };
       if (col.decimalScale) base.decimalScale = col.decimalScale;
-      if (col.key === "size") return { ...base, type: "combobox", align: "left", collection: itemSizeCollection };
+      if (col.key === "size") return { ...base, type: "text", align: "left"};
       if (col.key === "wastePercent") return { ...base, type: "number", decimalScale: 2 };
       if (col.key === "barcode") return { ...base, type: "text", align: "left", disabled: true };
       return base;

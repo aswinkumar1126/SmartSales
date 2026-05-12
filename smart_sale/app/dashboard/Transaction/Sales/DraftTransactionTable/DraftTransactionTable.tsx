@@ -597,12 +597,12 @@ export default function DraftTransactionTable({
             const next = prev.map((r, i) => {
                 if (i !== rowIndex) return r;
                 const updated = { ...r, [colKey]: value };
-                if(!updated.AWT){
+               
                     if (colKey === "WT") updated.AWT = value;
-                }
-                if(!updated.ATOUCH){
-                    if(colKey === "TOUCH") updated.ATOUCH = value;
-                }
+                
+                
+            if(colKey === "TOUCH" && transactionType == "RE") updated.ATOUCH = value;
+                
                 
                 recalcRow(updated, !!isIssue);
                 
@@ -912,9 +912,21 @@ export default function DraftTransactionTable({
         }
 
         return (
-            <CapitalizedInput field={col.key} value={value || ""} onChange={(_, v) => onChange(v)}
-                type={field.type === "number" ? "number" : "text"} isCapitalized={field.type !== "number"}
-                size="xs" rounded="sm" decimalScale={field.decimalScale} inputRef={inputRef} onEnter={onCommit} noBorder />
+            <CapitalizedInput 
+            field={col.key} 
+            value={value || ""} 
+            onChange={(_, v) => onChange(v)}
+            type={field.type === "number" ? "number" : "text"} 
+            isCapitalized={field.type !== "number"}
+                
+            size="xs" 
+            rounded="sm" 
+            decimalScale={field.decimalScale} 
+            inputRef={inputRef} 
+            onEnter={onCommit} 
+            noBorder 
+            allowFocus = {true}
+            />
         );
     }, [formFields, isIssue, handleOpenStoneModal, handleOpenMiscModal]);
 
@@ -1081,7 +1093,7 @@ export default function DraftTransactionTable({
                     zIndex={100} display="flex" alignItems="center" justifyContent="center"
                     onClick={() => setIsStoneModalOpen(false)}>
                     <Box bg={theme?.colors?.formColor || "white"} borderRadius="lg"
-                        maxW="1200px" width="100%" maxH="90vh" overflow="auto"
+                        maxW="1000px" width="100%" maxH="90vh" overflow="auto"
                         onClick={(e) => e.stopPropagation()}>
                         <StoneEnterMaster
                             grsWeight={currentGRSWT}

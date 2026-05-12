@@ -1009,7 +1009,7 @@ useGlobalKey(
             transactionType: targetType.code, // FIXED
         });
 
-        setIsStockDrawerOpen(false);
+        // setIsStockDrawerOpen(false);
     };
 
 

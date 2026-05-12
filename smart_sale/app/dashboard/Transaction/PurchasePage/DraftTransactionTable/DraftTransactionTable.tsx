@@ -1182,7 +1182,7 @@ export default function DraftTransactionTable({
                 >
                     <Box
                         bg={theme?.colors?.formColor || "white"} borderRadius="lg"
-                        maxW="1200px" width="100%" maxH="90vh" overflow="auto"
+                        maxW="1000px" width="100%" maxH="90vh" overflow="auto"
                         onClick={(e) => e.stopPropagation()}
                     >
                         <StoneEnterMaster
