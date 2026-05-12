@@ -47,9 +47,9 @@ import { DynamicForm } from "@/component/form/DynamicForm";
 
 const initialFormState: pureGoldMastOpenForm = {
     pureId: "",
-    weight: "",
-    actualTouch: "",
-    actualPure: "",
+    aWt: "",
+    aTouch: "",
+    aPureWt: "",
     // metalId:""
 };
 
@@ -59,9 +59,9 @@ export type TouchTableRow = {
     sno: number;
     pureId?: string;
     pureGoldName: string;
-    weight: number;
-    actualTouch: number;
-    actualPure: number;
+    aWt: number;
+    aTouch: number;
+    aPureWt: number;
     // metalId ?: string
 
 };
@@ -126,17 +126,17 @@ const PureGoldOpening = () => {
 
     /* ---------------- Helpers ---------------- */
     useEffect(() => {
-        const weight = Number(form.weight);
-        const touch = Number(form.actualTouch);
+        const weight = Number(form.aWt);
+        const touch = Number(form.aTouch);
 
         if (!isNaN(weight) && !isNaN(touch)) {
             const pure = (weight * touch) / 100;
             setForm((prev) => ({
                 ...prev,
-                actualPure: pure ? pure.toFixed(3) : "",
+                aPureWt: pure ? pure.toFixed(3) : "",
             }));
         }
-    }, [form.weight, form.actualTouch]);
+    }, [form.aWt, form.aTouch]);
 
 
     const handleChange = (key: keyof pureGoldMastOpenForm, value: string) => {
@@ -159,9 +159,9 @@ const PureGoldOpening = () => {
 
         setForm({
             pureId: String(row.pureId),
-            weight: String(row.weight),
-            actualPure: String(row.actualPure),
-            actualTouch: String(row.actualTouch),
+            aWt: String(row.aWt),
+            aPureWt: String(row.aPureWt),
+            aTouch: String(row.aTouch),
             // metalId: row.metalId ?? ''
         });
 
@@ -174,9 +174,9 @@ const PureGoldOpening = () => {
         const errors: FormErrors = {};
 
         if (!form.pureId) errors.pureId = "Pure Gold Name is required";
-        if (!form.weight) errors.weight = "Weight is required";
-        if (!form.actualPure) errors.actualPure = "Actual Pure is required";
-        if (!form.actualTouch) errors.actualTouch = "Actual Touch is required";
+        if (!form.aWt) errors.aWt = "Weight is required";
+        if (!form.aPureWt) errors.aPureWt = "Actual Pure is required";
+        if (!form.aTouch) errors.aTouch = "Actual Touch is required";
         // if (!form.metalId) errors.metalId = "Metal Name is required";
 
 
@@ -212,9 +212,9 @@ const PureGoldOpening = () => {
 
         const payload = {
             pureId: Number(form.pureId),
-            weight: Number(form.weight),
-            actualTouch: Number(form.actualTouch),
-            actualPure: Number(form.actualPure),
+            weight: Number(form.aWt),
+            actualTouch: Number(form.aTouch),
+            actualPure: Number(form.aPureWt),
             // metalId: String(form.metalId),
         };
 
@@ -410,10 +410,10 @@ const PureGoldOpening = () => {
                             <>
                                 <Table.Cell>{i + 1}</Table.Cell>
                                 <Table.Cell>{row.pureGoldName}</Table.Cell>
-                                <Table.Cell textAlign="end">{formatToFixed(row.weight, 2)} </Table.Cell>
-                                <Table.Cell textAlign="end" >{formatToFixed(row.actualTouch, 2)}</Table.Cell>
+                                <Table.Cell textAlign="end">{formatToFixed(row.aWt, 2)} </Table.Cell>
+                                <Table.Cell textAlign="end" >{formatToFixed(row.aTouch, 2)}</Table.Cell>
                                 <Table.Cell textAlign="end">
-                                    {formatToFixed(row.actualPure, 2)}
+                                    {formatToFixed(row.aPureWt, 2)}
                                 </Table.Cell>
                                 {/* <Table.Cell align="center">
                                     <Box display="flex" justifyContent="center">
