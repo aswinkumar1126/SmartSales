@@ -16,7 +16,7 @@ export const HmcMappingFormConfig = ({
     disabled: { isCustomerDisabled },
 }: HmcMappingCollections): FormField[] => [
     {
-        name: "customerType",
+        name: "acType",
         label: "CUSTOMER TYPE",
         type: "combobox",
         size: "sm",
@@ -26,7 +26,7 @@ export const HmcMappingFormConfig = ({
     },
 
     {
-        name: "customer",
+        name: "accode",
         label: "CUSTOMER",
         type: "combobox",
         size: "sm",
@@ -37,7 +37,7 @@ export const HmcMappingFormConfig = ({
     },
 
     {
-        name: "itemType",
+        name: "itemId",
         label: "ITEM TYPE",
         type: "combobox",
         size: "sm",
@@ -48,7 +48,7 @@ export const HmcMappingFormConfig = ({
     },
 
     {
-        name: "hmcAmount",
+        name: "hmcAmt",
         label: "HMC AMOUNT",
         type: "number",
         size: "sm",

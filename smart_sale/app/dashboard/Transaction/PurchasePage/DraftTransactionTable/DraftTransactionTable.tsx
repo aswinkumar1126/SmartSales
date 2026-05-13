@@ -619,7 +619,7 @@ export default function DraftTransactionTable({
     const activeRowPureId = activeRowIndex !== null ? draftRows[activeRowIndex]?.PUREID : undefined;
     const activeRowItemId = activeRowIndex !== null ? draftRows[activeRowIndex]?.ITEMID : undefined;
     const activeRowId = activeRowIndex !== null ? draftRows[activeRowIndex]?.__rowId : undefined;
-    const activeRowDetail =  draftRowsRef.current.find(r => r.__rowId === activeRowId) ;
+    // const activeRowDetail =  draftRowsRef.current.find(r => r.__rowId === activeRowId) ;
 
     
     
@@ -646,33 +646,49 @@ export default function DraftTransactionTable({
 
         if (!touchData || !touchData.TOUCH) {
             touchNotFoundRef.current.add(activeRowId);
-            // ✅ Don't mark as applied — let it retry when data arrives
+
             setTimeout(() => {
                 toaster.create({
                     title: "No Touch Found",
-                    description: "No touch configured for this item & customer. Please enter manually.",
+                    description:
+                        "No touch configured for this item & customer. Please enter manually.",
                     type: "warning",
                     duration: 3000,
                 });
             }, 0);
+
             return;
         }
 
-        // ✅ Only mark as applied when we actually have data
+        // ── mark applied ─────────────────────────────────────────────
         appliedItemIdRef.current[activeRowId] = key;
         touchNotFoundRef.current.delete(activeRowId);
 
+        console.log(touchData,'touchData')
+
         const touch = touchData.TOUCH;
         const calMode = touchData.CALMODE || "NETWT";
-        // const stnPresent = touchData.stnPrenset || true ;
 
+        const stonePresent = touchData.STNPRESENT || true ; 
+
+        // assume HMC comes from API (adjust field name if different)
+        const hmcAmount = Number(touchData.HMCAMT ?? 0);
+        console.log(hmcAmount, 'touhmcAmountchData')
 
         const rowIndex = activeRowIndex;
 
         setDraftRows((prev) => {
             const next = [...prev];
-            const row = { ...next[rowIndex], TOUCH: touch, ATOUCH: touch, CAL_MODE: calMode };
-            //const row = { ...next[rowIndex], TOUCH: touch, ATOUCH: touch, CAL_MODE: calMode , STN_PRESENT : stnPresent};
+
+            const row = {
+                ...next[rowIndex],
+                TOUCH: touch,
+                ATOUCH: touch,
+                CAL_MODE: calMode,
+                HMC: hmcAmount,
+                STN_PRESENT: stonePresent
+            };
+
             recalcRow(row, false);
             next[rowIndex] = row;
             return next;
@@ -681,23 +697,38 @@ export default function DraftTransactionTable({
         setTimeout(() => {
             toaster.create({
                 title: "Touch Applied",
-                description: `Touch ${touch} applied for selected item.`,
+                description: `Touch ${touch} + HMC ${hmcAmount} applied.`,
                 type: "success",
                 duration: 2000,
             });
         }, 0);
 
         const wasCommitted = committedRowIdsRef.current.has(activeRowId);
+
         if (wasCommitted) {
             pendingParentCallRef.current = () => {
                 onUpdateRow(rowIndex, "TOUCH", touch);
                 onUpdateRow(rowIndex, "ATOUCH", touch);
                 onUpdateRow(rowIndex, "CAL_MODE", calMode);
-                // onUpdateRow(rowIndex , "STN_PRESENT" ,stnPresent)
+                onUpdateRow(rowIndex, "STN_PRESENT", stonePresent);
+                onUpdateRow(rowIndex, "HMC", hmcAmount.toFixed(2));
+
+                // ✅ This will update _miscCharges which will trigger the modal to show data
+                setTimeout(() => onUpdateRow(rowIndex, "_miscCharges", [
+                    {
+                        draftRowId: String(activeRowId),
+                        chargeId: "1",
+                        chargeName: "HMC",
+                        amount: hmcAmount.toString(),
+                        finalAmount: hmcAmount.toString(),
+                    },
+                ]) , 100) 
+
+                console.log(activeRowId,'activeRowId')
+                setMiscModalRowId(String(activeRowId));
             };
         }
-    }, [touchData, touchDataLoading]); // ✅ no calculationMode
-
+    }, [touchData, touchDataLoading]);
 
 
     // ── Pure gold effect (issue) ──────────────────────────────────────────────
@@ -793,8 +824,14 @@ export default function DraftTransactionTable({
         () => draftRows.find((r) => r.__rowId === miscModalRowId),
         [draftRows, miscModalRowId]
     );
-    console.log(miscModalRow,'miscModalRow')
-    const otherChargesInitialRows = miscModalRow?._miscCharges || [];
+    console.log(draftRows, 'draftRows');
+    const otherChargesInitialRows = useMemo(() => {
+        return miscModalRow?._miscCharges || [];
+    }, [miscModalRow]); // ✅ Depends on miscModalRow, which depends on draftRows
+
+    useEffect(() => {
+    console.log('otherChargesInitialRows updated:', otherChargesInitialRows);
+}, [otherChargesInitialRows]);
 
     // ── Tag lookup ─────────────────────────────────────────────────────────────
     const handleTagNoKeyDown = async () => {
@@ -879,8 +916,8 @@ export default function DraftTransactionTable({
             return (
                 <div
                     style={{ display: "flex", alignItems: "center", width: "100%", padding: "0 2px" }}
-                    onFocus={() => handleOpenMiscModal(row.__rowId)}
-                    onClick={() => handleOpenMiscModal(row.__rowId)}
+                    onFocus={() => handleOpenMiscModal(activeRowId)}
+                    onClick={() => handleOpenMiscModal(activeRowId)}
                 >
                     <CapitalizedInput
                         field={col.key}
@@ -1259,6 +1296,7 @@ export default function DraftTransactionTable({
                         onClick={(e) => e.stopPropagation()}
                     >
                         <OtherChargesWindow
+                            key={`${miscModalRowId}-${otherChargesInitialRows.length}`}
                             draftRowId={miscModalRowId}
                             onClose={() => { setLastClosedModal("hmc"); setModalTrigger(t => t + 1); setIsStoneModalOpen(false) }}
                             initialRows={otherChargesInitialRows}

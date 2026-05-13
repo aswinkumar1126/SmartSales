@@ -72,7 +72,7 @@ export function usePrintHandler() {
   const buildLabelTSPL = useCallback((d: BarcodePrintDetail): string => `
 QRCODE 766,166,L,3,A,180,M2,S7,"${d.TAGNO}"
 CODEPAGE 1252
-TEXT 691,161,"0",180,11,9,"size:${d.SIZEID}"
+TEXT 691,161,"0",180,11,9,"size:${d.SIZE}"
 TEXT 766,98,"0",180,10,7,"DONE_BY_SUGI"
 TEXT 766,75,"0",180,7,6,"Mc:${d.MC}"
 TEXT 766,56,"0",180,7,6,"GrsWt:${d.GRSWT}"

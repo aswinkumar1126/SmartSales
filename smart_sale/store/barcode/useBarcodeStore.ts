@@ -37,16 +37,24 @@ export interface BarcodeTransactionRow {
 }
 
 export interface BarcodePrintDetail {
+
   TAGNO: string;
   GRSWT: number;
+  PURCHASESTNWT :number;
+
   STNWT: number;
-  WASPER: number;
-  DIAWT: number;
-  MC: number;
-  TOUCH: number;
+  NAVAWT :number;
   SALESSTNWT: number;
-  NETWT: number;
-  SIZEID: number;
+
+  DIAWT: number;
+
+  WASPER?: number;
+  MC?: number;
+  TOUCH?: number;
+
+  NETWT?: number;
+  SIZE: number;
+
   UPTIME?: string;
   USERID?: number;
 }

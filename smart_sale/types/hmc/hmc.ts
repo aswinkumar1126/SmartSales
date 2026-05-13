@@ -1,25 +1,24 @@
 export interface Hmc {
-    customerType?: string;
-    customer?: string;
-    itemType?: string;
-    hmcAmount?: string;
 
-    customerName?: string;
-    itemTypeName?: string;
+    acType?: string;
+    acName?: string;
+    itemName?: string;
+    hmcAmt?: string;
+
 }
 
 export interface HmcForm {
-    customerType: string;
-    customer: string;
-    itemType: number;
-    hmcAmount: number;
+    // acType: string;
+    accode: string;
+    itemId: number;
+    hmcAmt: number;
 }
 
 export interface HmcMaster {
-    customerType: string;
-    customer: string;
-    itemType: string;
-    hmcAmount: string;
+    acType: string;
+    accode: string;
+    itemId: string;
+    hmcAmt: string;
 }
 
 export interface HmcFilter {

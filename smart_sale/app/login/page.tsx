@@ -1,14 +1,11 @@
-"use client"
+"use client";
 
-import React, { useRef, useEffect } from "react";
+import React, { useRef, useEffect, useState } from "react";
 import { Box, Button, VStack, Text, HStack } from "@chakra-ui/react";
 import { useTheme } from "@/context/theme/themeContext";
-import { useForm } from "react-hook-form";
-import { yupResolver } from "@hookform/resolvers/yup";
-import { loginSchema } from "@/utils/validation/authSchema";
 import { useAuth } from "@/hooks/apiHooks/auth/useAuth";
 import { Toaster, toaster } from "@/components/ui/toaster";
-import { RiLockPasswordLine } from 'react-icons/ri';
+import { RiLockPasswordLine } from "react-icons/ri";
 import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
@@ -18,51 +15,101 @@ export default function LoginPage() {
 
     const usernameRef = useRef<HTMLInputElement>(null);
     const passwordRef = useRef<HTMLInputElement>(null);
+    const submitBtnRef = useRef<HTMLButtonElement>(null);
+
+    const [username, setUsername] = useState("");
+    const [password, setPassword] = useState("");
+    const [loading, setLoading] = useState(false);
+
+    const [errors, setErrors] = useState({
+        username: "",
+        password: "",
+    });
 
     useEffect(() => {
         usernameRef.current?.focus();
     }, []);
 
-    const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm({
-        resolver: yupResolver(loginSchema),
-    });
+    const validate = () => {
+        const newErrors = {
+            username: "",
+            password: "",
+        };
 
-    const onSubmit = async (formData: any) => {
-        const success = await login({
-            username: formData.username,
-            password: formData.password,
-        });
+        let valid = true;
 
-        if (!success?.success) {
-            toaster.create({ type: "error", title: success.message });
-            return;
+        if (!username.trim()) {
+            newErrors.username = "Username is required";
+            valid = false;
         }
 
-        toaster.create({ type: "success", title: "Login successful", duration: 1200 });
-        setTimeout(() => router.replace("/"), 1500);
+        if (!password.trim()) {
+            newErrors.password = "Password is required";
+            valid = false;
+        }
+
+        setErrors(newErrors);
+
+        return valid;
     };
 
-    const handleKeyDown = (
+    const onSubmit = async () => {
+        if (!validate()) return;
+
+        try {
+            setLoading(true);
+
+            const success = await login({
+                username,
+                password,
+            });
+
+            if (!success?.success) {
+                toaster.create({
+                    type: "error",
+                    title: success.message,
+                });
+
+                return;
+            }
+
+            toaster.create({
+                type: "success",
+                title: "Login successful",
+                duration: 1200,
+            });
+
+            setTimeout(() => {
+                router.replace("/");
+            }, 1500);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleKeyUp = (
         e: React.KeyboardEvent<HTMLInputElement>,
         nextRef?: React.RefObject<HTMLInputElement | null>
     ) => {
-        console.log(e.key,"enteringKey");
-        
         if (e.key === "Enter") {
             e.preventDefault();
+
+            // move focus
             if (nextRef?.current) {
                 nextRef.current.focus();
-            } else {
-                handleSubmit(onSubmit)();
+                return;
             }
+
+            // last field -> submit
+            submitBtnRef.current?.click();
         }
     };
 
-    // ✅ Uppercase directly on the input element — no setValue, no re-render
-    const handleUppercase = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const pos = e.target.selectionStart;
-        e.target.value = e.target.value.toUpperCase();
-        e.target.setSelectionRange(pos, pos); // keep cursor position
+    const handleUppercase = (
+        e: React.ChangeEvent<HTMLInputElement>,
+        setter: React.Dispatch<React.SetStateAction<string>>
+    ) => {
+        setter(e.target.value.toUpperCase());
     };
 
     const inputStyle: React.CSSProperties = {
@@ -74,17 +121,15 @@ export default function LoginPage() {
         outline: "none",
     };
 
-    const { ref: usernameRHFRef, ...usernameRest } = register("username");
-    const { ref: passwordRHFRef, ...passwordRest } = register("password");
-
     return (
         <>
             <Toaster />
+
             <Box
                 minH="100vh"
                 bgImage="url('https://static.vecteezy.com/system/resources/previews/014/468/621/large_2x/abstract-digital-technology-background-with-concept-security-vector.jpg')"
                 bgSize="cover"
-                backgroundPosition='center'
+                backgroundPosition="center"
                 bgRepeat="no-repeat"
                 display="flex"
                 alignItems="center"
@@ -94,83 +139,119 @@ export default function LoginPage() {
                     w="full"
                     maxW="420px"
                     bg="whiteAlpha.900"
-                    p={8}
+                    p={6}
                     borderRadius="xl"
                     boxShadow="0 0 40px rgba(15, 187, 255, 0.3)"
                     gap={4}
-                    css={{ xs: { marginLeft: '0px' }, sm: { marginLeft: '80px' } }}
+                    css={{
+                        xs: { marginLeft: "0px" },
+                        sm: { marginLeft: "80px" },
+                    }}
                 >
                     <HStack>
-                        <Box color="purple.500" bg='purple.200' p={2} rounded='full'>
+                        <Box
+                            color="purple.500"
+                            bg="purple.200"
+                            p={2}
+                            rounded="full"
+                        >
                             <RiLockPasswordLine size={20} />
                         </Box>
-                        <Text fontSize="xl" fontWeight="bold" color="purple.600">
+
+                        <Text
+                            fontSize="xl"
+                            fontWeight="bold"
+                            color="purple.600"
+                        >
                             Secured Login
                         </Text>
                     </HStack>
 
-                    <VStack as="form" w="full" onSubmit={handleSubmit(onSubmit)} gap={4}>
-
+                    <Box
+                        as="form"
+                        display="flex"
+                        flexDirection="column"
+                        gap={4}
+                        onSubmit={(e: React.FormEvent) => {
+                            e.preventDefault();
+                            onSubmit();
+                        }}
+                        width={'full'}
+                    >
                         {/* Username */}
                         <Box w="full">
-                            <Text fontSize="sm" mb={1}>Username</Text>
+                            <Text fontSize="sm" mb={1}>
+                                Username
+                            </Text>
+
                             <input
-                                {...usernameRest}
-                                ref={(e) => {
-                                    usernameRHFRef(e);              // RHF ref
-                                    (usernameRef as any).current = e; // focus ref
-                                }}
+                                ref={usernameRef}
+                                value={username}
                                 placeholder="Enter username"
                                 autoComplete="off"
-                                // ✅ uppercase mutates input value directly — no re-render
-                                onChange={handleUppercase}
-                                onKeyDown={(e) => handleKeyDown(e, passwordRef)}
-                                
+                                onChange={(e) =>
+                                    handleUppercase(e, setUsername)
+                                }
+                                onKeyUp={(e) =>
+                                    handleKeyUp(e, passwordRef)
+                                }
                                 style={inputStyle}
                             />
+
                             {errors.username && (
-                                <Text fontSize="xs" color="red.500" mt={1}>
-                                    {errors.username.message}
+                                <Text
+                                    fontSize="xs"
+                                    color="red.500"
+                                    mt={1}
+                                >
+                                    {errors.username}
                                 </Text>
                             )}
                         </Box>
 
                         {/* Password */}
                         <Box w="full">
-                            <Text fontSize="sm" mb={1}>Password</Text>
+                            <Text fontSize="sm" mb={1}>
+                                Password
+                            </Text>
+
                             <input
-                                {...passwordRest}
-                                ref={(e) => {
-                                    passwordRHFRef(e);              // RHF ref
-                                    (passwordRef as any).current = e; // focus ref
-                                }}
+                                ref={passwordRef}
+                                value={password}
                                 type="password"
                                 placeholder="Enter password"
                                 autoComplete="current-password"
-                                // ✅ uppercase mutates input value directly — no re-render
-                                onChange={handleUppercase}
-                                onKeyDown={(e) => handleKeyDown(e)} // Enter → submit
+                                onChange={(e) =>
+                                    handleUppercase(e, setPassword)
+                                }
+                                onKeyUp={(e) => handleKeyUp(e)}
                                 style={inputStyle}
                             />
+
                             {errors.password && (
-                                <Text fontSize="xs" color="red.500" mt={1}>
-                                    {errors.password.message}
+                                <Text
+                                    fontSize="xs"
+                                    color="red.500"
+                                    mt={1}
+                                >
+                                    {errors.password}
                                 </Text>
                             )}
                         </Box>
 
                         <Button
+                            ref={submitBtnRef}
                             type="submit"
                             w="full"
                             bg="purple.600"
                             color="white"
                             h="40px"
                             borderRadius="lg"
-                            loading={isSubmitting}
+                            loading={loading}
                         >
                             Proceed
                         </Button>
-                    </VStack>
+                    </Box>
                 </VStack>
             </Box>
         </>

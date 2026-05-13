@@ -229,6 +229,7 @@ export function useBarcodeGenerate() {
 
   const remainingRef = useRef(remaining);
 
+
   useEffect(() => { remainingRef.current = remaining; }, [remaining])
 
   const { printAll, printSingle, downloadSetupFiles } = usePrintHandler();
@@ -345,6 +346,7 @@ export function useBarcodeGenerate() {
     }
 
     const errors = validateSingleRow(
+
       {
         grsweight: currentForm.grsweight,
         purchaseStoneWt: currentForm.purchaseStoneWt,
@@ -352,9 +354,12 @@ export function useBarcodeGenerate() {
       },
       hasStone,
       effectiveBalance,
+      limits,
       tolerance
     );
 
+    console.log(errors, 'row errors');
+ 
     if (Object.keys(errors).length) {
       setTouched(FIELD_ORDER.reduce((a, k) => ({ ...a, [k]: true }), {} as Record<string, boolean>));
       setFieldErrors(errors);
@@ -660,6 +665,8 @@ export function useBarcodeGenerate() {
     if (!tagDetails) return;
     const purchase = tagDetails.PURCHASEDETAILS;
     const apiRows = tagDetails.TAGGINGDETAILS || [];
+
+    console.log(apiRows,'apiRows')
 
     setHeaderForm({
       ENTRYNO: String(purchase.ENTRYNO ?? ""),

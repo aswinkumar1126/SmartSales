@@ -60,71 +60,93 @@ export function useTaggingValidation() {
     },
     [validateHeader]
   );
-const validateSingleRow = useCallback(
-  (
-    data: {
-      grsweight: string;
-      purchaseStoneWt: string;
-      salesStoneWt: string;
-    },
-    hasStone: boolean,
-    balance: {
-      PCS: number;
-      STNWT: number;
-      GRSWT: number;
-    },
-    tolerance: number = 0 
-  ): Record<string, string> => {
-    const errors: Record<string, string> = {};
-    console.log(data ,'draftRow');
+  const validateSingleRow = useCallback(
+    (
+      data: {
+        grsweight: string;
+        purchaseStoneWt: string;
+        salesStoneWt: string;
+      },
+      hasStone: boolean,
+      balance: {
+        PCS: number;
+        STNWT: number;
+        GRSWT: number;
+      },
+      limits: {
+        PCS: number;
+        STNWT: number;
+        GRSWT: number;
+      },
+      tolerance: number = 0
+    ): Record<string, string> => {
 
-    const grs = Number(data.grsweight || 0);
-    const purchaseStnWt = Number(data.purchaseStoneWt || 0);
-    const salesStnWt = Number(data.salesStoneWt || 0);
+      const errors: Record<string, string> = {};
 
-    const grsUpperLimit = Number((balance.GRSWT + tolerance).toFixed(3));
+      const grs = Number(data.grsweight || 0);
+      const purchaseStnWt = Number(data.purchaseStoneWt || 0);
+      const salesStnWt = Number(data.salesStoneWt || 0);
 
-    console.log(balance,grsUpperLimit,'grsUpperLimit');
+      // ✅ SAFE LIMITS
+      const grsLimit = Number(limits?.GRSWT || 0);
+      const balanceStnWt = Number(balance?.STNWT || 0);
 
-    /* =========================
-       GROSS WEIGHT VALIDATION
-    ========================= */
+      const grsUpperLimit = Number(
+        (grsLimit + (tolerance || 0)).toFixed(3)
+      );
 
-    if (grs <= 0) {
-      errors.grsweight = "Gross weight must be greater than 0";
-    } else if (grs > grsUpperLimit) {
-      errors.grsweight = `Gross weight cannot exceed balance gross weight (${grsUpperLimit}g)`;
-    }
+      console.log({
+        grs,
+        purchaseStnWt,
+        salesStnWt,
+        grsLimit,
+        grsUpperLimit,
+        balanceStnWt,
+        tolerance,
+      });
 
-    /* =========================
-       STONE VALIDATION
-    ========================= */
+      /* =========================
+         GROSS WEIGHT VALIDATION
+      ========================= */
 
-  
-      console.log(purchaseStnWt, salesStnWt, balance.STNWT, 'stone validation');
-      // PURCHASE STONE WT
-    if(hasStone) {
-     if (purchaseStnWt > balance.STNWT) {
-        errors.purchaseStoneWt =
-          `Purchase stone weight cannot exceed balance stone weight (${balance.STNWT})`;
+      if (grs <= 0) {
+        errors.grsweight =
+          "Gross weight must be greater than 0";
+
+      } else if (grs > grsUpperLimit) {
+        errors.grsweight =
+          `Gross weight cannot exceed balance gross weight (${grsUpperLimit}g)`;
       }
 
-      // SALES STONE WT
+      /* =========================
+         STONE VALIDATION
+      ========================= */
 
-     if (salesStnWt > purchaseStnWt) {
-        errors.stoneWt =
-          "Sales stone weight cannot exceed purchase stone weight";
-      } else if (salesStnWt > balance.STNWT) {
-        errors.stoneWt =
-          `Sales stone weight cannot exceed balance stone weight (${balance.STNWT})`;
+      if (hasStone) {
+
+        // PURCHASE STONE WT
+        if (purchaseStnWt > balanceStnWt) {
+          errors.purchaseStoneWt =
+            `Purchase stone weight cannot exceed balance stone weight (${balanceStnWt})`;
+        }
+
+        // SALES STONE WT
+        if (salesStnWt > purchaseStnWt) {
+
+          errors.stoneWt =
+            "Sales stone weight cannot exceed purchase stone weight";
+
+        } else if (salesStnWt > balanceStnWt) {
+
+          errors.stoneWt =
+            `Sales stone weight cannot exceed balance stone weight (${balanceStnWt})`;
+        }
       }
-    }
-    
 
-    return errors;
-  },
-  []
-);
+      return errors;
+    },
+    []
+  );
   // Add isUpdate parameter to RowValidationOptions interface
   interface RowValidationOptions {
     rows: any[];
@@ -316,12 +338,27 @@ const validateSingleRow = useCallback(
 
         return false;
       }
-
       if (balance && balance.STNWT > 0 && balance.PCS === 0) {
         toaster.create({
           title: "Invalid Entry",
           description:
             "Pcs cannot be 0 when Stone Weight are present",
+          type: "error",
+          duration: 2000,
+        });
+
+        return false;
+      }
+      if (
+        balance &&
+        balance.PCS === 0 &&
+        balance.GRSWT === 0 &&
+        balance.STNWT > 0
+      ) {
+        toaster.create({
+          title: "Invalid Entry",
+          description:
+            "Stone Weight must be 0 when both PCS and Gross Weight are 0",
           type: "error",
           duration: 2000,
         });

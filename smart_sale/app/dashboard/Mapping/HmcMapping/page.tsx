@@ -56,20 +56,21 @@ import { HmcMappingFormConfig } from "@/config/mapping/HmcMapping";
 /* ---------------- INITIAL STATE ---------------- */
 
 const initialFormState: HmcMaster = {
-    customerType: "",
-    customer: "",
-    itemType: "",
-    hmcAmount: "",
+    acType: "",
+    accode: "",
+    itemId: "",
+    hmcAmt: "",
+  
 };
 
 /* ---------------- TABLE TYPE ---------------- */
 
 export type HmcTableRow = {
     sno: number;
-    customerName: string;
-    customerType: string;
-    itemTypeName: string;
-    hmcAmount: number;
+    acType: string;
+    acName: string;
+    itemName: string;
+    hmcAmt: number;
 };
 
 /* ---------------- COMPONENT ---------------- */
@@ -111,16 +112,18 @@ const HmcMappingForm = () => {
         refetch,
     } = useHmcData(filter);
 
-    const {
-        data: hmcDataById,
-        refetch: hmcRefetchById,
-    } = useHmcDataById(editId);
+    console.log(hmcData,'hmcData')
 
-    const customerType =
-        form.customerType?.trim().toUpperCase() || undefined;
+    // const {
+    //     data: hmcDataById,
+    //     refetch: hmcRefetchById,
+    // } = useHmcDataById(editId);
+
+    const acType =
+        form.acType?.trim().toUpperCase() || undefined;
 
     const { data: allAccounts } =
-        useAllAccountHead(customerType);
+        useAllAccountHead(acType);
 
     const { data: items } = useStoneItems();
 
@@ -162,8 +165,7 @@ const HmcMappingForm = () => {
             },
 
             disabled: {
-                isCustomerDisabled:
-                    !form.customerType,
+                isCustomerDisabled: !form.acType,
             },
         });
 
@@ -184,6 +186,13 @@ const HmcMappingForm = () => {
     const handleEdit = (row: any) => {
         setEditId(row.sno);
 
+        setForm({
+            acType: row.acType,
+            accode: String(row.accode),
+            itemId: String(row.itemId),
+            hmcAmt: String(row.hmcAmt),
+        })
+
         scrollToTop();
 
         toastLoaded("HMC Mapping");
@@ -192,6 +201,7 @@ const HmcMappingForm = () => {
     /* ---------------- RESET ---------------- */
 
     const resetForm = () => {
+      
         setForm(initialFormState);
 
         setEditId(null);
@@ -201,46 +211,18 @@ const HmcMappingForm = () => {
         setTimeout(() => focusFirst(), 50);
     };
 
-    /* ---------------- EDIT DATA ---------------- */
 
-    useEffect(() => {
-
-        if (!hmcDataById || editId === null)
-            return;
-
-        setForm({
-            customerType:
-                hmcDataById.customerType ?? "",
-
-            customer:
-                hmcDataById.customer ?? "",
-
-            itemType:
-                hmcDataById.itemType ?? "",
-
-            hmcAmount: String(
-                hmcDataById.hmcAmount ?? ""
-            ),
-        });
-
-    }, [hmcDataById, editId]);
-
-    useEffect(() => {
-        if (editId !== null) {
-            hmcRefetchById();
-        }
-    }, [editId, hmcRefetchById]);
 
     /* ---------------- PAYLOAD ---------------- */
 
     const payload = {
-        customerType: form.customerType,
+        acType: form.acType,
 
-        customer: form.customer,
+        accode: form.accode,
 
-        itemType: Number(form.itemType),
+        itemId: Number(form.itemId),
 
-        hmcAmount: Number(form.hmcAmount),
+        hmcAmt: Number(form.hmcAmt),
     };
 
     /* ---------------- VALIDATION ---------------- */
@@ -255,47 +237,49 @@ const HmcMappingForm = () => {
                 string
             >> = {};
 
-        if (!form.customerType)
-            errs.customerType =
+        if (!form.acType)
+            errs.acType =
                 "Customer Type is required";
 
-        if (!form.customer)
-            errs.customer =
+        if (!form.accode)
+            errs.accode =
                 "Customer is required";
 
-        if (!form.itemType)
-            errs.itemType =
-                "Item Type is required";
+        if (!form.itemId)
+            errs.itemId =
+                "Item Name is required";
 
-        if (!form.hmcAmount) {
-            errs.hmcAmount =
+        if (!form.hmcAmt) {
+            errs.hmcAmt =
                 "HMC Amount is required";
         } else if (
-            Number(form.hmcAmount) <= 0
+            Number(form.hmcAmt) <= 0
         ) {
-            errs.hmcAmount =
+            errs.hmcAmt =
                 "Amount must be greater than 0";
         }
 
-        const isDuplicate = hmcData?.some(
-            (item: any) =>
-                form.customerType?.toLowerCase() ===
-                    item.customerType?.toLowerCase() &&
-                Number(form.customer) ===
-                    Number(item.customer) &&
-                Number(form.itemType) ===
-                    Number(item.itemType) &&
-                Number(item.sno) !==
-                    Number(editId)
+        const isDuplicate = (
+            Array.isArray(hmcData) ? hmcData : []
+        ).some((item: any) =>
+            // form.acType?.toLowerCase() ===
+            //     item.acType?.toLowerCase() &&
+            Number(form.accode) ===
+                Number(item.accode) &&
+            Number(form.itemId) ===
+                Number(item.itemId) &&
+            Number(item.sno) !==
+                Number(editId)
         );
 
         if (isDuplicate) {
-            errs.itemType =
+            errs.itemId =
                 "Duplicate entry already exists";
         }
 
         return errs;
     };
+    console.log(payload,'payload')
 
     /* ---------------- SUBMIT ---------------- */
 
@@ -329,6 +313,17 @@ const HmcMappingForm = () => {
 
                         refetch();
                     },
+                    onError: (error: any) => {
+                        console.log(
+                            "create error",
+                            error
+                        );
+                        toastLoaded(
+                            error?.response?.data?.message ||
+                            "Failed to create HMC."
+                        );
+                        resetForm();
+                    },
                 }
             );
 
@@ -348,6 +343,17 @@ const HmcMappingForm = () => {
 
                     refetch();
                 },
+                onError: (error: any) => {
+                    console.log(
+                        "create error",
+                        error
+                    );
+                    toastLoaded(
+                        error?.response?.data?.message ||
+                            "Failed to create HMC."
+                    );
+                    resetForm();
+                },
             });
         }
     };
@@ -363,7 +369,7 @@ const HmcMappingForm = () => {
         },
 
         {
-            key: "customerType",
+            key: "acType",
             label: "Customer Type",
         },
 
@@ -391,26 +397,26 @@ const HmcMappingForm = () => {
         option: string
     ) => {
 
-        setData(hmcData);
+        setData(Array.isArray(hmcData) ? hmcData : []);
 
         setColumns([
             {
-                key: "customerName",
+                key: "acName",
                 label: "Customer Name",
             },
 
             {
-                key: "customerType",
+                key: "acType",
                 label: "Customer Type",
             },
 
             {
-                key: "itemTypeName",
-                label: "Item Type",
+                key: "itemName",
+                label: "Item Name",
             },
 
             {
-                key: "hmcAmount",
+                key: "hmcAmt",
                 label: "HMC Amount",
             },
         ]);
@@ -428,13 +434,13 @@ const HmcMappingForm = () => {
 
     useGlobalKey(
         "Alt+s",
-        () => handleSubmit(),
+        handleSubmit,
         "saveTransaction"
     );
 
     useGlobalKey(
         "Alt+c",
-        () => resetForm(),
+        resetForm,
         "ClearTransaction"
     );
 
@@ -465,7 +471,7 @@ const HmcMappingForm = () => {
         register,
     } = useEnterNavigation(
         formFieldName,
-        () => handleSubmit()
+        handleSubmit
     );
 
     useEffect(() => {
@@ -512,9 +518,7 @@ const HmcMappingForm = () => {
                         <Button
                             size="xs"
                             colorPalette={"blue"}
-                            onClick={() =>
-                                handleSubmit()
-                            }
+                            onClick={handleSubmit}
                         >
                             <AiOutlineSave />
 
@@ -625,7 +629,7 @@ const HmcMappingForm = () => {
                     <CustomTable<HmcTableRow>
                         columns={columns}
                         data={
-                            hmcData as HmcTableRow[]
+                            hmcData as HmcTableRow[] || []
                         }
                         renderRow={(
                             row: any,
@@ -638,32 +642,23 @@ const HmcMappingForm = () => {
 
                                 <Table.Cell>
                                     {
-                                        row.customerName
+                                        row.acName
                                     }
                                 </Table.Cell>
 
                                 <Table.Cell>
-                                    {
-                                        AccountTypeList.find(
-                                            (
-                                                item
-                                            ) =>
-                                                item.value ===
-                                                row.customerType
-                                        )?.label ||
-                                        row.customerType
-                                    }
+                                    {row.acType === "PR" ? "Purchaser" : "Customer"}
                                 </Table.Cell>
 
                                 <Table.Cell>
                                     {
-                                        row.itemTypeName
+                                        row.itemName
                                     }
                                 </Table.Cell>
 
                                 <Table.Cell textAlign="right">
                                     {formatToFixed(
-                                        row.hmcAmount,
+                                        row.hmcAmt,
                                         2
                                     )}
                                 </Table.Cell>
