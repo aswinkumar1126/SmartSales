@@ -22,6 +22,7 @@ export const useLoadSaleTag = () => {
 
             const response = await getTagDetails(tagNo, customerId, true);
             const data = response?.data;
+            console.log(data, 'usetouchdata');
 
             if (!data) {
                 toaster.create({

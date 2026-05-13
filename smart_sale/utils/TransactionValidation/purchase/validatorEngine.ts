@@ -31,10 +31,10 @@ export const validatePurchase = (row: any  ) => {
 export const validatePurchaseReturn = (row: any  ) => {
 
 
-    if (row.ITEM_TYPE === "TAGGED" && !row.TAGNO?.trim()) {
+    // if (row.ITEM_TYPE === "TAGGED" && !row.TAGNO?.trim()) {
 
-        return "it's a Taged Item Please enter tag no";
-    }
+    //     return "it's a Taged Item Please enter tag no";
+    // }
     if(Number(row.PCS) <= 0){
         return "Pcs are required"
     }

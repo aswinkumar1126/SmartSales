@@ -7,7 +7,7 @@ export const validateSales = (row: any) => {
         return "Please select an item";
     }
 
-    if (row.ITEM_TYPE === "TAGGED" || row.__isTaged  && !row.TAGNO?.trim()) {
+    if (row.ITEM_TYPE === "TAGED" || row.__isTaged  && !row.TAGNO?.trim()) {
     
         return "it's a Taged Item Please enter tag no";
     }

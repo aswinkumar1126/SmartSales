@@ -55,7 +55,7 @@ export const useDraftRowOperations = (isTagedItem: (id: number) => boolean) => {
                 ? isTagedItem(Number(formData.ITEMID))
                 : false;
 
-            const ITEM_TYPE = isTagged ? "TAGGED" : "NON_TAGGED";
+            const ITEM_TYPE = isTagged ? "TAGED" : "NON_TAGED";
 
             const newRow = {
                 ...formData,

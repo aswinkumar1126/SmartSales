@@ -33,6 +33,7 @@ export interface TouchFilter {
 export interface GetTouchByFilter {
     TOUCH: number;
     CALMODE:string;
-    STNPRESENT : boolean ;
+    STNPRESENT : "Y" | "N"; 
     HMCAMT : number | null;
+    STOCKTYPE : "T" | "N" ;
 }
