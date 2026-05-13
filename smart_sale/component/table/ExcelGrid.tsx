@@ -136,7 +136,7 @@ export const ExcelGrid: React.FC<ExcelGridProps> = ({
     showAddRow = true,
     showDeleteRow = true,
     showDuplicateRow = false,
-    maxVisibleRows = 12,
+    maxVisibleRows = 10,
     accentColor = '#185FA5',
     getCellStyle,
     getRowStyle,
@@ -154,6 +154,8 @@ export const ExcelGrid: React.FC<ExcelGridProps> = ({
 
     // ── Block Enter briefly after mount (modal open Enter bleed-through) ──────
     const enterBlockedRef = useRef(false);
+    const enterLockRef = useRef(false);
+
     useEffect(() => {
         if (!disableEnterOnMount) return;
         enterBlockedRef.current = true;
@@ -333,13 +335,29 @@ export const ExcelGrid: React.FC<ExcelGridProps> = ({
 
         switch (e.key) {
             case 'Enter':
-                if (enterBlockedRef.current) {
-                    e.preventDefault(); // swallow the modal-open Enter
-                    break;
-                }
-                e.preventDefault();
-                moveNext(ri, colKey);
-                break;
+
+    if (enterBlockedRef.current) {
+        e.preventDefault();
+        break;
+    }
+
+    // prevent double enter firing
+    if (enterLockRef.current) {
+        e.preventDefault();
+        break;
+    }
+
+    enterLockRef.current = true;
+
+    e.preventDefault();
+
+    moveNext(ri, colKey);
+
+    setTimeout(() => {
+        enterLockRef.current = false;
+    }, 50);
+
+    break;
 
             case 'Tab':
                 e.preventDefault();

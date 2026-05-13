@@ -245,7 +245,7 @@ export default function StoneEnterMaster({
                     }}
                     // ✅ First row gets the focus ref, rest get normal inputRef
                     ref={inputRef}
-                    onEnter={onCommit}
+                    // onEnter={onCommit}
                     rounded="sm"
                     placeholder="Select stone"
                 />
@@ -327,7 +327,7 @@ export default function StoneEnterMaster({
                     decimalScale={2}
                     onChange={(_, v) => onChange(v)}
                     inputRef={inputRef}
-                    onEnter={()=>{onCommit()}}
+                    // onEnter={()=>{onCommit()}}
                     size="xs"
                     rounded="sm"
                     noBorder
@@ -359,7 +359,7 @@ export default function StoneEnterMaster({
                     decimalScale={decimalScale}
                     onChange={(_, v) => onChange(v)}
                     inputRef={inputRef}
-                    onEnter={onCommit}
+                    // onEnter={onCommit}
                     size="xs"
                     rounded="sm"
                     noBorder

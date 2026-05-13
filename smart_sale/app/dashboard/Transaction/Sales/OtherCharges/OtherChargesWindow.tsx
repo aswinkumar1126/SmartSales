@@ -277,7 +277,7 @@ export default function OtherChargesWindow({
                         if (val) onCommit(); // move to next cell on selection
                     }}
                     ref={inputRef}
-                    onEnter={onCommit}
+                    // onEnter={onCommit}
                     rounded="sm"
                     placeholder="Select charge"
                 />
@@ -341,7 +341,7 @@ export default function OtherChargesWindow({
                         decimalScale={2}
                         onChange={(_, v) => onChange(v)}
                         inputRef={inputRef}
-                        onEnter={onCommit}
+                        // onEnter={onCommit}
                         size="xs"
                         rounded="sm"
                         noBorder
@@ -390,7 +390,7 @@ export default function OtherChargesWindow({
                     decimalScale={2}
                     onChange={(_, v) => onChange(v)}
                     inputRef={inputRef}
-                    onEnter={onCommit}
+                    // onEnter={onCommit}
                     size="xs"
                     rounded="sm"
                     disabled
