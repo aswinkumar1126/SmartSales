@@ -1,12 +1,11 @@
-
 "use client";
 
 import React, { useCallback, useState } from "react";
 import {
-  Box, Table, Text, Button, Portal, Drawer, Icon, Span, Spinner,
+  Box, Table, Text, Button, Portal, Drawer, Icon, Span,
 } from "@chakra-ui/react";
 import Image from "next/image";
-import { Printer } from "lucide-react";
+import { Printer, Upload } from "lucide-react";
 import { FaDownload } from "react-icons/fa";
 
 /* ── Components ── */
@@ -21,7 +20,7 @@ import { BarcodeTagListing } from "./BarcodeTagListing/BarcodeTagList";
 import StockSummaryPanel from "./StockSummary/StockSummaryPanel";
 
 /* ── Hook ── */
-import { useBarcodeGenerate, FIELD_ORDER, type FieldKey } from  '@/hooks/barcode/useBarcodeGenerater';
+import { useBarcodeGenerate, FIELD_ORDER, type FieldKey } from '@/hooks/barcode/useBarcodeGenerater';
 
 /* ── Theme ── */
 import { useTheme } from "@/context/theme/themeContext";
@@ -36,21 +35,19 @@ import { formatToFixed } from "@/utils/format/numberFormat";
 
 import type { BarcodeTransactionRow } from "@/store/barcode/useBarcodeStore";
 
-
-
 /* ============================================================
-   STOCK TABLE HEADER (static config, fine to keep in UI file)
+   STOCK TABLE HEADER
    ============================================================ */
 
 const STOCK_TABLE_HEADER = [
-  { key: "ITEMID",    label: "ITEM ID",    align: "start"  as const },
-  { key: "PCS",       label: "PCS",        align: "center" as const },
-  { key: "GRSWT",     label: "GROSS WT",   align: "end"    as const, decimalScale: 3 },
-  { key: "STNWT",     label: "STONE WT",   align: "end"    as const, decimalScale: 3 },
-  { key: "NETWT",     label: "NET WT",     align: "end"    as const, decimalScale: 3 },
+  { key: "ITEMID", label: "ITEM ID", align: "start" as const },
+  { key: "PCS", label: "PCS", align: "center" as const },
+  { key: "GRSWT", label: "GROSS WT", align: "end" as const, decimalScale: 3 },
+  { key: "STNWT", label: "STONE WT", align: "end" as const, decimalScale: 3 },
+  { key: "NETWT", label: "NET WT", align: "end" as const, decimalScale: 3 },
   // { key: "WASTYPE",   label: "WASTE TYPE", align: "center" as const },
-  { key: "TOUCH",     label: "TOUCH",      align: "center" as const, decimalScale: 1 },
-  { key: "STNPRESENT",label: "STONE",      align: "center" as const },
+  { key: "TOUCH", label: "TOUCH", align: "center" as const, decimalScale: 1 },
+  { key: "STNPRESENT", label: "STONE", align: "center" as const },
 ];
 
 /* ============================================================
@@ -59,87 +56,83 @@ const STOCK_TABLE_HEADER = [
 
 function BarCodeGenerate() {
   const { theme } = useTheme();
-const {
 
-  isretag,
-  setIsRetag,
-} = useBarcodeGenerate();
   const {
     /* state */
-    headerForm, 
-    rows, 
+    headerForm,
+    rows,
     isEditing,
     printDetails,
-    singleSearch, 
+    singleSearch,
     tagFilterParams,
-    transactionForm, 
-    editRowId, 
-    fieldErrors, 
-    touched, 
+    transactionForm,
+    editRowId,
+    fieldErrors,
+    touched,
     headerErrors,
-    isSubmittingRow, 
+    isSubmittingRow,
     isSubmittingTag,
-    excelDrawerOpen, 
+    excelDrawerOpen,
     setExcelDrawerOpen,
     deselectFlag,
     excelData,
     setExcelData,
     handleExcelChange,
     /* collections */
-    purchaserCollection, 
-    inwardCollection, 
-    itemCollection, 
+    purchaserCollection,
+    inwardCollection,
+    itemCollection,
     itemSizeCollection,
     stockTableData,
 
     /* stock summary */
-    stockSummary, 
+    stockSummary,
     remaining,
 
     /* table config */
-    transactionFormFields, 
-    allDisplayCols, 
-    transactionTotals, 
+    transactionFormFields,
+    allDisplayCols,
+    transactionTotals,
     showTableForm,
+
 
     /* listing */
     tagItemList,
 
     /* refs */
     fieldRefs,
+    isretag,
+    setIsRetag,
 
+    hasExistingRows ,
+    populateExcelFromRows,
     /* handlers */
-    handleHeaderChange, 
-    handleFormChange, 
+    handleHeaderChange,
+    handleFormChange,
     resetForm,
-    handleRowSubmit, 
+    handleRowSubmit,
     moveToNext,
-    handleEditRow, 
+    handleEditRow,
     handleDeleteRow,
     handleExcelLoad,
-    handleSave, 
-    handleUpdate, 
+    handleExcelUpdate,
+    handleSave,
+    handleUpdate,
     handleClear,
     handleSelectTag,
-    setSingleSearch, 
+    setSingleSearch,
     setTagFilterField,
-    handlePrintAll, 
-    handlePrintSingle, 
+    handlePrintAll,
+    handlePrintSingle,
     handleDownloadSetup,
 
     /* cell helpers */
-    getCellValue, 
+    getCellValue,
     formatTotal,
 
   } = useBarcodeGenerate();
-  
-  console.log(stockSummary,'stockSummary');
-
-  console.log(stockTableData,'stockTableData');
-  console.log(rows,'rows')
 
 
-  
 
   /* ── Stock row renderer ── */
   const renderStockRow = useCallback((row: any) => {
@@ -153,7 +146,6 @@ const {
         <Table.Cell textAlign="right">{formatToFixed(row.GRSWT, 3)}</Table.Cell>
         <Table.Cell textAlign="right">{formatToFixed(row.STNWT, 3)}</Table.Cell>
         <Table.Cell textAlign="right">{formatToFixed(row.NETWT, 3)}</Table.Cell>
-        {/* <Table.Cell textAlign="center">{row.WASTYPE || "-"}</Table.Cell> */}
         <Table.Cell textAlign="center">{formatToFixed(row.TOUCH, 1)}</Table.Cell>
         <Table.Cell textAlign="center">
           <Box
@@ -169,7 +161,7 @@ const {
 
   /* ── Transaction cell renderer ── */
   const renderCellValue = useCallback((col: any, row: BarcodeTransactionRow) => {
-    if(col.key === "size") {
+    if (col.key === "size") {
       return (
         <Text textAlign="center">{row.size}</Text>
       )
@@ -184,16 +176,7 @@ const {
     return getCellValue(col, row);
   }, [getCellValue, handlePrintSingle]);
 
-  /* ── isNew badge in cell ── */
-  const renderRowLabel = useCallback((row: BarcodeTransactionRow) => {
-    if (!isEditing) return null;
-    return row.isNew
-      ? <Box as="span" ml={1} bg="blue.100" color="blue.700" fontSize="2xs" px={1} rounded="sm">new</Box>
-      : <Box as="span" ml={1} bg="gray.100" color="gray.500" fontSize="2xs" px={1} rounded="sm">saved</Box>;
-  }, [isEditing]);
-
-
-  /* ── Form cell renderer (passed to TransactionTable) ── */
+  /* ── Form cell renderer ── */
   const renderFormCell = useCallback((field: any) => {
     const key = field.key as FieldKey;
     const ref = fieldRefs.current[key];
@@ -212,17 +195,10 @@ const {
 
     if (field.key === "barcode") return (
       <CapitalizedInput
-        field={key}
-        value={value}
+        field={key} value={value}
         onChange={(_: unknown, v: unknown) => handleFormChange(key, v)}
-        type="text" 
-        isCapitalized={false} 
-        size="xs" 
-        rounded="sm"
-        inputRef={ref} 
-        onEnter={handleRowSubmit} 
-        noBorder 
-        disabled
+        type="text" isCapitalized={false} size="xs" rounded="sm"
+        inputRef={ref} onEnter={handleRowSubmit} noBorder disabled
       />
     );
 
@@ -255,9 +231,6 @@ const {
     ...extra,
   }), []);
 
-
-  console.log(rows,'isSubmittingRow');
-
   /* ============================================================
      RENDER
      ============================================================ */
@@ -278,21 +251,34 @@ const {
             itemCollection={itemCollection}
             isDisabled={rows.length > 0}
             validationError={headerErrors}
-          /> 
-<SingleCheckbox
-  label="RETAG"
-  checked={isretag}
-  onChange={() => setIsRetag((prev) => !prev)}
-  size="sm"
-  fontSize="xs"
-/>
+          />
+          <SingleCheckbox
+            label="RETAG"
+            checked={isretag}
+            onChange={() => setIsRetag((prev) => !prev)}
+            size="sm"
+            fontSize="xs"
+          />
           <Box display="flex" alignItems="start" flexDirection="column" gap={2}>
-            <SingleCheckbox
-              label="EXCEL IMPORT"
-              checked={excelDrawerOpen}
-              onChange={() => setExcelDrawerOpen((p) => !p)}
-              size="sm" fontSize="xs"
-            />
+            <Box display="flex" alignItems="center" gap={2}>
+              <SingleCheckbox
+                label="EXCEL IMPORT"
+                checked={excelDrawerOpen}
+                onChange={() => setExcelDrawerOpen((p) => !p)}
+                size="sm" fontSize="xs"
+              />
+              {rows.length > 0 && (
+                <Button
+                  size="xs"
+                  variant="outline"
+                  colorPalette="blue"
+                  onClick={populateExcelFromRows}
+                >
+                  <Icon as={Upload} w={4} h={4} mr={1} />
+                  Load to Excel
+                </Button>
+              )}
+            </Box>
             <Button onClick={handleDownloadSetup} variant="ghost" p={0}>
               <Box display="flex" alignItems="center" flexDirection="column">
                 <Span fontSize="xs" display="flex" gap={1} alignItems="center">
@@ -304,16 +290,15 @@ const {
           </Box>
         </Box>
 
-        {/* ── Stock table + summary (split with isNew/saved awareness) ── */}
+        {/* ── Stock table + summary ── */}
         <Box
           display="flex" flexDirection={{ sm: "column", md: "row" }} gap={2}
           bg={theme.colors.formColor} p={2} justifyContent="space-between" rounded="xl"
-        > 
-        <Box>
+        >
+          <Box>
             <Text fontSize="xs" fontWeight={600} mb={1} color="gray.600">
               SELECTED ITEM SUMMARY
             </Text>
-
             <CustomTable
               columns={STOCK_TABLE_HEADER}
               data={stockTableData}
@@ -324,12 +309,9 @@ const {
               borderColor="white"
               maxWidth="100%"
             />
+          </Box>
 
-        </Box>
-         
-          {/* StockSummaryPanel receives the new 4-column summary (lot/saved/new/balance) */}
           <StockSummaryPanel
-
             summary={stockSummary}
             headerBg={theme.colors.accient}
           />
@@ -388,41 +370,49 @@ const {
           transactionType="barcode"
           showTotal
           showTableForm={showTableForm}
-
-          maxBodyHeight= "300px"
-          
-          /* isNew badge slot */
-          // renderRowLabel={isEditing ? renderRowLabel : undefined}
+          maxBodyHeight="300px"
         />
 
-        {/* ── Excel drawer ── */}
-        {excelDrawerOpen && (
-          <Drawer.Root open={excelDrawerOpen} onOpenChange={() => setExcelDrawerOpen(false)}>
-            <Portal>
-              <Drawer.Backdrop />
-              <Drawer.Positioner>
-                <Drawer.Content maxWidth="4xl">
-                  <Drawer.Header borderBottomWidth="1px" bg="cyan.50" fontSize="md">
-                    Excel Import
-                    <Drawer.CloseTrigger asChild>
-                      <Button variant="ghost" size="sm" onClick={() => setExcelDrawerOpen(false)}>×</Button>
-                    </Drawer.CloseTrigger>
-                  </Drawer.Header>
-                  <Drawer.Body p={0}>
-                    <BarCodeExcel
-                      data={excelData}
-                      onChange={handleExcelChange}
-                      onLoad={ handleExcelLoad }
-                      onFileParsed={setExcelData}
-                    />
-                  </Drawer.Body>
-                </Drawer.Content>
-              </Drawer.Positioner>
-            </Portal>
-          </Drawer.Root>
-        )}
+     
+          < Drawer.Root 
+  open={excelDrawerOpen}
+        onOpenChange={(details) => {
+          if (!details.open) setExcelDrawerOpen(false);
+        }}
+>
+        <Portal>
+          <Drawer.Backdrop />
+          <Drawer.Positioner>
+            <Drawer.Content maxWidth="4xl">
+              <Drawer.Header borderBottomWidth="1px" bg="cyan.50" fontSize="md">
+                Excel Import
+                <Drawer.CloseTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setExcelDrawerOpen(false)}
+                  >
+                    ×
+                  </Button>
+                </Drawer.CloseTrigger>
+              </Drawer.Header>
+              <Drawer.Body p={0}>
+                <BarCodeExcel
+                  data={excelData}
+                  hasExistingRows={hasExistingRows}
+                  onUpdate={handleExcelUpdate}
+                  onChange={handleExcelChange}
+                  onLoad={handleExcelLoad}
+                  onFileParsed={setExcelData}
+                />
+              </Drawer.Body>
+            </Drawer.Content>
+          </Drawer.Positioner>
+        </Portal>
+      </Drawer.Root>
+     
       </Box>
- 
+
       {/* ── Tag listing sidebar ── */}
       <Box width="15%">
         <BarcodeTagListing

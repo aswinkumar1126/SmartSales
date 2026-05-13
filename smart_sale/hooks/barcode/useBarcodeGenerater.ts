@@ -31,28 +31,27 @@ import { transactionTableCols } from "@/data/barcodeGenerate/barcodeFormFields";
 
 import { CellChange, ChangeSource } from "handsontable/common";
 import { ExcelData } from "@/app/dashboard/Transaction/BarCodeGenerate/excel/BarCodeExcel";
-import Header from "@/component/layout/header/Header";
 
 /* ============================================================
    CONSTANTS
    ============================================================ */
 
 export const FIELD_ORDER = [
-  "barcode", "grsweight", "purchaseStoneWt", "stoneWt", "navaWt",  "diamondWt", "size",
-  //"wastePercent","mc", "touch",
+  "barcode", "grsweight", "purchaseStoneWt", "stoneWt", "navaWt", "diamondWt", "size",
+  // "wastePercent","mc", "touch",
 ] as const;
 export type FieldKey = (typeof FIELD_ORDER)[number];
 
 const NUMERIC_FIELDS = new Set([
-  "grsweight", "purchaseStoneWt","stoneWT" ,"navaWt", "salesStoneWt","diamondWt", "size",
-  //  "wastePercent", "mc", "touch",
+  "grsweight", "purchaseStoneWt", "stoneWt", "navaWt", "salesStoneWt", "diamondWt",
+  // "wastePercent", "mc", "touch",
 ]);
 const REQUIRED_FIELDS_STN = new Set(["grsweight", "purchaseStoneWt", "salesStoneWt"]);
 const REQUIRED_FIELDS = new Set(["grsweight"]);
 
 const EMPTY_TRANSACTION_FORM = {
-  barcode: "", grsweight: "", purchaseStoneWt: "",stoneWt: "", navaWt: "", salesStoneWt: "",diamondWt: "", size:"",
-  // wastePercent: "",  mc: "", touch: "",
+  barcode: "", grsweight: "", purchaseStoneWt: "", stoneWt: "", navaWt: "", salesStoneWt: "", diamondWt: "", size: "",
+  // wastePercent: "", mc: "", touch: "",
 };
 
 const EMPTY_ARRAY: never[] = [];
@@ -64,7 +63,7 @@ const safeNum = (v: unknown) => { const n = Number(v); return isNaN(n) ? 0 : n; 
 
 export function useBarcodeGenerate() {
 
-  /* ── Store — flat primitives & actions only (no array selectors here) ── */
+  /* ── Store — flat primitives & actions only ── */
   const headerForm = useBarcodeStore((s) => s.headerForm);
   const rows = useBarcodeStore((s) => s.rows);
   const printDetails = useBarcodeStore((s) => s.printDetails);
@@ -87,7 +86,6 @@ export function useBarcodeGenerate() {
   const setTagFilterField = useBarcodeStore((s) => s.setTagFilterField);
   const clearAll = useBarcodeStore((s) => s.clearAll);
 
-
   const savedRows = useSavedRows();
   const newRows = useNewRows();
 
@@ -104,10 +102,7 @@ export function useBarcodeGenerate() {
   const [deselectFlag, setDeselectFlag] = useState(false);
   const [selectedItemId, setSelectedItemId] = useState<number | undefined>(undefined);
   const [excelData, setExcelData] = useState<ExcelData>([]);
-
   const [originalRow, setOriginalRow] = useState<BarcodeTransactionRow | null>(null);
-  console.log(originalRow, 'originalRow');
-
 
   /* ── Refs ── */
   const transactionFormRef = useRef(transactionForm);
@@ -115,9 +110,10 @@ export function useBarcodeGenerate() {
   const editingRowIdRef = useRef(editRowId);
   const originalRowRef = useRef(originalRow);
 
-useEffect(() => {
-  setHeaderField("RETAG",  isretag ? "true" : "false");
-}, [isretag, setHeaderField]);
+  useEffect(() => {
+    setHeaderField("RETAG", isretag ? "true" : "false");
+  }, [isretag, setHeaderField]);
+
   useEffect(() => { rowsRef.current = rows; }, [rows]);
   useEffect(() => { transactionFormRef.current = transactionForm; }, [transactionForm])
   useEffect(() => { editingRowIdRef.current = editRowId; }, [editRowId]);
@@ -128,7 +124,6 @@ useEffect(() => {
       FIELD_ORDER.map((k) => [k, { current: null as HTMLInputElement | null }])
     ) as Record<FieldKey, React.MutableRefObject<HTMLInputElement | null>>
   );
-  
 
   /* ── API ── */
   const { data: allPurchaseAccount } = useAllAccountHead("", { accountType: "PR" });
@@ -136,7 +131,6 @@ useEffect(() => {
   const printer = useMemo(() => printerSettings?.data ?? null, [printerSettings]);
 
   const { data: toleranceData } = useSoftControlById("LOT-TOLERANCE");
-  console.log(toleranceData,'toleranceData')
   const tolerance = useMemo(() => {
     return Number(toleranceData?.CTLTEXT ?? 0);
   }, [toleranceData]);
@@ -147,8 +141,8 @@ useEffect(() => {
     SNO: String(headerForm.ITEMNAME),
     ISEDITING: isEditing,
     ENTRYNO: isEditing ? Number(selectedEntryNo) : undefined,
-     RETAG: isretag,
-  }), [headerForm.COMPANYNAME, headerForm.INWARDNO, headerForm.ITEMNAME, isEditing, selectedEntryNo,isretag]);
+    RETAG: isretag,
+  }), [headerForm.COMPANYNAME, headerForm.INWARDNO, headerForm.ITEMNAME, isEditing, selectedEntryNo, isretag]);
 
   const { data: barcodeItems } = useBarcodeItems(barcodeQueryParams);
 
@@ -161,20 +155,9 @@ useEffect(() => {
         setHeaderField("ENTRYNO", String(barcodeItems.ENTRY_NO));
       }
     }
-
   }, [barcodeItems?.ENTRY_NO, setHeaderField, isEditing]);
 
-
-  // const { data: sizes } = useSize("", selectedItemId);
-
-  // const itemSizeList = useMemo(() =>
-  //   Array.isArray(sizes)
-  //     ? sizes.map((s: any) => ({ label: s.SIZENAME, value: String(s.SIZEID) }))
-  //     : EMPTY_ARRAY,
-  //   [sizes]);
-
   /* ── Tag listing ── */
-
   const filteredTagParams = useMemo(() => {
     const out: Record<string, string> = {};
     Object.entries(tagFilterParams).forEach(([k, v]) => {
@@ -182,11 +165,9 @@ useEffect(() => {
     });
     return out;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [JSON.stringify(tagFilterParams)]); // stringify → stable primitive dep
+  }, [JSON.stringify(tagFilterParams)]);
 
   const { data: tagEntryNos, refetch: refetchTagList } = useTagEntryNos(filteredTagParams);
-  console.log(tagEntryNos,'tagEntryNos');
-
 
   const tagFilterParamsKey = JSON.stringify(tagFilterParams);
   useEffect(() => {
@@ -195,8 +176,6 @@ useEffect(() => {
   }, [tagFilterParamsKey]);
 
   const { data: tagDetails } = useTagedDetailsByEntryNo(selectedEntryNo);
-
-  // console.log(tagDetails,'tagDetails');
 
   /* ── Collections ── */
   const purchaserCollection = useMemo(() =>
@@ -223,8 +202,6 @@ useEffect(() => {
       : EMPTY_ARRAY,
     [barcodeItems?.SIZELIST]);
 
-  console.log(barcodeItems, 'barcodeItems');
-
   const baseBarcodePrefix = barcodeItems?.TAGNO?.PREFIX ?? "";
   const startBarcodeNumber = Number(barcodeItems?.TAGNO?.TAGNO ?? 0);
 
@@ -234,7 +211,6 @@ useEffect(() => {
 
   const selectedItem = barcodeItems?.SELECTED_ITEM ?? null;
   const hasStone = selectedItem?.STNPRESENT === "Y";
-  console.log(hasStone,'hasStone');
 
   const stockTableData = useMemo(() =>
     Array.isArray(selectedItem) ? selectedItem
@@ -248,15 +224,12 @@ useEffect(() => {
 
   /* ── Logic hooks ── */
   const { validateHeaderWithToast, validateSingleRow, validateRows } = useTaggingValidation();
-  
+
   const { summary: stockSummary, limits, remaining } = useStockLimits(selectedItem, rows);
 
   const remainingRef = useRef(remaining);
 
-  console.log(remainingRef,'remainingRef');
-
   useEffect(() => { remainingRef.current = remaining; }, [remaining])
-
 
   const { printAll, printSingle, downloadSetupFiles } = usePrintHandler();
 
@@ -272,24 +245,39 @@ useEffect(() => {
     assignSingleBarcodeRef.current = assignSingleBarcode;
   }, [assignSingleBarcode]);
 
-
-  /*---------EXCEL IMPORT DATA ----------------*/
-    const handleExcelChange = useCallback(
-      (changes: CellChange[] | null, _source: ChangeSource) => {
-        if (!changes) return;
-        setExcelData((prev) => {
-          const next = prev.map((row) => [...row]);        // shallow-clone each row
-          changes.forEach(([row, col, , newVal]) => {
-            while (next.length <= row) next.push([]);    // grow if HOT added a spare row
-            next[row][col as number] = newVal as string | number | null;
-          });
-          return next;
+  /* ── EXCEL IMPORT DATA ── */
+  const handleExcelChange = useCallback(
+    (changes: CellChange[] | null, _source: ChangeSource) => {
+      if (!changes) return;
+      setExcelData((prev) => {
+        const next = prev.map((row) => [...row]);
+        changes.forEach(([row, col, , newVal]) => {
+          while (next.length <= row) next.push([]);
+          next[row][col as number] = newVal as string | number | null;
         });
-      },
-      []
-    );
+        return next;
+      });
+    },
+    []
+  );
 
+  // Add a function to populate Excel with existing rows
+  const populateExcelFromRows = useCallback(() => {
+    if (!rows.length) return;
 
+    const excelRows: ExcelData = rows.map(row => [
+      row.grsweight,
+      row.purchaseStoneWt,
+      row.stoneWt,
+      row.navaWt,
+      row.salesStoneWt, // Auto-calculated
+      row.diamondWt,
+      row.size,
+    ]);
+
+    setExcelData(excelRows);
+    setExcelDrawerOpen(true);
+  }, [rows]);
 
   /* ── Mutations ── */
   const { mutate: createTag } = useCreateTag();
@@ -309,22 +297,20 @@ useEffect(() => {
     setHeaderErrors({});
   }, [setHeaderField]);
 
-
-const handleFormChange = useCallback((key: string, value: unknown) => {
-  console.log(key, value, 'onchange');
-  setTransactionForm((p) => {
-    const updated = { ...p, [key]: value };
-    // Auto-calculate salesStoneWt = purchaseStoneWt + navaWt
-    if (key === "stoneWt" || key === "navaWt") {
-      const stoneWt = key === "stoneWt" ? Number(value) : Number(updated.stoneWt);
-      const nava    = key === "navaWt"            ? Number(value) : Number(updated.navaWt);
-      updated.salesStoneWt = String((stoneWt + nava).toFixed(3));
-    }
-    return updated;
-  });
-  setTouched((p) => ({ ...p, [key]: true }));
-  setFieldErrors((p) => { const n = { ...p }; delete n[key]; return n; });
-}, []);
+  const handleFormChange = useCallback((key: string, value: unknown) => {
+    setTransactionForm((p) => {
+      const updated = { ...p, [key]: value };
+      // Auto-calculate salesStoneWt = stoneWt + navaWt
+      if (key === "stoneWt" || key === "navaWt") {
+        const stoneWt = key === "stoneWt" ? Number(value) : Number(updated.stoneWt);
+        const nava = key === "navaWt" ? Number(value) : Number(updated.navaWt);
+        updated.salesStoneWt = String((stoneWt + nava).toFixed(3));
+      }
+      return updated;
+    });
+    setTouched((p) => ({ ...p, [key]: true }));
+    setFieldErrors((p) => { const n = { ...p }; delete n[key]; return n; });
+  }, []);
 
   const resetForm = useCallback(() => {
     setTransactionForm(EMPTY_TRANSACTION_FORM);
@@ -337,20 +323,14 @@ const handleFormChange = useCallback((key: string, value: unknown) => {
     const idx = FIELD_ORDER.indexOf(currentKey);
     if (idx < FIELD_ORDER.length - 1) focusField(FIELD_ORDER[idx + 1]);
     else handleRowSubmit();
-  }, [focusField]); // handleRowSubmit added below via ref pattern
-
+  }, [focusField]);
 
   /* ── Row submit ── */
   const handleRowSubmit = useCallback(() => {
-
-    // Get the current form state from ref
     const currentForm = transactionFormRef.current;
     const editingRowId = editingRowIdRef.current;
-
     const remainingByRef = remainingRef.current;
     const originalRow = originalRowRef.current;
-
-    console.log(remainingByRef,'remainingByRef');
 
     const editingRow = rowsRef.current.find(r => r.id === editingRowId);
 
@@ -363,9 +343,7 @@ const handleFormChange = useCallback((key: string, value: unknown) => {
         STNWT: effectiveBalance.STNWT + Number(originalRow.stoneWt || 0),
       };
     }
-    console.log(effectiveBalance, 'effectiveBalance');
 
-    // Use currentForm instead of transactionForm for validation
     const errors = validateSingleRow(
       {
         grsweight: currentForm.grsweight,
@@ -376,13 +354,11 @@ const handleFormChange = useCallback((key: string, value: unknown) => {
       effectiveBalance,
       tolerance
     );
-    console.log(errors, 'validationErrors');
 
     if (Object.keys(errors).length) {
       setTouched(FIELD_ORDER.reduce((a, k) => ({ ...a, [k]: true }), {} as Record<string, boolean>));
       setFieldErrors(errors);
       const first = FIELD_ORDER.find((k) => errors[k]);
-      console.log(first, 'firstErrorField');
       if (first) {
         focusField(first);
         toaster.create({ title: "Validation Error", description: errors[first], type: "error", duration: 2000 });
@@ -393,18 +369,15 @@ const handleFormChange = useCallback((key: string, value: unknown) => {
     setIsSubmittingRow(true);
 
     try {
-      // Use currentForm consistently throughout
       const formValues = {
         grsweight: Number(currentForm.grsweight),
-        purchaseStoneWt :Number(currentForm.purchaseStoneWt),
-        
+        purchaseStoneWt: Number(currentForm.purchaseStoneWt),
         stoneWt: Number(currentForm.stoneWt),
-        navaWt : Number(currentForm.navaWt),
+        navaWt: Number(currentForm.navaWt),
         salesStoneWt: Number(currentForm.salesStoneWt),
         diamondWt: Number(currentForm.diamondWt),
         // wastePercent: Number(currentForm.wastePercent || 0),
         size: currentForm.size,
-       
         // mc: Number(currentForm.mc),
         // touch: Number(currentForm.touch),
       };
@@ -414,9 +387,7 @@ const handleFormChange = useCallback((key: string, value: unknown) => {
         toaster.create({ title: "Row Updated", type: "success", duration: 2000 });
         setEditRowId(null);
         setOriginalRow(null);
-      }
-
-      else {
+      } else {
         const barcode = assignSingleBarcodeRef.current(rowsRef.current.length);
 
         if (!barcode) {
@@ -448,7 +419,6 @@ const handleFormChange = useCallback((key: string, value: unknown) => {
     }
   }, [
     hasStone,
-    editRowId,
     validateSingleRow,
     assignSingleBarcode,
     addRow,
@@ -456,24 +426,24 @@ const handleFormChange = useCallback((key: string, value: unknown) => {
     resetForm,
     focusField,
     headerForm.ENTRYNO,
+    tolerance,
   ]);
 
   const handleEditRow = useCallback((row: BarcodeTransactionRow) => {
-
     setTransactionForm({
       barcode: row.barcode,
       grsweight: row.grsweight.toString(),
       purchaseStoneWt: row.purchaseStoneWt.toString(),
+      stoneWt: row.stoneWt.toString(),
+      navaWt: row.navaWt.toString(),
       salesStoneWt: row.salesStoneWt.toString(),
       // wastePercent: row.wastePercent.toString(),
-      stoneWt: row.stoneWt.toString(),
-      navaWt : row.navaWt.toString(),
       size: row.size,
       diamondWt: row.diamondWt.toString(),
       // mc: row.mc.toString(),
       // touch: row.touch.toString(),
     });
-    setOriginalRow(row); // ✅ store original
+    setOriginalRow(row);
     setEditRowId(row.id);
     setFieldErrors({});
     setTouched({});
@@ -482,14 +452,15 @@ const handleFormChange = useCallback((key: string, value: unknown) => {
 
   const handleDeleteRow = useCallback((row: BarcodeTransactionRow) => {
     if (!window.confirm("Delete this item?")) return;
-    console.log(row, rowsRef.current,'ondelete');
     const remaining = rowsRef.current.filter((r) => r.id !== row.id);
     setRows(assignBarcodes(remaining));
     if (editRowId === row.id) resetForm();
     toaster.create({ title: "Row Deleted", type: "info", duration: 1000 });
   }, [editRowId, assignBarcodes, setRows, resetForm]);
 
-  /* ── Excel load ── */
+
+
+  // Update handleExcelLoad to accept ExcelRowData[]
   const handleExcelLoad = useCallback((parsedRows: any[]) => {
     if (!parsedRows.length) return;
     if (!validateHeaderWithToast(headerForm)) return;
@@ -501,27 +472,102 @@ const handleFormChange = useCallback((key: string, value: unknown) => {
       ...parsedRows.map((r) => ({
         id: `excel-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
         draftRowId,
-        grsweight: r.grsweight, 
-        purchaseStoneWt: r.purchaseStoneWt,
-        navaWt : r.navaWt,
-        stoneWt: r.stoneWt, 
-        salesStoneWt: r.salesStoneWt,
-        // wastePercent: r.wastePercent, 
-        size: r.size, 
-        diamondWt: r.diamondWt,
-        // mc: r.mc, 
-        // touch: r.touch, 
+        grsweight: r.grsweight || 0,
+        purchaseStoneWt: r.purchaseStoneWt || 0,
+        stoneWt: r.stoneWt || 0,
+        navaWt: r.navaWt || 0,
+        salesStoneWt: r.salesStoneWt || 0,
+        // wastePercent: r.wastePercent || 0,
+        size: r.size || "",
+        diamondWt: r.diamondWt || 0,
+        // mc: r.mc || 0,
+        // touch: r.touch || 0,
         barcode: "",
-         isNew: true as const,
+        isNew: true as const,
       })),
     ];
     setRows(assignBarcodes(merged));
-    
+
     toaster.create({ title: "Excel Imported", description: `${parsedRows.length} row(s) added`, type: "success", duration: 2500 });
     setExcelData([]);
     setExcelDrawerOpen(false);
+  }, [headerForm, rows, limits, isEditing, validateHeaderWithToast, validateRows, assignBarcodes, setRows, tolerance]);
 
-  }, [headerForm, rows, limits, isEditing, validateHeaderWithToast, validateRows, assignBarcodes, setRows]);
+
+
+  // Replace handleExcelUpdate with this corrected version:
+  const handleExcelUpdate = useCallback((parsedRows: any[]) => {
+    if (!parsedRows.length) return;
+
+    if (!validateHeaderWithToast(headerForm)) return;
+
+    if (
+      !validateRows({
+        rows,
+        limits,
+        countOnlyNew: false,
+        incomingRows: parsedRows,
+        tolerance,
+        isUpdate: true,
+      })
+    ) return;
+
+    const currentRows = rowsRef.current;
+
+    const updatedRows = parsedRows.map((r, index) => {
+      const existingRow = currentRows[index];
+
+      return {
+        id:
+          existingRow?.id ||
+          `excel-${Date.now()}-${Math.random()
+            .toString(36)
+            .slice(2, 7)}`,
+
+        draftRowId:
+          existingRow?.draftRowId ||
+          headerForm.ENTRYNO ||
+          String(Date.now()),
+
+        grsweight: r.grsweight || 0,
+        purchaseStoneWt: r.purchaseStoneWt || 0,
+        stoneWt: r.stoneWt || 0,
+        navaWt: r.navaWt || 0,
+        salesStoneWt: r.salesStoneWt || 0,
+        diamondWt: r.diamondWt || 0,
+        size: r.size || "",
+
+        barcode:
+          existingRow?.barcode ||
+          assignSingleBarcodeRef.current(index),
+
+        isNew: existingRow?.isNew ?? true,
+      };
+    });
+
+    setRows(updatedRows);
+
+    toaster.create({
+      title: "Excel Updated",
+      description: `${updatedRows.length} row(s) updated`,
+      type: "success",
+      duration: 2500,
+    });
+
+    setExcelData([]);
+    setExcelDrawerOpen(false);
+  }, [
+    headerForm,
+    rows,
+    limits,
+    validateHeaderWithToast,
+    validateRows,
+    setRows,
+    tolerance,
+  ]);
+
+  const hasExistingRows = rows.length > 0;
+
 
   /* ── Save / Update ── */
   const buildPayload = useCallback(() => {
@@ -533,38 +579,36 @@ const handleFormChange = useCallback((key: string, value: unknown) => {
       ACCODE: Number(headerForm.COMPANYNAME),
       PUSNO: headerForm.ITEMNAME,
       TAGDATE: headerForm.DATE || new Date().toISOString().split("T")[0],
-       RETAG: isretag,
+      RETAG: isretag,
     };
+
     const taggingDetails = rows.map((r) => ({
       TAGNO: r.barcode,
-      GRSWT: r.grsweight, 
-      PURCHASESTNWT :r.purchaseStoneWt,
+      GRSWT: r.grsweight,
+      PURCHASESTNWT: r.purchaseStoneWt,
       STNWT: r.stoneWt,
-      NAVAWT : r.navaWt,
+      NAVAWT: r.navaWt,
       SALESSTNWT: r.salesStoneWt,
       DIAWT: r.diamondWt,
       SIZE: Number(r.size),
-
       // WASPER: r.wastePercent,
       // MC: r.mc,
-      // TOUCH: r.touch, 
-      // NETWT: r.grsweight - r.stoneWt, 
-     
+      // TOUCH: r.touch,
+      // NETWT: r.grsweight - r.stoneWt,
     }));
     return { purchaseDetails, taggingDetails };
-  }, [rows, headerForm, itemId,isretag]);
+  }, [rows, headerForm, itemId, isretag]);
 
   const handleSave = useCallback(() => {
-
     const remainingByRef = remainingRef.current;
-
     let effectiveBalance = { ...remainingByRef };
 
     if (!validateHeaderWithToast(headerForm)) return;
-    if (!validateRows({ rows, limits, balance:effectiveBalance, tolerance })) return;
+    if (!validateRows({ rows, limits, balance: effectiveBalance, tolerance })) return;
     const { purchaseDetails, taggingDetails } = buildPayload();
     setIsSubmittingTag(true);
-    console.log('createTag', purchaseDetails, taggingDetails);
+    console.log(taggingDetails ,'createTag');
+
     createTag(
       { PURCHASEDETAILS: purchaseDetails, TAGGINGDETAILS: taggingDetails },
       {
@@ -572,25 +616,20 @@ const handleFormChange = useCallback((key: string, value: unknown) => {
           toaster.create({ title: "Saved", description: "Tagging created successfully", type: "success", duration: 2000 });
           setPrintId(res?.data?.ENTRYNO);
           setPrintDetails(res?.data?.TAGDETAILS ?? []);
-          // clearAll();
           setTimeout(() => printAll(res?.data?.TAGDETAILS ?? []), 500);
           handleClear();
         },
         onError: (err: any) => {
           const msg = err?.response?.data?.message || err?.message || "Something went wrong";
-          console.log(msg ,err?.message?.data,'messageforerror')
           toaster.create({ title: "Error", description: msg, type: "error", duration: 2000 });
         },
         onSettled: () => setIsSubmittingTag(false),
       }
     );
-  }, [headerForm, rows, limits, validateHeaderWithToast, validateRows, buildPayload, createTag, setPrintId, setPrintDetails, clearAll, printAll]);
+  }, [headerForm, rows, limits, validateHeaderWithToast, validateRows, buildPayload, createTag, setPrintId, setPrintDetails, clearAll, printAll, tolerance]);
 
   const handleUpdate = useCallback(() => {
-
     const remainingByRef = remainingRef.current;
-    console.log(remainingByRef, 'remainingByRef in update')
-
     let effectiveBalance = { ...remainingByRef };
 
     if (!validateHeaderWithToast(headerForm)) return;
@@ -605,8 +644,6 @@ const handleFormChange = useCallback((key: string, value: unknown) => {
           toaster.create({ title: "Updated", description: "Tagging updated successfully", type: "success", duration: 2000 });
           setPrintId(res?.data?.ENTRYNO);
           setPrintDetails(res?.data?.TAGDETAILS ?? []);
-          // clearAll();
-          // resetForm();
           setTimeout(() => printAll(res?.data?.TAGDETAILS ?? []), 500);
           handleClear();
         },
@@ -616,7 +653,7 @@ const handleFormChange = useCallback((key: string, value: unknown) => {
         onSettled: () => setIsSubmittingTag(false),
       }
     );
-  }, [headerForm, rows, limits, validateHeaderWithToast, validateRows, buildPayload, updateTag, setPrintId, setPrintDetails, clearAll, printAll]);
+  }, [headerForm, rows, limits, validateHeaderWithToast, validateRows, buildPayload, updateTag, setPrintId, setPrintDetails, clearAll, printAll, tolerance]);
 
   /* ── Load existing tag for edit ── */
   useEffect(() => {
@@ -638,12 +675,12 @@ const handleFormChange = useCallback((key: string, value: unknown) => {
         id: `edit-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
         draftRowId: String(purchase.ENTRYNO),
         grsweight: Number(r.GRSWT) || 0,
-        purchaseStoneWt : Number(r.PURCHASESTONE) || 0,
-        navaWt : Number(r.NETWT) || 0,
+        purchaseStoneWt: Number(r.PURCHASESTNWT) || 0,
         stoneWt: Number(r.STNWT) || 0,
+        navaWt: Number(r.NAVAWT) || 0,
         salesStoneWt: Number(r.SALESSTNWT) || 0,
         // wastePercent: Number(r.WASPER) || 0,
-        size: String(r.SIZEID) || "",
+        size: String(r.SIZE || r.SIZEID || ""),
         diamondWt: Number(r.DIAWT) || 0,
         // mc: Number(r.MC) || 0,
         // touch: Number(r.TOUCH) || 0,
@@ -652,22 +689,17 @@ const handleFormChange = useCallback((key: string, value: unknown) => {
     );
     setIsEditing(true);
     setPrintDetails(apiRows);
-  }, [tagDetails]); // tagDetails reference only changes when the API response changes
+  }, [tagDetails]);
 
   /* ── Tag selection ── */
   const handleSelectTag = useCallback((entryNo: string) => {
-    console.log(rowsRef.current ,editingRowIdRef.current ,isEditing ,'hanldeSelect');
-    
     if (rowsRef.current.length > 0 && !isEditing) {
-      toaster.create(
-        {
-          title: 'Clear Tags Or Save Tags',
-          type: 'info',
-          description: 'Please clear the current tag before selecting a new one.',
-        }
-      )
-    }
-    else {
+      toaster.create({
+        title: 'Clear Tags Or Save Tags',
+        type: 'info',
+        description: 'Please clear the current tag before selecting a new one.',
+      });
+    } else {
       if (selectedEntryNo === entryNo) {
         setSelectedEntryNo("");
         setTimeout(() => setSelectedEntryNo(entryNo), 10);
@@ -675,8 +707,7 @@ const handleFormChange = useCallback((key: string, value: unknown) => {
         setSelectedEntryNo(entryNo);
       }
     }
-
-  }, [selectedEntryNo, setSelectedEntryNo ,isEditing]);
+  }, [selectedEntryNo, setSelectedEntryNo, isEditing]);
 
   /* ── Clear ── */
   const handleClear = useCallback(() => {
@@ -686,11 +717,9 @@ const handleFormChange = useCallback((key: string, value: unknown) => {
     setIsRetag(false);
     setTimeout(() => setDeselectFlag(false), 50);
 
-
     if (barcodeItems?.ENTRY_NO) {
       setHeaderField("ENTRYNO", String(barcodeItems.ENTRY_NO));
     }
-
   }, [clearAll, barcodeItems]);
 
   /* ── Table config ── */
@@ -700,25 +729,20 @@ const handleFormChange = useCallback((key: string, value: unknown) => {
       const isRequired = hasStone ? REQUIRED_FIELDS_STN.has(col.key) : REQUIRED_FIELDS.has(col.key);
       const base: any = {
         key: col.key,
-         label: col.label || col.key, 
-         placeholder: col.label || col.key,
-        type:col.type,
-        
-        isRequired, 
+        label: col.label || col.key,
+        placeholder: col.label || col.key,
+        type: col.type,
+        isRequired,
         size: "xs",
-        align: col.type === "number" ? "right" : "left", 
+        align: col.type === "number" ? "right" : "left",
         allowFocus: col.allowFocus,
-        disabled : col.disabled
+        disabled: col.disabled
       };
       if (col.decimalScale) base.decimalScale = col.decimalScale;
-  
-      // if (col.key === "wastePercent") return { ...base, type: "number", decimalScale: 2 };
-      
+
       return base;
     }),
-    [itemSizeCollection, hasStone]);
-
-    console.log(transactionFormFields,'transactionFormFields')
+    [hasStone]);
 
   const allDisplayCols = useMemo(() =>
     transactionTableCols
@@ -733,21 +757,16 @@ const handleFormChange = useCallback((key: string, value: unknown) => {
   const transactionTotals = useMemo(() => ({
     grsweight: rows.reduce((s, r) => s + r.grsweight, 0),
     purchaseStoneWt: rows.reduce((s, r) => s + r.purchaseStoneWt, 0),
-    navaWt : rows.reduce((s, r) => s + r.navaWt, 0),
     stoneWt: rows.reduce((s, r) => s + r.stoneWt, 0),
+    navaWt: rows.reduce((s, r) => s + r.navaWt, 0),
     salesStoneWt: rows.reduce((s, r) => s + r.salesStoneWt, 0),
     diamondWt: rows.reduce((s, r) => s + r.diamondWt, 0),
     // mc: rows.reduce((s, r) => s + r.mc, 0),
   }), [rows]);
 
   const showTableForm = useMemo(() => {
-    // ✅ If editing a row → ALWAYS show form
     if (editRowId) return true;
-
-    // ❌ If some other editing → hide form
     if (isEditing) return false;
-
-    // ✅ Normal add condition
     return rows.length < safeNum(selectedItem?.PCS);
   }, [selectedItem?.PCS, rows.length, editRowId, isEditing]);
 
@@ -756,16 +775,13 @@ const handleFormChange = useCallback((key: string, value: unknown) => {
     const value = row[col.key as keyof BarcodeTransactionRow];
     if (value === undefined || value === null) return "-";
     if (typeof value === "number") {
-      if (["grsweight","purchaseStoneWt", "stoneWt", "navaWt", "salesStoneWt", "diamondWt"].includes(col.key)) return formatToFixed(value, 3);
+      if (["grsweight", "purchaseStoneWt", "stoneWt", "navaWt", "salesStoneWt", "diamondWt"].includes(col.key)) return formatToFixed(value, 3);
       // if (["wastePercent", "mc"].includes(col.key)) return formatToFixed(value, 2);
       // if (col.key === "touch") return formatToFixed(value, 1);
-      if(col.key === "size" ) return formatToFixed(value, 0);
+      if (col.key === "size") return formatToFixed(value, 0);
     }
-   
-    // if (col.key === "size" && value)
-    //   return itemSizeCollection.find((i: any) => i.value === value)?.label ?? value;
     return value.toString();
-  }, [itemSizeCollection]);
+  }, []);
 
   const formatTotal = useCallback((value: unknown, decimalScale?: number, key?: string) => {
     if (value == null || value === "") return "";
@@ -789,18 +805,19 @@ const handleFormChange = useCallback((key: string, value: unknown) => {
     handleExcelChange,
 
     purchaserCollection, inwardCollection, itemCollection, itemSizeCollection,
-    //  itemSizeList,
     stockTableData,
     stockSummary, limits, remaining,
 
     transactionFormFields, allDisplayCols, transactionTotals, showTableForm,
     tagItemList: Array.isArray(tagEntryNos) ? tagEntryNos : EMPTY_ARRAY,
     fieldRefs,
+    populateExcelFromRows,
+    hasExistingRows,
 
     handleHeaderChange, handleFormChange, resetForm,
     handleRowSubmit, moveToNext,
     handleEditRow, handleDeleteRow,
-    handleExcelLoad, handleSave, handleUpdate, handleClear, handleSelectTag,
+    handleExcelLoad,handleExcelUpdate , handleSave, handleUpdate, handleClear, handleSelectTag,
     setSingleSearch, setTagFilterField,
 
     handlePrintAll: () => printAll(printDetails),

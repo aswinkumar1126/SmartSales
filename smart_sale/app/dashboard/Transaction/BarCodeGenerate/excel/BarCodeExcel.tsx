@@ -5,7 +5,8 @@ import { HotTable } from "@handsontable/react";
 import type { CellChange, ChangeSource } from "handsontable/common";
 import { HotTableClass } from "@handsontable/react";
 import { registerAllModules } from "handsontable/registry";
-import { Box, Button, Text } from "@chakra-ui/react";
+import { Box, Button, Text, Icon } from "@chakra-ui/react";
+import { Trash2 } from "lucide-react";
 import * as XLSX from "xlsx";
 
 registerAllModules();
@@ -16,13 +17,15 @@ registerAllModules();
 
 export interface ExcelRowData {
     grsweight: number;
+    purchaseStoneWt: number;
     stoneWt: number;
+    navaWt: number;
     salesStoneWt: number;
-    wastePercent: number;
-    size: string;
+    // wastePercent: number;
     diamondWt: number;
-    mc: number;
-    touch: number;
+    size: string;
+    // mc: number;
+    // touch: number;
 }
 
 export type ExcelData = (string | number | null)[][];
@@ -38,15 +41,18 @@ export const EXCEL_COLUMNS: {
     numericFormat?: { pattern: string };
     decimalScale?: number;
     width: number;
+    readOnly?: boolean;
 }[] = [
-        { key: "grsweight", header: "GRS WT", type: "numeric", numericFormat: { pattern: "0.000" }, decimalScale: 3, width: 90 },
-        { key: "stoneWt", header: "STONE WT", type: "numeric", numericFormat: { pattern: "0.000" }, decimalScale: 3, width: 90 },
-        { key: "salesStoneWt", header: "SALES STN WT", type: "numeric", numericFormat: { pattern: "0.000" }, decimalScale: 3, width: 110 },
-        { key: "wastePercent", header: "WASTE %", type: "numeric", numericFormat: { pattern: "0.00" }, decimalScale: 2, width: 80 },
-        { key: "size", header: "SIZE", type: "text", width: 70 },
-        { key: "diamondWt", header: "DIAMOND WT", type: "numeric", numericFormat: { pattern: "0.000" }, decimalScale: 3, width: 100 },
-        { key: "mc", header: "MC", type: "numeric", numericFormat: { pattern: "0.00" }, decimalScale: 2, width: 70 },
-        { key: "touch", header: "TOUCH", type: "numeric", numericFormat: { pattern: "0.0" }, decimalScale: 1, width: 70 },
+        { key: "grsweight", header: "WEIGHT", type: "numeric", numericFormat: { pattern: "0.000" }, decimalScale: 3, width: 80 },
+        { key: "purchaseStoneWt", header: "P. STN WT", type: "numeric", numericFormat: { pattern: "0.000" }, decimalScale: 3, width: 100 },
+        { key: "stoneWt", header: "STN WT", type: "numeric", numericFormat: { pattern: "0.000" }, decimalScale: 3, width: 100 },
+        { key: "navaWt", header: "NAVA WT", type: "numeric", numericFormat: { pattern: "0.000" }, decimalScale: 3, width: 100 },
+        { key: "salesStoneWt", header: "SALES STN WT", type: "numeric", numericFormat: { pattern: "0.000" }, decimalScale: 3, width: 100, readOnly: true },
+        // { key: "wastePercent", header: "WASTE %", type: "numeric", numericFormat: { pattern: "0.00" }, decimalScale: 2, width: 70 },
+        { key: "diamondWt", header: "DIAMOND WT", type: "numeric", numericFormat: { pattern: "0.000" }, decimalScale: 3, width: 90 },
+        { key: "size", header: "SIZE", type: "text", width: 60 },
+        // { key: "mc", header: "MC", type: "numeric", numericFormat: { pattern: "0.00" }, decimalScale: 2, width: 120 },
+        // { key: "touch", header: "TOUCH", type: "numeric", numericFormat: { pattern: "0.0" }, decimalScale: 1, width: 120 },
     ];
 
 /**
@@ -54,15 +60,22 @@ export const EXCEL_COLUMNS: {
  * file might use; values map to EXCEL_COLUMNS indices (0-based).
  */
 const HEADER_ALIAS_MAP: Record<string, number> = {
-    "grs wt": 0, grsweight: 0, "grs weight": 0,
-    "stone wt": 1, stonewt: 1, "stone weight": 1,
-    "sales stn wt": 2, salesstonewt: 2, "sales stone wt": 2,
-    "waste %": 3, wastepercent: 3, waste: 3,
-    size: 4,
+    "grs wt": 0, grsweight: 0, "grs weight": 0, "weight": 0,
+    "p. stn wt": 1, "purchase stone wt": 1, purchasestonewt: 1, "purchase stn wt": 1,
+    "stn wt": 2, stonewt: 2, "stone weight": 2, "stone wt": 2,
+    "nava wt": 3, navawt: 3, "nava": 3,
+    "sales stn wt": 4, salesstonewt: 4, "sales stone wt": 4,
+    // "waste %": 5, wastepercent: 5, waste: 5,
     "diamond wt": 5, diamondwt: 5, "diamond weight": 5,
-    mc: 6,
-    touch: 7,
+    "size": 6,
+    // "mc": 7,
+    // "touch": 8,
 };
+
+// Index constants for clarity
+const STONE_WT_INDEX = 2;
+const NAVA_WT_INDEX = 3;
+const SALES_STONE_WT_INDEX = 4;
 
 const EMPTY_ROW: (string | number | null)[] = EXCEL_COLUMNS.map(() => null);
 const makeEmptyRows = (n = 10): ExcelData =>
@@ -78,20 +91,29 @@ const safeNum = (val: unknown, decimals = 3): number => {
     return parseFloat(n.toFixed(decimals));
 };
 
-const parseGridRow = (row: (string | number | null)[]): ExcelRowData | null => {
-    if (row.every((cell) => cell === null || cell === "")) return null;
-    return {
-        grsweight: safeNum(row[0], 3),
-        stoneWt: safeNum(row[1], 3),
-        salesStoneWt: safeNum(row[2], 3),
-        wastePercent: safeNum(row[3], 2),
-        size: String(row[4] ?? ""),
-        diamondWt: safeNum(row[5], 3),
-        mc: safeNum(row[6], 2),
-        touch: safeNum(row[7], 1),
-    };
+const calculateSalesStoneWt = (stoneWt: number, navaWt: number): number => {
+    return safeNum(stoneWt + navaWt, 3);
 };
 
+const parseGridRow = (row: (string | number | null)[]): ExcelRowData | null => {
+    if (row.every((cell) => cell === null || cell === "")) return null;
+
+    const stoneWt = safeNum(row[STONE_WT_INDEX], 3);
+    const navaWt = safeNum(row[NAVA_WT_INDEX], 3);
+
+    return {
+        grsweight: safeNum(row[0], 3),
+        purchaseStoneWt: safeNum(row[1], 3),
+        stoneWt: stoneWt,
+        navaWt: navaWt,
+        salesStoneWt: calculateSalesStoneWt(stoneWt, navaWt),
+        // wastePercent: safeNum(row[5], 2),
+        diamondWt: safeNum(row[5], 3),
+        size: String(row[6] ?? ""),
+        // mc: safeNum(row[7], 2),
+        // touch: safeNum(row[8], 1),
+    };
+};
 
 const sheetToExcelData = (worksheet: XLSX.WorkSheet): ExcelData => {
     const rawRows: (string | number | null)[][] = XLSX.utils.sheet_to_json(worksheet, {
@@ -126,9 +148,20 @@ const sheetToExcelData = (worksheet: XLSX.WorkSheet): ExcelData => {
 
     const mapped: ExcelData = dataRows.map((row) => {
         if (colRemap) {
-            return colRemap.map((srcIdx) => (srcIdx >= 0 ? (row[srcIdx] ?? null) : null));
+            const mappedRow = colRemap.map((srcIdx) => (srcIdx >= 0 ? (row[srcIdx] ?? null) : null));
+            // Auto-calculate sales stone wt
+            const stoneWt = safeNum(mappedRow[STONE_WT_INDEX], 3);
+            const navaWt = safeNum(mappedRow[NAVA_WT_INDEX], 3);
+            mappedRow[SALES_STONE_WT_INDEX] = calculateSalesStoneWt(stoneWt, navaWt);
+            return mappedRow;
         }
-        return EXCEL_COLUMNS.map((_, i) => row[i] ?? null);
+
+        const mappedRow = EXCEL_COLUMNS.map((_, i) => row[i] ?? null);
+        // Auto-calculate sales stone wt
+        const stoneWt = safeNum(mappedRow[STONE_WT_INDEX], 3);
+        const navaWt = safeNum(mappedRow[NAVA_WT_INDEX], 3);
+        mappedRow[SALES_STONE_WT_INDEX] = calculateSalesStoneWt(stoneWt, navaWt);
+        return mappedRow;
     });
 
     return mapped.length > 0 ? mapped : makeEmptyRows();
@@ -139,11 +172,12 @@ const sheetToExcelData = (worksheet: XLSX.WorkSheet): ExcelData => {
    ============================================================ */
 
 type BarCodeExcelProps = {
-
     data: ExcelData;
     onChange: (changes: CellChange[] | null, source: ChangeSource) => void;
     onLoad: (rows: ExcelRowData[]) => void;
+    onUpdate?: (rows: ExcelRowData[]) => void;
     onFileParsed?: (data: ExcelData) => void;
+    hasExistingRows?: boolean;
 };
 
 /* ============================================================
@@ -154,11 +188,12 @@ const BarCodeExcel: React.FC<BarCodeExcelProps> = ({
     data,
     onChange,
     onLoad,
+    onUpdate,
     onFileParsed,
+    hasExistingRows = false,
 }) => {
     const hotRef = useRef<HotTableClass>(null);
     const fileRef = useRef<HTMLInputElement>(null);
-
 
     const [internalData, setInternalData] = useState<ExcelData>(() =>
         data.length > 0 ? data : makeEmptyRows()
@@ -166,11 +201,9 @@ const BarCodeExcel: React.FC<BarCodeExcelProps> = ({
 
     const prevDataRef = useRef<ExcelData>(data);
     useEffect(() => {
-
         if (data !== prevDataRef.current) {
             prevDataRef.current = data;
             setInternalData(data.length > 0 ? data : makeEmptyRows());
-            
         }
     }, [data]);
 
@@ -180,26 +213,51 @@ const BarCodeExcel: React.FC<BarCodeExcelProps> = ({
 
     // ── Column settings ───────────────────────────────────────────────────────
     const columns = useMemo(() =>
-        EXCEL_COLUMNS.map((col) =>
-            col.type === "numeric"
-                ? { type: "numeric" as const, numericFormat: col.numericFormat ?? { pattern: "0.000" } }
-                : { type: "text" as const }
-        ), []);
+        EXCEL_COLUMNS.map((col) => ({
+            type: col.type === "numeric" ? ("numeric" as const) : ("text" as const),
+            numericFormat: col.type === "numeric" ? (col.numericFormat ?? { pattern: "0.000" }) : undefined,
+            readOnly: col.readOnly ?? false,
+        })), []);
 
     const colWidths = useMemo(() => EXCEL_COLUMNS.map((c) => c.width), []);
     const colHeaders = useMemo(() => EXCEL_COLUMNS.map((c) => c.header), []);
 
-    // ── afterChange: user edits only (skip programmatic "loadData" events) ───
+    // ── afterChange: auto-calculate sales stone wt when stone wt or nava wt changes ───
     const handleAfterChange = useCallback(
         (changes: CellChange[] | null, source: ChangeSource) => {
             // "loadData" fires when HotTable receives a new `data` prop — not a user action
             if (source === "loadData") return;
 
-            onChange(changes, source);
+            // Check if stone wt or nava wt were changed
+            if (changes && hotRef.current?.hotInstance) {
+                const hot = hotRef.current.hotInstance;
+                let recalculateNeeded = false;
 
-        
+                changes.forEach(([row, prop]) => {
+                    const col = typeof prop === 'number' ? prop : (typeof prop === 'string' ? hot.propToCol(prop) : -1);
+                    if (col === STONE_WT_INDEX || col === NAVA_WT_INDEX) {
+                        recalculateNeeded = true;
+                    }
+                });
+
+                if (recalculateNeeded) {
+                    // Suspend rendering for batch update
+                    hot.batch(() => {
+                        changes.forEach(([row]) => {
+                            if (typeof row === 'number') {
+                                const stoneWt = safeNum(hot.getDataAtCell(row, STONE_WT_INDEX), 3);
+                                const navaWt = safeNum(hot.getDataAtCell(row, NAVA_WT_INDEX), 3);
+                                const salesStoneWt = calculateSalesStoneWt(stoneWt, navaWt);
+                                hot.setDataAtCell(row, SALES_STONE_WT_INDEX, salesStoneWt, 'auto');
+                            }
+                        });
+                    });
+                }
+            }
+
+            onChange(changes, source);
         },
-        [onChange, onFileParsed]
+        [onChange]
     );
 
     // ── File upload ───────────────────────────────────────────────────────────
@@ -245,30 +303,56 @@ const BarCodeExcel: React.FC<BarCodeExcelProps> = ({
         setFileName("");
         setUploadError("");
         const blank = makeEmptyRows();
+
         prevDataRef.current = blank;
         setInternalData(blank);
         onFileParsed?.(blank);
+    
     }, [onFileParsed]);
 
-    // ── Load button ───────────────────────────────────────────────────────────
-    const handleLoad = useCallback(() => {
+    // ── Clear grid only (keep file name if any) ───────────────────────────────
+    const handleClearGrid = useCallback(() => {
+        const blank = makeEmptyRows();
+        prevDataRef.current = blank;
+        setInternalData(blank);
+        setUploadError("");
+    }, []);
+
+    // ── Get parsed data ───────────────────────────────────────────────────────
+    const getParsedData = useCallback((): ExcelRowData[] => {
         const sourceData: ExcelData =
             hotRef.current?.hotInstance
                 ? (hotRef.current.hotInstance.getData() as ExcelData)
                 : internalData;
 
-        const parsed = sourceData.reduce<ExcelRowData[]>((acc, row) => {
+        return sourceData.reduce<ExcelRowData[]>((acc, row) => {
             const item = parseGridRow(row);
             if (item) acc.push(item);
             return acc;
         }, []);
+    }, [internalData]);
+
+    // ── Load button (Add new rows) ────────────────────────────────────────────
+    const handleLoad = useCallback(() => {
+        const parsed = getParsedData();
 
         if (parsed.length === 0) {
             alert("No valid rows found in the grid.");
             return;
         }
         onLoad(parsed);
-    }, [internalData, onLoad]);
+    }, [getParsedData, onLoad]);
+
+    // ── Update button (Update existing rows) ──────────────────────────────────
+    const handleUpdate = useCallback(() => {
+        const parsed = getParsedData();
+
+        if (parsed.length === 0) {
+            alert("No valid rows found in the grid.");
+            return;
+        }
+        onUpdate?.(parsed);
+    }, [getParsedData, onUpdate]);
 
     /* ======================================================================== */
 
@@ -304,6 +388,16 @@ const BarCodeExcel: React.FC<BarCodeExcelProps> = ({
                     📂 Upload Excel / CSV
                 </Button>
 
+                <Button
+                    size="sm"
+                    variant="outline"
+                    colorPalette="red"
+                    onClick={handleClearGrid}
+                >
+                    <Icon as={Trash2} w={4} h={4} mr={1} />
+                    Clear Grid
+                </Button>
+
                 {fileName ? (
                     <>
                         <Text fontSize="sm" color="gray.700" flex={1}>
@@ -315,7 +409,7 @@ const BarCodeExcel: React.FC<BarCodeExcelProps> = ({
                             colorPalette="red"
                             onClick={handleClear}
                         >
-                            ✕ Clear
+                            ✕ Remove File
                         </Button>
                     </>
                 ) : (
@@ -333,6 +427,7 @@ const BarCodeExcel: React.FC<BarCodeExcelProps> = ({
 
             <Text fontSize="xs" color="gray.500">
                 Press <Text as="kbd" fontFamily="mono">Enter</Text> to move down a cell.
+                SALES STN WT is auto-calculated (STN WT + NAVA WT).
                 Drag column borders to resize. Blank rows are ignored on load.
             </Text>
 
@@ -362,8 +457,13 @@ const BarCodeExcel: React.FC<BarCodeExcelProps> = ({
 
             {/* ── Actions ── */}
             <Box display="flex" justifyContent="flex-end" gap={2}>
+                {hasExistingRows && onUpdate && (
+                    <Button size="sm" colorPalette="orange" onClick={handleUpdate}>
+                        Update Table
+                    </Button>
+                )}
                 <Button size="sm" colorPalette="teal" onClick={handleLoad}>
-                    Load into Table
+                    {hasExistingRows ? "Load as New" : "Load into Table"}
                 </Button>
             </Box>
         </Box>

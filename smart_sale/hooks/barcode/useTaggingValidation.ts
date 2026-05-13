@@ -125,6 +125,16 @@ const validateSingleRow = useCallback(
   },
   []
 );
+  // Add isUpdate parameter to RowValidationOptions interface
+  interface RowValidationOptions {
+    rows: any[];
+    limits: any;
+    countOnlyNew?: boolean;
+    incomingRows?: any[];
+    balance?: any;
+    tolerance?: number;
+    isUpdate?: boolean; // Add this
+  }
 
   const validateRows = useCallback(
     ({
@@ -133,9 +143,17 @@ const validateSingleRow = useCallback(
       countOnlyNew = false,
       incomingRows = [],
       balance,
-      tolerance = 0 
+      tolerance = 0,
+      isUpdate = false,
     }: RowValidationOptions): boolean => {
-      const allRows = [...rows, ...incomingRows];
+
+      // ✅ IMPORTANT FIX
+      // During update, incomingRows already contains the updated full dataset.
+      // So do NOT merge with existing rows again.
+      const allRows =
+        isUpdate && incomingRows.length > 0
+          ? incomingRows
+          : [...rows, ...incomingRows];
 
       if (allRows.length === 0) {
         toaster.create({
@@ -144,17 +162,21 @@ const validateSingleRow = useCallback(
           type: "error",
           duration: 2000,
         });
+
         return false;
       }
-      const grsLimit  = (limits.GRSWT  || 0) + (tolerance ?? 0);
+
+      const grsLimit = (limits.GRSWT || 0) + (tolerance ?? 0);
 
       let hasError = false;
 
+      // ✅ Row validation
       allRows.forEach((row, idx) => {
         const n = idx + 1;
 
         if (!row.grsweight || row.grsweight <= 0) {
           hasError = true;
+
           toaster.create({
             title: `Row ${n} Error`,
             description: "Gross weight must be greater than 0",
@@ -163,8 +185,9 @@ const validateSingleRow = useCallback(
           });
         }
 
-        if (row.purchaseStoneWt < 0) {
+        if ((row.purchaseStoneWt || 0) < 0) {
           hasError = true;
+
           toaster.create({
             title: `Row ${n} Error`,
             description: "Purchase stone weight must be ≥ 0",
@@ -173,21 +196,25 @@ const validateSingleRow = useCallback(
           });
         }
 
-        if (row.purchaseStoneWt > row.grsweight) {
+        if ((row.purchaseStoneWt || 0) > (row.grsweight || 0)) {
           hasError = true;
+
           toaster.create({
             title: `Row ${n} Error`,
-            description: "Purchase stone weight cannot exceed gross weight",
+            description:
+              "Purchase stone weight cannot exceed gross weight",
             type: "error",
             duration: 2000,
           });
         }
 
-        if (row.salesStoneWt > row.purchaseStoneWt) {
+        if ((row.salesStoneWt || 0) > (row.purchaseStoneWt || 0)) {
           hasError = true;
+
           toaster.create({
             title: `Row ${n} Error`,
-            description: "Sales stone weight cannot exceed purchase stone weight",
+            description:
+              "Sales stone weight cannot exceed purchase stone weight",
             type: "error",
             duration: 2000,
           });
@@ -196,17 +223,36 @@ const validateSingleRow = useCallback(
 
       if (hasError) return false;
 
-      // ── Limit checks ──
-
+      // ✅ Limit checks
       const rowsForLimitCheck = countOnlyNew
         ? allRows.filter((r) => ("isNew" in r ? r.isNew : true))
         : allRows;
 
-      const totalPCS = rowsForLimitCheck.length;
-      const totalPurchaseStoneWt = rowsForLimitCheck.reduce((s, r) => s + r.purchaseStoneWt, 0);
-      const totalGrsWt = rowsForLimitCheck.reduce((s, r) => s + r.grsweight, 0);
+      console.log(rowsForLimitCheck, "rowsForLimitCheck");
 
-      console.log(totalPCS, totalGrsWt, totalPurchaseStoneWt, limits, 'limit check');
+      const totalPCS = rowsForLimitCheck.length;
+
+      const totalPurchaseStoneWt = rowsForLimitCheck.reduce(
+        (s, r) => s + (r.purchaseStoneWt || 0),
+        0
+      );
+
+      const totalGrsWt = rowsForLimitCheck.reduce(
+        (s, r) => s + (r.grsweight || 0),
+        0
+      );
+
+      console.log(
+        totalPCS,
+        totalGrsWt,
+        totalPurchaseStoneWt,
+        limits,
+        "limit check",
+        {
+          isUpdate,
+          countOnlyNew,
+        }
+      );
 
       if (limits.PCS && totalPCS > limits.PCS) {
         toaster.create({
@@ -215,62 +261,77 @@ const validateSingleRow = useCallback(
           type: "error",
           duration: 2000,
         });
+
         return false;
       }
 
-      if (limits.GRSWT && totalGrsWt > grsLimit ) {
+      if (limits.GRSWT && totalGrsWt > grsLimit) {
         toaster.create({
-    title: "Lot GrsWt Exceeded",
-    description: `Total ${formatToFixed(totalGrsWt, 3)} exceeds allowed ${formatToFixed(limits.GRSWT, 3)} + tolerance ${formatToFixed(tolerance ?? 0, 3)} = ${formatToFixed(grsLimit, 3)}`,
-    type: "error",
-    duration: 2000,
-  });
+          title: "Lot GrsWt Exceeded",
+          description:
+            `Total ${formatToFixed(totalGrsWt, 3)} exceeds allowed ` +
+            `${formatToFixed(limits.GRSWT, 3)} + tolerance ` +
+            `${formatToFixed(tolerance ?? 0, 3)} = ` +
+            `${formatToFixed(grsLimit, 3)}`,
+          type: "error",
+          duration: 2000,
+        });
+
         return false;
       }
 
       if (limits.STNWT && totalPurchaseStoneWt > limits.STNWT) {
         toaster.create({
           title: "Lot Purchase Stone Weight Exceeded",
-          description: `Purchase stone weight ${totalPurchaseStoneWt.toFixed(3)} exceeds allowed ${limits.STNWT}`,
+          description:
+            `Purchase stone weight ${totalPurchaseStoneWt.toFixed(3)} ` +
+            `exceeds allowed ${limits.STNWT}`,
           type: "error",
           duration: 2000,
         });
+
         return false;
       }
 
+      // ✅ Balance checks
       if (balance && balance.PCS > 0 && balance.GRSWT === 0) {
         toaster.create({
           title: "Invalid Entry",
-          description: "Gross weight cannot be 0 when pieces are present",
+          description:
+            "Gross weight cannot be 0 when pieces are present",
           type: "error",
           duration: 2000,
         });
+
         return false;
       }
 
-      if (balance && balance.GRSWT > 0  && balance.PCS === 0) {
+      if (balance && balance.GRSWT > 0 && balance.PCS === 0) {
         toaster.create({
           title: "Invalid Entry",
           description: "Pcs cannot be 0 when GrsWt are present",
           type: "error",
           duration: 2000,
         });
+
         return false;
       }
 
       if (balance && balance.STNWT > 0 && balance.PCS === 0) {
         toaster.create({
           title: "Invalid Entry",
-          description: "Pcs cannot be 0 when Stone Weight are present",
+          description:
+            "Pcs cannot be 0 when Stone Weight are present",
           type: "error",
           duration: 2000,
         });
+
         return false;
       }
 
       return true;
     },
-    [] // ✅ fixed
+    []
   );
 
   return { validateHeader, validateHeaderWithToast, validateSingleRow, validateRows };
