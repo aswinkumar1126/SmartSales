@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef } from "react";
+import React, { useRef ,useState } from "react";
 import { Input, InputGroup, Button, Box, Image as ChakraImage } from "@chakra-ui/react";
 import { capitalizeText } from "@/utils/capitalize/capitalizeText";
 import { useTheme } from "@/context/theme/themeContext";
@@ -93,6 +93,9 @@ export function CapitalizedInput<T>({
 }: CapitalizedInputProps<T>) {
     const { theme } = useTheme();
     const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const [focusedValue, setFocusedValue] = useState<string | undefined>(undefined);
+const isFocused = focusedValue !== undefined;
 
     const inputIcon = icon ? ICONS_MAP[iconElement] : null;
 
@@ -209,104 +212,99 @@ export function CapitalizedInput<T>({
         );
     };
 
-    const handleChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        let inputValue = e.target.value;
+   const handleChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    let inputValue = e.target.value;
 
-        const mode = inputModeType || type;
+    const mode = inputModeType || type;
 
-        /* ================== MODE VALIDATIONS ================== */
+    /* ================== MODE VALIDATIONS ================== */
 
-        if (mode === "mobile") {
-            if (!/^[0-9]*$/.test(inputValue)) return;
-            if (inputValue.length > 10) return;
+    if (mode === "mobile") {
+        if (!/^[0-9]*$/.test(inputValue)) return;
+        if (inputValue.length > 10) return;
+    }
+
+    if (mode === "aadhaar") {
+        if (!/^[0-9]*$/.test(inputValue)) return;
+        if (inputValue.length > 12) return;
+    }
+
+    if (mode === "pincode") {
+        if (!/^[0-9]*$/.test(inputValue)) return;
+        if (inputValue.length > 6) return;
+    }
+
+    if (mode === "pan") {
+        inputValue = inputValue.toUpperCase();
+        const len = inputValue.length;
+        if (len <= 5 && !/^[A-Z]*$/.test(inputValue)) return;
+        if (len > 5 && len <= 9 && !/^[A-Z]{5}[0-9]*$/.test(inputValue)) return;
+        if (len === 10 && !/^[A-Z]{5}[0-9]{4}[A-Z]$/.test(inputValue)) return;
+        if (len > 10) return;
+    }
+
+    if (mode === "gst") {
+        inputValue = inputValue.toUpperCase();
+        const len = inputValue.length;
+        if (len <= 2 && !/^[0-9]*$/.test(inputValue)) return;
+        if (len > 2 && len <= 7 && !/^[0-9]{2}[A-Z]*$/.test(inputValue)) return;
+        if (len > 7 && len <= 11 && !/^[0-9]{2}[A-Z]{5}[0-9]*$/.test(inputValue)) return;
+        if (len === 12 && !/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]$/.test(inputValue)) return;
+        if (len === 13 && !/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9]$/.test(inputValue)) return;
+        if (len === 14 && !/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9]Z$/.test(inputValue)) return;
+        if (len === 15 && !/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9]Z[A-Z0-9]$/.test(inputValue)) return;
+        if (len > 15) return;
+    }
+
+    if (mode === "email") {
+        inputValue = inputValue.toLowerCase();
+        if (!/^[a-z0-9@._-]*$/.test(inputValue)) return;
+        const parts = inputValue.split("@");
+        if (parts.length > 2) return;
+        if (parts.length === 2) {
+            const domain = parts[1];
+            if (!"gmail.com".startsWith(domain)) return;
         }
+    }
 
-        if (mode === "aadhaar") {
-            if (!/^[0-9]*$/.test(inputValue)) return;
-            if (inputValue.length > 12) return;
-        }
-
-        if (mode === "pincode") {
-            if (!/^[0-9]*$/.test(inputValue)) return;
-            if (inputValue.length > 6) return;
-        }
-
-        if (mode === "pan") {
-            inputValue = inputValue.toUpperCase();
-            const len = inputValue.length;
-
-            if (len <= 5 && !/^[A-Z]*$/.test(inputValue)) return;
-            if (len > 5 && len <= 9 && !/^[A-Z]{5}[0-9]*$/.test(inputValue)) return;
-            if (len === 10 && !/^[A-Z]{5}[0-9]{4}[A-Z]$/.test(inputValue)) return;
-            if (len > 10) return;
-        }
-
-        if (mode === "gst") {
-            inputValue = inputValue.toUpperCase();
-            const len = inputValue.length;
-
-            if (len <= 2 && !/^[0-9]*$/.test(inputValue)) return;
-            if (len > 2 && len <= 7 && !/^[0-9]{2}[A-Z]*$/.test(inputValue)) return;
-            if (len > 7 && len <= 11 && !/^[0-9]{2}[A-Z]{5}[0-9]*$/.test(inputValue)) return;
-            if (len === 12 && !/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]$/.test(inputValue)) return;
-            if (len === 13 && !/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9]$/.test(inputValue)) return;
-            if (len === 14 && !/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9]Z$/.test(inputValue)) return;
-            if (len === 15 && !/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9]Z[A-Z0-9]$/.test(inputValue)) return;
-            if (len > 15) return;
-        }
-
-        if (mode === "email") {
-            inputValue = inputValue.toLowerCase();
-
-            // allow only valid characters
-            if (!/^[a-z0-9@._-]*$/.test(inputValue)) return;
-
-            const parts = inputValue.split("@");
-
-            // ❌ more than one @
-            if (parts.length > 2) return;
-
-            if (parts.length === 2) {
-                const domain = parts[1];
-
-                // ✅ allow typing like g, gm, gma...
-                if (!"gmail.com".startsWith(domain)) {
-                    return;
-                }
-            }
-        }
-        if (type === "number") {
-            if (inputValue === "-") {
-                if (!allowNegative) return;
-                onChange(field, inputValue);
-                return;
-            }
-
-            if (!allowDecimal && inputValue.includes(".")) return;
-
-            if (allowDecimal && inputValue.includes(".")) {
-                const [_, decimals] = inputValue.split(".");
-                if (decimals && decimals.length > decimalScale) return;
-            }
-
-            const num = Number(inputValue);
-            if (isNaN(num)) return;
-
-            if (num < 0 && !allowNegative) return;
-            if (max !== undefined && num > max) return;
-        }
-
-        if (type === "text" && max !== undefined && inputValue.length > max) {
+    if (type === "number") {
+        if (inputValue === "-") {
+            if (!allowNegative) return;
+            // ── sync focusedValue too ──
+            if (isFocused) setFocusedValue("-");
+            onChange(field, inputValue);
             return;
         }
 
-        onChange(
-            field,
-            isCapitalized && type !== "number"
-                ? capitalizeText(inputValue)
-                : inputValue
-        );
-    };
+        if (!allowDecimal && inputValue.includes(".")) return;
+
+        if (allowDecimal && inputValue.includes(".")) {
+            const [_, decimals] = inputValue.split(".");
+            if (decimals && decimals.length > decimalScale) return;
+        }
+
+        const num = Number(inputValue);
+        if (isNaN(num)) return;
+        if (num < 0 && !allowNegative) return;
+        if (max !== undefined && num > max) return;
+
+        // ── keep focusedValue in sync so the input isn't frozen ──
+        if (isFocused) setFocusedValue(inputValue);
+        onChange(field, inputValue);
+        return; // ← early return; skip the generic onChange below
+    }
+
+    if (type === "text" && max !== undefined && inputValue.length > max) {
+        return;
+    }
+
+    onChange(
+        field,
+        isCapitalized 
+            ? capitalizeText(inputValue)
+            : inputValue
+    );
+};
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
         const val = (e.target as HTMLInputElement).value;
@@ -351,7 +349,7 @@ export function CapitalizedInput<T>({
         <InputGroup startElement={inputIcon ? inputIcon : undefined}>
            <Input
     type={type === "number" ? "number" : type}
-    value={value ?? ""}
+    value={isFocused ? focusedValue : (value ?? "")}
     pl={icon ? "1.8rem" : "0.2rem"}
     textTransform={isCapitalized ? "uppercase" : "none"}
     placeholder={placeholder}
@@ -363,6 +361,7 @@ export function CapitalizedInput<T>({
     autoFocus={autoFocus}
     onKeyDown={handleKeyDown}
     onBlur={(e) => {
+         setFocusedValue(undefined); 
         if (type === "number" && allowDecimal) {
             const formatted = formatDecimalOnBlur(e.target.value, decimalScale);
             onChange(field, formatted);
@@ -386,6 +385,24 @@ export function CapitalizedInput<T>({
     minWidth={minWidth}
     border="1px solid #DDD"
     textAlign={type === "number" ? "right" : "left"} // 🔥 Add this
+     onFocus={(e) => {
+        if (type === "number") {
+            // Strip trailing zeros and leading zeros: "0.300" → "0.3", "0.000" → ""
+            const raw = e.target.value;
+            const num = Number(raw);
+            if (!raw || isNaN(num)) {
+                setFocusedValue("");
+            } else if (num === 0) {
+                setFocusedValue(""); // clear pure zeros so user types fresh
+            } else {
+                // Remove trailing zeros: "1.300" → "1.3", "2.000" → "2"
+                setFocusedValue(String(parseFloat(raw)));
+            }
+            // Select all text after setting value
+            setTimeout(() => e.target.select(), 0);
+        }
+    }}
+
     _focus={{
         border: "1px solid #FFF",
         boxShadow: "none",

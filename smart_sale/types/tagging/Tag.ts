@@ -13,14 +13,19 @@ export interface TAGGING_DETAILS {
 
     TAGNO: string;
     GRSWT: number;
+
+    PURCHASESTNWT :number;
+    NAVAWT:number;
     STNWT: number;
-    WASPER: number;
+    WASPER?: number;
     DIAWT: number;
-    MC: number;
-    TOUCH: number;
+    
     SALESSTNWT: number;
-    NETWT: number;
-    SIZEID: number;
+    NETWT?: number;
+    SIZE: number;
+
+    MC?: number;
+    TOUCH?: number;
     UPTIME?: string;
     USERID?: number;
 }

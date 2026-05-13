@@ -185,6 +185,7 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
                         {/* FORM ROW */}
                         {showTableForm && (
                             <tr style={{
+                               position: "sticky", top:25, zIndex: 10 ,
                                 backgroundColor: localEditId ? "#EBF8FF" : "#FAFAFA",
                                 borderBottom: "2px solid #CBD5E0",
                             }}>

@@ -78,8 +78,8 @@ export function useStockLimits(
     () => ({
       PCS: effectiveRows.length,
       GRSWT: effectiveRows.reduce((s, r) => s + r.grsweight, 0),
-      STNWT: effectiveRows.reduce((s, r) => s + r.stoneWt, 0),
-      NETWT: effectiveRows.reduce((s, r) => s + (r.grsweight - r.stoneWt), 0),
+      STNWT: effectiveRows.reduce((s, r) => s + r.purchaseStoneWt, 0),
+      NETWT: effectiveRows.reduce((s, r) => s + (r.grsweight - r.purchaseStoneWt), 0),
     }),
     [effectiveRows]
   );
@@ -130,9 +130,9 @@ export function useStockLimits(
   /* ================= REMAINING ================= */
   const remaining = useMemo(
     () => ({
-      PCS: Math.max(0, lot.PCS  - added.PCS),
-      GRSWT: Math.max(0, lot.GRSWT - added.GRSWT), // 🔥 ADDED
-      STNWT: Math.max(0, lot.STNWT - added.STNWT),
+      PCS: Number(formatToFixed(Math.max(0, lot.PCS  - added.PCS), 0)),
+      GRSWT: Number(formatToFixed(Math.max(0, lot.GRSWT - added.GRSWT), 3)), // 🔥 ADDED
+      STNWT: Number(formatToFixed(Math.max(0, lot.STNWT - added.STNWT), 3)),
     }),
     [lot, added]
   );

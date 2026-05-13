@@ -48,7 +48,7 @@ const STOCK_TABLE_HEADER = [
   { key: "GRSWT",     label: "GROSS WT",   align: "end"    as const, decimalScale: 3 },
   { key: "STNWT",     label: "STONE WT",   align: "end"    as const, decimalScale: 3 },
   { key: "NETWT",     label: "NET WT",     align: "end"    as const, decimalScale: 3 },
-  { key: "WASTYPE",   label: "WASTE TYPE", align: "center" as const },
+  // { key: "WASTYPE",   label: "WASTE TYPE", align: "center" as const },
   { key: "TOUCH",     label: "TOUCH",      align: "center" as const, decimalScale: 1 },
   { key: "STNPRESENT",label: "STONE",      align: "center" as const },
 ];
@@ -133,7 +133,10 @@ const {
 
   } = useBarcodeGenerate();
   
-  console.log(stockSummary,'stockSummary')
+  console.log(stockSummary,'stockSummary');
+
+  console.log(stockTableData,'stockTableData');
+  console.log(rows,'rows')
 
 
   
@@ -150,7 +153,7 @@ const {
         <Table.Cell textAlign="right">{formatToFixed(row.GRSWT, 3)}</Table.Cell>
         <Table.Cell textAlign="right">{formatToFixed(row.STNWT, 3)}</Table.Cell>
         <Table.Cell textAlign="right">{formatToFixed(row.NETWT, 3)}</Table.Cell>
-        <Table.Cell textAlign="center">{row.WASTYPE || "-"}</Table.Cell>
+        {/* <Table.Cell textAlign="center">{row.WASTYPE || "-"}</Table.Cell> */}
         <Table.Cell textAlign="center">{formatToFixed(row.TOUCH, 1)}</Table.Cell>
         <Table.Cell textAlign="center">
           <Box
@@ -166,6 +169,11 @@ const {
 
   /* ── Transaction cell renderer ── */
   const renderCellValue = useCallback((col: any, row: BarcodeTransactionRow) => {
+    if(col.key === "size") {
+      return (
+        <Text textAlign="center">{row.size}</Text>
+      )
+    }
     if (col.key === "__print") {
       return (
         <button onClick={() => handlePrintSingle(row.barcode)}>
@@ -381,7 +389,7 @@ const {
           showTotal
           showTableForm={showTableForm}
 
-          maxBodyHeight= "400px"
+          maxBodyHeight= "300px"
           
           /* isNew badge slot */
           // renderRowLabel={isEditing ? renderRowLabel : undefined}

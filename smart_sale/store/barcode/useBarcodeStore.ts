@@ -22,13 +22,16 @@ export interface BarcodeTransactionRow {
   draftRowId: string;
   barcode: string;
   grsweight: number;
+  purchaseStoneWt: number;
+ 
   stoneWt: number;
-  salesStoneWt: number;
-  wastePercent: number;
+  navaWt: number;
+   salesStoneWt: number;
+  // wastePercent: number;
   size: string;
   diamondWt: number;
-  mc: number;
-  touch: number;
+  // mc: number;
+  // touch: number;
   isNew: boolean;
   print?: boolean;
 }

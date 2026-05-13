@@ -22,7 +22,8 @@ import { useAllAccountHead } from "@/hooks/apiHooks/accountHead/useAccountHead";
 import { useBarcodeItems, useCreateTag, useUpdateTag } from "@/hooks/apiHooks/barcode/useBarcodeItems";
 import { useActivePrinter } from "@/hooks/apiHooks/print/usePrint";
 import { useTagEntryNos, useTagedDetailsByEntryNo } from "@/hooks/apiHooks/tag/useTag";
-import { useSize } from "@/hooks/apiHooks/size/useSize";
+// import { useSize } from "@/hooks/apiHooks/size/useSize";
+import { useSoftControlById } from "../apiHooks/softControl/useSoftControl";
 
 /* ── Utils ── */
 import { formatToFixed } from "@/utils/format/numberFormat";
@@ -37,20 +38,21 @@ import Header from "@/component/layout/header/Header";
    ============================================================ */
 
 export const FIELD_ORDER = [
-  "barcode", "grsweight", "stoneWt", "salesStoneWt", "wastePercent",
-  "size", "diamondWt", "mc", "touch",
+  "barcode", "grsweight", "purchaseStoneWt", "stoneWt", "navaWt",  "diamondWt", "size",
+  //"wastePercent","mc", "touch",
 ] as const;
 export type FieldKey = (typeof FIELD_ORDER)[number];
 
 const NUMERIC_FIELDS = new Set([
-  "grsweight", "stoneWt", "salesStoneWt", "wastePercent", "diamondWt", "mc", "touch",
+  "grsweight", "purchaseStoneWt","stoneWT" ,"navaWt", "salesStoneWt","diamondWt", "size",
+  //  "wastePercent", "mc", "touch",
 ]);
-const REQUIRED_FIELDS_STN = new Set(["grsweight", "stoneWt", "salesStoneWt"]);
+const REQUIRED_FIELDS_STN = new Set(["grsweight", "purchaseStoneWt", "salesStoneWt"]);
 const REQUIRED_FIELDS = new Set(["grsweight"]);
 
 const EMPTY_TRANSACTION_FORM = {
-  barcode: "", grsweight: "", stoneWt: "", salesStoneWt: "", wastePercent: "",
-  size: "", diamondWt: "", mc: "", touch: "",
+  barcode: "", grsweight: "", purchaseStoneWt: "",stoneWt: "", navaWt: "", salesStoneWt: "",diamondWt: "", size:"",
+  // wastePercent: "",  mc: "", touch: "",
 };
 
 const EMPTY_ARRAY: never[] = [];
@@ -133,6 +135,12 @@ useEffect(() => {
   const { data: printerSettings } = useActivePrinter();
   const printer = useMemo(() => printerSettings?.data ?? null, [printerSettings]);
 
+  const { data: toleranceData } = useSoftControlById("LOT-TOLERANCE");
+  console.log(toleranceData,'toleranceData')
+  const tolerance = useMemo(() => {
+    return Number(toleranceData?.CTLTEXT ?? 0);
+  }, [toleranceData]);
+
   const barcodeQueryParams = useMemo(() => ({
     ACCODE: Number(headerForm.COMPANYNAME),
     PURCHASE_ENTRYNO: Number(headerForm.INWARDNO),
@@ -157,13 +165,13 @@ useEffect(() => {
   }, [barcodeItems?.ENTRY_NO, setHeaderField, isEditing]);
 
 
-  const { data: sizes } = useSize("", selectedItemId);
+  // const { data: sizes } = useSize("", selectedItemId);
 
-  const itemSizeList = useMemo(() =>
-    Array.isArray(sizes)
-      ? sizes.map((s: any) => ({ label: s.SIZENAME, value: String(s.SIZEID) }))
-      : EMPTY_ARRAY,
-    [sizes]);
+  // const itemSizeList = useMemo(() =>
+  //   Array.isArray(sizes)
+  //     ? sizes.map((s: any) => ({ label: s.SIZENAME, value: String(s.SIZEID) }))
+  //     : EMPTY_ARRAY,
+  //   [sizes]);
 
   /* ── Tag listing ── */
 
@@ -226,6 +234,7 @@ useEffect(() => {
 
   const selectedItem = barcodeItems?.SELECTED_ITEM ?? null;
   const hasStone = selectedItem?.STNPRESENT === "Y";
+  console.log(hasStone,'hasStone');
 
   const stockTableData = useMemo(() =>
     Array.isArray(selectedItem) ? selectedItem
@@ -300,12 +309,22 @@ useEffect(() => {
     setHeaderErrors({});
   }, [setHeaderField]);
 
-  const handleFormChange = useCallback((key: string, value: unknown) => {
-    console.log(key,value ,'onchange')
-    setTransactionForm((p) => ({ ...p, [key]: value }));
-    setTouched((p) => ({ ...p, [key]: true }));
-    setFieldErrors((p) => { const n = { ...p }; delete n[key]; return n; });
-  }, []);
+
+const handleFormChange = useCallback((key: string, value: unknown) => {
+  console.log(key, value, 'onchange');
+  setTransactionForm((p) => {
+    const updated = { ...p, [key]: value };
+    // Auto-calculate salesStoneWt = purchaseStoneWt + navaWt
+    if (key === "stoneWt" || key === "navaWt") {
+      const stoneWt = key === "stoneWt" ? Number(value) : Number(updated.stoneWt);
+      const nava    = key === "navaWt"            ? Number(value) : Number(updated.navaWt);
+      updated.salesStoneWt = String((stoneWt + nava).toFixed(3));
+    }
+    return updated;
+  });
+  setTouched((p) => ({ ...p, [key]: true }));
+  setFieldErrors((p) => { const n = { ...p }; delete n[key]; return n; });
+}, []);
 
   const resetForm = useCallback(() => {
     setTransactionForm(EMPTY_TRANSACTION_FORM);
@@ -350,17 +369,20 @@ useEffect(() => {
     const errors = validateSingleRow(
       {
         grsweight: currentForm.grsweight,
-        stoneWt: currentForm.stoneWt,
+        purchaseStoneWt: currentForm.purchaseStoneWt,
         salesStoneWt: currentForm.salesStoneWt
       },
       hasStone,
       effectiveBalance,
+      tolerance
     );
+    console.log(errors, 'validationErrors');
 
     if (Object.keys(errors).length) {
       setTouched(FIELD_ORDER.reduce((a, k) => ({ ...a, [k]: true }), {} as Record<string, boolean>));
       setFieldErrors(errors);
       const first = FIELD_ORDER.find((k) => errors[k]);
+      console.log(first, 'firstErrorField');
       if (first) {
         focusField(first);
         toaster.create({ title: "Validation Error", description: errors[first], type: "error", duration: 2000 });
@@ -374,13 +396,17 @@ useEffect(() => {
       // Use currentForm consistently throughout
       const formValues = {
         grsweight: Number(currentForm.grsweight),
+        purchaseStoneWt :Number(currentForm.purchaseStoneWt),
+        
         stoneWt: Number(currentForm.stoneWt),
+        navaWt : Number(currentForm.navaWt),
         salesStoneWt: Number(currentForm.salesStoneWt),
-        wastePercent: Number(currentForm.wastePercent || 0),
-        size: currentForm.size,
         diamondWt: Number(currentForm.diamondWt),
-        mc: Number(currentForm.mc),
-        touch: Number(currentForm.touch),
+        // wastePercent: Number(currentForm.wastePercent || 0),
+        size: currentForm.size,
+       
+        // mc: Number(currentForm.mc),
+        // touch: Number(currentForm.touch),
       };
 
       if (editingRowId) {
@@ -437,13 +463,15 @@ useEffect(() => {
     setTransactionForm({
       barcode: row.barcode,
       grsweight: row.grsweight.toString(),
-      stoneWt: row.stoneWt.toString(),
+      purchaseStoneWt: row.purchaseStoneWt.toString(),
       salesStoneWt: row.salesStoneWt.toString(),
-      wastePercent: row.wastePercent.toString(),
+      // wastePercent: row.wastePercent.toString(),
+      stoneWt: row.stoneWt.toString(),
+      navaWt : row.navaWt.toString(),
       size: row.size,
       diamondWt: row.diamondWt.toString(),
-      mc: row.mc.toString(),
-      touch: row.touch.toString(),
+      // mc: row.mc.toString(),
+      // touch: row.touch.toString(),
     });
     setOriginalRow(row); // ✅ store original
     setEditRowId(row.id);
@@ -465,7 +493,7 @@ useEffect(() => {
   const handleExcelLoad = useCallback((parsedRows: any[]) => {
     if (!parsedRows.length) return;
     if (!validateHeaderWithToast(headerForm)) return;
-    if (!validateRows({ rows, limits, countOnlyNew: isEditing, incomingRows: parsedRows })) return;
+    if (!validateRows({ rows, limits, countOnlyNew: isEditing, incomingRows: parsedRows, tolerance })) return;
 
     const draftRowId = headerForm.ENTRYNO || String(Date.now());
     const merged = [
@@ -473,9 +501,18 @@ useEffect(() => {
       ...parsedRows.map((r) => ({
         id: `excel-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
         draftRowId,
-        grsweight: r.grsweight, stoneWt: r.stoneWt, salesStoneWt: r.salesStoneWt,
-        wastePercent: r.wastePercent, size: r.size, diamondWt: r.diamondWt,
-        mc: r.mc, touch: r.touch, barcode: "", isNew: true as const,
+        grsweight: r.grsweight, 
+        purchaseStoneWt: r.purchaseStoneWt,
+        navaWt : r.navaWt,
+        stoneWt: r.stoneWt, 
+        salesStoneWt: r.salesStoneWt,
+        // wastePercent: r.wastePercent, 
+        size: r.size, 
+        diamondWt: r.diamondWt,
+        // mc: r.mc, 
+        // touch: r.touch, 
+        barcode: "",
+         isNew: true as const,
       })),
     ];
     setRows(assignBarcodes(merged));
@@ -499,10 +536,20 @@ useEffect(() => {
        RETAG: isretag,
     };
     const taggingDetails = rows.map((r) => ({
-      TAGNO: r.barcode, GRSWT: r.grsweight, STNWT: r.stoneWt,
-      WASPER: r.wastePercent, DIAWT: r.diamondWt, MC: r.mc,
-      TOUCH: r.touch, SALESSTNWT: r.salesStoneWt,
-      NETWT: r.grsweight - r.stoneWt, SIZEID: Number(r.size),
+      TAGNO: r.barcode,
+      GRSWT: r.grsweight, 
+      PURCHASESTNWT :r.purchaseStoneWt,
+      STNWT: r.stoneWt,
+      NAVAWT : r.navaWt,
+      SALESSTNWT: r.salesStoneWt,
+      DIAWT: r.diamondWt,
+      SIZE: Number(r.size),
+
+      // WASPER: r.wastePercent,
+      // MC: r.mc,
+      // TOUCH: r.touch, 
+      // NETWT: r.grsweight - r.stoneWt, 
+     
     }));
     return { purchaseDetails, taggingDetails };
   }, [rows, headerForm, itemId,isretag]);
@@ -514,7 +561,7 @@ useEffect(() => {
     let effectiveBalance = { ...remainingByRef };
 
     if (!validateHeaderWithToast(headerForm)) return;
-    if (!validateRows({ rows, limits, balance:effectiveBalance })) return;
+    if (!validateRows({ rows, limits, balance:effectiveBalance, tolerance })) return;
     const { purchaseDetails, taggingDetails } = buildPayload();
     setIsSubmittingTag(true);
     console.log('createTag', purchaseDetails, taggingDetails);
@@ -547,7 +594,7 @@ useEffect(() => {
     let effectiveBalance = { ...remainingByRef };
 
     if (!validateHeaderWithToast(headerForm)) return;
-    if (!validateRows({ rows, limits, balance: effectiveBalance, countOnlyNew: false })) return;
+    if (!validateRows({ rows, limits, balance: effectiveBalance, countOnlyNew: false, tolerance })) return;
     const { purchaseDetails, taggingDetails } = buildPayload();
     setIsSubmittingTag(true);
 
@@ -591,13 +638,15 @@ useEffect(() => {
         id: `edit-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
         draftRowId: String(purchase.ENTRYNO),
         grsweight: Number(r.GRSWT) || 0,
+        purchaseStoneWt : Number(r.PURCHASESTONE) || 0,
+        navaWt : Number(r.NETWT) || 0,
         stoneWt: Number(r.STNWT) || 0,
         salesStoneWt: Number(r.SALESSTNWT) || 0,
-        wastePercent: Number(r.WASPER) || 0,
+        // wastePercent: Number(r.WASPER) || 0,
         size: String(r.SIZEID) || "",
         diamondWt: Number(r.DIAWT) || 0,
-        mc: Number(r.MC) || 0,
-        touch: Number(r.TOUCH) || 0,
+        // mc: Number(r.MC) || 0,
+        // touch: Number(r.TOUCH) || 0,
         barcode: r.TAGNO || "",
       }))
     );
@@ -650,17 +699,26 @@ useEffect(() => {
       const isNum = NUMERIC_FIELDS.has(col.key);
       const isRequired = hasStone ? REQUIRED_FIELDS_STN.has(col.key) : REQUIRED_FIELDS.has(col.key);
       const base: any = {
-        key: col.key, label: col.label || col.key, placeholder: col.label || col.key,
-        type: isNum ? "number" : "text", isRequired, size: "xs",
-        align: isNum ? "right" : "left", allowFocus: col.allowFocus,
+        key: col.key,
+         label: col.label || col.key, 
+         placeholder: col.label || col.key,
+        type:col.type,
+        
+        isRequired, 
+        size: "xs",
+        align: col.type === "number" ? "right" : "left", 
+        allowFocus: col.allowFocus,
+        disabled : col.disabled
       };
       if (col.decimalScale) base.decimalScale = col.decimalScale;
-      if (col.key === "size") return { ...base, type: "text", align: "left"};
-      if (col.key === "wastePercent") return { ...base, type: "number", decimalScale: 2 };
-      if (col.key === "barcode") return { ...base, type: "text", align: "left", disabled: true };
+  
+      // if (col.key === "wastePercent") return { ...base, type: "number", decimalScale: 2 };
+      
       return base;
     }),
     [itemSizeCollection, hasStone]);
+
+    console.log(transactionFormFields,'transactionFormFields')
 
   const allDisplayCols = useMemo(() =>
     transactionTableCols
@@ -674,10 +732,12 @@ useEffect(() => {
 
   const transactionTotals = useMemo(() => ({
     grsweight: rows.reduce((s, r) => s + r.grsweight, 0),
+    purchaseStoneWt: rows.reduce((s, r) => s + r.purchaseStoneWt, 0),
+    navaWt : rows.reduce((s, r) => s + r.navaWt, 0),
     stoneWt: rows.reduce((s, r) => s + r.stoneWt, 0),
     salesStoneWt: rows.reduce((s, r) => s + r.salesStoneWt, 0),
     diamondWt: rows.reduce((s, r) => s + r.diamondWt, 0),
-    mc: rows.reduce((s, r) => s + r.mc, 0),
+    // mc: rows.reduce((s, r) => s + r.mc, 0),
   }), [rows]);
 
   const showTableForm = useMemo(() => {
@@ -696,12 +756,14 @@ useEffect(() => {
     const value = row[col.key as keyof BarcodeTransactionRow];
     if (value === undefined || value === null) return "-";
     if (typeof value === "number") {
-      if (["grsweight", "stoneWt", "salesStoneWt", "diamondWt"].includes(col.key)) return formatToFixed(value, 3);
-      if (["wastePercent", "mc"].includes(col.key)) return formatToFixed(value, 2);
-      if (col.key === "touch") return formatToFixed(value, 1);
+      if (["grsweight","purchaseStoneWt", "stoneWt", "navaWt", "salesStoneWt", "diamondWt"].includes(col.key)) return formatToFixed(value, 3);
+      // if (["wastePercent", "mc"].includes(col.key)) return formatToFixed(value, 2);
+      // if (col.key === "touch") return formatToFixed(value, 1);
+      if(col.key === "size" ) return formatToFixed(value, 0);
     }
-    if (col.key === "size" && value)
-      return itemSizeCollection.find((i: any) => i.value === value)?.label ?? value;
+   
+    // if (col.key === "size" && value)
+    //   return itemSizeCollection.find((i: any) => i.value === value)?.label ?? value;
     return value.toString();
   }, [itemSizeCollection]);
 
@@ -726,7 +788,8 @@ useEffect(() => {
     setExcelData,
     handleExcelChange,
 
-    purchaserCollection, inwardCollection, itemCollection, itemSizeCollection, itemSizeList,
+    purchaserCollection, inwardCollection, itemCollection, itemSizeCollection,
+    //  itemSizeList,
     stockTableData,
     stockSummary, limits, remaining,
 
