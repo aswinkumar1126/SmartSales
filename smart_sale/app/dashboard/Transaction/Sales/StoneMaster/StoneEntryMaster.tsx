@@ -239,7 +239,7 @@ export default function StoneEnterMaster({
                         if (val) onCommit();
                     }}
                     ref={inputRef}
-                    onEnter={onCommit}
+                    // onEnter={onCommit}
                     rounded="sm"
                     placeholder="Select stone"
                 />
@@ -329,7 +329,7 @@ export default function StoneEnterMaster({
                     decimalScale={decimalScale}
                     onChange={(_, v) => onChange(v)}
                     inputRef={inputRef}
-                    onEnter={onCommit}
+                    // onEnter={onCommit}
                     size="xs"
                     rounded="sm"
                     noBorder

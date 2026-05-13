@@ -185,7 +185,7 @@ export const BankTransactionModal = ({
         if (!formData.PAYDATE) {
             newErrors.PAYDATE = "Date is required";
         }
-        if (!formData.CHQNO || formData.CHQNO.trim() === "") {
+        if (!formData.CHQNO || formData.TRANMODE === "C") {
             newErrors.CHQNO = "Cheque/Reference number is required";
         }
         const amount = Number(formData.AMOUNT);

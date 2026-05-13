@@ -860,7 +860,7 @@ export default function DraftTransactionTable({
                         rounded="sm"
                         decimalScale={field.decimalScale}
                         inputRef={inputRef}
-                        onEnter={onCommit}
+                        // onEnter={onCommit}
                         noBorder
                     />
                     {stonesCount > 0 && (
@@ -892,7 +892,7 @@ export default function DraftTransactionTable({
                         rounded="sm"
                         decimalScale={2}
                         inputRef={inputRef}
-                        onEnter={onCommit}
+                        // onEnter={onCommit}
                         noBorder
                     />
                     {chargesCount > 0 && (
@@ -948,7 +948,7 @@ export default function DraftTransactionTable({
                     size="xs"
                     rounded="sm"
                     inputRef={inputRef}
-                    onEnter={onCommit}
+                    // onEnter={onCommit}
                     noBorder
                     disabled
                 />
@@ -1000,7 +1000,7 @@ export default function DraftTransactionTable({
                     ref={inputRef as React.RefObject<HTMLInputElement>}
                     rounded="sm"
                     disable={false}
-                    onEnter={onCommit}
+                    // onEnter={onCommit}
                 />
             );
         }
@@ -1036,7 +1036,7 @@ export default function DraftTransactionTable({
                 rounded="sm"
                 decimalScale={field.decimalScale}
                 inputRef={inputRef}
-                onEnter={onCommit}
+                // onEnter={onCommit}
                 noBorder
                 disabled={col.disabled}
                 allowFocus

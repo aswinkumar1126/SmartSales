@@ -18,6 +18,7 @@ import { toaster } from "@/components/ui/toaster";
 import { useGlobalKey } from "@/components/key/useGlobalKey";
 import { PaymentModes } from "@/data/bankDetails/BankDetailsData";
 
+
 export interface BankTransaction {
 
     ID:         string;
@@ -188,7 +189,7 @@ export const BankTransactionModal = ({
         if (!formData.PAYDATE) {
             newErrors.PAYDATE = "Date is required";
         }
-        if (!formData.CHQNO || formData.CHQNO.trim() === "") {
+        if (!formData.CHQNO && formData.TRANMODE === "C") {
             newErrors.CHQNO = "Cheque/Reference number is required";
         }
         const AMOUNT = Number(formData.AMOUNT);

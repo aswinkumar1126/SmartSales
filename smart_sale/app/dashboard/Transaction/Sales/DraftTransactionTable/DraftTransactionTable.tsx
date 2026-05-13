@@ -404,57 +404,110 @@ export default function DraftTransactionTable({
 
     // ── Hash-based draftRows → parent sync ────────────────────────────────────
     // Runs after every render. Detects changed rows via JSON hash and pushes
-    // only those to the parent store. No sync logic needed elsewhere.
-    useEffect(() => {
-        const current = draftRowsRef.current;
+// only changed rows to parent store.
 
-        current.forEach((row, rowIndex) => {
-            const isMeaningful = !!(row.ITEMID || row.PUREID || row.WT || row.GRSWT);
-            if (!isMeaningful) return;
+const pendingCommitTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-            const isCommitted = committedRowIdsRef.current.has(row.__rowId);
+useEffect(() => {
+    const current = draftRowsRef.current;
 
-            // For new rows: only commit once GRSWT or WT is present.
-            // This prevents PCS-alone from triggering onAddRow (duplicate-row bug).
-            if (!isCommitted) {
-                const hasCommitWeight = isIssue
-                    ? !!(row.PUREID && row.WT)          // both required for issue
-                    : !!(row.ITEMID && row.PCS);         // both required for receipt
-                if (!hasCommitWeight) return;
+    current.forEach((row) => {
+
+        // Ignore fully empty rows
+        const isMeaningful = !!(
+            row.ITEMID ||
+            row.PUREID ||
+            row.WT ||
+            row.GRSWT ||
+            row.PCS
+        );
+
+        if (!isMeaningful) return;
+
+        const isCommitted = committedRowIdsRef.current.has(row.__rowId);
+
+        // ── Commit conditions ─────────────────────────────
+        const hasCommitData = isIssue
+            ? !!(row.PUREID )
+            : !!(row.ITEMID);
+
+        // Prevent premature commits
+        if (!isCommitted && !hasCommitData) return;
+
+        // ── Create sync snapshot ──────────────────────────
+        const {
+            __rowId,
+            _stones,
+            _miscCharges,
+            ...syncableFields
+        } = row;
+
+        const rowHash = JSON.stringify(syncableFields);
+        const lastHash = lastSyncedRowsRef.current[row.__rowId];
+
+        // No changes
+        if (rowHash === lastHash) return;
+
+        lastSyncedRowsRef.current[row.__rowId] = rowHash;
+
+        const snapshot = { ...row };
+
+        // ── Existing committed row ────────────────────────
+        if (isCommitted) {
+
+            pendingParentCallRef.current = () => {
+                Object.keys(snapshot).forEach((field) => {
+
+                    if (
+                        field === "__rowId" ||
+                        field === "_stones" ||
+                        field === "_miscCharges"
+                    ) {
+                        return;
+                    }
+
+                    onUpdateRow(
+                        snapshot.__rowId,
+                        field,
+                        snapshot[field]
+                    );
+                });
+            };
+
+        } else {
+
+            // ── First commit ──────────────────────────────
+            committedRowIdsRef.current.add(row.__rowId);
+
+            // prevent rapid duplicate commits
+            if (pendingCommitTimeoutRef.current) {
+                clearTimeout(pendingCommitTimeoutRef.current);
             }
 
-            // Serialize for change detection (exclude internal meta fields)
-            const { __rowId, _stones, _miscCharges, ...syncableFields } = row;
-            const rowHash = JSON.stringify(syncableFields);
-            const lastHash = lastSyncedRowsRef.current[row.__rowId];
-            if (rowHash === lastHash) return; // nothing changed
+            // defer parent update to next tick
+            pendingCommitTimeoutRef.current = setTimeout(() => {
+                onAddRow(snapshot);
+            }, 0);
+        }
+    });
 
-            lastSyncedRowsRef.current[row.__rowId] = rowHash;
+    // ── Cleanup deleted rows ─────────────────────────────
+    const currentIds = new Set(current.map((r) => r.__rowId));
 
-            const snapshot = { ...row };
+    Object.keys(lastSyncedRowsRef.current).forEach((id) => {
+        if (!currentIds.has(id)) {
+            delete lastSyncedRowsRef.current[id];
+        }
+    });
 
-            if (isCommitted) {
-                // Already in store — push field updates after render
-                pendingParentCallRef.current = () => {
-                    Object.keys(snapshot).forEach((field) => {
-                        if (field === "__rowId") return;
-                        onUpdateRow(snapshot.__rowId, field, snapshot[field]);
-                    });
-                };
-            } else {
-                // First commit
-                committedRowIdsRef.current.add(row.__rowId);
-                pendingParentCallRef.current = () => onAddRow(snapshot);
-            }
-        });
+    return () => {
+        if (pendingCommitTimeoutRef.current) {
+            clearTimeout(pendingCommitTimeoutRef.current);
+        }
+    };
 
-        // Clean up hashes for deleted rows
-        const currentIds = new Set(current.map((r) => r.__rowId));
-        Object.keys(lastSyncedRowsRef.current).forEach((id) => {
-            if (!currentIds.has(id)) delete lastSyncedRowsRef.current[id];
-        });
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [draftRows]);
+// eslint-disable-next-line react-hooks/exhaustive-deps
+}, [draftRows]);
 
     // ── Flush pending parent calls after every render ─────────────────────────
     // This ensures Zustand / parent store updates NEVER fire during React render,
@@ -467,10 +520,33 @@ export default function DraftTransactionTable({
         }
     });
 
-    // ── Add empty row ──────────────────────────────────────────────────────────
-    const handleAddRow = useCallback(() => {
-        setDraftRows((prev) => [...prev, makeEmptyRow(formFields, !!isIssue)]);
-    }, [formFields, isIssue]);
+    const isRowEmpty = (row: any) => {
+    return (
+        !row.ITEMID &&
+        !row.PUREID &&
+        row.WT &&
+        !row.GRSWT &&
+        !row.PCS
+    );
+};  
+  const handleAddRow = useCallback(() => {
+    setDraftRows((prev) => {
+
+        const hasPendingEmptyRow = prev.some(isRowEmpty);
+
+        if (hasPendingEmptyRow) {
+            toaster.create({
+                title: "Only one pending empty row allowed",
+                type: "warning",
+                duration: 2000,
+            });
+
+            return prev;
+        }
+
+        return [...prev, makeEmptyRow(formFields, !!isIssue)];
+    });
+}, [formFields, isIssue]);
 
     // ── Delete row ─────────────────────────────────────────────────────────────
     const handleDeleteRow = useCallback((rowIndex: number) => {
@@ -637,7 +713,6 @@ export default function DraftTransactionTable({
         if (appliedItemIdRef.current[activeRowId] === key) return; // already applied
 
         // ── Touch NOT found → clear ITEMID, warn ──────────────────────────────
-        // ── Touch NOT found → info only, keep ITEMID ─────────────────────────────
         if (!touchData || !touchData.TOUCH) {
             if (!touchNotFoundRef.current.has(activeRowId)) {
                 touchNotFoundRef.current.add(activeRowId);
@@ -843,7 +918,9 @@ export default function DraftTransactionTable({
                     <CapitalizedInput
                         field={col.key} value={value || ""} onChange={(_, v) => onChange(v)}
                         type="number" isCapitalized={false} size="xs" rounded="sm"
-                        decimalScale={field.decimalScale} inputRef={inputRef} onEnter={onCommit} noBorder
+                        decimalScale={field.decimalScale} inputRef={inputRef} 
+                        // onEnter={onCommit} 
+                        noBorder
                     />
                     {stonesCount > 0 && <span style={{ fontSize: 10, color: "#805AD5", flexShrink: 0, paddingRight: 2 }}>💎</span>}
                 </div>
@@ -861,7 +938,9 @@ export default function DraftTransactionTable({
                     <CapitalizedInput
                         field={col.key} value={value || ""} onChange={(_, v) => onChange(v)}
                         type="number" isCapitalized={false} size="xs" rounded="sm"
-                        decimalScale={2} inputRef={inputRef} onEnter={onCommit} noBorder
+                        decimalScale={2} inputRef={inputRef} 
+                        // onEnter={onCommit}
+                         noBorder
                     />
                     {chargesCount > 0 && <span style={{ fontSize: 10, color: "#C05621", flexShrink: 0, paddingRight: 2 }}>📋</span>}
                 </div>
@@ -882,7 +961,9 @@ export default function DraftTransactionTable({
         if (col.key === "TAGNO") {
             return (
                 <CapitalizedInput field={col.key} value={value || ""} onChange={(_, v) => onChange(v)}
-                    type="text" isCapitalized size="xs" rounded="sm" inputRef={inputRef} onEnter={onCommit} noBorder disabled />
+                    type="text" isCapitalized size="xs" rounded="sm" inputRef={inputRef}
+                    //  onEnter={onCommit} 
+                     noBorder disabled />
             );
         }
 
@@ -899,7 +980,9 @@ export default function DraftTransactionTable({
             return (
                 <SelectCombobox value={value || ""} onChange={(v) => { onChange(v); if (v) onCommit(); }}
                     items={items} placeholder={field.placeholder || `Select ${field.label}`}
-                    ref={inputRef as React.RefObject<HTMLInputElement>} rounded="sm" disable={false} onEnter={onCommit} />
+                    ref={inputRef as React.RefObject<HTMLInputElement>} rounded="sm" disable={false}
+                    //  onEnter={onCommit} 
+                     />
             );
         }
 
@@ -907,7 +990,9 @@ export default function DraftTransactionTable({
             return (
                 <CapitalizedInput field={col.key} value={value || ""} onChange={(_, v) => onChange(v)}
                     type="number" isCapitalized size="xs" rounded="sm"
-                    decimalScale={field.decimalScale} inputRef={inputRef} onEnter={onCommit} noBorder />
+                    decimalScale={field.decimalScale} inputRef={inputRef}
+                    //  onEnter={onCommit} 
+                     noBorder />
             );
         }
 
@@ -923,7 +1008,7 @@ export default function DraftTransactionTable({
             rounded="sm" 
             decimalScale={field.decimalScale} 
             inputRef={inputRef} 
-            onEnter={onCommit} 
+            // onEnter={onCommit} 
             noBorder 
             allowFocus = {true}
             />

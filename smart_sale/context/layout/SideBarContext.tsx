@@ -234,6 +234,22 @@ const STATIC_MENU: SidebarMenu = {
         },
       ],
     },
+
+    HmcMapping :{
+      icon: Shield,
+      items: [
+      
+      {
+          type: "direct",
+          label: "HMC Mapping",
+          route: "/dashboard/Mapping/HmcMapping",
+          icon: Users,
+          title: "HMC MAPPING",
+          description: "Manage HMC mappings",
+        },
+      ]
+    }
+  
   },
 
   RateEntry: {
