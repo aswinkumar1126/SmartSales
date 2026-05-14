@@ -92,6 +92,7 @@ export const useLoadSaleTag = () => {
                 _type: "SA",
 
                 ITEMID: data.ITEMID ? String(data.ITEMID) : "",
+                ITEMNAME :data.ITEMNAME ,
                 TAGNO: String(data.TAGNO || tagNo),
                 PCS: 1,
 

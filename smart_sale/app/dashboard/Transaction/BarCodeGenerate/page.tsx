@@ -80,6 +80,7 @@ function BarCodeGenerate() {
     handleExcelChange,
     /* collections */
     purchaserCollection,
+    customerCollection,
     inwardCollection,
     itemCollection,
     itemSizeCollection,
@@ -101,8 +102,7 @@ function BarCodeGenerate() {
 
     /* refs */
     fieldRefs,
-    isretag,
-    setIsRetag,
+ 
 
     hasExistingRows ,
     populateExcelFromRows,
@@ -247,18 +247,13 @@ function BarCodeGenerate() {
             form={headerForm}
             onChange={handleHeaderChange}
             purchaserCollection={purchaserCollection}
+            customerCollection={customerCollection}
             inwardCollection={inwardCollection}
             itemCollection={itemCollection}
             isDisabled={rows.length > 0}
             validationError={headerErrors}
           />
-          <SingleCheckbox
-            label="RETAG"
-            checked={isretag}
-            onChange={() => setIsRetag((prev) => !prev)}
-            size="sm"
-            fontSize="xs"
-          />
+          
           <Box display="flex" alignItems="start" flexDirection="column" gap={2}>
             <Box display="flex" alignItems="center" gap={2}>
               <SingleCheckbox
@@ -375,8 +370,8 @@ function BarCodeGenerate() {
 
      
           < Drawer.Root 
-  open={excelDrawerOpen}
-        onOpenChange={(details) => {
+          open={excelDrawerOpen}
+          onOpenChange={(details) => {
           if (!details.open) setExcelDrawerOpen(false);
         }}
 >

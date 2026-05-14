@@ -17,6 +17,7 @@ interface BarcodeHeaderFormProps {
     form: Record<string, any>;
     onChange: (field: string, value: any) => void;
     purchaserCollection?: { label: string; value: string }[];
+    customerCollection?: { label: string; value: string }[];
     inwardCollection?: { label: string; value: string }[];
     itemCollection?: { label: string; value: string }[];
     isDisabled?: boolean;
@@ -27,6 +28,7 @@ function BarcodeHeaderForm({
     form,
     onChange,
     purchaserCollection,
+    customerCollection,
     inwardCollection,
     itemCollection,
     isDisabled = false,
@@ -36,7 +38,7 @@ function BarcodeHeaderForm({
 
     const { theme } = useTheme();
     const barcodeHeaderField = barcodeHeaderFields({
-        vendorCollection: purchaserCollection,
+        vendorCollection: form.RETAG ? customerCollection : purchaserCollection,
         inwardCollection,
         itemCollection,
     });
@@ -46,7 +48,7 @@ function BarcodeHeaderForm({
 
     );
 
-    console.log("header form", form, purchaserCollection)
+    // console.log("header form", form, purchaserCollection)
 
 
     return (
@@ -67,6 +69,7 @@ function BarcodeHeaderForm({
                     COMPANYNAME: isDisabled,
                     ITEMNAME: isDisabled,
                     INWARDNO: isDisabled,
+                    RETAG :isDisabled
                 }}
             />
          

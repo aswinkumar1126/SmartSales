@@ -270,6 +270,8 @@ export default function SalesPage() {
     const { data: itemsData } = useStoneItems();
     const { data: tagedItems } = useStoneItems({ STOCKTYPE: 'T' });
 
+    const {data:nonTagedItemList} = useStoneItems({STOCKTYPE:'N'});
+
     console.log(tagedItems, 'tagedItems')
 
     const filters = {
@@ -500,6 +502,15 @@ export default function SalesPage() {
         [itemsData]
     );
 
+    const nonTagedItems = useMemo(
+        () =>
+            nonTagedItemList?.map((item: any) => ({
+                label: item.itemName,
+                value: item.itemId.toString(),
+            })) ?? [],
+        [nonTagedItemList]
+    )
+
     const tagedItemsList = useMemo(() =>
         tagedItems?.map((item: any) => ({
             label: item.itemName,
@@ -517,6 +528,17 @@ export default function SalesPage() {
     }, [mappedItems, set]);
 
 
+    const { collection: notTagedItemCollection, filter: notTagedItemsFilter, set:setNotTaged } = useListCollection({
+        initialItems: nonTagedItems,
+        filter: contains,
+    });
+
+    useEffect(() => {
+        setNotTaged(nonTagedItems);
+    }, [nonTagedItems, setNotTaged]);
+
+
+    // console.log(notTagedItemCollection,'notTagedItemCollection');
 
 
     const isTagedItem = useIsTaggedItem(tagedItemsList);
@@ -786,7 +808,7 @@ useGlobalKey(
     };
 
     const getActiveCollectionForType = (transactionType: SaleTransactionType) => {
-        return isIssueType(transactionType) ? pureNameCollection : itemsCollection;
+        return isIssueType(transactionType) ? pureNameCollection : transactionType.code === "SA" ? notTagedItemCollection   :itemsCollection;
     };
 
 
@@ -1439,16 +1461,16 @@ useGlobalKey(
                                                     rows={typeRows}
                                                     editingState={editingState}
                                                     isEditing={false}
-                                                    onAddRow={(formData) => {
-                                                        handleAddRow(transactionType, formData);
-                                                    }}
-                                                    onUpdateRow={(rowId, field, value) => {
-                                                        handleUpdateRow(rowId, field, value);
-                                                    }}
-                                                    onRemoveRow={(rowId) => {
-                                                        handleRemoveRow(rowId);
-                                                    }}
-                                                    onEditRow={(rowId, submitData) => handleEditRow(rowId, submitData)}
+                                                    // onAddRow={(formData) => {
+                                                    //     handleAddRow(transactionType, formData);
+                                                    // }}
+                                                    // onUpdateRow={(rowId, field, value) => {
+                                                    //     handleUpdateRow(rowId, field, value);
+                                                    // }}
+                                                    // onRemoveRow={(rowId) => {
+                                                    //     handleRemoveRow(rowId);
+                                                    // }}
+                                                    // onEditRow={(rowId, submitData) => handleEditRow(rowId, submitData)}
                                                     onRowClick={handleRowClick}
                                                     onCancelEdit={handleCancelEdit}
                                                     itemsCollection={activeCollection}

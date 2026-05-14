@@ -22,7 +22,7 @@ export interface TAGGING_DETAILS {
     
     SALESSTNWT: number;
     NETWT?: number;
-    SIZE: number;
+    SIZE: string;
 
     MC?: number;
     TOUCH?: number;
@@ -90,7 +90,7 @@ export interface getSingleTagDetail {
     PUENTRYNO: number;
     PUSNO: string;
     SALESSTNWT: number;
-    SIZEID: number;
+    SIZE: string;
     STNWT: number;
     TAGDATE: string;
     TAGNO: string;
@@ -121,7 +121,7 @@ export interface getSingleTagDetail {
         SALESSTNWT: number;
         SETTYPEID: number | null;
         SHAPEID: number | null;
-        SIZECODE: string | null;
+        SIZE: string | null;
         SNO: number;
         STNAMT: number | null;
         STNGRPID: number | null;

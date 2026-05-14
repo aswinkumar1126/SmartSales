@@ -118,7 +118,7 @@ function makeEmptyRow(formFields: FormField[], isIssue: boolean): Record<string,
     row.WASTYPE = "TOUCH";
     row._stones = [];
     row._miscCharges = [];
-    row.STN_PRESENT = "N";   // default — will be updated when touch data arrives
+    row.STN_PRESENT = "Y";   // default — will be updated when touch data arrives
     row.CAL_MODE = "NETWT";  // default — will be updated when touch data arrives
     return recalcRow(row, isIssue);
 }
@@ -394,6 +394,9 @@ export default function DraftTransactionTable({
     // ── Store write helpers (rowId-keyed, no index) ───────────────────────────
 
     const commitNewRow = useCallback((row: Record<string, any>) => {
+
+        console.log(row,'commitedNewRow')
+
         const isTagged = row.STOCKTYPE === "T" ? isTagedItem(Number(row.ITEMID)) : false;
         addDraftRow({
             ...row,
@@ -576,26 +579,28 @@ const handleAddRow = useCallback(() => {
         const key = `${activeRowId}::${activeRowItemId}`;
         if (appliedItemIdRef.current[activeRowId] === key) return;
 
-        if (!touchData?.TOUCH) {
-            touchNotFoundRef.current.add(activeRowId);
-            setTimeout(() => {
-                toaster.create({
-                    title: "No Touch Found",
-                    description: "No touch configured for this item & customer. Please enter manually.",
-                    type: "warning",
-                    duration: 3000,
-                });
-            }, 0);
-            return;
-        }
+        // if (!touchData?.TOUCH) {
+        //     touchNotFoundRef.current.add(activeRowId);
+        //     setTimeout(() => {
+        //         toaster.create({
+        //             title: "No Touch Found",
+        //             description: "No touch configured for this item & customer. Please enter manually.",
+        //             type: "warning",
+        //             duration: 3000,
+        //         });
+        //     }, 0);
+        //     return;
+        // }
+
+        console.log(touchData,'touchData');
 
         appliedItemIdRef.current[activeRowId] = key;
         touchNotFoundRef.current.delete(activeRowId);
 
-        const touch = touchData.TOUCH;
-        const calMode = touchData.CALMODE || "NETWT";
-        const stnPresent = touchData.STNPRESENT === "Y" ;  // normalised
-        const hmcAmount = Number(touchData.HMCAMT ?? 0);
+        const touch = touchData?.TOUCH;
+        const calMode = touchData?.CALMODE || "NETWT";
+        const stnPresent = touchData?.STNPRESENT === "Y" ;  // normalised
+        const hmcAmount = Number(touchData?.HMCAMT ?? 0);
         const capturedRowId = activeRowId;
 
         // Build the default HMC charge entry once — used in both local state and store

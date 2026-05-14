@@ -60,9 +60,11 @@ export function useTaggingValidation() {
     },
     [validateHeader]
   );
+  // In useTaggingValidation.ts, update validateSingleRow
   const validateSingleRow = useCallback(
     (
       data: {
+        rowId ?: string|null ,
         grsweight: string;
         purchaseStoneWt: string;
         salesStoneWt: string;
@@ -78,14 +80,31 @@ export function useTaggingValidation() {
         STNWT: number;
         GRSWT: number;
       },
+      rows:any ,
       tolerance: number = 0
     ): Record<string, string> => {
-
       const errors: Record<string, string> = {};
+
+      console.log(data, hasStone, balance, limits,rows, 'from validation');
+
+      const filteredRows = data.rowId
+        ? rows.filter((r: any) => r.id !== data.rowId)
+        : rows;
+
+      const existingGrsTotal = filteredRows.reduce(
+        (sum: number, row: any) =>
+          sum + Number(row.grsweight || 0),
+        0
+      );
+
 
       const grs = Number(data.grsweight || 0);
       const purchaseStnWt = Number(data.purchaseStoneWt || 0);
       const salesStnWt = Number(data.salesStoneWt || 0);
+
+      const finalGrsTotal = existingGrsTotal + grs;
+
+     
 
       // ✅ SAFE LIMITS
       const grsLimit = Number(limits?.GRSWT || 0);
@@ -94,52 +113,45 @@ export function useTaggingValidation() {
       const grsUpperLimit = Number(
         (grsLimit + (tolerance || 0)).toFixed(3)
       );
+      
+      console.log(finalGrsTotal, grsUpperLimit, 'totals');
 
-      console.log({
-        grs,
-        purchaseStnWt,
-        salesStnWt,
-        grsLimit,
-        grsUpperLimit,
-        balanceStnWt,
-        tolerance,
-      });
+      // If no stone, ensure stone values are 0
+      if (!hasStone) {
+        // We still validate that values are 0, but don't show errors to user
+        // Instead, we ensure values are set to 0 in the form
+        if (purchaseStnWt !== 0 || salesStnWt !== 0) {
+          // Force values to 0 silently
+          data.purchaseStoneWt = "0";
+          data.salesStoneWt = "0";
+        }
+      }
 
       /* =========================
          GROSS WEIGHT VALIDATION
       ========================= */
-
       if (grs <= 0) {
         errors.grsweight =
           "Gross weight must be greater than 0";
-
-      } else if (grs > grsUpperLimit) {
+      } else if (finalGrsTotal > grsUpperLimit) {
         errors.grsweight =
-          `Gross weight cannot exceed balance gross weight (${grsUpperLimit}g)`;
+          `Total gross weight cannot exceed ${grsUpperLimit}g`;
       }
 
       /* =========================
          STONE VALIDATION
       ========================= */
-
       if (hasStone) {
-
         // PURCHASE STONE WT
         if (purchaseStnWt > balanceStnWt) {
-          errors.purchaseStoneWt =
-            `Purchase stone weight cannot exceed balance stone weight (${balanceStnWt})`;
+          errors.purchaseStoneWt = `Purchase stone weight cannot exceed balance stone weight (${balanceStnWt})`;
         }
 
         // SALES STONE WT
         if (salesStnWt > purchaseStnWt) {
-
-          errors.stoneWt =
-            "Sales stone weight cannot exceed purchase stone weight";
-
+          errors.stoneWt = "Sales stone weight cannot exceed purchase stone weight";
         } else if (salesStnWt > balanceStnWt) {
-
-          errors.stoneWt =
-            `Sales stone weight cannot exceed balance stone weight (${balanceStnWt})`;
+          errors.stoneWt = `Sales stone weight cannot exceed balance stone weight (${balanceStnWt})`;
         }
       }
 

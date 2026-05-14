@@ -1,16 +1,16 @@
 
 export const validateSales = (row: any) => {
 
-   
+    console.log(row,'SalesRowForvalidate');
 
     if (!row.ITEMID) {
         return "Please select an item";
     }
 
-    if (row.ITEM_TYPE === "TAGED" || row.__isTaged  && !row.TAGNO?.trim()) {
+    // if (row.ITEM_TYPE === "TAGED" || row.__isTaged  && !row.TAGNO) {
     
-        return "it's a Taged Item Please enter tag no";
-    }
+    //     return "it's a Taged Item Please enter tag no";
+    // }
 
     if (Number(row.GRSWT) <= 0) {
         return "Gross weight must be > 0";

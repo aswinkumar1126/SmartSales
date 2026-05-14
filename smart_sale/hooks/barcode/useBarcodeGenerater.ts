@@ -40,7 +40,15 @@ export const FIELD_ORDER = [
   "barcode", "grsweight", "purchaseStoneWt", "stoneWt", "navaWt", "diamondWt", "size",
   // "wastePercent","mc", "touch",
 ] as const;
+
+export const FIELD_ORDER_NOT_STONE = [
+  "barcode", "grsweight", "diamondWt", "size",
+] as const;
+
 export type FieldKey = (typeof FIELD_ORDER)[number];
+export type FieldKeyNotStone = (typeof FIELD_ORDER_NOT_STONE)[number];
+
+type ActiveFieldKey = FieldKey | FieldKeyNotStone;
 
 const NUMERIC_FIELDS = new Set([
   "grsweight", "purchaseStoneWt", "stoneWt", "navaWt", "salesStoneWt", "diamondWt",
@@ -98,7 +106,7 @@ export function useBarcodeGenerate() {
   const [isSubmittingRow, setIsSubmittingRow] = useState(false);
   const [isSubmittingTag, setIsSubmittingTag] = useState(false);
   const [excelDrawerOpen, setExcelDrawerOpen] = useState(false);
-  const [isretag, setIsRetag] = useState<boolean>(false);
+ 
   const [deselectFlag, setDeselectFlag] = useState(false);
   const [selectedItemId, setSelectedItemId] = useState<number | undefined>(undefined);
   const [excelData, setExcelData] = useState<ExcelData>([]);
@@ -110,9 +118,7 @@ export function useBarcodeGenerate() {
   const editingRowIdRef = useRef(editRowId);
   const originalRowRef = useRef(originalRow);
 
-  useEffect(() => {
-    setHeaderField("RETAG", isretag ? "true" : "false");
-  }, [isretag, setHeaderField]);
+  
 
   useEffect(() => { rowsRef.current = rows; }, [rows]);
   useEffect(() => { transactionFormRef.current = transactionForm; }, [transactionForm])
@@ -125,8 +131,16 @@ export function useBarcodeGenerate() {
     ) as Record<FieldKey, React.MutableRefObject<HTMLInputElement | null>>
   );
 
+  // const fieldRefsNotStone = useRef(
+  //   Object.fromEntries(
+  //     FIELD_ORDER_NOT_STONE.map((k) => [k, { current: null as HTMLInputElement | null }])
+  //   ) as Record<FieldKey, React.MutableRefObject<HTMLInputElement | null>>
+  // );
+
+
   /* ── API ── */
   const { data: allPurchaseAccount } = useAllAccountHead("", { accountType: "PR" });
+  const { data: allCustomerAccount } = useAllAccountHead("", { accountType: "CR" });
   const { data: printerSettings } = useActivePrinter();
   const printer = useMemo(() => printerSettings?.data ?? null, [printerSettings]);
 
@@ -141,8 +155,8 @@ export function useBarcodeGenerate() {
     SNO: String(headerForm.ITEMNAME),
     ISEDITING: isEditing,
     ENTRYNO: isEditing ? Number(selectedEntryNo) : undefined,
-    RETAG: isretag,
-  }), [headerForm.COMPANYNAME, headerForm.INWARDNO, headerForm.ITEMNAME, isEditing, selectedEntryNo, isretag]);
+    RETAG: headerForm.RETAG,
+  }), [headerForm.COMPANYNAME, headerForm.INWARDNO, headerForm.ITEMNAME, isEditing, selectedEntryNo ,headerForm.RETAG ]);
 
   const { data: barcodeItems } = useBarcodeItems(barcodeQueryParams);
 
@@ -184,6 +198,13 @@ export function useBarcodeGenerate() {
       : EMPTY_ARRAY,
     [allPurchaseAccount?.data?.acheads]);
 
+  const customerCollection = useMemo(() =>
+    Array.isArray(allCustomerAccount?.data?.acheads)
+      ? allCustomerAccount.data.acheads.map((i: any) => ({ label: i.ACNAME, value: String(i.ACCODE) }))
+      : EMPTY_ARRAY,
+    [allCustomerAccount?.data?.acheads]);
+
+  
   const inwardCollection = useMemo(() =>
     Array.isArray(barcodeItems?.PURCHASE_ENTRY_NO)
       ? barcodeItems.PURCHASE_ENTRY_NO.map((i: number) => ({ label: `INWARD NO ${i}`, value: String(i) }))
@@ -320,12 +341,6 @@ export function useBarcodeGenerate() {
     setEditRowId(null);
   }, []);
 
-  const moveToNext = useCallback((currentKey: FieldKey) => {
-    const idx = FIELD_ORDER.indexOf(currentKey);
-    if (idx < FIELD_ORDER.length - 1) focusField(FIELD_ORDER[idx + 1]);
-    else handleRowSubmit();
-  }, [focusField]);
-
   /* ── Row submit ── */
   const handleRowSubmit = useCallback(() => {
     const currentForm = transactionFormRef.current;
@@ -348,6 +363,7 @@ export function useBarcodeGenerate() {
     const errors = validateSingleRow(
 
       {
+        rowId: editingRowId,
         grsweight: currentForm.grsweight,
         purchaseStoneWt: currentForm.purchaseStoneWt,
         salesStoneWt: currentForm.salesStoneWt
@@ -355,11 +371,12 @@ export function useBarcodeGenerate() {
       hasStone,
       effectiveBalance,
       limits,
+      rows,
       tolerance
     );
 
     console.log(errors, 'row errors');
- 
+
     if (Object.keys(errors).length) {
       setTouched(FIELD_ORDER.reduce((a, k) => ({ ...a, [k]: true }), {} as Record<string, boolean>));
       setFieldErrors(errors);
@@ -432,7 +449,26 @@ export function useBarcodeGenerate() {
     focusField,
     headerForm.ENTRYNO,
     tolerance,
+    rows
   ]);
+
+  const moveToNext = useCallback(
+    (currentKey: ActiveFieldKey) => {
+      const activeFieldOrder = hasStone
+        ? FIELD_ORDER
+        : FIELD_ORDER_NOT_STONE;
+
+      const idx = activeFieldOrder.indexOf(currentKey as never);
+
+      if (idx !== -1 && idx < activeFieldOrder.length - 1) {
+        focusField(activeFieldOrder[idx + 1]);
+      } else {
+        handleRowSubmit();
+      }
+    },
+    [focusField, hasStone ,handleRowSubmit]
+  );
+ 
 
   const handleEditRow = useCallback((row: BarcodeTransactionRow) => {
     setTransactionForm({
@@ -584,7 +620,7 @@ export function useBarcodeGenerate() {
       ACCODE: Number(headerForm.COMPANYNAME),
       PUSNO: headerForm.ITEMNAME,
       TAGDATE: headerForm.DATE || new Date().toISOString().split("T")[0],
-      RETAG: isretag,
+      RETAG: headerForm.RETAG,
     };
 
     const taggingDetails = rows.map((r) => ({
@@ -595,14 +631,14 @@ export function useBarcodeGenerate() {
       NAVAWT: r.navaWt,
       SALESSTNWT: r.salesStoneWt,
       DIAWT: r.diamondWt,
-      SIZE: Number(r.size),
+      SIZE: r.size,
       // WASPER: r.wastePercent,
       // MC: r.mc,
       // TOUCH: r.touch,
       // NETWT: r.grsweight - r.stoneWt,
     }));
     return { purchaseDetails, taggingDetails };
-  }, [rows, headerForm, itemId, isretag]);
+  }, [rows, headerForm, itemId]);
 
   const handleSave = useCallback(() => {
     const remainingByRef = remainingRef.current;
@@ -721,7 +757,6 @@ export function useBarcodeGenerate() {
     clearAll();
     resetForm();
     setDeselectFlag(true);
-    setIsRetag(false);
     setTimeout(() => setDeselectFlag(false), 50);
 
     if (barcodeItems?.ENTRY_NO) {
@@ -730,36 +765,211 @@ export function useBarcodeGenerate() {
   }, [clearAll, barcodeItems]);
 
   /* ── Table config ── */
+  // Update transactionFormFields to filter based on hasStone
   const transactionFormFields = useMemo(() =>
-    transactionTableCols.map((col): any => {
-      const isNum = NUMERIC_FIELDS.has(col.key);
-      const isRequired = hasStone ? REQUIRED_FIELDS_STN.has(col.key) : REQUIRED_FIELDS.has(col.key);
-      const base: any = {
-        key: col.key,
-        label: col.label || col.key,
-        placeholder: col.label || col.key,
-        type: col.type,
-        isRequired,
-        size: "xs",
-        align: col.type === "number" ? "right" : "left",
-        allowFocus: col.allowFocus,
-        disabled: col.disabled
-      };
-      if (col.decimalScale) base.decimalScale = col.decimalScale;
-
-      return base;
-    }),
+    transactionTableCols
+      .filter((col) => {
+        // If column has showWhenHasStone flag, only show when hasStone is true
+        if ('showWhenHasStone' in col && col.showWhenHasStone) {
+          return hasStone;
+        }
+        return true;
+      })
+      .map((col): any => {
+        const isNum = NUMERIC_FIELDS.has(col.key);
+        const isRequired = hasStone ? REQUIRED_FIELDS_STN.has(col.key) : REQUIRED_FIELDS.has(col.key);
+        const base: any = {
+          key: col.key,
+          label: col.label || col.key,
+          placeholder: col.label || col.key,
+          type: col.type,
+          isRequired,
+          size: "xs",
+          align: col.type === "number" ? "right" : "left",
+          allowFocus: col.allowFocus,
+          disabled: col.disabled
+        };
+        if (col.decimalScale) base.decimalScale = col.decimalScale;
+        return base;
+      }),
     [hasStone]);
 
+  // Update allDisplayCols to filter stone columns when hasStone is false
   const allDisplayCols = useMemo(() =>
     transactionTableCols
-      .filter((col) => isEditing || col.key !== "__print")
+      .filter((col) => {
+        // First filter based on hasStone
+        if ('showWhenHasStone' in col && col.showWhenHasStone) {
+          if (!hasStone) return false;
+        }
+        // Then filter print column for non-editing mode
+        if (!isEditing && col.key === "__print") return false;
+        return true;
+      })
       .map((col) => ({
         ...col,
         align: col.key === "size" || col.key === "barcode" ? "left" as const
           : col.key === "__print" ? "center" as const : "right" as const,
       })),
-    [isEditing]);
+    [isEditing, hasStone]);
+
+  // Update the handleFormChange to handle hasStone condition
+  // const handleFormChange = useCallback((key: string, value: unknown) => {
+  //   setTransactionForm((p) => {
+  //     const updated = { ...p, [key]: value };
+
+  //     // If hasStone is false, ensure stone values are 0
+  //     if (!hasStone) {
+  //       updated.purchaseStoneWt = "0";
+  //       updated.stoneWt = "0";
+  //       updated.navaWt = "0";
+  //       updated.salesStoneWt = "0";
+  //       return updated;
+  //     }
+
+  //     // Auto-calculate salesStoneWt = stoneWt + navaWt only when hasStone is true
+  //     if (key === "stoneWt" || key === "navaWt") {
+  //       const stoneWt = key === "stoneWt" ? Number(value) : Number(updated.stoneWt);
+  //       const nava = key === "navaWt" ? Number(value) : Number(updated.navaWt);
+  //       updated.salesStoneWt = String((stoneWt + nava).toFixed(3));
+  //     }
+  //     return updated;
+  //   });
+
+  //   // Only track touched state for visible fields
+  //   if (hasStone || !["stoneWt", "navaWt", "purchaseStoneWt", "salesStoneWt"].includes(key)) {
+  //     setTouched((p) => ({ ...p, [key]: true }));
+  //   }
+  //   setFieldErrors((p) => { const n = { ...p }; delete n[key]; return n; });
+  // }, [hasStone]);
+
+  // Update handleRowSubmit to handle hasStone condition
+  // const handleRowSubmit = useCallback(() => {
+  //   const currentForm = transactionFormRef.current;
+  //   const editingRowId = editingRowIdRef.current;
+  //   const remainingByRef = remainingRef.current;
+  //   const originalRow = originalRowRef.current;
+
+  //   const editingRow = rowsRef.current.find(r => r.id === editingRowId);
+
+  //   let effectiveBalance = { ...remainingByRef };
+
+  //   if (editingRowId && originalRow) {
+  //     effectiveBalance = {
+  //       PCS: effectiveBalance.PCS + 1,
+  //       GRSWT: effectiveBalance.GRSWT + Number(originalRow.grsweight || 0),
+  //       STNWT: effectiveBalance.STNWT + Number(originalRow.stoneWt || 0),
+  //     };
+  //   }
+
+  //   // If hasStone is false, ensure stone values are 0
+  //   if (!hasStone) {
+  //     currentForm.purchaseStoneWt = "0";
+  //     currentForm.stoneWt = "0";
+  //     currentForm.navaWt = "0";
+  //     currentForm.salesStoneWt = "0";
+  //   }
+
+  //   const errors = validateSingleRow(
+  //     {
+  //       grsweight: currentForm.grsweight,
+  //       purchaseStoneWt: currentForm.purchaseStoneWt,
+  //       salesStoneWt: currentForm.salesStoneWt
+  //     },
+  //     hasStone,
+  //     effectiveBalance,
+  //     limits,
+  //     tolerance
+  //   );
+
+  //   // Filter errors based on hasStone
+  //   const filteredErrors = hasStone ? errors :
+  //     Object.fromEntries(
+  //       Object.entries(errors).filter(([key]) =>
+  //         !["purchaseStoneWt", "stoneWt", "navaWt", "salesStoneWt"].includes(key)
+  //       )
+  //     );
+
+  //   if (Object.keys(filteredErrors).length) {
+  //     setTouched(FIELD_ORDER.reduce((a, k) => ({ ...a, [k]: true }), {} as Record<string, boolean>));
+  //     setFieldErrors(filteredErrors);
+  //     const first = FIELD_ORDER.find((k) => filteredErrors[k]);
+  //     if (first) {
+  //       focusField(first);
+  //       toaster.create({ title: "Validation Error", description: filteredErrors[first], type: "error", duration: 2000 });
+  //     }
+  //     return;
+  //   }
+
+  //   setIsSubmittingRow(true);
+
+  //   try {
+  //     const formValues = {
+  //       grsweight: Number(currentForm.grsweight),
+  //       purchaseStoneWt: hasStone ? Number(currentForm.purchaseStoneWt) : 0,
+  //       stoneWt: hasStone ? Number(currentForm.stoneWt) : 0,
+  //       navaWt: hasStone ? Number(currentForm.navaWt) : 0,
+  //       salesStoneWt: hasStone ? Number(currentForm.salesStoneWt) : 0,
+  //       diamondWt: Number(currentForm.diamondWt),
+  //       size: currentForm.size,
+  //     };
+
+  //     if (editingRowId) {
+  //       updateRow(editingRowId, formValues);
+  //       toaster.create({ title: "Row Updated", type: "success", duration: 2000 });
+  //       setEditRowId(null);
+  //       setOriginalRow(null);
+  //     } else {
+  //       const barcode = assignSingleBarcodeRef.current(rowsRef.current.length);
+
+  //       if (!barcode) {
+  //         toaster.create({
+  //           title: "Barcode not ready",
+  //           description: "Please wait for initialization",
+  //           type: "warning",
+  //           duration: 2000,
+  //         });
+  //         return;
+  //       }
+
+  //       addRow({
+  //         ...formValues,
+  //         barcode,
+  //         draftRowId: headerForm.ENTRYNO || String(Date.now()),
+  //       });
+
+  //       toaster.create({
+  //         title: "Row Added",
+  //         type: "success",
+  //         duration: 2000,
+  //       });
+  //     }
+  //     resetForm();
+  //     setTimeout(() => focusField(FIELD_ORDER[1]), 50);
+  //   } finally {
+  //     setIsSubmittingRow(false);
+  //   }
+  // }, [
+  //   hasStone,
+  //   validateSingleRow,
+  //   assignSingleBarcode,
+  //   addRow,
+  //   updateRow,
+  //   resetForm,
+  //   focusField,
+  //   headerForm.ENTRYNO,
+  //   tolerance,
+  // ]);
+
+  // const allDisplayCols = useMemo(() =>
+  //   transactionTableCols
+  //     .filter((col) => isEditing || col.key !== "__print")
+  //     .map((col) => ({
+  //       ...col,
+  //       align: col.key === "size" || col.key === "barcode" ? "left" as const
+  //         : col.key === "__print" ? "center" as const : "right" as const,
+  //     })),
+  //   [isEditing]);
 
   const transactionTotals = useMemo(() => ({
     grsweight: rows.reduce((s, r) => s + r.grsweight, 0),
@@ -804,14 +1014,14 @@ export function useBarcodeGenerate() {
     transactionForm, editRowId, fieldErrors, touched, headerErrors,
     isSubmittingRow, isSubmittingTag,
     excelDrawerOpen, setExcelDrawerOpen,
-    isretag, setIsRetag,
+  
     deselectFlag,
 
     excelData,
     setExcelData,
     handleExcelChange,
 
-    purchaserCollection, inwardCollection, itemCollection, itemSizeCollection,
+    purchaserCollection, customerCollection, inwardCollection, itemCollection, itemSizeCollection,
     stockTableData,
     stockSummary, limits, remaining,
 

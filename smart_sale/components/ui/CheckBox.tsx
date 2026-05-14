@@ -123,7 +123,7 @@ interface SingleCheckboxProps {
     checked?: boolean
     onChange?: (checked: boolean) => void
     size?: "xs"|"sm" | "md" | "lg"
-    fontSize?:"xs"| "sm" | "md" | "lg"
+    fontSize?:string |"xs"| "sm" | "md" | "lg"
     [key: string]: any
 }
 

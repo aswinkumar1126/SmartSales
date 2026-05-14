@@ -53,7 +53,7 @@ export interface BarcodePrintDetail {
   TOUCH?: number;
 
   NETWT?: number;
-  SIZE: number;
+  SIZE: string;
 
   UPTIME?: string;
   USERID?: number;

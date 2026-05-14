@@ -31,6 +31,13 @@ export const barcodeHeaderFields = (  options :{vendorCollection?: {
 
 
     },
+    {
+        name: "RETAG",
+        label: "RETAG",
+        type: "checkbox",
+        fontSize :'xs',
+  
+    },
   
     { 
         name: "COMPANYNAME", 

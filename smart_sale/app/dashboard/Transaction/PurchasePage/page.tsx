@@ -1468,16 +1468,16 @@ useGlobalKey(
                                                     rows={typeRows}
                                                     editingState={editingState}
                                                     isEditing={false}
-                                                    onAddRow={(formData) => {
-                                                        handleAddRow(transactionType, formData);
-                                                    }}
-                                                    onUpdateRow={(rowIndex, field, value) => {
-                                                        handleUpdateRow(rowIndex, field, value, typeRows);
-                                                    }}
-                                                    onRemoveRow={(rowId) => {
-                                                        handleRemoveRow(rowId);
-                                                    }}
-                                                    onEditRow={(rowId, submitData) => handleEditRow(rowId, submitData)}
+                                                    // onAddRow={(formData) => {
+                                                    //     handleAddRow(transactionType, formData);
+                                                    // }}
+                                                    // onUpdateRow={(rowIndex, field, value) => {
+                                                    //     handleUpdateRow(rowIndex, field, value, typeRows);
+                                                    // }}
+                                                    // onRemoveRow={(rowId) => {
+                                                    //     handleRemoveRow(rowId);
+                                                    // }}
+                                                    // onEditRow={(rowId, submitData) => handleEditRow(rowId, submitData)}
                                                     onRowClick={handleRowClick}
                                                     onCancelEdit={handleCancelEdit}
                                                     itemsCollection={activeCollection}
@@ -1504,6 +1504,7 @@ useGlobalKey(
                                                         showBillModal,
                                                         handleBillShow: handleBillShow,
                                                     }}
+                                                    isTagedItem={isTagedItem}
                                                 />
                                             </Box>
                                         );

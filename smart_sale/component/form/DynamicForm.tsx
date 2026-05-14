@@ -18,6 +18,7 @@ import { SwitchInput } from '@/components/ui/SwitchInput';
 
 
 import { FormField } from '@/types/form/form';
+import { SingleCheckbox } from '@/components/ui/CheckBox';
 
 
 interface DynamicFormProps {
@@ -270,6 +271,19 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
                             onBlur={() => handleBlur(field.name)}
                         />
                     );
+            case 'checkbox' :
+                return (
+                    <SingleCheckbox 
+                        label={field.label}
+                        checked={formData[field.name] ?? false}
+                        onChange={(checked: boolean) => onChange(field.name, checked)}
+                        size={field.size || "sm"}
+                        disabled={isDisabled}
+                        fontSize={field.fontSize || "sm"}
+
+                    />
+                )
+
 
          
             case 'number':
