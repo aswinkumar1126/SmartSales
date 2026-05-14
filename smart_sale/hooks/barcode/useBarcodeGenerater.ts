@@ -112,11 +112,15 @@ export function useBarcodeGenerate() {
   const [excelData, setExcelData] = useState<ExcelData>([]);
   const [originalRow, setOriginalRow] = useState<BarcodeTransactionRow | null>(null);
 
+  const [savedRowsInEditing ,setSavedRowsInEditing] =useState<number>(1);
+
   /* ── Refs ── */
   const transactionFormRef = useRef(transactionForm);
   const rowsRef = useRef<BarcodeTransactionRow[]>([]);
   const editingRowIdRef = useRef(editRowId);
   const originalRowRef = useRef(originalRow);
+
+
 
   
 
@@ -159,6 +163,7 @@ export function useBarcodeGenerate() {
   }), [headerForm.COMPANYNAME, headerForm.INWARDNO, headerForm.ITEMNAME, isEditing, selectedEntryNo ,headerForm.RETAG ]);
 
   const { data: barcodeItems } = useBarcodeItems(barcodeQueryParams);
+  
 
   const isFirstRender = useRef(true);
 
@@ -259,6 +264,7 @@ export function useBarcodeGenerate() {
     prefix: baseBarcodePrefix,
     startNumber: startBarcodeNumber,
     isEditing,
+    savedRowsInEditing
   });
 
   const assignSingleBarcodeRef = useRef(assignSingleBarcode);
@@ -314,8 +320,8 @@ export function useBarcodeGenerate() {
   }, []);
 
   /* ── Header / form handlers ── */
-  const handleHeaderChange = useCallback((field: string, value: unknown) => {
-    setHeaderField(field as keyof typeof headerForm, String(value ?? ""));
+  const handleHeaderChange = useCallback((field: string, value: any) => {
+    setHeaderField(field as keyof typeof headerForm, value);
     setHeaderErrors({});
   }, [setHeaderField]);
 
@@ -410,7 +416,7 @@ export function useBarcodeGenerate() {
         setEditRowId(null);
         setOriginalRow(null);
       } else {
-        const barcode = assignSingleBarcodeRef.current(rowsRef.current.length);
+        const barcode = assignSingleBarcodeRef.current(rowsRef.current.length ,isEditing ,savedRowsInEditing);
 
         if (!barcode) {
           toaster.create({
@@ -555,15 +561,31 @@ export function useBarcodeGenerate() {
 
     const currentRows = rowsRef.current;
 
-    const updatedRows = parsedRows.map((r, index) => {
-      const existingRow = currentRows[index];
+    let barcodeCounter = 0;
+
+    const updatedRows = parsedRows.map((r) => {
+      const existingRow = currentRows.find(
+        (row) => row.id === r.id || row.draftRowId === r.draftRowId
+      );
+
+      const isExisting = !!existingRow;
+
+      let barcode = existingRow?.barcode;
+
+      if (!barcode) {
+        barcode = assignSingleBarcodeRef.current(
+          barcodeCounter,
+          isEditing,
+          savedRowsInEditing ?? 0
+        );
+
+        barcodeCounter++;
+      }
 
       return {
         id:
           existingRow?.id ||
-          `excel-${Date.now()}-${Math.random()
-            .toString(36)
-            .slice(2, 7)}`,
+          `excel-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
 
         draftRowId:
           existingRow?.draftRowId ||
@@ -578,11 +600,9 @@ export function useBarcodeGenerate() {
         diamondWt: r.diamondWt || 0,
         size: r.size || "",
 
-        barcode:
-          existingRow?.barcode ||
-          assignSingleBarcodeRef.current(index),
+        barcode,
 
-        isNew: existingRow?.isNew ?? true,
+        isNew: !isExisting,
       };
     });
 
@@ -605,6 +625,8 @@ export function useBarcodeGenerate() {
     validateRows,
     setRows,
     tolerance,
+    isEditing,
+    savedRowsInEditing
   ]);
 
   const hasExistingRows = rows.length > 0;
@@ -648,10 +670,11 @@ export function useBarcodeGenerate() {
     if (!validateRows({ rows, limits, balance: effectiveBalance, tolerance })) return;
     const { purchaseDetails, taggingDetails } = buildPayload();
     setIsSubmittingTag(true);
-    console.log(taggingDetails ,'createTag');
+    console.log(purchaseDetails,taggingDetails ,'createTag');
 
     createTag(
-      { PURCHASEDETAILS: purchaseDetails, TAGGINGDETAILS: taggingDetails },
+      { RETAG :purchaseDetails.RETAG ,  PURCHASEDETAILS: purchaseDetails, TAGGINGDETAILS: taggingDetails },
+    
       {
         onSuccess: (res) => {
           toaster.create({ title: "Saved", description: "Tagging created successfully", type: "success", duration: 2000 });
@@ -677,9 +700,10 @@ export function useBarcodeGenerate() {
     if (!validateRows({ rows, limits, balance: effectiveBalance, countOnlyNew: false, tolerance })) return;
     const { purchaseDetails, taggingDetails } = buildPayload();
     setIsSubmittingTag(true);
+    console.log("update tag", purchaseDetails, taggingDetails)
 
     updateTag(
-      { PURCHASEDETAILS: purchaseDetails, TAGGINGDETAILS: taggingDetails, id: Number(headerForm.ENTRYNO) },
+      { RETAG: purchaseDetails.RETAG, PURCHASEDETAILS: purchaseDetails, TAGGINGDETAILS: taggingDetails, id: Number(headerForm.ENTRYNO) },
       {
         onSuccess: (res) => {
           toaster.create({ title: "Updated", description: "Tagging updated successfully", type: "success", duration: 2000 });

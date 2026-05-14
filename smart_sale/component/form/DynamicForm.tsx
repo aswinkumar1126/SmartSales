@@ -272,11 +272,12 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
                         />
                     );
             case 'checkbox' :
+                    console.log("field:", field.name, formData[field.name])
                 return (
                     <SingleCheckbox 
                         label={field.label}
-                        checked={formData[field.name] ?? false}
-                        onChange={(checked: boolean) => onChange(field.name, checked)}
+                        checked={Boolean(formData[field.name])}
+                        onChange={(checked) => onChange(field.name, checked)}
                         size={field.size || "sm"}
                         disabled={isDisabled}
                         fontSize={field.fontSize || "sm"}

@@ -31,7 +31,7 @@ export interface TAGGING_DETAILS {
 }
 
 export interface CreateTag {
-
+    RETAG?: boolean;
     PURCHASEDETAILS: PURCHASE_DETAILS;
     TAGGINGDETAILS: TAGGING_DETAILS[];
 

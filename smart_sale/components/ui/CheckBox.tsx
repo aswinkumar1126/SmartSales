@@ -139,7 +139,7 @@ const SingleCheckbox = ({
     return (
         <Checkbox.Root
             checked={checked}
-            onCheckedChange={(e) => onChange?.(e.checked === true)}
+           onCheckedChange={(e) => onChange?.(!!e.checked)}
             {...props}
             disabled={disabled}
             size={size}

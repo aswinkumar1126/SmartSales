@@ -28,11 +28,14 @@ export const useCreateTag = () =>{
   return useApiMutation<CreateTagResponse,CreateTag>(
     {
       url:"/tagged",
+      params: (variables: CreateTag) => ({ RETAG: variables.RETAG }), // Access from body
       method:"POST",
       queryKey:['barcode-items-filter'],
+ 
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: ['tag-details']})
-      }
+      },
+
     }
   )
 }
@@ -43,6 +46,7 @@ export const useUpdateTag = () => {
     {
       url:({id})=>`/tagged/${id}`,
       method:"PUT",
+      params: (variables: CreateTag) => ({ RETAG: variables.RETAG }), // Access from body
       queryKey:['barcode-items-filter'],
       // enabled: !!id ,
       onSuccess: () => {

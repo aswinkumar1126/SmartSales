@@ -75,13 +75,12 @@ export const useApiQuery = <
 export const useApiMutation = <TData = any, TBody = any, TParams = any>({
     url,
     method = "POST",
-    params,
+    params, // Can be object or function
     queryKey,
     onSuccess,
     onError,
     onSettled,
     onMutate,
-    
 }: ApiHookOptions<TData, TParams, TBody>) => {
     const queryClient = useQueryClient();
 
@@ -89,10 +88,15 @@ export const useApiMutation = <TData = any, TBody = any, TParams = any>({
         mutationFn: async (variables: TBody) => {
             const resolvedUrl = typeof url === "function" ? url(variables) : url;
 
+            // Resolve params - if it's a function, call it with variables
+            const resolvedParams = typeof params === "function"
+                ? params(variables)
+                : params;
+
             const res = await axiosInstance.request<ApiResponse<TData>>({
                 url: resolvedUrl,
                 method,
-                params,
+                params: resolvedParams,
                 data: variables,
             });
 

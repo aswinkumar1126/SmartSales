@@ -104,6 +104,8 @@ interface BarcodeState {
   setRows: (rows: BarcodeTransactionRow[]) => void;
   loadApiRows: (rows: Omit<BarcodeTransactionRow, "isNew">[]) => void;
 
+  // replaceAllRows: (rows: BarcodeTransactionRow[]) => void; // Add this
+
   printId: number | null;
   setPrintId: (id: number | null) => void;
   printDetails: BarcodePrintDetail[];
@@ -147,6 +149,12 @@ export const useBarcodeStore = create<BarcodeState>()(
       deleteRow: (id) =>
         set((s) => ({ rows: s.rows.filter((r) => r.id !== id) })),
       setRows: (rows) => set({ rows }),
+
+      // replaceAllRows: (rows) => {
+      //   set({ rows });
+      //   // Optionally trigger any side effects here
+      //   console.log('All rows replaced:', rows.length);
+      // },
       loadApiRows: (rows) =>
         set({ rows: rows.map((r) => ({ ...r, isNew: false })) }),
 

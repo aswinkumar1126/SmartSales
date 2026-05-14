@@ -260,7 +260,8 @@ function BarCodeGenerate() {
                 label="EXCEL IMPORT"
                 checked={excelDrawerOpen}
                 onChange={() => setExcelDrawerOpen((p) => !p)}
-                size="sm" fontSize="xs"
+                size="sm" 
+                fontSize="xs"
               />
               {rows.length > 0 && (
                 <Button
