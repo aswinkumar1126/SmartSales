@@ -896,18 +896,17 @@ const defaultHmcCharge = hmcAmount > 0
         }
         if (col.key === "ITEMID" || col.key === "PUREID") {
             const items = field.collection?.items || [];
-            const item = items.find((i) => i.value === value?.toString());
 
-            // Locked row — always show label, never combobox
+            // Locked row — always show resolved label
             if (shouldDisableOnEditing) {
-                return (                                      
+                return (
                     <span style={{ padding: "0 6px", fontSize: 11, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", display: "block" }}>
                         {itemName}
                     </span>
                 );
             }
 
-            // Idle cell — show label
+            // Idle cell — show resolved label
             if (!isEditing && !isFocused) {
                 return (
                     <span style={{ padding: "0 6px", fontSize: 11, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", display: "block" }}>
@@ -917,17 +916,17 @@ const defaultHmcCharge = hmcAmount > 0
             }
 
             // Active editable cell — show combobox
-            // return (
-            //     <SelectCombobox
-            //         value={value || ""}
-            //         onChange={(v) => { onChange(v); if (v) onCommit(); }}
-            //         items={items}
-            //         placeholder={field.placeholder || `Select ${field.label}`}
-            //         ref={inputRef as React.RefObject<HTMLInputElement>}
-            //         rounded="sm"
-            //         disable={false}
-            //     />
-            // );
+            return (
+                <SelectCombobox
+                    value={value || ""}
+                    onChange={(v) => { onChange(v); if (v) onCommit(); }}
+                    items={items}
+                    placeholder={field.placeholder || `Select ${field.label}`}
+                    ref={inputRef as React.RefObject<HTMLInputElement>}
+                    rounded="sm"
+                    disable={false}
+                />
+            );
         }
 
         return (
