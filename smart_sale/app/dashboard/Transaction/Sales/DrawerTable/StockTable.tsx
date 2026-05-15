@@ -101,7 +101,7 @@ export default function StockDrawer({
                 { key: "STOCKSTATUS", label: "Stock Status", align: "end" },
                 { key: "TOUCH", label: "Touch", align: "end" },
                 { key: "PUREWT", label: "Pure Wt", align: "end" },
-                // { key: "ACTION", label: "Action", align: "center" },
+                { key: "ACTION", label: "Action", align: "center" },
             ];
     }, [showStock]);
 
@@ -217,6 +217,8 @@ export default function StockDrawer({
                                     const stockId = getStockId(row);
 
                                     const touch = getTouch(row);
+
+                                    
                                  
                                     // Get availability for this row based on stock type
                                     const availability = getStockAvailability && stockId
@@ -341,7 +343,7 @@ export default function StockDrawer({
                                                 <Table.Cell as="td" textAlign="end" fontWeight="bold" color="blue.600">
                                                     {Number(row.PUREWT || row.purewt || 0).toFixed(3)}g
                                                 </Table.Cell>
-                                                {/* <Box as="td" textAlign="center">
+                                                <Box as="td" textAlign="center">
                                                     <IconButton
                                                         size="2xs"
                                                         onClick={() => onIssue(row)}
@@ -351,7 +353,7 @@ export default function StockDrawer({
                                                     >
                                                         <FaArrowUp />
                                                     </IconButton>
-                                                </Box> */}
+                                                </Box>
                                             </>
                                         );
                                     }

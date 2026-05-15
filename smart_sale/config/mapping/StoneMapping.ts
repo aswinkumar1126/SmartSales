@@ -2,7 +2,7 @@ import { FormField } from "@/types/form/form";
 
 type StoneMappingCollections = {
     collection: {
-        customerType: { label: string; value: string }[];
+        // customerType: { label: string; value: string }[];
         customer: { label: string; value: string }[];
         itemType: { label: string; value: string }[];
     };
@@ -12,18 +12,18 @@ type StoneMappingCollections = {
 };
 
 export const StoneMappingFormConfig = ({
-    collection: { customerType, customer, itemType },
+    collection: { customer, itemType },
     disabled: { isCustomerDisabled },
 }: StoneMappingCollections): FormField[] => [
-    {
-        name: "acType",
-        label: "CUSTOMER TYPE",
-        type: "combobox",
-        size: "sm",
-        required: true,
-        rounded: "sm",
-        items: customerType || [],
-    },
+    // {
+    //     name: "acType",
+    //     label: "CUSTOMER TYPE",
+    //     type: "combobox",
+    //     size: "sm",
+    //     required: true,
+    //     rounded: "sm",
+    //     items: customerType || [],
+    // },
 
     {
         name: "accode",
@@ -33,7 +33,7 @@ export const StoneMappingFormConfig = ({
         required: true,
         rounded: "sm",
         items: customer || [],
-        disabled: isCustomerDisabled,
+        // disabled: isCustomerDisabled,
     },
 
     {

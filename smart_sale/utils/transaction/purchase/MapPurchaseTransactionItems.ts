@@ -112,6 +112,8 @@ const mapPurchaseItems = (
 
         console.log(item,'purcaseTranItem');
 
+        const isTagged = item.STOCKTYPE === "T" ;
+
         // ---------------- STONES ----------------
         const stonesRaw = item.STONEDETAILS || [];
         const normalizedStones = stonesRaw.map((s: any, i: number) => {
@@ -159,6 +161,9 @@ const mapPurchaseItems = (
             __isEditing: false,
             TRANSACTION_TYPE: type,
             _type: type,
+
+
+
             ITEMID: String(item.ITEMID || ""),
             TAGNO: item.TAGNO || "",
             PCS: Number(item.PCS || 0),
@@ -174,6 +179,9 @@ const mapPurchaseItems = (
             SNO: item.SNO || "",
             _stones: normalizedStones,
             _miscCharges: normalizedMisc,
+
+            __isTaged: isTagged ,
+            ITEM_TYPE : isTagged ? "TAGGED" : "NON_TAGGED" ,
 
             ITEMNAME :item.ITEMNAME ,
             ISEDITABLE: item.EDITABLE  ,

@@ -57,7 +57,7 @@ import { StoneMappingFormConfig } from "@/config/mapping/StoneMapping";
 /* ---------------- INITIAL STATE ---------------- */
 
 const initialFormState: StoneMappingMaster = {
-    acType: "",
+    // acType: "",
     accode: "",
     itemId: "",
     stnAmt: "",
@@ -120,11 +120,10 @@ const HmcMappingForm = () => {
     //     refetch: hmcRefetchById,
     // } = useHmcDataById(editId);
 
-    const acType =
-        form.acType?.trim().toUpperCase() || undefined;
+    // const acType =
+    //     form.acType?.trim().toUpperCase() || undefined;
 
-    const { data: allAccounts } =
-        useAllAccountHead(acType);
+    const { data: allAccounts } = useAllAccountHead("CR");
 
     const { data: items } = useStoneItems({ STUDDED :"Y"});
 
@@ -159,13 +158,13 @@ const HmcMappingForm = () => {
     const formConfig =
         StoneMappingFormConfig({
             collection: {
-                customerType: AccountTypeList,
+                // customerType: AccountTypeList,
                 customer: customerList,
                 itemType: itemTypeList,
             },
 
             disabled: {
-                isCustomerDisabled: !form.acType,
+                isCustomerDisabled: !form.accode,
             },
         });
 
@@ -187,7 +186,7 @@ const HmcMappingForm = () => {
         setEditId(row.sno);
 
         setForm({
-            acType: row.acType,
+            // acType: row.acType,
             accode: String(row.accode),
             itemId: String(row.itemId),
             stnAmt: String(row.stnAmt),
@@ -216,7 +215,7 @@ const HmcMappingForm = () => {
     /* ---------------- PAYLOAD ---------------- */
 
     const payload = {
-        acType: form.acType,
+        // acType: form.acType,
 
         accode: Number(form.accode),
 
@@ -237,9 +236,9 @@ const HmcMappingForm = () => {
                 string
             >> = {};
 
-        if (!form.acType)
-            errs.acType =
-                "Customer Type is required";
+        // if (!form.acType)
+        //     errs.acType =
+        //         "Customer Type is required";
 
         if (!form.accode)
             errs.accode =

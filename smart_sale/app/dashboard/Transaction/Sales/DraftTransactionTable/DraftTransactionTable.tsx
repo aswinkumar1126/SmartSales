@@ -98,7 +98,7 @@ interface DraftTransactionTableProps {
 
 const newRowId = () => `row-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
 
-function recalcRow(row: Record<string, any>, isIssue: boolean) {
+export function recalcRow(row: Record<string, any>, isIssue: boolean) {
     const g = parseFloat(row.GRSWT) || 0;
     const s = parseFloat(row.STNWT) || 0;
     const touch = parseFloat(row.TOUCH) || 0;
@@ -122,7 +122,7 @@ function makeEmptyRow(formFields: FormField[], isIssue: boolean): Record<string,
     row.WASTYPE = "TOUCH";
     row._stones = [];
     row._miscCharges = [];
-    row.STN_PRESENT = "N";
+    row.STN_PRESENT = true;
     row.CAL_MODE = "NETWT";
     return recalcRow(row, isIssue);
 }
@@ -190,8 +190,10 @@ export default function DraftTransactionTable({
             [activeRowId]
         )
     );
-    const activeStnPresent: string =
-        activeStoreRow?.STN_PRESENT ?? activeRow?.STN_PRESENT ?? "N";
+    const activeStnPresent: boolean =
+        activeStoreRow?.STN_PRESENT ?? activeRow?.STN_PRESENT ?? true;
+
+    console.log(activeStnPresent,'activeStnPresent');
     const activeCalMode: string =
         activeStoreRow?.CAL_MODE ?? activeRow?.CAL_MODE ?? "NETWT";
 
@@ -281,8 +283,8 @@ export default function DraftTransactionTable({
                 return { ...base, disabled: true };
 
             // ── STNWT: disabled when the active row's item has no stones ─────
-            if (!isIssue && col.key === "STNWT")
-                return { ...base, disabled: activeStnPresent !== "Y" };
+            // if (!isIssue && col.key === "STNWT")
+            //     return { ...base, disabled: !activeStnPresent };
 
             return base;
         });
@@ -430,7 +432,7 @@ export default function DraftTransactionTable({
         addDraftRow({
             ...row,
             __rowId: row.__rowId,
-            STN_PRESENT: row.STN_PRESENT ?? "N",
+            STN_PRESENT: row.STN_PRESENT || false,
             CAL_MODE: row.CAL_MODE ?? "NETWT",
             __isNew: false,
             __previewSno:
@@ -635,27 +637,30 @@ export default function DraftTransactionTable({
         const key = `${activeRowId}::${activeRowItemId}`;
         if (appliedItemIdRef.current[activeRowId] === key) return;
 
-        if (!touchData?.TOUCH) {
-            touchNotFoundRef.current.add(activeRowId);
-            setTimeout(() => {
-                toaster.create({
-                    title: "No Touch Found",
-                    description: "No touch configured for this item & customer. Please enter manually.",
-                    type: "warning",
-                    duration: 3000,
-                });
-            }, 0);
-            return;
-        }
+
+        if(isEditing) return ;
+
+        // if (!touchData?.TOUCH) {
+        //     touchNotFoundRef.current.add(activeRowId);
+        //     setTimeout(() => {
+        //         toaster.create({
+        //             title: "No Touch Found",
+        //             description: "No touch configured for this item & customer. Please enter manually.",
+        //             type: "warning",
+        //             duration: 3000,
+        //         });
+        //     }, 0);
+        //     return;
+        // }
 
         appliedItemIdRef.current[activeRowId] = key;
         touchNotFoundRef.current.delete(activeRowId);
 
-        const touch = touchData.TOUCH;
-        const calMode = touchData.CALMODE || "NETWT";
-        const stnPresent = touchData.STNPRESENT === "Y";
-        const hmcAmount = Number(touchData.HMCAMT ?? 0);
-        const itemType = touchData.STOCKTYPE === "T" ? "TAGED" : "NON-TAGED";
+        const touch = touchData?.TOUCH;
+        const calMode = touchData?.CALMODE || "NETWT";
+        const stnPresent = touchData?.STNPRESENT === "Y";
+        const hmcAmount = Number(touchData?.HMCAMT ?? 0);
+        const itemType = touchData?.STOCKTYPE === "T" ? "TAGED" : "NON-TAGED";
         const istaged = itemType === "TAGED";
 
         const capturedRowId = activeRowId;
@@ -717,12 +722,14 @@ export default function DraftTransactionTable({
                 duration: 2000,
             });
         }, 0);
-    }, [touchData, touchDataLoading, activeRowId, activeRowItemId]);
+    }, [touchData, touchDataLoading, activeRowId, activeRowItemId ,isEditing]);
 
     // ── Pure gold effect — writes directly to store by rowId ─────────────────
     useEffect(() => {
         if (!activeRowId || !activeRowPureId) return;
         if (!pureStockData) return;
+
+        if(isEditing) return ;
 
         const key = `${activeRowId}::${activeRowPureId}`;
         if (appliedPureIdRef.current[activeRowId] === key) return;
@@ -766,7 +773,7 @@ export default function DraftTransactionTable({
                 duration: 1500,
             });
         }, 0);
-    }, [pureStockData, activeRowId, activeRowPureId, isIssue]);
+    }, [pureStockData, activeRowId, activeRowPureId, isIssue ,isEditing]);
 
     // ── Stone modal ───────────────────────────────────────────────────────────
     const handleOpenStoneModal = useCallback((rowId: string, grsWeight: number) => {
@@ -865,16 +872,17 @@ export default function DraftTransactionTable({
         if (col.key === "STNWT") {
             // Per-row STN_PRESENT check — each row respects its own item's stone config
             const rowStnPresent = row.STN_PRESENT ?? false;
+            console.log(rowStnPresent,'rowStnPresent');
             const isStnDisabled = !rowStnPresent;
             const stonesCount = (row._stones || []).length;
 
-            if (isStnDisabled) {
-                return (
-                    <span style={{ padding: "0 6px", fontSize: 11, color: "#aaa", width: "100%", display: "block", textAlign: "right", cursor: "not-allowed" }}>
-                        {value || "0.000"}
-                    </span>
-                );
-            }
+            // if (isStnDisabled) {
+            //     return (
+            //         <span style={{ padding: "0 6px", fontSize: 11, color: "#aaa", width: "100%", display: "block", textAlign: "right", cursor: "not-allowed" }}>
+            //             {value || "0.000"}
+            //         </span>
+            //     );
+            // }
 
             return (
                 <div
@@ -935,9 +943,6 @@ export default function DraftTransactionTable({
        if (col.key === "ITEMID" || col.key === "PUREID") {
     const items = field.collection?.items || [];
 
-    // ── Tagged row: item came via TagNo lookup.
-    //    ITEMID won't exist in the non-tagged items collection,
-    //    so render the item name directly from row data instead of combobox.
     if (col.key === "ITEMID" && row.TAGNO) {
         return (
             <span style={{
@@ -1177,6 +1182,7 @@ export default function DraftTransactionTable({
                         trigger: modalTrigger,
                     }}
                     showEnterNavigate={false}
+                    tranEditing={isEditing}
                 />
             </Box>
 

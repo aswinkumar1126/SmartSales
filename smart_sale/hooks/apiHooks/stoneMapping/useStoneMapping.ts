@@ -46,7 +46,7 @@ export const useStoneMappingData = (filter?: string) => {
         queryFn: () =>
             StoneMappingService().getStoneMappingData(filter),
 
-        select: (data) => data,
+        select: (data) => data.data,
     });
 };
 

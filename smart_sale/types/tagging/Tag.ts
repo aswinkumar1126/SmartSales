@@ -100,6 +100,7 @@ export interface getSingleTagDetail {
     TRANTYPE?: string | null;
     WASPER: number;
     STNAMT:number;
+    STNPRESENT :"Y" | "N" | string;
     STONEDETAILS:
     {
         APPVER?: string | null;

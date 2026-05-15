@@ -466,6 +466,7 @@ export default function StoneEnterMaster({
                 maxVisibleRows={10}
                 accentColor="#185FA5"
                 initialFocusCell={{ rowIndex: 0, colKey: "stoneId" }}  // ✅ clean
+                tranEditing={false}
   
 
 

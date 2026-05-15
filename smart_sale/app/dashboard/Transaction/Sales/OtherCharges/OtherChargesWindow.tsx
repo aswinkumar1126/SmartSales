@@ -486,6 +486,7 @@ export default function OtherChargesWindow({
                     return {};
                 }}
                 initialFocusCell={{ rowIndex: 0, colKey: "chargeId" }}  // ✅ clean
+                tranEditing={false}
             />
 
             <HStack justify="flex-end" gap={2} mt={3}>

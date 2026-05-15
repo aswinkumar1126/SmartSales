@@ -350,6 +350,7 @@ export function useTaggingValidation() {
 
         return false;
       }
+      console.log(balance , balance.STNWT > 0 && balance.PCS === 0 ,'balance check')
       if (balance && balance.STNWT > 0 && balance.PCS === 0) {
         toaster.create({
           title: "Invalid Entry",

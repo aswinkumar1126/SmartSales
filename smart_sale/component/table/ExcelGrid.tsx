@@ -99,6 +99,7 @@ export interface ExcelGridProps {
     initialFocusCol?: string;            // colKey to focus on new row add; falls back to initialFocusCell?.colKey then first navigable col
     focusAfterModal?: { cell: CellCoord; trigger: number }; // focus after modal closes; trigger increments on each close
     disableEnterOnMount?: boolean;       // block Enter for 300ms after mount (prevents modal-open Enter bleed)
+    tranEditing: boolean;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -147,6 +148,7 @@ export const ExcelGrid: React.FC<ExcelGridProps> = ({
     initialFocusCol,
     focusAfterModal,
     disableEnterOnMount = false,
+    tranEditing 
 }) => {
 
     const [activeCell, setActiveCell] = useState<CellCoord | null>(null);
@@ -199,7 +201,7 @@ export const ExcelGrid: React.FC<ExcelGridProps> = ({
 
     // ── Initial focus on mount ────────────────────────────────────────────────
     useEffect(() => {
-        if (!initialFocusCell) return;
+        if (!initialFocusCell ) return;
         const t = setTimeout(() => {
             focusCell(initialFocusCell.rowIndex, initialFocusCell.colKey);
         }, 100);

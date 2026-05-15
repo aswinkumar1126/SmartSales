@@ -730,7 +730,7 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
 
                     <Separator my={2} borderColor="gray.200" />
 
-                    <VStack align="stretch" gap={1}>
+                    {/* <VStack align="stretch" gap={1}>
                         {[
                             { label: "Help & Support", icon: HelpCircle },
                             { label: "Settings", icon: Settings },
@@ -760,7 +760,7 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
                                 </MotionHStack>
                             </Tooltip>
                         ))}
-                    </VStack>
+                    </VStack> */}
                 </VStack>
             </Box>
 

@@ -362,7 +362,7 @@ export function useBarcodeGenerate() {
       effectiveBalance = {
         PCS: effectiveBalance.PCS + 1,
         GRSWT: effectiveBalance.GRSWT + Number(originalRow.grsweight || 0),
-        STNWT: effectiveBalance.STNWT + Number(originalRow.stoneWt || 0),
+        STNWT: effectiveBalance.STNWT + Number(originalRow.purchaseStoneWt || 0),
       };
     }
 

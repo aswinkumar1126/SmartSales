@@ -30,7 +30,8 @@ function calculateStoneAmount(
 const mapSalesItems = (list: any[] = [], type: string, isTagedItem: any, isUseFinalAmount:boolean) => {
     return list.map((item, index) => {
 
-        console.log(list,'listlist');
+        console.log(list,'saleslistlist');
+        
 
 
         const isTagged = item.ITEMID

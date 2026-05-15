@@ -583,7 +583,7 @@ const handleAddRow = useCallback(() => {
         const key = `${activeRowId}::${activeRowItemId}`;
         if (appliedItemIdRef.current[activeRowId] === key) return;
 
-       
+        if(isEditing) return;
 
         console.log(touchData,'touchData');
 
@@ -643,7 +643,7 @@ const defaultHmcCharge = hmcAmount > 0
                 duration: 2000,
             });
         }, 0);
-    }, [touchData, touchDataLoading, activeRowId, activeRowItemId]);
+    }, [touchData, touchDataLoading, activeRowId, activeRowItemId ,isEditing]);
 
     // ── Pure gold effect — writes directly to store by rowId ─────────────────
     useEffect(() => {
@@ -653,6 +653,8 @@ const defaultHmcCharge = hmcAmount > 0
         const key = `${activeRowId}::${activeRowPureId}`;
         if (appliedPureIdRef.current[activeRowId] === key) return;
         appliedPureIdRef.current[activeRowId] = key;
+
+        if(isEditing) return;
 
         const capturedRowId = activeRowId;
 
@@ -692,7 +694,7 @@ const defaultHmcCharge = hmcAmount > 0
                 duration: 2000,
             });
         }, 0);
-    }, [pureStockData, activeRowId, activeRowPureId, isIssue]);
+    }, [pureStockData, activeRowId, activeRowPureId, isIssue , isEditing]);
 
     // ── Stone modal ───────────────────────────────────────────────────────────
     const handleOpenStoneModal = useCallback((rowId: string, grsWeight: number) => {
@@ -766,12 +768,17 @@ const defaultHmcCharge = hmcAmount > 0
         );
     }, [isIssue]);
 
+    const tranEditing = isEditing ;
+
     // ── Cell renderer ─────────────────────────────────────────────────────────
     const renderCell = useCallback((params: RenderCellParams) => {
         const { row, col, value, isEditing, isFocused, onChange, onCommit, inputRef } = params;
 
+        
+
         const field = formFields.find((f) => f.key === col.key);
-        const shouldDisableOnEditing = !row.ISEDITABLE;
+        const shouldDisableOnEditing = row.ISEDITABLE && row.__isTaged;
+        console.log(shouldDisableOnEditing, row,'shouldDisableOnEditing');
 
         // ── Resolve item name: prefer stored ITEMNAME, fall back to collection lookup ──
         const itemName = row.ITEMNAME
@@ -788,7 +795,7 @@ const defaultHmcCharge = hmcAmount > 0
 
         if (!field) return <span style={{ padding: "0 4px", fontSize: 11 }}>{value ?? ""}</span>;
 
-        if (col.computed || col.disabled || shouldDisableOnEditing) {
+        if (col.computed || col.disabled ) {
             let displayValue = value ?? "";
             if (col.decimalScale) displayValue = Number(value || 0).toFixed(col.decimalScale);
             return (
@@ -858,7 +865,7 @@ const defaultHmcCharge = hmcAmount > 0
                         decimalScale={2}
                         inputRef={inputRef}
                         noBorder
-                        disabled={shouldDisableOnEditing}
+                        disabled={shouldDisableOnEditing && tranEditing}
                     />
                     {chargesCount > 0 && (
                         <span style={{ fontSize: 10, color: "#C05621", flexShrink: 0, paddingRight: 2 }}>📋</span>
@@ -896,25 +903,29 @@ const defaultHmcCharge = hmcAmount > 0
         }
         if (col.key === "ITEMID" || col.key === "PUREID") {
             const items = field.collection?.items || [];
-
-            // Locked row — always show resolved label
-            if (shouldDisableOnEditing) {
+ 
+            if (col.key === "ITEMID" && row.ISEDITABLE && tranEditing && row.__isTaged) {
                 return (
-                    <span style={{ padding: "0 6px", fontSize: 11, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", display: "block" }}>
-                        {itemName}
+                    <span style={{
+                        padding: "0 6px", fontSize: 11, color: "#555",
+                        width: "100%", display: "block",
+                        overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                        cursor: "default",
+                    }}>
+                        {row.ITEMNAME || value || ""}
                     </span>
                 );
             }
 
-            // Idle cell — show resolved label
-            if (!isEditing && !isFocused) {
-                return (
-                    <span style={{ padding: "0 6px", fontSize: 11, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", display: "block" }}>
-                        {itemName}
-                    </span>
-                );
-            }
-
+            // ── Non-tagged row: normal combobox ───────────────────────────────
+            // if (!isEditing && !isFocused && tranEditing) {
+            //     const item = items.find((i) => i.value === value?.toString());
+            //     return (
+            //         <span style={{ padding: "0 6px", fontSize: 11, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", display: "block" }}>
+            //             {row.ITEMNAME  || item?.label || value || ""}
+            //         </span>
+            //     );
+            // }
             // Active editable cell — show combobox
             return (
                 <SelectCombobox
@@ -941,11 +952,11 @@ const defaultHmcCharge = hmcAmount > 0
                 decimalScale={field.decimalScale}
                 inputRef={inputRef}
                 noBorder
-                disabled={col.disabled || shouldDisableOnEditing}
+                disabled={col.disabled || shouldDisableOnEditing && tranEditing}
                 allowFocus
             />
         );
-    }, [formFields, isIssue, handleOpenStoneModal, handleOpenMiscModal]);
+    }, [formFields, isIssue, handleOpenStoneModal, handleOpenMiscModal ,tranEditing]);
     // Note: activeRowId intentionally NOT in renderCell deps — STNWT uses per-row data
 
     // ── Colors ────────────────────────────────────────────────────────────────
@@ -1053,6 +1064,7 @@ const defaultHmcCharge = hmcAmount > 0
                         trigger: modalTrigger,
                     }}
                     showEnterNavigate={false}
+                    tranEditing = {isEditing}
                 />
             </Box>
 

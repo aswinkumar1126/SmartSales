@@ -71,6 +71,9 @@ export const useLoadSalesStock = () => {
             MC: stockRow.MC || 0,
             AMOUNT: stockRow.AMOUNT || 0,
 
+            ITEM_TYPE : "NON_TAGED",
+            __isTaged :false ,
+
             stoneDetails: stockRow.stoneDetails || [],
             otherChargesDetails: stockRow.otherChargesDetails || [],
         };

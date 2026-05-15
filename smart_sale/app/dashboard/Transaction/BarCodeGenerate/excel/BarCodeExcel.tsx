@@ -50,7 +50,7 @@ export const EXCEL_COLUMNS: {
         { key: "salesStoneWt", header: "SALES STN WT", type: "numeric", numericFormat: { pattern: "0.000" }, decimalScale: 3, width: 100, readOnly: true },
         // { key: "wastePercent", header: "WASTE %", type: "numeric", numericFormat: { pattern: "0.00" }, decimalScale: 2, width: 70 },
         { key: "diamondWt", header: "DIAMOND WT", type: "numeric", numericFormat: { pattern: "0.000" }, decimalScale: 3, width: 90 },
-        { key: "size", header: "SIZE", type: "text", width: 60 },
+        { key: "size", header: "SIZE", type: "text", decimalScale: 0, width: 60 },
         // { key: "mc", header: "MC", type: "numeric", numericFormat: { pattern: "0.00" }, decimalScale: 2, width: 120 },
         // { key: "touch", header: "TOUCH", type: "numeric", numericFormat: { pattern: "0.0" }, decimalScale: 1, width: 120 },
     ];

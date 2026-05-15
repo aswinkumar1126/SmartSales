@@ -67,7 +67,7 @@ function emptyRow(draftRowId: string): StoneRow {
         stoneAmount: "0",
     };
 }
-function calculateStoneAmount(
+export function calculateStoneAmount(
     unit: "g" | "c",
     weight: string,
     pcs: string,
@@ -428,6 +428,7 @@ export default function StoneEnterMaster({
                 maxVisibleRows={10}
                 accentColor="#185FA5"
                 initialFocusCell={{ rowIndex: 0, colKey: "stoneId" }}  // ✅ clean
+                tranEditing ={false}
             />
 
             <HStack justify="flex-end" gap={2} mt={4}>

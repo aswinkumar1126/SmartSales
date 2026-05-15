@@ -25,16 +25,12 @@ const safeNum = (v: unknown) => {
   const n = Number(v);
   return isNaN(n) ? 0 : n;
 };
-const normalize = (v: number, precision = 6) =>
+const normalize = (v: number, precision = 3) =>
   parseFloat(v.toFixed(precision));
 
 const formatToFixed = (val: number, digits = 3) => {
   const num = Number(val);
 
-  // preserve very small values
-  if (Math.abs(num) < 0.0005 && num !== 0) {
-    return num.toExponential(6); 
-  }
 
   return num.toFixed(digits);
 };
@@ -101,10 +97,10 @@ export function useStockLimits(
       const t = lot[key];
 
       const nw = added[key];
-      const bal = formatToFixed(Math.max(0, normalize(t) - normalize(nw)),3);
+      const bal = formatToFixed( normalize(t) - normalize(nw));
 
       const fmt = (v: number) =>
-        isPCS ? Math.round(v).toString() : formatToFixed(v, 3);
+        isPCS ? v : formatToFixed(v, 3);
 
       return {
         key,
@@ -130,13 +126,13 @@ export function useStockLimits(
   /* ================= REMAINING ================= */
   const remaining = useMemo(
     () => ({
-      PCS: Number(formatToFixed(Math.max(0, lot.PCS  - added.PCS), 0)),
-      GRSWT: Number(formatToFixed(Math.max(0, lot.GRSWT - added.GRSWT), 3)), // 🔥 ADDED
-      STNWT: Number(formatToFixed(Math.max(0, lot.STNWT - added.STNWT), 3)),
+      PCS: Number(formatToFixed(lot.PCS  - added.PCS)),
+      GRSWT: Number(formatToFixed( lot.GRSWT - added.GRSWT)), // 🔥 ADDED
+      STNWT: Number(formatToFixed(lot.STNWT - added.STNWT)),
     }),
     [lot, added]
   );
-  console.log(remaining,'remainingremaining')
+  console.log(remaining, lot, added,'remainingremaining')
 
 
 

@@ -1,6 +1,8 @@
 import { useSaleTransactionStore } from "@/store/sales/useSaleTransactionStore";
 import { getTagDetails } from "@/service/TagedService";
 import { toaster } from "@/components/ui/toaster";
+import { calculateStoneAmount } from "@/app/dashboard/Transaction/Sales/StoneMaster/StoneEntryMaster";
+import { formatToFixed } from "@/utils/format/numberFormat";
 
 export const useLoadSaleTag = () => {
     const {
@@ -67,11 +69,15 @@ export const useLoadSaleTag = () => {
                     stoneId: String(stone.STNITEMID || stone.STNSUBITEMID || ""),
                     subStoneId: String(stone.STNSUBITEMID || ""),
                     stonePcs: Number(stone.STNPCS || 1),
-                    stoneWeight: Number(stone.SALESSTNWT || 0),
+                    stoneWeight: formatToFixed(Number(stone.SALESSTNWT || 0),3),
                     stoneUnit: stone.STONEUNIT || "g",
                     stoneCalculation: stone.CALCMODE || "w",
-                    stoneRate: Number(stone.STNRATE || 0),
-                    stoneAmount: Number(stone.STNAMT || 0),
+                    stoneRate: formatToFixed(Number(stone.STNRATE || 0),2),
+                    stoneAmount: formatToFixed(calculateStoneAmount(stone.STONEUNIT || "g",
+                        stone.SALESSTNWT ,
+                        stone.STNPCS ||1,
+                        stone.STNRATE || 0,
+                        stone.CALCMODE || "w"),3),
                 }));
 
                 totalStoneWeight = stonesWithId.reduce(
@@ -79,6 +85,10 @@ export const useLoadSaleTag = () => {
                     0
                 );
             }
+
+            const STN_PRESENT = data.STNPRESENT === "Y" || stoneDetails.length > 0 ;  
+
+            console.log(STN_PRESENT,'STN_PRESENT')
 
             // ✅ Build the complete row object at once — no partial mutation
             const newRow: any = {
@@ -96,14 +106,16 @@ export const useLoadSaleTag = () => {
                 TAGNO: String(data.TAGNO || tagNo),
                 PCS: 1,
 
-                GRSWT: Number(data.GRSWT) || 0,
+                STN_PRESENT: STN_PRESENT,
+
+                GRSWT: formatToFixed(Number(data.GRSWT),3) || 0,
                 STNWT: stoneDetails.length > 0
-                    ? totalStoneWeight
-                    : Number(data.SALESSTNWT) || 0,
-                NETWT: Number(data.NETWT) || 0,
+                    ? formatToFixed(totalStoneWeight,3)
+                    : formatToFixed(Number(data.SALESSTNWT),3) || 0,
+                NETWT: formatToFixed(Number(data.NETWT),3) || 0,
 
                 TOUCH: Number(data.TOUCH) || 0,
-                MC: Number(data.MC) || 0,
+                MC: formatToFixed(Number(data.MC),2) || 0,
 
                 _hasStones: stonesWithId.length > 0,
                 _hasCharges: false,

@@ -154,9 +154,12 @@ export function useStockAvailability({
             } else if (isSales || isSalesReturn) {
                 stock = itemsStockList.find(
                     (s) =>
-                        String(s.itemId) === String(id) ||
+                        String(s.ITEMID) === String(id) ||
                         String(s.pureId) === String(id)
                 );
+
+                console.log(stock, 'stockstockstock');
+
                 if (!stock) return undefined;
 
                 if (isEditMode && originalTransactionData) {
@@ -164,8 +167,8 @@ export function useStockAvailability({
                     originalUsage = editCalculator.getOriginalUsage(String(id), null, 'NETWT', 'SA');
                 }
 
-                totalAvailablePieces = Number(stock.pcs ?? stock.pieces ?? stock.quantity ?? 0);
-                totalAvailableWeight = Number(stock.netwt ?? stock.netWeight ?? stock.purewt ?? 0) + Number(originalUsage);
+                totalAvailablePieces = Number(stock.PCS ?? stock.pieces ?? stock.quantity ?? 0);
+                totalAvailableWeight = Number(stock.NETWT ?? stock.netWeight ?? stock.purewt ?? 0) + Number(originalUsage);
                 stockSource = 'items';
 
             } else {
