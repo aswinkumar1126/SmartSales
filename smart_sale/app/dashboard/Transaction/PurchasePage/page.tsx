@@ -130,6 +130,15 @@ export default function PurchasePage() {
     const router = useRouter();
     const today = new Date().toISOString().split("T")[0];
 
+
+
+    const {data: useApiRate} = useSoftControlById('USE_API_RATE');
+
+    console.log(useApiRate,'softControl in header form');
+    const isApiRateEnabled = useApiRate?.CTLTEXT === 'Y';
+
+    console.log(isApiRateEnabled,'isApiRateEnabled');
+
     const initialDraftRowsRef = useRef<any[]>([]);
     const initialClosingRef = useRef<BaseClosingFormDetails>(
         {
@@ -398,6 +407,7 @@ export default function PurchasePage() {
 
     useSyncPurchaseHeader(
         transactionHeaderDetail,
+        isApiRateEnabled,
         metalRates,
         headerForm.METALTYPE
     );
@@ -1184,7 +1194,7 @@ useGlobalKey(
             setSelectedTransactionId('');
         }
 
-        const safeRate = rate ?? 0;
+        const safeRate = !isApiRateEnabled ? rate ?? 0 : 0;
 
         setHeaderForm({
             ENTRYNO: "",
@@ -1192,7 +1202,7 @@ useGlobalKey(
             CUSTOMER_NAME: "",
             BILLNO: "",
             DATE: new Date().toISOString().split("T")[0],
-            RATEGM: Number(formatToFixed(safeRate, 2)),
+            RATEGM: formatToFixed(safeRate, 2)
         });
 
         setDeselectFlag(true);
@@ -1484,8 +1494,8 @@ useGlobalKey(
                                                     onCancelEdit={handleCancelEdit}
                                                     itemsCollection={activeCollection}
                                                     totals={typeTotals}
-                                                    transactionTitle={transactionType?.label}
-                                                    transactionType={transactionType?.value}
+                                                    transactionTitle={transactionType.label}
+                                                    transactionType={transactionType.code}
                                                     theme={theme}
                                                     isIssue={isIssue}
                                                     getAvailableWeight={getAvailableWeight}

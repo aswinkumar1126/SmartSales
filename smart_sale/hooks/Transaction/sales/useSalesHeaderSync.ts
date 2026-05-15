@@ -13,18 +13,23 @@ type metalRatesDetail = {
 
 export const useSyncSalesHeader = (
     transactionHeaderDetail?: TransactionHeaderDetail,
+    isApiRateEnabled ? :boolean ,
     metalRates?: metalRatesDetail
 ) => {
-    const { setHeaderForm, isEditing } = useSalesHeader();
+    const {headerForm , setHeaderForm, isEditing } = useSalesHeader();
 
     // 🔵 Metal rate sync
     useEffect(() => {
-        if (isEditing || !metalRates) return;
+        if (isEditing || !metalRates || !isApiRateEnabled) return;
+
+        if(headerForm.RATEGM && Number(headerForm.RATEGM) > 0){
+            return;
+        }
 
         setHeaderForm({
             RATEGM: formatToFixed(metalRates["GOLD 916.00"],2) ?? 0,
         });
-    }, [metalRates, isEditing, setHeaderForm]);
+    }, [metalRates, isEditing, setHeaderForm ,isApiRateEnabled]);
 
     // 🔵 Entry + Bill sync
     useEffect(() => {

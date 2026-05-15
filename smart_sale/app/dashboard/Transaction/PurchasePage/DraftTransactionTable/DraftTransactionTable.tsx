@@ -152,6 +152,7 @@ export default function DraftTransactionTable({
     onSaleReturnModal,
 }: DraftTransactionTableProps) {
     console.log(isEditing,'isEditing');
+    console.log(transactionType,'transactionTypetransactionType')
 
     // ── Zustand store ─────────────────────────────────────────────────────────
     const { addDraftRow, updateDraftRow, removeDraftRow } = usePurchaseTransactionStore();
@@ -575,126 +576,189 @@ const handleAddRow = useCallback(() => {
         shouldFetchTouch
     );
 
-    // ── Touch data effect — writes directly to store by rowId ─────────────────
-    useEffect(() => {
-        if (!activeRowId || !activeRowItemId) return;
-        if (touchDataLoading) return;
+  useEffect(() => {
+    if (!activeRowId || !activeRowItemId) return;
+    if (touchDataLoading || isEditing) return;
 
-        const key = `${activeRowId}::${activeRowItemId}`;
-        if (appliedItemIdRef.current[activeRowId] === key) return;
+    const key = `${activeRowId}::${activeRowItemId}`;
 
-        if(isEditing) return;
+    const touch = touchData?.TOUCH;
+    const calMode = touchData?.CALMODE || "NETWT";
+    const stnPresent = touchData?.STNPRESENT === "Y";
+    const hmcAmount = Number(touchData?.HMCAMT ?? 0);
 
-        console.log(touchData,'touchData');
+    const defaultHmcCharge =
+        hmcAmount > 0
+            ? [{
+                  draftRowId: activeRowId,
+                  chargeId: "1",
+                  chargeName: "HMC",
+                  amount: hmcAmount.toString(),
+                  finalAmount: hmcAmount.toString(),
+              }]
+            : [];
 
+    const existingRow = draftRows.find(
+        r => r.__rowId === activeRowId
+    );
+
+   
+
+    const alreadyApplied =
+        existingRow?.TOUCH  &&
+        existingRow?.CAL_MODE 
+        // existingRow?.STN_PRESENT  
+
+          // existingRow?.ATOUCH === touch &&
+        // Number(existingRow?.HMC || 0) === hmcAmount;
+
+         console.log(alreadyApplied ,'existingRow');
+
+    // THIS is the real protection
+    if (alreadyApplied) {
         appliedItemIdRef.current[activeRowId] = key;
-        touchNotFoundRef.current.delete(activeRowId);
+        return;
+    }
 
-        const touch = touchData?.TOUCH;
-        const calMode = touchData?.CALMODE || "NETWT";
-        const stnPresent = touchData?.STNPRESENT === "Y" ;  // normalised
-        const hmcAmount = Number(touchData?.HMCAMT ?? 0);
-        const capturedRowId = activeRowId;
+    // optional optimization only
+    if (appliedItemIdRef.current[activeRowId] === key) {
+        return;
+    }
 
-        // Build the default HMC charge entry once — used in both local state and store
-const defaultHmcCharge = hmcAmount > 0
-    ? [{
-        draftRowId: capturedRowId,
-        chargeId: "1",
-        chargeName: "HMC",
-        amount: hmcAmount.toString(),
-        finalAmount: hmcAmount.toString(),
-    }]
-    : [];
+    appliedItemIdRef.current[activeRowId] = key;
 
+    setDraftRows(prev =>
+        prev.map(r => {
+            if (r.__rowId !== activeRowId) return r;
 
-
-        // 1. Update local draft row (for recalc + rendering)
-        setDraftRows((prev) =>
-            prev.map((r) => {
-                if (r.__rowId !== capturedRowId) return r;
-                return recalcRow(
-                    { ...r, TOUCH: touch, ATOUCH: touch, CAL_MODE: calMode, STN_PRESENT: stnPresent, HMC: hmcAmount,   _miscCharges: defaultHmcCharge,  },
-                    false
-                );
-            })
-        );
-
-        // 2. Write to Zustand store immediately by rowId (no index needed)
-        if (committedRowIdsRef.current.has(capturedRowId)) {
-            pendingStoreCallRef.current = () => {
-                commitRowUpdate(capturedRowId, {
+            return recalcRow(
+                {
+                    ...r,
                     TOUCH: touch,
                     ATOUCH: touch,
                     CAL_MODE: calMode,
-                    STN_PRESENT: stnPresent,   // ← stored so activeStnPresent picks it up
-                    HMC: hmcAmount.toFixed(2),
-                     _miscCharges: defaultHmcCharge,
-                });
-              
-            };
-        }
+                    STN_PRESENT: stnPresent,
+                    HMC: hmcAmount,
+                    _miscCharges: defaultHmcCharge,
+                },
+                false
+            );
+        })
+    );
+
+    if (committedRowIdsRef.current.has(activeRowId)) {
+        pendingStoreCallRef.current = () =>
+            commitRowUpdate(activeRowId, {
+                TOUCH: touch,
+                ATOUCH: touch,
+                CAL_MODE: calMode,
+                STN_PRESENT: stnPresent,
+                HMC: hmcAmount.toFixed(2),
+                _miscCharges: defaultHmcCharge,
+            });
+    }
+}, [
+    touchData,
+    touchDataLoading,
+    activeRowId,
+    activeRowItemId,
+    isEditing,
+    draftRows,
+]);
+
+   // ── Pure gold effect — writes directly to store by rowId ─────────────────
+useEffect(() => {
+    if (!activeRowId || !activeRowPureId) return;
+    if (!pureStockData) return;
+    if (isEditing) return;
+
+    const key = `${activeRowId}::${activeRowPureId}`;
+
+    // already processed same item
+    if (appliedPureIdRef.current[activeRowId] === key) return;
+
+    const capturedRowId = activeRowId;
+
+    if (!pureStockData.actualTouch) {
+        touchNotFoundRef.current.add(capturedRowId);
 
         setTimeout(() => {
             toaster.create({
-                title: "Touch Applied",
-                description: `Touch ${touch} + HMC ${hmcAmount} applied.`,
-                type: "success",
-                duration: 2000,
+                title: "No Touch Found",
+                description:
+                    "No touch found for this pure gold item. Please enter manually.",
+                type: "warning",
+                duration: 3000,
             });
         }, 0);
-    }, [touchData, touchDataLoading, activeRowId, activeRowItemId ,isEditing]);
 
-    // ── Pure gold effect — writes directly to store by rowId ─────────────────
-    useEffect(() => {
-        if (!activeRowId || !activeRowPureId) return;
-        if (!pureStockData) return;
-
-        const key = `${activeRowId}::${activeRowPureId}`;
-        if (appliedPureIdRef.current[activeRowId] === key) return;
         appliedPureIdRef.current[activeRowId] = key;
+        return;
+    }
 
-        if(isEditing) return;
+    touchNotFoundRef.current.delete(capturedRowId);
 
-        const capturedRowId = activeRowId;
+    const touch = pureStockData.actualTouch;
+    
+    // check existing row values before updating
+    const existingRow = draftRows.find(
+        (r) => r.__rowId === capturedRowId
+    );
 
-        if (!pureStockData.actualTouch) {
-            touchNotFoundRef.current.add(capturedRowId);
-            setTimeout(() => {
-                toaster.create({
-                    title: "No Touch Found",
-                    description: "No touch found for this pure gold item. Please enter manually.",
-                    type: "warning",
-                    duration: 3000,
-                });
-            }, 0);
-            return;
-        }
+    const alreadyApplied =
+        existingRow?.TOUCH > 0 &&
+        existingRow?.ATOUCH > 0;
 
-        touchNotFoundRef.current.delete(capturedRowId);
-        const touch = pureStockData.actualTouch;
+    // skip everything if already applied
+    if (alreadyApplied) {
+        appliedPureIdRef.current[activeRowId] = key;
+        return;
+    }
 
-        setDraftRows((prev) =>
-            prev.map((r) => {
-                if (r.__rowId !== capturedRowId) return r;
-                return recalcRow({ ...r, TOUCH: touch, ATOUCH: touch }, !!isIssue);
-            })
-        );
+    appliedPureIdRef.current[activeRowId] = key;
 
-        if (committedRowIdsRef.current.has(capturedRowId)) {
-            pendingStoreCallRef.current = () =>
-                commitRowUpdate(capturedRowId, { TOUCH: touch, ATOUCH: touch });
-        }
+    // local state update
+    setDraftRows((prev) =>
+        prev.map((r) => {
+            if (r.__rowId !== capturedRowId) return r;
 
-        setTimeout(() => {
-            toaster.create({
-                title: "Touch Applied",
-                description: `Touch ${touch} applied from pure gold data.`,
-                type: "success",
-                duration: 2000,
+            return recalcRow(
+                {
+                    ...r,
+                    TOUCH: touch,
+                    ATOUCH: touch,
+                },
+                !!isIssue
+            );
+        })
+    );
+
+    // zustand store update
+    if (committedRowIdsRef.current.has(capturedRowId)) {
+        pendingStoreCallRef.current = () =>
+            commitRowUpdate(capturedRowId, {
+                TOUCH: touch,
+                ATOUCH: touch,
             });
-        }, 0);
-    }, [pureStockData, activeRowId, activeRowPureId, isIssue , isEditing]);
+    }
+
+    // toaster
+    setTimeout(() => {
+        toaster.create({
+            title: "Touch Applied",
+            description: `Touch ${touch} applied from pure gold data.`,
+            type: "success",
+            duration: 1500,
+        });
+    }, 0);
+}, [
+    pureStockData,
+    activeRowId,
+    activeRowPureId,
+    isIssue,
+    isEditing,
+    draftRows,
+]);
 
     // ── Stone modal ───────────────────────────────────────────────────────────
     const handleOpenStoneModal = useCallback((rowId: string, grsWeight: number) => {

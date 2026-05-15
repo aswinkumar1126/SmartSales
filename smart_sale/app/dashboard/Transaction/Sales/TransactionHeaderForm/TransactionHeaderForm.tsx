@@ -157,7 +157,7 @@ export default function TransactionHeaderForm({
                         type="number"
                         size="xs"
                         rounded="sm"
-                        disabled
+                        // disabled
                     />
                 </Box>
 

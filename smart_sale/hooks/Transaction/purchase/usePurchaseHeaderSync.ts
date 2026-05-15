@@ -14,31 +14,45 @@ type MetalRates = {
 
 export const useSyncPurchaseHeader = (
     transactionHeaderDetail?: TransactionHeaderDetail,
+    isApiRateEnabled?: boolean ,
     metalRates?: MetalRates,
     metalType?: string
 ) => {
-    const { setHeaderForm, isEditing } = usePurchaseHeader();
+    const { headerForm ,setHeaderForm, isEditing } = usePurchaseHeader();
 
-    // 🔵 Metal rate sync
-    useEffect(() => {
-        if (isEditing || !metalRates || !metalType) return;
+  useEffect(() => {
+    if (isEditing) return;
+    if (!isApiRateEnabled) return;
+    if (!metalRates || !metalType) return;
 
-        const rateKey =
-            metalType === "G"
-                ? "GOLD 916.00"
-                : metalType === "S"
-                    ? "SILVER 916.00"
-                    : null;
+    const rateKey =
+        metalType === "G"
+            ? "GOLD 916.00"
+            : metalType === "S"
+            ? "SILVER 916.00"
+            : null;
 
-        const rateValue = rateKey ? metalRates[rateKey] : null;
+    if (!rateKey) return;
 
-        setHeaderForm({
-            RATEGM:
-                rateValue != null
-                    ? Number(formatToFixed(rateValue, 2))
-                    : 0,
-        });
-    }, [metalRates, metalType, isEditing, setHeaderForm]);
+    const apiRate = metalRates[rateKey];
+
+    if (apiRate == null) return;
+
+    const formattedRate = formatToFixed(apiRate, 2);
+
+    // prevent unnecessary updates
+   if(headerForm.RATEGM && Number(headerForm.RATEGM) > 0){
+            return;
+        }
+    setHeaderForm({
+        RATEGM: formattedRate,
+    });
+}, [
+    metalRates,
+    metalType,
+    isEditing,
+    isApiRateEnabled,
+]);
 
     // 🔵 Entry + Bill sync
     useEffect(() => {

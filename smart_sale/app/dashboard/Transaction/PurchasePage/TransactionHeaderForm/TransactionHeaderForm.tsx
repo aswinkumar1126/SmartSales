@@ -8,6 +8,7 @@ import { formatToFixed } from "@/utils/format/numberFormat";
 import { SelectCombobox } from "@/components/ui/selectComboBox";
 
 import { PurchaseHeaderForm } from "@/types/TransactionTypes/purchase/PurchaseHeaderType";
+import { useSoftControlById } from "@/hooks/apiHooks/softControl/useSoftControl";
 
 interface TransactionHeaderFormProps {
     form: any;
@@ -41,7 +42,6 @@ export default function TransactionHeaderForm({
     isClosingChanged,
 }: TransactionHeaderFormProps) {
 
-    console.log(form,'headerformintran');
 
     // Get the customer label for the current form.CUSTOMER value
     const getCustomerLabel = (value: any) => {
@@ -179,7 +179,7 @@ export default function TransactionHeaderForm({
                         type="number"
                         size="xs"
                         rounded="sm"
-                        disabled
+                        // disabled
                     />
                 </Box>
 

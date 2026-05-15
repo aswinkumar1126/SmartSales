@@ -134,6 +134,11 @@ export default function SalesPage() {
     const initialDraftRowsRef = useRef<any[]>([]);
     const initialClosingRef = useRef<BaseClosingFormDetails>(null);
 
+       const {data: useApiRate} = useSoftControlById('USE_API_RATE');
+    
+        console.log(useApiRate,'softControl in header form');
+        const isApiRateEnabled = useApiRate?.CTLTEXT === 'Y';
+
     console.log(initialClosingRef.current, initialDraftRowsRef.current, 'currentref');
 
     /* ================================
@@ -375,7 +380,7 @@ export default function SalesPage() {
 
 
 
-    useSyncSalesHeader(transactionHeaderDetail, metalRates);
+    useSyncSalesHeader(transactionHeaderDetail,isApiRateEnabled, metalRates);
 
 
     const transactionIdsList = useMemo(() => {
@@ -915,6 +920,9 @@ useGlobalKey(
     const getClosingDetailsPayload = (): ClosingDetails => {
         const d = closingDetails;
 
+        const cleanBankDetails = (rows: any[] = []) =>
+        rows.map(({ ID, DRAFTROWID, ...rest }) => rest);
+
         return {
             CONVTYPE: d.CONVTYPE,
             CONVAMT: Number(d.CONVAMT || 0),
@@ -925,8 +933,8 @@ useGlobalKey(
             CASHRCVD: Number(d.CASHRCVD || 0),
             BANKPAID: Number(d.BANKPAID || 0),
             BANKRCVD: Number(d.BANKRCVD || 0),
-            BANKPAIDDETAILS: d.BANKPAIDDETAILS,
-            BANKRCVDDETAILS: d.BANKRCVDDETAILS,
+            BANKPAIDDETAILS: cleanBankDetails(d.BANKPAIDDETAILS),
+            BANKRCVDDETAILS: cleanBankDetails(d.BANKRCVDDETAILS),
         };
     };
 
@@ -1475,8 +1483,8 @@ useGlobalKey(
                                                     onCancelEdit={handleCancelEdit}
                                                     itemsCollection={activeCollection}
                                                     totals={typeTotals}
-                                                    transactionTitle={transactionType?.label}
-                                                    transactionType={transactionType?.value}
+                                                    transactionTitle={transactionType.label}
+                                                    transactionType={transactionType.code}
                                                     theme={theme}
                                                     isIssue={isIssue}
                                                     getAvailableWeight={getAvailableWeight}
