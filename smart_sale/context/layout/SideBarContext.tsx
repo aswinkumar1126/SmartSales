@@ -235,7 +235,7 @@ const STATIC_MENU: SidebarMenu = {
       ],
     },
 
-    HmcMapping :{
+    Mapping :{
       icon: Shield,
       items: [
       
@@ -246,6 +246,16 @@ const STATIC_MENU: SidebarMenu = {
           icon: Users,
           title: "HMC MAPPING",
           description: "Manage HMC mappings",
+        },
+
+
+        {
+          type: "direct",
+          label: "Stone Mapping",
+          route: "/dashboard/Mapping/StoneMapping",
+          icon: Users,
+          title: "STONE MAPPING",
+          description: "Manage Stone Mapping",
         },
       ]
     }

@@ -90,6 +90,9 @@ const mapPurchaseReturnItems = (
             MC: Number(item.MC || 0),
             DESCRIPTION: item.DESCRIPTION || "",
             SNO: item.SNO || "",
+
+            ITEMNAME: item.ITEMNAME,
+
             _stones: normalizedStones,
             _miscCharges: normalizedMisc,
         };
@@ -105,6 +108,9 @@ const mapPurchaseItems = (
     // console.log(isUseFinalAmount,'isUseFinalAmount')
     return list.map((item, index) => {
         const rowId = `edit-${item.SNO || Date.now()}-${index}`;
+
+
+        console.log(item,'purcaseTranItem');
 
         // ---------------- STONES ----------------
         const stonesRaw = item.STONEDETAILS || [];
@@ -168,6 +174,9 @@ const mapPurchaseItems = (
             SNO: item.SNO || "",
             _stones: normalizedStones,
             _miscCharges: normalizedMisc,
+
+            ITEMNAME :item.ITEMNAME ,
+            ISEDITABLE: item.EDITABLE  ,
         };
     });
 };
@@ -190,6 +199,8 @@ const mapIssueItems = (list: any[] = [], type: string) => {
             APUREWT: Number(item.PUREWT || 0),
             DESCRIPTION: item.DESCRIPTION || "",
             SNO: item.SNO || "",
+
+            PUREGOLDNAME : item.PURENAME,
         };
     });
 };

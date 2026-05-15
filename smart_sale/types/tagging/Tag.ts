@@ -7,6 +7,7 @@ export interface PURCHASE_DETAILS {
     ACCODE: number;
     PUSNO: string;
     TAGDATE: string;
+    RETAG: boolean;
 }
 
 export interface TAGGING_DETAILS {
@@ -85,6 +86,7 @@ export interface getSingleTagDetail {
     GRSWT: number;
     ISSDATE: string | null
     ITEMID: number;
+    ITEMNAME: string;
     MC: number;
     NETWT: number;
     PUENTRYNO: number;

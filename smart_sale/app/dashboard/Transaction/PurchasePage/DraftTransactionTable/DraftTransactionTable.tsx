@@ -151,6 +151,7 @@ export default function DraftTransactionTable({
     isTagedItem,
     onSaleReturnModal,
 }: DraftTransactionTableProps) {
+    console.log(isEditing,'isEditing');
 
     // ── Zustand store ─────────────────────────────────────────────────────────
     const { addDraftRow, updateDraftRow, removeDraftRow } = usePurchaseTransactionStore();
@@ -192,8 +193,10 @@ export default function DraftTransactionTable({
         )
     );
     // STN_PRESENT: prefer store value (most up-to-date after touch fetch), fall back to local draft
-    const activeStnPresent: string =
+    const activeStnPresent: boolean =
         activeStoreRow?.STN_PRESENT ?? activeRow?.STN_PRESENT ?? "N";
+
+    console.log(activeStnPresent, activeStoreRow, activeRow,'activeRow');
     const activeCalMode: string =
         activeStoreRow?.CAL_MODE ?? activeRow?.CAL_MODE ?? "NETWT";
 
@@ -284,7 +287,7 @@ export default function DraftTransactionTable({
             // ── STNWT: disabled when the active row's item has no stones ─────
             // activeStnPresent comes from the Zustand store (updated when touch data loads)
             if (!isIssue && col.key === "STNWT")
-                return { ...base, disabled: activeStnPresent !== "Y" };
+                return { ...base, disabled: !activeStnPresent };
 
             return base;
         });
@@ -411,6 +414,8 @@ export default function DraftTransactionTable({
                     (r) => r.TRANSACTION_TYPE === transactionType
                 ).length + 1,
             TRANSACTION_TYPE: transactionType ?? "",
+            ISEDITABLE : true,
+
         });
         committedRowIdsRef.current.add(row.__rowId);
     }, [addDraftRow, isTagedItem, transactionType]);
@@ -469,12 +474,6 @@ const handleAddRow = useCallback(() => {
         const hasPendingEmptyRow = prev.some(isRowEmpty);
 
         if (hasPendingEmptyRow) {
-            toaster.create({
-                title: "Only one pending empty row allowed",
-                type: "warning",
-                duration: 2000,
-            });
-
             return prev;
         }
 
@@ -485,6 +484,11 @@ const handleAddRow = useCallback(() => {
     const handleDeleteRow = useCallback((rowIndex: number) => {
         const row = draftRowsRef.current[rowIndex];
         if (!row) return;
+
+        console.log(isEditing, row, transactionType,'deleteRow');
+        if (isEditing && transactionType=== "PU" && !row.ISEDITABLE) return;
+
+        console.log(isEditing, row.ISEDITABLE ,'isEditable');
 
         const isBlank = !row.ITEMID && !row.PUREID && !row.WT && !row.GRSWT;
         if (!isBlank && !window.confirm("Delete this row?")) return;
@@ -579,18 +583,7 @@ const handleAddRow = useCallback(() => {
         const key = `${activeRowId}::${activeRowItemId}`;
         if (appliedItemIdRef.current[activeRowId] === key) return;
 
-        // if (!touchData?.TOUCH) {
-        //     touchNotFoundRef.current.add(activeRowId);
-        //     setTimeout(() => {
-        //         toaster.create({
-        //             title: "No Touch Found",
-        //             description: "No touch configured for this item & customer. Please enter manually.",
-        //             type: "warning",
-        //             duration: 3000,
-        //         });
-        //     }, 0);
-        //     return;
-        // }
+       
 
         console.log(touchData,'touchData');
 
@@ -776,10 +769,26 @@ const defaultHmcCharge = hmcAmount > 0
     // ── Cell renderer ─────────────────────────────────────────────────────────
     const renderCell = useCallback((params: RenderCellParams) => {
         const { row, col, value, isEditing, isFocused, onChange, onCommit, inputRef } = params;
+
         const field = formFields.find((f) => f.key === col.key);
+        const shouldDisableOnEditing = !row.ISEDITABLE;
+
+        // ── Resolve item name: prefer stored ITEMNAME, fall back to collection lookup ──
+        const itemName = row.ITEMNAME
+            || itemsCollection?.items?.find(
+                (i: { label: string; value: string }) => i.value === row.ITEMID?.toString()
+            )?.label
+            || row.PURENAME
+            || itemsCollection?.items?.find(
+                (i: { label: string; value: string }) => i.value === row.PUREID?.toString()
+            )?.label
+            || value
+            || "";
+        
+
         if (!field) return <span style={{ padding: "0 4px", fontSize: 11 }}>{value ?? ""}</span>;
 
-        if (col.computed || col.disabled) {
+        if (col.computed || col.disabled || shouldDisableOnEditing) {
             let displayValue = value ?? "";
             if (col.decimalScale) displayValue = Number(value || 0).toFixed(col.decimalScale);
             return (
@@ -792,7 +801,7 @@ const defaultHmcCharge = hmcAmount > 0
         if (col.key === "STNWT") {
             // Per-row STN_PRESENT check: use this specific row's value (not just the active row)
             // so every row in the grid respects its own item's stone config.
-            const rowStnPresent = row.STN_PRESENT ?? false;
+            const rowStnPresent = row.STN_PRESENT || false;
             const isStnDisabled = !rowStnPresent;
             const stonesCount = (row._stones || []).length;
 
@@ -849,6 +858,7 @@ const defaultHmcCharge = hmcAmount > 0
                         decimalScale={2}
                         inputRef={inputRef}
                         noBorder
+                        disabled={shouldDisableOnEditing}
                     />
                     {chargesCount > 0 && (
                         <span style={{ fontSize: 10, color: "#C05621", flexShrink: 0, paddingRight: 2 }}>📋</span>
@@ -884,28 +894,40 @@ const defaultHmcCharge = hmcAmount > 0
                 />
             );
         }
-
         if (col.key === "ITEMID" || col.key === "PUREID") {
             const items = field.collection?.items || [];
-            if (!isEditing && !isFocused) {
-                const item = items.find((i) => i.value === value?.toString());
-                return (
+            const item = items.find((i) => i.value === value?.toString());
+
+            // Locked row — always show label, never combobox
+            if (shouldDisableOnEditing) {
+                return (                                      
                     <span style={{ padding: "0 6px", fontSize: 11, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", display: "block" }}>
-                        {item?.label || value || ""}
+                        {itemName}
                     </span>
                 );
             }
-            return (
-                <SelectCombobox
-                    value={value || ""}
-                    onChange={(v) => { onChange(v); if (v) onCommit(); }}
-                    items={items}
-                    placeholder={field.placeholder || `Select ${field.label}`}
-                    ref={inputRef as React.RefObject<HTMLInputElement>}
-                    rounded="sm"
-                    disable={false}
-                />
-            );
+
+            // Idle cell — show label
+            if (!isEditing && !isFocused) {
+                return (
+                    <span style={{ padding: "0 6px", fontSize: 11, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", display: "block" }}>
+                        {itemName}
+                    </span>
+                );
+            }
+
+            // Active editable cell — show combobox
+            // return (
+            //     <SelectCombobox
+            //         value={value || ""}
+            //         onChange={(v) => { onChange(v); if (v) onCommit(); }}
+            //         items={items}
+            //         placeholder={field.placeholder || `Select ${field.label}`}
+            //         ref={inputRef as React.RefObject<HTMLInputElement>}
+            //         rounded="sm"
+            //         disable={false}
+            //     />
+            // );
         }
 
         return (
@@ -920,7 +942,7 @@ const defaultHmcCharge = hmcAmount > 0
                 decimalScale={field.decimalScale}
                 inputRef={inputRef}
                 noBorder
-                disabled={col.disabled}
+                disabled={col.disabled || shouldDisableOnEditing}
                 allowFocus
             />
         );

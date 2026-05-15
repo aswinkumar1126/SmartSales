@@ -43,23 +43,24 @@ import { useAllAccountHead } from "@/hooks/apiHooks/accountHead/useAccountHead";
 import { useStoneItems } from "@/hooks/apiHooks/item/useItems";
 
 import {
-    useHmcCreate,
-    useHmcData,
-    useHmcDataById,
-    useModifyHmcById,
-} from "@/hooks/apiHooks/hmc/useHmc";
+    useStoneMappingCreate,
+    useStoneMappingData,
+    useStoneMappingDataById,
+    useModifyStoneMappingById,
+    useStoneMappingByFilter,
+} from "@/hooks/apiHooks/stoneMapping/useStoneMapping";
 
-import { HmcMaster } from "@/types/hmc/hmc";
+import { StoneMappingMaster } from "@/types/stoneMapping/StoneMappingTypes";
 
-import { HmcMappingFormConfig } from "@/config/mapping/HmcMapping";
+import { StoneMappingFormConfig } from "@/config/mapping/StoneMapping";
 
 /* ---------------- INITIAL STATE ---------------- */
 
-const initialFormState: HmcMaster = {
+const initialFormState: StoneMappingMaster = {
     acType: "",
     accode: "",
     itemId: "",
-    hmcAmt: "",
+    stnAmt: "",
   
 };
 
@@ -78,7 +79,7 @@ export type HmcTableRow = {
 const HmcMappingForm = () => {
 
     const [form, setForm] =
-        useState<HmcMaster>(initialFormState);
+        useState<StoneMappingMaster>(initialFormState);
 
     const [editId, setEditId] =
         useState<number | null>(null);
@@ -88,7 +89,7 @@ const HmcMappingForm = () => {
 
     const [errors, setErrors] =
         useState<
-            Partial<Record<keyof HmcMaster, string>>
+            Partial<Record<keyof StoneMappingMaster, string>>
         >({});
 
     const [filter, setFilter] =
@@ -108,11 +109,11 @@ const HmcMappingForm = () => {
     /* ---------------- DATA ---------------- */
 
     const {
-        data: hmcData = [],
+        data: stoneMappingData = [],
         refetch,
-    } = useHmcData(filter);
+    } = useStoneMappingData(filter);
 
-    console.log(hmcData,'hmcData')
+    console.log(stoneMappingData,'stoneMappingData')
 
     // const {
     //     data: hmcDataById,
@@ -125,12 +126,11 @@ const HmcMappingForm = () => {
     const { data: allAccounts } =
         useAllAccountHead(acType);
 
-    const { data: items } = useStoneItems();
+    const { data: items } = useStoneItems({ STUDDED :"Y"});
 
-    const createMutation = useHmcCreate();
+    const createMutation = useStoneMappingCreate();
 
-    const updateMutation =
-        useModifyHmcById();
+    const updateMutation = useModifyStoneMappingById();
 
     /* ---------------- MEMO LISTS ---------------- */
 
@@ -157,7 +157,7 @@ const HmcMappingForm = () => {
     /* ---------------- FORM CONFIG ---------------- */
 
     const formConfig =
-        HmcMappingFormConfig({
+        StoneMappingFormConfig({
             collection: {
                 customerType: AccountTypeList,
                 customer: customerList,
@@ -172,7 +172,7 @@ const HmcMappingForm = () => {
     /* ---------------- FORM CHANGE ---------------- */
 
     const handleChange = (
-        key: keyof HmcMaster,
+        key: keyof StoneMappingMaster,
         value: string
     ) => {
         setForm((prev) => ({
@@ -190,12 +190,12 @@ const HmcMappingForm = () => {
             acType: row.acType,
             accode: String(row.accode),
             itemId: String(row.itemId),
-            hmcAmt: String(row.hmcAmt),
+            stnAmt: String(row.stnAmt),
         })
 
         scrollToTop();
 
-        toastLoaded("HMC Mapping");
+        toastLoaded("Stone Mapping");
     };
 
     /* ---------------- RESET ---------------- */
@@ -222,18 +222,18 @@ const HmcMappingForm = () => {
 
         itemId: Number(form.itemId),
 
-        hmcAmt: Number(form.hmcAmt),
+        stnAmt: Number(form.stnAmt),
     };
 
     /* ---------------- VALIDATION ---------------- */
 
     const validateForm = (
-        form: HmcMaster
+        form: StoneMappingMaster
     ) => {
 
         const errs:
             Partial<Record<
-                keyof HmcMaster,
+                keyof StoneMappingMaster,
                 string
             >> = {};
 
@@ -249,18 +249,18 @@ const HmcMappingForm = () => {
             errs.itemId =
                 "Item Name is required";
 
-        if (!form.hmcAmt) {
-            errs.hmcAmt =
-                "HMC Amount is required";
+        if (!form.stnAmt) {
+            errs.stnAmt =
+                "Stone Amount is required";
         } else if (
-            Number(form.hmcAmt) <= 0
+            Number(form.stnAmt) <= 0
         ) {
-            errs.hmcAmt =
+            errs.stnAmt =
                 "Amount must be greater than 0";
         }
 
         const isDuplicate = (
-            Array.isArray(hmcData) ? hmcData : []
+            Array.isArray(stoneMappingData) ? stoneMappingData : []
         ).some((item: any) =>
             // form.acType?.toLowerCase() ===
             //     item.acType?.toLowerCase() &&
@@ -297,6 +297,8 @@ const HmcMappingForm = () => {
         }
 
         setErrors({});
+        console.log(payload,'payload');
+      
 
         if (editId) {
 
@@ -320,7 +322,7 @@ const HmcMappingForm = () => {
                         );
                         toastLoaded(
                             error?.response?.data?.message ||
-                            "Failed to create HMC."
+                            "Failed to create stoneMappingData."
                         );
                         resetForm();
                     },
@@ -379,8 +381,8 @@ const HmcMappingForm = () => {
         },
 
         {
-            key: "hmcAmount",
-            label: "HMC Amount",
+            key: "stnAmount",
+            label: "STN Amount",
             align: "center" as const,
         },
 
@@ -397,7 +399,7 @@ const HmcMappingForm = () => {
         option: string
     ) => {
 
-        setData(Array.isArray(hmcData) ? hmcData : []);
+        setData(Array.isArray(stoneMappingData) ? stoneMappingData : []);
 
         setColumns([
             {
@@ -416,14 +418,14 @@ const HmcMappingForm = () => {
             },
 
             {
-                key: "hmcAmt",
-                label: "HMC Amount",
+                key: "stnAmt",
+                label: "STN Amount",
             },
         ]);
 
         setShowSno(true);
 
-        title?.("HMC Mapping List");
+        title?.("STONE Mapping List");
 
         router.push(
             `/print?export=${option}`
@@ -564,7 +566,7 @@ const HmcMappingForm = () => {
                     >
 
                         <Text fontSize="small">
-                            HMC MAPPING LIST
+                            STONE MAPPING LIST
                         </Text>
 
                         <Box
@@ -575,7 +577,7 @@ const HmcMappingForm = () => {
                             <SearchBar
                                 searchTerm={filter}
                                 onChange={setFilter}
-                                placeholder="Search HMC Mapping"
+                                placeholder="Search STONE Mapping"
                                 size="2xs"
                             />
 
@@ -629,7 +631,7 @@ const HmcMappingForm = () => {
                     <CustomTable<HmcTableRow>
                         columns={columns}
                         data={
-                            hmcData as HmcTableRow[] || []
+                            stoneMappingData as HmcTableRow[] || []
                         }
                         renderRow={(
                             row: any,
@@ -658,7 +660,7 @@ const HmcMappingForm = () => {
 
                                 <Table.Cell textAlign="right">
                                     {formatToFixed(
-                                        row.hmcAmt,
+                                        row.stnAmt,
                                         2
                                     )}
                                 </Table.Cell>

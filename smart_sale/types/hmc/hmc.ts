@@ -9,7 +9,7 @@ export interface Hmc {
 
 export interface HmcForm {
     // acType: string;
-    accode: string;
+    accode: number;
     itemId: number;
     hmcAmt: number;
 }

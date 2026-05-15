@@ -324,6 +324,8 @@ export default function PurchasePage() {
 
     const { data: transactionsById, isLoading: getbySnoLoading } = useTransactionByTransId(selectedTransactionId, "purchase");
 
+    console.log(transactionsById,'transactionsById');
+
 
 
     /*------------------------------- BILL DETAILS API ----------------------------*/
@@ -1467,7 +1469,7 @@ useGlobalKey(
                                                 <DraftTransactionTable
                                                     rows={typeRows}
                                                     editingState={editingState}
-                                                    isEditing={false}
+                                                    isEditing={isEditing}
                                                     // onAddRow={(formData) => {
                                                     //     handleAddRow(transactionType, formData);
                                                     // }}
