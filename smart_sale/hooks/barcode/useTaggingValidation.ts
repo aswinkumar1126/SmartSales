@@ -24,6 +24,7 @@ export interface RowValidationOptions {
     GRSWT: number;
   };
   tolerance: number;
+  stnTolerance :number 
 }
 
 /* ============================================================
@@ -160,6 +161,7 @@ export function useTaggingValidation() {
     []
   );
   // Add isUpdate parameter to RowValidationOptions interface
+  // Add isUpdate parameter to RowValidationOptions interface
   interface RowValidationOptions {
     rows: any[];
     limits: any;
@@ -167,7 +169,8 @@ export function useTaggingValidation() {
     incomingRows?: any[];
     balance?: any;
     tolerance?: number;
-    isUpdate?: boolean; // Add this
+    isUpdate?: boolean;
+    stnTolerance?: number;
   }
 
   const validateRows = useCallback(
@@ -179,11 +182,9 @@ export function useTaggingValidation() {
       balance,
       tolerance = 0,
       isUpdate = false,
+      stnTolerance = 0.05,
     }: RowValidationOptions): boolean => {
 
-      // ✅ IMPORTANT FIX
-      // During update, incomingRows already contains the updated full dataset.
-      // So do NOT merge with existing rows again.
       const allRows =
         isUpdate && incomingRows.length > 0
           ? incomingRows
@@ -196,21 +197,26 @@ export function useTaggingValidation() {
           type: "error",
           duration: 2000,
         });
-
         return false;
       }
 
-      const grsLimit = (limits.GRSWT || 0) + (tolerance ?? 0);
+      // ✅ ± tolerance ranges
+      const absTolerance = Math.abs(tolerance ?? 0);
+      const grsUpperLimit = (limits.GRSWT || 0) + absTolerance;
+      const grsLowerLimit = (limits.GRSWT || 0) - absTolerance;
+
+      const absStnTolerance = Math.abs(stnTolerance ?? 0);
+      const stnUpperLimit = (limits.STNWT || 0) + absStnTolerance;
+      const stnLowerLimit = (limits.STNWT || 0) - absStnTolerance;
 
       let hasError = false;
 
-      // ✅ Row validation
+      // ✅ Row-level validation
       allRows.forEach((row, idx) => {
         const n = idx + 1;
 
         if (!row.grsweight || row.grsweight <= 0) {
           hasError = true;
-
           toaster.create({
             title: `Row ${n} Error`,
             description: "Gross weight must be greater than 0",
@@ -221,7 +227,6 @@ export function useTaggingValidation() {
 
         if ((row.purchaseStoneWt || 0) < 0) {
           hasError = true;
-
           toaster.create({
             title: `Row ${n} Error`,
             description: "Purchase stone weight must be ≥ 0",
@@ -232,11 +237,9 @@ export function useTaggingValidation() {
 
         if ((row.purchaseStoneWt || 0) > (row.grsweight || 0)) {
           hasError = true;
-
           toaster.create({
             title: `Row ${n} Error`,
-            description:
-              "Purchase stone weight cannot exceed gross weight",
+            description: "Purchase stone weight cannot exceed gross weight",
             type: "error",
             duration: 2000,
           });
@@ -244,11 +247,9 @@ export function useTaggingValidation() {
 
         if ((row.salesStoneWt || 0) > (row.purchaseStoneWt || 0)) {
           hasError = true;
-
           toaster.create({
             title: `Row ${n} Error`,
-            description:
-              "Sales stone weight cannot exceed purchase stone weight",
+            description: "Sales stone weight cannot exceed purchase stone weight",
             type: "error",
             duration: 2000,
           });
@@ -276,17 +277,10 @@ export function useTaggingValidation() {
         0
       );
 
-      console.log(
-        totalPCS,
-        totalGrsWt,
-        totalPurchaseStoneWt,
-        limits,
-        "limit check",
-        {
-          isUpdate,
-          countOnlyNew,
-        }
-      );
+      console.log(totalPCS, totalGrsWt, totalPurchaseStoneWt, limits, "limit check", {
+        isUpdate,
+        countOnlyNew,
+      });
 
       if (limits.PCS && totalPCS > limits.PCS) {
         toaster.create({
@@ -295,89 +289,79 @@ export function useTaggingValidation() {
           type: "error",
           duration: 2000,
         });
-
         return false;
       }
 
-      if (limits.GRSWT && totalGrsWt > grsLimit) {
+      // ✅ GrsWt ± tolerance check
+      if (limits.GRSWT && (totalGrsWt < grsLowerLimit || totalGrsWt > grsUpperLimit)) {
         toaster.create({
-          title: "Lot GrsWt Exceeded",
+          title: "Lot GrsWt Out of Range",
           description:
-            `Total ${formatToFixed(totalGrsWt, 3)} exceeds allowed ` +
-            `${formatToFixed(limits.GRSWT, 3)} + tolerance ` +
-            `${formatToFixed(tolerance ?? 0, 3)} = ` +
-            `${formatToFixed(grsLimit, 3)}`,
+            `Total ${formatToFixed(totalGrsWt, 3)} is outside allowed range ` +
+            `${formatToFixed(grsLowerLimit, 3)} – ${formatToFixed(grsUpperLimit, 3)} ` +
+            `(limit ${formatToFixed(limits.GRSWT, 3)} ± ${formatToFixed(absTolerance, 3)})`,
           type: "error",
           duration: 2000,
         });
-
         return false;
       }
 
-      if (limits.STNWT && totalPurchaseStoneWt > limits.STNWT) {
+      // ✅ StnWt ± tolerance check
+      if (limits.STNWT && (totalPurchaseStoneWt < stnLowerLimit || totalPurchaseStoneWt > stnUpperLimit)) {
         toaster.create({
-          title: "Lot Purchase Stone Weight Exceeded",
+          title: "Lot Purchase Stone Weight Out of Range",
           description:
-            `Purchase stone weight ${totalPurchaseStoneWt.toFixed(3)} ` +
-            `exceeds allowed ${limits.STNWT}`,
+            `Purchase stone weight ${formatToFixed(totalPurchaseStoneWt, 3)} is outside allowed range ` +
+            `${formatToFixed(stnLowerLimit, 3)} – ${formatToFixed(stnUpperLimit, 3)} ` +
+            `(limit ${formatToFixed(limits.STNWT, 3)} ± ${formatToFixed(absStnTolerance, 3)})`,
           type: "error",
           duration: 2000,
         });
-
         return false;
       }
 
-      // ✅ Balance checks
-      if (balance && balance.PCS > 0 && balance.GRSWT === 0) {
-        toaster.create({
-          title: "Invalid Entry",
-          description:
-            "Gross weight cannot be 0 when pieces are present",
-          type: "error",
-          duration: 2000,
-        });
+      // // ✅ Balance checks
+      // if (balance && balance.PCS > 0 && balance.GRSWT === 0) {
+      //   toaster.create({
+      //     title: "Invalid Entry",
+      //     description: "Gross weight cannot be 0 when pieces are present",
+      //     type: "error",
+      //     duration: 2000,
+      //   });
+      //   return false;
+      // }
 
-        return false;
-      }
+      // if (balance && balance.GRSWT > 0 && balance.PCS === 0) {
+      //   toaster.create({
+      //     title: "Invalid Entry",
+      //     description: "Pcs cannot be 0 when GrsWt are present",
+      //     type: "error",
+      //     duration: 2000,
+      //   });
+      //   return false;
+      // }
 
-      if (balance && balance.GRSWT > 0 && balance.PCS === 0) {
-        toaster.create({
-          title: "Invalid Entry",
-          description: "Pcs cannot be 0 when GrsWt are present",
-          type: "error",
-          duration: 2000,
-        });
+      // console.log(balance, balance.STNWT > 0 && balance.PCS === 0, "balance check");
 
-        return false;
-      }
-      console.log(balance , balance.STNWT > 0 && balance.PCS === 0 ,'balance check')
-      if (balance && balance.STNWT > 0 && balance.PCS === 0) {
-        toaster.create({
-          title: "Invalid Entry",
-          description:
-            "Pcs cannot be 0 when Stone Weight are present",
-          type: "error",
-          duration: 2000,
-        });
+      // if (balance && balance.STNWT > 0 && balance.PCS === 0) {
+      //   toaster.create({
+      //     title: "Invalid Entry",
+      //     description: "Pcs cannot be 0 when Stone Weight are present",
+      //     type: "error",
+      //     duration: 2000,
+      //   });
+      //   return false;
+      // }
 
-        return false;
-      }
-      if (
-        balance &&
-        balance.PCS === 0 &&
-        balance.GRSWT === 0 &&
-        balance.STNWT > 0
-      ) {
-        toaster.create({
-          title: "Invalid Entry",
-          description:
-            "Stone Weight must be 0 when both PCS and Gross Weight are 0",
-          type: "error",
-          duration: 2000,
-        });
-
-        return false;
-      }
+      // if (balance && balance.PCS === 0 && balance.GRSWT === 0 && balance.STNWT > 0) {
+      //   toaster.create({
+      //     title: "Invalid Entry",
+      //     description: "Stone Weight must be 0 when both PCS and Gross Weight are 0",
+      //     type: "error",
+      //     duration: 2000,
+      //   });
+      //   return false;
+      // }
 
       return true;
     },

@@ -81,6 +81,7 @@ function BarCodeGenerate() {
     /* collections */
     purchaserCollection,
     customerCollection,
+    allPartiesCollections,
     inwardCollection,
     itemCollection,
     itemSizeCollection,
@@ -420,7 +421,7 @@ function BarCodeGenerate() {
           deselectFlag={deselectFlag}
           onFilterChange={setTagFilterField}
           filterParams={tagFilterParams}
-          collections={{ acCodeCollection: purchaserCollection }}
+          collections={{ acCodeCollection: allPartiesCollections }}
           isEditing={isEditing}
         />
       </Box>

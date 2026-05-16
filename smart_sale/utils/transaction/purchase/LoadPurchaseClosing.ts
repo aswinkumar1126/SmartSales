@@ -20,6 +20,8 @@ export const loadPurchaseClosing = (
         CONVTYPE: closing.CONVTYPE || "",
         CONVAMT: closing.CONVAMT ? String(closing.CONVAMT) : "",
         CONVWT: closing.CONVWT ? String(closing.CONVWT) : "",
+        DISCWT: closing.DISCWT ? String(closing.DISCWT) : "",
+        DISCAMT: closing.DISCAMT ? String(closing.DISCAMT) : "",
         CASHPAID: closing.CASHPAID ? String(closing.CASHPAID) : "",
         CASHRCVD: closing.CASHRCVD ? String(closing.CASHRCVD) : "",
         BANKPAID: closing.BANKPAID ? String(closing.BANKPAID) : "",

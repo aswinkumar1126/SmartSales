@@ -3,7 +3,7 @@ import { OrnamentPayload, ApiResponse } from "@/types/ornament/ornament";
 
 export const getOrnamentList = async (filter?:string) => {
     const response = await axiosInstance.get("/ornament",{
-        params: filter ? { filter: filter } : undefined,
+        params:  { FILTER: filter ,STOCKTYPE :'N' } ,
     });
     return response.data;
 };

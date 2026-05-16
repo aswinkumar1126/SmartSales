@@ -17,7 +17,7 @@ export const useLoadSalesTransaction = () => {
     console.log(controlData, 'controlData')
     const isUseFinalAmount = controlData?.CTLTEXT === "Y";
 
-    const loadTransaction = (transactionData: any, sno: string ,isTagedItem:(id: number | null) => boolean ) => {
+    const loadTransaction = (transactionData: any, sno: string ) => {
         if (!transactionData) return;
 
         startEdit(sno);
@@ -27,7 +27,7 @@ export const useLoadSalesTransaction = () => {
 
         // loadOpening(transactionData.BALANCE, setBaseOpening);
 
-        const { rows, selectedTransactionTypes } = mapSalesTransactionItems(transactionData, isTagedItem, isUseFinalAmount );
+        const { rows, selectedTransactionTypes } = mapSalesTransactionItems(transactionData,  isUseFinalAmount );
 
         return { rows,selectedTransactionTypes };
     };

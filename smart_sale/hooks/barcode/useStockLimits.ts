@@ -12,9 +12,9 @@ import { SELECTED_BARCODE_ITEM } from "@/types/barcode/BarcodeDetails";
 export interface StockSummaryRow {
   key: string;
   label: string;
-  total: string;
-  newRows: string;
-  balance: string;
+  total: string|number;
+  newRows: string|number;
+  balance: string|number;
 }
 
 /* ============================================================

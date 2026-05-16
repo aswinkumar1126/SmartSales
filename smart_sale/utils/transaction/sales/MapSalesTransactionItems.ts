@@ -27,24 +27,20 @@ function calculateStoneAmount(
     return 0;
 }
 
-const mapSalesItems = (list: any[] = [], type: string, isTagedItem: any, isUseFinalAmount:boolean) => {
+const mapSalesItems = (list: any[] = [], type: string, isUseFinalAmount:boolean) => {
     return list.map((item, index) => {
 
         console.log(list,'saleslistlist');
         
 
 
-        const isTagged = item.ITEMID
-            ? isTagedItem(Number(item.ITEMID))
-            : false;
 
         const rowId = `edit-${item.SNO || Date.now()}-${index}`;
-        const ITEM_TYPE = isTagged ? "TAGGED" : "NON_TAGGED";
 
+        const isTaged = item.STOCKTYPE === "T" ;
 
 
         const grswt = Number(item.GRSWT || 0);
-
 
         const SNO = item.SNO;
     
@@ -91,14 +87,15 @@ const mapSalesItems = (list: any[] = [], type: string, isTagedItem: any, isUseFi
         return {
             __rowId: `edit-${item.SNO || Date.now()}-${index}`,
             __isNew: false,
-            __isTagged:isTagged,
+            __isTagged: isTaged,
 
-            ITEM_TYPE,
+            ITEM_TYPE : isTaged ? "TAGED" : "NON-TAGED",
 
             TRANSACTION_TYPE: type,
             _type: type,
 
             ITEMID: String(item.ITEMID || ""),
+            ITEMNAME : item.ITEMNAME || "",
             TAGNO : item.TAGNO || "",
 
             PCS: Number(item.PCS || 0),
@@ -158,7 +155,6 @@ const mapIssueItems = (list: any[] = [], type: string) => {
 
 export const mapSalesTransactionItems = (
     transactionData: any,
-    isTagedItem: (id: number | null) => boolean,
     isUseFinalAmount :boolean
 ) => {
     const details = transactionData?.TRANSACTION_DETAILS;
@@ -170,8 +166,8 @@ export const mapSalesTransactionItems = (
         };
     }
 
-    const sales = mapSalesItems(details.sales, "SA", isTagedItem, isUseFinalAmount );
-    const salesReturn = mapSalesItems(details.sales_return, "SR", isTagedItem, isUseFinalAmount);
+    const sales = mapSalesItems(details.sales, "SA",  isUseFinalAmount );
+    const salesReturn = mapSalesItems(details.sales_return, "SR",  isUseFinalAmount);
 
     const issue = mapIssueItems(details.issue, "IS");
     const receipt = mapIssueItems(details.receipt, "RE");

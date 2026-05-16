@@ -10,6 +10,9 @@ export const useClosingCalculation = (
         const cashRcvd = Number(closingDetails.CASHRCVD || 0);
         const cashPaid = Number(closingDetails.CASHPAID || 0);
 
+        const discWt = Number(closingDetails.DISCWT|| 0);
+        const discAmt = Number(closingDetails.DISCAMT || 0);
+
         const bankRcvd = closingDetails.BANKRCVDDETAILS.length > 0 ? closingDetails.BANKRCVDDETAILS.reduce(
             (sum, t) => sum + (t.AMOUNT || 0),
             0
@@ -30,9 +33,10 @@ export const useClosingCalculation = (
             cashRcvd +
             bankRcvd -
             cashPaid -
-            bankPaid;
+            bankPaid -
+            discAmt;
 
-        let closingPure = openingBalances.openPure || 0;
+        let closingPure = (openingBalances.openPure || 0) - discWt ;
 
         if (type === "C") {
             closingCash -= convAmt;

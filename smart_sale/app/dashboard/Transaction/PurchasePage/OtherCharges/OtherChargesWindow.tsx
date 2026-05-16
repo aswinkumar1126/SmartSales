@@ -65,7 +65,7 @@ export default function OtherChargesWindow({
     enteredPieces
 }: Props) {
 
-    console.log(enteredPieces,'enteredPieces');
+    // console.log(enteredPieces,'enteredPieces');
   
 
     const { data: softControlData } = useSoftControlById('PU_HMC_FINALAMT');
@@ -110,23 +110,23 @@ export default function OtherChargesWindow({
         }
     }, [initialRows, draftRowId]);
 
-    // Add this effect to re-derive finalAmount when enteredPieces changes
-    useEffect(() => {
-        setRows(prev => prev.map(row => {
-            const match = otherChargesData?.find(
-                (item: any) => Number(item.chargeId) === Number(row.chargeId)
-            );
+    // // Add this effect to re-derive finalAmount when enteredPieces changes
+    // useEffect(() => {
+    //     setRows(prev => prev.map(row => {
+    //         const match = otherChargesData?.find(
+    //             (item: any) => Number(item.chargeId) === Number(row.chargeId)
+    //         );
 
-            // ✅ Use same isHmc logic as handleCellChange
-            const isHmc = String(match?.chargeName || "").trim().toUpperCase() === "HMC";
+    //         // ✅ Use same isHmc logic as handleCellChange
+    //         const isHmc = String(match?.chargeName || "").trim().toUpperCase() === "HMC";
 
-            const amt = Number(row.amount || 0);
-            return {
-                ...row,
-                finalAmount: String(isHmc && isHmcFinalAmt ? amt * Number(enteredPieces || 1) : amt)
-            };
-        }));
-    }, [enteredPieces]); // ✅ Remove otherChargesData — only re-derive when pieces change
+    //         const amt = Number(row.amount || 0);
+    //         return {
+    //             ...row,
+    //             finalAmount: String(isHmc && isHmcFinalAmt ? amt * Number(enteredPieces || 1) : amt)
+    //         };
+    //     }));
+    // }, [enteredPieces]); // ✅ Remove otherChargesData — only re-derive when pieces change
 
     // ── Validation ────────────────────────────────────────────────────────────
     const [touched, setTouched] = useState<Record<string, boolean>>({});

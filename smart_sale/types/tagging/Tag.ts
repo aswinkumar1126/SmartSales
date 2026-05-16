@@ -101,6 +101,7 @@ export interface getSingleTagDetail {
     WASPER: number;
     STNAMT:number;
     STNPRESENT :"Y" | "N" | string;
+    HMCAMT :number;
     STONEDETAILS:
     {
         APPVER?: string | null;

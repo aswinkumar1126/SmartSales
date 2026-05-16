@@ -78,17 +78,6 @@ export const SearchDrawer: React.FC<SearchDrawerProps> = ({
     // Search form fields configuration
     const searchFields: FormField[] = [
         {
-            name: "accode",
-            label: "Account Code",
-            type: "combobox",
-            placeholder: "Select Account",
-            items: accodeOptions,
-            size: "sm",
-            maxWidth: "100%",
-            rounded: 'sm',
-            colSpan: 2,
-        },
-        {
             name: "fromDate",
             label: "From Date",
             type: "date",
@@ -98,7 +87,9 @@ export const SearchDrawer: React.FC<SearchDrawerProps> = ({
             maxDate: formData.toDate && !isNaN(new Date(formData.toDate).getTime())
                 ? formData.toDate
                 : today,
-          
+            maxW: '80px',
+            
+
         },
         {
             name: "toDate",
@@ -108,8 +99,21 @@ export const SearchDrawer: React.FC<SearchDrawerProps> = ({
             size: 'xs',
             colSpan: 2,
             maxDate: today,
-            minDate:formData.fromDate || "",
+            minDate: formData.fromDate || "",
+            maxW: '80px'
         },
+        {
+            name: "accode",
+            label: "Purchaser",
+            type: "combobox",
+            placeholder: "Select Account",
+            items: accodeOptions,
+            size: "sm",
+            maxWidth: "100%",
+            rounded: 'sm',
+            colSpan: 2,
+        },
+       
         {
             name: "entryNo",
             label: "Entry No",
@@ -119,6 +123,17 @@ export const SearchDrawer: React.FC<SearchDrawerProps> = ({
             allowDecimal: false,
             maxWidth: "100%",
             colSpan: 1,
+        },
+        {
+            name: "itemId",
+            label: "Item",
+            type: "combobox",
+            placeholder: "Select Item",
+            items: itemOptions,
+            size: "sm",
+            maxWidth: "100%",
+            rounded: 'sm',
+            colSpan: 2,
         },
         // {
         //     name: "lotNumber",
@@ -150,17 +165,7 @@ export const SearchDrawer: React.FC<SearchDrawerProps> = ({
             allowFocus: true,
             colSpan: 2,
         },
-        {
-            name: "itemId",
-            label: "Item",
-            type: "combobox",
-            placeholder: "Select Item",
-            items: itemOptions,
-            size: "sm",
-            maxWidth: "100%",
-            rounded: 'sm',
-            colSpan: 2,
-        },
+        
         
     ];
 

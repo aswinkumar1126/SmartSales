@@ -61,18 +61,6 @@ export const SalesSearch: React.FC<salesSearchProps> = ({
     const isOpen = externalIsOpen !== undefined ? externalIsOpen : internalIsOpen;
 
     const searchFields: FormField[] = [
-
-        {
-            name: "accode",
-            label: "PURCHASER",
-            type: "combobox",
-            placeholder: "Select Account",
-            items: accodeOptions,
-            size: "sm",
-            maxWidth: "100%",
-            rounded: 'sm',
-            colSpan: 2,
-        },
         {
             name: "fromDate",
             label: "FROM DATE",
@@ -91,8 +79,30 @@ export const SalesSearch: React.FC<salesSearchProps> = ({
             maxWidth: "120px",
             size: 'xs',
             colSpan: 1,
-            minDate:formData.fromDate,
+            minDate: formData.fromDate,
             maxDate: today
+        },
+        {
+            name: "accode",
+            label: "PURCHASER",
+            type: "combobox",
+            placeholder: "Select Account",
+            items: accodeOptions,
+            size: "sm",
+            maxWidth: "100%",
+            rounded: 'sm',
+            colSpan: 2,
+        },
+        {
+            name: "itemId",
+            label: "ITEM NAME",
+            type: "combobox",
+            placeholder: "Select Item",
+            items: itemOptions,
+            size: "sm",
+            maxWidth: "100%",
+            rounded: 'sm',
+            colSpan: 2,
         },
         {
             name: "pureId",
@@ -117,17 +127,7 @@ export const SalesSearch: React.FC<salesSearchProps> = ({
             allowFocus: true,
             colSpan: 2,
         },
-        {
-            name: "itemId",
-            label: "ITEM NAME",
-            type: "combobox",
-            placeholder: "Select Item",
-            items: itemOptions,
-            size: "sm",
-            maxWidth: "100%",
-            rounded: 'sm',
-            colSpan: 2,
-        },
+        
        
     ];
 

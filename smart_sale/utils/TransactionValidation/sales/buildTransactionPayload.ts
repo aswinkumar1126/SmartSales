@@ -4,6 +4,7 @@ export const buildTransactionPayload = ({
     SALE_TRANSACTION_KEY_MAP,
     normalizeRowForApi,
 }: any) => {
+    console.log(draftRows,'draftRowsdraftRows')
     const transactionDetails: Record<string, any[]> = {};
 
     draftRows.forEach((row: any) => {

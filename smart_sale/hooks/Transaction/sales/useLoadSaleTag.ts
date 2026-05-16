@@ -59,6 +59,7 @@ export const useLoadSaleTag = () => {
             // ✅ Build stones FIRST
             let stonesWithId: any[] = [];
             let totalStoneWeight = 0;
+            let totalStoneAmount = 0;
 
             if (stoneDetails.length > 0) {
                 stonesWithId = stoneDetails.map((stone: any, index: number) => ({
@@ -84,7 +85,25 @@ export const useLoadSaleTag = () => {
                     (sum: number, s: any) => sum + Number(s.stoneWeight || 0),
                     0
                 );
+
+                totalStoneAmount = stonesWithId.reduce(
+                    (sum: number, s: any) => sum + Number(s.stoneAmount || 0),
+                    0
+                );
             }
+            const hmcAmount = data.HMCAMT ;
+
+            // Build the default HMC charge entry once — used in both local state and store
+            const defaultHmcCharge = hmcAmount > 0
+                ? [{
+                    draftRowId: rowId,
+                    chargeId: "1",
+                    chargeName: "HMC",
+                    amount: hmcAmount.toString(),
+                    finalAmount: hmcAmount.toString(),
+                }]
+                : [];
+
 
             const STN_PRESENT = data.STNPRESENT === "Y" || stoneDetails.length > 0 ;  
 
@@ -116,9 +135,12 @@ export const useLoadSaleTag = () => {
 
                 TOUCH: Number(data.TOUCH) || 0,
                 MC: formatToFixed(Number(data.MC),2) || 0,
+                STNAMT: formatToFixed(totalStoneAmount, 2) || 0,
 
                 _hasStones: stonesWithId.length > 0,
-                _hasCharges: false,
+                _hasCharges: true,
+                HMC: hmcAmount,
+                _miscCharges: defaultHmcCharge,
 
                 // ✅ Always include _stones (empty array if none)
                 _stones: stonesWithId,

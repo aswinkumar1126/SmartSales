@@ -54,6 +54,7 @@ type CapitalizedInputProps<T> = {
     maxSize?: number; // in bytes, e.g., 5 * 1024 * 1024 for 5MB
     onImageError?: (error: string) => void;
     imagePreview?: boolean; // Show preview of uploaded image
+    color?: string;
 };
 
 export function CapitalizedInput<T>({
@@ -89,7 +90,8 @@ export function CapitalizedInput<T>({
     accept = "image/*", // 🔥 NEW
     maxSize = 5 * 1024 * 1024, // 🔥 NEW: 5MB default
     onImageError, // 🔥 NEW
-    imagePreview = true // 🔥 NEW
+    imagePreview = true, // 🔥 NEW
+    color,
 }: CapitalizedInputProps<T>) {
     const { theme } = useTheme();
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -425,7 +427,7 @@ const isFocused = focusedValue !== undefined;
         cursor: 'not-allowed',
         bg: noBorder ? '#ffffff' : theme.colors.greyColor,
         border: "1px solid transparent",
-        color: theme.colors.green,
+        color: color || theme.colors.green,
         fontWeight: 'bold'
     }}
 />

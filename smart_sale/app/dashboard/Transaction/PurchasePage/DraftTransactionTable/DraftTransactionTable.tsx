@@ -21,7 +21,9 @@ import { usePureGoldDataById } from "@/hooks/apiHooks/pureGoldMast/usePureGoldMa
 import { ExcelGrid, ColumnDef, RenderCellParams } from "@/component/table/ExcelGrid";
 import { useTouchByFilter } from "@/hooks/apiHooks/touch/useTouchMastData";
 import { usePurchaseTransactionStore } from "@/store/purchase/usePurchaseTransactionStore";
+import { calculateMiscChargeFinalAmount } from "@/hooks/Transaction/both/calculateMiscCharges";
 
+import { useSoftControlById } from "@/hooks/apiHooks/softControl/useSoftControl";
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface FormField {
@@ -152,7 +154,13 @@ export default function DraftTransactionTable({
     onSaleReturnModal,
 }: DraftTransactionTableProps) {
     console.log(isEditing,'isEditing');
-    console.log(transactionType,'transactionTypetransactionType')
+    console.log(transactionType,'transactionTypetransactionType');
+
+    
+        const { data: softControlData } = useSoftControlById('PU_HMC_FINALAMT');
+    
+        const usePcsBySoftControl = softControlData?.CTLTEXT === 'Y'? true : false;
+    
 
     // ── Zustand store ─────────────────────────────────────────────────────────
     const { addDraftRow, updateDraftRow, removeDraftRow } = usePurchaseTransactionStore();
@@ -540,11 +548,54 @@ const handleAddRow = useCallback(() => {
 
         setDraftRows((prev) => {
             return prev.map((r) => {
-                if (r.__rowId !== rowId) return r;      // match by rowId, not index
+
+                if (r.__rowId !== rowId) return r;
+
                 const updated = { ...r, [colKey]: value };
+
                 if (colKey === "WT") updated.AWT = value;
-                if (colKey === "TOUCH" && transactionType === "REC") updated.ATOUCH = value;
-                return recalcRow(updated, !!isIssue);
+
+                if (colKey === "TOUCH" && transactionType === "REC") {
+                    updated.ATOUCH = value;
+                }
+
+                let recalculatedRow = recalcRow(updated, !!isIssue);
+
+                // ✅ PCS → recalculate HMC
+                if (colKey === "PCS") {
+
+                    const pcs = Number(value || 0);
+
+                    const updatedCharges = (recalculatedRow._miscCharges || []).map((c: any) => {
+
+                        const isHmc =
+                            String(c.chargeName || "")
+                                .trim()
+                                .toUpperCase() === "HMC";
+
+                        return {
+                            ...c,
+                            finalAmount:
+                                isHmc 
+                                    ? Number(c.amount || 0) * pcs
+                                    : Number(c.amount || 0),
+                        };
+                    });
+
+                    const hmcTotal = updatedCharges.reduce(
+                        (sum: number, c: any) =>
+                            sum + Number(c.finalAmount || 0),
+                        0
+                    );
+
+                    recalculatedRow = {
+                        ...recalculatedRow,
+                        _miscCharges: updatedCharges,
+                        HMC: hmcTotal.toFixed(2),
+                    };
+                }
+
+                return recalculatedRow;
             });
         });
 
@@ -579,6 +630,8 @@ const handleAddRow = useCallback(() => {
   useEffect(() => {
     if (!activeRowId || !activeRowItemId) return;
     if (touchDataLoading || isEditing) return;
+
+      console.log(touchData,'touchData');
 
     const key = `${activeRowId}::${activeRowItemId}`;
 
@@ -841,7 +894,7 @@ useEffect(() => {
         
 
         const field = formFields.find((f) => f.key === col.key);
-        const shouldDisableOnEditing = row.ISEDITABLE && row.__isTaged;
+        const shouldDisableOnEditing = !row.ISEDITABLE && row.__isTaged;
         console.log(shouldDisableOnEditing, row,'shouldDisableOnEditing');
 
         // ── Resolve item name: prefer stored ITEMNAME, fall back to collection lookup ──
@@ -868,6 +921,9 @@ useEffect(() => {
                 </span>
             );
         }
+        const items = field.collection?.items || [];
+
+    
 
         if (col.key === "STNWT") {
             // Per-row STN_PRESENT check: use this specific row's value (not just the active row)
@@ -968,7 +1024,7 @@ useEffect(() => {
         if (col.key === "ITEMID" || col.key === "PUREID") {
             const items = field.collection?.items || [];
  
-            if (col.key === "ITEMID" && row.ISEDITABLE && tranEditing && row.__isTaged) {
+            if (col.key === "ITEMID" && shouldDisableOnEditing) {
                 return (
                     <span style={{
                         padding: "0 6px", fontSize: 11, color: "#555",
@@ -1210,30 +1266,41 @@ useEffect(() => {
                             onClose={() => { setLastClosedModal("hmc"); setModalTrigger((t) => t + 1); setIsMiscModalOpen(false); }}
                             initialRows={otherChargesInitialRows}
                             onSave={(chargeRows) => {
-                                const updatedCharges = chargeRows.map((c) => ({ ...c, draftRowId: miscModalRowId }));
-                                const total = updatedCharges.reduce((sum, c) => sum + (Number(c.finalAmount) || 0), 0);
+
                                 const capturedRowId = miscModalRowId;
 
                                 setDraftRows((prev) =>
                                     prev.map((r) => {
+
                                         if (r.__rowId !== capturedRowId) return r;
-                                        return { ...r, _miscCharges: updatedCharges, HMC: total.toFixed(2) };
+
+                                        const pcs = Number(r.PCS || 0);
+
+                                        const updatedCharges = chargeRows.map((c) => ({
+                                            ...c,
+                                            draftRowId: capturedRowId,
+
+                                            finalAmount: calculateMiscChargeFinalAmount({
+                                                chargeName :c.chargeName,
+                                                amount :Number(c.amount || 0),
+                                                pcs:pcs,
+                                                isHmcFinalAmt: usePcsBySoftControl
+                                            }),
+                                        }));
+
+                                        const total = updatedCharges.reduce(
+                                            (sum, c) => sum + (Number(c.finalAmount) || 0),
+                                            0
+                                        );
+
+                                        return {
+                                            ...r,
+                                            _miscCharges: updatedCharges,
+                                            HMC: total.toFixed(2),
+                                        };
                                     })
                                 );
 
-                                if (committedRowIdsRef.current.has(capturedRowId)) {
-                                    pendingStoreCallRef.current = () => commitRowUpdate(capturedRowId, {
-                                        _miscCharges: updatedCharges,
-                                        HMC: total.toFixed(2),
-                                    });
-                                }
-
-                                toaster.create({
-                                    title: "Charges Updated",
-                                    description: `Rs.${total.toFixed(2)}`,
-                                    type: "success",
-                                    duration: 2000,
-                                });
                                 setIsMiscModalOpen(false);
                             }}
                             chargeItems={otherChargesList}

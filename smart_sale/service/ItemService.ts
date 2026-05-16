@@ -9,7 +9,7 @@ type stoneItemsParam = {
     STUDDED?: "Y" | "N",
     STUDDEDTYPE?: "T" | "D" | "" | string;
     STNPRESENT?: "Y" | "N";
-    STOCKTYPE?: string;
+    STOCKTYPE?: "T" | "N" | string;
 
 }
 

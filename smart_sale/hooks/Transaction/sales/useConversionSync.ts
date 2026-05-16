@@ -23,7 +23,7 @@ export const useConversionSync = (rate: number) => {
         // 🔴 CLEAR LOGIC (empty or invalid)
         if (convType === "P") {
             // If weight is empty OR <= 0 → clear amount
-            if (!convWtStr || convWt <= 0) {
+            if (!convWtStr ) {
                 if (convAmtStr !== "") {
                     setClosingField("CONVAMT", "");
                 }
@@ -33,7 +33,7 @@ export const useConversionSync = (rate: number) => {
 
         if (convType === "C") {
             // If amount is empty OR <= 0 → clear weight
-            if (!convAmtStr || convAmt <= 0) {
+            if (!convAmtStr ) {
                 if (convWtStr !== "") {
                     setClosingField("CONVWT", "");
                 }
@@ -43,7 +43,7 @@ export const useConversionSync = (rate: number) => {
 
 
         // 🟢 CALCULATION LOGIC
-        if (convType === "P" && convWt > 0) {
+        if (convType === "P" ) {
             const calculatedAmt = (convWt * rate).toFixed(2);
 
             if (calculatedAmt !== closingDetails.CONVAMT) {
@@ -51,7 +51,7 @@ export const useConversionSync = (rate: number) => {
             }
         }
 
-        if (convType === "C" && convAmt > 0) {
+        if (convType === "C" ) {
             const calculatedWt = (convAmt / rate).toFixed(3);
 
             if (calculatedWt !== closingDetails.CONVWT) {

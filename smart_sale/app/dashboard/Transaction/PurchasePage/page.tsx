@@ -150,7 +150,9 @@ export default function PurchasePage() {
             CASHRCVD: "",
             CONVAMT: "",
             CONVTYPE: "",
-            CONVWT: ""
+            CONVWT: "",
+            DISCAMT: "",
+            DISCWT: ""
         }
     );
 
@@ -936,6 +938,8 @@ useGlobalKey(
 
     const { closingPure, closingCash } = useClosingCalculation(closingDetails, openingBalances, Number(headerForm.RATEGM || 0));
 
+    console.log(closingDetails,'closingDetails');
+
 
     // ✅ Always reads latest — even before re-render
     const getClosingDetailsPayload = (): ClosingDetails => {
@@ -945,8 +949,8 @@ useGlobalKey(
             CONVTYPE: d.CONVTYPE,
             CONVAMT: Number(d.CONVAMT || 0),
             CONVWT: Number(d.CONVWT || 0),
-            // discAmt: Number(d.discAmt || 0),
-            // discWt: Number(d.discWt || 0),
+            DISCAMT: Number(d.DISCAMT || 0),
+            DISCWT: Number(d.DISCWT || 0),
             CASHPAID: Number(d.CASHPAID || 0),
             CASHRCVD: Number(d.CASHRCVD || 0),
             BANKPAID: Number(d.BANKPAID || 0),
@@ -1251,13 +1255,14 @@ useGlobalKey(
                         type: "success",
                     });
 
-                    goldStockRefetch();
-                    itemStockRefetch();
-                    openingBalanceRefetch();
+                    // goldStockRefetch();
+                    // itemStockRefetch();
+                    // openingBalanceRefetch();
 
-                    resetStore();
-                    resetBalance();
-                    setIsOpenRemarkModal(false);
+                    // resetStore();
+                    // resetBalance();
+                    // setIsOpenRemarkModal(false);
+                    handleResetDraft();
                 },
 
                 onError: (error: any) => {
@@ -1326,11 +1331,20 @@ useGlobalKey(
             });
 
 
-            resetStore();
+            setSelectedTransactionId(null);
+            setEditingState({ rowId: null, transactionType: null });
+            resetDraftRowTempId();
+
+            setSingleSearch("");
+
+            setEditingSno(null);
+
+            resetHeader();
             resetBalance();
-            setDeselectFlag(true);
-            handleResetDraft();
-            setIsOpenRemarkModal(false);
+            resetStore();
+            stopEdit();
+            refetchTransactionHeaderDetail();
+
 
         } catch (error: any) {
             toaster.create({
@@ -1556,8 +1570,8 @@ useGlobalKey(
                         closingCash={closingCash}
                         closingPure={closingPure}
                         bankAccList={allBankAccounts}
+
                         headerForm ={headerForm}
-                  
                         onFormChange={setHeaderField}
                     />
 

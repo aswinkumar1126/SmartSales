@@ -24,6 +24,8 @@ export interface BaseClosingFormDetails {
     CONVTYPE: "P" | "C" | "" | string;
     CONVAMT: string;
     CONVWT: string;
+    DISCWT :string;
+    DISCAMT :string;
     CASHPAID: string;
     CASHRCVD: string;
     BANKPAID: string;

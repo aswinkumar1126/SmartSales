@@ -36,6 +36,8 @@ const initialClosingDetails: PurchaseClosingFormDetails = {
     CONVTYPE: "",
     CONVAMT: "",
     CONVWT: "",
+    DISCWT: "",
+    DISCAMT: "",
     CASHPAID: "",
     CASHRCVD: "",
     BANKPAID: "",

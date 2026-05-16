@@ -25,6 +25,8 @@ import { usePureGoldDataById } from "@/hooks/apiHooks/pureGoldMast/usePureGoldMa
 import { ExcelGrid, ColumnDef, RenderCellParams } from "@/component/table/ExcelGrid";
 import { useSaleTransactionStore } from "@/store/sales/useSaleTransactionStore";
 import { useTouchByFilter } from "@/hooks/apiHooks/touch/useTouchMastData";
+import { useSoftControlById } from "@/hooks/apiHooks/softControl/useSoftControl";
+import { calculateMiscChargeFinalAmount } from "@/hooks/Transaction/both/calculateMiscCharges";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -154,6 +156,12 @@ export default function DraftTransactionTable({
 }: DraftTransactionTableProps) {
 
     console.log(transactionType,'transactionTypetransactionType');
+
+    
+        const { data: SoftControl } = useSoftControlById('SA_HMC_FINALAMT');
+    
+    
+        const usePcsMultiply = SoftControl?.CTLTEXT === "Y" ;
 
     // ── Zustand store ─────────────────────────────────────────────────────────
     const { addDraftRow, updateDraftRow, removeDraftRow } = useSaleTransactionStore();
@@ -603,7 +611,43 @@ export default function DraftTransactionTable({
                 const updated = { ...r, [colKey]: value };
                 if (colKey === "WT") updated.AWT = value;
                 if (colKey === "TOUCH" && transactionType === "RE") updated.ATOUCH = value;
-                return recalcRow(updated, !!isIssue);
+                let recalculatedRow = recalcRow(updated, !!isIssue);
+
+                // ✅ PCS → recalculate HMC
+                if (colKey === "PCS") {
+
+                    const pcs = Number(value || 0);
+
+                    const updatedCharges = (recalculatedRow._miscCharges || []).map((c: any) => {
+
+                        const isHmc =
+                            String(c.chargeName || "")
+                                .trim()
+                                .toUpperCase() === "HMC";
+
+                        return {
+                            ...c,
+                            finalAmount:
+                                isHmc && usePcsMultiply
+                                    ? Number(c.amount || 0) * pcs
+                                    : Number(c.amount || 0),
+                        };
+                    });
+
+                    const hmcTotal = updatedCharges.reduce(
+                        (sum: number, c: any) =>
+                            sum + Number(c.finalAmount || 0),
+                        0
+                    );
+
+                    recalculatedRow = {
+                        ...recalculatedRow,
+                        _miscCharges: updatedCharges,
+                        HMC: hmcTotal.toFixed(2),
+                    };
+                }
+
+                return recalculatedRow;
             });
         });
 
@@ -631,7 +675,7 @@ export default function DraftTransactionTable({
         { ITEMID: Number(activeRowItemId), ACCODE: Number(acCode) },
         shouldFetchTouch
     );
-    console.log(touchData,'touchData');
+    console.log(touchData,'touchDatatouchData');
 
     // ── Touch data effect — writes directly to store by rowId ─────────────────
     useEffect(() => {
@@ -686,10 +730,8 @@ export default function DraftTransactionTable({
     const existingRow = draftRows.find(r => r.__rowId === activeRowId);
 
     const alreadyApplied =
-        existingRow?.TOUCH > 0 &&
-       
-        existingRow?.CAL_MODE === calMode &&
-        existingRow?.STN_PRESENT === stnPresent 
+        existingRow?.TOUCH &&
+        existingRow?.CAL_MODE 
 
          // existingRow?.ATOUCH === touch &&
         // Number(existingRow?.HMC || 0) === hmcAmount;
@@ -748,7 +790,7 @@ export default function DraftTransactionTable({
                 type: "success",
                 duration: 2000,
             });
-        }, 0);
+        }, 10);
     }, [touchData, touchDataLoading, activeRowId, activeRowItemId ,isEditing]);
 // ── Pure gold effect — writes directly to store by rowId ─────────────────
 useEffect(() => {
@@ -790,7 +832,7 @@ useEffect(() => {
     );
 
     const alreadyApplied =
-        existingRow?.TOUCH&&
+        existingRow?.TOUCH &&
         existingRow?.ATOUCH;
 
     // skip everything if already applied
@@ -925,6 +967,8 @@ useEffect(() => {
     // ── Cell renderer ─────────────────────────────────────────────────────────
     const renderCell = useCallback((params: RenderCellParams) => {
         const { row, col, value, isEditing, isFocused, onChange, onCommit, inputRef } = params;
+
+        console.log(row,'rowinrendercell');
         const field = formFields.find((f) => f.key === col.key);
         if (!field) return <span style={{ padding: "0 4px", fontSize: 11 }}>{value ?? ""}</span>;
 
@@ -1123,35 +1167,71 @@ useEffect(() => {
     }, [stoneModalRowId, isIssue, commitRowUpdate]);
 
     // ── Other charges save ─────────────────────────────────────────────────────
-    const handleOtherChargesSave = useCallback((chargeRows: MiscChargeRow[]) => {
-        const updatedCharges = chargeRows.map((c) => ({ ...c, draftRowId: miscModalRowId }));
-        const total = updatedCharges.reduce((sum, c) => sum + (Number(c.finalAmount) || 0), 0);
-        const capturedRowId = miscModalRowId;
+    const handleOtherChargesSave = useCallback(
+        (chargeRows: MiscChargeRow[]) => {
 
-        setDraftRows((prev) =>
-            prev.map((r) => {
-                if (r.__rowId !== capturedRowId) return r;
-                return { ...r, _miscCharges: updatedCharges, HMC: total.toFixed(2) };
-            })
-        );
+            const capturedRowId = miscModalRowId;
 
-        if (committedRowIdsRef.current.has(capturedRowId!)) {
-            pendingStoreCallRef.current = () => commitRowUpdate(capturedRowId!, {
-                _miscCharges: updatedCharges,
-                HMC: total.toFixed(2),
-            });
-        }
+            setDraftRows((prev) =>
+                prev.map((r) => {
 
-        toaster.create({
-            title: "Charges Updated",
-            description: `Rs.${total.toFixed(2)}`,
-            type: "success",
-            duration: 2000,
-        });
-        setIsMiscModalOpen(false);
-        setLastClosedModal("hmc");
-        setModalTrigger((t) => t + 1);
-    }, [miscModalRowId, commitRowUpdate]);
+                    if (r.__rowId !== capturedRowId) return r;
+
+                    const pcs = Number(r.PCS || 0);
+
+                    // ✅ Parent recalculates finalAmount
+                    const updatedCharges = chargeRows.map((c) => ({
+
+                        ...c,
+                        draftRowId: capturedRowId,
+
+                       
+                              finalAmount: calculateMiscChargeFinalAmount({
+                                                                            chargeName :c.chargeName,
+                                                                            amount :Number(c.amount || 0),
+                                                                            pcs:pcs,
+                                                                            isHmcFinalAmt: usePcsMultiply
+                                                                        }),
+                        
+                    }));
+
+                    const total = updatedCharges.reduce(
+                        (sum, c) =>
+                            sum + Number(c.finalAmount || 0),
+                        0
+                    );
+
+                    // store latest total for commit
+                    if (committedRowIdsRef.current.has(capturedRowId!)) {
+
+                        pendingStoreCallRef.current = () =>
+                            commitRowUpdate(capturedRowId!, {
+                                _miscCharges: updatedCharges,
+                                HMC: total.toFixed(2),
+                            });
+                    }
+
+                    toaster.create({
+                        title: "Charges Updated",
+                        description: `Rs.${total.toFixed(2)}`,
+                        type: "success",
+                        duration: 2000,
+                    });
+
+                    return {
+                        ...r,
+                        _miscCharges: updatedCharges,
+                        HMC: total.toFixed(2),
+                    };
+                })
+            );
+
+            setIsMiscModalOpen(false);
+            setLastClosedModal("hmc");
+            setModalTrigger((t) => t + 1);
+        },
+        [miscModalRowId, commitRowUpdate, usePcsMultiply]
+    );
 
     // ── Clear all ──────────────────────────────────────────────────────────────
     const handleClearAll = useCallback(() => {

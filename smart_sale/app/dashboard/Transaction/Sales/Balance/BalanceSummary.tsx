@@ -215,6 +215,7 @@ const BalanceSummary = ({
                     disabled={
                         !accCode || conversionType === "C" || conversionType === ""
                     }
+                    allowNegative
                 />
 
                 <CapitalizedInput
@@ -229,7 +230,43 @@ const BalanceSummary = ({
                     disabled={
                         !accCode || conversionType === "P" || conversionType === ""
                     }
+                    allowNegative
                 />
+
+                 <Text fontSize="xs" fontWeight="semibold">
+                                    Discount
+                                </Text>
+                
+                                <CapitalizedInput
+                                    field="DISCWT"
+                                    value={closingDetails.DISCWT}
+                                    onChange={(_, v) => handleChange("DISCWT", v)}
+                                    type="number"
+                                    allowDecimal
+                                    decimalScale={3}
+                                    size="xs"
+                                    rounded="sm"
+                                    // disabled={
+                                    //     !accCode || conversionType === "C" || conversionType === ""
+                                    // }
+                                    allowNegative
+                
+                                />
+                
+                                <CapitalizedInput
+                                    field="DISCAMT"
+                                    value={closingDetails.DISCAMT}
+                                    onChange={(_, v) => handleChange("DISCAMT", v)}
+                                    type="number"
+                                    allowDecimal
+                                    decimalScale={2}
+                                    size="xs"
+                                    rounded="sm"
+                                    // disabled={
+                                    //     !accCode || conversionType === "P" || conversionType === ""
+                                    // }
+                                    allowNegative
+                                />
 
                 <Box />
                 <Box />
@@ -354,6 +391,7 @@ const BalanceSummary = ({
                     size="xs"
                     rounded="sm"
                     disabled
+                    color={Number(closingPure) > 0 ? "red.500" : "green.600"}
                 />
                 <CapitalizedInput
                     field="closingCash"
@@ -363,6 +401,7 @@ const BalanceSummary = ({
                     size="xs"
                     rounded="sm"
                     disabled
+                    color={Number(closingCash) > 0 ? "red.500" : "green.600"}
                 />
             </Grid>
                  {headerForm.CUSTOMER && 

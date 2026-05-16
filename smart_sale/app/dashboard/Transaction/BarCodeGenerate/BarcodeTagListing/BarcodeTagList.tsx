@@ -49,7 +49,7 @@ export const BarcodeTagListing: React.FC<TagListProps> = ({
 
     const today = new Date().toISOString().split('T')[0]
     const { theme } = useTheme();
-    const { data: items, isLoading, isError } = useStoneItems();
+    const { data: items, isLoading, isError } = useStoneItems({STOCKTYPE :"T"});
     console.log(items, 'items')
 
     const [selectedTransactionId, setSelectedTransactionId] = useSessionStorage<number | null>('selectedTagTransaction', null);

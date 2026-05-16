@@ -47,7 +47,7 @@ import { useSoftControlById } from "@/hooks/apiHooks/softControl/useSoftControl"
 
 /*-------------------  *VALIDATION HOOKS*  --------------------------*/
 
-import { useIsTaggedItem } from "@/utils/TransactionValidation/sales/TagNumberValidation";
+
 import { validateTransactions } from "@/utils/TransactionValidation/sales/ValidateTransaction";
 import { buildTransactionPayload } from "@/utils/TransactionValidation/sales/buildTransactionPayload";
 import { normalizeRowForApi } from "@/utils/TransactionValidation/sales/normalizeRowForApi";
@@ -546,7 +546,7 @@ export default function SalesPage() {
     // console.log(notTagedItemCollection,'notTagedItemCollection');
 
 
-    const isTagedItem = useIsTaggedItem(tagedItemsList);
+   
 
 
 
@@ -633,7 +633,7 @@ export default function SalesPage() {
         setSelectedTransactionTypes
     } = useSaleTransactionStore();
 
-    const { handleAddRow, handleEditRow, handleRemoveRow, handleUpdateRow } = useDraftRowOperations(isTagedItem);
+    // const { handleAddRow, handleEditRow, handleRemoveRow, handleUpdateRow } = useDraftRowOperations(isTagedItem);
 
     console.log(draftRows, 'draftRowsssssss');
     useGlobalKey(
@@ -870,7 +870,7 @@ useGlobalKey(
         setOpeningBalance(data, true);
         setEditingSno(sno);
 
-        const result = loadTransaction(data, sno, isTagedItem);
+        const result = loadTransaction(data, sno);
         if (!result) return;
 
         console.log(data,'datadata')
@@ -927,8 +927,8 @@ useGlobalKey(
             CONVTYPE: d.CONVTYPE,
             CONVAMT: Number(d.CONVAMT || 0),
             CONVWT: Number(d.CONVWT || 0),
-            // DISCAMt: Number(d.discAmt || 0),
-            // DISCWT: Number(d.discWt || 0),
+            DISCAMT: Number(d.DISCAMT || 0),
+            DISCWT: Number(d.DISCWT || 0),
             CASHPAID: Number(d.CASHPAID || 0),
             CASHRCVD: Number(d.CASHRCVD || 0),
             BANKPAID: Number(d.BANKPAID || 0),
@@ -1136,6 +1136,7 @@ useGlobalKey(
             normalizeRowForApi,
         });
 
+
         const payload: CreateSaleTransaction = {
             TRANSACTION_HEADER: {
                 ACCODE: Number(headerForm.CUSTOMER),
@@ -1151,6 +1152,52 @@ useGlobalKey(
 
         return { valid: true, payload };
     };
+
+
+    const handleResetDraft = () => {
+
+        setSelectedTransactionId(null);
+
+        setEditingState({ rowId: null, transactionType: null });
+        resetDraftRowTempId();
+
+        setSingleSearch("");
+        setDeselectFlag(true);
+        setTimeout(() => setDeselectFlag(false), 50);
+
+        setEditingSno(null);
+
+        resetHeader();
+        resetBalance();
+        resetStore();
+
+
+        if (isEditing) {
+            stopEdit();
+            refetchTransactionHeaderDetail();
+
+            toaster.create({
+                title: "Edit Cancelled",
+                description: "Transaction edit has been cancelled.",
+                type: "info",
+            });
+        } else {
+            localStorage.removeItem(TYPE_KEY);
+            setSelectedTransactionId(null);
+        }
+        setHeaderForm({
+            ENTRYNO: "",
+            CUSTOMER: "",
+            CUSTOMER_NAME: "",
+            BILLNO: "",
+            DATE: new Date().toISOString().split("T")[0],
+            RATEGM: metalRates ? formatToFixed(metalRates["GOLD 916.00"], 2) : "",
+        });
+
+
+
+    };
+
 
 
     const handleSaveTransaction = () => {
@@ -1196,13 +1243,14 @@ useGlobalKey(
                         type: "success",
                     });
 
-                    goldStockRefetch();
-                    itemStockRefetch();
-                    openingBalanceRefetch();
+                    // goldStockRefetch();
+                    // itemStockRefetch();
+                    // openingBalanceRefetch();
 
-                    resetStore();
-                    resetBalance();
-                    setIsOpenSalesSaveModal(false);
+                    // resetStore();
+                    // resetBalance();
+                    // setIsOpenSalesSaveModal(false);
+                    handleResetDraft();
                 },
 
                 onError: (error: any) => {
@@ -1268,6 +1316,7 @@ useGlobalKey(
             resetStore();
             resetBalance();
             setIsOpenSalesSaveModal(false);
+            // handleResetDraft();
 
         } catch (error: any) {
             toaster.create({
@@ -1279,50 +1328,6 @@ useGlobalKey(
             setIsOpenSalesSaveModal(false);
             openingBalanceRefetch();
         }
-    };
-
-    const handleResetDraft = () => {
-
-        setSelectedTransactionId(null);
-
-        setEditingState({ rowId: null, transactionType: null });
-        resetDraftRowTempId();
-
-        setSingleSearch("");
-        setDeselectFlag(true);
-        setTimeout(() => setDeselectFlag(false), 50);
-
-        setEditingSno(null);
-
-        resetHeader();
-        resetBalance();
-        resetStore();
-
-
-        if (isEditing) {
-            stopEdit();
-            refetchTransactionHeaderDetail();
-
-            toaster.create({
-                title: "Edit Cancelled",
-                description: "Transaction edit has been cancelled.",
-                type: "info",
-            });
-        } else {
-            localStorage.removeItem(TYPE_KEY);
-            setSelectedTransactionId(null);
-        }
-        setHeaderForm({
-            ENTRYNO: "",
-            CUSTOMER: "",
-            CUSTOMER_NAME: "",
-            BILLNO: "",
-            DATE: new Date().toISOString().split("T")[0],
-            RATEGM: metalRates ? formatToFixed(metalRates["GOLD 916.00"], 2) : "",
-        });
-
-
-
     };
 
    const handleTransactionClick = useCallback((transactionId: string) => {

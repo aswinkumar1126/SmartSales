@@ -192,11 +192,14 @@ export const ExcelGrid: React.FC<ExcelGridProps> = ({
         const coord: CellCoord = { rowIndex: ri, colKey };
         setActiveCell(coord);
         onActiveChange?.(coord);
+
+        if(!tranEditing) {
         setTimeout(() => {
             const ref = inputRefs.current[errKey(ri, colKey)];
             ref?.current?.focus?.();
             ref?.current?.select?.();
         }, delay);
+    }
     }, [onActiveChange]);
 
     // ── Initial focus on mount ────────────────────────────────────────────────

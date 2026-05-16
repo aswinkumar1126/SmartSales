@@ -40,7 +40,7 @@ import { SaleTransactionKey, SALESTRANSACTIONITEMS } from "@/types/transcation/S
             const itemId = rest.ITEMID ? Number(rest.ITEMID) : null;
 
             const tagged = rest.__isTaged || rest.ITEM_TYPE === "TAGGED";
-            console.log(tagged,'taggedtagged');
+            console.log(tagged, rest ,'taggedtaggedatsales');
        
 
             const payload: SALESTRANSACTIONITEMS = {
@@ -58,7 +58,7 @@ import { SaleTransactionKey, SALESTRANSACTIONITEMS } from "@/types/transcation/S
                
 
                 // ✅ Only include TAGNO if tagged item
-                ...(tagged && { TAGNO: rest.TAGNO || "" }),
+               TAGNO: rest.TAGNO || "",
 
                 ...(editTransaction && { SNO: String(rest.SNO || "") }),
                 ...(rest.DESCRIPTION && { DESCRIPTION: rest.DESCRIPTION }),

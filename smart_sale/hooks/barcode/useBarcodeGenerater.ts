@@ -145,6 +145,7 @@ export function useBarcodeGenerate() {
   /* ── API ── */
   const { data: allPurchaseAccount } = useAllAccountHead("", { accountType: "PR" });
   const { data: allCustomerAccount } = useAllAccountHead("", { accountType: "CR" });
+  const {data: allParties } = useAllAccountHead("");
   const { data: printerSettings } = useActivePrinter();
   const printer = useMemo(() => printerSettings?.data ?? null, [printerSettings]);
 
@@ -203,11 +204,19 @@ export function useBarcodeGenerate() {
       : EMPTY_ARRAY,
     [allPurchaseAccount?.data?.acheads]);
 
+
   const customerCollection = useMemo(() =>
     Array.isArray(allCustomerAccount?.data?.acheads)
       ? allCustomerAccount.data.acheads.map((i: any) => ({ label: i.ACNAME, value: String(i.ACCODE) }))
       : EMPTY_ARRAY,
     [allCustomerAccount?.data?.acheads]);
+
+  /* ── Collections ── */
+  const allPartiesCollections = useMemo(() =>
+    Array.isArray(allParties?.data?.acheads)
+      ? allParties.data.acheads.map((i: any) => ({ label: i.ACNAME, value: String(i.ACCODE) }))
+      : EMPTY_ARRAY,
+    [allParties?.data?.acheads]);
 
   
   const inwardCollection = useMemo(() =>
@@ -254,7 +263,9 @@ export function useBarcodeGenerate() {
   const { summary: stockSummary, limits, remaining } = useStockLimits(selectedItem, rows);
 
   const remainingRef = useRef(remaining);
+  const limitsRef = useRef(limits);
 
+  useEffect(() => { limitsRef.current = limits; }, [limits])
 
   useEffect(() => { remainingRef.current = remaining; }, [remaining])
 
@@ -509,9 +520,14 @@ export function useBarcodeGenerate() {
 
   // Update handleExcelLoad to accept ExcelRowData[]
   const handleExcelLoad = useCallback((parsedRows: any[]) => {
+
+    const remainingByRef = remainingRef.current;
+    let effectiveBalance = { ...remainingByRef };
+
+
     if (!parsedRows.length) return;
     if (!validateHeaderWithToast(headerForm)) return;
-    if (!validateRows({ rows, limits, countOnlyNew: isEditing, incomingRows: parsedRows, tolerance })) return;
+    if (!validateRows({ rows, limits, countOnlyNew: isEditing, incomingRows: parsedRows, balance: effectiveBalance, tolerance })) return;
 
     const draftRowId = headerForm.ENTRYNO || String(Date.now());
     const merged = [
@@ -548,6 +564,9 @@ export function useBarcodeGenerate() {
 
     if (!validateHeaderWithToast(headerForm)) return;
 
+    const remainingByRef = remainingRef.current;
+    let effectiveBalance = { ...remainingByRef };
+
     if (
       !validateRows({
         rows,
@@ -555,6 +574,7 @@ export function useBarcodeGenerate() {
         countOnlyNew: false,
         incomingRows: parsedRows,
         tolerance,
+        balance: effectiveBalance,
         isUpdate: true,
       })
     ) return;
@@ -1045,7 +1065,7 @@ export function useBarcodeGenerate() {
     setExcelData,
     handleExcelChange,
 
-    purchaserCollection, customerCollection, inwardCollection, itemCollection, itemSizeCollection,
+    purchaserCollection, customerCollection, inwardCollection, itemCollection, itemSizeCollection, allPartiesCollections,
     stockTableData,
     stockSummary, limits, remaining,
 

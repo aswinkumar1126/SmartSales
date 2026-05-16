@@ -127,22 +127,22 @@ export default function OtherChargesWindow({
     }, [rows]);
     
     // Add this effect to re-derive finalAmount when enteredPieces changes
-    useEffect(() => {
-        setRows(prev => prev.map(row => {
-            const match = otherChargesData?.find(
-                (item: any) => Number(item.chargeId) === Number(row.chargeId)
-            );
+    // useEffect(() => {
+    //     setRows(prev => prev.map(row => {
+    //         const match = otherChargesData?.find(
+    //             (item: any) => Number(item.chargeId) === Number(row.chargeId)
+    //         );
 
-            // ✅ Use same isHmc logic as handleCellChange
-            const isHmc = String(match?.chargeName || "").trim().toUpperCase() === "HMC";
+    //         // ✅ Use same isHmc logic as handleCellChange
+    //         const isHmc = String(match?.chargeName || "").trim().toUpperCase() === "HMC";
 
-            const amt = Number(row.amount || 0);
-            return {
-                ...row,
-                finalAmount: String(isHmc && isHmcFinalAmt ? amt * Number(pcs || 1) : amt)
-            };
-        }));
-    }, [pcs]); 
+    //         const amt = Number(row.amount || 0);
+    //         return {
+    //             ...row,
+    //             finalAmount: String(isHmc && isHmcFinalAmt ? amt * Number(pcs || 1) : amt)
+    //         };
+    //     }));
+    // }, [pcs]); 
     // ── Cell change — fully controlled ────────────────────────────────────────
     const handleCellChange = useCallback(
         (ri: number, colKey: string, value: any) => {

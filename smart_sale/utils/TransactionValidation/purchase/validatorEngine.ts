@@ -58,7 +58,7 @@ export const validatePurchaseReturn = (row: any  ) => {
         return "TOUCH must be > 0";
     }
  
-    if (touch > actualTouch) 
+    if (actualTouch && touch > actualTouch) 
         return `Touch do not exists the Actual Touch ${row.ATOUCH}`
     
     // if (!row._miscCharges || row._miscCharges.length <= 0) {

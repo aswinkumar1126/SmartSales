@@ -53,9 +53,11 @@ export const SalesSearch: React.FC<salesSearchProps> = ({
         fromDate: initialFilters.fromDate || "",
         toDate: initialFilters.toDate || "",
         pureId: initialFilters.pureId || "",
-        weight: initialFilters.weight || "",
-        itemId: initialFilters.itemId || "",
         accode: initialFilters.accode || "",
+        itemId: initialFilters.itemId || "",
+        weight: initialFilters.weight || "",
+   
+      
     });
 
     const isOpen = externalIsOpen !== undefined ? externalIsOpen : internalIsOpen;
@@ -63,7 +65,30 @@ export const SalesSearch: React.FC<salesSearchProps> = ({
     console.log(formData.toDate,formData.fromDate ,'formData.toDate')
 
     const searchFields: FormField[] = [
+        {
+            name: "fromDate",
+            label: "FROM DATE",
+            type: "date",
+            maxWidth: "120px",
+            colSpan: 1,
+            size: 'xs',
+            maxDate: formData.toDate && !isNaN(new Date(formData.toDate).getTime())
+                ? formData.toDate
+                : today,
 
+
+        },
+        {
+            name: "toDate",
+            label: "TO DATE",
+            type: "date",
+            maxWidth: "120px",
+            size: 'xs',
+            colSpan: 1,
+            minDate: formData.fromDate,
+            maxDate: today,
+
+        },
         {
             name: "accode",
             label: "PURCHASER",
@@ -77,29 +102,17 @@ export const SalesSearch: React.FC<salesSearchProps> = ({
           
         },
         {
-            name: "fromDate",
-            label: "FROM DATE",
-            type: "date",
-            maxWidth: "120px",
-            colSpan: 1,
-            size: 'xs',
-            maxDate: formData.toDate && !isNaN(new Date(formData.toDate).getTime())
-                ? formData.toDate
-                : today,
-          
-
+            name: "itemId",
+            label: "ITEM NAME",
+            type: "combobox",
+            placeholder: "Select Item",
+            items: itemOptions,
+            size: "sm",
+            maxWidth: "100%",
+            rounded: 'sm',
+            colSpan: 2,
         },
-        {
-            name: "toDate",
-            label: "TO DATE",
-            type: "date",
-            maxWidth: "120px",
-            size: 'xs',
-            colSpan: 1,
-            minDate:formData.fromDate,
-            maxDate: today,
-     
-        },
+      
         {
             name: "pureId",
             label: "PURE  NAME",
@@ -123,17 +136,7 @@ export const SalesSearch: React.FC<salesSearchProps> = ({
             allowFocus: true,
             colSpan: 2,
         },
-        {
-            name: "itemId",
-            label: "ITEM NAME",
-            type: "combobox",
-            placeholder: "Select Item",
-            items: itemOptions,
-            size: "sm",
-            maxWidth: "100%",
-            rounded: 'sm',
-            colSpan: 2,
-        },
+        
        
     ];
 
