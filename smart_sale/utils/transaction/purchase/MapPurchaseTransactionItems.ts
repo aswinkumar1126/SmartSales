@@ -31,14 +31,15 @@ function calculateStoneAmount(
 const mapPurchaseReturnItems = (
     list: any[] = [],
     type: string,
-    isTagedItem: (id: number) => boolean,
     isUseFinalAmount: boolean        // ✅ passed in
 ) => {
     return list.map((item, index) => {
         const rowId = `edit-${item.SNO || Date.now()}-${index}`;
 
-        const isTagged = item.ITEMID ? isTagedItem(Number(item.ITEMID)) : false;
+        const isTagged = item.STOCKTYPE === "T";
         const ITEM_TYPE = isTagged ? "TAGGED" : "NON_TAGGED";
+
+        const stonePresent = item.STNPRESENT === "Y" ;
 
         // ---------------- STONES ----------------
         const stonesRaw = item.STONEDETAILS || [];
@@ -93,6 +94,8 @@ const mapPurchaseReturnItems = (
 
             ITEMNAME: item.ITEMNAME,
 
+            STN_PRESENT: stonePresent ,
+
             _stones: normalizedStones,
             _miscCharges: normalizedMisc,
         };
@@ -113,6 +116,8 @@ const mapPurchaseItems = (
         console.log(item,'purcaseTranItem');
 
         const isTagged = item.STOCKTYPE === "T" ;
+
+        const stnPresent = item.STNPRESENT === "Y" ;
 
         // ---------------- STONES ----------------
         const stonesRaw = item.STONEDETAILS || [];
@@ -174,6 +179,7 @@ const mapPurchaseItems = (
             PUREWT: Number(item.PUREWT || 0),
             MC: Number(item.MC || 0),
             HMC: totalHMC,
+            STN_PRESENT: stnPresent, 
             STNAMT: item.STNAMT || 0,
             DESCRIPTION: item.DESCRIPTION || "",
             SNO: item.SNO || "",
@@ -216,17 +222,18 @@ const mapIssueItems = (list: any[] = [], type: string) => {
 // ─── Main export ──────────────────────────────────────────────────────────────
 export const mapPurchaseTransactionItems = (
     transactionData: any,
-    isTagedItem: (id: number | null) => boolean,
     isUseFinalAmount: boolean = false   // ✅ passed from component after hook call
 ) => {
     const details = transactionData?.TRANSACTION_DETAILS;
+
+    console.log(details,'detailsinpurchase');
 
     if (!details) {
         return { rows: [], selectedTransactionTypes: [] };
     }
 
     const purchase = mapPurchaseItems(details.purchase, "PU", isUseFinalAmount);
-    const purchaseReturn = mapPurchaseReturnItems(details.purchase_return, "PR", isTagedItem, isUseFinalAmount);
+    const purchaseReturn = mapPurchaseReturnItems(details.purchase_return, "PR", isUseFinalAmount);
     const issue = mapIssueItems(details.issue, "ISP");
     const receipt = mapIssueItems(details.receipt, "REC");
 

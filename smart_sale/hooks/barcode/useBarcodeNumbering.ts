@@ -5,14 +5,12 @@ interface BarcodeNumberingOptions {
   prefix: string;
   startNumber: number;
   isEditing: boolean;
-  savedRowsInEditing?: number;
 }
 
 export function useBarcodeNumbering({
   prefix,
   startNumber,
   isEditing,
-  savedRowsInEditing,
 }: BarcodeNumberingOptions) {
 
   const isReady =
@@ -23,79 +21,40 @@ export function useBarcodeNumbering({
 
   const assignBarcodes = useCallback(
     (rows: BarcodeTransactionRow[]): BarcodeTransactionRow[] => {
-
-      // Prevent running before values are ready
       if (!isReady) return rows;
 
-      /**
-       * =========================
-       * CREATE MODE
-       * =========================
-       */
-      if (!isEditing) {
-        return rows.map((row, i) => ({
-          ...row,
-          barcode: `${prefix}${startNumber + (i + 1)}`,
-        }));
-      }
-
-      /**
-       * =========================
-       * EDIT MODE
-       * =========================
-       * Use backend-provided saved count instead of recalculating
-       */
-      const savedCount = 3;
-
-      console.log(savedCount, isEditing, startNumber,'savedCount');
-      let newRowCounter = 0;
+      let newCounter = 0;
 
       return rows.map((row) => {
-        if (!row.isNew) return row;
-        console.log(row,'rowinassinging');
+        // isTaged = existing saved row — never touch its barcode
+        if ((row as any).isTaged) return row;
 
-        newRowCounter++;
+        // In edit mode, only isNew rows get a barcode
+        if (isEditing && !row.isNew) return row;
 
-        return {
-          ...row,
-          barcode: `${prefix}${startNumber + 1 - savedCount + newRowCounter}`,
-        };
+        newCounter++;
+        return { ...row, barcode: `${prefix}${startNumber + newCounter}` };
       });
     },
-    [prefix, startNumber, isEditing, isReady, savedRowsInEditing]
+    [prefix, startNumber, isEditing, isReady]
   );
 
-  /**
-   * Assign single barcode
-   */
   const assignSingleBarcode = useCallback(
-    (
-      existingCount: number,
-      isEditing: boolean,
-      savedCount: number
-    ): string => {
+    (existingCount: number, isEditing: boolean): string => {
       if (!isReady) return "";
 
-      console.log(startNumber, existingCount,
-isEditing,
-        savedCount,'startNumber');
-
-      /**
-       * CREATE MODE
-       */
+      // CREATE MODE: count up from all existing non-tagged rows
       if (!isEditing) {
         return `${prefix}${startNumber + existingCount + 1}`;
       }
 
-      /**
-       * EDIT MODE
-       * Only new rows should continue after saved rows
-       */
-      const newCount = existingCount - savedCount ;
-
-      return `${prefix}${startNumber + 1 + newCount}`;
+      // EDIT MODE: API returns startNumber already accounting for saved rows,
+      // so startNumber + 1 is always the correct next slot.
+      // existingCount here = rows added so far in this edit session (non-isTaged new rows)
+      return `${prefix}${startNumber + existingCount + 1}`;
     },
     [prefix, startNumber, isReady]
   );
+
   return { assignBarcodes, assignSingleBarcode };
 }

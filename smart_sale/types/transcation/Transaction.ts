@@ -167,6 +167,12 @@ export interface ClosingDetails {
     DISCAMT?: number;
     DISCWT?: number;
 
+    GSTPER :number;
+    GSTAMT :number;
+
+    TDSPER :number;
+    TDSAMT :number;
+
     CASHPAID: number;
     CASHRCVD: number;
 
@@ -200,6 +206,13 @@ export interface PurchaseCLosing{
     CONVWT: number;
     DISCAMT: number;
     DISCWT: number;
+
+    GSTPER: number;
+    GSTAMT: number;
+
+    TDSPER: number;
+    TDSAMT: number;
+
     ENTRYNO: number;
     PURCHASENO: string;
     RATE: number;

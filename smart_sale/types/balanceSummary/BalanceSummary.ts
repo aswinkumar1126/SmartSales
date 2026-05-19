@@ -26,6 +26,13 @@ export interface BaseClosingFormDetails {
     CONVWT: string;
     DISCWT :string;
     DISCAMT :string;
+
+    GSTPER :string;
+    GSTAMT:string;
+    
+    TDSPER : string;
+    TDSAMT:string;
+
     CASHPAID: string;
     CASHRCVD: string;
     BANKPAID: string;

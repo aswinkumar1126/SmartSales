@@ -19,7 +19,6 @@ export const useLoadPurchaseTransaction = () => {
     const loadTransaction = (
         transactionData: any,
         sno: string,
-        isTagedItem: (id: number | null) => boolean
     ) => {
         if (!transactionData) return;
 
@@ -31,7 +30,7 @@ export const useLoadPurchaseTransaction = () => {
         // ✅ Pass flag into pure function
         const { rows, selectedTransactionTypes } = mapPurchaseTransactionItems(
             transactionData,
-            isTagedItem,
+          
             isUseFinalAmount
         );
 

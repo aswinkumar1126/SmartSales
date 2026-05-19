@@ -67,4 +67,29 @@ export const useConversionSync = (rate: number) => {
         closingDetails.CONVWT,
         rate,
     ]);
+
+  
+};
+
+
+export const useGstConversion = (stnRate: number) => {
+    const { closingDetails, setClosingField } = usePurchaseBalanceSummary();
+
+
+    useEffect(() => {
+       
+        const gstPer = Number(closingDetails.GSTPER) ;
+    
+        const gstAmt = (gstPer * stnRate) /100 ;
+
+        if(stnRate <0 && gstPer < 0) return ;
+
+        setClosingField("GSTAMT", gstAmt.toFixed(2))
+
+    }, [
+        closingDetails.GSTPER,
+        stnRate,
+    ]);
+
+
 };

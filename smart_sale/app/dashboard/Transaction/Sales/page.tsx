@@ -57,7 +57,7 @@ import { normalizeRowForApi } from "@/utils/TransactionValidation/sales/normaliz
 
 import { useStockAvailability } from "@/hooks/Transaction/sales/useStockAvailability";
 
-import { useConversionSync } from "@/hooks/Transaction/sales/useConversionSync";
+import { useConversionSync, useGstConversion } from "@/hooks/Transaction/sales/useConversionSync";
 import { useClosingCalculation } from "@/hooks/Transaction/sales/useClosingBalanceCalculation";
 import { useSalesOpeningBalances } from "@/hooks/Transaction/sales/useSalesOpeningCal";
 
@@ -908,10 +908,17 @@ useGlobalKey(
        ================================ */
     const { closingDetails, setClosingDetails, resetBalance } = useSalesBalanceSummary();
 
+  const totalFinalStoneAmount = useMemo(() => {
+        return draftRows
+            .filter(row => row.TRANSACTION_TYPE === "SA")
+            .reduce((sum, item) => sum + (Number(item.STNAMT) || 0), 0);
+    }, [draftRows]);
 
-    console.log(closingDetails,'closingDetailsdetails');
+  
+
 
     useConversionSync(Number(headerForm.RATEGM || 0));
+    useGstConversion(Number(totalFinalStoneAmount || 0));
 
     const { closingPure, closingCash } = useClosingCalculation(closingDetails, openingBalances, Number(headerForm.RATEGM || 0));
 
@@ -929,6 +936,12 @@ useGlobalKey(
             CONVWT: Number(d.CONVWT || 0),
             DISCAMT: Number(d.DISCAMT || 0),
             DISCWT: Number(d.DISCWT || 0),
+
+            GSTPER :Number(d.GSTPER),
+            GSTAMT :Number(d.GSTAMT),
+            TDSPER :Number(d.TDSPER || 0),
+            TDSAMT:Number(d.TDSAMT || 0),
+
             CASHPAID: Number(d.CASHPAID || 0),
             CASHRCVD: Number(d.CASHRCVD || 0),
             BANKPAID: Number(d.BANKPAID || 0),
@@ -1095,6 +1108,10 @@ useGlobalKey(
                 Number(closingDetails.CASHRCVD || 0) > 0 ||
                 Number(closingDetails.BANKPAID || 0) > 0 ||
                 Number(closingDetails.BANKRCVD || 0) > 0 ||
+                Number(closingDetails.TDSPER || 0) > 0 ||
+                Number(closingDetails.TDSAMT || 0) > 0 ||
+                Number(closingDetails.GSTPER || 0) > 0 ||
+                Number(closingDetails.GSTAMT || 0) > 0 ||
                 (closingDetails.BANKPAIDDETAILS?.length ?? 0) > 0 ||
                 (closingDetails.BANKRCVDDETAILS?.length ?? 0) > 0;
                 

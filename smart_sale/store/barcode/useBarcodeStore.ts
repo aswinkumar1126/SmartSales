@@ -34,6 +34,7 @@ export interface BarcodeTransactionRow {
   // touch: number;
   isNew: boolean;
   print?: boolean;
+  isTaged?: boolean;
 }
 
 export interface BarcodePrintDetail {

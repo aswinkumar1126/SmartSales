@@ -83,6 +83,12 @@ export interface ClosingDetails {
     CASHPAID: number;
     CASHRCVD: number;
 
+    GSTAMT :number;
+    GSTPER :number;
+
+    TDSAMT :number;
+    TDSPER :number;
+
     BANKPAID: number;
     BANKRCVD: number;
     BANKPAIDDETAILS: BankTransactionDetails[];

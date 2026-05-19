@@ -38,6 +38,13 @@ const initialClosingDetails: PurchaseClosingFormDetails = {
     CONVWT: "",
     DISCWT: "",
     DISCAMT: "",
+
+    GSTPER:"",
+    GSTAMT:"",
+
+    TDSPER:"",
+    TDSAMT:"",
+
     CASHPAID: "",
     CASHRCVD: "",
     BANKPAID: "",

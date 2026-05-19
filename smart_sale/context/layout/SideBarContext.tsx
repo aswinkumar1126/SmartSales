@@ -468,6 +468,15 @@ const STATIC_MENU: SidebarMenu = {
           description: "View Tagwise-age reports",
         },
 
+        CASHREPORT :{
+          type: "direct",
+          label: "Cash Report",
+          route: "/dashboard/Reports/cash",
+          icon: Layers,
+          title: "CASH REPORT",
+          description: "View cash and bank reports",
+        }
+
         // {
         //   type: "direct",
         //   label: "DESIGNER Stock Report",

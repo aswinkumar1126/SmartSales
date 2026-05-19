@@ -268,6 +268,84 @@ const BalanceSummary = ({
                                     allowNegative
                                 />
 
+                                 <Text fontSize="xs" fontWeight="semibold"> GST </Text>
+                                                <Box>
+                                                    <HStack justify="space-between" width="100%">
+                                                        <Text fontSize="2xs" fontWeight="medium">
+                                                            GST %
+                                                        </Text>
+                                                    </HStack>
+                                                    <CapitalizedInput
+                                                        field="GSTPER"
+                                                        value={closingDetails.GSTPER}
+                                                        onChange={(_, v) => handleChange("GSTPER", v)}
+                                                        type="number"
+                                                        allowDecimal
+                                                        decimalScale={2}
+                                                        size="xs"
+                                                        rounded="sm"
+                                
+                                                    />
+                                                </Box>
+                                                <Box>
+                                                    <HStack justify="space-between" width="100%">
+                                                        <Text fontSize="2xs" fontWeight="medium">
+                                                            GST AMT
+                                                        </Text>
+                                                    </HStack>
+                                                    <CapitalizedInput
+                                                        field="GSTAMT"
+                                                        value={closingDetails.GSTAMT}
+                                                        onChange={(_, v) => handleChange("GSTAMT", v)}
+                                                        type="number"
+                                                        allowDecimal
+                                                        decimalScale={2}
+                                                        size="xs"
+                                                        rounded="sm"
+                                                        disabled
+                                
+                                                    />
+                                                </Box>
+                                                
+                                                <Text fontSize="xs" fontWeight="semibold"> TDS </Text>
+                                                <Box>
+                                                    <HStack justify="space-between" width="100%">
+                                                        <Text fontSize="2xs" fontWeight="medium">
+                                                            TDS %
+                                                        </Text>
+                                                    </HStack>
+                                                    <CapitalizedInput
+                                                        field="TDSPER"
+                                                        value={closingDetails.TDSPER}
+                                                        onChange={(_, v) => handleChange("TDSPER", v)}
+                                                        type="number"
+                                                        allowDecimal
+                                                        decimalScale={2}
+                                                        size="xs"
+                                                        rounded="sm"
+                                
+                                                    />
+                                                </Box>
+                                                <Box>
+                                                    <HStack justify="space-between" width="100%">
+                                                        <Text fontSize="2xs" fontWeight="medium">
+                                                            TDS AMT
+                                                        </Text>
+                                                    </HStack>
+                                                    <CapitalizedInput
+                                                        field="TDSAMT"
+                                                        value={closingDetails.TDSAMT}
+                                                        onChange={(_, v) => handleChange("TDSAMT", v)}
+                                                        type="number"
+                                                        allowDecimal
+                                                        decimalScale={2}
+                                                        size="xs"
+                                                        rounded="sm"
+                                                    
+                                
+                                                    />
+                                                </Box>
+
                 <Box />
                 <Box />
                 <Box />

@@ -39,6 +39,8 @@ const mapSalesItems = (list: any[] = [], type: string, isUseFinalAmount:boolean)
 
         const isTaged = item.STOCKTYPE === "T" ;
 
+        const stonePresent = item.STNPRESENT === "Y";
+
 
         const grswt = Number(item.GRSWT || 0);
 
@@ -87,7 +89,7 @@ const mapSalesItems = (list: any[] = [], type: string, isUseFinalAmount:boolean)
         return {
             __rowId: `edit-${item.SNO || Date.now()}-${index}`,
             __isNew: false,
-            __isTagged: isTaged,
+            __isTaged: isTaged,
 
             ITEM_TYPE : isTaged ? "TAGED" : "NON-TAGED",
 
@@ -108,11 +110,13 @@ const mapSalesItems = (list: any[] = [], type: string, isUseFinalAmount:boolean)
 
             HMC : totalHMC,
             MC: Number(item.MC || 0),
+            STN_PRESENT : stonePresent,
            
             DESCRIPTION: item.DESCRIPTION || "",
 
             _stones: normalizedStones,
             _miscCharges: normalizedMisc || [],
+
               
             SNO: SNO
         };
