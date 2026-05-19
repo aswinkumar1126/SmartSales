@@ -416,6 +416,22 @@ const STATIC_MENU: SidebarMenu = {
   },
 
   Reports: {
+          SALES:  {
+          type: "direct",
+          label: "Sales Report",
+          route: "/dashboard/Reports/TagReport/SalesReport",
+          icon: Layers,
+          title: "TRANSACTION REPORT",
+          description: "View Transaction summary reports",
+        },
+        PURCHASE:  {
+          type: "direct",
+          label: "Purchase Report",
+          route: "/dashboard/Reports/TagReport/PurchaseReport",
+          icon: Layers,
+          title: "TRANSACTION REPORT",
+          description: "View Transaction summary reports",
+        },
          OutstandingReport : 
         {
           type: "direct",
@@ -425,7 +441,7 @@ const STATIC_MENU: SidebarMenu = {
           title: "  OUTSTANDING REPORT",
           description: "View stock   OUTSTANDING reports",
         },
-      ITEMReport : 
+      ITEMStockReport: 
         {
           type: "direct",
           label: "ITEM Stock Report",

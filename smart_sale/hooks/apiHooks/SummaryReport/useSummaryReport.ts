@@ -5,6 +5,42 @@ import axios from "axios";
 
 
 
+
+
+export const usePurchaseSummary = ({
+  fromAge,
+  toAge,
+}: {
+  fromAge?: number;
+  toAge?: number;
+}) => {
+  return useApiQuery<Record<string, any>[]>({
+    queryKey: ["age_report", fromAge?.toString() ?? "", toAge?.toString() ?? ""],
+    url: "/report/purchase", // Adjust the endpoint URL as needed
+    method: "GET",
+
+    select: (res) => res.data,
+    enabled: false,
+  });
+};
+
+export const useSalesSummary = ({
+  fromAge,
+  toAge,
+}: {
+  fromAge?: number;
+  toAge?: number;
+}) => {
+  return useApiQuery<Record<string, any>[]>({
+    queryKey: ["age_report", fromAge?.toString() ?? "", toAge?.toString() ?? ""],
+    url: "/report/sales", // Adjust the endpoint URL as needed
+    method: "GET",
+
+    select: (res) => res.data,
+    enabled: false,
+  });
+};
+
 export const usePureStockReport = ({ date, columns, groupBy }: {
   date?: string,
   columns?: string[],
