@@ -86,7 +86,7 @@ export const saleColumns = (isTag: boolean) => [
         type: "number" ,
         align: "right" ,
         max: 999,
-        decimalScale: 1
+        decimalScale: 2
 
     },
     {
@@ -200,7 +200,7 @@ export const issueColumns = [
         type: "number" ,
         align: "right" ,
         max: 999,
-        decimalScale: 1,
+        decimalScale: 2,
         allowFocus:true
 
     },
@@ -211,7 +211,7 @@ export const issueColumns = [
         type: "number" ,
         align: "right",
         max: 999,
-        decimalScale: 1,
+        decimalScale: 2,
         allowFocus: true,
         editable: false,
         // disabled: true,

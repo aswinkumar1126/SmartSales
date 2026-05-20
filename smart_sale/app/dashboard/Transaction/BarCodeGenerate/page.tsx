@@ -2,7 +2,7 @@
 
 import React, { useCallback, useState } from "react";
 import {
-  Box, Table, Text, Button, Portal, Drawer, Icon, Span,
+  Box, Table, Text, Button, Portal, Drawer, Icon, Span,Badge
 } from "@chakra-ui/react";
 import Image from "next/image";
 import { Printer, Upload } from "lucide-react";
@@ -96,6 +96,9 @@ function BarCodeGenerate() {
     allDisplayCols,
     transactionTotals,
     showTableForm,
+
+    /*STONE DIFF */
+    diffStoneWt,
 
 
     /* listing */
@@ -306,12 +309,21 @@ function BarCodeGenerate() {
               borderColor="white"
               maxWidth="100%"
             />
+            
+         
           </Box>
-
-          <StockSummaryPanel
-            summary={stockSummary}
-            headerBg={theme.colors.accient}
-          />
+          <Box display={'flex'} justifySelf={'flex-end'}> 
+          <Text  mt={2} borderRadius={'xl'} fontSize={'xs'} p={2} fontWeight={'semibold'} >
+            {/* Remaining Stone Wt: <Badge colorPalette="red">{formatToFixed(remaining, 3)}</Badge> | */}
+            Diff Stone Wt: <Badge colorPalette="red">{formatToFixed(diffStoneWt, 3)}</Badge>
+          </Text>
+          </Box>
+            <StockSummaryPanel
+              summary={stockSummary}
+              headerBg={theme.colors.accient}
+            />
+          
+          
         </Box>
 
         {/* ── Action bar ── */}

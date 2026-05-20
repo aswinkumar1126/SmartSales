@@ -6,6 +6,8 @@ export const loadPurchaseClosing = (
 ) => {
     if (!closing) return;
 
+    console.log(closing,'closingdetials');
+
     const bankPaidDetails = (closing.BANKPAIDDETAILS || []).map((item: any) => ({
         ...item,
         BANKID: item.BANKID ? String(item.BANKID) : ""
@@ -26,6 +28,10 @@ export const loadPurchaseClosing = (
         CASHRCVD: closing.CASHRCVD ? String(closing.CASHRCVD) : "",
         BANKPAID: closing.BANKPAID ? String(closing.BANKPAID) : "",
         BANKRCVD: closing.BANKRCVD ? String(closing.BANKRCVD) : "",
+        GSTPER : closing.GSTPER ? String(closing.GSTPER) : "",
+        GSTAMT: closing.GSTAMT ? String(closing.GSTAMT) : "",
+        TDSPER: closing.TDSPER ? String(closing.TDSPER) : "",
+        TDSAMT: closing.TDSAMT ? String(closing.TDSAMT) : "",
         BANKPAIDDETAILS: bankPaidDetails,
         BANKRCVDDETAILS: bankRcvdDetails,
     });

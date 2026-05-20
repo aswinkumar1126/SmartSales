@@ -65,7 +65,9 @@ export const useLoadPurchaseTag = () => {
             const stoneDetails = Array.isArray(data.STONEDETAILS)
                 ? data.STONEDETAILS
                 : [];
-            console.log(stoneDetails,'stoneDetails')
+            console.log(data,'stoneDetails');
+
+            const STNPRESENT = data?.STNPRESENT === "Y";
 
             // ---------------- BUILD ROW ----------------
             const newRow: any = {
@@ -85,12 +87,15 @@ export const useLoadPurchaseTag = () => {
                 STNWT: Number(data.SALESSTNWT) || 0,
                 NETWT: Number(data.NETWT) || 0,
 
+                STN_PRESENT : STNPRESENT,
+
                 TOUCH: Number(data.TOUCH) || 0,
                 MC: Number(data.MC) || 0,
 
                 _hasStones: stoneDetails.length > 0,
                 _hasCharges: false,
             };
+      
 
             // ---------------- STONES ----------------
             let stonesWithId: any[] = [];
@@ -115,7 +120,7 @@ export const useLoadPurchaseTag = () => {
                         ),
 
                         stonePcs: Number(stone.STNPCS || 1),
-                        stoneWeight: Number(stone.SALESSTNWT || 0),
+                        stoneWeight: Number(stone.STNWT || 0),
 
                         stoneUnit: stone.STONEUNIT || "g",
                         stoneCalculation: stone.CALCMODE || "w",

@@ -55,6 +55,7 @@ type CapitalizedInputProps<T> = {
     onImageError?: (error: string) => void;
     imagePreview?: boolean; // Show preview of uploaded image
     color?: string;
+    fontSize?: string;
 };
 
 export function CapitalizedInput<T>({
@@ -92,6 +93,7 @@ export function CapitalizedInput<T>({
     onImageError, // 🔥 NEW
     imagePreview = true, // 🔥 NEW
     color,
+   fontSize
 }: CapitalizedInputProps<T>) {
     const { theme } = useTheme();
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -177,7 +179,7 @@ const isFocused = focusedValue !== undefined;
                         accept={accept}
                         disabled={disabled}
                         // style={{ display: 'none' }}
-                        style={{ border: '1px solid #DDD', fontSize:'xs',padding:'5px' ,color:'#444', }}
+                        style={{ border: '1px solid #DDD', fontSize:fontSize || "xs"  ,padding:'5px' ,color:'#444', }}
                     
                     />
               
@@ -382,7 +384,7 @@ const isFocused = focusedValue !== undefined;
     className={onClassUse ? "type-inputs" : ""}
     maxWidth={maxWidth}
     bg={noBorder ? theme.colors.formColor : theme.colors.whiteColor}
-    fontSize='xs'
+    fontSize={fontSize || "xs"}
     rounded={rounded}
     minWidth={minWidth}
     border="1px solid #DDD"

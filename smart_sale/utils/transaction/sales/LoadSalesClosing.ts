@@ -26,6 +26,10 @@ export const loadSalesClosing = (
         CASHRCVD: closing.CASHRCVD ? String(closing.CASHRCVD) : "",
         BANKPAID: closing.BANKPAID ? String(closing.BANKPAID) : "",
         BANKRCVD: closing.BANKRCVD ? String(closing.BANKRCVD) : "",
+        GSTPER: closing.GSTPER ? String(closing.GSTPER) : "",
+        GSTAMT: closing.GSTAMT ? String(closing.GSTAMT) : "",
+        TDSPER: closing.TDSPER ? String(closing.TDSPER) : "",
+        TDSAMT: closing.TDSAMT ? String(closing.TDSAMT) : "",
         BANKPAIDDETAILS: bankPaidDetails,
         BANKRCVDDETAILS: bankRcvdDetails,
     });

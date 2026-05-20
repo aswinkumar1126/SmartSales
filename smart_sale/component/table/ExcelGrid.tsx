@@ -188,19 +188,34 @@ export const ExcelGrid: React.FC<ExcelGridProps> = ({
     }, [initialFocusCol, initialFocusCell, navigableCols]);
 
     // ── Focus a cell ──────────────────────────────────────────────────────────
-    const focusCell = useCallback((ri: number, colKey: string, delay = 20) => {
-        const coord: CellCoord = { rowIndex: ri, colKey };
-        setActiveCell(coord);
-        onActiveChange?.(coord);
+    const focusCell = useCallback(
+        (ri: number, colKey: string, delay = 20, shouldFocus = true) => {
+            const coord: CellCoord = { rowIndex: ri, colKey };
 
-        if(!tranEditing) {
-        setTimeout(() => {
-            const ref = inputRefs.current[errKey(ri, colKey)];
-            ref?.current?.focus?.();
-            ref?.current?.select?.();
-        }, delay);
-    }
-    }, [onActiveChange]);
+            setActiveCell(coord);
+            onActiveChange?.(coord);
+
+            // only DOM focus is blocked, NOT navigation/state
+            if (!shouldFocus) return;
+
+            setTimeout(() => {
+                const ref = inputRefs.current[errKey(ri, colKey)];
+                ref?.current?.focus?.();
+                ref?.current?.select?.();
+            }, delay);
+        },
+        [onActiveChange]
+    );
+    const hasAutoFocused = useRef(false);
+
+    useEffect(() => {
+        if (tranEditing) return;
+        if (hasAutoFocused.current) return;
+
+        hasAutoFocused.current = true;
+
+        focusCell(0, initialFocusCell?.colKey ?? "ITEM", 50, true);
+    }, [tranEditing]);
 
     // ── Initial focus on mount ────────────────────────────────────────────────
     useEffect(() => {

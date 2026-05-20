@@ -464,20 +464,22 @@ const BalanceSummary = ({
                     type="number"
                     allowDecimal
                     decimalScale={3}
-                    size="xs"
+                    size="sm"
                     rounded="sm"
                     disabled
-                    color={Number(closingPure) > 0 ? "red.500" : "green.500"}
+                    color={Number(closingPure) > 0 ? "red.700" : "green.800"}
+                    fontSize="sm"
                 />
                 <CapitalizedInput
                     field="closingCash"
                     value={formatToFixed(closingCash.toString(), 2)}
                     onChange={() => null}
                     type="number"
-                    size="xs"
+                    size="sm"
                     rounded="sm"
                     disabled
-                    color={Number(closingCash) > 0 ? "red.500" : "green.600"}
+                    color={Number(closingCash) > 0 ? "red.700" : "green.800"}
+                    fontSize="sm"
                 />
             </Grid>
             {headerForm.CUSTOMER && 

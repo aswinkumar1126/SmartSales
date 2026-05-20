@@ -1209,11 +1209,11 @@ useGlobalKey(
             stopEdit();
             refetchTransactionHeaderDetail();
 
-            toaster.create({
-                title: "Edit Cancelled",
-                description: "Transaction edit has been cancelled.",
-                type: "info",
-            });
+            // toaster.create({
+            //     title: "Edit Cancelled",
+            //     description: "Transaction edit has been cancelled.",
+            //     type: "info",
+            // });
         } else {
             localStorage.removeItem(TYPE_KEY);
             setSelectedTransactionId('');
@@ -1336,11 +1336,11 @@ useGlobalKey(
                 TRANTYPE: "purchase"
             });
 
-            setEditingSno(null);
+            // setEditingSno(null);
 
-            goldStockRefetch();
-            itemStockRefetch();
-            openingBalanceRefetch();
+            // goldStockRefetch();
+            // itemStockRefetch();
+            // openingBalanceRefetch();
 
             setEditingState({ rowId: null, transactionType: null });
 
@@ -1351,19 +1351,22 @@ useGlobalKey(
             });
 
 
-            setSelectedTransactionId('');
-            setEditingState({ rowId: null, transactionType: null });
-            resetDraftRowTempId();
+            // setSelectedTransactionId('');
+            // setEditingState({ rowId: null, transactionType: null });
+            // resetDraftRowTempId();
 
-            setSingleSearch("");
+            // setSingleSearch("");
 
-            setEditingSno(null);
+            // setEditingSno(null);
 
-            resetHeader();
-            resetBalance();
-            resetStore();
-            stopEdit();
-            refetchTransactionHeaderDetail();
+            // resetHeader();
+            // resetBalance();
+            // resetStore();
+            // stopEdit();
+            // refetchTransactionHeaderDetail();
+            // setSelectedTransactionId(null);
+
+            handleResetDraft();
 
 
 

@@ -201,6 +201,7 @@ const mapPurchaseItems = (
 // ─── Issue / receipt items ────────────────────────────────────────────────────
 const mapIssueItems = (list: any[] = [], type: string) => {
     return list.map((item, index) => {
+        console.log(item, 'itemitem');
         const wt = Number(item.WT || 0);
         return {
             __rowId: `edit-${item.SNO || Date.now()}-${index}`,
@@ -211,9 +212,9 @@ const mapIssueItems = (list: any[] = [], type: string) => {
             WT: wt,
             AWT: wt,
             TOUCH: Number(item.TOUCH || 0),
-            ATOUCH: Number(item.TOUCH || 0),
+            ATOUCH: Number(item.ATOUCH || 0),
             PUREWT: Number(item.PUREWT || 0),
-            APUREWT: Number(item.PUREWT || 0),
+            APUREWT: Number(item.APUREWT || 0),
             DESCRIPTION: item.DESCRIPTION || "",
             SNO: item.SNO || "",
 

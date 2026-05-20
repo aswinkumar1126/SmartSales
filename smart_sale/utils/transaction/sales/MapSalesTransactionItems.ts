@@ -126,6 +126,8 @@ const mapSalesItems = (list: any[] = [], type: string, isUseFinalAmount:boolean)
 const mapIssueItems = (list: any[] = [], type: string) => {
     return list.map((item, index) => {
 
+        console.log(item,'itemitem');
+
         const wt = Number(item.WT || 0);
 
         const SNO = item.SNO;
@@ -143,10 +145,10 @@ const mapIssueItems = (list: any[] = [], type: string) => {
             AWT: wt,
 
             TOUCH: Number(item.TOUCH || 0),
-            ATOUCH: Number(item.TOUCH || 0),
+            ATOUCH: Number(item.ATOUCH || 0),
 
             PUREWT: Number(item.PUREWT || 0),
-            APUREWT: Number(item.PUREWT || 0),
+            APUREWT: Number(item.APUREWT || 0),
 
             DESCRIPTION: item.DESCRIPTION || "",
 

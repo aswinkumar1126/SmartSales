@@ -895,6 +895,9 @@ export function useBarcodeGenerate() {
     setPrintDetails(apiRows);
   }, [tagDetails]);
 
+
+  
+
   /* ── Tag selection ── */
   const handleSelectTag = useCallback((entryNo: string) => {
     if (rowsRef.current.length > 0 && !isEditing) {
@@ -924,6 +927,12 @@ export function useBarcodeGenerate() {
       setHeaderField("ENTRYNO", String(barcodeItems.ENTRY_NO));
     }
   }, [clearAll, barcodeItems]);
+
+
+  /*--------------SAVE TRANSACTION ----------------------*/
+  useGlobalKey("ALT+S", () => { isEditing ? handleUpdate() : handleSave() });
+  useGlobalKey("ALT+C", handleClear);
+
 
   /* ── Table config ── */
   // Update transactionFormFields to filter based on hasStone
@@ -974,16 +983,28 @@ export function useBarcodeGenerate() {
       })),
     [isEditing, hasStone]);
 
- 
+  const totalPurchaseStoneWt = rows.reduce(
+    (s, r) => s + (Number(r.purchaseStoneWt) || 0),
+    0
+  );
+
+  const totalSalesStoneWt = rows.reduce(
+    (s, r) => s + (Number(r.salesStoneWt) || 0),
+    0
+  );
+
+  const diffStoneWt = totalPurchaseStoneWt -  totalSalesStoneWt ;
 
   const transactionTotals = useMemo(() => ({
     grsweight: rows.reduce((s, r) => s + r.grsweight, 0),
-    purchaseStoneWt: rows.reduce((s, r) => s + r.purchaseStoneWt, 0),
+    purchaseStoneWt: totalPurchaseStoneWt,
     stoneWt: rows.reduce((s, r) => s + r.stoneWt, 0),
     navaWt: rows.reduce((s, r) => s + r.navaWt, 0),
-    salesStoneWt: rows.reduce((s, r) => s + r.salesStoneWt, 0),
+    salesStoneWt: totalSalesStoneWt,
     diamondWt: rows.reduce((s, r) => s + r.diamondWt, 0),
     // mc: rows.reduce((s, r) => s + r.mc, 0),
+    size: totalPurchaseStoneWt - totalSalesStoneWt,
+
   }), [rows]);
 
   const showTableForm = useMemo(() => {
@@ -1035,6 +1056,7 @@ export function useBarcodeGenerate() {
     fieldRefs,
     populateExcelFromRows,
     hasExistingRows,
+    diffStoneWt,
 
     handleHeaderChange, handleFormChange, resetForm,
     handleRowSubmit, moveToNext,

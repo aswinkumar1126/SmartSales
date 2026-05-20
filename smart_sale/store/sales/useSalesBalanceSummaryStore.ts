@@ -66,21 +66,7 @@ export const useSalesBalanceSummary = create<SalesBalanceSummaryStore>()(
                 set((state) => ({
                     closingDetails: {
                         ...state.closingDetails,
-
-                        // ✅ map only correct keys
-                        CONVTYPE: data.CONVTYPE ?? state.closingDetails.CONVTYPE,
-                        CONVAMT: data.CONVAMT ?? state.closingDetails.CONVAMT,
-                        CONVWT: data.CONVWT ?? state.closingDetails.CONVWT,
-                        DISCAMT: data.DISCAMT ?? state.closingDetails.DISCAMT,
-                        DISCWT: data.DISCWT ?? state.closingDetails.DISCWT,
-                        CASHPAID: data.CASHPAID ?? state.closingDetails.CASHPAID,
-                        CASHRCVD: data.CASHRCVD ?? state.closingDetails.CASHRCVD,
-                        BANKPAID: data.BANKPAID ?? state.closingDetails.BANKPAID,
-                        BANKRCVD: data.BANKRCVD ?? state.closingDetails.BANKRCVD,
-                        BANKPAIDDETAILS:
-                            data.BANKPAIDDETAILS ?? state.closingDetails.BANKPAIDDETAILS,
-                        BANKRCVDDETAILS:
-                            data.BANKRCVDDETAILS ?? state.closingDetails.BANKRCVDDETAILS,
+                        ...data,
                     },
                 })),
             setClosingField: (field, value) => {
