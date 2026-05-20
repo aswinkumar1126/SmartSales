@@ -84,7 +84,7 @@ import { TRANSACTIONTYPES } from '@/data/Transaction/TransactionType';
 import { BaseClosingFormDetails } from "@/types/balanceSummary/BalanceSummary";
 //Utilities
 import { formatToFixed } from '@/utils/format/numberFormat';
-import PurchaseReceipt from "@/component/ReceiptPrint/PurchasePrint";
+import PurchaseReceipt,{exportToExcel} from "@/component/ReceiptPrint/PurchasePrint";
 
 
 //Icons
@@ -201,6 +201,7 @@ export default function PurchasePage() {
 
 
     const TRANSACTION_LIST_SEARCH = "purchase_transaction_list_search";
+    const PURCHASE_PRINT_DATA = "purchase_print_data";
     const ISTAG = 'purchase_is_tag';
 
 
@@ -241,7 +242,7 @@ export default function PurchasePage() {
     const [singleSearch, setSingleSearch] = useSessionStorage<string>(TRANSACTION_LIST_SEARCH, '');
     const [deselectFlag, setDeselectFlag] = useState<boolean>(false);
     const [showPrintModal, setShowPrintModal] = useState<boolean>(false);
-    const [printData, setPrintData] = useState<any>(null);
+    const [printData, setPrintData] = useSessionStorage<any>(PURCHASE_PRINT_DATA , null);
 
     const [purchaseFilter, setPurchaseFilter] = useState<PurchaseFilter>({
         fromDate: "",
@@ -980,10 +981,11 @@ useGlobalKey(
     const handleLoadFromStock = (stockRow: any) => {
 
         const issueStock = isIssueStock(stockRow);
+        if(stockRow.PCS <= 0 && stockRow.weight <=0 ) return;
 
         const targetType = issueStock
             ? TRANSACTIONTYPES.find(t => t.key === "issue")
-            : TRANSACTIONTYPES.find(t => t.key === "purchase");
+            : TRANSACTIONTYPES.find(t => t.key === "purchase_return");
 
         if (!targetType) {
             toaster.create({
@@ -995,11 +997,7 @@ useGlobalKey(
 
         // check open
         if (!selectedTransactionTypes.some(t => t.value === targetType.value)) {
-            toaster.create({
-                title: `${targetType.label} Not Opened`,
-                type: "error",
-            });
-            return;
+            setSelectedTransactionTypes([...selectedTransactionTypes, targetType])
         }
 
         let availability = null;
@@ -1201,6 +1199,10 @@ useGlobalKey(
         resetHeader();
         resetBalance();
         resetStore();
+        setPrintData(null);
+
+        goldStockRefetch();
+        itemStockRefetch();
 
 
         if (isEditing) {
@@ -1349,7 +1351,7 @@ useGlobalKey(
             });
 
 
-            setSelectedTransactionId(null);
+            setSelectedTransactionId('');
             setEditingState({ rowId: null, transactionType: null });
             resetDraftRowTempId();
 
@@ -1362,6 +1364,7 @@ useGlobalKey(
             resetStore();
             stopEdit();
             refetchTransactionHeaderDetail();
+
 
 
         } catch (error: any) {
@@ -1468,8 +1471,10 @@ useGlobalKey(
                             acCode={headerForm.CUSTOMER}
                             draftRows={draftRows}
                             onPrint={() => {
-                                setShowPrintModal(prev => !prev)
+                                setShowPrintModal(true)
                             }}
+                            exportToExcel={exportToExcel}
+                            printData={printData}
                         />
 
 
@@ -1631,6 +1636,7 @@ useGlobalKey(
                     <PurchaseReceipt
                         COMPANY_DETAILS={companyDetails}
                         {...printData}
+                        onAfterPrint={() => setShowPrintModal(false)}
                     />
                 </Box>
 

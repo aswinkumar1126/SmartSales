@@ -128,6 +128,8 @@ export function useStockAvailability({
         ): StockAvailability | undefined => {
             if (!id) return undefined;
 
+          
+
             const { excludeRowId, originalValue } = options ?? {};
 
             let stock: any = null;
@@ -174,32 +176,143 @@ export function useStockAvailability({
             } else {
                 return undefined;
             }
+            // =====================================================
+            // CALCULATE USED QUANTITY
+            // =====================================================
 
-            const dbCode = isIssue || isReceipt ? 'IS' : 'SA';
+            let usedWeight = 0;
+            let usedPieces = 0;
 
-            // ✅ Pass touch to both used quantity calls
-            const usedWeight = getUsedQuantityById(id, touch, {
-                excludeRowId,
-                transactionTypeCode: dbCode,
-                field: isIssue || isReceipt ? 'WT' : 'NETWT',
-            });
+            // =====================================================
+            // ISSUE / RECEIPT
+            // ISSUE    => ADD
+            // RECEIPT  => SUBTRACT
+            // =====================================================
 
-            const usedPieces = getUsedQuantityById(id, touch, {
-                excludeRowId,
-                transactionTypeCode: dbCode,
-                field: 'PCS',
-            });
+            if (isIssue || isReceipt) {
+
+                const issueWeight = getUsedQuantityById(id, touch, {
+                    excludeRowId,
+                    transactionTypeCode: 'IS',
+                    field: 'WT',
+                });
+
+                const receiptWeight = getUsedQuantityById(id, touch, {
+                    excludeRowId,
+                    transactionTypeCode: 'IR',
+                    field: 'WT',
+                });
+
+                const issuePieces = getUsedQuantityById(id, touch, {
+                    excludeRowId,
+                    transactionTypeCode: 'IS',
+                    field: 'PCS',
+                });
+
+                const receiptPieces = getUsedQuantityById(id, touch, {
+                    excludeRowId,
+                    transactionTypeCode: 'IR',
+                    field: 'PCS',
+                });
+
+                usedWeight =
+                    Number(issueWeight || 0) -
+                    Number(receiptWeight || 0);
+
+                usedPieces =
+                    Number(issuePieces || 0) -
+                    Number(receiptPieces || 0);
+            }
+
+            // =====================================================
+            // SALES / SALES RETURN
+            // SALES          => ADD
+            // SALES RETURN   => SUBTRACT
+            // =====================================================
+
+            if (isSales || isSalesReturn) {
+
+                const salesWeight = getUsedQuantityById(id, touch, {
+                    excludeRowId,
+                    transactionTypeCode: 'SA',
+                    field: 'NETWT',
+                });
+
+                const salesReturnWeight = getUsedQuantityById(id, touch, {
+                    excludeRowId,
+                    transactionTypeCode: 'SR',
+                    field: 'NETWT',
+                });
+
+                const salesPieces = getUsedQuantityById(id, touch, {
+                    excludeRowId,
+                    transactionTypeCode: 'SA',
+                    field: 'PCS',
+                });
+
+                const salesReturnPieces = getUsedQuantityById(id, touch, {
+                    excludeRowId,
+                    transactionTypeCode: 'SR',
+                    field: 'PCS',
+                });
+
+                usedWeight =
+                    Number(salesWeight || 0) -
+                    Number(salesReturnWeight || 0);
+
+                usedPieces =
+                    Number(salesPieces || 0) -
+                    Number(salesReturnPieces || 0);
+            }
+
+            // =====================================================
+            // SAFETY
+            // =====================================================
+
+            usedWeight = Math.max(usedWeight, 0);
+            usedPieces = Math.max(usedPieces, 0);
+
+            // =====================================================
+            // REMAINING CALCULATION
+            // =====================================================
 
             let weightRemaining: number;
             let piecesRemaining: number;
 
             if (isEditMode) {
-                weightRemaining = Math.max(totalAvailableWeight - usedWeight, 0);
-                piecesRemaining = Math.max(totalAvailablePieces + (isSales || isSalesReturn ? originalUsage : 0) - usedPieces, 0);
+
+                weightRemaining = Math.max(
+                    totalAvailableWeight - usedWeight,
+                    0
+                );
+
+                piecesRemaining = Math.max(
+                    totalAvailablePieces -
+                    usedPieces,
+                    0
+                );
+
             } else {
-                weightRemaining = Math.max(totalAvailableWeight - usedWeight, 0);
-                piecesRemaining = Math.max(totalAvailablePieces - usedPieces, 0);
+
+                weightRemaining = Math.max(
+                    totalAvailableWeight - usedWeight,
+                    0
+                );
+
+                piecesRemaining = Math.max(
+                    totalAvailablePieces - usedPieces,
+                    0
+                );
             }
+
+            console.log({
+                usedWeight,
+                usedPieces,
+                weightRemaining,
+                piecesRemaining
+            },'groupingdata');
+
+           
 
             return {
                 stock,

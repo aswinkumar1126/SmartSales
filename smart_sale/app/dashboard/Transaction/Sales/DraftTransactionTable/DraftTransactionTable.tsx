@@ -566,44 +566,44 @@ export default function DraftTransactionTable({
         console.log(transactionType,'transactionType')
 
         // Stock validation (SA transaction)
-        if ((colKey === "PCS" || colKey === "NETWT") && transactionType === "SA") {
-            const row = draftRowsRef.current[rowIndex];
-            if (row?.ITEMID) {
-                const isCommitted = committedRowIdsRef.current.has(row.__rowId);
-                const opts = {
-                    excludeRowId: isCommitted ? row.__rowId : undefined,
-                    isEditing: isCommitted,
-                    originalPieces: Number(row._originalPieces) || 0,
-                    transactionTypeCode: transactionType,
-                };
+        // if ((colKey === "PCS" || colKey === "NETWT") && transactionType === "SA") {
+        //     const row = draftRowsRef.current[rowIndex];
+        //     if (row?.ITEMID) {
+        //         const isCommitted = committedRowIdsRef.current.has(row.__rowId);
+        //         // const opts = {
+        //         //     excludeRowId: isCommitted ? row.__rowId : undefined,
+        //         //     isEditing: isCommitted,
+        //         //     originalPieces: Number(row._originalPieces) || 0,
+        //         //     transactionTypeCode: transactionType,
+        //         // };
 
-                if (colKey === "PCS") {
-                    const available = getAvailablePieces?.(row.ITEMID, row.TOUCH, opts) ?? null;
-                    console.log(available,'available pieces');
-                    if (available !== null && Number(value) > available) {
-                        setTimeout(() => toaster.create({
-                            title: "Insufficient Stock",
-                            description: `Requested ${value} pcs exceeds available ${available} pcs`,
-                            type: "error",
-                        }), 0);
-                        return;
-                    }
-                }
+        //         // if (colKey === "PCS") {
+        //         //     const available = getAvailablePieces?.(row.ITEMID, row.TOUCH, opts) ?? null;
+        //         //     console.log(available,'available pieces');
+        //         //     if (available !== null && Number(value) > available) {
+        //         //         setTimeout(() => toaster.create({
+        //         //             title: "Insufficient Stock",
+        //         //             description: `Requested ${value} pcs exceeds available ${available} pcs`,
+        //         //             type: "error",
+        //         //         }), 0);
+        //         //         return;
+        //         //     }
+        //         // }
 
-                if (colKey === "NETWT") {
-                    const wOpts = { ...opts, originalWeight: Number(row._originalNetwt) || 0 };
-                    const avWt = getAvailableWeight?.(row.ITEMID, row.TOUCH, wOpts) ?? null;
-                    const netwt = parseFloat(row.NETWT) || 0;
-                    if (avWt !== null && netwt > avWt) {
-                        setTimeout(() => toaster.create({
-                            title: "Insufficient Stock",
-                            description: `Net weight ${netwt.toFixed(3)}g exceeds available ${avWt.toFixed(3)}g`,
-                            type: "error",
-                        }), 0);
-                    }
-                }
-            }
-        }
+        //         // if (colKey === "NETWT") {
+        //         //     const wOpts = { ...opts, originalWeight: Number(row._originalNetwt) || 0 };
+        //         //     const avWt = getAvailableWeight?.(row.ITEMID, row.TOUCH, wOpts) ?? null;
+        //         //     const netwt = parseFloat(row.NETWT) || 0;
+        //         //     if (avWt !== null && netwt > avWt) {
+        //         //         setTimeout(() => toaster.create({
+        //         //             title: "Insufficient Stock",
+        //         //             description: `Net weight ${netwt.toFixed(3)}g exceeds available ${avWt.toFixed(3)}g`,
+        //         //             type: "error",
+        //         //         }), 0);
+        //         //     }
+        //         // }
+        //     }
+        // }
 
         setDraftRows((prev) => {
             return prev.map((r) => {
@@ -677,6 +677,100 @@ export default function DraftTransactionTable({
     );
     console.log(touchData,'touchDatatouchData');
 
+
+    
+    //   useEffect(() => {
+    //     if (!activeRowId || !activeRowItemId) return;
+    //     if (touchDataLoading || isEditing) return;
+    
+    //       console.log(touchData,'touchData');
+    
+    //     const key = `${activeRowId}::${activeRowItemId}`;
+    
+    //     const touch = touchData?.TOUCH;
+    //     const calMode = touchData?.CALMODE || "NETWT";
+    //     const stnPresent = touchData?.STNPRESENT === "Y";
+    //     const hmcAmount = Number(touchData?.HMCAMT ?? 0);
+    
+    //     const defaultHmcCharge =
+    //         hmcAmount > 0
+    //             ? [{
+    //                   draftRowId: activeRowId,
+    //                   chargeId: "1",
+    //                   chargeName: "HMC",
+    //                   amount: hmcAmount.toString(),
+    //                   finalAmount: hmcAmount.toString(),
+    //               }]
+    //             : [];
+    
+    //     const existingRow = draftRows.find(
+    //         r => r.__rowId === activeRowId
+    //     );
+    
+       
+    
+    //     const alreadyApplied =
+    //         existingRow?.TOUCH  &&
+    //         existingRow?.CAL_MODE 
+    //         // existingRow?.STN_PRESENT  
+    
+    //           // existingRow?.ATOUCH === touch &&
+    //         // Number(existingRow?.HMC || 0) === hmcAmount;
+    
+    //          console.log(alreadyApplied ,'existingRow');
+    
+    //     // THIS is the real protection
+    //     if (alreadyApplied) {
+    //         appliedItemIdRef.current[activeRowId] = key;
+    //         return;
+    //     }
+    
+    //     // optional optimization only
+    //     if (appliedItemIdRef.current[activeRowId] === key) {
+    //         return;
+    //     }
+    
+    //     appliedItemIdRef.current[activeRowId] = key;
+    
+    //     setDraftRows(prev =>
+    //         prev.map(r => {
+    //             if (r.__rowId !== activeRowId) return r;
+    
+    //             return recalcRow(
+    //                 {
+    //                     ...r,
+    //                     TOUCH: touch,
+    //                     ATOUCH: touch,
+    //                     CAL_MODE: calMode,
+    //                     STN_PRESENT: stnPresent,
+    //                     HMC: hmcAmount,
+    //                     _miscCharges: defaultHmcCharge,
+    //                 },
+    //                 false
+    //             );
+    //         })
+    //     );
+    
+    //     if (committedRowIdsRef.current.has(activeRowId)) {
+    //         pendingStoreCallRef.current = () =>
+    //             commitRowUpdate(activeRowId, {
+    //                 TOUCH: touch,
+    //                 ATOUCH: touch,
+    //                 CAL_MODE: calMode,
+    //                 STN_PRESENT: stnPresent,
+    //                 HMC: hmcAmount.toFixed(2),
+    //                 _miscCharges: defaultHmcCharge,
+    //             });
+    //     }
+    // }, [
+    //     touchData,
+    //     touchDataLoading,
+    //     activeRowId,
+    //     activeRowItemId,
+    //     isEditing,
+    //     draftRows,
+    // ]);
+
     // ── Touch data effect — writes directly to store by rowId ─────────────────
     useEffect(() => {
         if (!activeRowId || !activeRowItemId) return;
@@ -736,12 +830,19 @@ export default function DraftTransactionTable({
          // existingRow?.ATOUCH === touch &&
         // Number(existingRow?.HMC || 0) === hmcAmount;
 
-    if (alreadyApplied) {
-        appliedItemIdRef.current[activeRowId] = key;
-        return;
-    }
-
+   //     // THIS is the real protection
+        if (alreadyApplied) {
+            appliedItemIdRef.current[activeRowId] = key;
+            return;
+        }
+      
+        // optional optimization only
+        if (appliedItemIdRef.current[activeRowId] === key) {
+            return;
+        }
+    
     appliedItemIdRef.current[activeRowId] = key;
+
 
        
 
@@ -792,6 +893,8 @@ export default function DraftTransactionTable({
             });
         }, 10);
     }, [touchData, touchDataLoading, activeRowId, activeRowItemId ,isEditing]);
+
+    
 // ── Pure gold effect — writes directly to store by rowId ─────────────────
 useEffect(() => {
     if (!activeRowId || !activeRowPureId) return;

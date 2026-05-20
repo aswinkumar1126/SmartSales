@@ -6,6 +6,7 @@ export const usePureGoldData = (filter?:string,filters?: any) => {
         queryKey: ["pureGoldData", filter, filters], // 👈 include filters
         queryFn: () => pureGoldMastService().getAllPureGoldData(filter, filters),
         select: (data) => data.data,
+        
     });
 };
 export const usePureGoldDataById = (id: number) => {

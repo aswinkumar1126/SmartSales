@@ -25,7 +25,9 @@ export default function TransactionTypeSelector({
     onReset,
     isSaving,
     acCode,
-    onPrint
+    onPrint,
+    exportToExcel,
+    printData
 }: any) {
     // Get from Zustand store
     const {
@@ -203,6 +205,8 @@ export default function TransactionTypeSelector({
 
                  {/* PRINT — show when rows are loaded (same as DESELECT) */}
                                 {isEditing && (
+                                    <Box>
+
                                     <Box
                                         className="flex flex-col items-center cursor-pointer gap-1"
                                         onClick={onPrint}
@@ -212,6 +216,17 @@ export default function TransactionTypeSelector({
                                             PRINT
                                         </Text>
                                     </Box>
+                                     {/* <Box
+                                        className="flex flex-col items-center cursor-pointer gap-1"
+                                        onClick={exportToExcel(printData)}
+                                    >
+                                        <HiPrinter size={20} className="text-gray-600" />
+                                        <Text fontSize="x-small" fontWeight="semibold">
+                                            PRINT
+                                        </Text>
+                                    </Box> */}
+                                    </Box>
+                                    
                                 )}
 
                 {/* SHOW / HIDE FILTER */}

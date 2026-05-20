@@ -13,8 +13,8 @@ export const useClosingCalculation = (
         const discWt = Number(closingDetails.DISCWT|| 0);
         const discAmt = Number(closingDetails.DISCAMT || 0);
 
-        const gstAmt = Number(closingDetails.GSTPER || 0);
-        const tdsAmt = Number(closingDetails.TDSPER || 0);
+        const gstAmt = Number(closingDetails.GSTAMT || 0);
+        const tdsAmt = Number(closingDetails.TDSAMT || 0);
 
 
         const bankRcvd = closingDetails.BANKRCVDDETAILS.length > 0 ? closingDetails.BANKRCVDDETAILS.reduce(

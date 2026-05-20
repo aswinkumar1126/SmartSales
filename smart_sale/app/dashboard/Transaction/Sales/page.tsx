@@ -957,10 +957,15 @@ useGlobalKey(
 
         const issueStock = isIssueStock(stockRow);
 
+        if (stockRow.PCS <= 0 || stockRow.weight <= 0) {
+            return;
+        }
+
         const targetType = issueStock
             ? SALETRANSACTIONTYPES.find(t => t.key === "issue")
             : SALETRANSACTIONTYPES.find(t => t.key === "sales");
 
+            
         if (!targetType) {
             toaster.create({
                 title: "Transaction Type Missing",
@@ -971,11 +976,10 @@ useGlobalKey(
 
         // check open
         if (!selectedTransactionTypes.some(t => t.value === targetType.value)) {
-            toaster.create({
-                title: `${targetType.label} Not Opened`,
-                type: "error",
-            });
-            return;
+           setSelectedTransactionTypes([
+                ...selectedTransactionTypes,
+                targetType
+            ])
         }
 
         let availability = null;
@@ -1173,7 +1177,7 @@ useGlobalKey(
 
     const handleResetDraft = () => {
 
-        setSelectedTransactionId(null);
+        setSelectedTransactionId('');
 
         setEditingState({ rowId: null, transactionType: null });
         resetDraftRowTempId();
@@ -1187,20 +1191,22 @@ useGlobalKey(
         resetHeader();
         resetBalance();
         resetStore();
+        goldStockRefetch();
+        itemStockRefetch();
 
 
         if (isEditing) {
             stopEdit();
             refetchTransactionHeaderDetail();
 
-            toaster.create({
-                title: "Edit Cancelled",
-                description: "Transaction edit has been cancelled.",
-                type: "info",
-            });
+            // toaster.create({
+            //     title: "Edit Cancelled",
+            //     description: "Transaction edit has been cancelled.",
+            //     type: "info",
+            // });
         } else {
             localStorage.removeItem(TYPE_KEY);
-            setSelectedTransactionId(null);
+            setSelectedTransactionId('');
         }
         setHeaderForm({
             ENTRYNO: "",
@@ -1333,7 +1339,7 @@ useGlobalKey(
             resetStore();
             resetBalance();
             setIsOpenSalesSaveModal(false);
-            // handleResetDraft();
+            handleResetDraft();
 
         } catch (error: any) {
             toaster.create({

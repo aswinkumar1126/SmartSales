@@ -33,7 +33,7 @@ type StockAvailable = {
     usedPieces?: number;
     remainingPieces?: number;
 }
-
+// 1. Fix the prop type first
 type StockDrawerProps = {
     isIssue: boolean;
     showStock: string;
@@ -49,13 +49,13 @@ type StockDrawerProps = {
     setSelectedName: (val?: string) => void;
     pureGoldCollection?: any[];
     itemCollection?: any[];
-    getStockAvailability?: (id: string, touch:number , options?: {
-        excludeRowId?: string,
-        transactionTypeCode: string,
-        isEditing?: boolean,
-        originalValue?: number
-    }) => any;
-};
+    // ✅ Clean signature — just id, touch, options (no transactionTypeCode)
+    getStockAvailability?: (
+        id: string,
+        touch: number | null,
+        options?: { excludeRowId?: string }
+    ) => any;
+};;
 
 export default function StockDrawer({
     isIssue,
@@ -87,7 +87,7 @@ export default function StockDrawer({
                 { key: "weight", label: "Weight", align: "end" },
                 { key: "actualTouch", label: "Touch", align: "end" },
                 { key: "actualPure", label: "Pure", align: "end" },
-                { key: "stockStatus", label: "Stock Status", align: "end" },
+                // { key: "stockStatus", label: "Stock Status", align: "end" },
                 { key: "action", label: "Action", align: "center" },
             ]
             : [
@@ -97,10 +97,10 @@ export default function StockDrawer({
                 { key: "GRSWT", label: "Gross Wt", align: "end" },
                 { key: "STNWT", label: "Stone Wt", align: "end" },
                 { key: "NETWT", label: "Net Wt", align: "end" },
-                { key: "STOCKSTATUS", label: "Stock Status", align: "end" },
+                // { key: "STOCKSTATUS", label: "Stock Status", align: "end" },
                 { key: "TOUCH", label: "Touch", align: "end" },
                 { key: "PUREWT", label: "Pure Wt", align: "end" },
-                // { key: "ACTION", label: "Action", align: "center" },
+                { key: "ACTION", label: "Action", align: "center" },
             ];
     }, [showStock]);
 
@@ -209,26 +209,20 @@ export default function StockDrawer({
                                 headerBg={theme.colors.accient}
                                 headerColor={theme.colors.whiteColor}
                                 renderRow={(row, index, isSelected) => {
-                                    console.log(stockData, 'stockDatastockData');
+                                    const stockId = getStockId(row);   // pureId for PURE, itemId for ITEM
+                                    const touch = getTouch(row);       // aTouch for PURE, TOUCH for ITEM
 
-                                    const stockId = getStockId(row);
-                                    const touch = getTouch(row);
-
-                                    console.log(stockId, 'stockId');
-                                    
-                                    // Get availability for this row based on stock type
-                                    const availability = getStockAvailability && stockId && touch 
-                                        ? getStockAvailability(stockId, touch, {
-                                            transactionTypeCode: showStock === "PURE" ? "ISP" : "PU",
-                                            isEditing: false,
-                                        })
+                                    // ✅ Just pass id + touch — hook already knows stock type from transactionCodes
+                                    const availability = getStockAvailability && stockId
+                                        ? getStockAvailability(String(stockId), touch ?? null)
                                         : undefined;
+                                        console.log(availability,stockId, 'availabilityinstock')
 
-                                    console.log(availability, stockId, touch, 'availability');
-
+                                    // ✅ PURE stock → check weight remaining
+                                    // ✅ ITEM stock → check pieces remaining
                                     const isOutOfStock = showStock === "PURE"
-                                        ? (availability?.remaining ?? 0) <= 0
-                                        : (availability?.remainingPieces ?? 0) <= 0;
+                                        ? (availability?.weight?.remaining ?? 0) <= 0
+                                        : (availability?.pieces?.remaining ?? 0) <= 0;
 
                                     if (showStock === "PURE") {
                                         return (
@@ -237,9 +231,13 @@ export default function StockDrawer({
                                                 <Table.Cell as="td">{row.metalName}</Table.Cell>
                                                 <Table.Cell as="td" textAlign="end">
                                                     <Stack gap={0}>
-                                                        <Text fontWeight="medium">
-                                                            {Number(row.aWt).toFixed(3)}g
-                                                        </Text>
+                                                        <Text fontWeight="medium">{Number(row.aWt).toFixed(3)}g</Text>
+                                                        {/* ✅ Show live remaining weight from draft */}
+                                                        {availability && (
+                                                            <Text fontSize="xs" color={isOutOfStock ? "red.500" : "green.600"}>
+                                                                Avail: {availability.weight.remaining.toFixed(3)}g
+                                                            </Text>
+                                                        )}
                                                     </Stack>
                                                 </Table.Cell>
                                                 <Table.Cell as="td" textAlign="end" fontWeight="medium">
@@ -248,33 +246,12 @@ export default function StockDrawer({
                                                 <Table.Cell as="td" textAlign="end" fontWeight="medium">
                                                     {Number(row.aPureWt).toFixed(3)}
                                                 </Table.Cell>
-                                                <Table.Cell as="td" textAlign="end">
-                                                    {availability ? (
-                                                        <Stack gap={0} align="end">
-                                                            <Text
-                                                                fontSize="sm"
-                                                                fontWeight="bold"
-                                                                color={getStockStatusColor(availability.remaining, availability.total)}
-                                                            >
-                                                                Available: {availability.remaining.toFixed(3)}g
-                                                            </Text>
-                                                            <Text fontSize="xs" color="gray.500">
-                                                                Total: {availability.total.toFixed(3)}g | Used: {availability.used.toFixed(3)}g
-                                                            </Text>
-                                                        </Stack>
-                                                    ) : (
-                                                        <Text fontSize="sm" color="gray.500">
-                                                            {Number(row.aWt).toFixed(3)}g available
-                                                        </Text>
-                                                    )}
-                                                </Table.Cell>
                                                 <Table.Cell as="td" textAlign="center">
                                                     <IconButton
                                                         size="2xs"
                                                         onClick={() => onIssue(row)}
                                                         disabled={isOutOfStock}
                                                         title={isOutOfStock ? "Out of stock" : "Add to transaction"}
-                                                        colorScheme={isOutOfStock ? "gray" : "blue"}
                                                     >
                                                         <FaArrowUp />
                                                     </IconButton>
@@ -289,9 +266,13 @@ export default function StockDrawer({
                                                 <Table.Cell as="td">{row.METALNAME}</Table.Cell>
                                                 <Table.Cell as="td" textAlign="end">
                                                     <Stack gap={0}>
-                                                        <Text fontWeight="bold">
-                                                            {row.PCS} pcs
-                                                        </Text>
+                                                        <Text fontWeight="bold">{row.PCS} pcs</Text>
+                                                        {/* ✅ Show live remaining pieces from draft */}
+                                                        {availability && (
+                                                            <Text fontSize="xs" color={isOutOfStock ? "red.500" : "green.600"}>
+                                                                Avail: {availability.pieces.remaining} pcs
+                                                            </Text>
+                                                        )}
                                                     </Stack>
                                                 </Table.Cell>
                                                 <Table.Cell as="td" textAlign="end">
@@ -301,58 +282,32 @@ export default function StockDrawer({
                                                     {Number(row.STNWT || 0).toFixed(3)}g
                                                 </Table.Cell>
                                                 <Table.Cell as="td" textAlign="end">
-                                                    <Text fontWeight="bold">
-                                                        {netwt.toFixed(3)}g
-                                                    </Text>
-                                                </Table.Cell>
-                                                <Table.Cell as="td" textAlign="end">
-                                                    {availability ? (
-                                                        <Stack gap={0} align="end">
-                                                            <Text
-                                                                fontSize="sm"
-                                                                fontWeight="bold"
-                                                                color={getStockStatusColor(availability.remainingPieces || 0, availability.totalPieces || 0)}
-                                                            >
-                                                                Available: {availability.remainingPieces || 0} pcs
+                                                    <Stack gap={0}>
+                                                        <Text fontWeight="bold">{netwt.toFixed(3)}g</Text>
+                                                        {/* ✅ Show live remaining weight */}
+                                                        {availability && (
+                                                            <Text fontSize="xs" color="blue.500">
+                                                                Avail: {availability.weight.remaining.toFixed(3)}g
                                                             </Text>
-                                                            <Text fontSize="xs" color="gray.500">
-                                                                Total: {availability.totalPieces || 0} pcs | Used: {availability.usedPieces || 0} pcs
-                                                            </Text>
-                                                            {availability.remaining > 0 && (
-                                                                <Text fontSize="xs" color="green.500">
-                                                                    Net Wt Available: {availability.remaining.toFixed(3)}g
-                                                                </Text>
-                                                            )}
-                                                        </Stack>
-                                                    ) : (
-                                                        <Stack gap={0} align="end">
-                                                            <Text fontSize="sm" color="gray.500">
-                                                                {row.PCS} pcs available
-                                                            </Text>
-                                                            <Text fontSize="xs" color="gray.400">
-                                                                Net Wt: {netwt.toFixed(3)}g
-                                                            </Text>
-                                                        </Stack>
-                                                    )}
+                                                        )}
+                                                    </Stack>
                                                 </Table.Cell>
                                                 <Table.Cell as="td" textAlign="end">
                                                     {row.TOUCH || row.touch || ""}
                                                 </Table.Cell>
-                                                <Table.Cell as="td" textAlign="end" fontWeight={'bold'} color="blue.600" px={1}>
+                                                <Table.Cell as="td" textAlign="end" fontWeight="bold" color="blue.600" px={1}>
                                                     {Number(row.PUREWT || row.purewt || 0).toFixed(3)}g
                                                 </Table.Cell>
-                                                {/* Uncomment if you want action button for items */}
-                                                {/* <Box as="td" textAlign="center">
+                                                <Box as="td" textAlign="center">
                                                     <IconButton
                                                         size="2xs"
                                                         onClick={() => onIssue(row)}
                                                         disabled={isOutOfStock}
                                                         title={isOutOfStock ? "Out of stock" : "Add to transaction"}
-                                                        colorScheme={isOutOfStock ? "gray" : "blue"}
                                                     >
                                                         <FaArrowUp />
                                                     </IconButton>
-                                                </Box> */}
+                                                </Box>
                                             </>
                                         );
                                     }

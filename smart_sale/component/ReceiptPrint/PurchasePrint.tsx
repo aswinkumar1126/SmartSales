@@ -1,9 +1,10 @@
 "use client";
-import React, { useRef, useCallback, useState, useEffect } from "react";
+import React, { useRef, useCallback, useEffect } from "react";
 import { Company } from "@/service/CompanyService";
 import { PurchaseCLosing } from "@/types/transcation/Transaction";
 import { useSoftControlById } from "@/hooks/apiHooks/softControl/useSoftControl";
 import { SoftControl } from "@/types/softcontrol/SoftControl";
+import * as XLSX from 'xlsx'; // Add this import
 
 // ─── API Data Types ───────────────────────────────────────────────────────────
 
@@ -125,6 +126,9 @@ export interface PurchaseReceiptProps {
   accentColor?: string;
   COMPANY_DETAILS: Company;
   autoPrint?: boolean;
+  copies?: number;
+  onAfterPrint?: () => void;
+  onAfterExport?: () => void; // Callback for after export
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -148,11 +152,6 @@ const getConvTypeLabel = (type: string | null | undefined): string => {
   return type.toUpperCase() === "P" ? "PURE" : type.toUpperCase() === "C" ? "CASH" : "";
 };
 
-// ─── Styling Constants ────────────────────────────────────────────────────────
-
-const FONT_BODY = "'Roboto', 'Arial', sans-serif";
-const FONT_AMOUNT = "'Roboto', 'Arial', sans-serif";
-
 const hasTransactions = (details: PurchaseReceiptProps['TRANSACTION_DETAILS']): boolean => {
   return (
     (details.purchase?.length || 0) > 0 ||
@@ -174,13 +173,274 @@ const hasClosingDetails = (closing: PurchaseReceiptProps['CLOSING_DETAILS']): bo
   );
 };
 
+// ─── Excel Data Builder ─────────────────────────────────────────────────────
+
+interface ExcelRow {
+  [key: string]: any;
+}
+
+const buildExcelData = (p: PurchaseReceiptProps): ExcelRow[] => {
+  const { TRANSACTION_HEADER: H, TRANSACTION_DETAILS: D, BALANCE: B, CLOSING_DETAILS: C, ACHEAD_DETAILS: A } = p;
+  const excelRows: ExcelRow[] = [];
+
+  // Header row with receipt information
+  excelRows.push({
+    'Type': 'RECEIPT INFORMATION',
+    'Bill No': H.BILLNO,
+    'Date': formatDate(H.TRANDATE),
+    'Party': A?.ACNAME || `AC #${H.ACCODE}`,
+    'Remark': H.REMARK,
+    'Thru': H.THRU,
+  });
+
+  excelRows.push({}); // Empty row for spacing
+
+  // Opening Balance
+  excelRows.push({
+    'Type': 'OPENING BALANCE',
+    'Cash': B.openingCash,
+    'Pure': B.openingPure,
+  });
+
+  excelRows.push({}); // Empty row
+
+  // Purchase Items
+  if (D.purchase && D.purchase.length > 0) {
+    excelRows.push({
+      'Type': 'PURCHASE',
+      'Item Name': '',
+      'PCS': '',
+      'GRS WT': '',
+      'NET WT': '',
+      'TOUCH': '',
+      'PURE WT': '',
+      'HMC': '',
+      'MC': '',
+    });
+
+    D.purchase.forEach((item) => {
+      const stoneDetails = item?.STONEDETAILS || [];
+
+      // Get stone weights
+      const getStoneWt = (stoneId: number) => {
+        return stoneDetails
+          .filter((s: any) => Number(s.stoneId) === stoneId)
+          .reduce((sum: number, s: any) => {
+            const wt = Number(s.stoneWeight) || 0;
+            return sum + ((s.stoneUnit || "g") === "c" ? wt / 5 : wt);
+          }, 0);
+      };
+
+      const stoneWt = getStoneWt(9999);
+      const navaWt = getStoneWt(9997);
+      const diamondWt = getStoneWt(9998);
+
+      excelRows.push({
+        'Type': '',
+        'Item Name': item.ITEMNAME || item.PUREGOLDNAME || '-',
+        'PCS': item.PCS || 0,
+        'GRS WT': item.GRSWT || 0,
+        'STN WT': stoneWt || 0,
+        'NAVA WT': navaWt || 0,
+        'DIA WT': diamondWt || 0,
+        'NET WT': item.NETWT || 0,
+        'TOUCH': item.TOUCH || 0,
+        'PURE WT': item.PUREWT || 0,
+        'HMC': item.HMC || 0,
+        'MC': item.MC || 0,
+      });
+    });
+
+    // Purchase totals
+    const purchaseTotals = {
+      pcs: D.purchase.reduce((sum, item) => sum + (Number(item.PCS) || 0), 0),
+      grswt: D.purchase.reduce((sum, item) => sum + (Number(item.GRSWT) || 0), 0),
+      netwt: D.purchase.reduce((sum, item) => sum + (Number(item.NETWT) || 0), 0),
+      purewt: D.purchase.reduce((sum, item) => sum + (Number(item.PUREWT) || 0), 0),
+      hmc: D.purchase.reduce((sum, item) => sum + (Number(item.HMC) || 0), 0),
+      mc: D.purchase.reduce((sum, item) => sum + (Number(item.MC) || 0), 0),
+    };
+
+    excelRows.push({
+      'Type': 'TOTAL',
+      'Item Name': '',
+      'PCS': purchaseTotals.pcs,
+      'GRS WT': purchaseTotals.grswt,
+      'NET WT': purchaseTotals.netwt,
+      'PURE WT': purchaseTotals.purewt,
+      'HMC': purchaseTotals.hmc,
+      'MC': purchaseTotals.mc,
+    });
+
+    excelRows.push({}); // Empty row
+  }
+
+  // Purchase Return Items
+  if (D.purchase_return && D.purchase_return.length > 0) {
+    excelRows.push({
+      'Type': 'PURCHASE RETURN',
+      'Item Name': '',
+      'PCS': '',
+      'GRS WT': '',
+      'NET WT': '',
+      'TOUCH': '',
+      'PURE WT': '',
+    });
+
+    D.purchase_return.forEach((item) => {
+      excelRows.push({
+        'Type': '',
+        'Item Name': item.ITEMNAME || item.PUREGOLDNAME || '-',
+        'PCS': item.PCS || 0,
+        'GRS WT': item.GRSWT || 0,
+        'NET WT': item.NETWT || 0,
+        'TOUCH': item.TOUCH || 0,
+        'PURE WT': item.PUREWT || 0,
+      });
+    });
+
+    excelRows.push({}); // Empty row
+  }
+
+  // Issue Items
+  if (D.issue && D.issue.length > 0) {
+    excelRows.push({
+      'Type': 'ISSUE',
+      'Item Name': '',
+      'WT': '',
+      'TOUCH': '',
+      'PURE WT': '',
+    });
+
+    D.issue.forEach((item) => {
+      excelRows.push({
+        'Type': '',
+        'Item Name': item.ITEMNAME || item.PUREGOLDNAME || '-',
+        'WT': item.WT || 0,
+        'TOUCH': item.TOUCH || 0,
+        'PURE WT': item.PUREWT || 0,
+      });
+    });
+
+    // Issue totals
+    const issueTotals = {
+      wt: D.issue.reduce((sum, item) => sum + (Number(item.WT) || 0), 0),
+      purewt: D.issue.reduce((sum, item) => sum + (Number(item.PUREWT) || 0), 0),
+    };
+
+    excelRows.push({
+      'Type': 'TOTAL',
+      'WT': issueTotals.wt,
+      'PURE WT': issueTotals.purewt,
+    });
+
+    excelRows.push({}); // Empty row
+  }
+
+  // Receipt Items
+  if (D.receipt && D.receipt.length > 0) {
+    excelRows.push({
+      'Type': 'RECEIPT',
+      'Item Name': '',
+      'WT': '',
+      'TOUCH': '',
+      'PURE WT': '',
+    });
+
+    D.receipt.forEach((item) => {
+      excelRows.push({
+        'Type': '',
+        'Item Name': item.ITEMNAME || item.PUREGOLDNAME || '-',
+        'WT': item.WT || 0,
+        'TOUCH': item.TOUCH || 0,
+        'PURE WT': item.PUREWT || 0,
+      });
+    });
+
+    excelRows.push({}); // Empty row
+  }
+
+  // Closing Details
+  if (hasClosingDetails(C)) {
+    excelRows.push({
+      'Type': 'CLOSING DETAILS',
+      'Conversion Type': getConvTypeLabel(C.CONVTYPE),
+      'Conversion WT': C.CONVWT || 0,
+      'Conversion Rate': H.RATE || 0,
+      'Conversion Amount': C.CONVAMT || 0,
+    });
+    excelRows.push({}); // Empty row
+  }
+
+  // Payments
+  const cashRcvd = Number(C.CASHRCVD) || 0;
+  const cashPaid = Number(C.CASHPAID) || 0;
+  const bankRcvd = Number(C.BANKRCVD) || 0;
+  const bankPaid = Number(C.BANKPAID) || 0;
+
+  if (cashRcvd > 0 || cashPaid > 0 || bankRcvd > 0 || bankPaid > 0) {
+    excelRows.push({
+      'Type': 'PAYMENTS',
+      'Cash Received': cashRcvd,
+      'Cash Paid': cashPaid,
+      'Bank Received': bankRcvd,
+      'Bank Paid': bankPaid,
+      'Total Received': cashRcvd + bankRcvd,
+      'Total Paid': cashPaid + bankPaid,
+    });
+    excelRows.push({}); // Empty row
+  }
+
+  // Closing Balance
+  excelRows.push({
+    'Type': 'CLOSING BALANCE',
+    'Cash': B.closingCash,
+    'Pure': B.closingPure,
+  });
+
+  return excelRows;
+};
+
+// ─── Export to Excel Function ────────────────────────────────────────────────
+
+export const exportToExcel = (props: PurchaseReceiptProps, filename?: string) => {
+  const excelData = buildExcelData(props);
+
+  // Create worksheet
+  const ws = XLSX.utils.json_to_sheet(excelData);
+
+  // Set column widths (optional)
+  ws['!cols'] = [
+    { wch: 20 }, // Type column
+    { wch: 30 }, // Item Name / Description
+    { wch: 12 }, // PCS / WT
+    { wch: 15 }, // GRS WT
+    { wch: 15 }, // STN WT
+    { wch: 15 }, // NAVA WT
+    { wch: 15 }, // DIA WT
+    { wch: 15 }, // NET WT
+    { wch: 12 }, // TOUCH
+    { wch: 15 }, // PURE WT
+    { wch: 15 }, // HMC
+    { wch: 15 }, // MC
+  ];
+
+  // Create workbook
+  const wb = XLSX.utils.book_new();
+  const sheetName = `Receipt_${props.TRANSACTION_HEADER.BILLNO}_${formatDate(props.TRANSACTION_HEADER.TRANDATE)}`;
+  XLSX.utils.book_append_sheet(wb, ws, sheetName.slice(0, 31)); // Excel sheet name max 31 chars
+
+  // Export to file
+  const fileName = filename || `Purchase_Receipt_${props.TRANSACTION_HEADER.BILLNO}.xlsx`;
+  XLSX.writeFile(wb, fileName);
+};
+
 // ─── Thermal HTML Builder ─────────────────────────────────────────────────────
 
 const buildThermalHTML = (p: PurchaseReceiptProps, softData?: SoftControl, is50?: boolean): string => {
   const { TRANSACTION_HEADER: H, TRANSACTION_DETAILS: D, BALANCE: B, CLOSING_DETAILS: C, ACHEAD_DETAILS: A } = p;
 
   const partyName = A?.ACNAME || `AC #${H.ACCODE}`;
-  const partyAddress = A?.ADDRESS ? A.ADDRESS.replace(/null/g, "") : "";
   const showTransactions = hasTransactions(D);
   const showClosingSection = hasClosingDetails(C);
   const convTypeLabel = getConvTypeLabel(C.CONVTYPE);
@@ -279,7 +539,6 @@ const buildThermalHTML = (p: PurchaseReceiptProps, softData?: SoftControl, is50?
   <th style="border:1px solid #000; padding:2px; text-align:end">PURE</th>
 </tr>`;
 
-  //${ partyAddress ? `<tr><td style="font-weight:bold; width:40%;">ADDRESS :</td><td>${partyAddress}</td>` : "" }
     const rowsHtml = rows
       .map((item) => {
         const name =
@@ -347,14 +606,9 @@ const buildThermalHTML = (p: PurchaseReceiptProps, softData?: SoftControl, is50?
   <td style="border:1px solid #000; padding:2px; text-align:right;"><strong>${fmtWt(totals.wt)}</strong></td>
   <td style="border:1px solid #000; padding:2px;"></td>
   <td style="border:1px solid #000; padding:2px; text-align:right;"><strong>${fmtWt(totals.purewt)}</strong></td>
-</tr>`
+</table>`
       : "";
 
-    /**
-     * =====================================================
-     * EXTRA CHARGES TABLE - Split into Stone, Nava, Diamond
-     * =====================================================
-     */
     const extraChargesTable = totals && isPurchaseType && (totals.hmc || totals.mc || totals.stoneAmt || totals.navaAmt || totals.diamondAmt)
       ? `
 <div style="width:100%; display:flex; justify-content:flex-end; margin-top:2px;">
@@ -414,7 +668,7 @@ ${extraChargesTable}`;
   </thead>
   <tbody>
     <tr><td style="border:1px solid #000; padding:2px;">CASH</td><td style="border:1px solid #000; padding:2px; text-align:right">${cashRcvd > 0 ? fmtNormalAmt(cashRcvd) : '0'}</td><td style="border:1px solid #000; padding:2px; text-align:right">${cashPaid > 0 ? fmtNormalAmt(cashPaid) : '0'}</td>
-    <tr>
+    </tr>
     <tr><td style="border:1px solid #000; padding:2px;">BANK</td><td style="border:1px solid #000; padding:2px; text-align:right">${bankRcvd > 0 ? fmtNormalAmt(bankRcvd) : '0'}</td><td style="border:1px solid #000; padding:2px; text-align:right">${bankPaid > 0 ? fmtNormalAmt(bankPaid) : '0'}</td>
     </tr>
     <tr style="font-weight:bold;"><td style="border:1px solid #000; padding:2px;">TOTAL</td><td style="border:1px solid #000; padding:2px; text-align:right">${fmtNormalAmt(cashRcvd + bankRcvd)}</td><td style="border:1px solid #000; padding:2px; text-align:right">${fmtNormalAmt(cashPaid + bankPaid)}</td>
@@ -454,20 +708,20 @@ ${extraChargesTable}`;
     <tr>
       <td style="width:55%; vertical-align:top;">
         <table style="width:100%;" class="no-border">
-          <tr><td style="font-weight:bold; width:40%;">PARTY <span style="display:inline-block; width:10px;"></span>: </td><td>${partyName}</td>
+          <tr><td style="font-weight:bold; width:40%;">PARTY : </td><td>${partyName}</td>
           </tr>
-        
-          <tr><td style="font-weight:bold; width:40%;">REMARK <span style="display:inline-block; width:2px;"></span>:</td><td>${H.REMARK}</td>
-           <tr><td style="font-weight:bold; width:40%;">THRU <span style="display:inline-block; width:15px;"></span>:</td><td>${H.THRU}</td> 
+          <tr><td style="font-weight:bold; width:40%;">REMARK : </td><td>${H.REMARK}</td>
+          </tr>
+          <tr><td style="font-weight:bold; width:40%;">THRU : </td><td>${H.THRU}</td>
+          </tr>
         </table>
       </td>
       <td style="width:45%; vertical-align:top; text-align:left;">
         <table style="width:100%; font-size:10px; text-align:left;" class="no-border">
-          <tr><td style="font-weight:bold; width:42%;">BILL NO :</td><td>${H.BILLNO}</td>
+          <tr><td style="font-weight:bold; width:42%;">BILL NO : </td><td>${H.BILLNO}</td>
           </tr>
-          <tr><td style="font-weight:bold; width:42%;">DATE <span style="display:inline-block; width:12px;"></span>:</td><td>${formatDate(H.TRANDATE)}</td>
+          <tr><td style="font-weight:bold; width:42%;">DATE : </td><td>${formatDate(H.TRANDATE)}</td>
           </tr>
-         
         </table>
       </td>
     </tr>
@@ -484,49 +738,139 @@ ${extraChargesTable}`;
 // ─── Print CSS ────────────────────────────────────────────────────────────────
 
 const buildPrintCSS = (is50: boolean): string => {
-  const pageW = is50 ? "120mm" : "100mm";
-  const bodyW = is50 ? "110mm" : "95mm";
-  const margin = is50 ? "2mm" : "1mm";
   return `
-@page { size: ${pageW} auto; margin: ${margin}; }
-* { margin:0; padding:0; box-sizing:border-box; }
-html, body { width:${pageW}; background:#fff; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
-.pr-thermal {
-  font-family: 'Roboto', 'Helvetica Neue', sans-serif;
-  font-weight: normal;
-  color: #000;
-  background: #fff;
-  width: ${bodyW};
-  margin: 30px auto 0px;
-  padding: 4px 2px;
-  font-size: 14px;
-  line-height: 1.4;
+@page {
+  size: A6 portrait;
+  margin: 4mm;
 }
-.pr-thermal .co-name, .pr-thermal .sec-title { text-align:center; font-size:12px; font-weight:bold; margin:4px 0px 2px; }
-.pr-thermal .sec-title { font-size:10px; text-transform:uppercase; }
-.pr-thermal .dashed-line { border-top: 1px dashed #000; margin: 4px 0; }
-.pr-thermal .double-line { border-top: 3px double #000; margin: 4px 0; }
-.pr-thermal .lr { display:flex; justify-content:space-between; font-size:10px; margin:2px 0; }
-.pr-thermal table { width:100%; margin:4px 0;}
-.pr-thermal table.no-border { width:100%; border-collapse:collapse; margin:2px 0;}
-.pr-thermal table.with-border { width:100%; border-collapse:collapse; margin:4px 0; border:1px solid #222;}
-.pr-thermal table th { padding:2px; font-size:10px; font-weight:bold; }
-.pr-thermal table td { padding:2px; font-size:10px; vertical-align:top; }
-.pr-thermal .tran-table { margin: 10px 0px 10px 0px;}
-.pr-thermal .closing-table{ margin: 10px 0px;}
+
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+}
+
+html, body{
+  background:#fff;
+  -webkit-print-color-adjust:exact;
+  print-color-adjust:exact;
+}
+
+.print-container{
+  width:100%;
+}
+
+/* Remove page-break wrapper - allow natural flow */
+.pr-thermal{
+  font-family:'Roboto','Helvetica Neue',sans-serif;
+  color:#000;
+  background:#fff;
+  width:100%;
+  padding:4px;
+  font-size:14px;
+  line-height:1.4;
+  /* Allow content to break naturally across pages */
+  page-break-inside: auto;
+}
+
+/* Ensure tables break properly across pages */
+.pr-thermal table {
+  width:100%; 
+  margin:4px 0;
+  page-break-inside: avoid;
+  break-inside: avoid;
+}
+
+/* Allow table rows to break across pages if needed */
+.pr-thermal table tr {
+  page-break-inside: avoid;
+  break-inside: avoid;
+}
+
+/* Keep totals together */
+.pr-thermal table tr:last-child {
+  page-break-after: auto;
+}
+
+.pr-thermal .co-name,
+.pr-thermal .sec-title{
+  text-align:center;
+  font-size:12px;
+  font-weight:bold;
+  margin:4px 0 2px;
+  page-break-after: avoid;
+  break-after: avoid;
+}
+
+.pr-thermal .sec-title{
+  font-size:10px;
+  text-transform:uppercase;
+}
+
+.pr-thermal table.no-border { 
+  width:100%; 
+  border-collapse:collapse; 
+  margin:2px 0;
+}
+
+.pr-thermal table.with-border { 
+  width:100%; 
+  border-collapse:collapse; 
+  margin:4px 0; 
+  border:1px solid #222;
+}
+
+.pr-thermal table th { 
+  padding:2px; 
+  font-size:10px; 
+  font-weight:bold; 
+}
+
+.pr-thermal table td { 
+  padding:2px; 
+  font-size:10px; 
+  vertical-align:top; 
+}
+
+.pr-thermal .tran-table { 
+  margin: 10px 0px 10px 0px;
+}
+
+.pr-thermal .closing-table { 
+  margin: 10px 0px;
+}
+
+/* Page break helpers - force break before major sections if needed */
+.page-break-before {
+  page-break-before: always;
+  break-before: page;
+}
+
+/* Keep heading with its content */
+h1, h2, h3, h4, .sec-title {
+  page-break-after: avoid;
+  break-after: avoid;
+}
 `;
 };
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 const PurchaseReceipt: React.FC<PurchaseReceiptProps> = (props) => {
-  const { columnSize = "40", autoPrint = true } = props;
+  const { columnSize = "40", autoPrint = true, copies = 1, onAfterPrint } = props;
   const { data: softData } = useSoftControlById('RECEIPT_PRINT_LOGO');
   const is50 = columnSize === "50";
   const hasPrintedRef = useRef(false);
 
   const handlePrint = useCallback(() => {
-    const thermalHTML = buildThermalHTML(props, softData, is50);
+    // Generate the receipt HTML
+    const receiptHTML = buildThermalHTML(props, softData, is50);
+
+    // If multiple copies requested, repeat the receipt
+    const thermalHTML = copies > 1
+      ? Array(copies).fill(`<div class="pr-thermal">${receiptHTML}</div>`).join('\n<div class="page-break-before"></div>\n')
+      : `<div class="pr-thermal">${receiptHTML}</div>`;
+
     const css = buildPrintCSS(is50);
 
     const iframe = document.createElement("iframe");
@@ -558,15 +902,16 @@ const PurchaseReceipt: React.FC<PurchaseReceiptProps> = (props) => {
           iframe.contentWindow?.focus();
           iframe.contentWindow?.print();
         } catch { }
-        setTimeout(() => iframe.remove(), 300);
+        setTimeout(() => { iframe.remove(); onAfterPrint?.(); }, 300);
       }, 300);
     };
-  }, [props, softData, is50]);
+  }, [props, softData, is50, copies, onAfterPrint]);
 
   useEffect(() => {
     if (autoPrint && !hasPrintedRef.current) {
       hasPrintedRef.current = true;
-      handlePrint();
+      // Small delay to ensure everything is ready
+      setTimeout(() => handlePrint(), 100);
     }
   }, [handlePrint, autoPrint]);
 

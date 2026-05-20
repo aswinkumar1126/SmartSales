@@ -88,7 +88,7 @@ export default function StockDrawer({
                 { key: "weight", label: "Weight", align: "end" },
                 { key: "actualTouch", label: "Touch", align: "end" },
                 { key: "actualPure", label: "Pure", align: "end" },
-                { key: "stockStatus", label: "Stock Status", align: "end" },
+                // { key: "stockStatus", label: "Stock Status", align: "end" },
                 { key: "action", label: "Action", align: "center" },
             ]
             : [
@@ -98,7 +98,7 @@ export default function StockDrawer({
                 { key: "GRSWT", label: "Gross Wt", align: "end" },
                 { key: "STNWT", label: "Stone Wt", align: "end" },
                 { key: "NETWT", label: "Net Wt", align: "end" },
-                { key: "STOCKSTATUS", label: "Stock Status", align: "end" },
+                // { key: "STOCKSTATUS", label: "Stock Status", align: "end" },
                 { key: "TOUCH", label: "Touch", align: "end" },
                 { key: "PUREWT", label: "Pure Wt", align: "end" },
                 { key: "ACTION", label: "Action", align: "center" },
@@ -230,9 +230,9 @@ export default function StockDrawer({
 
                                     console.log(availability, stockId, 'availability');
 
-                                    const isOutOfStock = showStock === "PURE"
-                                        ? (availability?.remaining ?? 0) <= 0
-                                        : (availability?.remainingPieces ?? 0) <= 0;
+                                    // const isOutOfStock = showStock === "PURE"
+                                    //     ? (availability?.remaining ?? 0) <= 0
+                                    //     : (availability?.remainingPieces ?? 0) <= 0;
 
                                     if (showStock === "PURE") {
                                         return (
@@ -250,7 +250,7 @@ export default function StockDrawer({
                                                 <Table.Cell as="td" textAlign="end" fontWeight="medium">
                                                     {Number(row.aPureWt).toFixed(3)}
                                                 </Table.Cell>
-                                                <Table.Cell as="td" textAlign="end">
+                                                {/* <Table.Cell as="td" textAlign="end">
                                                     {availability ? (
                                                         <Stack gap={0} align="end">
                                                             <Text
@@ -269,14 +269,14 @@ export default function StockDrawer({
                                                             {Number(row.aWt).toFixed(3)}g available
                                                         </Text>
                                                     )}
-                                                </Table.Cell>
+                                                </Table.Cell> */}
                                                 <Table.Cell as="td" textAlign="center">
                                                     <IconButton
                                                         size="2xs"
                                                         onClick={() => onIssue(row)}
-                                                        disabled={isOutOfStock}
-                                                        title={isOutOfStock ? "Out of stock" : "Add to transaction"}
-                                                        colorScheme={isOutOfStock ? "gray" : "blue"}
+                                                        // disabled={isOutOfStock}
+                                                        // title={isOutOfStock ? "Out of stock" : "Add to transaction"}
+                                                        // colorPalette={isOutOfStock ? "gray" : "blue"}
                                                     >
                                                         <FaArrowUp />
                                                     </IconButton>
@@ -307,7 +307,7 @@ export default function StockDrawer({
                                                         {netwt.toFixed(3)}g
                                                     </Text>
                                                 </Table.Cell>
-                                                <Table.Cell as="td" textAlign="end">
+                                                {/* <Table.Cell as="td" textAlign="end">
                                                     {availability ? (
                                                         <Stack gap={0} align="end">
                                                             <Text
@@ -336,7 +336,7 @@ export default function StockDrawer({
                                                             </Text>
                                                         </Stack>
                                                     )}
-                                                </Table.Cell>
+                                                </Table.Cell> */}
                                                 <Table.Cell as="td" textAlign="end">
                                                     {row.TOUCH || row.touch || ""}
                                                 </Table.Cell>
@@ -347,9 +347,9 @@ export default function StockDrawer({
                                                     <IconButton
                                                         size="2xs"
                                                         onClick={() => onIssue(row)}
-                                                        disabled={isOutOfStock}
-                                                        title={isOutOfStock ? "Out of stock" : "Add to transaction"}
-                                                        colorScheme={isOutOfStock ? "gray" : "blue"}
+                                                        // disabled={isOutOfStock}
+                                                        // title={isOutOfStock ? "Out of stock" : "Add to transaction"}
+                                                        // colorScheme={isOutOfStock ? "gray" : "blue"}
                                                     >
                                                         <FaArrowUp />
                                                     </IconButton>

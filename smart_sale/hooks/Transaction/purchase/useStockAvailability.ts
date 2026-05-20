@@ -1,5 +1,5 @@
-// hooks/useStockAvailability.ts (UPDATED)
-import { useCallback, useMemo } from 'react';
+// hooks/useStockAvailability.ts
+import { useCallback } from 'react';
 import { TransactionKey, TRANSACTION_KEY_MAP } from "@/types/transcation/Transaction";
 import { useEditStockCalculator } from './useEditStockCalculator';
 
@@ -9,7 +9,6 @@ interface UseStockAvailabilityDeps {
     itemsStockList: any[];
     draftRows: any[];
     TRANSACTIONTYPES: any[];
-    // Add this for edit mode
     isEditMode?: boolean;
     originalTransactionData?: any;
 }
@@ -24,7 +23,6 @@ export interface QuantityDetail {
     total: number;
     used: number;
     remaining: number;
-    originalUsed?: number; // Add this for edit mode clarity
 }
 
 export interface StockAvailability {
@@ -42,9 +40,6 @@ export interface StockAvailability {
     remaining: number;
     usedPieces: number;
     remainingPieces: number;
-    // Edit mode specific
-    isEditMode?: boolean;
-    originalUsage?: number;
 }
 
 export interface ValidateOptions {
@@ -63,9 +58,6 @@ export function useStockAvailability({
     originalTransactionData,
 }: UseStockAvailabilityDeps) {
 
-    console.log(pureStockList ,'pureStockList');
-
-    // Initialize edit calculator if in edit mode
     const editCalculator = useEditStockCalculator({
         pureStockList,
         itemsStockList,
@@ -74,141 +66,102 @@ export function useStockAvailability({
         TRANSACTIONTYPES,
     });
 
-    console.log(pureStockList ,'pureStockListinpurchase');
-
     const transactionKeys = new Set(
         transactionCodes.map(code => TRANSACTION_KEY_MAP[code])
     );
-   
 
     const isIssue = transactionKeys.has('issue');
     const isReceipt = transactionKeys.has('receipt');
     const isPurchase = transactionKeys.has('purchase');
     const isPurchaseReturn = transactionKeys.has('purchase_return');
-   
 
-   const getUsedQuantityById = useCallback((
-    id: string | number|null,
-    touch: number | null,        // ✅ Add touch as explicit 2nd param
-    options?: {
-        excludeRowId?: string,
-        transactionTypeCode?: string,
-        field?: 'WT' | 'PCS' | 'NETWT'
-    }
-) => {
-    const pureIdStr = String(id);
-    const { excludeRowId, transactionTypeCode, field = 'WT' } = options || {};
+    // ─── Pieces: still a simple sum (pieces don't have isExisting sign logic yet) ───
+    const getUsedPiecesById = useCallback((
+        id: string | number | null,
+        touch: number | null,
+        excludeRowId?: string
+    ): number => {
+        const idStr = String(id);
+        const isISP = isIssue || isReceipt;
 
-    const filteredRows = draftRows.filter(row => {
-        if (excludeRowId && row.__rowId === excludeRowId) return false;
-        if (String(row.PUREID || row.ITEMID) !== pureIdStr) return false;
-
-        // ✅ THIS IS THE KEY FIX — filter by touch for ISP/pure stock rows
-        if (touch != null && (isIssue || isReceipt)) {
-            if (Number(row.ATOUCH) !== Number(touch)) return false;
-        }
-
-        const transactionType = TRANSACTIONTYPES.find(
-            t => t.value === row.TRANSACTION_TYPE
-        );
-        if (!transactionType) return false;
-
-        if (transactionTypeCode && transactionType.value !== transactionTypeCode) {
-            return false;
-        }
-
-        return true;
-    });
-
-    return filteredRows.reduce((sum, row) => {
-        return sum + (Number(row[field]) || 0);
-    }, 0);
-}, [draftRows, TRANSACTIONTYPES, isIssue, isReceipt]); // ✅ add isIssue, isReceipt to deps
-
-
+        return draftRows
+            .filter(row => {
+                if (excludeRowId && row.__rowId === excludeRowId) return false;
+                if (String(row.PUREID || row.ITEMID) !== idStr) return false;
+                if (isISP && touch != null && Number(row.ATOUCH ?? row.TOUCH) !== Number(touch)) return false;
+                return true;
+            })
+            .reduce((sum, row) => sum + (Number(row.PCS) || 0), 0);
+    }, [draftRows, isIssue, isReceipt]);
 
     const getStockAvailability = useCallback(
         (
             id: string | number | null,
-            touch: number | null ,
+            touch: number | null,
             options?: StockAvailabilityOptions
         ): StockAvailability | undefined => {
-            if (!id && !touch) return undefined;
+            if (!id ) return undefined;
 
-            const { excludeRowId, originalValue } = options ?? {};
+            console.log(id ,options ,'checkinginstcok')
+
+            const { excludeRowId } = options ?? {};
+            
+            // console.log(pureStockList, itemsStockList, 'stock list in available')
 
             let stock: any = null;
-            let totalAvailableWeight = 0;
-            let totalAvailablePieces = 0;
+            let baseWeight = 0;
+            let basePieces = 0;
             let stockSource: 'pure' | 'items';
-            let originalUsage = 0;
 
-           if (isIssue || isReceipt) {
-    stock = pureStockList.find(
-        (s) => String(s.pureId) === String(id) && Number(s.aTouch) === Number(touch)
-    );
-    if (!stock) return undefined;
+            console.log(stock, baseWeight,pureStockList, itemsStockList, 'stock in test')
 
-    if (isEditMode && originalTransactionData) {
-        // ✅ Pass touch here
-        originalUsage = editCalculator.getOriginalUsage(String(id), touch, 'WT', 'ISP');
-    }
-
-    totalAvailableWeight = Number(stock.aWt ?? 0) + Number(originalUsage);
-    stockSource = 'pure';
-
-}else if (isPurchase || isPurchaseReturn) {
-                stock = itemsStockList.find(
-                    (s) =>
-                        String(s.itemId) === String(id) ||
-                        String(s.pureId) === String(id)
+            // ─── 1. Find base stock ───────────────────────────────────────────
+            if (isIssue || isReceipt) {
+                // IS / RE → pure stock, match by pureId + touch
+                stock = pureStockList.find(
+                    s => String(s.pureId) === String(id) && Number(s.aTouch) === Number(touch)
                 );
                 if (!stock) return undefined;
 
-                // For edit mode, get original usage from transaction being edited
-                if (isEditMode && originalTransactionData) {
-                    originalUsage = editCalculator.getOriginalUsage(String(id),touch, 'NETWT', 'PU');
-                }
-                
-                totalAvailablePieces = Number(stock.pcs ?? stock.pieces ?? stock.quantity ?? 0);
-                totalAvailableWeight = Number(stock.netwt ?? stock.netWeight ?? stock.purewt ?? 0) + Number(originalUsage) ;
+                baseWeight = Number(stock.aWt ?? 0);
+                stockSource = 'pure';
 
-              
+            } else if (isPurchase || isPurchaseReturn) {
+                // SA / SR → items stock, match by itemId or pureId
+                stock = itemsStockList.find(
+                    s => String(s.itemId) === String(id) || String(s.pureId) === String(id)
+                );
+                if (!stock) return undefined;
+
+                baseWeight = Number(stock.netwt ?? stock.netWeight ?? stock.purewt ?? 0);
+                basePieces = Number(stock.pcs ?? stock.pieces ?? stock.quantity ?? 0);
                 stockSource = 'items';
 
-               
             } else {
                 return undefined;
             }
 
-            const dbCode = isIssue || isReceipt ? 'ISP' : 'PU';
+            // ─── 2. Available weight via calculator ───────────────────────────
+            // editCalculator.getEditStock handles:
+            //   • isExisting=true  → sign flipped (SA adds, SR reduces, IS adds, RE reduces)
+            //   • isExisting=false → normal (SA reduces, SR adds, IS reduces, RE adds)
+            // Works the same in both edit mode and normal mode.
+            const type = (isIssue || isReceipt) ? 'ISP' : 'PU';
+            const weightAvailable = editCalculator.getEditStock(
+                String(id),
+                touch,
+                baseWeight,
+                type
+            );
 
-           let usedWeight = getUsedQuantityById(id, touch, {   // ✅ pass touch
-    excludeRowId,
-    transactionTypeCode: dbCode,
-    field: isIssue || isReceipt ? 'WT' : 'NETWT',
-});
+            console.log(baseWeight,weightAvailable, 'weightAvailable');
 
-const usedPieces = getUsedQuantityById(id, touch, {  // ✅ pass touch
-    excludeRowId,
-    transactionTypeCode: dbCode,
-    field: 'PCS',
-});
-            
+            // ─── 3. Used weight = base - available (for display purposes) ─────
+            const usedWeight = baseWeight - weightAvailable;
 
-            // Apply edit mode calculation
-            let weightRemaining: number;
-            let piecesRemaining: number;
-
-            if (isEditMode) {
-                // Edit mode formula: Base Stock + Original - Current Draft
-                weightRemaining = Math.max(totalAvailableWeight - usedWeight, 0);
-                piecesRemaining = Math.max(totalAvailablePieces + (isPurchase || isPurchaseReturn ? originalUsage : 0) - usedPieces, 0);
-            } else {
-                // Normal mode formula: Base Stock - Current Draft
-                weightRemaining = Math.max(totalAvailableWeight - usedWeight, 0);
-                piecesRemaining = Math.max(totalAvailablePieces - usedPieces, 0);
-            }
+            // ─── 4. Pieces (simple sum, excludeRowId respected) ──────────────
+            const usedPieces = getUsedPiecesById(id, touch, excludeRowId);
+            const piecesRemaining = Math.max(basePieces - usedPieces, 0);
 
             return {
                 stock,
@@ -219,63 +172,57 @@ const usedPieces = getUsedQuantityById(id, touch, {  // ✅ pass touch
                 isPurchaseReturn,
                 isReceipt,
                 weight: {
-                    total: totalAvailableWeight,
-                    used: usedWeight,
-                    remaining: weightRemaining,
-                    originalUsed: isEditMode ? originalUsage : undefined
+                    total: baseWeight,
+                    used: Math.max(usedWeight, 0),
+                    remaining: Math.max(weightAvailable, 0),
                 },
                 pieces: {
-                    total: totalAvailablePieces,
+                    total: basePieces,
                     used: usedPieces,
-                    remaining: piecesRemaining
+                    remaining: piecesRemaining,
                 },
-                total: totalAvailableWeight,
-                used: usedWeight,
-                remaining: weightRemaining,
+                total: baseWeight,
+                used: Math.max(usedWeight, 0),
+                remaining: Math.max(weightAvailable, 0),
                 usedPieces,
                 remainingPieces: piecesRemaining,
-                isEditMode,
-                originalUsage: isEditMode ? originalUsage : undefined,
             };
         },
         [
             pureStockList,
             itemsStockList,
-            getUsedQuantityById,
+            getUsedPiecesById,
             isIssue,
             isPurchase,
             isPurchaseReturn,
             isReceipt,
             transactionKeys,
-            isEditMode,
-            originalTransactionData,
             editCalculator,
         ]
     );
 
     const getAvailableWeight = useCallback(
-        (id: string | number | null, touch: number | null,  options?: StockAvailabilityOptions) =>
-            getStockAvailability(id, touch,options)?.weight.remaining ?? null,
+        (id: string | number | null, touch: number | null, options?: StockAvailabilityOptions) =>
+            getStockAvailability(id, touch, options)?.weight.remaining ?? null,
         [getStockAvailability]
     );
 
     const getAvailablePieces = useCallback(
-        (pureId: string | number | null, touch: number | null,options?: StockAvailabilityOptions | undefined) =>
-            getStockAvailability(pureId,touch, options)?.pieces.remaining ?? null,
+        (id: string | number | null, touch: number | null, options?: StockAvailabilityOptions) =>
+            getStockAvailability(id, touch, options)?.pieces.remaining ?? null,
         [getStockAvailability]
     );
 
     const validateQuantity = useCallback(
         (
-            pureId: string | number | null,
+            id: string | number | null,
             value: number,
-            touch:number|null,
-            options: ValidateOptions,
-
+            touch: number | null,
+            options: ValidateOptions
         ): boolean => {
-            if (!pureId) return true;
+            if (!id) return true;
 
-            const availability = getStockAvailability(pureId,touch, {
+            const availability = getStockAvailability(id, touch, {
                 excludeRowId: options.excludeRowId,
                 originalValue: options.originalValue,
             });
@@ -300,17 +247,13 @@ const usedPieces = getUsedQuantityById(id, touch, {  // ✅ pass touch
     );
 
     const getStockForTransaction = useCallback(
-        (pureId: string | number) => {
+        (id: string | number) => {
             if (isIssue || isReceipt) {
-                return pureStockList.find(
-                    (s) => String(s.pureId) === String(pureId)
-                ) ?? null;
+                return pureStockList.find(s => String(s.pureId) === String(id)) ?? null;
             }
             if (isPurchase || isPurchaseReturn) {
                 return itemsStockList.find(
-                    (s) =>
-                        String(s.itemId) === String(pureId) ||
-                        String(s.pureId) === String(pureId)
+                    s => String(s.itemId) === String(id) || String(s.pureId) === String(id)
                 ) ?? null;
             }
             return null;
@@ -329,10 +272,11 @@ const usedPieces = getUsedQuantityById(id, touch, {  // ✅ pass touch
         getAvailablePieces,
         validateQuantity,
         getStockForTransaction,
-        // Expose edit calculator methods for direct access if needed
         ...(isEditMode && {
-            getEditAvailableWeightForISP: (pureId: string ,touch:number|null) => editCalculator.getAvailableWeightForISP(pureId ,touch),
-            getEditAvailableWeightForPU: (itemId: string) => editCalculator.getAvailableWeightForPU(itemId),
+            getEditAvailableWeightForISP: (pureId: string, touch: number | null) =>
+                editCalculator.getAvailableWeightForISP(pureId, touch),
+            getEditAvailableWeightForPU: (itemId: string) =>
+                editCalculator.getAvailableWeightForPU(itemId),
         }),
     };
 }

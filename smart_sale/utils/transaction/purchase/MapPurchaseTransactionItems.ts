@@ -98,6 +98,7 @@ const mapPurchaseReturnItems = (
 
             _stones: normalizedStones,
             _miscCharges: normalizedMisc,
+            isExisting: true,
         };
     });
 };
@@ -191,6 +192,8 @@ const mapPurchaseItems = (
 
             ITEMNAME :item.ITEMNAME ,
             ISEDITABLE: item.EDITABLE  ,
+
+            isExisting :true,
         };
     });
 };
@@ -215,6 +218,7 @@ const mapIssueItems = (list: any[] = [], type: string) => {
             SNO: item.SNO || "",
 
             PUREGOLDNAME : item.PURENAME,
+            isExisting: true,
         };
     });
 };

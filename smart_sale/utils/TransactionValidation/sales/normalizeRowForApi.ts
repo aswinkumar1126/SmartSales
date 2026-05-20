@@ -58,7 +58,8 @@ import { SaleTransactionKey, SALESTRANSACTIONITEMS } from "@/types/transcation/S
                
 
                 // ✅ Only include TAGNO if tagged item
-               TAGNO: rest.TAGNO || "",
+                // ...(tagged &&{ TAGNO : rest.TAGNO || null}),
+                TAGNO: rest.TAGNO || null ,
 
                 ...(editTransaction && { SNO: String(rest.SNO || "") }),
                 ...(rest.DESCRIPTION && { DESCRIPTION: rest.DESCRIPTION }),

@@ -1,4 +1,5 @@
 // hooks/useEditStockCalculator.ts
+
 interface EditingStockProps {
     pureStockList: any[];
     itemsStockList: any[];
@@ -6,6 +7,16 @@ interface EditingStockProps {
     originalTransactionData: any;
     TRANSACTIONTYPES: any[];
 }
+
+// Transaction type code constants
+const ITEM_STOCK_TYPES = ['PU', 'PR'];   // Sales, Sales Return → itemsStockList
+const PURE_STOCK_TYPES = ['ISP', 'REC'];   // Issue, Receipt → pureStockList
+
+// For existing rows: these types ADD back to stock (they're being "undone")
+const EXISTING_ADD_TYPES = ['PU', 'ISP']; // Sales & Issue when existing → add back
+
+// For new rows: these types ADD to stock
+const NEW_ADD_TYPES = ['PR', 'REC']; // Sales Return & Receipt when new → add
 
 export function useEditStockCalculator({
     pureStockList,
@@ -15,7 +26,43 @@ export function useEditStockCalculator({
     TRANSACTIONTYPES,
 }: EditingStockProps) {
 
-    // ✅ Added touch parameter to filter by both id AND touch
+    /**
+     * Determine if a row's weight should be ADDED (+) or SUBTRACTED (-) from stock.
+     * 
+     * isExisting = true  → opposite of normal (we're reversing the original effect)
+     *   SA (Sales):        normally reduces stock → now ADD back
+     *   SR (Sales Return): normally adds to stock → now REDUCE
+     *   IS (Issue):        normally reduces pure stock → now ADD back
+     *   RE (Receipt):      normally adds to pure stock → now REDUCE
+     *
+     * isExisting = false → normal behavior
+     *   SA → reduce, SR → add, IS → reduce, RE → add
+     */
+    const getSignForRow = (transactionTypeCode: string, isExisting: boolean): 1 | -1 => {
+        const normallyAdds = NEW_ADD_TYPES.includes(transactionTypeCode); // SR, RE add stock normally
+
+        if (isExisting) {
+            // Flip: existing rows undo their original effect
+            return normallyAdds ? -1 : 1;
+        } else {
+            // Normal: new rows apply their standard effect
+            return normallyAdds ? 1 : -1;
+        }
+    };
+
+    /**
+     * Get the stock type ('ISP' | 'PU') based on transaction type code.
+     * IS/RE → pure stock (ISP)
+     * SA/SR → items stock (PU)
+     */
+    const getStockTypeForCode = (transactionTypeCode: string): 'ISP' | 'PU' => {
+        return PURE_STOCK_TYPES.includes(transactionTypeCode) ? 'ISP' : 'PU';
+    };
+
+    /**
+     * Get original usage from the saved transaction (before edits).
+     * Used to restore stock when editing an existing transaction.
+     */
     const getOriginalUsage = (
         id: string,
         touch: number | null,
@@ -25,14 +72,14 @@ export function useEditStockCalculator({
         const details = originalTransactionData?.TRANSACTION_DETAILS;
         if (!details) return 0;
 
+        // ISP = issue/receipt rows, PU = sales/sales-return rows
         const rows = type === 'ISP'
-            ? [...(details.issue || [])]
-            : [...(details.purchase || [])];
+            ? [...(details.issue || []), ...(details.receipt || [])]
+            : [...(details.sales || []), ...(details.salesReturn || [])];
 
         return rows
             .filter(r => {
                 const matchId = String(r.PUREID || r.ITEMID) === String(id);
-                // ✅ Only filter by touch for ISP (pure stock), PU uses itemId
                 const matchTouch = type === 'ISP' && touch != null
                     ? Number(r.TOUCH) === Number(touch)
                     : true;
@@ -41,8 +88,11 @@ export function useEditStockCalculator({
             .reduce((sum, r) => sum + Number(r[field] || 0), 0);
     };
 
-    // ✅ Added touch parameter
-    const getDraftUsage = (
+    /**
+     * Calculate net draft impact on stock for a given id/touch.
+     * Each draft row contributes +/- based on its type and isExisting flag.
+     */
+    const getDraftNetImpact = (
         id: string,
         touch: number | null,
         field: string,
@@ -51,18 +101,30 @@ export function useEditStockCalculator({
         return draftRows
             .filter(r => {
                 const matchId = String(r.PUREID || r.ITEMID) === String(id);
-                // ✅ Filter by touch for ISP rows
+
                 const matchTouch = type === 'ISP' && touch != null
-                    ? Number(r.TOUCH) === Number(touch)
+                    ? Number(r.ATOUCH ?? r.TOUCH) === Number(touch)
                     : true;
-                const isPurchaseType = TRANSACTIONTYPES.includes(r.TRANSACTION_TYPE);
-                const matchType = type === 'PU' ? isPurchaseType : !isPurchaseType;
-                return matchId && matchTouch && matchType;
+                
+                console.log(matchTouch,'matchTouch');
+
+                // Only include rows that belong to this stock type
+                const rowStockType = getStockTypeForCode(r.TRANSACTION_TYPE);
+                const matchStockType = rowStockType === type;
+
+                return matchId && matchTouch && matchStockType;
             })
-            .reduce((sum, r) => sum + Number(r[field] || 0), 0);
+            .reduce((sum, r) => {
+                const qty = Number(r[field] || 0);
+                const sign = getSignForRow(r.TRANSACTION_TYPE, Boolean(r.isExisting));
+                return sum + sign * qty;
+            }, 0);
     };
 
-    // ✅ Added touch parameter
+    /**
+     * Available stock = Base Stock + Net Draft Impact
+     * Net draft impact accounts for both new and existing rows with correct signs.
+     */
     const getEditStock = (
         id: string,
         touch: number | null,
@@ -70,14 +132,10 @@ export function useEditStockCalculator({
         type: 'ISP' | 'PU'
     ): number => {
         const field = type === 'ISP' ? 'WT' : 'NETWT';
-        const original = getOriginalUsage(id, touch, field, type);
-        const draft = getDraftUsage(id, touch, field, type);
-
-        // Formula: Base Stock + Original (return to stock) - Draft (current usage)
-        return baseStock + original - draft;
+        const netImpact = getDraftNetImpact(id, touch, field, type);
+        return baseStock + netImpact;
     };
 
-    // ✅ Added touch parameter — find stock by BOTH pureId AND touch
     const getAvailableWeightForISP = (pureId: string, touch: number | null): number => {
         const stock = pureStockList.find(
             s => String(s.pureId) === String(pureId) && Number(s.aTouch) === Number(touch)
@@ -86,7 +144,6 @@ export function useEditStockCalculator({
         return getEditStock(pureId, touch, Number(stock.aWt || 0), 'ISP');
     };
 
-    // touch not needed for PU (items stock doesn't have touch)
     const getAvailableWeightForPU = (itemId: string): number => {
         const stock = itemsStockList.find(s =>
             String(s.itemId) === String(itemId) || String(s.pureId) === String(itemId)
@@ -100,6 +157,7 @@ export function useEditStockCalculator({
         getAvailableWeightForPU,
         getEditStock,
         getOriginalUsage,
-        getDraftUsage
+        getDraftNetImpact,
+        getSignForRow,
     };
 }
