@@ -1,5 +1,3 @@
-
-
 import { useCallback } from "react";
 import type { BarcodePrintDetail } from "@/store/barcode/useBarcodeStore";
 
@@ -20,22 +18,27 @@ const PROTOCOL = {
   REG_KEY: `HKEY_CLASSES_ROOT\\${APP_NAME}`,
 };
 
-const TSPL_HEADER = `SIZE 97.5 mm, 25 mm
-DIRECTION 0,0
-REFERENCE 0,0
-OFFSET 0 mm
-SET PEEL OFF
-SET CUTTER OFF
-SET PARTIAL_CUTTER OFF
-SET TEAR ON
-CLS`;
+/* ============================================================
+   EPL / XPML HEADER
+   ============================================================ */
+
+const EPL_HEADER = `<xpml><page quantity='0' pitch='15.0 mm'></xpml>
+I8,A
+q711
+O
+JF
+ZT
+Q120,25
+<xpml></page></xpml>`;
 
 /* ============================================================
    HOOK
    ============================================================ */
 
 export function usePrintHandler() {
-  /* ─── Low-level helpers ─── */
+  /* ─────────────────────────────────────────────
+     LOW LEVEL HELPERS
+     ───────────────────────────────────────────── */
 
   const buildProtocolUrl = useCallback(
     (action: string) => `${PROTOCOL.NAME}://${action}`,
@@ -45,54 +48,96 @@ export function usePrintHandler() {
   const downloadText = useCallback(
     (filename: string, content: string, onComplete?: () => void) => {
       const blob = new Blob([content], { type: "text/plain" });
+
       const url = URL.createObjectURL(blob);
+
       const a = document.createElement("a");
       a.href = url;
       a.download = filename;
+
       document.body.appendChild(a);
       a.click();
+
       document.body.removeChild(a);
+
       URL.revokeObjectURL(url);
-      if (onComplete) setTimeout(onComplete, 500);
+
+      if (onComplete) {
+        setTimeout(onComplete, 500);
+      }
     },
     []
   );
 
   const triggerProtocol = useCallback(() => {
-    // iframe approach to avoid navigating away
     const iframe = document.createElement("iframe");
+
     iframe.style.display = "none";
     iframe.src = buildProtocolUrl("launch");
+
     document.body.appendChild(iframe);
-    setTimeout(() => document.body.removeChild(iframe), 2000);
+
+    setTimeout(() => {
+      document.body.removeChild(iframe);
+    }, 2000);
   }, [buildProtocolUrl]);
 
-  /* ─── TSPL generation ─── */
+  /* ─────────────────────────────────────────────
+     LABEL GENERATION
+     ───────────────────────────────────────────── */
 
-  const buildLabelTSPL = useCallback((d: BarcodePrintDetail): string => `
-QRCODE 766,166,L,3,A,180,M2,S7,"${d.TAGNO}"
-CODEPAGE 1252
-TEXT 691,161,"0",180,11,9,"size:${d.SIZE}"
-TEXT 766,98,"0",180,10,7,"DONE_BY_SUGI"
-TEXT 766,75,"0",180,7,6,"Mc:${d.MC}"
-TEXT 766,56,"0",180,7,6,"GrsWt:${d.GRSWT}"
-TEXT 762,35,"0",180,9,10,"Wt:${d.STNWT}"
-TEXT 624,116,"0",90,8,6,"ASWIN"
-PRINT 1,1`, []);
+  const buildLabelEPL = useCallback(
+    (d: BarcodePrintDetail): string => `
+<xpml><page quantity='1' pitch='15.0 mm'></xpml>
+N
 
-  const buildAllLabels = useCallback(
-    (details: BarcodePrintDetail[]): string =>
-      [TSPL_HEADER, ...details.map(buildLabelTSPL)].join("\n"),
-    [buildLabelTSPL]
+A488,97,2,3,1,1,N,"G Wt"
+A488,73,2,3,1,1,N,"S Wt"
+A488,47,2,3,1,1,N,"N Wt"
+
+A424,97,2,3,1,1,N,"${d.GRSWT ?? ""}"
+A424,73,2,3,1,1,N,"${d.STNWT ?? ""}"
+A424,47,2,3,1,1,N,"${d.NETWT ?? ""}"
+
+
+
+b621,4,Q,m2,s3,eL,"${d.TAGNO ?? ""}"
+
+A611,52,2,3,1,1,N,"${d.MC ?? ""}"
+
+A484,20,2,2,1,1,N,"D/N ${d.SIZE ?? ""}"
+
+
+
+P1
+<xpml></page></xpml>`,
+    []
   );
 
-  /* ─── Public API ─── */
+  const buildAllLabels = useCallback(
+    (details: BarcodePrintDetail[]): string => {
+      const labels = details.map(buildLabelEPL).join("\n");
 
-  /** Print all labels in `details` */
+      return `
+${EPL_HEADER}
+${labels}
+<xpml><end/></xpml>
+`;
+    },
+    [buildLabelEPL]
+  );
+
+  /* ─────────────────────────────────────────────
+     PUBLIC API
+     ───────────────────────────────────────────── */
+
+  /** Print all labels */
   const printAll = useCallback(
     (details: BarcodePrintDetail[]) => {
       if (!details.length) return;
+
       const content = buildAllLabels(details);
+
       downloadText("barcode.txt", content, () => {
         setTimeout(triggerProtocol, 800);
       });
@@ -100,24 +145,33 @@ PRINT 1,1`, []);
     [buildAllLabels, downloadText, triggerProtocol]
   );
 
-  /** Print a single label by matching TAGNO from the details array */
+  /** Print single label */
   const printSingle = useCallback(
     (tagNo: string, details: BarcodePrintDetail[]) => {
       const detail = details.find((d) => d.TAGNO === tagNo);
+
       if (!detail) return false;
+
       const content = buildAllLabels([detail]);
+
       downloadText("barcode.txt", content, () => {
         setTimeout(triggerProtocol, 500);
       });
+
       return true;
     },
     [buildAllLabels, downloadText, triggerProtocol]
   );
 
-  /* ─── Setup file generation ─── */
+  /* ─────────────────────────────────────────────
+     SETUP FILE GENERATION
+     ───────────────────────────────────────────── */
 
   const buildBatFile = useCallback(
-    (systemName: string, printerName: string): string => `@echo off
+    (
+      systemName: string,
+      printerName: string
+    ): string => `@echo off
 setlocal
 
 set DOWNLOAD_PATH=${PATHS.SOURCE}
@@ -126,26 +180,36 @@ set DEST_PATH=${PATHS.DEST}
 echo Waiting for barcode.txt...
 
 set count=0
+
 :waitloop
 if exist "%DOWNLOAD_PATH%" goto movefile
+
 timeout /t 1 >nul
+
 set /a count+=1
+
 if %count% GEQ 5 goto error
+
 goto waitloop
 
 :movefile
 echo File found. Overwriting...
+
 if exist "%DEST_PATH%" del "%DEST_PATH%"
+
 move "%DOWNLOAD_PATH%" "%DEST_PATH%"
 
 echo Printing...
+
 TYPE "%DEST_PATH%" > \\\\${systemName}\\${printerName}
 
 echo Done
+
 exit
 
 :error
 echo File not found!
+
 pause
 exit`,
     []
@@ -159,18 +223,29 @@ exit`,
 "URL Protocol"=""
 
 [${PROTOCOL.REG_KEY}\\shell\\open\\command]
-@="cmd.exe /c \\"%USERPROFILE%\\Downloads\\${APP_NAME}.BAT\\"`,
+@="cmd.exe /c \\"%USERPROFILE%\\Downloads\\${APP_NAME}.BAT\\""`,
     []
   );
 
-  /** Download the .bat and .reg setup files needed for the print protocol */
+  /** Download setup files */
   const downloadSetupFiles = useCallback(
     (printerName: string, systemName: string) => {
-      downloadText(`${APP_NAME}.BAT`, buildBatFile(systemName, printerName));
-      downloadText(`${APP_NAME}.REG`, buildRegFile());
+      downloadText(
+        `${APP_NAME}.BAT`,
+        buildBatFile(systemName, printerName)
+      );
+
+      downloadText(
+        `${APP_NAME}.REG`,
+        buildRegFile()
+      );
     },
     [buildBatFile, buildRegFile, downloadText]
   );
 
-  return { printAll, printSingle, downloadSetupFiles };
+  return {
+    printAll,
+    printSingle,
+    downloadSetupFiles,
+  };
 }

@@ -1,20 +1,20 @@
 "use client";
 
 import React from "react";
-import { Box , Dialog ,Portal ,Button, Text , CloseButton} from "@chakra-ui/react";
+import { Box, Dialog, Portal, Button, Text, CloseButton } from "@chakra-ui/react";
 import { CapitalizedInput } from "@/components/ui/CapitalizedInput";
-import { SalesHeaderForm } from "@/types/TransactionTypes/sales/SalesHeaderType";
+import { SalesHeaderForm } from "@/types/TransactionTypes/sales/SaleHeaderType";
 
 
-type SalesSaveModalProps ={
+type SalesSaveModalProps = {
     headerForm: SalesHeaderForm;
     onFormChange: <K extends keyof SalesHeaderForm>(
         field: K,
         value: string
     ) => void;
-    isOpen:boolean;
-    isClose: ()=>void;
-    onConfirm: ()=>void;
+    isOpen: boolean;
+    isClose: () => void;
+    onConfirm: () => void;
 }
 
 function SalesSaveModal({
@@ -25,52 +25,52 @@ function SalesSaveModal({
     onConfirm
 }: SalesSaveModalProps) {
     return (
-      
+
 
         <Dialog.Root open={isOpen} placement={'center'}>
             <Portal >
                 <Dialog.Backdrop />
                 <Dialog.Positioner>
-                <Dialog.Content p={0}>
-                    <Dialog.Header>
-                        Are you sure you want to save this transaction?
+                    <Dialog.Content p={0}>
+                        <Dialog.Header>
+                            Are you sure you want to save this transaction?
 
-                        
-                    </Dialog.Header>
 
-                    <Dialog.Body>
-                        <Box mb={2} display={'flex'} alignItems={'center'}>
+                        </Dialog.Header>
+
+                        <Dialog.Body>
+                            <Box mb={2} display={'flex'} alignItems={'center'}>
                                 <Text minW={'80px'} fontSize={'xs'}> REMARK : </Text>
-                            <CapitalizedInput
-                                type="text"
-                                placeholder="Enter Remark (Optional)"
-                                field={"REMARK"}
-                                value={headerForm.REMARK}
-                                onChange={(field ,value) => onFormChange(field, value)}
-                                size="xs"
-                            />
-                        </Box>
+                                <CapitalizedInput
+                                    type="text"
+                                    placeholder="Enter Remark (Optional)"
+                                    field={"REMARK"}
+                                    value={headerForm.REMARK}
+                                    onChange={(field, value) => onFormChange(field, value)}
+                                    size="xs"
+                                />
+                            </Box>
 
-                        <Box  display={'flex'} alignItems={'center'}>
-                            <Text minW={'80px'} fontSize={'xs'} >THRU : </Text>
-                            <CapitalizedInput
-                                type="text"
-                                placeholder="Enter Thru (Optional)"
-                                field={"THRU"}
-                                value={headerForm.THRU}
-                                onChange={(field, value) => onFormChange(field, value)}
-                                size="xs"
-                                
-                            />
-                        </Box>
-                    </Dialog.Body>
+                            <Box display={'flex'} alignItems={'center'}>
+                                <Text minW={'80px'} fontSize={'xs'} >THRU : </Text>
+                                <CapitalizedInput
+                                    type="text"
+                                    placeholder="Enter Thru (Optional)"
+                                    field={"THRU"}
+                                    value={headerForm.THRU}
+                                    onChange={(field, value) => onFormChange(field, value)}
+                                    size="xs"
 
-                    <Dialog.Footer>
-                        <Dialog.CloseTrigger asChild>
+                                />
+                            </Box>
+                        </Dialog.Body>
+
+                        <Dialog.Footer>
+                            <Dialog.CloseTrigger asChild>
                                 <Dialog.CloseTrigger asChild>
-                                    <CloseButton size="sm" onClick={isClose}/>
+                                    <CloseButton size="sm" onClick={isClose} />
                                 </Dialog.CloseTrigger>
-                        </Dialog.CloseTrigger>
+                            </Dialog.CloseTrigger>
 
                             <Button
                                 colorScheme="green"
@@ -91,12 +91,12 @@ function SalesSaveModal({
                             >
                                 Continue ➠
                             </Button>
-                    </Dialog.Footer>
-                </Dialog.Content>
+                        </Dialog.Footer>
+                    </Dialog.Content>
                 </Dialog.Positioner>
             </Portal>
         </Dialog.Root>
-     
+
     );
 }
 export default SalesSaveModal;

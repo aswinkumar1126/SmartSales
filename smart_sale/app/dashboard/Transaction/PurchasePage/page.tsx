@@ -179,11 +179,16 @@ export default function PurchasePage() {
         setCustomer,
         setAccCode,
         startEdit,
+        startModifying,
+        stopModifying,
         stopEdit,
         resetHeader,
-        isEditing
+        isEditing,
+        isModifying
     } = usePurchaseHeader();
 
+
+    console.log(isModifying,'isModifying')
     /* ================================
     VALIDATION FROM SOFT CONTROL
 ================================ */
@@ -231,8 +236,9 @@ export default function PurchasePage() {
     const [selectedName, setSelectedName] = useState<string | undefined>();
     const [isFilterOpen, setIsFilterOpen] = useState(false);
     const [apiBalanceOpening, setApiBalanceOpening] = useState({ openPure: 0, openCash: 0 });
-
-    const [selectedTransactionId, setSelectedTransactionId] = useState<string | null>(null)
+    // ✅ Store transactionId instead of index
+    const [selectedTransactionId, setSelectedTransactionId] =
+        useSessionStorage<string | null>("selectedTransactionId", null);
 
     const [baseOpening, setBaseOpening] = useSessionStorage<{ openPure: number, openCash: number }>('purchase-openingBalance', {
         openPure: 0,
@@ -338,7 +344,7 @@ export default function PurchasePage() {
 
     const { data: allPureGoldNames } = usePureGoldNames();
 
-    const { data: transactionsById, isLoading: getbySnoLoading } = useTransactionByTransId(selectedTransactionId, "purchase");
+    const { data: transactionsById, isLoading: getbySnoLoading , refetch :refetchTransactionListById } = useTransactionByTransId(selectedTransactionId, "purchase");
 
     console.log(transactionsById,'transactionsById');
 
@@ -628,6 +634,8 @@ export default function PurchasePage() {
     useGlobalKey("Alt+s" , ()=>handleSaveTransaction() , "saveTransaction");
     useGlobalKey("Alt+c", () => handleResetDraft() ,"ClearTransaction");
 
+    useGlobalKey("Alt+m" , ()=>{isModifying ? stopModifying() : startModifying()}, "modifyTransaction");
+
   
 
     const handleBillParamChange = useCallback((field: any, value: any) => {
@@ -840,13 +848,14 @@ useGlobalKey(
     // This useEffect loads transaction data when transactionsById changes
     useEffect(() => {
         if (transactionsById && selectedTransactionId) {
-
             setEditingRowsData(transactionsById);
-            handleEditTransaction(transactionsById, selectedTransactionId)
+            handleEditTransaction(transactionsById, selectedTransactionId);
+        }
+        // Clear state when deselected
+        else if (!selectedTransactionId) {
+            setDraftRows([]);
         }
     }, [transactionsById, selectedTransactionId]);
-
-
 
 
 
@@ -1183,10 +1192,20 @@ useGlobalKey(
 
         return { valid: true, payload };
     };
+    const handleReSelectTransaction = async () => {
+        // 1. Reset the selectedTransactionId first to trigger a clean re-fetch cycle
+        setSelectedTransactionId(null);
 
+        // 2. Await the refetch so we have fresh data
+        await refetchTransactionListById();
 
+        // 3. Now set the ID again — this will trigger the useEffect with the new data
+        setSelectedTransactionId(selectedTransactionId);
+    };
 
     const handleResetDraft = () => {
+
+
 
         setSelectedTransactionId(null);
         setEditingState({ rowId: null, transactionType: null });
@@ -1384,7 +1403,7 @@ useGlobalKey(
 
   
 
-    const handleTransactionClick = useCallback((transactionId: string) => {
+    const handleTransactionClick = useCallback((transactionId: string |null) => {
 
         if (draftRows.length > 0 && !isEditing) {
             toaster.create({
@@ -1398,12 +1417,11 @@ useGlobalKey(
             return;
         }
 
-        setSelectedTransactionId(prev =>
-            prev === transactionId ? '' : transactionId
-        );
-        if(isEditing){
-            setDraftRows([]);
-        }
+
+        setSelectedTransactionId(transactionId);
+        // if(isEditing){
+        //     setDraftRows([]);
+        // }
 
     }, [draftRows]);
 
@@ -1467,7 +1485,7 @@ useGlobalKey(
                             handleShowFilter={openFilter}
                             isEditing={isEditing}
                             onSave={isEditing ? handleUpdateTransaction : handleSaveTransaction}
-                            onReset={handleResetDraft}
+                            onReset={isModifying ? handleResetDraft : handleReSelectTransaction }
                             isSaving={
                                 createTransaction.isPending || updateTransaction.isPending
                             }
@@ -1478,19 +1496,12 @@ useGlobalKey(
                             }}
                             exportToExcel={exportToExcel}
                             printData={printData}
+
+                            isModifying = {isModifying}
+                            startModifying ={startModifying}
+                            stopModifying ={stopModifying}
+
                         />
-
-
-                        {/* Show transaction info when editing */}
-                        {/* {isEditing && selectedTransactionTypes.length > 0 && (
-                            <Box p={2} bg={theme.colors.formColor} borderRadius="md" display='flex' gap={2}>
-                                <Text fontSize='xs' color={theme.colors.primaryText}>
-                                    {selectedTransactionTypes.map(t => t.label).join(", ")} - {editingSno}
-                                </Text>
-                                <Text fontSize="xs"> <strong>Customer: </strong>{headerForm.CUSTOMER_NAME}</Text>
-                                <Text fontSize="xs"> <strong>Date:</strong> {headerForm.DATE}</Text>
-                            </Box>
-                        )} */}
 
 
                         {/* Draft Section - show separate tables for each transaction type */}
@@ -1520,16 +1531,6 @@ useGlobalKey(
                                                     rows={typeRows}
                                                     editingState={editingState}
                                                     isEditing={isEditing}
-                                                    // onAddRow={(formData) => {
-                                                    //     handleAddRow(transactionType, formData);
-                                                    // }}
-                                                    // onUpdateRow={(rowIndex, field, value) => {
-                                                    //     handleUpdateRow(rowIndex, field, value, typeRows);
-                                                    // }}
-                                                    // onRemoveRow={(rowId) => {
-                                                    //     handleRemoveRow(rowId);
-                                                    // }}
-                                                    // onEditRow={(rowId, submitData) => handleEditRow(rowId, submitData)}
                                                     onRowClick={handleRowClick}
                                                     onCancelEdit={handleCancelEdit}
                                                     itemsCollection={activeCollection}
@@ -1557,6 +1558,7 @@ useGlobalKey(
                                                         handleBillShow: handleBillShow,
                                                     }}
                                                     isTagedItem={isTagedItem}
+                                                    isModifying ={isModifying}
                                                     
                                                 />
                                             </Box>

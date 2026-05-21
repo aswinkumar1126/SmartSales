@@ -2,7 +2,7 @@
 
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import type { SalesHeaderState, SalesHeaderForm} from '@/types/TransactionTypes/sales/SalesHeaderType';
+import type { SalesHeaderState, SalesHeaderForm} from '@/types/TransactionTypes/sales/SaleHeaderType';
 
 type SalesHeaderActions = {
     setHeaderField: <K extends keyof SalesHeaderForm>(

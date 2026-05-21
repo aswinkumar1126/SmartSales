@@ -18,7 +18,7 @@ import { BankTransactionModal } from "./BankTransactionModal";
 
 import { useSalesBalanceSummary } from "@/store/sales/useSalesBalanceSummaryStore";
 
-import { SalesHeaderForm } from "@/types/TransactionTypes/sales/SalesHeaderType";
+import { SalesHeaderForm } from "@/types/TransactionTypes/sales/SaleHeaderType";
 
 
 interface BalanceSummaryProps {
@@ -62,7 +62,7 @@ const BalanceSummary = ({
         setBankRcvd,
     } = useSalesBalanceSummary();
 
-    console.log(closingDetails,'closingDetailsclosingDetails')
+    console.log(closingDetails, 'closingDetailsclosingDetails')
 
 
     const conversionType = closingDetails.CONVTYPE;
@@ -233,118 +233,118 @@ const BalanceSummary = ({
                     allowNegative
                 />
 
-                 <Text fontSize="xs" fontWeight="semibold">
-                                    Discount
-                                </Text>
-                
-                                <CapitalizedInput
-                                    field="DISCWT"
-                                    value={closingDetails.DISCWT}
-                                    onChange={(_, v) => handleChange("DISCWT", v)}
-                                    type="number"
-                                    allowDecimal
-                                    decimalScale={3}
-                                    size="xs"
-                                    rounded="sm"
-                                    // disabled={
-                                    //     !accCode || conversionType === "C" || conversionType === ""
-                                    // }
-                                    allowNegative
-                
-                                />
-                
-                                <CapitalizedInput
-                                    field="DISCAMT"
-                                    value={closingDetails.DISCAMT}
-                                    onChange={(_, v) => handleChange("DISCAMT", v)}
-                                    type="number"
-                                    allowDecimal
-                                    decimalScale={2}
-                                    size="xs"
-                                    rounded="sm"
-                                    // disabled={
-                                    //     !accCode || conversionType === "P" || conversionType === ""
-                                    // }
-                                    allowNegative
-                                />
+                <Text fontSize="xs" fontWeight="semibold">
+                    Discount
+                </Text>
 
-                                 <Text fontSize="xs" fontWeight="semibold"> GST </Text>
-                                                <Box>
-                                                    <HStack justify="space-between" width="100%">
-                                                        <Text fontSize="2xs" fontWeight="medium">
-                                                            GST %
-                                                        </Text>
-                                                    </HStack>
-                                                    <CapitalizedInput
-                                                        field="GSTPER"
-                                                        value={closingDetails.GSTPER}
-                                                        onChange={(_, v) => handleChange("GSTPER", v)}
-                                                        type="number"
-                                                        allowDecimal
-                                                        decimalScale={2}
-                                                        size="xs"
-                                                        rounded="sm"
-                                
-                                                    />
-                                                </Box>
-                                                <Box>
-                                                    <HStack justify="space-between" width="100%">
-                                                        <Text fontSize="2xs" fontWeight="medium">
-                                                            GST AMT
-                                                        </Text>
-                                                    </HStack>
-                                                    <CapitalizedInput
-                                                        field="GSTAMT"
-                                                        value={closingDetails.GSTAMT}
-                                                        onChange={(_, v) => handleChange("GSTAMT", v)}
-                                                        type="number"
-                                                        allowDecimal
-                                                        decimalScale={2}
-                                                        size="xs"
-                                                        rounded="sm"
-                                                        disabled
-                                
-                                                    />
-                                                </Box>
-                                                
-                                                <Text fontSize="xs" fontWeight="semibold"> TDS </Text>
-                                                <Box>
-                                                    <HStack justify="space-between" width="100%">
-                                                        <Text fontSize="2xs" fontWeight="medium">
-                                                            TDS %
-                                                        </Text>
-                                                    </HStack>
-                                                    <CapitalizedInput
-                                                        field="TDSPER"
-                                                        value={closingDetails.TDSPER}
-                                                        onChange={(_, v) => handleChange("TDSPER", v)}
-                                                        type="number"
-                                                        allowDecimal
-                                                        decimalScale={2}
-                                                        size="xs"
-                                                        rounded="sm"
-                                
-                                                    />
-                                                </Box>
-                                                <Box>
-                                                    <HStack justify="space-between" width="100%">
-                                                        <Text fontSize="2xs" fontWeight="medium">
-                                                            TDS AMT
-                                                        </Text>
-                                                    </HStack>
-                                                    <CapitalizedInput
-                                                        field="TDSAMT"
-                                                        value={closingDetails.TDSAMT}
-                                                        onChange={(_, v) => handleChange("TDSAMT", v)}
-                                                        type="number"
-                                                        allowDecimal
-                                                        decimalScale={2}
-                                                        size="xs"
-                                                        rounded="sm"
-                                                    
-                                
-                                                    />
-                                                </Box>
+                <CapitalizedInput
+                    field="DISCWT"
+                    value={closingDetails.DISCWT}
+                    onChange={(_, v) => handleChange("DISCWT", v)}
+                    type="number"
+                    allowDecimal
+                    decimalScale={3}
+                    size="xs"
+                    rounded="sm"
+                    // disabled={
+                    //     !accCode || conversionType === "C" || conversionType === ""
+                    // }
+                    allowNegative
+
+                />
+
+                <CapitalizedInput
+                    field="DISCAMT"
+                    value={closingDetails.DISCAMT}
+                    onChange={(_, v) => handleChange("DISCAMT", v)}
+                    type="number"
+                    allowDecimal
+                    decimalScale={2}
+                    size="xs"
+                    rounded="sm"
+                    // disabled={
+                    //     !accCode || conversionType === "P" || conversionType === ""
+                    // }
+                    allowNegative
+                />
+
+                <Text fontSize="xs" fontWeight="semibold"> GST </Text>
+                <Box>
+                    <HStack justify="space-between" width="100%">
+                        <Text fontSize="2xs" fontWeight="medium">
+                            GST %
+                        </Text>
+                    </HStack>
+                    <CapitalizedInput
+                        field="GSTPER"
+                        value={closingDetails.GSTPER}
+                        onChange={(_, v) => handleChange("GSTPER", v)}
+                        type="number"
+                        allowDecimal
+                        decimalScale={2}
+                        size="xs"
+                        rounded="sm"
+
+                    />
+                </Box>
+                <Box>
+                    <HStack justify="space-between" width="100%">
+                        <Text fontSize="2xs" fontWeight="medium">
+                            GST AMT
+                        </Text>
+                    </HStack>
+                    <CapitalizedInput
+                        field="GSTAMT"
+                        value={closingDetails.GSTAMT}
+                        onChange={(_, v) => handleChange("GSTAMT", v)}
+                        type="number"
+                        allowDecimal
+                        decimalScale={2}
+                        size="xs"
+                        rounded="sm"
+                        disabled
+
+                    />
+                </Box>
+
+                <Text fontSize="xs" fontWeight="semibold"> TDS </Text>
+                <Box>
+                    <HStack justify="space-between" width="100%">
+                        <Text fontSize="2xs" fontWeight="medium">
+                            TDS %
+                        </Text>
+                    </HStack>
+                    <CapitalizedInput
+                        field="TDSPER"
+                        value={closingDetails.TDSPER}
+                        onChange={(_, v) => handleChange("TDSPER", v)}
+                        type="number"
+                        allowDecimal
+                        decimalScale={2}
+                        size="xs"
+                        rounded="sm"
+
+                    />
+                </Box>
+                <Box>
+                    <HStack justify="space-between" width="100%">
+                        <Text fontSize="2xs" fontWeight="medium">
+                            TDS AMT
+                        </Text>
+                    </HStack>
+                    <CapitalizedInput
+                        field="TDSAMT"
+                        value={closingDetails.TDSAMT}
+                        onChange={(_, v) => handleChange("TDSAMT", v)}
+                        type="number"
+                        allowDecimal
+                        decimalScale={2}
+                        size="xs"
+                        rounded="sm"
+
+
+                    />
+                </Box>
 
                 <Box />
                 <Box />
@@ -467,7 +467,7 @@ const BalanceSummary = ({
                     allowDecimal
                     decimalScale={3}
                     size="sm"
-                    
+
                     rounded="sm"
                     disabled
                     color={Number(closingPure) > 0 ? "red.600" : "green.800"}
@@ -485,47 +485,47 @@ const BalanceSummary = ({
                     fontSize="sm"
                 />
             </Grid>
-                 {headerForm.CUSTOMER && 
-                           <Box
-                               display={'flex'}
-                               flexDirection={'column'}
-                               mt={2}
-                               p={1}
-                               bg="gray.50"
-                               borderRadius="md"
-                               border="1px solid"
-                               borderColor="gray.200"
-                               gap={2}
-                           >
-           
-                               <Box display={'flex'} alignItems={'center'} >
-                                   <Text as="span" fontWeight="semibold" fontSize={'xs'} minW={'70px'}>
-                                       REMARK:
-                                   </Text>
-                                   <CapitalizedInput
-                                       value={headerForm.REMARK}
-                                       onChange={(_, value) => onFormChange("REMARK", value)}
-                                       field={"REMARK"}
-                                       size="xs"
-           
-                                   />
-                               </Box>
-                               <Box display={'flex'} alignItems={'center'}>
-                                   <Text as="span" fontWeight="semibold" fontSize={'xs'} minW={'70px'}>
-           
-                                       THRU:
-                                   </Text>
-                                   <CapitalizedInput
-                                       value={headerForm.THRU}
-                                       onChange={(_, value) => onFormChange("THRU", value)}
-                                       field={"THRU"}
-                                       size="xs"
-                                   />
-                               </Box>
-           
-                           </Box>
-           }
-                 
+            {headerForm.CUSTOMER &&
+                <Box
+                    display={'flex'}
+                    flexDirection={'column'}
+                    mt={2}
+                    p={1}
+                    bg="gray.50"
+                    borderRadius="md"
+                    border="1px solid"
+                    borderColor="gray.200"
+                    gap={2}
+                >
+
+                    <Box display={'flex'} alignItems={'center'} >
+                        <Text as="span" fontWeight="semibold" fontSize={'xs'} minW={'70px'}>
+                            REMARK:
+                        </Text>
+                        <CapitalizedInput
+                            value={headerForm.REMARK}
+                            onChange={(_, value) => onFormChange("REMARK", value)}
+                            field={"REMARK"}
+                            size="xs"
+
+                        />
+                    </Box>
+                    <Box display={'flex'} alignItems={'center'}>
+                        <Text as="span" fontWeight="semibold" fontSize={'xs'} minW={'70px'}>
+
+                            THRU:
+                        </Text>
+                        <CapitalizedInput
+                            value={headerForm.THRU}
+                            onChange={(_, value) => onFormChange("THRU", value)}
+                            field={"THRU"}
+                            size="xs"
+                        />
+                    </Box>
+
+                </Box>
+            }
+
             {/* =====================
           MODAL (ZUSTAND CONTROLLED)
       ===================== */}

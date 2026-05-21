@@ -1,13 +1,13 @@
 "use client";
 
-import React, { useState, useEffect ,useRef} from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Box, Text, Flex, Button } from "@chakra-ui/react";
 import DatePicker from "react-datepicker";
 import { CapitalizedInput } from "@/components/ui/CapitalizedInput";
 import { formatToFixed } from "@/utils/format/numberFormat";
 import { SelectCombobox } from "@/components/ui/selectComboBox";
 
-import { SalesHeaderForm } from "@/types/TransactionTypes/sales/SalesHeaderType";
+import { SalesHeaderForm } from "@/types/TransactionTypes/sales/SaleHeaderType";
 
 interface TransactionHeaderFormProps {
     form: any;
@@ -70,20 +70,20 @@ export default function TransactionHeaderForm({
 
     console.log(isEditing, isDraftRowChanged, isClosingChanged, 'isChanged ')
 
- 
-    const customerDisable = isEditing || isDraftRowChanged || isClosingChanged ;;
 
-     const customerRef = useRef<any>(null);
+    const customerDisable = isEditing || isDraftRowChanged || isClosingChanged;;
 
-   useEffect(() => {
-    const timer = setTimeout(() => {
-        if (customerRef.current && !isEditing && !form.CUSTOMER && customerCollection) {
-            customerRef.current.focus?.();
-        }
-    }, 200);
+    const customerRef = useRef<any>(null);
 
-    return () => clearTimeout(timer);
-}, []);
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            if (customerRef.current && !isEditing && !form.CUSTOMER && customerCollection) {
+                customerRef.current.focus?.();
+            }
+        }, 200);
+
+        return () => clearTimeout(timer);
+    }, []);
 
     return (
         <Box
@@ -93,7 +93,7 @@ export default function TransactionHeaderForm({
             alignItems="center"
             bg={theme.colors.formColor}
             p={1}
-         
+
         >
 
             <Box
@@ -157,7 +157,7 @@ export default function TransactionHeaderForm({
                         type="number"
                         size="xs"
                         rounded="sm"
-                        // disabled
+                    // disabled
                     />
                 </Box>
 

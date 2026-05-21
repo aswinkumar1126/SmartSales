@@ -12,18 +12,18 @@ export const useConversionSync = (rate: number) => {
 
 
         let convAmt = parseFloat(closingDetails.CONVAMT || "") || 0;
-        let convWt = parseFloat(closingDetails. CONVWT || "") || 0;
-        
+        let convWt = parseFloat(closingDetails.CONVWT || "") || 0;
 
-        console.log(convWt ,convAmt ,'conversions')
 
-        if (!rate || rate <=0) return;
+        console.log(convWt, convAmt, 'conversions')
+
+        if (!rate || rate <= 0) return;
 
 
         // 🔴 CLEAR LOGIC (empty or invalid)
         if (convType === "P") {
             // If weight is empty OR <= 0 → clear amount
-            if (!convWtStr ) {
+            if (!convWtStr) {
                 if (convAmtStr !== "") {
                     setClosingField("CONVAMT", "");
                 }
@@ -33,7 +33,7 @@ export const useConversionSync = (rate: number) => {
 
         if (convType === "C") {
             // If amount is empty OR <= 0 → clear weight
-            if (!convAmtStr ) {
+            if (!convAmtStr) {
                 if (convWtStr !== "") {
                     setClosingField("CONVWT", "");
                 }
@@ -43,7 +43,7 @@ export const useConversionSync = (rate: number) => {
 
 
         // 🟢 CALCULATION LOGIC
-        if (convType === "P" ) {
+        if (convType === "P") {
             const calculatedAmt = (convWt * rate).toFixed(2);
 
             if (calculatedAmt !== closingDetails.CONVAMT) {
@@ -51,7 +51,7 @@ export const useConversionSync = (rate: number) => {
             }
         }
 
-        if (convType === "C" ) {
+        if (convType === "C") {
             const calculatedWt = (convAmt / rate).toFixed(3);
 
             if (calculatedWt !== closingDetails.CONVWT) {
@@ -72,12 +72,12 @@ export const useGstConversion = (stnRate: number) => {
 
 
     useEffect(() => {
-       
-        const gstPer = Number(closingDetails.GSTPER) ;
-    
-        const gstAmt = (gstPer * stnRate) / 100 ;
 
-        if(stnRate <0 && gstPer < 0) return ;
+        const gstPer = Number(closingDetails.GSTPER);
+
+        const gstAmt = (gstPer * stnRate) / 100;
+
+        if (stnRate < 0 && gstPer < 0) return;
 
         setClosingField("GSTAMT", gstAmt.toFixed(2))
 

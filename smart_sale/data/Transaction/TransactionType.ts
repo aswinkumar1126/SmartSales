@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import { TransactionType } from "@/types/transcation/Transaction";
 import { SaleTransactionType } from "@/types/transcation/SaleTransaction";
+import { ApprovalTransactionType } from "@/types/transcation/ApprovalTransaction";
 
 export const TRANSACTIONTYPES: TransactionType[] = [
     {
@@ -36,7 +37,7 @@ export const TRANSACTIONTYPES: TransactionType[] = [
         value: "REC",
         icon: Wallet,
     },
-    
+
 ];
 
 export const SALETRANSACTIONTYPES: SaleTransactionType[] = [
@@ -68,4 +69,23 @@ export const SALETRANSACTIONTYPES: SaleTransactionType[] = [
         value: "SR",
         icon: RotateCcw,
     },
+];
+
+
+export const APPROVALTRANSACTIONTYPES: ApprovalTransactionType[] = [
+    {
+        code: "APPIS",
+        key: "APPROVAL_ISSUE",
+        label: "APPROVAL ISSUE",
+        value: "APPIS",
+        icon: ArrowUpRight,
+    },
+    {
+        code: "APPRE",
+        key: "APPROVAL_RECEIPT",
+        label: "APPROVAL RECEIPT",
+        value: "APPRE",
+        icon: ShoppingCart,
+    },
+
 ];

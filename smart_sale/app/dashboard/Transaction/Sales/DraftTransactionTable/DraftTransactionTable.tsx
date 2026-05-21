@@ -3,6 +3,7 @@
 import React, {
     useMemo, useCallback, useState, useEffect, useRef,
 } from "react";
+import { useRouter } from "next/navigation";
 import {
     Box, Text, Button, Flex, Badge, HStack, Icon,
 } from "@chakra-ui/react";
@@ -157,11 +158,12 @@ export default function DraftTransactionTable({
 
     console.log(transactionType,'transactionTypetransactionType');
 
+    const router = useRouter();
+
+    const { data: SoftControl } = useSoftControlById('SA_HMC_FINALAMT');
     
-        const { data: SoftControl } = useSoftControlById('SA_HMC_FINALAMT');
     
-    
-        const usePcsMultiply = SoftControl?.CTLTEXT === "Y" ;
+    const usePcsMultiply = SoftControl?.CTLTEXT === "Y" ;
 
     // ── Zustand store ─────────────────────────────────────────────────────────
     const { addDraftRow, updateDraftRow, removeDraftRow } = useSaleTransactionStore();
@@ -678,99 +680,6 @@ export default function DraftTransactionTable({
     console.log(touchData,'touchDatatouchData');
 
 
-    
-    //   useEffect(() => {
-    //     if (!activeRowId || !activeRowItemId) return;
-    //     if (touchDataLoading || isEditing) return;
-    
-    //       console.log(touchData,'touchData');
-    
-    //     const key = `${activeRowId}::${activeRowItemId}`;
-    
-    //     const touch = touchData?.TOUCH;
-    //     const calMode = touchData?.CALMODE || "NETWT";
-    //     const stnPresent = touchData?.STNPRESENT === "Y";
-    //     const hmcAmount = Number(touchData?.HMCAMT ?? 0);
-    
-    //     const defaultHmcCharge =
-    //         hmcAmount > 0
-    //             ? [{
-    //                   draftRowId: activeRowId,
-    //                   chargeId: "1",
-    //                   chargeName: "HMC",
-    //                   amount: hmcAmount.toString(),
-    //                   finalAmount: hmcAmount.toString(),
-    //               }]
-    //             : [];
-    
-    //     const existingRow = draftRows.find(
-    //         r => r.__rowId === activeRowId
-    //     );
-    
-       
-    
-    //     const alreadyApplied =
-    //         existingRow?.TOUCH  &&
-    //         existingRow?.CAL_MODE 
-    //         // existingRow?.STN_PRESENT  
-    
-    //           // existingRow?.ATOUCH === touch &&
-    //         // Number(existingRow?.HMC || 0) === hmcAmount;
-    
-    //          console.log(alreadyApplied ,'existingRow');
-    
-    //     // THIS is the real protection
-    //     if (alreadyApplied) {
-    //         appliedItemIdRef.current[activeRowId] = key;
-    //         return;
-    //     }
-    
-    //     // optional optimization only
-    //     if (appliedItemIdRef.current[activeRowId] === key) {
-    //         return;
-    //     }
-    
-    //     appliedItemIdRef.current[activeRowId] = key;
-    
-    //     setDraftRows(prev =>
-    //         prev.map(r => {
-    //             if (r.__rowId !== activeRowId) return r;
-    
-    //             return recalcRow(
-    //                 {
-    //                     ...r,
-    //                     TOUCH: touch,
-    //                     ATOUCH: touch,
-    //                     CAL_MODE: calMode,
-    //                     STN_PRESENT: stnPresent,
-    //                     HMC: hmcAmount,
-    //                     _miscCharges: defaultHmcCharge,
-    //                 },
-    //                 false
-    //             );
-    //         })
-    //     );
-    
-    //     if (committedRowIdsRef.current.has(activeRowId)) {
-    //         pendingStoreCallRef.current = () =>
-    //             commitRowUpdate(activeRowId, {
-    //                 TOUCH: touch,
-    //                 ATOUCH: touch,
-    //                 CAL_MODE: calMode,
-    //                 STN_PRESENT: stnPresent,
-    //                 HMC: hmcAmount.toFixed(2),
-    //                 _miscCharges: defaultHmcCharge,
-    //             });
-    //     }
-    // }, [
-    //     touchData,
-    //     touchDataLoading,
-    //     activeRowId,
-    //     activeRowItemId,
-    //     isEditing,
-    //     draftRows,
-    // ]);
-
     // ── Touch data effect — writes directly to store by rowId ─────────────────
     useEffect(() => {
         if (!activeRowId || !activeRowItemId) return;
@@ -782,19 +691,7 @@ export default function DraftTransactionTable({
 
         if(isEditing) return ;
 
-        // if (!touchData?.TOUCH) {
-        //     touchNotFoundRef.current.add(activeRowId);
-        //     setTimeout(() => {
-        //         toaster.create({
-        //             title: "No Touch Found",
-        //             description: "No touch configured for this item & customer. Please enter manually.",
-        //             type: "warning",
-        //             duration: 3000,
-        //         });
-        //     }, 0);
-        //     return;
-        // }
-
+     
         appliedItemIdRef.current[activeRowId] = key;
         touchNotFoundRef.current.delete(activeRowId);
 
@@ -1092,13 +989,6 @@ useEffect(() => {
             const isStnDisabled = !rowStnPresent;
             const stonesCount = (row._stones || []).length;
 
-            // if (isStnDisabled) {
-            //     return (
-            //         <span style={{ padding: "0 6px", fontSize: 11, color: "#aaa", width: "100%", display: "block", textAlign: "right", cursor: "not-allowed" }}>
-            //             {value || "0.000"}
-            //         </span>
-            //     );
-            // }
 
             return (
                 <div
@@ -1144,7 +1034,7 @@ useEffect(() => {
             );
             return (
                 <span style={{ padding: "0 6px", fontSize: 11, color: "#333", width: "100%", display: "block", textAlign: "right" }}>
-                    {stonesTotal > 0 ? stonesTotal.toFixed(2) : value || ""}
+                    {stonesTotal > 0 ? stonesTotal : value || ""}
                 </span>
             );
         }
@@ -1359,7 +1249,7 @@ useEffect(() => {
             >
                 <HStack gap={2}>
                     <Text fontSize="xs" fontWeight="semibold" color={theme?.colors?.primaryText || "#1a202c"}>
-                        {transactionTitle || "Transaction"} Items
+                        {transactionTitle || "Transaction"} 
                     </Text>
                     {showTag && (
                         <>
@@ -1389,6 +1279,29 @@ useEffect(() => {
                         {committedRows.length} item{committedRows.length !== 1 ? "s" : ""}
                     </Badge>
                 </HStack>
+                {transactionType === "SR" && 
+                                    <Badge
+                                        colorPalette={"red"}
+                                        variant="subtle"
+                                        fontSize="2xs"
+                                        px={2}
+                                        onClick={() => router.push("/dashboard/Master/Item/ItemMaster/")}
+                                    >
+                                        Add Item  Name
+                                    </Badge>
+                                }
+                                {transactionType === "RE" && 
+                
+                                    <Badge
+                                        colorPalette={"gray"}
+                                        variant="subtle"
+                                        fontSize="2xs"
+                                        px={2}
+                                        onClick={() => router.push("/dashboard/Master/Item/ItemMaster/")}
+                                    >
+                                        Add Pure Gold Name
+                                    </Badge>
+                                 }
                 {!isEditing && (
                     <Button
                         size="2xs" colorPalette="red" variant="outline" fontSize="2xs"

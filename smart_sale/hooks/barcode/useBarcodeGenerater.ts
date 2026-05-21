@@ -1003,7 +1003,7 @@ export function useBarcodeGenerate() {
     salesStoneWt: totalSalesStoneWt,
     diamondWt: rows.reduce((s, r) => s + r.diamondWt, 0),
     // mc: rows.reduce((s, r) => s + r.mc, 0),
-    size: totalPurchaseStoneWt - totalSalesStoneWt,
+    // size: totalPurchaseStoneWt - totalSalesStoneWt,
 
   }), [rows]);
 

@@ -336,6 +336,16 @@ const STATIC_MENU: SidebarMenu = {
       description: "Create and manage sales transactions",
     },
 
+
+    Approval: {
+      type: "direct",
+      label: "Approval",
+      route: "/dashboard/Transaction/Approval",
+      icon: AiOutlineShoppingCart,
+      title: "APPROVAL ISSUE  / RECEIPT",
+      description: "Create and manage approval transactions",
+    },
+
     
     // Purchase: {
     //   type: "direct",

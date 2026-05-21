@@ -99,7 +99,15 @@ export interface ExcelGridProps {
     initialFocusCol?: string;            // colKey to focus on new row add; falls back to initialFocusCell?.colKey then first navigable col
     focusAfterModal?: { cell: CellCoord; trigger: number }; // focus after modal closes; trigger increments on each close
     disableEnterOnMount?: boolean;       // block Enter for 300ms after mount (prevents modal-open Enter bleed)
+
+    // Editing state
+    // tranEditing: true  → a transaction row is selected/being viewed (rows loaded from API)
+    // isModifying: true  → user is actively editing an existing transaction
+    //
+    // Auto-focus on mount is ONLY triggered when BOTH are false (i.e. fresh/new transaction).
+    // Enter → moveNext and Tab navigation ALWAYS work regardless of these flags.
     tranEditing: boolean;
+    isModifying?: boolean;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -148,7 +156,8 @@ export const ExcelGrid: React.FC<ExcelGridProps> = ({
     initialFocusCol,
     focusAfterModal,
     disableEnterOnMount = false,
-    tranEditing 
+    tranEditing,
+    isModifying = false,
 }) => {
 
     const [activeCell, setActiveCell] = useState<CellCoord | null>(null);
@@ -206,20 +215,42 @@ export const ExcelGrid: React.FC<ExcelGridProps> = ({
         },
         [onActiveChange]
     );
+
+    // ── Auto-focus on new/fresh transaction only ──────────────────────────────
+    // Tracks whether the initial auto-focus has fired for the current tranEditing session.
+    // Reset whenever tranEditing flips so that switching transactions re-evaluates.
     const hasAutoFocused = useRef(false);
 
     useEffect(() => {
+        // Whenever tranEditing changes (e.g. user selects a different transaction or
+        // clears selection), reset the flag so the effect below can re-evaluate.
+        hasAutoFocused.current = false;
+    }, [tranEditing]);
+
+    useEffect(() => {
+        // Skip: a transaction row is selected (viewing/editing existing data)
         if (tranEditing) return;
+
+        // Skip: user is actively modifying — don't steal focus away from their edits
+        if (isModifying) return;
+
+        // Skip: already auto-focused for this session
         if (hasAutoFocused.current) return;
 
         hasAutoFocused.current = true;
-
         focusCell(0, initialFocusCell?.colKey ?? "ITEM", 50, true);
-    }, [tranEditing]);
 
-    // ── Initial focus on mount ────────────────────────────────────────────────
+        // Intentionally NOT including focusCell/initialFocusCell in deps —
+        // this should only re-run when the editing-state flags change.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [tranEditing, isModifying]);
+
+    // ── Initial focus on mount (only for new transactions) ───────────────────
     useEffect(() => {
-        if (!initialFocusCell ) return;
+        // Don't hijack focus when loading an existing transaction
+        if (isModifying) return;
+        if (!initialFocusCell) return;
+
         const t = setTimeout(() => {
             focusCell(initialFocusCell.rowIndex, initialFocusCell.colKey);
         }, 100);
@@ -256,14 +287,18 @@ export const ExcelGrid: React.FC<ExcelGridProps> = ({
             return;
         }
 
-        // External add: toolbar "+ Add Row" or programmatic parent add
-        if (newRowFocusCol) {
+        // External add: toolbar "+ Add Row" or programmatic parent add.
+        // This is always a user-initiated action so focus regardless of isModifying.
+
+        if (newRowFocusCol && !tranEditing ) {
             focusCell(curr - 1, newRowFocusCol);
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [rows.length]);
 
     // ── Navigate: Enter / Tab ─────────────────────────────────────────────────
+    // NOTE: moveNext has NO awareness of tranEditing / isModifying.
+    // It must always work freely — those flags only control initial auto-focus.
     const moveNext = useCallback((ri: number, colKey: string) => {
         const ci = navigableCols.findIndex(c => c.key === colKey);
 
@@ -320,15 +355,6 @@ export const ExcelGrid: React.FC<ExcelGridProps> = ({
         }
     }, [navigableCols, focusCell]);
 
-    // ── Arrow key navigation ──────────────────────────────────────────────────
-    // const moveArrow = useCallback((ri: number, colKey: string, dir: 'up' | 'down' | 'left' | 'right') => {
-    //     const ci = columns.findIndex(c => c.key === colKey);
-    //     if (dir === 'up' && ri > 0) focusCell(ri - 1, colKey);
-    //     if (dir === 'down' && ri < rows.length - 1) focusCell(ri + 1, colKey);
-    //     if (dir === 'left' && ci > 0) focusCell(ri, columns[ci - 1].key);
-    //     if (dir === 'right' && ci < columns.length - 1) focusCell(ri, columns[ci + 1].key);
-    // }, [columns, rows.length, focusCell]);
-
     // ── Cancel / blur ─────────────────────────────────────────────────────────
     const cancelEdit = useCallback(() => {
         setActiveCell(null);
@@ -356,28 +382,26 @@ export const ExcelGrid: React.FC<ExcelGridProps> = ({
         switch (e.key) {
             case 'Enter':
 
-    if (enterBlockedRef.current) {
-        e.preventDefault();
-        break;
-    }
+                if (enterBlockedRef.current) {
+                    e.preventDefault();
+                    break;
+                }
 
-    // prevent double enter firing
-    if (enterLockRef.current) {
-        e.preventDefault();
-        break;
-    }
+                // prevent double enter firing
+                if (enterLockRef.current) {
+                    e.preventDefault();
+                    break;
+                }
 
-    enterLockRef.current = true;
+                enterLockRef.current = true;
+                e.preventDefault();
+                moveNext(ri, colKey);
 
-    e.preventDefault();
+                setTimeout(() => {
+                    enterLockRef.current = false;
+                }, 50);
 
-    moveNext(ri, colKey);
-
-    setTimeout(() => {
-        enterLockRef.current = false;
-    }, 50);
-
-    break;
+                break;
 
             case 'Tab':
                 e.preventDefault();
@@ -388,49 +412,6 @@ export const ExcelGrid: React.FC<ExcelGridProps> = ({
                 e.preventDefault();
                 cancelEdit();
                 break;
-
-            // case 'ArrowUp':
-            //     if (!shouldBlockArrowUpDown) {
-            //         e.preventDefault();
-            //         moveArrow(ri, colKey, 'up');
-            //     }
-            //     break;
-
-            // case 'ArrowDown':
-            //     if (!shouldBlockArrowUpDown) {
-            //         e.preventDefault();
-            //         moveArrow(ri, colKey, 'down');
-            //     }
-            //     break;
-
-            // case 'ArrowLeft': {
-            //     if (!isTextInput && !isTextArea && !isComboboxInput) {
-            //         e.preventDefault();
-            //         moveArrow(ri, colKey, 'left');
-            //     } else if (isTextInput || isTextArea) {
-            //         const atStart = target.selectionStart === 0 && target.selectionEnd === 0;
-            //         if (atStart) {
-            //             e.preventDefault();
-            //             moveArrow(ri, colKey, 'left');
-            //         }
-            //     }
-            //     break;
-            // }
-
-            // case 'ArrowRight': {
-            //     if (!isTextInput && !isTextArea && !isComboboxInput) {
-            //         e.preventDefault();
-            //         moveArrow(ri, colKey, 'right');
-            //     } else if (isTextInput || isTextArea) {
-            //         const atEnd = target.selectionStart === target.value.length
-            //             && target.selectionEnd === target.value.length;
-            //         if (atEnd) {
-            //             e.preventDefault();
-            //             moveArrow(ri, colKey, 'right');
-            //         }
-            //     }
-            //     break;
-            // }
         }
     }, [moveNext, movePrev, cancelEdit]);
 

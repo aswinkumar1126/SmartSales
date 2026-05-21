@@ -20,9 +20,9 @@ export const buildTransactionPayload = ({
 
         const validStones = rowStones.filter((stone: any) =>
             stone.stoneId &&
-            stone.stonePcs > 0 &&
-            stone.stoneWeight > 0 &&
-            stone.stoneRate > 0
+            // stone.stonePcs > 0 &&
+            stone.stoneWeight > 0 
+            // stone.stoneRate > 0
         );
 
         const validCharges = rowCharges.filter((charge: any) =>

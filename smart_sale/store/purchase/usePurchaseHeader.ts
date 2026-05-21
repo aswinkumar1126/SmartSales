@@ -19,6 +19,9 @@ type PurchaseHeaderActions = {
     startEdit: (sno: string) => void;
     stopEdit: () => void;
 
+    startModifying: () => void;   // add this
+    stopModifying: () => void;    // add this
+
     resetHeader: () => void;
 };
 
@@ -41,6 +44,7 @@ export const usePurchaseHeader = create<PurchaseHeaderState & PurchaseHeaderActi
             headerForm: initialHeader,
             accCode: null,
             isEditing: false,
+            isModifying :false,
             editingSno: null,
             selectedTransactionId: null,
 
@@ -89,12 +93,21 @@ export const usePurchaseHeader = create<PurchaseHeaderState & PurchaseHeaderActi
                     editingSno: null,
                     selectedTransactionId: null,
                 }),
+            startModifying : () =>
+                set({
+                    isModifying :true
+                }),
+            stopModifying: () =>
+                set({
+                    isModifying: false
+                }),
 
             resetHeader: () =>
                 set({
                     headerForm: initialHeader,
                     accCode: null,
                     isEditing: false,
+                    isModifying :false,
                     editingSno: null,
                     selectedTransactionId: null,
                 }),

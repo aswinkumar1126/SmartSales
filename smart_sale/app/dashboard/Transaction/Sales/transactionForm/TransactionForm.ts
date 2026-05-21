@@ -136,7 +136,7 @@ export const saleColumns = (isTag: boolean) => [
         type: "number" ,
         align: "right" ,
         max: 999999999,
-        decimalScale: 2,
+        decimalScale: 0,
         editable:false
 
     },

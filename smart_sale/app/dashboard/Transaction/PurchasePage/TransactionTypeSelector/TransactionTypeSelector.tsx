@@ -8,6 +8,7 @@ import Image from "next/image";
 import saveIcon from '@/asserts/icons/save.png';
 import clearIcon from '@/asserts/icons/clear.jpeg';
 import updateIcon from '@/asserts/icons/update.png';
+import modifyIcon from '@/asserts/icons/modify.png';
 import { usePurchaseTransactionStore } from "@/store/purchase/usePurchaseTransactionStore";
 import { toaster } from "@/components/ui/toaster";
 import { HiPrinter } from "react-icons/hi2";
@@ -27,7 +28,11 @@ export default function TransactionTypeSelector({
     acCode,
     onPrint,
     exportToExcel,
-    printData
+    printData,
+
+    isModifying,
+    startModifying ,
+    stopModifying
 }: any) {
     // Get from Zustand store
     const {
@@ -37,6 +42,7 @@ export default function TransactionTypeSelector({
         clearAllTransactionTypes,
         draftRows,
         clearDraftRows,
+    
     } = usePurchaseTransactionStore();
 
     /* ---------- ORDER BY CODE ---------- */
@@ -173,6 +179,7 @@ export default function TransactionTypeSelector({
                         variant='ghost'
                         bg={theme.colors.formColor}
                         p={0}
+                        
                     >
                         <Image src={clearIcon} width={58} alt="clear" />
                     </Button>
@@ -185,9 +192,27 @@ export default function TransactionTypeSelector({
                         loadingText="Saving..."
                         variant='ghost'
                         p={0}
+                        disabled = {isEditing && !isModifying}
                     >
                         <Image src={isEditing ? updateIcon : saveIcon} width={60} alt="save" />
                     </Button>
+                    {isEditing && 
+                    <>
+                        <Button 
+                        size="xs"
+                        bg={theme.colors.formColor}
+                        onClick={isModifying ? stopModifying : startModifying}
+                   
+                        loadingText="Saving..."
+                        variant='ghost'
+                        p={0}
+                    >
+                        <Image src={modifyIcon} width={72} alt="save" />
+                    </Button>
+
+                    </>
+                    }
+                    
                 </Box>
             }
 
@@ -204,30 +229,30 @@ export default function TransactionTypeSelector({
                 </Box>
 
                  {/* PRINT — show when rows are loaded (same as DESELECT) */}
-                                {isEditing && (
-                                    <Box>
+                {isEditing && (
+                    <Box>
 
-                                    <Box
-                                        className="flex flex-col items-center cursor-pointer gap-1"
-                                        onClick={onPrint}
-                                    >
-                                        <HiPrinter size={20} className="text-gray-600" />
-                                        <Text fontSize="x-small" fontWeight="semibold">
-                                            PRINT
-                                        </Text>
-                                    </Box>
-                                     {/* <Box
-                                        className="flex flex-col items-center cursor-pointer gap-1"
-                                        onClick={exportToExcel(printData)}
-                                    >
-                                        <HiPrinter size={20} className="text-gray-600" />
-                                        <Text fontSize="x-small" fontWeight="semibold">
-                                            PRINT
-                                        </Text>
-                                    </Box> */}
-                                    </Box>
-                                    
-                                )}
+                    <Box
+                        className="flex flex-col items-center cursor-pointer gap-1"
+                        onClick={onPrint}
+                    >
+                        <HiPrinter size={20} className="text-gray-600" />
+                        <Text fontSize="x-small" fontWeight="semibold">
+                            PRINT
+                        </Text>
+                    </Box>
+                     {/* <Box
+                        className="flex flex-col items-center cursor-pointer gap-1"
+                        onClick={exportToExcel(printData)}
+                    >
+                        <HiPrinter size={20} className="text-gray-600" />
+                        <Text fontSize="x-small" fontWeight="semibold">
+                            PRINT
+                        </Text>
+                    </Box> */}
+                    </Box>
+                    
+                )}
 
                 {/* SHOW / HIDE FILTER */}
                 <Box

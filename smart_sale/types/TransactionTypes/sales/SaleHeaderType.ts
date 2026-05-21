@@ -1,6 +1,7 @@
-// types/salesHeader.ts
+// types/SalesHeader.ts
 
 export interface SalesHeaderForm {
+    
     CUSTOMER: string;
     CUSTOMER_NAME: string;
     DATE: string;

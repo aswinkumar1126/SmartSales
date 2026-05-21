@@ -3,6 +3,8 @@
 import React, {
     useMemo, useCallback, useState, useEffect, useRef,
 } from "react";
+import { useRouter } from "next/navigation";
+
 import {
     Box, Text, Button, Flex, Badge, HStack, Icon,
 } from "@chakra-ui/react";
@@ -90,6 +92,7 @@ interface DraftTransactionTableProps {
         showBillModal: boolean;
         handleBillShow: () => void;
     };
+    isModifying?:boolean
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -152,9 +155,12 @@ export default function DraftTransactionTable({
     acCode,
     isTagedItem,
     onSaleReturnModal,
+    isModifying
 }: DraftTransactionTableProps) {
     console.log(isEditing,'isEditing');
     console.log(transactionType,'transactionTypetransactionType');
+
+    const router = useRouter();
 
     
         const { data: softControlData } = useSoftControlById('PU_HMC_FINALAMT');
@@ -1000,7 +1006,7 @@ useEffect(() => {
             );
             return (
                 <span style={{ padding: "0 6px", fontSize: 11, color: "#333", width: "100%", display: "block", textAlign: "right" }}>
-                    {stonesTotal > 0 ? stonesTotal.toFixed(2) : value || ""}
+                    {stonesTotal > 0 ? stonesTotal : value || ""}
                 </span>
             );
         }
@@ -1108,8 +1114,11 @@ useEffect(() => {
             >
                 <HStack gap={2}>
                     <Text fontSize="xs" fontWeight="semibold" color={theme?.colors?.primaryText || "#1a202c"}>
-                        {transactionTitle || "Transaction"} Items
+                        {transactionTitle || "Transaction"}
                     </Text>
+                  
+                    
+
                     {showTag && (
                         <>
                             <Button size="2xs" bg="yellow.subtle" color="blackAlpha.800" onClick={handleTagChange}>
@@ -1134,8 +1143,36 @@ useEffect(() => {
                     >
                         {committedRows.length} item{committedRows.length !== 1 ? "s" : ""}
                     </Badge>
+
+
                 </HStack>
+                {transactionType === "PU" && 
+                    <Badge
+                        colorPalette={"red"}
+                        variant="subtle"
+                        fontSize="2xs"
+                        px={2}
+                        onClick={() => router.push("/dashboard/Master/Item/ItemMaster/")}
+                    >
+                        Add Item  Name
+                    </Badge>
+                }
+                {transactionType === "REC" && 
+
+                    <Badge
+                        colorPalette={"gray"}
+                        variant="subtle"
+                        fontSize="2xs"
+                        px={2}
+                        onClick={() => router.push("/dashboard/Master/Item/ItemMaster/")}
+                    >
+                        Add Pure Gold Name
+                    </Badge>
+                 }
+               
                 {!isEditing && (
+                    <>
+                        
                     <Button
                         size="2xs" colorPalette="red" variant="outline" fontSize="2xs"
                         onClick={() => {
@@ -1146,6 +1183,7 @@ useEffect(() => {
                     >
                         <Icon as={LuX} boxSize={2} /> Clear All
                     </Button>
+                    </>
                 )}
             </Flex>
 
@@ -1185,6 +1223,7 @@ useEffect(() => {
                     }}
                     showEnterNavigate={false}
                     tranEditing = {isEditing}
+                    isModifying = {isModifying}
                 />
             </Box>
 
