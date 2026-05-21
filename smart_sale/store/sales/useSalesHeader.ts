@@ -19,6 +19,9 @@ type SalesHeaderActions = {
     startEdit: (sno: string) => void;
     stopEdit: () => void;
 
+    startModify :() => void ,
+    stopModify :() => void ,
+
     resetHeader: () => void;
 };
 
@@ -42,6 +45,7 @@ export const useSalesHeader = create<SalesHeaderState & SalesHeaderActions>()(
             isEditing: false,
             editingSno: null,
             selectedTransactionId: null,
+            isModifying :false,
 
             // ACTIONS
             setHeaderField: (field, value) =>
@@ -88,6 +92,15 @@ export const useSalesHeader = create<SalesHeaderState & SalesHeaderActions>()(
                     editingSno: null,
                     selectedTransactionId: null,
                 }),
+            
+            startModify: () =>
+                set({
+                    isModifying: true
+                }),
+            stopModify: () =>
+                set({
+                    isModifying: false
+                }),
 
             resetHeader: () =>
                 set({
@@ -96,6 +109,7 @@ export const useSalesHeader = create<SalesHeaderState & SalesHeaderActions>()(
                     isEditing: false,
                     editingSno: null,
                     selectedTransactionId: null,
+                    isModifying:false,
                 }),
         }),
         {

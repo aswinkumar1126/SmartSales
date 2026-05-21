@@ -154,8 +154,11 @@ export default function SalesPage() {
         setAccCode,
         startEdit,
         stopEdit,
+        startModify,
+        stopModify,
         resetHeader,
-        isEditing
+        isEditing,
+        isModifying
     } = useSalesHeader();
 
 
@@ -309,7 +312,7 @@ export default function SalesPage() {
 
     const { data: allPureGoldNames } = usePureGoldNames();
 
-    const { data: transactionsById, isLoading: getbySnoLoading } = useTransactionByTransId(selectedTransactionId, "sales");
+    const { data: transactionsById, isLoading: getbySnoLoading, refetch:refetchTransactionListById } = useTransactionByTransId(selectedTransactionId, "sales");
 
 
 
@@ -612,6 +615,7 @@ export default function SalesPage() {
     useGlobalKey("F1", () => openFilter(), "openFilter");
     useGlobalKey("Alt+s" , ()=>handleSaveTransaction() , "saveTransaction");
     useGlobalKey("Alt+c", () => handleResetDraft() ,"ClearTransaction");
+      useGlobalKey("Alt+m" , ()=>{isModifying ? stopModify() : startModify()}, "modifyTransaction");
 
     const handleBillParamChange = useCallback((field: any, value: any) => {
         setBillParams(prev => ({
@@ -823,17 +827,13 @@ useGlobalKey(
        Load Transaction Data When Selected
     ================================ */
 
-    // This useEffect loads transaction data when transactionsById changes
-    useEffect(() => {
-        if (transactionsById && selectedTransactionId) {
-
-            setEditingRowsData(transactionsById);
-            handleEditTransaction(transactionsById, selectedTransactionId)
-        }
-    }, [transactionsById, selectedTransactionId]);
-
-
-
+     // This useEffect loads transaction data when transactionsById changes
+        useEffect(() => {
+            if (transactionsById && selectedTransactionId) {
+                setEditingRowsData(transactionsById);
+                handleEditTransaction(transactionsById, selectedTransactionId);
+            }
+        }, [transactionsById, selectedTransactionId]);
 
 
     const handleRowClick = (row: any, clickedTransactionType: string) => {
@@ -1173,7 +1173,16 @@ useGlobalKey(
 
         return { valid: true, payload };
     };
+    const handleReSelectTransaction = async () => {
+        // 1. Reset the selectedTransactionId first to trigger a clean re-fetch cycle
+        setSelectedTransactionId(null);
 
+        // 2. Await the refetch so we have fresh data
+        await refetchTransactionListById();
+
+        // 3. Now set the ID again — this will trigger the useEffect with the new data
+        setSelectedTransactionId(selectedTransactionId);
+    };
 
     const handleResetDraft = () => {
 
@@ -1367,11 +1376,9 @@ useGlobalKey(
 
             return;
         }
-        console.log("triggers the click")
+         
 
-       setSelectedTransactionId(prev =>
-           prev === transactionId ? '' : transactionId
-       );
+        setSelectedTransactionId(transactionId);
 
     }, [draftRows]);
 
@@ -1458,7 +1465,7 @@ useGlobalKey(
                             handleShowFilter={openFilter}
                             isEditing={isEditing}
                             onSave={isEditing ? handleUpdateTransaction : handleSaveTransaction}
-                            onReset={handleResetDraft}
+                            onReset={isEditing ? isModifying ? handleResetDraft : handleReSelectTransaction : handleResetDraft}
                             isSaving={
                                 createTransaction.isPending || updateTransaction.isPending
                             }
@@ -1467,6 +1474,10 @@ useGlobalKey(
                             onPrint={() => {
                                 setShowPrintModal(prev => !prev)
                             }}
+
+                            isModifying={isModifying}
+                            startModify={startModify}
+                            stopModify={stopModify}
                         />
 
 
@@ -1496,17 +1507,7 @@ useGlobalKey(
                                                 <DraftTransactionTable
                                                     rows={typeRows}
                                                     editingState={editingState}
-                                                    isEditing={false}
-                                                    // onAddRow={(formData) => {
-                                                    //     handleAddRow(transactionType, formData);
-                                                    // }}
-                                                    // onUpdateRow={(rowId, field, value) => {
-                                                    //     handleUpdateRow(rowId, field, value);
-                                                    // }}
-                                                    // onRemoveRow={(rowId) => {
-                                                    //     handleRemoveRow(rowId);
-                                                    // }}
-                                                    // onEditRow={(rowId, submitData) => handleEditRow(rowId, submitData)}
+                                                    isEditing={isEditing}
                                                     onRowClick={handleRowClick}
                                                     onCancelEdit={handleCancelEdit}
                                                     itemsCollection={activeCollection}
@@ -1533,6 +1534,7 @@ useGlobalKey(
                                                         showBillModal,
                                                         handleBillShow: handleBillShow,
                                                     }}
+                                                    isModifying={isModifying}
                                                 />
                                             </Box>
                                         );

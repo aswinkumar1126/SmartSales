@@ -39,6 +39,7 @@ export interface BarcodeTransactionRow {
 
 export interface BarcodePrintDetail {
 
+  ITEMID?: number;
   TAGNO: string;
   GRSWT: number;
   PURCHASESTNWT :number;

@@ -852,9 +852,9 @@ useGlobalKey(
             handleEditTransaction(transactionsById, selectedTransactionId);
         }
         // Clear state when deselected
-        else if (!selectedTransactionId) {
-            setDraftRows([]);
-        }
+        // else if (!selectedTransactionId) {
+        //     setDraftRows([]);
+        // }
     }, [transactionsById, selectedTransactionId]);
 
 
@@ -1419,9 +1419,7 @@ useGlobalKey(
 
 
         setSelectedTransactionId(transactionId);
-        // if(isEditing){
-        //     setDraftRows([]);
-        // }
+     
 
     }, [draftRows]);
 
@@ -1485,7 +1483,7 @@ useGlobalKey(
                             handleShowFilter={openFilter}
                             isEditing={isEditing}
                             onSave={isEditing ? handleUpdateTransaction : handleSaveTransaction}
-                            onReset={isModifying ? handleResetDraft : handleReSelectTransaction }
+                            onReset={isEditing ? isModifying ? handleResetDraft : handleReSelectTransaction : handleResetDraft }
                             isSaving={
                                 createTransaction.isPending || updateTransaction.isPending
                             }

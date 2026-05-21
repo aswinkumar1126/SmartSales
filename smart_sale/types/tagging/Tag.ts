@@ -12,6 +12,7 @@ export interface PURCHASE_DETAILS {
 
 export interface TAGGING_DETAILS {
 
+    ITEMID?:number;
     TAGNO: string;
     GRSWT: number;
 

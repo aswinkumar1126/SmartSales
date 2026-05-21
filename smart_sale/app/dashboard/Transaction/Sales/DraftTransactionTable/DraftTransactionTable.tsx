@@ -95,6 +95,7 @@ interface DraftTransactionTableProps {
         showBillModal: boolean;
         handleBillShow: () => void;
     };
+    isModifying?:boolean
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -154,9 +155,10 @@ export default function DraftTransactionTable({
     onTagNoLookup,
     acCode,
     onSaleReturnModal,
+    isModifying
 }: DraftTransactionTableProps) {
 
-    console.log(transactionType,'transactionTypetransactionType');
+    console.log(isEditing ,isModifying,'transactionTypetransactionType');
 
     const router = useRouter();
 
@@ -1297,7 +1299,7 @@ useEffect(() => {
                                         variant="subtle"
                                         fontSize="2xs"
                                         px={2}
-                                        onClick={() => router.push("/dashboard/Master/Item/ItemMaster/")}
+                                        onClick={() => router.push("/dashboard/Master/Item/pureGold/")}
                                     >
                                         Add Pure Gold Name
                                     </Badge>
@@ -1348,6 +1350,7 @@ useEffect(() => {
                     }}
                     showEnterNavigate={false}
                     tranEditing={isEditing}
+                    isModifying={isModifying}
                 />
             </Box>
 

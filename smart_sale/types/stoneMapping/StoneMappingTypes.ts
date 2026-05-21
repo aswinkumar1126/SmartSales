@@ -15,7 +15,7 @@ export interface StoneMappingForm {
 }
 
 export interface StoneMappingMaster {
-    // acType: string;
+    acType: string;
     accode: string;
     itemId: string;
     stnAmt: string;

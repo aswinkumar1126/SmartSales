@@ -152,9 +152,19 @@ export function useBarcodeGenerate() {
   const printer = useMemo(() => printerSettings?.data ?? null, [printerSettings]);
 
   const { data: toleranceData } = useSoftControlById("LOT-TOLERANCE");
+
+  const { data: stoneToleranceData } = useSoftControlById("	LOT_STONE_TOLERANCE");
+
   const tolerance = useMemo(() => {
     return Number(toleranceData?.CTLTEXT ?? 0);
   }, [toleranceData]);
+
+
+  const stoneTolerance = useMemo(()=>{
+    return Number(stoneToleranceData?.CTLTEXT ?? 0);
+  }, [stoneToleranceData]);
+
+  console.log(stoneTolerance ,'stoneTolerance');
 
   const barcodeQueryParams = useMemo(() => ({
     ACCODE: Number(headerForm.COMPANYNAME),
@@ -534,7 +544,7 @@ export function useBarcodeGenerate() {
 
     if (!parsedRows.length) return;
     if (!validateHeaderWithToast(headerForm)) return;
-    if (!validateRows({ rows, limits, countOnlyNew: isEditing, incomingRows: parsedRows, balance: effectiveBalance, tolerance })) return;
+    if (!validateRows({ rows, limits, countOnlyNew: isEditing, incomingRows: parsedRows, balance: effectiveBalance, tolerance: tolerance,stnTolerance :stoneTolerance })) return;
 
     const draftRowId = headerForm.ENTRYNO || String(Date.now());
     const merged = [

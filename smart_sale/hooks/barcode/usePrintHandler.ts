@@ -22,14 +22,13 @@ const PROTOCOL = {
    EPL / XPML HEADER
    ============================================================ */
 
-const EPL_HEADER = `<xpml><page quantity='0' pitch='15.0 mm'></xpml>
-I8,A
+const EPL_HEADER = `<xpml><page quantity='0' pitch='15.0 mm'></xpml>I8,A
 q711
 O
 JF
 ZT
 Q120,25
-<xpml></page></xpml>`;
+<xpml></page></xpml><xpml><page quantity='1' pitch='15.0 mm'></xpml>N`;
 
 /* ============================================================
    HOOK
@@ -88,29 +87,22 @@ export function usePrintHandler() {
 
   const buildLabelEPL = useCallback(
     (d: BarcodePrintDetail): string => `
-<xpml><page quantity='1' pitch='15.0 mm'></xpml>
-N
+A694,110,2,3,1,1,N," ${d.ITEMID || ""}-${d.TAGNO ?? ""} "
+A694,85,2,3,1,1,N,"GWt:${d.GRSWT.toFixed(3) ?? ""}"
+A694,60,2,3,1,1,N,"SWt:${d.SALESSTNWT.toFixed(3) ?? ""}"
+A694,35,2,3,1,1,N,"NWt:${d.NETWT?.toFixed(3) ?? ""}"
 
-A488,97,2,3,1,1,N,"G Wt"
-A488,73,2,3,1,1,N,"S Wt"
-A488,47,2,3,1,1,N,"N Wt"
-
-A424,97,2,3,1,1,N,"${d.GRSWT ?? ""}"
-A424,73,2,3,1,1,N,"${d.STNWT ?? ""}"
-A424,47,2,3,1,1,N,"${d.NETWT ?? ""}"
+A488,110,2,2,1,1,N,"NG/NAVA BANGLE"
+b424,15,Q,m2,s3,eL,"${d.TAGNO ?? ""}"
 
 
-
-b621,4,Q,m2,s3,eL,"${d.TAGNO ?? ""}"
-
-A611,52,2,3,1,1,N,"${d.MC ?? ""}"
-
-A484,20,2,2,1,1,N,"D/N ${d.SIZE ?? ""}"
-
-
-
+A520,60,3,3,1,1,N,"${d.SIZE ?? ""}"
+A410,83,2,2,1,1,N,"D:${d.DIAWT.toFixed(3)}"
+A410,60,2,2,1,1,N,"N:${d.NAVAWT.toFixed(3)}"
+A410,35,2,2,1,1,N,"S:${d.STNWT.toFixed(3)}"
 P1
-<xpml></page></xpml>`,
+<xpml></page></xpml>
+`,
     []
   );
 
@@ -223,7 +215,7 @@ exit`,
 "URL Protocol"=""
 
 [${PROTOCOL.REG_KEY}\\shell\\open\\command]
-@="cmd.exe /c \\"%USERPROFILE%\\Downloads\\${APP_NAME}.BAT\\""`,
+@="cmd.exe /c \\"%USERPROFILE%\\\\Downloads\\\\${APP_NAME}.BAT\\" \\"%1\\""`,
     []
   );
 

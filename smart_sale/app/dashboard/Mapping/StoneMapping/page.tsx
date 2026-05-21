@@ -57,7 +57,7 @@ import { StoneMappingFormConfig } from "@/config/mapping/StoneMapping";
 /* ---------------- INITIAL STATE ---------------- */
 
 const initialFormState: StoneMappingMaster = {
-    // acType: "",
+    acType: "",
     accode: "",
     itemId: "",
     stnAmt: "",
@@ -186,7 +186,7 @@ const HmcMappingForm = () => {
         setEditId(row.sno);
 
         setForm({
-            // acType: row.acType,
+            acType: row.acType,
             accode: String(row.accode),
             itemId: String(row.itemId),
             stnAmt: String(row.stnAmt),

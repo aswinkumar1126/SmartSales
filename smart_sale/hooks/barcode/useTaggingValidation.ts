@@ -24,7 +24,7 @@ export interface RowValidationOptions {
     GRSWT: number;
   };
   tolerance: number;
-  stnTolerance :number 
+  stnTolerance :number ;
 }
 
 /* ============================================================
@@ -187,7 +187,7 @@ export function useTaggingValidation() {
       balance,
       tolerance = 0,
       isUpdate = false,
-      stnTolerance = 0.05,
+      stnTolerance = 0,
     }: RowValidationOptions): boolean => {
 
       const allRows =

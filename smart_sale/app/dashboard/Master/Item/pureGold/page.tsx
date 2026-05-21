@@ -338,6 +338,9 @@ const PureGoldMaster = () => {
                             <Button size="xs" colorPalette="blue" onClick={resetForm}>
                                 Clear <IoIosExit />
                             </Button>
+                            <Button size="xs" onClick={()=>router.back()} colorPalette="blue">
+                                <IoIosExit /> Cancel
+                            </Button>
                         </HStack>
                     </Box>
                 </Box>

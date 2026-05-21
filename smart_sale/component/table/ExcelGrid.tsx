@@ -216,61 +216,46 @@ export const ExcelGrid: React.FC<ExcelGridProps> = ({
         [onActiveChange]
     );
 
-    // ── Auto-focus on new/fresh transaction only ──────────────────────────────
-    // Tracks whether the initial auto-focus has fired for the current tranEditing session.
-    // Reset whenever tranEditing flips so that switching transactions re-evaluates.
     const hasAutoFocused = useRef(false);
 
     useEffect(() => {
-        // Whenever tranEditing changes (e.g. user selects a different transaction or
-        // clears selection), reset the flag so the effect below can re-evaluate.
         hasAutoFocused.current = false;
     }, [tranEditing]);
 
     useEffect(() => {
-        // Skip: a transaction row is selected (viewing/editing existing data)
-        if (tranEditing) return;
+        if (tranEditing && !isModifying) return;
 
-        // Skip: user is actively modifying — don't steal focus away from their edits
-        if (isModifying) return;
-
-        // Skip: already auto-focused for this session
         if (hasAutoFocused.current) return;
 
         hasAutoFocused.current = true;
         focusCell(0, initialFocusCell?.colKey ?? "ITEM", 50, true);
 
-        // Intentionally NOT including focusCell/initialFocusCell in deps —
-        // this should only re-run when the editing-state flags change.
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [tranEditing, isModifying]);
 
     // ── Initial focus on mount (only for new transactions) ───────────────────
     useEffect(() => {
-        // Don't hijack focus when loading an existing transaction
-        if (isModifying) return;
+
         if (!initialFocusCell) return;
+        if (tranEditing && !isModifying) return;
 
         const t = setTimeout(() => {
             focusCell(initialFocusCell.rowIndex, initialFocusCell.colKey);
         }, 100);
         return () => clearTimeout(t);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []); // run once on mount only
+    }, []); 
 
     // ── Focus cell after modal closes ─────────────────────────────────────────
     useEffect(() => {
         if (!focusAfterModal) return;
+        if(tranEditing && !isModifying) return ;
+        
         const t = setTimeout(() => {
             focusCell(focusAfterModal.cell.rowIndex, focusAfterModal.cell.colKey);
         }, 150);
         return () => clearTimeout(t);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [focusAfterModal?.trigger]);
 
-    // ── Auto-focus when a new row is added ────────────────────────────────────
-    // rowAddedByNavigationRef: moveNext already scheduled its own focusCell,
-    // so the effect skips to avoid double-firing / racing.
+
     const prevRowCountRef = useRef(rows.length);
     const rowAddedByNavigationRef = useRef(false);
 
@@ -290,9 +275,9 @@ export const ExcelGrid: React.FC<ExcelGridProps> = ({
         // External add: toolbar "+ Add Row" or programmatic parent add.
         // This is always a user-initiated action so focus regardless of isModifying.
 
-        if (newRowFocusCol && !tranEditing ) {
-            focusCell(curr - 1, newRowFocusCol);
-        }
+        // if (newRowFocusCol && !tranEditing && isModifying) {
+        //     focusCell(curr - 1, newRowFocusCol);
+        // }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [rows.length]);
 

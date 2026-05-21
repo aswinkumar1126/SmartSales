@@ -1164,7 +1164,7 @@ useEffect(() => {
                         variant="subtle"
                         fontSize="2xs"
                         px={2}
-                        onClick={() => router.push("/dashboard/Master/Item/ItemMaster/")}
+                        onClick={() => router.push("/dashboard/Master/Item/pureGold/")}
                     >
                         Add Pure Gold Name
                     </Badge>

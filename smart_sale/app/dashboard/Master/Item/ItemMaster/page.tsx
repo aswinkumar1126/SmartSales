@@ -102,6 +102,8 @@ export default function ItemMasterPage() {
 
     const items: ItemMast[] = (itemsData?.items ?? []).map(normalizeItem);
 
+    console.log(items,'itemsforListing');
+
     const companies = useMemo(() => {
         const companyList = Array.isArray(companyData?.data) ? companyData.data : [];
         if (!companyList) return [];
@@ -329,6 +331,10 @@ export default function ItemMasterPage() {
         { key: "itemId", label: "ItemId" },
         { key: "itemName", label: "Item Name" },
         { key: "metalId", label: "Metal" },
+        { key: "stockType", label: "Stock Type" },
+        { key: "StonePresent", label: "Stone Present" },
+        {key :"studded" ,label:"Studded"},
+        { key:"studdedStone" ,label:"Studded Stone Type"},
         { key: "active", label: "Active", align: "center" },
         { key: "action", label: "Action", align: "center" },
     ];
@@ -408,7 +414,11 @@ export default function ItemMasterPage() {
                                 </Button>
 
                                 <Button size="xs" onClick={resetForm} colorPalette="blue">
-                                    <IoIosExit /> Clear
+                                    <IoIosExit /> Clear 
+                                </Button>
+
+                                <Button size="xs" onClick={()=>router.back()} colorPalette="blue">
+                                    <IoIosExit /> Cancel
                                 </Button>
                             </HStack>
                         </Fieldset.Root>
@@ -481,6 +491,10 @@ export default function ItemMasterPage() {
                                     <Table.Cell>{item.itemId}</Table.Cell>
                                     <Table.Cell>{item.itemName}</Table.Cell>
                                     <Table.Cell>{item.metalName}</Table.Cell>
+                                    <Table.Cell>{item.stockType === "T" ? "TAGED" :"NON TAGED"}</Table.Cell>
+                                    <Table.Cell>{item.stnPresent === "Y" ? "Yes" : "No"}</Table.Cell>
+                                    <Table.Cell>{item.studded === "Y" ? "Yes" : "No"}</Table.Cell>
+                                    <Table.Cell>{item.studded === "Y" ? item.studdedStone === "D" ? "Diamond" : "Stone" : ""}</Table.Cell>
                                     <Table.Cell textAlign="center">{item.active}</Table.Cell>
                                     <Table.Cell textAlign="center">
                                         <Box display="flex" justifyContent="center">
