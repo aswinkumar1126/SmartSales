@@ -6,6 +6,7 @@ import {
     Box,
     Flex,
     Stack,
+    Button,
 } from "@chakra-ui/react";
 import lodash from "lodash";
 import { useRouter } from "next/navigation";
@@ -82,6 +83,7 @@ import { ApprovalTransactionKey, ApprovalTransactionItems, APPROVAL_TRANSACTION_
 
 //Utilities
 import { formatToFixed } from '@/utils/format/numberFormat';
+import ShortcutDialog from "@/components/shortcut/ShortcutDialog";
 // import SalesSaveModal from "./SaveModal/SaveModal";
 
 
@@ -191,6 +193,7 @@ export default function SalesPage() {
 
 
     const [loading, setLoading] = useState<boolean>(true);
+    const [openShortcut, setOpenShortcut] = useState(false);
     const [saleCustomerList, setSaleCustomerList] = useState<{ label: string, value: string }[]>([]);
 
     const [isStockDrawerOpen, setIsStockDrawerOpen] = useState(false);
@@ -1070,7 +1073,7 @@ export default function SalesPage() {
             TRANSACTION_HEADER: {
                 ACCODE: Number(headerForm.CUSTOMER),
                 TRANDATE: headerForm.DATE,
-                BILLNO: headerForm.BILLNO ? Number(headerForm.BILLNO) : undefined,
+                // BILLNO: headerForm.BILLNO ? Number(headerForm.BILLNO) : undefined,
                 RATE: headerForm.RATEGM ? Number(headerForm.RATEGM) : undefined,
                 REMARK: headerForm.REMARK,
                 THRU: headerForm.THRU
@@ -1125,7 +1128,7 @@ export default function SalesPage() {
             ENTRYNO: "",
             CUSTOMER: "",
             CUSTOMER_NAME: "",
-            BILLNO: "",
+            // BILLNO: "",
             DATE: new Date().toISOString().split("T")[0],
             RATEGM: metalRates ? formatToFixed(metalRates["GOLD 916.00"], 2) : "",
         });
@@ -1331,6 +1334,19 @@ export default function SalesPage() {
     const handleReset = isEditing
         ? (isModifying ? handleResetDraft : handleReSelectTransaction)
         : handleResetDraft;
+
+
+const shortcuts = [
+  { keys: "Alt S", label: "Save" },
+  { keys: "Alt U", label: "Update" },
+  { keys: "Alt C", label: "Clear" },
+  { keys: "Alt M", label: "Modify" },
+  { keys: "F1", label: "Filter" },
+  { keys: "Alt I", label: "Approval Issue" },
+  { keys: "Alt R", label: "Approval Receipt" },
+];
+
+
     return (
         <>
 
@@ -1354,58 +1370,16 @@ export default function SalesPage() {
                             isEditing={isEditing}
                             // isClosingChanged={isClosingChanged()}
                             isDraftRowChanged={isDraftRowsChanged()}
+                            showShortcut={() => setOpenShortcut(true)}
 
                         />
-                        <Box
-                            display="flex"
-                            alignItems="center"
-                            gap={2}
-                            px={2}
-                            py={2}
-                            bg="gray.50"
-                            border="0.5px solid"
-                            borderColor={theme.colors.greyColor}
-                            rounded="md"
-                            flexWrap="wrap"
-                        >
-                            <Text fontSize="12px" color={theme.colors.green} mr={1} fontWeight={'semibold'}>Shortcuts</Text>
-                        
-                            {[
-                              { keys: "Alt S", label: "Save" },
-                              { keys: "Alt U", label: "Update" },
-                              { keys: "Alt C", label: "Clear" },
-                              { keys: "Alt M", label: "Modify" },
-                              { keys: "F1", label: "Filter" },
-                             
-                              { keys: "Alt I", label: "Approval Issue" },
-                              { keys: "Alt R", label: "Approval Receipt" },
-                            ].map(({ keys, label }, i, arr) => (
-                              <React.Fragment key={keys}>
-                                <Box display="flex" alignItems="center" gap={1}>
-                                  <Box
-                                    as="kbd"
-                                    fontSize="10px"
-                                    fontFamily={theme.fonts.body2}
-                                    px="5px"
-                                    py="2px"
-                                    bg={theme.colors.accient}
-                                    border="0.5px solid"
-                                    borderColor={theme.colors.greyColor}
-                                    rounded="sm"
-                                    lineHeight="1.6"
-                                    color={theme.colors.whiteColor}
-                                   
-                                    >
-                                      {keys}
-                                    </Box>
-                                    <Text fontSize="11px" fontFamily={theme.fonts.body2} >{label}</Text>
-                                </Box>
-                                    {i < arr.length - 1 && (
-                                        <Text fontSize="10px" color="black" fontFamily={theme.fonts.body2}>|</Text>
-                                    )}
-                            </React.Fragment>
-                                  ))}
-                        </Box>
+                   
+
+                        <ShortcutDialog
+                          
+                          shortcuts={shortcuts}
+                          theme={theme}
+                        />
                         {/* 2. Transaction Type Selector */}
 
                         <TransactionTypeSelector

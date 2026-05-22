@@ -24,6 +24,7 @@ interface TransactionHeaderFormProps {
     isEditing?: boolean;
     // isClosingChanged?: boolean;
     isDraftRowChanged?: boolean
+    showShortcut: () => void;
 }
 
 export default function TransactionHeaderForm({
@@ -38,6 +39,7 @@ export default function TransactionHeaderForm({
     isEditing = false,
     isDraftRowChanged,
     // isClosingChanged,
+    showShortcut
 }: TransactionHeaderFormProps) {
 
     // Get the customer label for the current form.CUSTOMER value
@@ -117,7 +119,7 @@ export default function TransactionHeaderForm({
                 </Box>
 
                 {/* BILL NO */}
-                <Box w={{ base: '100%', md: '80px' }} display={{ base: 'flex', md: 'block' }} alignItems={{ base: 'center' }}>
+                {/* <Box w={{ base: '100%', md: '80px' }} display={{ base: 'flex', md: 'block' }} alignItems={{ base: 'center' }}>
                     <Text fontSize="2xs" mb={1} minW={{ base: '100px' }}>BILL NO :</Text>
                     <CapitalizedInput
                         value={form.BILLNO}
@@ -127,7 +129,7 @@ export default function TransactionHeaderForm({
                         size="xs"
                         rounded="md"
                     />
-                </Box>
+                </Box> */}
 
                 {/* DATE */}
                 <Box w={{ base: '100%', md: '90px' }} display={{ base: 'flex', md: 'block' }} alignItems='center'>
@@ -219,6 +221,11 @@ export default function TransactionHeaderForm({
                     </>
 
                 )}
+
+                <Button onFocus={showShortcut} size="xs" variant="outline" fontSize="x-small" >
+                    Shortcuts
+                </Button>
+
             </Box>
 
         </Box>
