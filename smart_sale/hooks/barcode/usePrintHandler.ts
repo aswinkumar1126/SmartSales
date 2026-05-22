@@ -89,7 +89,7 @@ export function usePrintHandler() {
     (d: BarcodePrintDetail): string => `
 A694,110,2,3,1,1,N," ${d.ITEMID || ""}-${d.TAGNO ?? ""} "
 A694,85,2,3,1,1,N,"GWt:${d.GRSWT.toFixed(3) ?? ""}"
-A694,60,2,3,1,1,N,"SWt:${d.SALESSTNWT.toFixed(3) ?? ""}"
+  ${d.SALESSTNWT > 0 ? `A694,60,2,3,1,1,N,"SWt:${d.SALESSTNWT.toFixed(3) ?? ""}"` : ""}
 A694,35,2,3,1,1,N,"NWt:${d.NETWT?.toFixed(3) ?? ""}"
 
 A488,110,2,2,1,1,N,"NG/NAVA BANGLE"
@@ -97,9 +97,9 @@ b424,15,Q,m2,s3,eL,"${d.TAGNO ?? ""}"
 
 
 A520,60,3,3,1,1,N,"${d.SIZE ?? ""}"
-A410,83,2,2,1,1,N,"D:${d.DIAWT.toFixed(3)}"
-A410,60,2,2,1,1,N,"N:${d.NAVAWT.toFixed(3)}"
-A410,35,2,2,1,1,N,"S:${d.STNWT.toFixed(3)}"
+${d.DIAWT > 0 ? `A410,83,2,2,1,1,N,"D:${d.DIAWT.toFixed(3)}"` : ""}
+${d.NAVAWT > 0 ? `A410,60,2,2,1,1,N,"N:${d.NAVAWT.toFixed(3)}"` : ""}
+${d.STNWT > 0 ? `A410,35,2,2,1,1,N,"S:${d.STNWT.toFixed(3)}"` : ""}
 P1
 <xpml></page></xpml>
 `,
@@ -207,17 +207,18 @@ exit`,
     []
   );
 
-  const buildRegFile = useCallback(
-    (): string => `Windows Registry Editor Version 5.00
+const buildRegFile = useCallback(
+  (systemName: string): string => `Windows Registry Editor Version 5.00
 
 [${PROTOCOL.REG_KEY}]
 @="URL:${PROTOCOL.NAME} Protocol"
 "URL Protocol"=""
 
 [${PROTOCOL.REG_KEY}\\shell\\open\\command]
-@="cmd.exe /c \\"%USERPROFILE%\\\\Downloads\\\\${APP_NAME}.BAT\\" \\"%1\\""`,
-    []
-  );
+@="\\"C:\\\\Users\\\\${systemName}\\\\Downloads\\\\${APP_NAME}.BAT\\" \\"%1\\""
+`,
+  []
+);
 
   /** Download setup files */
   const downloadSetupFiles = useCallback(
@@ -229,7 +230,7 @@ exit`,
 
       downloadText(
         `${APP_NAME}.REG`,
-        buildRegFile()
+        buildRegFile(systemName)
       );
     },
     [buildBatFile, buildRegFile, downloadText]
