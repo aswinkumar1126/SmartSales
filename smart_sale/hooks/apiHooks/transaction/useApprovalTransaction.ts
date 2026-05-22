@@ -12,7 +12,7 @@ import { ApprovalTransactionList } from "@/types/transactionList/TransactionList
 
 /* -------------------- QUERY KEYS -------------------- */
 export const transactionKeys = {
-    all: ["transactions"] as const,
+    all: ["approvalTransactions"] as const,
     list: (TRANTYPE: string) => [...transactionKeys.all, TRANTYPE] as const,
     byId: (sno: number, TRANTYPE: string) =>
         [...transactionKeys.all, "one", sno, TRANTYPE] as const,
@@ -24,8 +24,8 @@ export const transactionKeys = {
 /* -------------------- QUERIES -------------------- */
 
 // GET ALL
-export const useTransactions = (props: {
-    TRANTYPE: string;
+export const useApprovalTransactions = (props: {
+  
     trantype?: string | null;
     accode?: number | null;
     startdate?: string | null;
@@ -35,7 +35,7 @@ export const useTransactions = (props: {
     console.log("useTransaction called with props:", props);
     return useQuery<ApiResponse<ApprovalTransactionList>, Error, ApprovalTransactionList>({
         queryKey: [
-            "transactions",
+            "approvalTransactions",
             "list",
             props.trantype ?? "all",
             props.accode ?? "all",

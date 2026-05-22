@@ -17,6 +17,7 @@ export interface ApprovalHeaderState {
     accCode: number | null;
 
     isEditing: boolean;
+    isModifying:boolean;
     editingSno: string | null;
     selectedTransactionId: string | null;
 }

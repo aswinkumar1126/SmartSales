@@ -7,7 +7,6 @@ import { PurchaseTransactionList } from "@/types/transactionList/TransactionList
 
 type GetTransactionProps = {
 
-    TRANTYPE: string;
     trantype?: string | null;
     accode?: number | null;
     startdate?: string | null;

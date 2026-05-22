@@ -11,15 +11,19 @@ export const StoneMappingService = () => {
 
             return res.data;
         } catch (error: any) {
-            console.error("createHmc error:", error);
-
-            return {
-                success: false,
-                data: null,
-                message:
-                    error?.response?.data?.message ||
-                    "Failed to create HMC",
-            };
+            if (error.response) {
+                // Server responded with error
+                console.error("API ERROR:");
+                console.error("Status:", error.response.status);
+                console.error("Data:", error.response.data);
+                console.error("Headers:", error.response.headers);
+            } else if (error.request) {
+                // Request sent but no response
+                console.error("NO RESPONSE:", error.request);
+            } else {
+                // Other axios error
+                console.error("AXIOS ERROR:", error.message);
+            }
         }
     };
 

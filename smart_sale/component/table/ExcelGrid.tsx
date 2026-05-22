@@ -108,6 +108,7 @@ export interface ExcelGridProps {
     // Enter → moveNext and Tab navigation ALWAYS work regardless of these flags.
     tranEditing: boolean;
     isModifying?: boolean;
+    manualEntry?:boolean;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -158,6 +159,7 @@ export const ExcelGrid: React.FC<ExcelGridProps> = ({
     disableEnterOnMount = false,
     tranEditing,
     isModifying = false,
+    manualEntry =true,
 }) => {
 
     const [activeCell, setActiveCell] = useState<CellCoord | null>(null);
@@ -399,6 +401,22 @@ export const ExcelGrid: React.FC<ExcelGridProps> = ({
                 break;
         }
     }, [moveNext, movePrev, cancelEdit]);
+
+
+
+    const visibleRows = useMemo(() => {
+        if (manualEntry) return rows;
+
+        // hide initial empty row when manual entry is false
+        return rows.filter((row, index) => {
+            // keep rows that have some value
+            const hasValue = row.ITEMID && row.__rowId ;
+            console.log(hasValue, 'hasValue');
+
+            return hasValue;
+        });
+    }, [rows, manualEntry]);
+    console.log(visibleRows,'visibleRows')
 
     // ── Styles ────────────────────────────────────────────────────────────────
     const ROW_H = 30;
@@ -671,18 +689,23 @@ export const ExcelGrid: React.FC<ExcelGridProps> = ({
                         </thead>
 
                         <tbody>
-                            {rows.map((row, ri) => (
+                            {visibleRows.map((row, ri) => (
                                 <GridRow
                                     key={row.__id ?? row.__rowId ?? ri}
                                     renderRowContent={() => renderRowContent(row, ri)}
                                 />
                             ))}
 
-                            {rows.length === 0 && (
+                            {visibleRows.length === 0 && (
                                 <tr>
                                     <td
                                         colSpan={columns.length + 2}
-                                        style={{ padding: 20, textAlign: 'center', fontSize: 11, color: '#adb5bd' }}
+                                        style={{
+                                            padding: 20,
+                                            textAlign: 'center',
+                                            fontSize: 11,
+                                            color: '#adb5bd'
+                                        }}
                                     >
                                         No rows yet — click "+ Add Row" to begin
                                     </td>

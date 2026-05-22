@@ -652,18 +652,7 @@ export default function DraftTransactionTable({
 
         if(isEditing) return ;
 
-        // if (!touchData?.TOUCH) {
-        //     touchNotFoundRef.current.add(activeRowId);
-        //     setTimeout(() => {
-        //         toaster.create({
-        //             title: "No Touch Found",
-        //             description: "No touch configured for this item & customer. Please enter manually.",
-        //             type: "warning",
-        //             duration: 3000,
-        //         });
-        //     }, 0);
-        //     return;
-        // }
+       
 
         appliedItemIdRef.current[activeRowId] = key;
         touchNotFoundRef.current.delete(activeRowId);
@@ -764,100 +753,6 @@ export default function DraftTransactionTable({
         }, 10);
     }, [touchData, touchDataLoading, activeRowId, activeRowItemId ,isEditing]);
 
-    
-// // ── Pure gold effect — writes directly to store by rowId ─────────────────
-// useEffect(() => {
-//     if (!activeRowId || !activeRowPureId) return;
-//     if (!pureStockData) return;
-//     if (isEditing) return;
-
-//     const key = `${activeRowId}::${activeRowPureId}`;
-
-//     // already processed same item
-//     if (appliedPureIdRef.current[activeRowId] === key) return;
-
-//     const capturedRowId = activeRowId;
-
-//     if (!pureStockData.actualTouch) {
-//         touchNotFoundRef.current.add(capturedRowId);
-
-//         setTimeout(() => {
-//             toaster.create({
-//                 title: "No Touch Found",
-//                 description:
-//                     "No touch found for this pure gold item. Please enter manually.",
-//                 type: "warning",
-//                 duration: 3000,
-//             });
-//         }, 0);
-
-//         appliedPureIdRef.current[activeRowId] = key;
-//         return;
-//     }
-
-//     touchNotFoundRef.current.delete(capturedRowId);
-
-//     const touch = pureStockData.actualTouch;
-
-//     // check existing row values before updating
-//     const existingRow = draftRows.find(
-//         (r) => r.__rowId === capturedRowId
-//     );
-
-//     const alreadyApplied =
-//         existingRow?.TOUCH &&
-//         existingRow?.ATOUCH;
-
-//     // skip everything if already applied
-//     if (alreadyApplied) {
-//         appliedPureIdRef.current[activeRowId] = key;
-//         return;
-//     }
-
-//     appliedPureIdRef.current[activeRowId] = key;
-
-//     // local state update
-//     setDraftRows((prev) =>
-//         prev.map((r) => {
-//             if (r.__rowId !== capturedRowId) return r;
-
-//             return recalcRow(
-//                 {
-//                     ...r,
-//                     TOUCH: touch,
-//                     ATOUCH: touch,
-//                 },
-//                 !!isIssue
-//             );
-//         })
-//     );
-
-//     // zustand store update
-//     if (committedRowIdsRef.current.has(capturedRowId)) {
-//         pendingStoreCallRef.current = () =>
-//             commitRowUpdate(capturedRowId, {
-//                 TOUCH: touch,
-//                 ATOUCH: touch,
-//             });
-//     }
-
-//     // toaster
-//     setTimeout(() => {
-//         toaster.create({
-//             title: "Touch Applied",
-//             description: `Touch ${touch} applied from pure gold data.`,
-//             type: "success",
-//             duration: 1500,
-//         });
-//     }, 0);
-// }, [
-//     pureStockData,
-//     activeRowId,
-//     activeRowPureId,
-//     isIssue,
-//     isEditing,
-//     draftRows,
-// ]);
 
     // ── Stone modal ───────────────────────────────────────────────────────────
     const handleOpenStoneModal = useCallback((rowId: string, grsWeight: number) => {
@@ -1157,14 +1052,12 @@ export default function DraftTransactionTable({
 
                         ...c,
                         draftRowId: capturedRowId,
-
-                       
-                              finalAmount: calculateMiscChargeFinalAmount({
-                                                                            chargeName :c.chargeName,
-                                                                            amount :Number(c.amount || 0),
-                                                                            pcs:pcs,
-                                                                            isHmcFinalAmt: usePcsMultiply
-                                                                        }),
+                        finalAmount: calculateMiscChargeFinalAmount({
+                            chargeName :c.chargeName,
+                            amount :Number(c.amount || 0),
+                            pcs:pcs,
+                            isHmcFinalAmt: usePcsMultiply
+                        }),
                         
                     }));
 
@@ -1285,7 +1178,7 @@ export default function DraftTransactionTable({
                     errors={errors}
                     touched={touched}
                     showTotals={committedRows.length > 0}
-                    showAddRow
+                    showAddRow = {transactionType === "APPRE" ? false :true}
                     showDeleteRow
                     maxVisibleRows={3}
                     accentColor={accentColor}
@@ -1305,6 +1198,8 @@ export default function DraftTransactionTable({
                     }}
                     showEnterNavigate={false}
                     tranEditing={isEditing}
+                    manualEntry = {transactionType === "APPRE" ? false : true}
+                    
                 />
             </Box>
 

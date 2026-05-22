@@ -19,6 +19,9 @@ type ApprovalHeaderActions = {
     startEdit: (sno: string) => void;
     stopEdit: () => void;
 
+    startModify : ()=>void;
+    stopModify : ()=>void;
+
     resetHeader: () => void;
 };
 
@@ -40,6 +43,7 @@ export const useApprovalHeader = create<ApprovalHeaderState & ApprovalHeaderActi
             headerForm: initialHeader,
             accCode: null,
             isEditing: false,
+            isModifying :false,
             editingSno: null,
             selectedTransactionId: null,
 
@@ -89,6 +93,11 @@ export const useApprovalHeader = create<ApprovalHeaderState & ApprovalHeaderActi
                     selectedTransactionId: null,
                 }),
 
+            startModify :()=>
+                set({isModifying:true}),
+            stopModify :()=>
+                set({isModifying:false}),
+
             resetHeader: () =>
                 set({
                     headerForm: initialHeader,
@@ -96,6 +105,7 @@ export const useApprovalHeader = create<ApprovalHeaderState & ApprovalHeaderActi
                     isEditing: false,
                     editingSno: null,
                     selectedTransactionId: null,
+                    isModifying:false
                 }),
         }),
         {

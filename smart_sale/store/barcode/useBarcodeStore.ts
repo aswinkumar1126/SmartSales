@@ -193,7 +193,7 @@ export const useBarcodeStore = create<BarcodeState>()(
     }),
     {
       name: "barcode-store",
-      storage: createJSONStorage(() => sessionStorage),
+      storage: createJSONStorage(() => localStorage),
       partialize: (s) => ({
         headerForm: s.headerForm,
         rows: s.rows,

@@ -8,6 +8,7 @@ import Image from "next/image";
 import saveIcon from '@/asserts/icons/save.png';
 import clearIcon from '@/asserts/icons/clear.jpeg';
 import updateIcon from '@/asserts/icons/update.png';
+import modifyIcon from '@/asserts/icons/modify.png';
 import { useApprovalTransactionStore } from "@/store/approval/useApprovalTransaction";
 import { toaster } from "@/components/ui/toaster";
 import { HiPrinter } from "react-icons/hi2";
@@ -24,7 +25,10 @@ export default function TransactionTypeSelector({
     onReset,
     isSaving,
     acCode,
-    onPrint
+    onPrint,
+    isModifying,
+    startModify,
+    stopModify,
 }: any) {
     // Get from Zustand store
     const {
@@ -181,9 +185,26 @@ export default function TransactionTypeSelector({
                         loadingText="Saving..."
                         variant='ghost'
                         p={0}
+                        disabled={isEditing && !isModifying}
                     >
                         <Image src={isEditing ? updateIcon : saveIcon} width={55} alt="save" />
                     </Button>
+                    {isEditing && 
+                        <>
+                            <Button 
+                            size="xs"
+                            bg={theme.colors.formColor}
+                            onClick={isModifying ? stopModify : startModify}
+                        
+                            loadingText="Saving..."
+                            variant='ghost'
+                            p={0}
+                        >
+                            <Image src={modifyIcon} width={72} alt="save" />
+                        </Button>
+                    
+                        </>
+                     }                  
                 </Box>
             }
 

@@ -123,8 +123,8 @@ const HmcMappingForm = () => {
     // const acType =
     //     form.acType?.trim().toUpperCase() || undefined;
 
-    const { data: allAccounts } = useAllAccountHead("CR");
-
+    const { data: allCustomer } = useAllAccountHead("CR");
+    const {data : allPurchaser } = useAllAccountHead("PR");
     const { data: items } = useStoneItems({ STUDDED :"Y"});
 
     const createMutation = useStoneMappingCreate();
@@ -135,16 +135,31 @@ const HmcMappingForm = () => {
 
     const customerList = useMemo(() => {
         const accounts = Array.isArray(
-            allAccounts?.data?.acheads
+            allCustomer?.data?.acheads
         )
-            ? allAccounts.data.acheads
+            ? allCustomer.data.acheads
             : [];
+
 
         return accounts.map((acc: any) => ({
             label: acc.ACNAME,
             value: String(acc.ACCODE),
         }));
-    }, [allAccounts]);
+    }, [allCustomer]);
+
+    const purchaserList = useMemo(() => {
+        const accounts = Array.isArray(
+            allPurchaser?.data?.acheads
+        )
+            ? allPurchaser.data.acheads
+            : [];
+
+
+        return accounts.map((acc: any) => ({
+            label: acc.ACNAME,
+            value: String(acc.ACCODE),
+        }));
+    }, [allPurchaser]);
 
     const itemTypeList = useMemo(() => {
         return (items ?? []).map((item: any) => ({
@@ -153,18 +168,20 @@ const HmcMappingForm = () => {
         }));
     }, [items]);
 
+    const accountCollection = form.acType === "PR" ? purchaserList : customerList
+
     /* ---------------- FORM CONFIG ---------------- */
 
     const formConfig =
         StoneMappingFormConfig({
             collection: {
-                // customerType: AccountTypeList,
-                customer: customerList,
+                customerType: AccountTypeList,
+                customer: accountCollection,
                 itemType: itemTypeList,
             },
 
             disabled: {
-                isCustomerDisabled: !form.accode,
+                isCustomerDisabled: !form.acType,
             },
         });
 
@@ -317,12 +334,12 @@ const HmcMappingForm = () => {
                     onError: (error: any) => {
                         console.log(
                             "create error",
-                            error
+                            error?.response
                         );
-                        toastLoaded(
-                            error?.response?.data?.message ||
-                            "Failed to create stoneMappingData."
-                        );
+                        // toastLoaded(
+                        //     error?.response?.data?.message ||
+                        //     "Failed to create stoneMappingData."
+                        // );
                         resetForm();
                     },
                 }
