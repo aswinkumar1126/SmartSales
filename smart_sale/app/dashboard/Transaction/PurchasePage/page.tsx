@@ -67,7 +67,6 @@ import { usePurchaseOpeningBalances } from "@/hooks/Transaction/purchase/usePurc
 import { useSyncPurchaseHeader } from "@/hooks/Transaction/purchase/usePurchaseHeaderSync";
 import { useLoadPurchaseTransaction } from "@/hooks/Transaction/purchase/usePurchaseTransactionLoad";
 
-import { useDraftRowOperations } from "@/hooks/Transaction/purchase/useDraftRowOperations";
 import { useLoadPurchaseTag } from "@/hooks/Transaction/purchase/useLoadPurchaseTag";
 import { useLoadPurchaseStock } from "@/hooks/Transaction/purchase/useLoadPurchaseStock";
 
@@ -660,7 +659,6 @@ export default function PurchasePage() {
 
     } = usePurchaseTransactionStore();
 
-    const { handleAddRow, handleEditRow, handleRemoveRow, handleUpdateRow } = useDraftRowOperations(isTagedItem);
 
 useGlobalKey(
     "alt+p",
@@ -1228,14 +1226,9 @@ useGlobalKey(
             stopEdit();
             refetchTransactionHeaderDetail();
 
-            // toaster.create({
-            //     title: "Edit Cancelled",
-            //     description: "Transaction edit has been cancelled.",
-            //     type: "info",
-            // });
+          
         } else {
             localStorage.removeItem(TYPE_KEY);
-            setSelectedTransactionId('');
         }
 
         const safeRate = !isApiRateEnabled ? rate ?? 0 : 0;
@@ -1368,22 +1361,6 @@ useGlobalKey(
                 description: "Transaction Updated Successfully",
                 type: "success",
             });
-
-
-            // setSelectedTransactionId('');
-            // setEditingState({ rowId: null, transactionType: null });
-            // resetDraftRowTempId();
-
-            // setSingleSearch("");
-
-            // setEditingSno(null);
-
-            // resetHeader();
-            // resetBalance();
-            // resetStore();
-            // stopEdit();
-            // refetchTransactionHeaderDetail();
-            // setSelectedTransactionId(null);
 
             handleResetDraft();
 

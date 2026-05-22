@@ -25,7 +25,7 @@ export const useLoadSalesTransaction = () => {
         loadSalesHeader(transactionData.TRANSACTION_HEADER, setHeaderForm, setAccCode);
         loadSalesClosing(transactionData.CLOSING_DETAILS, setClosingDetails);
 
-        // loadOpening(transactionData.BALANCE, setBaseOpening);
+      
 
         const { rows, selectedTransactionTypes } = mapSalesTransactionItems(transactionData, isUseFinalAmount);
 

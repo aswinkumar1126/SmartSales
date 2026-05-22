@@ -541,6 +541,7 @@ export function useBarcodeGenerate() {
     const remainingByRef = remainingRef.current;
     let effectiveBalance = { ...remainingByRef };
 
+    console.log(stoneTolerance,'stoneTolerance in load');
 
     if (!parsedRows.length) return;
     if (!validateHeaderWithToast(headerForm)) return;
@@ -571,7 +572,7 @@ export function useBarcodeGenerate() {
     toaster.create({ title: "Excel Imported", description: `${parsedRows.length} row(s) added`, type: "success", duration: 2500 });
     setExcelData([]);
     setExcelDrawerOpen(false);
-  }, [headerForm, rows, limits, isEditing, validateHeaderWithToast, validateRows, assignBarcodes, setRows, tolerance]);
+  }, [headerForm, rows, limits, isEditing, validateHeaderWithToast, validateRows, assignBarcodes, setRows, tolerance ,stoneTolerance]);
 
 
   // Replace handleExcelUpdate with this corrected version:
@@ -595,6 +596,7 @@ export function useBarcodeGenerate() {
         tolerance,
         balance: effectiveBalance,
         isUpdate: true,
+        stnTolerance : stoneTolerance,
       })
     ) {
       return;
@@ -772,6 +774,7 @@ export function useBarcodeGenerate() {
     savedRowsInEditing,
     baseBarcodePrefix,
     startBarcodeNumber,
+    stoneTolerance
   ]);
 
 
@@ -813,7 +816,7 @@ export function useBarcodeGenerate() {
     let effectiveBalance = { ...remainingByRef };
 
     if (!validateHeaderWithToast(headerForm)) return;
-    if (!validateRows({ rows, limits, balance: effectiveBalance, tolerance })) return;
+    if (!validateRows({ rows, limits, balance: effectiveBalance, tolerance ,stnTolerance :stoneTolerance })) return;
     const { purchaseDetails, taggingDetails } = buildPayload();
     setIsSubmittingTag(true);
     console.log(purchaseDetails,taggingDetails ,'createTag');
@@ -836,14 +839,14 @@ export function useBarcodeGenerate() {
         onSettled: () => setIsSubmittingTag(false),
       }
     );
-  }, [headerForm, rows, limits, validateHeaderWithToast, validateRows, buildPayload, createTag, setPrintId, setPrintDetails, clearAll, printAll, tolerance]);
+  }, [headerForm, rows, limits, validateHeaderWithToast, validateRows, buildPayload, createTag, setPrintId, setPrintDetails, clearAll, printAll, tolerance ,stoneTolerance]);
 
   const handleUpdate = useCallback(() => {
     const remainingByRef = remainingRef.current;
     let effectiveBalance = { ...remainingByRef };
 
     if (!validateHeaderWithToast(headerForm)) return;
-    if (!validateRows({ rows, limits, balance: effectiveBalance, countOnlyNew: false, tolerance })) return;
+    if (!validateRows({ rows, limits, balance: effectiveBalance, countOnlyNew: false, tolerance ,stnTolerance :stoneTolerance })) return;
     const { purchaseDetails, taggingDetails } = buildPayload();
     setIsSubmittingTag(true);
     console.log("update tag", purchaseDetails, taggingDetails)
@@ -864,7 +867,7 @@ export function useBarcodeGenerate() {
         onSettled: () => setIsSubmittingTag(false),
       }
     );
-  }, [headerForm, rows, limits, validateHeaderWithToast, validateRows, buildPayload, updateTag, setPrintId, setPrintDetails, clearAll, printAll, tolerance]);
+  }, [headerForm, rows, limits, validateHeaderWithToast, validateRows, buildPayload, updateTag, setPrintId, setPrintDetails, clearAll, printAll, tolerance ,stoneTolerance]);
 
   /* ── Load existing tag for edit ── */
   useEffect(() => {

@@ -79,8 +79,10 @@ const mapSalesItems = (list: any[] = [], type: string, isUseFinalAmount:boolean)
 
 
         const totalStoneWeight = normalizedStones.reduce(
-            (sum: number, s: any) => sum + s.stoneWeight, 0
+            (sum: number, s: any) => sum + Number(s.stoneWeight), 0
         );
+        console.log(totalStoneWeight,'totalStoneWeight');
+
         const totalStoneAmount = normalizedStones.length > 0
             ? normalizedStones.reduce((sum: number, s: any) => sum + Number(s.stoneAmount), 0)
             : item.STNAMT || 0;
@@ -102,13 +104,14 @@ const mapSalesItems = (list: any[] = [], type: string, isUseFinalAmount:boolean)
 
             PCS: Number(item.PCS || 0),
             GRSWT: grswt,
-            STNWT: totalStoneWeight,
+            STNWT: Number(totalStoneWeight).toFixed(3),
             NETWT: grswt - totalStoneWeight,
 
             TOUCH: Number(item.TOUCH || 0),
             PUREWT: Number(item.PUREWT || 0),
 
             HMC : totalHMC,
+            STNAMT : totalStoneAmount,
             MC: Number(item.MC || 0),
             STN_PRESENT : stonePresent,
            
@@ -135,6 +138,7 @@ const mapIssueItems = (list: any[] = [], type: string) => {
         return {
             __rowId: `edit-${item.SNO || Date.now()}-${index}`,
             __isNew: false,
+            isExisting: true,
 
             TRANSACTION_TYPE: type,
             _type: type,

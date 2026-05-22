@@ -57,7 +57,7 @@ const mapPurchaseReturnItems = (
         }));
 
         const totalStoneWeight = normalizedStones.reduce(
-            (sum: number, s: any) => sum + s.stoneWeight, 0
+            (sum: number, s: any) => sum + Number(s.stoneWeight), 0
         );
         const totalStoneAmount = normalizedStones.length > 0
             ? normalizedStones.reduce((sum: number, s: any) => sum + Number(s.stoneAmount), 0)
@@ -75,17 +75,21 @@ const mapPurchaseReturnItems = (
             __rowId: rowId,
             __isNew: false,
             __isTagged: isTagged,
+
             ITEM_TYPE,
             TRANSACTION_TYPE: type,
             _type: type,
             ITEMID: String(item.ITEMID || ""),
             TAGNO: item.TAGNO || "",
             PCS: Number(item.PCS || 0),
+
             GRSWT: grswt,
             STNWT: stnwt,
             NETWT: grswt - stnwt,
+
             TOUCH: Number(item.TOUCH || 0),
             PUREWT: Number(item.PUREWT || 0),
+
             STNAMT: totalStoneAmount,
             HMC: totalHMC,
             MC: Number(item.MC || 0),
@@ -173,11 +177,14 @@ const mapPurchaseItems = (
             ITEMID: String(item.ITEMID || ""),
             TAGNO: item.TAGNO || "",
             PCS: Number(item.PCS || 0),
+
             GRSWT: grswt.toFixed(3),
             STNWT: stnwt.toFixed(3),
             NETWT: netwt,
+
             TOUCH: item.TOUCH || "TOUCH",
             PUREWT: Number(item.PUREWT || 0),
+
             MC: Number(item.MC || 0),
             HMC: totalHMC,
             STN_PRESENT: stnPresent, 
@@ -208,13 +215,18 @@ const mapIssueItems = (list: any[] = [], type: string) => {
             __isNew: false,
             TRANSACTION_TYPE: type,
             _type: type,
+
             PUREID: String(item.PUREID || ""),
+
             WT: wt,
             AWT: wt,
+
             TOUCH: Number(item.TOUCH || 0),
             ATOUCH: Number(item.ATOUCH || 0),
+
             PUREWT: Number(item.PUREWT || 0),
             APUREWT: Number(item.APUREWT || 0),
+            
             DESCRIPTION: item.DESCRIPTION || "",
             SNO: item.SNO || "",
 

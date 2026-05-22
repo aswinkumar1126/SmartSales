@@ -204,6 +204,7 @@ export function useTaggingValidation() {
         });
         return false;
       }
+      console.log(stnTolerance,'stnTolerance')
 
       // ✅ ± tolerance ranges
       const absTolerance = Math.abs(tolerance ?? 0);

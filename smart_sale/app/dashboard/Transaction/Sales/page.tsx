@@ -66,7 +66,6 @@ import { useSalesOpeningBalances } from "@/hooks/Transaction/sales/useSalesOpeni
 import { useSyncSalesHeader } from "@/hooks/Transaction/sales/useSalesHeaderSync";
 import { useLoadSalesTransaction } from "@/hooks/Transaction/sales/useSalesTransactionLoad";
 
-import { useDraftRowOperations } from "@/hooks/Transaction/sales/useDraftRowOperations";
 import { useLoadSaleTag } from "@/hooks/Transaction/sales/useLoadSaleTag";
 import { useLoadSalesStock } from "@/hooks/Transaction/sales/useLoadSalesStock";
 
@@ -209,7 +208,8 @@ export default function SalesPage() {
     const [isFilterOpen, setIsFilterOpen] = useState(false);
     const [apiBalanceOpening, setApiBalanceOpening] = useState({ openPure: 0, openCash: 0 });
 
-    const [selectedTransactionId, setSelectedTransactionId] = useState<string | null>(null);
+    const [selectedTransactionId, setSelectedTransactionId] =
+        useSessionStorage<string | null>("selectedTransactionId", null); 
 
     const [baseOpening, setBaseOpening] = useSessionStorage<{ openPure: number, openCash: number }>('sales-openingBalance', {
         openPure: 0,
@@ -264,13 +264,6 @@ export default function SalesPage() {
     /* ================================
        State Management
     ================================ */
-
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            setLoading(false);
-        }, 1000);
-        return () => clearTimeout(timer);
-    }, []);
 
 
 
@@ -828,28 +821,23 @@ useGlobalKey(
     ================================ */
 
      // This useEffect loads transaction data when transactionsById changes
-        useEffect(() => {
-            if (transactionsById && selectedTransactionId) {
-                setEditingRowsData(transactionsById);
-                handleEditTransaction(transactionsById, selectedTransactionId);
-            }
-        }, [transactionsById, selectedTransactionId]);
+useEffect(() => {
+    if (!transactionsById || !selectedTransactionId) return;
 
+    setEditingRowsData(transactionsById);
+    handleEditTransaction(transactionsById, selectedTransactionId);
+
+}, [transactionsById]); // ✅ fresh data arrival drives this, not the ID
 
     const handleRowClick = (row: any, clickedTransactionType: string) => {
-        // console.log('Row clicked:', row, 'Type:', clickedTransactionType);
         setEditingState({
             rowId: row.__rowId,
             transactionType: clickedTransactionType
         });
-        // setEditingRowId(row.__rowId);
 
     };
 
     const handleCancelEdit = useCallback(() => {
-        // console.log('Cancelling edit, editingState:', editingState);
-
-        // Remove temp row ONLY for the current transaction type
 
         // Clear editing state
         setEditingState({ rowId: null, transactionType: null });
@@ -899,7 +887,7 @@ useGlobalKey(
         }
 
 
-        setSelectedTransactionId(null);
+        setSelectedTransactionId(null); // Clear selected transaction ID when changing types
     };
 
 
@@ -1022,8 +1010,6 @@ useGlobalKey(
             rowId: newRow.__rowId,
             transactionType: targetType.code, // FIXED
         });
-
-        // setIsStockDrawerOpen(false);
     };
 
 
@@ -1060,9 +1046,6 @@ useGlobalKey(
         originalTransactionData, // Pass the original transaction data
     });
 
-    // const editavailable = getAvailableWeight('5');
-    // console.log(editavailable, 'editavailable');
-
 
     /* ================================
         Calculate Totals For Specific Type
@@ -1093,13 +1076,7 @@ useGlobalKey(
     }, [draftRows]);
 
       const isClosingChanged = useCallback(() => {
-            // const prev = initialClosingRef.current ?? {};
-            // const current = getClosingDetailsPayload() ?? {};
-            // console.log(current, 'currentPayloadClosingRef')
-    
-            // const closingChanged = !lodash.isEqual(prev, current);
-    
-            // console.log(closingChanged,'closingChanged')
+        
     
             const isBalanceSame = Number(openingBalances.openPure || 0) === Number(closingPure || 0) && Number(openingBalances.openCash || 0) === Number(closingCash || 0);
     
@@ -1173,20 +1150,24 @@ useGlobalKey(
 
         return { valid: true, payload };
     };
-    const handleReSelectTransaction = async () => {
-        // 1. Reset the selectedTransactionId first to trigger a clean re-fetch cycle
-        setSelectedTransactionId(null);
 
-        // 2. Await the refetch so we have fresh data
-        await refetchTransactionListById();
-
-        // 3. Now set the ID again — this will trigger the useEffect with the new data
-        setSelectedTransactionId(selectedTransactionId);
-    };
+  const handleReSelectTransaction = async () => {
+    const currentId = selectedTransactionId; // ✅ capture immediately
+    
+    console.log(currentId, 'reselecting transaction');
+    
+    setSelectedTransactionId(null);          // reset
+    
+    await refetchTransactionListById();
+    
+    console.log(currentId, 'after refetch'); // ✅ still has correct value
+    
+    setSelectedTransactionId(currentId);     // ✅ use captured value
+};
 
     const handleResetDraft = () => {
 
-        setSelectedTransactionId('');
+        setSelectedTransactionId(null);
 
         setEditingState({ rowId: null, transactionType: null });
         resetDraftRowTempId();
@@ -1275,13 +1256,6 @@ useGlobalKey(
                         type: "success",
                     });
 
-                    // goldStockRefetch();
-                    // itemStockRefetch();
-                    // openingBalanceRefetch();
-
-                    // resetStore();
-                    // resetBalance();
-                    // setIsOpenSalesSaveModal(false);
                     handleResetDraft();
                 },
 
@@ -1376,6 +1350,7 @@ useGlobalKey(
 
             return;
         }
+        setDraftRows([]); // Clear draft rows immediately to prevent stale data display
          
 
         setSelectedTransactionId(transactionId);
@@ -1426,6 +1401,14 @@ useGlobalKey(
         loadSaleTag(tagNo, Number(headerForm.CUSTOMER));
     };
 
+    const handleSave = isEditing
+  ? handleUpdateTransaction
+  : handleSaveTransaction;
+
+const handleReset = isEditing
+  ? (isModifying ? handleResetDraft : handleReSelectTransaction)
+  : handleResetDraft;
+
 
     return (
         <>
@@ -1464,8 +1447,8 @@ useGlobalKey(
                             setIsStockDrawerOpen={setIsStockDrawerOpen}
                             handleShowFilter={openFilter}
                             isEditing={isEditing}
-                            onSave={isEditing ? handleUpdateTransaction : handleSaveTransaction}
-                            onReset={isEditing ? isModifying ? handleResetDraft : handleReSelectTransaction : handleResetDraft}
+                            onSave={handleSave}
+                            onReset={handleReset}
                             isSaving={
                                 createTransaction.isPending || updateTransaction.isPending
                             }

@@ -30,7 +30,7 @@ export const TransactionListing: React.FC<TransactionListingProps> = ({
 }) => {
     const { theme } = useTheme();
 
-    const [selectedTransactionId, setSelectedTransactionId] = useSessionStorage< string|null >('SaleSelectedTranId', null); // no default selection
+    const [selectedTransactionId, setSelectedTransactionId] = useSessionStorage< string >('SaleSelectedTranId', ""); // no default selection
     const containerRef = useRef<HTMLDivElement>(null);
 
     
@@ -45,7 +45,7 @@ export const TransactionListing: React.FC<TransactionListingProps> = ({
     useEffect(() => {
         if (deselectFlag) {
             console.log('comes')
-            setSelectedTransactionId(null);
+            setSelectedTransactionId("");
         }
     }, [deselectFlag]);
 
