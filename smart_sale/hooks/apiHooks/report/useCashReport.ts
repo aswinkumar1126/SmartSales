@@ -10,3 +10,4 @@ export const useCashReport  =(params:CashReportParams , isEnabled :boolean) => {
         enabled: isEnabled
     })
 }
+

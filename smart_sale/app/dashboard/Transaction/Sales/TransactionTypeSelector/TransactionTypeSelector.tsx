@@ -239,7 +239,7 @@ export default function TransactionTypeSelector({
                     className="flex flex-col items-center cursor-pointer animate__animated animate__fadeInUp gap-1"
                     onClick={() => handleShowFilter(!showFilter)}
                 >
-                    {showFilter ? <HiX size={18} className="text-red-500" /> : <HiFilter size={15} className="text-blue-500" />}
+                    {showFilter ? <HiX size={18} className="text-red-500" /> : <HiFilter size={18} className="text-blue-500" />}
                     <Text fontSize="2xs" fontWeight="semibold">
                         {showFilter ? "HIDE FILTER" : "SHOW FILTER"}
                     </Text>

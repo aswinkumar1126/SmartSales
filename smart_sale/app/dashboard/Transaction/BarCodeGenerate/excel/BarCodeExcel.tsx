@@ -273,6 +273,7 @@ const BarCodeExcel: React.FC<BarCodeExcelProps> = ({
     const [fileName, setFileName] = useState("");
     const [uploadError, setUploadError] = useState("");
 
+    
     /* ============================================================
        SYNC
        ============================================================ */
@@ -554,13 +555,13 @@ const BarCodeExcel: React.FC<BarCodeExcelProps> = ({
        ============================================================ */
 
     return (
-        <Box display="flex" flexDirection="column" gap={3} p={2}>
+        <Box display="flex" flexDirection="column" gap={2} p={1}>
 
             <Box
                 display="flex"
                 alignItems="center"
-                gap={3}
-                p={3}
+                gap={2}
+                p={2}
                 border="1px dashed"
                 borderColor="gray.300"
                 rounded="md"
@@ -577,7 +578,7 @@ const BarCodeExcel: React.FC<BarCodeExcelProps> = ({
                 />
 
                 <Button
-                    size="sm"
+                    size="xs"
                     variant="outline"
                     colorPalette="blue"
                     onClick={() => fileRef.current?.click()}
@@ -586,12 +587,12 @@ const BarCodeExcel: React.FC<BarCodeExcelProps> = ({
                 </Button>
 
                 <Button
-                    size="sm"
+                    size="xs"
                     variant="outline"
                     colorPalette="red"
                     onClick={handleClear}
                 >
-                    <Icon as={Trash2} w={4} h={4} mr={1} />
+                    <Icon as={Trash2} w={3} h={3} mr={1} />
                     Clear Grid
                 </Button>
 
@@ -625,7 +626,7 @@ const BarCodeExcel: React.FC<BarCodeExcelProps> = ({
                     colWidths={colWidths}
                     rowHeaders={true}
                     width="100%"
-                    height="420px"
+                    height="300px"
                     enterMoves={{ row: 1, col: 0 }}
                     licenseKey="non-commercial-and-evaluation"
                     afterChange={handleAfterChange}

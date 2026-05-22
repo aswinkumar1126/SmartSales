@@ -385,13 +385,18 @@ export function useBarcodeGenerate() {
 
     let effectiveBalance = { ...remainingByRef };
 
+    console.log(effectiveBalance,'effectiveBalance');
+    console.log(editingRowId, originalRow , 'editing');
+
     if (editingRowId && originalRow) {
       effectiveBalance = {
-        PCS: effectiveBalance.PCS + 1,
-        GRSWT: effectiveBalance.GRSWT + Number(originalRow.grsweight || 0),
-        STNWT: effectiveBalance.STNWT + Number(originalRow.purchaseStoneWt || 0),
+        PCS: Number(effectiveBalance.PCS) + 1,
+        GRSWT: Number(effectiveBalance.GRSWT) + Number(originalRow.grsweight || 0),
+        STNWT: Number(effectiveBalance.STNWT) + Number(originalRow.purchaseStoneWt || 0),
       };
     }
+
+    console.log(effectiveBalance, 'effectiveBalance after edit')
 
     const errors = validateSingleRow(
 
@@ -405,7 +410,8 @@ export function useBarcodeGenerate() {
       effectiveBalance,
       limits,
       rows,
-      tolerance
+      tolerance,
+      stoneTolerance
     );
 
     console.log(errors, 'row errors');
@@ -601,6 +607,8 @@ export function useBarcodeGenerate() {
     ) {
       return;
     }
+
+    
 
     const currentRows = rowsRef.current;
 
@@ -862,7 +870,8 @@ export function useBarcodeGenerate() {
           handleClear();
         },
         onError: (err: any) => {
-          toaster.create({ title: "Error", description: err?.message || "Update failed", type: "error", duration: 2000 });
+          console.log(err?.response ,'responseerr');
+          toaster.create({ title: "Error", description: err?.data || "Update failed", type: "error", duration: 2000 });
         },
         onSettled: () => setIsSubmittingTag(false),
       }
@@ -872,11 +881,11 @@ export function useBarcodeGenerate() {
   /* ── Load existing tag for edit ── */
   useEffect(() => {
     if (!tagDetails) return;
+
     const purchase = tagDetails.PURCHASEDETAILS;
     const apiRows = tagDetails.TAGGINGDETAILS || [];
 
-    console.log(apiRows,'apiRows')
-
+    // ✅ Always restore header form
     setHeaderForm({
       ENTRYNO: String(purchase.ENTRYNO ?? ""),
       COMPANYNAME: String(purchase.ACCODE ?? ""),
@@ -886,31 +895,37 @@ export function useBarcodeGenerate() {
       RETAG: false,
     });
 
-    loadApiRows(
-      apiRows.map((r: any) => ({
-        id: `edit-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-        draftRowId: String(purchase.ENTRYNO),
-        grsweight: Number(r.GRSWT) || 0,
-        purchaseStoneWt: Number(r.PURCHASESTNWT) || 0,
-        stoneWt: Number(r.STNWT) || 0,
-        navaWt: Number(r.NAVAWT) || 0,
-        salesStoneWt: Number(r.SALESSTNWT) || 0,
-        // wastePercent: Number(r.WASPER) || 0,
-        size: String(r.SIZE || r.SIZEID || ""),
-        diamondWt: Number(r.DIAWT) || 0,
-        // mc: Number(r.MC) || 0,
-        // touch: Number(r.TOUCH) || 0,
-        barcode: r.TAGNO || "",
-        isTaged : true,
-      }))
-    );
     setIsEditing(true);
     setPrintDetails(apiRows);
+
+    // ✅ Only load rows from API if store has no rows for this entry
+    // (i.e., fresh load, not a refresh with unsaved edits)
+    const currentRows = rowsRef.current;
+    const hasRowsForThisEntry = currentRows.length > 0 &&
+      currentRows.some(r => r.draftRowId === String(purchase.ENTRYNO));
+
+    if (!hasRowsForThisEntry) {
+      loadApiRows(
+        apiRows.map((r: any) => ({
+          id: `edit-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+          draftRowId: String(purchase.ENTRYNO),
+          grsweight: Number(r.GRSWT) || 0,
+          purchaseStoneWt: Number(r.PURCHASESTNWT) || 0,
+          stoneWt: Number(r.STNWT) || 0,
+          navaWt: Number(r.NAVAWT) || 0,
+          salesStoneWt: Number(r.SALESSTNWT) || 0,
+          size: String(r.SIZE || r.SIZEID || ""),
+          diamondWt: Number(r.DIAWT) || 0,
+          barcode: r.TAGNO || "",
+          isTaged: true,
+        }))
+      );
+    }
+    // else: rows already in store from localStorage, keep them as-is
+
   }, [tagDetails]);
 
-
   
-
   /* ── Tag selection ── */
   const handleSelectTag = useCallback((entryNo: string) => {
     if (rowsRef.current.length > 0 && !isEditing) {
@@ -1022,7 +1037,7 @@ export function useBarcodeGenerate() {
 
   const showTableForm = useMemo(() => {
     if (editRowId) return true;
-    if (isEditing) return false;
+    // if (isEditing) return false;
     return rows.length < safeNum(selectedItem?.PCS);
   }, [selectedItem?.PCS, rows.length, editRowId, isEditing]);
 

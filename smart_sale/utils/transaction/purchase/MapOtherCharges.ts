@@ -36,7 +36,7 @@ export function MapOtherCharges(
                     sum + (c.finalAmount),
                 0
             )
-            : Number(item.HMC || item.MC || 0);
+            : Number(item.HMC || 0);
 
     return { normalizedMisc, totalHMC };
 }

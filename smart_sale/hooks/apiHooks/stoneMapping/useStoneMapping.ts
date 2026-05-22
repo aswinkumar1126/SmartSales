@@ -26,12 +26,10 @@ export const useStoneMappingCreate = () => {
             queryClient.invalidateQueries({
                 queryKey: ["hmc"],
             });
-
-            toastCreated("HMC Mapping");
         },
 
         onError: (error) => {
-            console.error("Error creating hmc:", error);
+            console.error("Error creating hmc:", error?.message);
             toastError(`${error}`);
         },
     });
@@ -79,19 +77,6 @@ export const useModifyStoneMappingById = () => {
                 data.id,
                 data.formData
             ),
-
-        onSuccess: () => {
-            queryClient.invalidateQueries({
-                queryKey: ["hmc"],
-            });
-
-            toastUpdated("HMC Mapping");
-        },
-
-        onError: (error) => {
-            console.error("Error updating hmc:", error);
-            toastError(`${error}`);
-        },
     });
 };
 

@@ -117,8 +117,8 @@ export const useLoadTag = () => {
                 __previewSno: freshDraftRows.length + 1, // ✅ fresh length
                 __isTaged: true,
 
-                TRANSACTION_TYPE: "SA",
-                _type: "SA",
+                TRANSACTION_TYPE: "APPIS",
+                _type: "APPIS",
 
                 ITEMID: data.ITEMID ? String(data.ITEMID) : "",
                 ITEMNAME :data.ITEMNAME ,

@@ -382,6 +382,52 @@ function BarCodeGenerate() {
           maxBodyHeight="300px"
         />
 
+        <Box
+          display="flex"
+          alignItems="center"
+          gap={2}
+          px={3}
+          py={1.5}
+          bg="gray.50"
+          border="0.5px solid"
+          borderColor="gray.200"
+          rounded="md"
+          flexWrap="wrap"
+          _dark={{ bg: "gray.800", borderColor: "gray.700" }}
+        >
+          <Text fontSize="10px" color="gray.400" mr={1}>Shortcuts</Text>
+
+          {[
+            { keys: "Alt S", label: "Save / Update" },
+            { keys: "Alt C", label: "Clear" },
+            // { keys: "Alt M", label: "Modify" },
+            { keys: "F1", label: "Filter" },
+          ].map(({ keys, label }, i, arr) => (
+            <React.Fragment key={keys}>
+              <Box display="flex" alignItems="center" gap={1}>
+                <Box
+                  as="kbd"
+                  fontSize="10px"
+                  fontFamily="mono"
+                  px="5px"
+                  py="2px"
+                  bg="white"
+                  border="0.5px solid"
+                  borderColor="gray.300"
+                  rounded="sm"
+                  lineHeight="1.6"
+                  _dark={{ bg: "teal.200", borderColor: "gray.500" }}
+                >
+                  {keys}
+                </Box>
+                <Text fontSize="11px" color="gray.500">{label}</Text>
+              </Box>
+              {i < arr.length - 1 && (
+                <Text fontSize="10px" color="gray.300">|</Text>
+              )}
+            </React.Fragment>
+          ))}
+        </Box>
      
           < Drawer.Root 
           open={excelDrawerOpen}
@@ -415,6 +461,12 @@ function BarCodeGenerate() {
                   onFileParsed={setExcelData}
                 />
               </Drawer.Body>
+              <Drawer.Footer>
+                  <StockSummaryPanel
+                    summary={stockSummary}
+                    headerBg={theme.colors.accient}
+                  />
+              </Drawer.Footer>
             </Drawer.Content>
           </Drawer.Positioner>
         </Portal>
@@ -436,6 +488,9 @@ function BarCodeGenerate() {
           collections={{ acCodeCollection: allPartiesCollections }}
           isEditing={isEditing}
         />
+      </Box>
+      <Box>
+    
       </Box>
     </Box>
   );

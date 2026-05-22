@@ -33,7 +33,7 @@ import { useGlobalKey } from "@/components/key/useGlobalKey";
 
 // Hooks
 
-import { useTransactions } from "@/hooks/apiHooks/transaction/useTransactions";
+import { useApprovalTransactions } from "@/hooks/apiHooks/transaction/useApprovalTransaction";
 import { useAllAccountHead } from "@/hooks/apiHooks/accountHead/useAccountHead";
 import { useStoneItems } from "@/hooks/apiHooks/item/useItems";
 import { useCreateTransactions, useUpdateTransaction, useTransactionByTransId } from "@/hooks/apiHooks/transaction/useApprovalTransaction";
@@ -149,7 +149,10 @@ export default function SalesPage() {
         startEdit,
         stopEdit,
         resetHeader,
-        isEditing
+        isEditing,
+        isModifying,
+        startModify,
+        stopModify
     } = useApprovalHeader();
 
 
@@ -303,7 +306,7 @@ export default function SalesPage() {
 
     const { data: allPureGoldNames } = usePureGoldNames();
 
-    const { data: transactionsById, isLoading: getbySnoLoading } = useTransactionByTransId(selectedTransactionId, "sales");
+    const { data: transactionsById, isLoading: getbySnoLoading ,refetch:refetchTransactionListById  } = useTransactionByTransId(selectedTransactionId, "sales");
 
 
 
@@ -356,8 +359,8 @@ export default function SalesPage() {
 
 
     // Note: This hook might need to be updated to handle multiple transaction types
-    const { data: transactionList, isLoading, refetch: refetchTransactionList } = useTransactions({
-        TRANTYPE: "sales",
+    const { data: transactionList, isLoading, refetch: refetchTransactionList } = useApprovalTransactions({
+     
         trantype: null,
         accode: saleFilter.accode ? Number(saleFilter.accode) : null,
         startdate: saleFilter.fromDate || null,
@@ -367,11 +370,12 @@ export default function SalesPage() {
 
     const { data: metalRates, isLoading: metalRatesLoading, isError: metalRatesError } = useRates();
 
-    const { data: transactionHeaderDetail, isLoading: transactionHeaderLoading, refetch: refetchTransactionHeaderDetail } = useTransactions({
-        TRANTYPE: "sales",
+    const { data: transactionHeaderDetail, isLoading: transactionHeaderLoading, refetch: refetchTransactionHeaderDetail } = useApprovalTransactions({
+        
         accode: headerForm.CUSTOMER ? Number(headerForm.CUSTOMER) : null
     });
 
+    console.log(transactionHeaderDetail,'transactionHeaderDetail');
 
 
     useSyncApprovalHeader(transactionHeaderDetail, isApiRateEnabled, metalRates);
@@ -604,8 +608,9 @@ export default function SalesPage() {
     // KEY TO ACCESS
 
     useGlobalKey("F1", () => openFilter(), "openFilter");
-    useGlobalKey("Alt+s", () => handleSaveTransaction(), "saveTransaction");
-    useGlobalKey("Alt+c", () => handleResetDraft(), "ClearTransaction");
+    useGlobalKey("Alt+s", () => handleSaveTransaction(), "saveApprovalTransaction");
+    useGlobalKey("Alt+c", () => handleResetDraft(), "ClearApprovalTransaction");
+    useGlobalKey("Alt+m", () => { isModifying ? stopModify() : startModify() }, "modifyApprovalTransaction");
 
     const handleBillParamChange = useCallback((field: any, value: any) => {
         setBillParams(prev => ({
@@ -768,13 +773,13 @@ export default function SalesPage() {
     ================================ */
 
     // This useEffect loads transaction data when transactionsById changes
-    useEffect(() => {
-        if (transactionsById && selectedTransactionId) {
+   useEffect(() => {
+           if (transactionsById && selectedTransactionId) {
+               setEditingRowsData(transactionsById);
+               handleEditTransaction(transactionsById, selectedTransactionId);
+           }
 
-            setEditingRowsData(transactionsById);
-            handleEditTransaction(transactionsById, selectedTransactionId)
-        }
-    }, [transactionsById, selectedTransactionId]);
+       }, [transactionsById, selectedTransactionId]);
 
 
 
@@ -809,15 +814,16 @@ export default function SalesPage() {
 
 
 
-    const handleEditTransaction = useCallback((data: any, sno: string) => {
+  const handleEditTransaction = useCallback((data: any, sno: string) => {
 
         setOpeningBalance(data, true);
         setEditingSno(sno);
 
+        console.log(data, 'datadata')
+
         const result = loadTransaction(data, sno);
         if (!result) return;
 
-        console.log(data, 'datadata')
 
         setSelectedTransactionTypes(result.selectedTransactionTypes);
         setDraftRows(result.rows);
@@ -825,7 +831,6 @@ export default function SalesPage() {
 
 
     }, []);
-
 
     /* ================================
        Transaction Type Handlers
@@ -1031,40 +1036,6 @@ export default function SalesPage() {
         );
     }, [draftRows]);
 
-    // const isClosingChanged = useCallback(() => {
-    //     // const prev = initialClosingRef.current ?? {};
-    //     // const current = getClosingDetailsPayload() ?? {};
-    //     // console.log(current, 'currentPayloadClosingRef')
-
-    //     // const closingChanged = !lodash.isEqual(prev, current);
-
-    //     // console.log(closingChanged,'closingChanged')
-
-    //     const isBalanceSame = Number(openingBalances.openPure || 0) === Number(closingPure || 0) && Number(openingBalances.openCash || 0) === Number(closingCash || 0);
-
-
-
-    //     const hasAnyValue =
-    //         Number(closingDetails.CONVAMT || 0) > 0 ||
-    //         Number(closingDetails.CONVWT || 0) > 0 ||
-    //         Number(closingDetails.CASHPAID || 0) > 0 ||
-    //         Number(closingDetails.CASHRCVD || 0) > 0 ||
-    //         Number(closingDetails.BANKPAID || 0) > 0 ||
-    //         Number(closingDetails.BANKRCVD || 0) > 0 ||
-    //         Number(closingDetails.TDSPER || 0) > 0 ||
-    //         Number(closingDetails.TDSAMT || 0) > 0 ||
-    //         Number(closingDetails.GSTPER || 0) > 0 ||
-    //         Number(closingDetails.GSTAMT || 0) > 0 ||
-    //         (closingDetails.BANKPAIDDETAILS?.length ?? 0) > 0 ||
-    //         (closingDetails.BANKRCVDDETAILS?.length ?? 0) > 0;
-
-    //     return (!isBalanceSame && hasAnyValue);
-    // }, [closingDetails, getClosingDetailsPayload]);
-
-
-
-    // console.log(isDraftRowsChanged(), isClosingChanged(), 'isDraftRowsChanged, isClosingChanged')
-
 
 
     /* ================================
@@ -1111,7 +1082,16 @@ export default function SalesPage() {
         return { valid: true, payload };
     };
 
+    const handleReSelectTransaction = async () => {
+        // 1. Reset the selectedTransactionId first to trigger a clean re-fetch cycle
+        setSelectedTransactionId(null);
 
+        // 2. Await the refetch so we have fresh data
+        await refetchTransactionListById();
+
+        // 3. Now set the ID again — this will trigger the useEffect with the new data
+        setSelectedTransactionId(selectedTransactionId);
+    };
     const handleResetDraft = () => {
 
         setSelectedTransactionId('');
@@ -1136,11 +1116,7 @@ export default function SalesPage() {
             stopEdit();
             refetchTransactionHeaderDetail();
 
-            // toaster.create({
-            //     title: "Edit Cancelled",
-            //     description: "Transaction edit has been cancelled.",
-            //     type: "info",
-            // });
+            
         } else {
             localStorage.removeItem(TYPE_KEY);
             setSelectedTransactionId('');
@@ -1203,13 +1179,6 @@ export default function SalesPage() {
                         type: "success",
                     });
 
-                    // goldStockRefetch();
-                    // itemStockRefetch();
-                    // openingBalanceRefetch();
-
-                    // resetStore();
-                    // resetBalance();
-                    // setIsOpenSalesSaveModal(false);
                     handleResetDraft();
                 },
 
@@ -1355,7 +1324,13 @@ export default function SalesPage() {
         loadTagDetials(tagNo, Number(headerForm.CUSTOMER));
     };
 
+    const handleSave = isEditing
+        ? handleUpdateTransaction
+        : handleSaveTransaction;
 
+    const handleReset = isEditing
+        ? (isModifying ? handleResetDraft : handleReSelectTransaction)
+        : handleResetDraft;
     return (
         <>
 
@@ -1381,7 +1356,56 @@ export default function SalesPage() {
                             isDraftRowChanged={isDraftRowsChanged()}
 
                         />
-
+                        <Box
+                            display="flex"
+                            alignItems="center"
+                            gap={2}
+                            px={2}
+                            py={2}
+                            bg="gray.50"
+                            border="0.5px solid"
+                            borderColor={theme.colors.greyColor}
+                            rounded="md"
+                            flexWrap="wrap"
+                        >
+                            <Text fontSize="12px" color={theme.colors.green} mr={1} fontWeight={'semibold'}>Shortcuts</Text>
+                        
+                            {[
+                              { keys: "Alt S", label: "Save" },
+                              { keys: "Alt U", label: "Update" },
+                              { keys: "Alt C", label: "Clear" },
+                              { keys: "Alt M", label: "Modify" },
+                              { keys: "F1", label: "Filter" },
+                             
+                              { keys: "Alt I", label: "Approval Issue" },
+                              { keys: "Alt R", label: "Approval Receipt" },
+                            ].map(({ keys, label }, i, arr) => (
+                              <React.Fragment key={keys}>
+                                <Box display="flex" alignItems="center" gap={1}>
+                                  <Box
+                                    as="kbd"
+                                    fontSize="10px"
+                                    fontFamily={theme.fonts.body2}
+                                    px="5px"
+                                    py="2px"
+                                    bg={theme.colors.accient}
+                                    border="0.5px solid"
+                                    borderColor={theme.colors.greyColor}
+                                    rounded="sm"
+                                    lineHeight="1.6"
+                                    color={theme.colors.whiteColor}
+                                   
+                                    >
+                                      {keys}
+                                    </Box>
+                                    <Text fontSize="11px" fontFamily={theme.fonts.body2} >{label}</Text>
+                                </Box>
+                                    {i < arr.length - 1 && (
+                                        <Text fontSize="10px" color="black" fontFamily={theme.fonts.body2}>|</Text>
+                                    )}
+                            </React.Fragment>
+                                  ))}
+                        </Box>
                         {/* 2. Transaction Type Selector */}
 
                         <TransactionTypeSelector
@@ -1393,8 +1417,8 @@ export default function SalesPage() {
                             setIsStockDrawerOpen={setIsStockDrawerOpen}
                             handleShowFilter={openFilter}
                             isEditing={isEditing}
-                            onSave={isEditing ? handleUpdateTransaction : handleSaveTransaction}
-                            onReset={handleResetDraft}
+                            onSave={handleSave}
+                            onReset={handleReset}
                             isSaving={
                                 createTransaction.isPending || updateTransaction.isPending
                             }
@@ -1403,6 +1427,11 @@ export default function SalesPage() {
                             onPrint={() => {
                                 setShowPrintModal(prev => !prev)
                             }}
+
+
+                            isModifying={isModifying}
+                            startModifying={startModify}
+                            stopModifying={stopModify}
                         />
 
 

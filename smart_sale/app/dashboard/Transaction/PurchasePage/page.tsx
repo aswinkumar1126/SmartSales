@@ -629,11 +629,11 @@ export default function PurchasePage() {
 
     // KEY TO ACCESS
 
-    useGlobalKey("F1", () => openFilter(), "openFilter");
-    useGlobalKey("Alt+s" , ()=>handleSaveTransaction() , "saveTransaction");
-    useGlobalKey("Alt+c", () => handleResetDraft() ,"ClearTransaction");
-
-    useGlobalKey("Alt+m" , ()=>{isModifying ? stopModifying() : startModifying()}, "modifyTransaction");
+    useGlobalKey("F1", () => openFilter(), "openPurchaseFilter");
+    useGlobalKey("Alt+s" , ()=>handleSaveTransaction() , "savePurchaseTransaction");
+    useGlobalKey("Alt+c", () => handleResetDraft() ,"ClearPurchaseTransaction");
+    useGlobalKey("Alt+u" , ()=>handleUpdateTransaction());
+    useGlobalKey("Alt+m" , ()=>{isModifying ? stopModifying() : startModifying()}, "modifyPurchaseTransaction");
 
   
 
@@ -1447,6 +1447,57 @@ useGlobalKey(
                             isDraftRowChanged ={isDraftRowsChanged()}
 
                         />
+                        <Box
+                            display="flex"
+                            alignItems="center"
+                            gap={2}
+                            px={2}
+                            py={2}
+                            bg="gray.50"
+                            border="0.5px solid"
+                            borderColor={theme.colors.greyColor}
+                            rounded="md"
+                            flexWrap="wrap"
+                        >
+                            <Text fontSize="12px" color={theme.colors.green} mr={1} fontWeight={'semibold'}>Shortcuts</Text>
+                                                
+                            {[
+                              { keys: "Alt S", label: "Save" },
+                              { keys: "Alt U", label: "Update" },
+                              { keys: "Alt C", label: "Clear" },
+                              { keys: "Alt M", label: "Modify" },
+                              { keys: "F1", label: "Filter" },
+                              { keys: "Alt P", label: "Purchase" },
+                              { keys: "Alt R", label: "Purchase Return" },
+                              { keys: "Alt I", label: "Issue" },
+                              { keys: "Alt T", label: "Receipt" },
+                            ].map(({ keys, label }, i, arr) => (
+                              <React.Fragment key={keys}>
+                                <Box display="flex" alignItems="center" gap={1}>
+                                  <Box
+                                    as="kbd"
+                                    fontSize="10px"
+                                    fontFamily={theme.fonts.body2}
+                                    px="5px"
+                                    py="2px"
+                                    bg={theme.colors.accient}
+                                    border="0.5px solid"
+                                    borderColor={theme.colors.greyColor}
+                                    rounded="sm"
+                                    lineHeight="1.6"
+                                    color={theme.colors.whiteColor}
+                                   
+                                    >
+                                      {keys}
+                                    </Box>
+                                    <Text fontSize="11px" fontFamily={theme.fonts.body2} >{label}</Text>
+                                </Box>
+                                    {i < arr.length - 1 && (
+                                        <Text fontSize="10px" color="black" fontFamily={theme.fonts.body2}>|</Text>
+                                    )}
+                            </React.Fragment>
+                                  ))}
+                        </Box>
 
                         {/* 2. Transaction Type Selector */}
 

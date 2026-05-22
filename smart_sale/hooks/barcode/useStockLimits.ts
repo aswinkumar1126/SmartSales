@@ -73,9 +73,9 @@ export function useStockLimits(
   const added = useMemo(
     () => ({
       PCS: effectiveRows.length,
-      GRSWT: effectiveRows.reduce((s, r) => s + r.grsweight, 0),
-      STNWT: effectiveRows.reduce((s, r) => s + r.purchaseStoneWt, 0),
-      NETWT: effectiveRows.reduce((s, r) => s + (r.grsweight - r.purchaseStoneWt), 0),
+      GRSWT: effectiveRows.reduce((s:number, r) => s + Number(r.grsweight), 0),
+      STNWT: effectiveRows.reduce((s:number, r) => s + Number(r.purchaseStoneWt), 0),
+      NETWT: effectiveRows.reduce((s:number, r) => s +  Number(r.grsweight)- Number(r.purchaseStoneWt), 0),
     }),
     [effectiveRows]
   );
@@ -132,7 +132,7 @@ export function useStockLimits(
     }),
     [lot, added]
   );
-  console.log(remaining, lot, added,'remainingremaining')
+  console.log(remaining, lot, 'remainingremaining')
 
 
 
