@@ -14,6 +14,7 @@ import { SearchIcon } from "lucide-react";
 import { Tooltip } from "@/components/ui/tooltip";
 import { FormField } from '@/types/form/form';
 import { useEnterNavigation } from "@/component/form/useEnterNavigation";
+import { useGlobalKey } from "@/components/key/useGlobalKey";
 
 export interface SearchFilters {
     fromDate: string;
@@ -58,6 +59,8 @@ export const SearchDrawer: React.FC<SearchDrawerProps> = ({
         itemId: initialFilters.itemId || "",
         accode: initialFilters.accode || "",
     });
+    
+    useGlobalKey("F1",()=> internalIsOpen ? setInternalIsOpen(false)  :setInternalIsOpen(true), "openSearchFilters");
 
     const isOpen = externalIsOpen !== undefined ? externalIsOpen : internalIsOpen;
 

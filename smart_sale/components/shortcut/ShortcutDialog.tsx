@@ -10,6 +10,9 @@ import {
 import { Keyboard, Search } from "lucide-react";
 import { Tooltip } from "@/components/ui/tooltip";
 
+//Key Management
+import { useGlobalKey } from "@/components/key/useGlobalKey";
+
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 type Shortcut = {
@@ -20,6 +23,7 @@ type Shortcut = {
 
 
 type Props = {
+  remoteOpen?: boolean;
   shortcuts?: Shortcut[];
   theme: any;
 };
@@ -121,9 +125,11 @@ const ShortcutRow = ({
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
-const ShortcutDialog = ({ shortcuts = [], theme }: Props) => {
+const ShortcutDialog = ({ remoteOpen = false, shortcuts = [], theme }: Props) => {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
+
+  useGlobalKey("F2", () =>{  setOpen((o) => !o) } );
 
   // Group shortcuts by category
   const grouped = useMemo(() => {
@@ -147,6 +153,7 @@ const ShortcutDialog = ({ shortcuts = [], theme }: Props) => {
     (acc, arr) => acc + arr.length,
     0
   );
+
 
   return (
     <>
@@ -186,7 +193,7 @@ const ShortcutDialog = ({ shortcuts = [], theme }: Props) => {
 
       {/* Dialog */}
       <Dialog.Root
-        open={open}
+        open={open || remoteOpen}
         onOpenChange={(e) => setOpen(e.open)}
         motionPreset="slide-in-bottom"
       >
@@ -392,7 +399,7 @@ const ShortcutDialog = ({ shortcuts = [], theme }: Props) => {
                 alignItems="center"
                 gap={1.5}
               >
-                <KbdBadge keyStr="?" theme={theme} />
+                <KbdBadge keyStr="F2" theme={theme} />
                 <Text
                   fontSize="11px"
                   fontFamily={theme.fonts.body2}

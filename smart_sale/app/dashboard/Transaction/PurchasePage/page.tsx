@@ -85,6 +85,8 @@ import { BaseClosingFormDetails } from "@/types/balanceSummary/BalanceSummary";
 //Utilities
 import { formatToFixed } from '@/utils/format/numberFormat';
 import PurchaseReceipt,{exportToExcel} from "@/component/ReceiptPrint/PurchasePrint";
+import {useTransactionLoader} from "@/utils/loader/ResolveLoader";
+import TransactionLoader from "@/component/loader/Transactionloader";
 
 
 //Icons
@@ -187,6 +189,8 @@ export default function PurchasePage() {
         isModifying
     } = usePurchaseHeader();
 
+     const {isOpen, status, title, description, openLoader, resolveLoader, closeLoader} = useTransactionLoader();
+
 
     console.log(isModifying,'isModifying')
     /* ================================
@@ -215,6 +219,8 @@ export default function PurchasePage() {
 
 
     const openFilter = () => setIsFilterOpen(true);
+
+  
 
     const draftRowTempId = useRef<string | null>(null);
 
@@ -292,6 +298,7 @@ export default function PurchasePage() {
 
     const [isTag, setIsTag] = useSessionStorage<boolean>(ISTAG, false);
 
+   
 
     /* ================================
        State Management
@@ -347,6 +354,7 @@ export default function PurchasePage() {
     const { data: transactionsById, isLoading: getbySnoLoading , refetch :refetchTransactionListById } = useTransactionByTransId(selectedTransactionId, "purchase");
 
     console.log(transactionsById,'transactionsById');
+
 
 
 
@@ -631,12 +639,14 @@ export default function PurchasePage() {
     // KEY TO ACCESS
 
     useGlobalKey("F1", () => openFilter(), "openPurchaseFilter");
-    useGlobalKey("Alt+s" , ()=>handleSaveTransaction() , "savePurchaseTransaction");
+    useGlobalKey("Alt+s" , ()=> isModifying ? handleSaveTransaction() : null, "savePurchaseTransaction");
     useGlobalKey("Alt+c", () => handleResetDraft() ,"ClearPurchaseTransaction");
-    useGlobalKey("Alt+u" , ()=>handleUpdateTransaction());
+    useGlobalKey("Alt+u" , ()=> isModifying ? handleUpdateTransaction() : null, "updatePurchaseTransaction");
     useGlobalKey("Alt+m" , ()=>{isModifying ? stopModifying() : startModifying()}, "modifyPurchaseTransaction");
+    useGlobalKey("F3" , ()=>{ isStockDrawerOpen ? setIsStockDrawerOpen(false) : setIsStockDrawerOpen(true)}, "openStockDrawer");
+    useGlobalKey("CTRL+P" , ()=>{ isEditing && showPrintModal ? setShowPrintModal(false) : setShowPrintModal(true)}, "openPrintModal");
 
-  
+
 
     const handleBillParamChange = useCallback((field: any, value: any) => {
         setBillParams(prev => ({
@@ -1275,7 +1285,8 @@ useGlobalKey(
         }
       
 
-    // return;
+        openLoader("save");
+
         createTransaction.mutate(
             { payload: result.payload, TRANTYPE: "purchase" },
             {
@@ -1289,14 +1300,10 @@ useGlobalKey(
                         type: "success",
                     });
 
-                    // goldStockRefetch();
-                    // itemStockRefetch();
-                    // openingBalanceRefetch();
-
-                    // resetStore();
-                    // resetBalance();
-                    // setIsOpenRemarkModal(false);
                     handleResetDraft();
+                    setTimeout(() => {
+                        resolveLoader("success", "save");
+                    }, 500);
                 },
 
                 onError: (error: any) => {
@@ -1308,6 +1315,9 @@ useGlobalKey(
 
                     openingBalanceRefetch();
                     setIsOpenRemarkModal(false);
+                    setTimeout(() => {
+                        resolveLoader("error", "save", error?.message || "Failed to save transaction.");
+                    }, 500);
                 }
             }
         );
@@ -1339,7 +1349,7 @@ useGlobalKey(
             return;
         }
 
-     
+        openLoader("update");
 
         try {
 
@@ -1365,7 +1375,9 @@ useGlobalKey(
 
             handleResetDraft();
 
-
+            setTimeout(() => {
+                resolveLoader("success", "update");
+            }, 500);
 
         } catch (error: any) {
             toaster.create({
@@ -1376,6 +1388,10 @@ useGlobalKey(
 
             openingBalanceRefetch();
             setIsOpenRemarkModal(false);
+
+            setTimeout(() => {
+                resolveLoader("error", "update", error.message || "Failed to update transaction.");
+            }, 500);
         }
     };
 
@@ -1427,15 +1443,25 @@ const shortcuts = [
   { keys: "Alt C", label: "Clear" },
   { keys: "Alt M", label: "Modify" },
   { keys: "F1", label: "Filter" },
-  { keys: "Alt I", label: "Approval Issue" },
-  { keys: "Alt R", label: "Approval Receipt" },
+  { keys: "Alt P", label: "Purchase" },
+  { keys: "Alt R", label: "Purchase Return" },
+  { keys: "Alt I", label: "Issue" },
+  { keys: "Alt T", label: "Receipt" },
+  {keys : "CTRL P" , label :"Print"},
+  {keys:"F3" , label :"Stock Open" }
 ];
   
     return (
         <>
 
             <Flex gap={1}>
-
+                <TransactionLoader
+                    isOpen={isOpen}
+                    status={status}
+                    title={title}
+                    description={description}
+                    onClose={closeLoader}
+                />
                 {/* LEFT – 70% */}
                 <Box display='flex' gap={1} width='100%' >
                     <Stack flex={1}>
@@ -1457,7 +1483,7 @@ const shortcuts = [
 
                         />
                          <ShortcutDialog
-                          
+                    
                           shortcuts={shortcuts}
                           theme={theme}
                         />

@@ -10,7 +10,7 @@ import {
     Icon,
     useMediaQuery,
     Separator,
-    Button,
+    Badge,
 } from "@chakra-ui/react";
 import { Tooltip } from "@/components/ui/tooltip";
 import {
@@ -18,11 +18,11 @@ import {
     ChevronsRight,
     ChevronDown,
     LayoutDashboard,
-    Settings,
-    HelpCircle,
-    UserCircle,
     Search,
     X,
+    UserCircle,
+    ArrowRight,
+    Layers,
 } from "lucide-react";
 import {
     useSidebar,
@@ -59,42 +59,89 @@ interface SidebarProps {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Shared animation variants
+// Animation variants
 // ─────────────────────────────────────────────────────────────────────────────
-
 const expandVariants = {
-    hidden: { opacity: 0, y: -6 },
+    hidden: { opacity: 0, y: -8, scale: 0.97 },
     visible: {
         opacity: 1,
         y: 0,
-        transition: { duration: 0.18, ease: "easeOut" as const },
+        scale: 1,
+        transition: { duration: 0.2, ease: "easeOut" as const },
     },
-    exit: { opacity: 0, y: -6, transition: { duration: 0.12 } },
+    exit: { opacity: 0, y: -4, scale: 0.98, transition: { duration: 0.14 } },
 };
 
+const searchResultVariants = {
+    hidden: { opacity: 0, x: -8 },
+    visible: (i: number) => ({
+        opacity: 1,
+        x: 0,
+        transition: { delay: i * 0.04, duration: 0.18, ease: "easeOut" as const },
+    }),
+    exit: { opacity: 0, x: -4, transition: { duration: 0.1 } },
+};
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Type guards
+// ─────────────────────────────────────────────────────────────────────────────
 const parentHasActiveChild = (item: ParentMenuItem, pathname: string): boolean =>
     item.children.some((c) => c.route === pathname);
 
-/**
- * Type guard to check if content is a MenuGroup
- */
-const isMenuGroup = (content: SectionContent): content is MenuGroup => {
-    return 'icon' in content && 'items' in content;
-};
+const isMenuGroup = (content: SectionContent): content is MenuGroup =>
+    "icon" in content && "items" in content;
 
-/**
- * Type guard to check if content is a SectionDirectItem
- */
-const isSectionDirectItem = (content: SectionContent): content is SectionDirectItem => {
-    return 'type' in content && content.type === 'direct';
-};
+const isSectionDirectItem = (content: SectionContent): content is SectionDirectItem =>
+    "type" in content && content.type === "direct";
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Flat search result type
+// ─────────────────────────────────────────────────────────────────────────────
+interface FlatSearchResult {
+    label: string;
+    route: string;
+    icon: React.ElementType;
+    parentLabel?: string;
+    sectionLabel?: string;
+    meta?: any;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Child count badge
+// ─────────────────────────────────────────────────────────────────────────────
+const ChildCountBadge = ({
+    count,
+    isActive,
+    primaryColor,
+}: {
+    count: number;
+    isActive: boolean;
+    primaryColor: string;
+}) => (
+    <Box
+        display="inline-flex"
+        alignItems="center"
+        justifyContent="center"
+        minW="18px"
+        h="18px"
+        px="5px"
+        borderRadius="full"
+        fontSize="10px"
+        fontWeight="700"
+        letterSpacing="0.02em"
+        bg={isActive ? primaryColor : "rgba(120,120,140,0.15)"}
+        color={isActive ? "white" : "gray.500"}
+        transition="all 0.2s ease"
+        flexShrink={0}
+    >
+        {count}
+    </Box>
+);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Component
 // ─────────────────────────────────────────────────────────────────────────────
 const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
-    // ── Context ────────────────────────────────────────────────────────────────
     const {
         menuData,
         currentSection,
@@ -104,30 +151,27 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
         sidebarConfig,
         sidebarCollapsed,
         toggleSidebar,
-        multiWindow
+        multiWindow,
     } = useSidebar();
 
     const { user, logout } = useAuth();
-    const {setPageName  , setDescription} =usePageName();
+    const { setPageName, setDescription } = usePageName();
 
     const router = useRouter();
     const rawPathname = usePathname();
     const pathname = normalizePath(rawPathname);
-    console.log(pathname,'pathname')
     const { theme } = useTheme();
 
-    // ── Local UI state ─────────────────────────────────────────────────────────
-    const [title, setTitle] = useSessionStorage<string| null>("PAGE",null);
+    const [title, setTitle] = useSessionStorage<string | null>("PAGE", null);
     const [isDesktop] = useMediaQuery(["(min-width: 768px)"]);
     const [isHovered, setIsHovered] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
     const [showSearch, setShowSearch] = useState(false);
-
-    const [logoutOpen,setLogoutOpen] = useState(false);
+    const [logoutOpen, setLogoutOpen] = useState(false);
+    const [hoveredItem, setHoveredItem] = useState<string | null>(null);
 
     const { collapsedWidth, expandedWidth } = sidebarConfig;
 
-    // ── Derived display flags ──────────────────────────────────────────────────
     const sidebarWidth = useMemo(() => {
         if (!isDesktop) return expandedWidth;
         return sidebarCollapsed && !isHovered ? collapsedWidth : expandedWidth;
@@ -138,7 +182,6 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
         [isDesktop, sidebarCollapsed, isHovered]
     );
 
-    // Auto-hide the search bar when sidebar collapses to icon-only mode
     useEffect(() => {
         if (!isExpanded) {
             setShowSearch(false);
@@ -146,82 +189,233 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
         }
     }, [isExpanded]);
 
-    useEffect(() => setPageName(title),[title])
+    useEffect(() => setPageName(title), [title]);
 
-    // ── Search filtering ───────────────────────────────────────────────────────
-    const filteredMenuData = useMemo(() => {
-        if (!searchQuery.trim()) return menuData;
+    // ── Flat search results ────────────────────────────────────────────────────
+    const flatSearchResults = useMemo((): FlatSearchResult[] => {
+        if (!searchQuery.trim()) return [];
         const q = searchQuery.toLowerCase();
-        const result: typeof menuData = {};
+        const results: FlatSearchResult[] = [];
 
         Object.entries(menuData).forEach(([sectionKey, groups]) => {
-            const filteredGroups: (typeof menuData)[string] = {};
-
             Object.entries(groups).forEach(([groupKey, content]) => {
-                // Handle SectionDirectItem
                 if (isSectionDirectItem(content)) {
                     if (content.label.toLowerCase().includes(q)) {
-                        filteredGroups[groupKey] = content;
+                        results.push({
+                            label: content.label,
+                            route: content.route,
+                            icon: content.icon,
+                            sectionLabel: sectionKey,
+                            meta: content,
+                        });
                     }
-                }
-                // Handle MenuGroup
-                else if (isMenuGroup(content)) {
-                    const filteredItems = content.items.filter((item) => {
-                        if (item.type === "direct")
-                            return item.label.toLowerCase().includes(q);
-                        return (
-                            item.label.toLowerCase().includes(q) ||
-                            item.children.some((c) => c.label.toLowerCase().includes(q))
-                        );
+                } else if (isMenuGroup(content)) {
+                    content.items.forEach((item) => {
+                        if (item.type === "direct" && item.label.toLowerCase().includes(q)) {
+                            results.push({
+                                label: item.label,
+                                route: item.route,
+                                icon: item.icon,
+                                parentLabel: groupKey,
+                                sectionLabel: sectionKey,
+                                meta: item,
+                            });
+                        } else if (item.type === "parent") {
+                            // Always flatten children into results when they match
+                            item.children.forEach((child) => {
+                                if (
+                                    child.label.toLowerCase().includes(q) ||
+                                    item.label.toLowerCase().includes(q)
+                                ) {
+                                    results.push({
+                                        label: child.label,
+                                        route: child.route,
+                                        icon: child.icon,
+                                        parentLabel: item.label,
+                                        sectionLabel: sectionKey,
+                                        meta: child,
+                                    });
+                                }
+                            });
+                        }
                     });
-
-                    if (filteredItems.length > 0)
-                        filteredGroups[groupKey] = { ...content, items: filteredItems };
                 }
             });
-
-            if (Object.keys(filteredGroups).length > 0)
-                result[sectionKey] = filteredGroups;
         });
 
-        return result;
+        return results;
     }, [menuData, searchQuery]);
 
+    const isSearching = searchQuery.trim().length > 0;
 
     // ── Navigation ─────────────────────────────────────────────────────────────
     const navigate = useCallback(
         (route: string, meta?: any) => {
-
-            console.log("Navigating to:", route, meta);
-
             if (multiWindow) {
                 const userId = user?.USERID;
-
-                if (userId) {
-                    setStorage(`userId`, true )
-                }
-
-                const url = `${window.location.origin}${route}`;
-
-                window.open(url, "_blank", "noopener,noreferrer");
+                if (userId) setStorage(`userId`, true);
+                window.open(`${window.location.origin}${route}`, "_blank", "noopener,noreferrer");
                 return;
             }
-
             router.push(route);
-
             if (meta?.title) {
                 setTitle(meta.title);
                 setPageName(meta.title);
                 setDescription(meta.description);
             }
-
             if (!isDesktop) onClose();
         },
         [router, isDesktop, onClose, multiWindow, user]
     );
 
+    // ── Search Results Panel ───────────────────────────────────────────────────
+    const renderSearchResults = () => {
+        if (flatSearchResults.length === 0) {
+            return (
+                <VStack py={10} gap={3} align="center">
+                    <Box
+                        w={10}
+                        h={10}
+                        borderRadius="xl"
+                        bg="gray.100"
+                        display="flex"
+                        alignItems="center"
+                        justifyContent="center"
+                    >
+                        <Icon as={Search} boxSize={4} color="gray.300" />
+                    </Box>
+                    <Text color="gray.400" fontSize="sm" fontWeight="500">
+                        No results for "{searchQuery}"
+                    </Text>
+                    <Text color="gray.300" fontSize="xs">
+                        Try a different keyword
+                    </Text>
+                </VStack>
+            );
+        }
 
-    // ── Item renderers ─────────────────────────────────────────────────────────
+        return (
+            <VStack align="stretch" gap={1} px={2} pt={1}>
+                <Text
+                    px={2}
+                    pb={1}
+                    fontSize="10px"
+                    fontWeight="700"
+                    textTransform="uppercase"
+                    letterSpacing="0.1em"
+                    color="gray.400"
+                >
+                    {flatSearchResults.length} result{flatSearchResults.length !== 1 ? "s" : ""}
+                </Text>
+                {flatSearchResults.map((result, i) => {
+                    const isActive = pathname === result.route;
+                    const ResultIcon = result.icon;
+                    return (
+                        <MotionHStack
+                            key={`${result.route}-${i}`}
+                            custom={i}
+                            variants={searchResultVariants}
+                            initial="hidden"
+                            animate="visible"
+                            exit="exit"
+                            px={3}
+                            py={2.5}
+                            gap={3}
+                            cursor="pointer"
+                            borderRadius="lg"
+                            bg={isActive ? `${theme.colors.primary}12` : "transparent"}
+                            borderLeft="2px solid"
+                            borderLeftColor={isActive ? theme.colors.primary : "transparent"}
+                            color={isActive ? theme.colors.primary : "gray.600"}
+                            _hover={{
+                                bg: isActive ? `${theme.colors.primary}18` : "gray.50",
+                                color: theme.colors.primaryText,
+                                borderLeftColor: theme.colors.primary,
+                            }}
+                            onClick={() => {
+                                navigate(result.route, result.meta);
+                                setSearchQuery("");
+                                setShowSearch(false);
+                            }}
+                            whileTap={{ scale: 0.98 }}
+                            transition={{ duration: 0.12 } as any}
+                            onMouseEnter={() => setHoveredItem(result.route)}
+                            onMouseLeave={() => setHoveredItem(null)}
+                            position="relative"
+                            overflow="hidden"
+                        >
+                            {/* Icon */}
+                            <Box
+                                w={7}
+                                h={7}
+                                borderRadius="md"
+                                bg={isActive ? `${theme.colors.primary}20` : "gray.100"}
+                                display="flex"
+                                alignItems="center"
+                                justifyContent="center"
+                                flexShrink={0}
+                                transition="all 0.15s ease"
+                            >
+                                <Icon as={ResultIcon} boxSize={3.5} />
+                            </Box>
+
+                            {/* Labels */}
+                            <Box flex={1} minW={0}>
+                                <Text
+                                    fontSize="sm"
+                                    fontWeight={isActive ? 600 : 500}
+                                    lineHeight="1.2"
+                               
+                                >
+                                    {result.label}
+                                </Text>
+                                {(result.parentLabel || result.sectionLabel) && (
+                                    <HStack gap={1} mt={0.5}>
+                                        {result.sectionLabel && (
+                                            <Text
+                                                fontSize="10px"
+                                                color="gray.400"
+                                                fontWeight="500"
+                                                textTransform="uppercase"
+                                                letterSpacing="0.05em"
+                                            
+                                            >
+                                                {result.sectionLabel}
+                                            </Text>
+                                        )}
+                                        {result.parentLabel && (
+                                            <>
+                                                <Text fontSize="10px" color="gray.300">›</Text>
+                                                <Text fontSize="10px" color="gray.400" fontWeight="500">
+                                                    {result.parentLabel}
+                                                </Text>
+                                            </>
+                                        )}
+                                    </HStack>
+                                )}
+                            </Box>
+
+                            {/* Arrow indicator on hover */}
+                            <AnimatePresence>
+                                {hoveredItem === result.route && (
+                                    <MotionBox
+                                        initial={{ opacity: 0, x: -4 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        exit={{ opacity: 0, x: -4 }}
+                                        transition={{ duration: 0.12 } as any}
+                                    >
+                                        <Icon as={ArrowRight} boxSize={3.5} color="gray.400" />
+                                    </MotionBox>
+                                )}
+                            </AnimatePresence>
+                        </MotionHStack>
+                    );
+                })}
+            </VStack>
+        );
+    };
+
+    // ── Direct item renderer ───────────────────────────────────────────────────
     const renderDirectItem = useCallback(
         (item: DirectMenuItem) => {
             const isActive = pathname === item.route;
@@ -241,18 +435,35 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
                         gap={3}
                         cursor="pointer"
                         borderRadius="lg"
-                        bg={isActive ? `${theme.colors.primary}15` : "transparent"}
-                        borderLeft="3px solid"
+                        bg={isActive ? `${theme.colors.primary}12` : "transparent"}
+                        borderLeft="2px solid"
                         borderLeftColor={isActive ? theme.colors.primary : "transparent"}
                         color={isActive ? theme.colors.primary : "gray.500"}
-                        _hover={{ bg: isActive ? `${theme.colors.primary}20` : "gray.100" }}
-                        onClick={() => navigate(item.route , item)}
+                        _hover={{
+                            bg: isActive ? `${theme.colors.primary}18` : "gray.50",
+                            borderLeftColor: theme.colors.primary,
+                            color: theme.colors.primaryText,
+                        }}
+                        onClick={() => navigate(item.route, item)}
                         whileHover={{ x: 2 }}
                         whileTap={{ scale: 0.98 }}
                         justifyContent={isExpanded ? "flex-start" : "center"}
                         width="100%"
+                        transition={{ duration: 0.12 } as any}
                     >
-                        <Icon as={ItemIcon} boxSize={4} />
+                        <Box
+                            w={isExpanded ? 7 : 8}
+                            h={isExpanded ? 7 : 8}
+                            borderRadius={isExpanded ? "md" : "lg"}
+                            bg={isActive ? `${theme.colors.primary}20` : "transparent"}
+                            display="flex"
+                            alignItems="center"
+                            justifyContent="center"
+                            flexShrink={0}
+                            transition="all 0.15s ease"
+                        >
+                            <Icon as={ItemIcon} boxSize={4} />
+                        </Box>
                         {isExpanded && (
                             <Text fontSize="sm" fontWeight={isActive ? 600 : 400} flex={1}>
                                 {item.label}
@@ -265,12 +476,14 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
         [pathname, isExpanded, navigate, theme.colors.primary]
     );
 
+    // ── Parent item renderer ───────────────────────────────────────────────────
     const renderParentItem = useCallback(
         (item: ParentMenuItem, sectionKey: string, groupKey: string) => {
             const nodeId = `${sectionKey}__${groupKey}__${item.label}`;
             const isNodeOpen = !!expandedNodes[nodeId];
             const hasActive = parentHasActiveChild(item, pathname);
             const ItemIcon = item.icon;
+            const childCount = item.children.length;
 
             return (
                 <Box key={item.label} width="100%">
@@ -286,28 +499,61 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
                             gap={3}
                             cursor="pointer"
                             borderRadius="lg"
-                            bg={hasActive ? `${theme.colors.primary}15` : "transparent"}
-                            borderLeft="3px solid"
+                            bg={hasActive ? `${theme.colors.primary}12` : "transparent"}
+                            borderLeft="2px solid"
                             borderLeftColor={hasActive ? theme.colors.primary : "transparent"}
                             color={hasActive ? theme.colors.primary : "gray.500"}
-                            _hover={{ bg: hasActive ? `${theme.colors.primary}20` : "gray.100" }}
+                            _hover={{
+                                bg: hasActive ? `${theme.colors.primary}18` : "gray.50",
+                                borderLeftColor: theme.colors.primary,
+                                color: theme.colors.primaryText,
+                            }}
                             onClick={() => isExpanded && toggleNode(nodeId)}
                             whileHover={{ x: 2 }}
                             whileTap={{ scale: 0.98 }}
                             justifyContent={isExpanded ? "flex-start" : "center"}
                             width="100%"
+                            transition={{ duration: 0.12 } as any}
                         >
-                            <Icon as={ItemIcon} boxSize={4} />
+                            <Box
+                                w={isExpanded ? 7 : 8}
+                                h={isExpanded ? 7 : 8}
+                                borderRadius={isExpanded ? "md" : "lg"}
+                                bg={hasActive ? `${theme.colors.primary}20` : "transparent"}
+                                display="flex"
+                                alignItems="center"
+                                justifyContent="center"
+                                flexShrink={0}
+                                transition="all 0.15s ease"
+                            >
+                                <Icon as={ItemIcon} boxSize={4} />
+                            </Box>
+
                             {isExpanded && (
                                 <>
-                                    <Text fontSize="sm" fontWeight={hasActive ? 600 : 400} flex={1}>
+                                    <Text
+                                        fontSize="sm"
+                                        fontWeight={hasActive ? 600 : 400}
+                                        flex={1}
+                                        lineHeight="1.2"
+                                    >
                                         {item.label}
                                     </Text>
+
+                                    {/* Child count badge */}
+                                    <ChildCountBadge
+                                        count={childCount}
+                                        isActive={hasActive || isNodeOpen}
+                                        primaryColor={theme.colors.primary}
+                                    />
+
                                     <Icon
                                         as={ChevronDown}
-                                        boxSize={3.5}
+                                        boxSize={3}
                                         transform={isNodeOpen ? "rotate(0deg)" : "rotate(-90deg)"}
-                                        transition="transform 0.2s ease"
+                                        transition="transform 0.22s ease"
+                                        color={hasActive ? theme.colors.primary : "gray.400"}
+                                        ml={-1}
                                     />
                                 </>
                             )}
@@ -321,9 +567,9 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
                                 pl={3}
                                 mt={0.5}
                                 gap={0.5}
-                                ml={5}
-                                borderLeft="1px solid"
-                                borderColor="gray.200"
+                                ml={6}
+                                borderLeft="1.5px solid"
+                                borderColor="gray.150"
                                 variants={expandVariants}
                                 initial="hidden"
                                 animate="visible"
@@ -336,20 +582,45 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
                                     return (
                                         <MotionHStack
                                             key={child.route}
-                                            px={2}
+                                            px={2.5}
                                             py={2}
-                                            gap={2}
+                                            gap={2.5}
                                             cursor="pointer"
                                             borderRadius="md"
-                                            bg={isChildActive ? `${theme.colors.primary}15` : "transparent"}
+                                            bg={isChildActive ? `${theme.colors.primary}10` : "transparent"}
                                             color={isChildActive ? theme.colors.primary : "gray.400"}
-                                            _hover={{ bg: "gray.100", color: theme.colors.primaryText }}
-                                            onClick={() => navigate(child.route ,child)}
+                                            _hover={{
+                                                bg: "gray.50",
+                                                color: theme.colors.primaryText,
+                                            }}
+                                            onClick={() => navigate(child.route, child)}
                                             whileHover={{ x: 2 }}
                                             whileTap={{ scale: 0.97 }}
+                                            transition={{ duration: 0.1 } as any}
+                                            position="relative"
                                         >
-                                            <Icon as={ChildIcon} boxSize={3.5} />
-                                            <Text fontSize="xs" fontWeight={isChildActive ? 600 : 400}>
+                                            {/* Dot indicator */}
+                                            <Box
+                                                w={1.5}
+                                                h={1.5}
+                                                borderRadius="full"
+                                                bg={isChildActive ? theme.colors.primary : "gray.300"}
+                                                flexShrink={0}
+                                                transition="all 0.15s ease"
+                                            />
+                                            <Box
+                                                w={6}
+                                                h={6}
+                                                borderRadius="md"
+                                                bg={isChildActive ? `${theme.colors.primary}15` : "transparent"}
+                                                display="flex"
+                                                alignItems="center"
+                                                justifyContent="center"
+                                                flexShrink={0}
+                                            >
+                                                <Icon as={ChildIcon} boxSize={3.5} />
+                                            </Box>
+                                            <Text fontSize="xs" fontWeight={isChildActive ? 600 : 400} flex={1}>
                                                 {child.label}
                                             </Text>
                                         </MotionHStack>
@@ -373,10 +644,9 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
         [renderDirectItem, renderParentItem]
     );
 
-    // ── Render Section Content ─────────────────────────────────────────────────
+    // ── Section content renderer ───────────────────────────────────────────────
     const renderSectionContent = useCallback(
         (content: SectionContent, groupKey: string, sectionKey: string) => {
-            // Handle direct item (like Purchase)
             if (isSectionDirectItem(content)) {
                 const item = content;
                 const isActive = pathname === item.route;
@@ -396,18 +666,34 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
                             gap={3}
                             cursor="pointer"
                             borderRadius="lg"
-                            bg={isActive ? `${theme.colors.primary}15` : "transparent"}
-                            borderLeft="3px solid"
+                            bg={isActive ? `${theme.colors.primary}12` : "transparent"}
+                            borderLeft="2px solid"
                             borderLeftColor={isActive ? theme.colors.primary : "transparent"}
                             color={isActive ? theme.colors.primary : "gray.500"}
-                            _hover={{ bg: isActive ? `${theme.colors.primary}20` : "gray.100" }}
-                            onClick={() => navigate(item.route ,item)}
+                            _hover={{
+                                bg: isActive ? `${theme.colors.primary}18` : "gray.50",
+                                borderLeftColor: theme.colors.primary,
+                                color: theme.colors.primaryText,
+                            }}
+                            onClick={() => navigate(item.route, item)}
                             whileHover={{ x: 2 }}
                             whileTap={{ scale: 0.98 }}
                             justifyContent={isExpanded ? "flex-start" : "center"}
                             width="100%"
+                            transition={{ duration: 0.12 } as any}
                         >
-                            <Icon as={ItemIcon} boxSize={4} />
+                            <Box
+                                w={isExpanded ? 7 : 8}
+                                h={isExpanded ? 7 : 8}
+                                borderRadius={isExpanded ? "md" : "lg"}
+                                bg={isActive ? `${theme.colors.primary}20` : "transparent"}
+                                display="flex"
+                                alignItems="center"
+                                justifyContent="center"
+                                flexShrink={0}
+                            >
+                                <Icon as={ItemIcon} boxSize={4} />
+                            </Box>
                             {isExpanded && (
                                 <Text fontSize="sm" fontWeight={isActive ? 600 : 400} flex={1}>
                                     {item.label}
@@ -418,7 +704,6 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
                 );
             }
 
-            // Handle MenuGroup
             if (isMenuGroup(content)) {
                 const group = content;
                 const GroupIcon = group.icon;
@@ -426,12 +711,17 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
                 const isGroupOpen = !!expandedNodes[groupNodeId];
 
                 const groupIsActive = group.items.some((item) => {
-                    if (item.type === "direct")
-                        return item.route === pathname;
-                    if (item.type === "parent")
-                        return parentHasActiveChild(item, pathname);
+                    if (item.type === "direct") return item.route === pathname;
+                    if (item.type === "parent") return parentHasActiveChild(item, pathname);
                     return false;
                 });
+
+                // Count total items across the group (direct + children of parents)
+                const totalItems = group.items.reduce((acc, item) => {
+                    if (item.type === "direct") return acc + 1;
+                    if (item.type === "parent") return acc + item.children.length;
+                    return acc;
+                }, 0);
 
                 return (
                     <Box key={groupKey} width="100%">
@@ -449,27 +739,53 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
                                 justify={isExpanded ? "space-between" : "center"}
                                 bg={groupIsActive ? `${theme.colors.primary}10` : "transparent"}
                                 color={groupIsActive ? theme.colors.primary : "gray.500"}
-                                _hover={{ bg: "gray.100", color: theme.colors.primaryText }}
+                                _hover={{
+                                    bg: "gray.50",
+                                    color: theme.colors.primaryText,
+                                }}
                                 onClick={() => isExpanded && toggleNode(groupNodeId)}
                                 whileHover={{ x: 2 }}
                                 whileTap={{ scale: 0.98 }}
                                 width="100%"
+                                transition={{ duration: 0.12 } as any}
                             >
-                                <HStack gap={2} w={isExpanded ? "auto" : "100%"} justify="center">
-                                    <Icon as={GroupIcon as React.ElementType} boxSize={4.5} />
+                                <HStack gap={2.5} w={isExpanded ? "auto" : "100%"} justify="center">
+                                    <Box
+                                        w={isExpanded ? 7 : 8}
+                                        h={isExpanded ? 7 : 8}
+                                        borderRadius={isExpanded ? "md" : "lg"}
+                                        bg={groupIsActive ? `${theme.colors.primary}20` : "gray.100"}
+                                        display="flex"
+                                        alignItems="center"
+                                        justifyContent="center"
+                                        flexShrink={0}
+                                        transition="all 0.15s ease"
+                                    >
+                                        <Icon as={GroupIcon as React.ElementType} boxSize={4} />
+                                    </Box>
                                     {isExpanded && (
-                                        <Text fontWeight="600" fontSize="sm" flex={1}>
+                                        <Text fontWeight="600" fontSize="sm" flex={1} lineHeight="1.2">
                                             {groupKey}
                                         </Text>
                                     )}
                                 </HStack>
+
                                 {isExpanded && (
-                                    <Icon
-                                        as={ChevronDown}
-                                        boxSize={3.5}
-                                        transform={isGroupOpen ? "rotate(0deg)" : "rotate(-90deg)"}
-                                        transition="transform 0.2s ease"
-                                    />
+                                    <HStack gap={2}>
+                                        {/* Total item count badge */}
+                                        <ChildCountBadge
+                                            count={totalItems}
+                                            isActive={groupIsActive || isGroupOpen}
+                                            primaryColor={theme.colors.primary}
+                                        />
+                                        <Icon
+                                            as={ChevronDown}
+                                            boxSize={3}
+                                            transform={isGroupOpen ? "rotate(0deg)" : "rotate(-90deg)"}
+                                            transition="transform 0.22s ease"
+                                            color={groupIsActive ? theme.colors.primary : "gray.400"}
+                                        />
+                                    </HStack>
                                 )}
                             </MotionHStack>
                         </Tooltip>
@@ -501,62 +817,84 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
         [pathname, isExpanded, navigate, theme.colors, expandedNodes, toggleNode, renderMenuItem]
     );
 
-    // ── Sidebar JSX ────────────────────────────────────────────────────────────
+    // ── Sidebar content ────────────────────────────────────────────────────────
     const Content = (
         <MotionBox
             w={sidebarWidth}
             onMouseEnter={() => isDesktop && setIsHovered(true)}
             onMouseLeave={() => isDesktop && setIsHovered(false)}
             bg={theme.colors.sideBar}
-            color={theme.colors.whiteColor}
             h="100%"
             borderRight="1px solid"
-            borderColor="gray.200"
+            borderColor="rgba(0,0,0,0.07)"
             overflow="hidden"
             position="relative"
-            boxShadow="2px 0 8px rgba(0,0,0,0.05)"
+            boxShadow="4px 0 24px rgba(0,0,0,0.06)"
             initial={false}
             animate={{ width: sidebarWidth }}
             transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] } as any}
         >
-            {/* Header */}
+            {/* ── Header ── */}
             <Box
                 borderBottom="1px solid"
-                borderColor="gray.200"
+                borderColor="rgba(0,0,0,0.07)"
                 bg={theme.colors.sideBar}
-                backdropFilter="blur(8px)"
+                backdropFilter="blur(12px)"
                 zIndex={10}
             >
                 <HStack
                     h="64px"
-                    px={4}
+                    px={isExpanded ? 4 : 3}
                     justify={isExpanded ? "space-between" : "center"}
                     gap={2}
                 >
                     {isExpanded ? (
                         <>
-                            <HStack gap={2}>
-                                <Icon as={LayoutDashboard} boxSize={5} color={theme.colors.primary} />
+                            <HStack gap={2.5}>
+                                <Box
+                                    w={8}
+                                    h={8}
+                                    borderRadius="lg"
+                                    bg={`${theme.colors.primary}20`}
+                                    display="flex"
+                                    alignItems="center"
+                                    justifyContent="center"
+                                    flexShrink={0}
+                                >
+                                    <Icon as={LayoutDashboard} boxSize={4.5} color={theme.colors.primary} />
+                                </Box>
                                 <Text
-                                    fontSize="base"
-                                    fontWeight="semibold"
+                                    fontSize="sm"
+                                    fontWeight="700"
                                     color={theme.colors.whiteColor}
-                                    letterSpacing="tight"
+                                    letterSpacing="-0.01em"
                                 >
                                     Dashboard
                                 </Text>
                             </HStack>
 
-                            <HStack gap={1}>
-                                <Box
-                                    p={1.5}
-                                    borderRadius="md"
-                                    cursor="pointer"
-                                    title="Toggle search"
-                                    onClick={() => setShowSearch((s) => !s)}
-                                >
-                                    <Icon as={Search} boxSize={4} color="gray.100" />
-                                </Box>
+                            <HStack gap={0.5}>
+                                <Tooltip content="Search menu" showArrow>
+                                    <Box
+                                        w={7}
+                                        h={7}
+                                        borderRadius="md"
+                                        display="flex"
+                                        alignItems="center"
+                                        justifyContent="center"
+                                        cursor="pointer"
+                                        bg={showSearch ? `${theme.colors.primary}20` : "transparent"}
+                                        _hover={{ bg: "rgba(255,255,255,0.1)" }}
+                                        onClick={() => setShowSearch((s) => !s)}
+                                        transition="all 0.15s ease"
+                                    >
+                                        <Icon
+                                            as={showSearch ? X : Search}
+                                            boxSize={3.5}
+                                            color={showSearch ? theme.colors.primary : "gray.300"}
+                                        />
+                                    </Box>
+                                </Tooltip>
 
                                 {isDesktop && (
                                     <Tooltip
@@ -564,15 +902,20 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
                                         showArrow
                                     >
                                         <Box
-                                            p={1.5}
+                                            w={7}
+                                            h={7}
                                             borderRadius="md"
+                                            display="flex"
+                                            alignItems="center"
+                                            justifyContent="center"
                                             cursor="pointer"
+                                            _hover={{ bg: "rgba(255,255,255,0.1)" }}
                                             onClick={toggleSidebar}
                                         >
                                             <Icon
                                                 as={sidebarCollapsed ? ChevronsRight : ChevronsLeft}
-                                                boxSize={4}
-                                                color="gray.100"
+                                                boxSize={3.5}
+                                                color="gray.300"
                                             />
                                         </Box>
                                     </Tooltip>
@@ -580,10 +923,21 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
                             </HStack>
                         </>
                     ) : (
-                        <Icon as={LayoutDashboard} boxSize={5} color={theme.colors.primary} />
+                        <Box
+                            w={8}
+                            h={8}
+                            borderRadius="lg"
+                            bg={`${theme.colors.primary}20`}
+                            display="flex"
+                            alignItems="center"
+                            justifyContent="center"
+                        >
+                            <Icon as={LayoutDashboard} boxSize={4.5} color={theme.colors.primary} />
+                        </Box>
                     )}
                 </HStack>
 
+                {/* Search bar */}
                 <AnimatePresence>
                     {showSearch && isExpanded && (
                         <MotionBox
@@ -594,21 +948,20 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
                             exit={{ opacity: 0, height: 0 }}
                             transition={{ duration: 0.18 } as any}
                         >
-                            <Box
-                                position="relative"
-                                bg="gray.100"
+                            <HStack
+                                bg="rgba(255,255,255,0.08)"
                                 borderRadius="lg"
-                                overflow="hidden"
+                                border="1px solid"
+                                borderColor="rgba(255,255,255,0.12)"
+                                px={3}
+                                gap={2}
+                                _focusWithin={{
+                                    borderColor: theme.colors.primary,
+                                    bg: "rgba(255,255,255,0.12)",
+                                }}
+                                transition="all 0.15s ease"
                             >
-                                <Icon
-                                    as={Search}
-                                    position="absolute"
-                                    left={3}
-                                    top="50%"
-                                    transform="translateY(-50%)"
-                                    boxSize={4}
-                                    color="gray.400"
-                                />
+                                <Icon as={Search} boxSize={3.5} color="gray.400" flexShrink={0} />
                                 <input
                                     autoFocus
                                     type="text"
@@ -616,223 +969,217 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
                                     style={{
-                                        width: "100%",
-                                        padding: "8px 36px",
+                                        flex: 1,
+                                        padding: "9px 0",
                                         background: "transparent",
                                         border: "none",
                                         outline: "none",
-                                        fontSize: "14px",
-                                        color: theme.colors.primaryText,
+                                        fontSize: "13px",
+                                        color: theme.colors.whiteColor,
                                     }}
                                 />
                                 {searchQuery && (
-                                    <Icon
-                                        as={X}
-                                        position="absolute"
-                                        right={3}
-                                        top="50%"
-                                        transform="translateY(-50%)"
-                                        boxSize={4}
-                                        color="gray.400"
+                                    <Box
                                         cursor="pointer"
                                         onClick={() => setSearchQuery("")}
-                                    />
+                                        flexShrink={0}
+                                    >
+                                        <Icon as={X} boxSize={3.5} color="gray.400" />
+                                    </Box>
                                 )}
-                            </Box>
+                            </HStack>
                         </MotionBox>
                     )}
                 </AnimatePresence>
             </Box>
 
-            {/* Scrollable navigation body */}
+            {/* ── Scrollable body ── */}
             <Box
-                h="calc(100% - 64px - 110px)"
+                h="calc(100% - 64px - 72px)"
                 overflowY="auto"
                 overflowX="hidden"
                 css={{
-                    "&::-webkit-scrollbar": { width: "4px" },
+                    "&::-webkit-scrollbar": { width: "3px" },
                     "&::-webkit-scrollbar-track": { background: "transparent" },
                     "&::-webkit-scrollbar-thumb": {
-                        background: "rgba(0,0,0,0.15)",
+                        background: "rgba(255,255,255,0.1)",
                         borderRadius: "4px",
                     },
                 }}
             >
-                <VStack align="stretch" gap={1} p={3}>
-                    {Object.keys(filteredMenuData).length > 0 ? (
-                        Object.entries(filteredMenuData).map(([sectionKey, groups]) => {
-                            const isSectionOpen = currentSection === sectionKey;
-
-                            return (
-                                <Box key={sectionKey} width="100%">
-                                    {isExpanded && (
-                                        <HStack
-                                            px={3}
-                                            py={2}
-                                            cursor="pointer"
-                                            borderRadius="lg"
-                                            justify="space-between"
-                                            color={
-                                                isSectionOpen
-                                                    ? theme.colors.primary
-                                                    : theme.colors.sideBarFont
-                                            }
-                                            bg={isSectionOpen ? `${theme.colors.primary}10` : "transparent"}
-                                            _hover={{ bg: "gray.100", color: theme.colors.primaryText }}
-                                            onClick={() => setCurrentSection(sectionKey)}
-                                            transition="all 0.15s ease"
-                                        >
-                                            <Text
-                                                fontSize="xs"
-                                                fontWeight="700"
-                                                textTransform="uppercase"
-                                                letterSpacing="wider"
-                                            >
-                                                {sectionKey}
-                                            </Text>
-                                            <Icon
-                                                as={ChevronDown}
-                                                boxSize={3}
-                                                transform={isSectionOpen ? "rotate(0deg)" : "rotate(-90deg)"}
-                                                transition="transform 0.2s ease"
-                                            />
-                                        </HStack>
-                                    )}
-
-                                    <AnimatePresence initial={false}>
-                                        {(isExpanded ? isSectionOpen :true) && (
-                                            <MotionVStack
-                                                align="stretch"
-                                                gap={2}
-                                                mt={1}
-                                                variants={expandVariants}
-                                                initial="hidden"
-                                                animate="visible"
-                                                exit="exit"
-                                            >
-                                                {Object.entries(groups).map(([groupKey, content]) =>
-                                                    renderSectionContent(content, groupKey, sectionKey)
-                                                )}
-                                            </MotionVStack>
-                                        )}
-                                    </AnimatePresence>
-                                </Box>
-                            );
-                        })
+                {/* Search results or normal nav */}
+                <AnimatePresence mode="wait">
+                    {isSearching && isExpanded ? (
+                        <MotionBox
+                            key="search-results"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            transition={{ duration: 0.15 } as any}
+                            pt={2}
+                            pb={4}
+                        >
+                            {renderSearchResults()}
+                        </MotionBox>
                     ) : (
-                        <VStack py={8} gap={3}>
-                            <Icon as={Search} boxSize={8} color="gray.300" />
-                            <Text color="gray.400" fontSize="sm">
-                                No menu items found
-                            </Text>
-                        </VStack>
+                        <MotionBox
+                            key="nav-tree"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            transition={{ duration: 0.15 } as any}
+                        >
+                            <VStack align="stretch" gap={1} p={3}>
+                                {Object.entries(menuData).map(([sectionKey, groups]) => {
+                                    const isSectionOpen = currentSection === sectionKey;
+
+                                    return (
+                                        <Box key={sectionKey} width="100%">
+                                            {isExpanded && (
+                                                <HStack
+                                                    px={3}
+                                                    py={1.5}
+                                                    cursor="pointer"
+                                                    borderRadius="lg"
+                                                    justify="space-between"
+                                                    color={
+                                                        isSectionOpen
+                                                            ? theme.colors.primary
+                                                            : theme.colors.sideBarFont ?? "gray.400"
+                                                    }
+                                                    bg={isSectionOpen ? `${theme.colors.primary}10` : "transparent"}
+                                                    _hover={{ bg: "rgba(255,255,255,0.06)", color: theme.colors.primary }}
+                                                    onClick={() => setCurrentSection(sectionKey)}
+                                                    transition="all 0.15s ease"
+                                                >
+                                                    <Text
+                                                        fontSize="10px"
+                                                        fontWeight="700"
+                                                        textTransform="uppercase"
+                                                        letterSpacing="0.1em"
+                                                    >
+                                                        {sectionKey}
+                                                    </Text>
+                                                    <Icon
+                                                        as={ChevronDown}
+                                                        boxSize={3}
+                                                        transform={isSectionOpen ? "rotate(0deg)" : "rotate(-90deg)"}
+                                                        transition="transform 0.2s ease"
+                                                    />
+                                                </HStack>
+                                            )}
+
+                                            <AnimatePresence initial={false}>
+                                                {(isExpanded ? isSectionOpen : true) && (
+                                                    <MotionVStack
+                                                        align="stretch"
+                                                        gap={0.5}
+                                                        mt={isExpanded ? 1 : 2}
+                                                        variants={expandVariants}
+                                                        initial="hidden"
+                                                        animate="visible"
+                                                        exit="exit"
+                                                    >
+                                                        {Object.entries(groups).map(([groupKey, content]) =>
+                                                            renderSectionContent(content, groupKey, sectionKey)
+                                                        )}
+                                                    </MotionVStack>
+                                                )}
+                                            </AnimatePresence>
+                                        </Box>
+                                    );
+                                })}
+
+                                <Box pt={2} pb={1}>
+                                    <Separator borderColor="rgba(255,255,255,0.08)" />
+                                </Box>
+                            </VStack>
+                        </MotionBox>
                     )}
-
-                    <Separator my={2} borderColor="gray.200" />
-
-                    {/* <VStack align="stretch" gap={1}>
-                        {[
-                            { label: "Help & Support", icon: HelpCircle },
-                            { label: "Settings", icon: Settings },
-                        ].map(({ label, icon: UtilIcon }) => (
-                            <Tooltip
-                                key={label}
-                                content={label}
-                                disabled={isExpanded}
-                                showArrow
-                                positioning={{ placement: "right" }}
-                            >
-                                <MotionHStack
-                                    px={3}
-                                    py={2.5}
-                                    gap={3}
-                                    cursor="pointer"
-                                    borderRadius="lg"
-                                    color={theme.colors.sideBarFont}
-                                    _hover={{ bg: "gray.100", color: theme.colors.primaryText }}
-                                    whileHover={{ x: 2 }}
-                                    whileTap={{ scale: 0.98 }}
-                                    justify={isExpanded ? "flex-start" : "center"}
-                                    width="100%"
-                                >
-                                    <Icon as={UtilIcon} boxSize={4} />
-                                    {isExpanded && <Text fontSize="sm">{label}</Text>}
-                                </MotionHStack>
-                            </Tooltip>
-                        ))}
-                    </VStack> */}
-                </VStack>
+                </AnimatePresence>
             </Box>
 
-            {/* User profile footer */}
+            {/* ── Footer / user profile ── */}
             <Box
                 position="absolute"
                 bottom={0}
                 left={0}
                 right={0}
                 borderTop="1px solid"
-                borderColor="gray.200"
+                borderColor="rgba(0,0,0,0.07)"
                 bg={theme.colors.sideBar}
-                backdropFilter="blur(8px)"
-                p={2}
-         
+                backdropFilter="blur(12px)"
+                p={3}
             >
                 <Tooltip content="User Profile" disabled={isExpanded} showArrow>
                     <MotionHStack
-                        gap={3}
+                        gap={2.5}
                         cursor="pointer"
                         p={2}
                         borderRadius="lg"
-                        color={theme.colors.sideBarFont}
-                        _hover={{ bg: "gray.100", color: theme.colors.primaryText }}
+                        color={theme.colors.sideBarFont ?? "gray.400"}
+                        _hover={{ bg: "rgba(255,255,255,0.08)", color: theme.colors.whiteColor }}
                         whileHover={{ x: 2 }}
                         whileTap={{ scale: 0.98 }}
                         justify={isExpanded ? "flex-start" : "center"}
                         width="100%"
                         onClick={() => setLogoutOpen(true)}
-                 
+                        transition={{ duration: 0.12 } as any}
                     >
-                        <Box
-                            position="relative"
-                            w={8}
-                            h={8}
-                            borderRadius="full"
-                            bg="gray.200"
-                            flexShrink={0}
-                           
-                        >
-                            <Icon as={UserCircle} w="full" h="full" />
+                        {/* Avatar */}
+                        <Box position="relative" flexShrink={0}>
+                            <Box
+                                w={8}
+                                h={8}
+                                borderRadius="full"
+                                bg={`${theme.colors.primary}30`}
+                                display="flex"
+                                alignItems="center"
+                                justifyContent="center"
+                                border="1.5px solid"
+                                borderColor={`${theme.colors.primary}40`}
+                            >
+                                <Icon
+                                    as={UserCircle}
+                                    boxSize={5}
+                                    color={theme.colors.primary}
+                                />
+                            </Box>
                             <Box
                                 position="absolute"
-                                bottom={0}
-                                right={0}
-                                w={2.5}
-                                h={2.5}
-                                bg="green.500"
+                                bottom="0"
+                                right="0"
+                                w="9px"
+                                h="9px"
+                                bg="green.400"
                                 borderRadius="full"
-                                border="2px solid"
-                                borderColor="white"
+                                border="1.5px solid"
+                                borderColor={theme.colors.sideBar}
                             />
                         </Box>
-                        {isExpanded && (
-                            <Box display={'flex'} alignItems={'center'} >
-                                <Text fontSize="sm" fontWeight="500">
-                                    {user?.USERNAME ?? "ADMIN"}
-                                </Text>
 
+                        {isExpanded && (
+                            <Box flex={1} minW={0}>
+                                <Text
+                                    fontSize="sm"
+                                    fontWeight="600"
+                                    color={theme.colors.whiteColor}
+                                   
+                                >
+                                    {user?.USERNAME ?? "Admin"}
+                                </Text>
+                                {/* <Text fontSize="10px" color="gray.500" >
+                                    {user?.EMAIL ?? "Online"}
+                                </Text> */}
                             </Box>
                         )}
-
                     </MotionHStack>
-
                 </Tooltip>
-                <Logout isOpen={logoutOpen}  onClose={()=>setLogoutOpen(false)}/>       
+                <Logout isOpen={logoutOpen} onClose={() => setLogoutOpen(false)} />
             </Box>
-            
         </MotionBox>
     );
 
-    // Mobile: Chakra Drawer
     if (!isDesktop) {
         return (
             <Drawer.Root open={isOpen} onOpenChange={onClose} size="xs">
@@ -846,13 +1193,12 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
         );
     }
 
-    // Desktop: fixed sidebar rail
     return (
         <Box
             position="fixed"
             left={0}
-            sm={{ h: '100vh' }}
-            md={{ h: '93vh' }}
+            sm={{ h: "100vh" }}
+            md={{ h: "93vh" }}
             zIndex={9999}
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}

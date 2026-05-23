@@ -26,6 +26,8 @@ import BalanceSummary from "./Balance/BalanceSummary";
 import { TransactionListing } from "./TransactionList/TransactionIdsListing";
 import { SalesSearch } from "./Search/SalesSearch";
 import SalesReceipt from "@/component/ReceiptPrint/SalesPrint";
+import ShortcutDialog from "@/components/shortcut/ShortcutDialog";
+import TransactionLoader, { TransactionStatus } from "@/component/loader/Transactionloader";
 
 //Key Management
 import { useGlobalKey } from "@/components/key/useGlobalKey";
@@ -85,6 +87,7 @@ import { BaseClosingFormDetails } from "@/types/balanceSummary/BalanceSummary";
 //Utilities
 import { formatToFixed } from '@/utils/format/numberFormat';
 import SalesSaveModal from "./SaveModal/SaveModal";
+import {useTransactionLoader} from "@/utils/loader/ResolveLoader";
 
 
 //Icons
@@ -133,10 +136,10 @@ export default function SalesPage() {
     const initialDraftRowsRef = useRef<any[]>([]);
     const initialClosingRef = useRef<BaseClosingFormDetails>(null);
 
-       const {data: useApiRate} = useSoftControlById('USE_API_RATE');
+    const {data: useApiRate} = useSoftControlById('USE_API_RATE');
     
-        console.log(useApiRate,'softControl in header form');
-        const isApiRateEnabled = useApiRate?.CTLTEXT === 'Y';
+    console.log(useApiRate,'softControl in header form');
+    const isApiRateEnabled = useApiRate?.CTLTEXT === 'Y';
 
     console.log(initialClosingRef.current, initialDraftRowsRef.current, 'currentref');
 
@@ -160,6 +163,8 @@ export default function SalesPage() {
         isModifying
     } = useSalesHeader();
 
+    const {isOpen, status, title, description, openLoader, resolveLoader, closeLoader} = useTransactionLoader();
+
 
     /* ================================
    Session Storage Keys (All in one place)
@@ -180,6 +185,7 @@ export default function SalesPage() {
 
 
     const openFilter = () => setIsFilterOpen(true);
+    const closeFilter = () => setIsFilterOpen(false);
 
     const draftRowTempId = useRef<string | null>(null);
 
@@ -250,7 +256,6 @@ export default function SalesPage() {
         setShowBillModal(prev => !prev);
     };
 
-    const [openSalesSaveModal ,setIsOpenSalesSaveModal] = useState<boolean>(false);
 
     /*-------------------PERSISTENT STATE-------------------------------*/
 
@@ -605,10 +610,13 @@ export default function SalesPage() {
 
     // KEY TO ACCESS
 
-    useGlobalKey("F1", () => openFilter(), "openFilter");
-    useGlobalKey("Alt+s" , ()=>handleSaveTransaction() , "saveTransaction");
+    useGlobalKey("F1", () => isFilterOpen ? closeFilter() : openFilter(), "openFilter");
+    useGlobalKey("Alt+s" , ()=> isModifying ? handleSaveTransaction() : null, "saveTransaction");
+    useGlobalKey("Alt+u" , ()=> isModifying ? handleUpdateTransaction() : null  , "updateTransaction");
     useGlobalKey("Alt+c", () => handleResetDraft() ,"ClearTransaction");
-      useGlobalKey("Alt+m" , ()=>{isModifying ? stopModify() : startModify()}, "modifyTransaction");
+    useGlobalKey("Alt+m" , ()=>{isModifying ? stopModify() : startModify()}, "modifyTransaction");
+    useGlobalKey("F3" , ()=>{ isStockDrawerOpen ? setIsStockDrawerOpen(false) : setIsStockDrawerOpen(true)}, "openStockDrawer");
+    useGlobalKey("CTRL+P" , ()=>{ isEditing && showPrintModal ? setShowPrintModal(false) : setShowPrintModal(true)}, "openPrintModal");
 
     const handleBillParamChange = useCallback((field: any, value: any) => {
         setBillParams(prev => ({
@@ -630,7 +638,6 @@ export default function SalesPage() {
         setSelectedTransactionTypes
     } = useSaleTransactionStore();
 
-    // const { handleAddRow, handleEditRow, handleRemoveRow, handleUpdateRow } = useDraftRowOperations(isTagedItem);
 
     console.log(draftRows, 'draftRowsssssss');
     useGlobalKey(
@@ -1213,129 +1220,129 @@ useEffect(() => {
 
 
 
-    const handleSaveTransaction = () => {
+  const handleSaveTransaction = () => {
+    setEditingState({ rowId: null, transactionType: null });
+ 
+    if (!headerForm.CUSTOMER) {
+        toaster.create({
+            title: "Customer Required",
+            description: "Please select a customer.",
+            type: "error",
+        });
+        return;
+    }
+ 
+    const result = buildTransactionRequest();
+ 
+    if (!result.valid || !result.payload) {
+        toaster.create({
+            title: "Validation Error",
+            description: result.error,
+            type: "error",
+        });
+        return;
+    }
+ 
+    // ✅ Open loader in save mode
+    openLoader("save");
+ 
+    createTransaction.mutate(
+        { payload: result.payload, TRANTYPE: "sales" },
+        {
+            onSuccess: () => {
+                setEditingState({ rowId: null, transactionType: null });
 
-        setEditingState({ rowId: null, transactionType: null });
-
-        if (!headerForm.CUSTOMER) {
-            toaster.create({
-                title: "Customer Required",
-                description: "Please select a customer.",
-                type: "error",
-            });
-            return;
-        }
-
-        const result = buildTransactionRequest();
-
-        console.log(result.payload ,'createTransactionPayload');
-        
-
-
-        if (!result.valid || !result.payload) {
-            toaster.create({
-                title: "Validation Error",
-                description: result.error,
-                type: "error",
-            });
-            return;
-        }
-
-        // return;
-
-        createTransaction.mutate(
-            { payload: result.payload, TRANTYPE: "sales" },
-            {
-                onSuccess: () => {
-
-                    setEditingState({ rowId: null, transactionType: null });
-
-                    toaster.create({
-                        title: "Transaction Saved",
-                        description: "Transaction saved successfully",
-                        type: "success",
-                    });
-
+                // Defer cleanup until after the loader finishes
+                setTimeout(() => {
                     handleResetDraft();
-                },
+                    resolveLoader("success", "save");
+                }, 500);
 
-                onError: (error: any) => {
-                    toaster.create({
-                        title: "Save Failed",
-                        description: error?.message || "Failed to save transaction.",
-                        type: "error",
-                    });
+                // ✅ Resolve to success — loader auto-closes after 2s
+       
+            },
+ 
+            onError: (error: any) => {
 
+                setTimeout(() => {
                     openingBalanceRefetch();
-                    setIsOpenSalesSaveModal(false);
-                }
-            }
-        );
-    };
-
-    const handleUpdateTransaction = async () => {
-
-        setEditingState({ rowId: null, transactionType: null });
-
-        if (!editingSno) {
-            toaster.create({
-                title: "Transaction ID Missing",
-                description: "Cannot update without transaction SNO.",
-                type: "error",
-            });
-            return;
+                    resolveLoader("error", "save", error?.message || "Failed to save transaction.");   
+                }, 500);
+                             
+            },
         }
-
-        const result = buildTransactionRequest();
-
-        if (!result.valid || !result.payload) {
-            toaster.create({
-                title: "Validation Error",
-                description: result.error,
-                type: "error",
-            });
-            return;
-        }
-
-        console.log(result.payload ,'updateTransaction');
-
+    );
+};
+ 
+// ─────────────────────────────────────────────────────────────────────────────
+// handleUpdateTransaction — updated
+// ─────────────────────────────────────────────────────────────────────────────
+ 
+const handleUpdateTransaction = async () => {
+    setEditingState({ rowId: null, transactionType: null });
+ 
+    if (!editingSno) {
+        toaster.create({
+            title: "Transaction ID Missing",
+            description: "Cannot update without transaction SNO.",
+            type: "error",
+        });
+        return;
+    }
+ 
+    const result = buildTransactionRequest();
+ 
+    if (!result.valid || !result.payload) {
+        toaster.create({
+            title: "Validation Error",
+            description: result.error,
+            type: "error",
+        });
+        return;
+    }
+ 
+    // ✅ Open loader in update mode
+    openLoader("update");
+ 
+    try {
+        await updateTransaction.mutateAsync({
+            entryNo: Number(headerForm.ENTRYNO),
+            payload: result.payload,
+            TRANTYPE: "sales",
+        });
+ 
+        setEditingSno(null);
+ 
     
-        try {
-            await updateTransaction.mutateAsync({
-                entryNo: Number(headerForm.ENTRYNO),
-                payload: result.payload,
-                TRANTYPE: "sales"
-            });
-
-            setEditingSno(null);
-
-            toaster.create({
-                title: "Transaction Updated",
-                description: "Transaction updated successfully.",
-                type: "success",
-            });
-
+ 
+        // Defer cleanup until after the loader finishes
+        setTimeout(() => {
             goldStockRefetch();
             itemStockRefetch();
             openingBalanceRefetch();
-
             resetStore();
             resetBalance();
-            setIsOpenSalesSaveModal(false);
+            // setIsOpenSalesSaveModal(false);
             handleResetDraft();
-
-        } catch (error: any) {
-            toaster.create({
-                title: "Update Failed",
-                description: error.message || "Failed to update transaction.",
-                type: "error",
-            });
-
-            setIsOpenSalesSaveModal(false);
+            
+        }, 500);
+         setTimeout(() => {
+            // ✅ Resolve to success
+        resolveLoader("success", "update");
+        }, 600);
+    } catch (error: any) {
+        // ✅ Resolve to error
+   
+ 
+        setTimeout(() => {
             openingBalanceRefetch();
-        }
-    };
-
+            // setIsOpenSalesSaveModal(false);
+        }, 500);
+        setTimeout(() => {
+        resolveLoader("error", "update", error?.message || "Failed to update transaction.");
+        }, 600);
+    }
+};
    const handleTransactionClick = useCallback((transactionId: string) => {
 
         if (draftRows.length > 0 && !isEditing) {
@@ -1409,11 +1416,31 @@ const handleReset = isEditing
   ? (isModifying ? handleResetDraft : handleReSelectTransaction)
   : handleResetDraft;
 
+  const shortcuts = [
+  { keys: "Alt S", label: "Save" },
+  { keys: "Alt U", label: "Update" },
+  { keys: "Alt C", label: "Clear" },
+  { keys: "Alt M", label: "Modify" },
+  { keys: "F1", label: "FilterOpen / Close" },
+  { keys: "Alt I", label: "Issue" },
+  { keys: "Alt T", label: "Receipt" },
+  { keys: "Alt P", label: "Sales" },
+  { keys: "Alt R", label: "Sales Return" },
+
+];
+
 
     return (
         <>
 
             <Flex gap={1}>
+                <TransactionLoader
+                    isOpen={isOpen}
+                    status={status}
+                    title={title}
+                    description={description}
+                    onClose={closeLoader}
+                />
 
                 {/* LEFT – 70% */}
                 <Box display='flex' gap={1} width={'100%'}>
@@ -1435,57 +1462,12 @@ const handleReset = isEditing
                             isDraftRowChanged ={isDraftRowsChanged()}
 
                         />
-                        <Box
-                            display="flex"
-                            alignItems="center"
-                            gap={2}
-                            px={2}
-                            py={2}
-                            bg="gray.50"
-                            border="0.5px solid"
-                            borderColor={theme.colors.greyColor}
-                            rounded="md"
-                            flexWrap="wrap"
-                        >
-                            <Text fontSize="12px" color={theme.colors.green} mr={1} fontWeight={'semibold'}>Shortcuts</Text>
-                        
-                            {[
-                              { keys: "Alt S", label: "Save" },
-                              { keys: "Alt U", label: "Update" },
-                              { keys: "Alt C", label: "Clear" },
-                              { keys: "Alt M", label: "Modify" },
-                              { keys: "F1", label: "Filter" },
-                              { keys: "Alt P", label: "Sales" },
-                              { keys: "Alt R", label: "Sales Return" },
-                              { keys: "Alt I", label: "Issue" },
-                              { keys: "Alt T", label: "Receipt" },
-                            ].map(({ keys, label }, i, arr) => (
-                              <React.Fragment key={keys}>
-                                <Box display="flex" alignItems="center" gap={1}>
-                                  <Box
-                                    as="kbd"
-                                    fontSize="10px"
-                                    fontFamily={theme.fonts.body2}
-                                    px="5px"
-                                    py="2px"
-                                    bg={theme.colors.accient}
-                                    border="0.5px solid"
-                                    borderColor={theme.colors.greyColor}
-                                    rounded="sm"
-                                    lineHeight="1.6"
-                                    color={theme.colors.whiteColor}
-                                   
-                                    >
-                                      {keys}
-                                    </Box>
-                                    <Text fontSize="11px" fontFamily={theme.fonts.body2} >{label}</Text>
-                                </Box>
-                                    {i < arr.length - 1 && (
-                                        <Text fontSize="10px" color="black" fontFamily={theme.fonts.body2}>|</Text>
-                                    )}
-                            </React.Fragment>
-                                  ))}
-                        </Box>
+                        <ShortcutDialog
+                    
+                          shortcuts={shortcuts}
+                          theme={theme}
+
+                        />
                         
 
                         {/* 2. Transaction Type Selector */}

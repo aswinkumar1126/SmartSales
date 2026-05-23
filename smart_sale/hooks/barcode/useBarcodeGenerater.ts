@@ -283,6 +283,14 @@ export function useBarcodeGenerate() {
 
   const { printAll, printSingle, downloadSetupFiles } = usePrintHandler();
 
+  const handlePrintAll = () => printAll(printDetails);
+
+
+  const handleDownloadSetup = () => {
+      if (!printer) { toaster.create({ title: "Printer not configured", type: "error", duration: 2000 }); return; }
+      downloadSetupFiles(printer.printerName, printer.exeName);
+    }
+
   const { assignBarcodes, assignSingleBarcode } = useBarcodeNumbering({
     prefix: baseBarcodePrefix,
     startNumber: startBarcodeNumber,
@@ -958,8 +966,16 @@ export function useBarcodeGenerate() {
 
 
   /*--------------SAVE TRANSACTION ----------------------*/
+
   useGlobalKey("ALT+S", () => { isEditing ? handleUpdate() : handleSave() });
   useGlobalKey("ALT+C", handleClear);
+
+  /*--------------EXCEL DRAWER ----------------------*/
+
+  useGlobalKey("Alt+E",()=>excelDrawerOpen ? setExcelDrawerOpen(false) : setExcelDrawerOpen(true));
+  useGlobalKey("Alt+L" ,()=>handleExcelLoad(excelData));
+
+  useGlobalKey("Ctrl+P" ,handlePrintAll);
 
 
   /* ── Table config ── */
@@ -1097,10 +1113,7 @@ export function useBarcodeGenerate() {
       const found = printSingle(tagNo, printDetails);
       if (!found) toaster.create({ title: "No print data", description: "Details not found for this tag", type: "error", duration: 2000 });
     },
-    handleDownloadSetup: () => {
-      if (!printer) { toaster.create({ title: "Printer not configured", type: "error", duration: 2000 }); return; }
-      downloadSetupFiles(printer.printerName, printer.exeName);
-    },
+   handleDownloadSetup,
 
     getCellValue, formatTotal,
   };

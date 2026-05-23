@@ -445,6 +445,9 @@ const buildThermalHTML = (p: PurchaseReceiptProps, softData?: SoftControl, is50?
   const showClosingSection = hasClosingDetails(C);
   const convTypeLabel = getConvTypeLabel(C.CONVTYPE);
 
+  const remark = H.REMARK !== null && H.REMARK !== undefined && H.REMARK !== "" ? H.REMARK : "";
+  const thru = H.THRU !== null && H.THRU !== undefined && H.THRU !== "" ? H.THRU :"";
+
   const sections = [
     { label: "PURCHASE", rows: D.purchase ?? [], type: "purchase" },
     { label: "PURCHASE RETURN", rows: D.purchase_return ?? [], type: "purchase" },
@@ -676,23 +679,77 @@ ${extraChargesTable}`;
 </table>
 ` : '';
 
-  const openingBalanceHtml = `
-<div class="sec-title">OPENING BALANCE</div>
+const openingBalanceHtml = `
+
 <table style="width:100%; margin:2px 0;" class="no-border">
-  <tr style="display:flex; justify-content:space-between; gap:15px; width:100%;">
-    <td style="text-align:right; font-weight:600;">CASH : ${fmtNormalAmt(B.openingCash)}</td>
-    <td style="text-align:right; font-weight:600;">PURE : ${fmtWt(B.openingPure)}</td>
+  <tr>
+    <td style="width:70%;"></td>
+
+    <td style="font-weight:600; white-space:nowrap; text-align:right;">
+      OB PURE
+    </td>
+
+    <td style="width:10px; font-weight:600; white-space:nowrap; text-align:center;">
+      :
+    </td>
+
+    <td style="text-align:right; font-weight:600; white-space:nowrap;">
+      ${fmtWt(B.openingPure)}
+    </td>
+  </tr>
+
+  <tr>
+    <td></td>
+
+    <td style="font-weight:600; white-space:nowrap; text-align:right;">
+      OB CASH
+    </td>
+
+    <td style="font-weight:600; white-space:nowrap; text-align:center;">
+      :
+    </td>
+
+    <td style="text-align:right; font-weight:600; white-space:nowrap;">
+      ${fmtNormalAmt(B.openingCash)}
+    </td>
   </tr>
 </table>`;
 
   const transactionsHtml = showTransactions ? `<div class="tran-table">${itemSections}</div>` : '';
 
-  const closingBalanceHtml = `
-<div class="sec-title">CLOSING BALANCE</div>
+ const closingBalanceHtml = `
+
 <table style="width:100%; margin:4px 0;" class="no-border">
-  <tr style="display:flex; justify-content:space-between; gap:15px; width:100%;">
-    <td style="text-align:right; font-weight:600;">CASH : ${fmtNormalAmt(B.closingCash)}</td>
-    <td style="text-align:right; font-weight:600;">PURE : ${fmtWt(B.closingPure)}</td>
+  <tr>
+    <td style="width:70%;"></td>
+
+    <td style="font-weight:600; white-space:nowrap; text-align:right;">
+      CB PURE
+    </td>
+
+    <td style="width:10px; font-weight:600; white-space:nowrap; text-align:center;">
+      :
+    </td>
+
+    <td style="text-align:right; font-weight:600; white-space:nowrap;">
+      ${fmtWt(B.closingPure)}
+    </td>
+  </tr>
+
+  <tr>
+    <td></td>
+
+    <td style="font-weight:600; white-space:nowrap; text-align:right;">
+      CBCASH
+    </td>
+
+    <td style="font-weight:600; white-space:nowrap; text-align:center;">
+      :
+    </td>
+
+    <td style="text-align:right; font-weight:600; white-space:nowrap;">
+      ${fmtNormalAmt(B.closingCash)}
+    </td>
   </tr>
 </table>`;
 
@@ -704,28 +761,44 @@ ${extraChargesTable}`;
   
   <div style="text-align:center; font-size:12px; font-weight:bold; letter-spacing:0.5px; margin:4px 0;">PURCHASE ESTIMATION</div>
 
-  <table style="width:100%; margin:4px 0;" class="no-border">
-    <tr>
-      <td style="width:55%; vertical-align:top;">
-        <table style="width:100%;" class="no-border">
-          <tr><td style="font-weight:bold; width:40%;">PARTY : </td><td>${partyName}</td>
-          </tr>
-          <tr><td style="font-weight:bold; width:40%;">REMARK : </td><td>${H.REMARK}</td>
-          </tr>
-          <tr><td style="font-weight:bold; width:40%;">THRU : </td><td>${H.THRU}</td>
-          </tr>
-        </table>
-      </td>
-      <td style="width:45%; vertical-align:top; text-align:left;">
-        <table style="width:100%; font-size:10px; text-align:left;" class="no-border">
-          <tr><td style="font-weight:bold; width:42%;">BILL NO : </td><td>${H.BILLNO}</td>
-          </tr>
-          <tr><td style="font-weight:bold; width:42%;">DATE : </td><td>${formatDate(H.TRANDATE)}</td>
-          </tr>
-        </table>
-      </td>
-    </tr>
-  </table>
+ <table style="width:100%; margin:4px 0;" class="no-border">
+  <tr>
+    <td style="width:55%; vertical-align:top;">
+      <table style="width:100%;" class="no-border">
+        <tr>
+          <td style="font-weight:bold; width:30%; white-space:nowrap;">PARTY</td>
+          <td style="width:5%; white-space:nowrap;">:</td>
+          <td>${partyName}</td>
+        </tr>
+        <tr>
+          <td style="font-weight:bold; white-space:nowrap;">REMARK</td>
+          <td style="white-space:nowrap;">:</td>
+          <td>${remark}</td>
+        </tr>
+        <tr>
+          <td style="font-weight:bold; white-space:nowrap;">THRU</td>
+          <td style="white-space:nowrap;">:</td>
+          <td>${thru}</td>
+        </tr>
+      </table>
+    </td>
+
+    <td style="width:45%; vertical-align:top; text-align:left;">
+      <table style="width:100%; font-size:10px; text-align:left;" class="no-border">
+        <tr>
+          <td style="font-weight:bold; width:30%; white-space:nowrap;">BILL NO</td>
+          <td style="width:5%; white-space:nowrap;">:</td>
+          <td>${H.BILLNO}</td>
+        </tr>
+        <tr>
+          <td style="font-weight:bold; white-space:nowrap;">DATE</td>
+          <td style="white-space:nowrap;">:</td>
+          <td>${formatDate(H.TRANDATE)}</td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
 
   ${openingBalanceHtml}
   ${transactionsHtml}
