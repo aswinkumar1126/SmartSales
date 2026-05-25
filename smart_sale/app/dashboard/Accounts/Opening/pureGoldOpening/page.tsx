@@ -28,9 +28,13 @@ import { SelectCombobox } from "@/components/ui/selectComboBox";
 import { safeValue } from "@/utils/comboBox/safeValue";
 import SearchBar from "@/component/search/SearchBar";
 
+import { useGlobalKey } from "@/components/key/useGlobalKey";
 import { PureGoldMastForm } from "@/config/opening/pureGoldOpening";
 import { useEnterNavigation } from "@/component/form/useEnterNavigation";
 import { DynamicForm } from "@/component/form/DynamicForm";
+import ShortcutDialog from "@/components/shortcut/ShortcutDialog";
+import { useTransactionLoader } from "@/utils/loader/ResolveLoader";
+import TransactionLoader from "@/component/loader/Transactionloader";
 
 /* ---------------- Initial Form State ---------------- */
 
@@ -60,6 +64,8 @@ export type TouchTableRow = {
 /* ---------------- Component ---------------- */
 
 const PureGoldOpening = () => {
+
+    const {isOpen, status, title:loaderTitle, description, openLoader, resolveLoader, closeLoader} = useTransactionLoader();
     /* ---------------- State ---------------- */
 
     const [form, setForm] = useState<pureGoldMastOpenForm>(initialFormState);
@@ -227,6 +233,7 @@ const PureGoldOpening = () => {
         }
 
         if (editId) {
+            openLoader('update', true)
             updateMutation.mutate(
                 { id: editId, data: payload },
                 {
@@ -234,16 +241,25 @@ const PureGoldOpening = () => {
                         setHighlightRowId(editId);
                         resetForm();
                         refetch();
+                        resolveLoader("success", "update", "", true)
                     },
+                    onError: () => {
+                        resolveLoader("error", "update", "", true)
+                    }
                 }
             );
         } else {
+            openLoader('save', true)
             createMutation.mutate(payload, {
                 onSuccess: (res: any) => {
                     setHighlightRowId(res?.data?.id);
                     resetForm();
                     refetch();
+                    resolveLoader("success", "save", "", true)
                 },
+                onError: () => {
+                    resolveLoader("error", "save", "", true)
+                }
             });
         }
     };
@@ -289,13 +305,26 @@ const PureGoldOpening = () => {
 
     useEffect(() => {
         focusFirst()
-    }, [focusFirst])
+    }, [focusFirst]);
+
+    useGlobalKey("Alt+s" , ()=>handleSubmit() , "saveTransaction");
+    useGlobalKey("Alt+r", () => resetForm() ,"Reset");
+    useGlobalKey("Alt+e", () => router.back(), "exit");
+    useGlobalKey("Alt+u", () => handleSubmit(), "update");
     /* ---------------- UI ---------------- */
 
     return (
         <Grid templateColumns={{ base: "1fr", lg: "1fr 2fr" }} fontWeight='semibold' gap={2}>
+         
+            <TransactionLoader
+                isOpen={isOpen}
+                status={status}
+                title={loaderTitle}
+                description={description}
+                onClose={closeLoader}
+            />
             <Toaster />
-
+            <ShortcutDialog />
             {/* -------- Form Section -------- */}
             <GridItem>
                 <Box p={2} borderRadius="lg" bg={theme.colors.formColor} boxShadow="sm">
@@ -336,7 +365,10 @@ const PureGoldOpening = () => {
                             </Button>
 
                             <Button size="xs" colorPalette="blue" onClick={resetForm}>
-                                Clear <IoIosExit />
+                                Reset <IoIosExit />
+                            </Button>
+                            <Button size="xs" colorPalette="blue" onClick={()=>router.back()}>
+                                Exit <IoIosExit />
                             </Button>
                         </HStack>
                     </Box>

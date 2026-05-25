@@ -88,6 +88,7 @@ export interface TransactionHeader {
 
     REMARK: string;
     THRU: string;
+    REFNO : number;
 }
 
 

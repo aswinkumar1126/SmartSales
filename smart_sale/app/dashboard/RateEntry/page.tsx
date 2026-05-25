@@ -16,6 +16,7 @@ import { AiOutlineSave } from "react-icons/ai";
 import { IoIosExit } from "react-icons/io";
 import { Toaster } from "@/components/ui/toaster";
 import { useTheme } from "@/context/theme/themeContext";
+import { useRouter } from "next/navigation";
 
 import { toastError, toastLoaded } from "@/component/toast/toast";
 
@@ -25,11 +26,17 @@ import { useCreateRate, useRates, useAllRates } from "@/hooks/apiHooks/rate/useR
 import { RateForm } from "@/types/rate/rate";
 import { RateEntryForm } from "@/config/master/RateEntry";
 
+import ShortcutDialog from "@/components/shortcut/ShortcutDialog";
+import { useTransactionLoader } from "@/utils/loader/ResolveLoader";
+import TransactionLoader from "@/component/loader/Transactionloader";
+import { useGlobalKey } from "@/components/key/useGlobalKey";
+
 
 function RateEntry() {
 
     const { theme } = useTheme();
-
+    const router =useRouter();
+    const {isOpen, status, title:loaderTitle, description, openLoader, resolveLoader, closeLoader} = useTransactionLoader();
     /* -------------------- API HOOKS -------------------- */
 
     const { mutate: createRate, isPending } = useCreateRate();
@@ -49,10 +56,6 @@ function RateEntry() {
 
 
     const [errors, setErrors] = useState<Record<string, string>>({});
-
-
-
-
 
 
     /* -------------------- HANDLERS -------------------- */
@@ -118,21 +121,18 @@ function RateEntry() {
             "SILVER 100": Number(form["SILVER 100"]),
             "SILVER 916": Number(form["SILVER 916"]),
         }
+        openLoader('save', true)
 
         createRate(payload, {
             onSuccess: () => {
                 toastLoaded("Rate Created Successfully");
-                // resetForm();
-                setForm({
-                    "GOLD 100": "",
-                    "GOLD 916": "",
-                    "SILVER 100": "",
-                    "SILVER 916": "",
-                });
-                setTimeout(() => {
-                    window.location.reload();
-                }, 1000);
+                resetForm();
+                resolveLoader("success", "save", "", true)
+            },
+            onError: () => {
+                resolveLoader("error", "save", "Failed to create rate", true)
             }
+
         });
 
     }
@@ -155,11 +155,23 @@ function RateEntry() {
     useEffect(() => {
         focusFirst();
     }, []);
+    useGlobalKey("Alt+s" , ()=>handleSave() , "saveTransaction");
+    useGlobalKey("Alt+r", () => resetForm() ,"Reset");
+    useGlobalKey("Alt+e", () => router.back(), "exit");
+    useGlobalKey("Alt+u", () => handleSave(), "update");
 
     /* -------------------- UI -------------------- */
     return (
         <Box fontWeight="semibold" bg={theme.colors.primary} color={theme.colors.secondary}>
+            <TransactionLoader
+                isOpen={isOpen}
+                status={status}
+                title={loaderTitle}
+                description={description}
+                onClose={closeLoader}
+            />
             <Toaster />
+            <ShortcutDialog />
             <Grid templateColumns={{ base: "1fr", lg: "1fr 1.5fr" }} gap={2}>
                 {/* FORM SECTION */}
                 <GridItem>
@@ -185,6 +197,9 @@ function RateEntry() {
                                 <AiOutlineSave /> Save
                             </Button>
                             <Button size="xs" colorPalette="blue" onClick={resetForm}>
+                                <IoIosExit /> Reset
+                            </Button>
+                            <Button size="xs" colorPalette="blue" onClick={() => router.back()}>
                                 <IoIosExit /> Exit
                             </Button>
                         </HStack>

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Box, Grid, GridItem, Button, HStack ,Table ,Flex ,Text} from "@chakra-ui/react";
 
 import { DynamicForm } from "@/component/form/DynamicForm";
@@ -24,6 +25,12 @@ import { useAuth } from "@/hooks/apiHooks/auth/useAuth";
 
 import { formatDateForShow } from "@/utils/format/formatDateForAPI";
 import { Edit2Icon } from "lucide-react";
+
+import { useGlobalKey } from "@/components/key/useGlobalKey";
+import { PureGoldMastForm } from "@/config/opening/pureGoldOpening";
+import ShortcutDialog from "@/components/shortcut/ShortcutDialog";
+import { useTransactionLoader } from "@/utils/loader/ResolveLoader";
+import TransactionLoader from "@/component/loader/Transactionloader";
 
 /* ---------------- TYPES ---------------- */
 
@@ -59,7 +66,9 @@ const initialForm: ExpenseForm = {
 function ExpensesPage() {
     const { theme } = useTheme();
     const {user} =useAuth();
-    console.log(user,'user')
+    const router = useRouter();
+    console.log(user,'user');
+    const {isOpen, status, title:loaderTitle, description, openLoader, resolveLoader, closeLoader} = useTransactionLoader();
 
     /* ---------------- STATE ---------------- */
 
@@ -199,6 +208,7 @@ function ExpensesPage() {
         };
 
         if (editId) {
+            openLoader("update",true);
             updateMutation.mutate(
                 { entryNo: editId, ...payload },
                 {
@@ -206,6 +216,7 @@ function ExpensesPage() {
                         setHighlightRowId(editId);
                         resetForm();
                         refetch();
+                        resolveLoader("success", "update", "", true);
                     },
                     onError: (error: any) => {
                         if(error){
@@ -218,16 +229,19 @@ function ExpensesPage() {
                                  
                             })
                         }
+                        resolveLoader("error", "update", "", true);
                         console.log("Error updating expense:", error?.response?.data?.message);
                     }
                 }
             );
         } else {
+            openLoader("save", true);
             createMutation.mutate(payload, {
                 onSuccess: (res: any) => {
                     setHighlightRowId(res?.data?.entryNo);
                     resetForm();
                     refetch();
+                    resolveLoader("success", "save", "", true);
                 },
                 onError: (error: any) => {
                     console.log("Error creating expense:", error.message);
@@ -236,7 +250,8 @@ function ExpensesPage() {
                         title:'Expense Creation Error' ,
                         description : error?.response?.data?.message || 'Failed to create expense' ,
                         type:'error'
-                    })
+                    });
+                    resolveLoader("error", "save", "", true)
                 }
             });
         }
@@ -274,6 +289,10 @@ function ExpensesPage() {
         {key:"userId" ,label:"MADE BY"},
         { key: "action", label: "ACTION" },
     ];
+    useGlobalKey("Alt+s" , ()=>handleSubmit() , "saveTransaction");
+    useGlobalKey("Alt+r", () => resetForm() ,"Reset");
+    useGlobalKey("Alt+e", () => router.back(), "exit");
+    useGlobalKey("Alt+u", () => handleSubmit(), "update");
 
     /* ---------------- UI ---------------- */
 
@@ -281,6 +300,17 @@ function ExpensesPage() {
         <Grid templateColumns={{ base: "1fr", lg: "1fr 2fr" }} gap={2}>
             {/* FORM */}
             <GridItem>
+
+                <TransactionLoader
+                    isOpen={isOpen}
+                    status={status}
+                    title={loaderTitle}
+                    description={description}
+                    onClose={closeLoader}
+                />
+       
+                <ShortcutDialog />
+
                 <Box p={3} bg={theme.colors.formColor} borderRadius="lg">
                     <DynamicForm
                         fields={expenseFormFields}
@@ -306,7 +336,10 @@ function ExpensesPage() {
                         </Button>
 
                         <Button size="xs" onClick={resetForm}>
-                            Clear
+                            Reset
+                        </Button>
+                        <Button size="xs" onClick={() => router.back()}>
+                            Exit
                         </Button>
                     </HStack>
                 </Box>

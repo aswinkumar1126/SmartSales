@@ -892,6 +892,7 @@ export function useBarcodeGenerate() {
 
     const purchase = tagDetails.PURCHASEDETAILS;
     const apiRows = tagDetails.TAGGINGDETAILS || [];
+    console.log(purchase,'purchase')
 
     // ✅ Always restore header form
     setHeaderForm({
@@ -900,7 +901,7 @@ export function useBarcodeGenerate() {
       INWARDNO: String(purchase.PUENTRYNO ?? ""),
       ITEMNAME: String(purchase.PUSNO ?? ""),
       DATE: purchase.TAGDATE ?? "",
-      RETAG: false,
+      RETAG: purchase.RETAG,
     });
 
     setIsEditing(true);

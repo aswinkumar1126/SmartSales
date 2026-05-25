@@ -46,6 +46,10 @@ import { useEnterNavigation } from "@/component/form/useEnterNavigation";
 import { IoIosExit } from "react-icons/io";
 import { AiOutlineSave } from "react-icons/ai";
 import { useGlobalKey } from "@/components/key/useGlobalKey";
+import ShortcutDialog from "@/components/shortcut/ShortcutDialog";
+import { useTransactionLoader } from "@/utils/loader/ResolveLoader";
+import TransactionLoader from "@/component/loader/Transactionloader";
+
 
 /* ---------------- Initial State ---------------- */
 
@@ -69,6 +73,7 @@ export type TouchTableRow = {
 /* ---------------- Component ---------------- */
 
 const TouchMasterForm = () => {
+    const {isOpen, status, title:loaderTitle, description, openLoader, resolveLoader, closeLoader} = useTransactionLoader();
 
     const [form, setForm] = useState<TouchMaster>(initialFormState);
     const [editId, setEditId] = useState<number | null>(null);
@@ -241,6 +246,7 @@ const TouchMasterForm = () => {
 
 
         if (editId) {
+            openLoader('update', true)
             updateMutation.mutate(
                 { id: editId, formData: payload },
                 {
@@ -248,11 +254,16 @@ const TouchMasterForm = () => {
                         setHighlightRowId(editId);
                         resetForm();
                         refetch();
+                        resolveLoader("success", "update", "", true)
 
                     },
+                    onError :()=>{
+                        resolveLoader("error", "update", "", true)
+                    }
                 }
             );
         } else {
+            openLoader('save', true)
             console.log(payload,'payload')
             createMutation.mutate(payload, {
                 onSuccess: (res: any) => {
@@ -260,7 +271,12 @@ const TouchMasterForm = () => {
                     setHighlightRowId(createdId);
                     resetForm();
                     refetch();
+                    resolveLoader("success", "save", "", true)
                 },
+                onError: (error: any) => {
+                    console.error("Error creating touch master:", error);
+                    resolveLoader("error", "save", "", true)
+                }
             });
         }
     };
@@ -293,8 +309,11 @@ const TouchMasterForm = () => {
         router.push(`/print?export=${option}`);
     }
 
+
     useGlobalKey("Alt+s" , ()=>handleSubmit() , "saveTransaction");
-    useGlobalKey("Alt+c", () => resetForm() ,"ClearTransaction");
+    useGlobalKey("Alt+r", () => resetForm() ,"Reset");
+    useGlobalKey("Alt+e", () => router.back(), "exit");
+    useGlobalKey("Alt+u", () => handleSubmit(), "update");
     /* ------------ Highlight Timeout ---------------- */
 
     useEffect(() => {
@@ -317,7 +336,15 @@ const TouchMasterForm = () => {
 
     return (
         <Grid templateColumns={{ base: "1fr", lg: "1fr 2fr" }} gap={2}>
+            <TransactionLoader
+                isOpen={isOpen}
+                status={status}
+                title={loaderTitle}
+                description={description}
+                onClose={closeLoader}
+            />
             <Toaster />
+            <ShortcutDialog />
 
             {/* FORM */}
             <GridItem bg={theme.colors.formColor} p={2} rounded={'xl'} gap={2}>
@@ -350,6 +377,9 @@ const TouchMasterForm = () => {
                             onClick={() => resetForm()}
 
                         >
+                            <IoIosExit /> Reset
+                        </Button>
+                        <Button size="xs" colorPalette="blue" onClick={() => router.back()}>
                             <IoIosExit /> Exit
                         </Button>
                 </Flex>

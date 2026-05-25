@@ -1465,7 +1465,7 @@ const handleReset = isEditing
                         <ShortcutDialog
                     
                           shortcuts={shortcuts}
-                          theme={theme}
+                 
 
                         />
                         

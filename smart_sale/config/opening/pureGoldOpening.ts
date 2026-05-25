@@ -28,7 +28,7 @@ export const PureGoldMastForm = (pureCollection: { label: string; value: string 
         required: true,
         rounded: "sm",
         allowFocus: true,
-        decimalScale: 1,
+        decimalScale: 2,
     },
     {
         name: "aPureWt",

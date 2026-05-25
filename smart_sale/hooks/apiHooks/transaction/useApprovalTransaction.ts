@@ -4,7 +4,7 @@ import {
     useQueryClient,
 } from "@tanstack/react-query";
 
-import { TransactionService, getBillWiseSales } from "@/service/ApprovalTransactionService";
+import { TransactionService, getIssueWiseApproval } from "@/service/ApprovalTransactionService";
 import { CreateApprovalTransaction } from "@/types/transcation/ApprovalTransaction";
 import { ApiResponse } from "@/types/api/apiResponse";
 import { billNoParams } from "@/service/ApprovalTransactionService";
@@ -58,6 +58,7 @@ export const useTransactionByTransId = (
         queryFn: () =>
             TransactionService.getByTransId(transId),
         enabled: !!transId,
+        select: (res) => res.data,
     });
 };
 
@@ -135,7 +136,6 @@ export const useDeleteTransaction = (TRANTYPE: string, tranType: string) => {
 };
 
 //CREATE
-//CREATE
 export const useCreateTransactions = () => {
     const queryClient = useQueryClient();
 
@@ -152,14 +152,10 @@ export const useCreateTransactions = () => {
 };
 
 
-export const useBillDetails = (params: billNoParams) => {
+export const useAppIssueDetails = (params: billNoParams) => {
     return useQuery({
         queryKey: ['bill-details', params],
-        queryFn: () => getBillWiseSales(params),
-        enabled: true,
-        staleTime: 1000 * 60 * 5, // optional: cache for 5 mins
-        retry: 1,
-
-
+        queryFn: () => getIssueWiseApproval(params),
+      
     })
 }

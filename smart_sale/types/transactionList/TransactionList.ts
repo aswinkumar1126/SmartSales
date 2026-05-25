@@ -6,7 +6,7 @@ export interface PurchaseTransactionList {
 
 
 export interface ApprovalTransactionList  {
-    snoList: number[],
+    SNOLIST: number[],
     ENTRYNO: number;
     BILLNO?: number;
 }

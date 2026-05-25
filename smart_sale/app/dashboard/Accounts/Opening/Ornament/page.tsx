@@ -374,7 +374,10 @@ function OrnamentMaster() {
                                         <AiOutlineSave /> {editId ? "Update" : "Save"}
                                     </Button>
                                     <Button size="xs" colorPalette="blue" onClick={resetForm}>
-                                        <IoIosExit /> Clear
+                                        <IoIosExit /> Reset
+                                    </Button>
+                                    <Button size="xs" colorPalette="blue" onClick={() => router.back()}>
+                                        <IoIosExit /> Exit
                                     </Button>
                                 </HStack>
                             </Fieldset.Content>

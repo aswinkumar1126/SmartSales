@@ -3,7 +3,7 @@ import { useApprovalHeader } from "@/store/approval/useApprovalHeader";
 
 import { loadApprovalHeader } from "@/utils/transaction/approval/LoadApprovalHeader";
 // import { loadSalesClosing } from "@/utils/transaction/sales/LoadSalesClosing";
-import { mapSalesTransactionItems } from "@/utils/transaction/approval/MapApprovalTransactionItems";
+import { mapApprovalTransactionItems } from "@/utils/transaction/approval/MapApprovalTransactionItems";
 import { useSoftControlById } from "@/hooks/apiHooks/softControl/useSoftControl";
 
 export const useLoadApprovalTransaction = () => {
@@ -21,13 +21,12 @@ export const useLoadApprovalTransaction = () => {
         if (!transactionData) return;
 
         startEdit(sno);
+        console.log(transactionData,'transactionData');
 
         loadApprovalHeader(transactionData.TRANSACTION_HEADER, setHeaderForm, setAccCode);
-        // loadSalesClosing(transactionData.CLOSING_DETAILS, setClosingDetails);
+        
 
-        // loadOpening(transactionData.BALANCE, setBaseOpening);
-
-        const { rows, selectedTransactionTypes } = mapSalesTransactionItems(transactionData, isUseFinalAmount);
+        const { rows, selectedTransactionTypes } = mapApprovalTransactionItems(transactionData, isUseFinalAmount);
 
         return { rows, selectedTransactionTypes };
     };

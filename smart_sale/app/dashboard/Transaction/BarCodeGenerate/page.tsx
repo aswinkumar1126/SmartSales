@@ -45,6 +45,7 @@ const STOCK_TABLE_HEADER = [
   { key: "PCS", label: "PCS", align: "center" as const },
   { key: "GRSWT", label: "GROSS WT", align: "end" as const, decimalScale: 3 },
   { key: "STNWT", label: "STONE WT", align: "end" as const, decimalScale: 3 },
+  { key: "DIAWT", label: "DIAMOND WT", align: "end" as const, decimalScale: 3 },
   { key: "NETWT", label: "NET WT", align: "end" as const, decimalScale: 3 },
   // { key: "WASTYPE",   label: "WASTE TYPE", align: "center" as const },
   { key: "TOUCH", label: "TOUCH", align: "center" as const, decimalScale: 1 },
@@ -150,6 +151,7 @@ function BarCodeGenerate() {
         <Table.Cell textAlign="center">{row.PCS ?? "0"}</Table.Cell>
         <Table.Cell textAlign="right">{formatToFixed(row.GRSWT, 3)}</Table.Cell>
         <Table.Cell textAlign="right">{formatToFixed(row.STNWT, 3)}</Table.Cell>
+        <Table.Cell textAlign="right">{formatToFixed(row.DIAWT, 3)}</Table.Cell>
         <Table.Cell textAlign="right">{formatToFixed(row.NETWT, 3)}</Table.Cell>
         <Table.Cell textAlign="center">{formatToFixed(row.TOUCH, 1)}</Table.Cell>
         <Table.Cell textAlign="center">
@@ -369,7 +371,7 @@ function BarCodeGenerate() {
         </Box>
         <ShortcutDialog 
           shortcuts={shortcuts}
-          theme={theme}
+       
         
         />
 
@@ -434,10 +436,10 @@ function BarCodeGenerate() {
                 />
               </Drawer.Body>
               <Drawer.Footer>
-                  <StockSummaryPanel
+                  {/* <StockSummaryPanel
                     summary={stockSummary}
                     headerBg={theme.colors.accient}
-                  />
+                  /> */}
               </Drawer.Footer>
             </Drawer.Content>
           </Drawer.Positioner>

@@ -58,7 +58,7 @@ export const OrnamentOpeningFields = (itemCollection: { label: string; value: st
         required: true,
         rounded: "sm",
         allowFocus: true,
-        decimalScale:1,
+        decimalScale:2,
     },
     {
         name: "purewt",

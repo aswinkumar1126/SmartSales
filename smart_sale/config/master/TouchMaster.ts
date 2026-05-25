@@ -53,7 +53,7 @@ export const TouchMasterFormConfig = ({collection:{actype,accode ,itemId ,calMod
         size: "sm",
         required: true,
         rounded:"sm",
-        decimalScale: 1,
+        decimalScale: 2,
         allowFocus: true,
         disabled: isAccode
     },

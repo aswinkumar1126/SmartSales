@@ -34,6 +34,9 @@ import { getItemSizeFields } from "@/config/master/itemSize";
 import { ItemSize, ItemSizePayload } from "@/types/size/Size";
 import SearchBar from "@/component/search/SearchBar";
 import { useGlobalKey } from "@/components/key/useGlobalKey";
+import ShortcutDialog from "@/components/shortcut/ShortcutDialog";
+import { useTransactionLoader } from "@/utils/loader/ResolveLoader";
+import TransactionLoader from "@/component/loader/Transactionloader";
 
 
 function ItemSizeMaster() {
@@ -41,6 +44,7 @@ function ItemSizeMaster() {
     const { theme } = useTheme();
     const router = useRouter();
     const { setData, setColumns, setShowSno, title } = usePrint();
+    const {isOpen, status, title:loaderTitle, description, openLoader, resolveLoader, closeLoader} = useTransactionLoader();
 
     /* -------------------- API HOOKS -------------------- */
 
@@ -142,6 +146,7 @@ function ItemSizeMaster() {
             isSaving.current = false;
         };
         if (editId) {
+            openLoader('update', true)
             // For update:
             if (!validateForm(existingSizes, Number(editId))) return;
             // pass id separately for path variable
@@ -151,10 +156,15 @@ function ItemSizeMaster() {
                     itemSizeRefetch();
                     onDone();
                     setHighlightedId(editId);
+                    resolveLoader("success", "update", "", true)
                 },
-                onError: onDone
+                onError: ()=> {
+                    onDone();
+                    resolveLoader("error", "update", "", true)
+                }
             });
         } else {
+            openLoader('save', true)
             if (!validateForm(existingSizes)) {
                 // toastError("Please fix the errors in the form");
                 return;
@@ -164,11 +174,13 @@ function ItemSizeMaster() {
                     resetForm();
                     itemSizeRefetch();
                     onDone();
+                    resolveLoader("success", "save", "", true)
 
                 },
                 onError: (error) => {
                     toastError(error.message);
-                    onDone
+                    onDone();
+                    resolveLoader("error", "save", "", true)
                 }
             });
         }
@@ -220,13 +232,24 @@ function ItemSizeMaster() {
         focusFirst();
     }, []);
 
-        useGlobalKey("Alt+s" , ()=>handleSave() , "saveTransaction");
-        useGlobalKey("Alt+c", () => resetForm() ,"ClearTransaction");
+    useGlobalKey("Alt+s" , ()=>handleSave() , "saveTransaction");
+    useGlobalKey("Alt+r", () => resetForm() ,"Reset");
+    useGlobalKey("Alt+e", () => router.back(), "exit");
+    useGlobalKey("Alt+u", () => handleSave(), "update");
+
 
     /* -------------------- UI -------------------- */
     return (
         <Box fontWeight="semibold" bg={theme.colors.primary} color={theme.colors.secondary}>
+            <TransactionLoader
+                isOpen={isOpen}
+                status={status}
+                title={loaderTitle}
+                description={description}
+                onClose={closeLoader}
+            />
             <Toaster />
+            <ShortcutDialog />
             <Grid templateColumns={{ base: "1fr", lg: "1fr 2fr" }} gap={2}>
                 {/* FORM SECTION */}
                 <GridItem>
@@ -253,6 +276,9 @@ function ItemSizeMaster() {
                                 <AiOutlineSave /> {editId ? "Update" : "Save"}
                             </Button>
                             <Button size="xs" colorPalette="blue" onClick={resetForm}>
+                                <IoIosExit /> Reset
+                            </Button>
+                            <Button size="xs" colorPalette="blue" onClick={() => router.back()}>
                                 <IoIosExit /> Exit
                             </Button>
                         </HStack>

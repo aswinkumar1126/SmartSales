@@ -374,14 +374,14 @@ export default function StoneEnterMaster({
     // ── Totals ────────────────────────────────────────────────────────────────
     const totals = useMemo(() => ({
         stonePcs: rows.reduce((sum, r) => sum + (parseInt(r.stonePcs) || 0), 0),
-        stoneWeight: rows.reduce((sum, r) => sum + (parseFloat(r.stoneWeight) || 0), 0),
+        // stoneWeight: rows.reduce((sum, r) => sum + (parseFloat(r.stoneWeight) || 0), 0),
         stoneAmount: rows.reduce((sum, r) => sum + (parseFloat(r.stoneAmount) || 0), 0),
     }), [rows]);
 
     const renderTotalCell = useCallback((col: ColumnDef) => {
         if (col.key === "stoneId") return <span style={{ fontSize: 11 }}>TOTAL</span>;
         if (col.key === "stonePcs") return <span style={{ fontSize: 11 }}>{totals.stonePcs}</span>;
-        if (col.key === "stoneWeight") return <span style={{ fontSize: 11 }}>{totals.stoneWeight.toFixed(3)}</span>;
+        // if (col.key === "stoneWeight") return <span style={{ fontSize: 11 }}>{totals.stoneWeight.toFixed(3)}</span>;
         if (col.key === "stoneAmount") return <span style={{ fontSize: 11 }}>{totals.stoneAmount.toFixed(2)}</span>;
         return null;
     }, [totals]);

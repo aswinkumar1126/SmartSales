@@ -12,6 +12,7 @@ import {
     Text,
     Flex,
 } from "@chakra-ui/react";
+import { useRouter } from "next/navigation";
 
 import { FiEdit } from "react-icons/fi";
 import { AiOutlineSave } from "react-icons/ai";
@@ -33,7 +34,9 @@ import {
 
 import { useTheme } from "@/context/theme/themeContext";
 import { useGlobalKey } from "@/components/key/useGlobalKey";
-
+import ShortcutDialog from "@/components/shortcut/ShortcutDialog";
+import { useTransactionLoader } from "@/utils/loader/ResolveLoader";
+import TransactionLoader from "@/component/loader/Transactionloader";
 
 type FormErrors = Partial<Record<keyof CreateExpenseMast, string>>;
 
@@ -45,6 +48,8 @@ const initialForm: CreateExpenseMast = {
 function ExpenseMaster() {
 
     const {theme} =useTheme();
+    const router =useRouter();
+    const {isOpen, status, title:loaderTitle, description, openLoader, resolveLoader, closeLoader} = useTransactionLoader();
 
     /* ---------------- STATE ---------------- */
 
@@ -141,6 +146,7 @@ function ExpenseMaster() {
         console.log(payload,'payload');
 
         if (editId) {
+            openLoader("update", true);
             updateMutation.mutate(
                 {id:editId , ...payload},
                 {
@@ -148,6 +154,7 @@ function ExpenseMaster() {
                         setHighlightRowId(editId);
                         resetForm();
                         refetch();
+                        resolveLoader("success", "update", "", true)
                     },
                     onError: (error: any) => {
                         console.log(error ,'ERROR')
@@ -157,21 +164,26 @@ function ExpenseMaster() {
                             "Something went wrong";
 
                         console.log("API Error:", message , error.response);
+                        resolveLoader("error", "update", message, true)
                     }
                 }
             );
         } else {
+            openLoader("save", true);
             createMutation.mutate(payload, {
                 onSuccess: (res: any) => {
                     setHighlightRowId(res?.data?.expId);
                     resetForm();
                     refetch();
+                    resolveLoader("success", "save", "", true)
                 },
                 onError :
                     (error: any) => {
                         console.log("Error" ,error)
                         console.log("Error creating expense:", error.message);
+                        resolveLoader("error", "save", "Error creating expense", true)
                     }
+                    
             });
         }
     };
@@ -199,7 +211,9 @@ function ExpenseMaster() {
     }, []);
 
         useGlobalKey("Alt+s" , ()=>handleSubmit() , "saveTransaction");
-        useGlobalKey("Alt+c", () => resetForm() ,"ClearTransaction");
+        useGlobalKey("Alt+r", () => resetForm() ,"reset");
+        useGlobalKey("Alt+e", () => router.back() , "exit");
+        useGlobalKey("Alt+u", ()=>handleSubmit(), "update");
 
     /* ---------------- HIGHLIGHT EFFECT ---------------- */
 
@@ -215,6 +229,14 @@ function ExpenseMaster() {
         <Grid templateColumns={{ base: "1fr", lg: "1fr 2fr" }} gap={2}>
             {/* -------- FORM -------- */}
             <GridItem>
+                <TransactionLoader
+                    isOpen={isOpen}
+                    status={status}
+                    title={loaderTitle}
+                    description={description}
+                    onClose={closeLoader}
+                />
+                <ShortcutDialog />
                 <Box p={3} borderRadius="lg" boxShadow="sm" bg={theme.colors.formColor}>
                   
                     <DynamicForm
@@ -241,7 +263,10 @@ function ExpenseMaster() {
                         </Button>
 
                         <Button size="xs" onClick={resetForm}>
-                            Clear <IoIosExit />
+                            Reset <IoIosExit />
+                        </Button>
+                        <Button size="xs" onClick={()=>router.back()}>
+                            Exit <IoIosExit />
                         </Button>
                     </HStack>
                 </Box>

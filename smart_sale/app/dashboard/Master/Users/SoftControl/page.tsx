@@ -35,7 +35,10 @@ import { FaPrint, FaFileExcel } from "react-icons/fa";
 import { getSoftControlFormFields } from "@/config/user/SoftControlMaster";
 import SearchBar from "@/component/search/SearchBar";
 
-
+import ShortcutDialog from "@/components/shortcut/ShortcutDialog";
+import { useTransactionLoader } from "@/utils/loader/ResolveLoader";
+import TransactionLoader from "@/component/loader/Transactionloader";
+import { useGlobalKey } from "@/components/key/useGlobalKey";
 // TypeScript interface for SoftControl (matching hooks)
 import { SoftControl } from "@/types/softcontrol/SoftControl";
 
@@ -45,6 +48,7 @@ function SoftControlMaster() {
   const { theme } = useTheme();
   const router = useRouter();
   const { setData, setColumns, setShowSno, title } = usePrint();
+  const {isOpen, status, title:loaderTitle, description, openLoader, resolveLoader, closeLoader} = useTransactionLoader();
 
   /* -------------------- API HOOKS -------------------- */
   const { data, refetch: softControlRefetch } = useSoftControls();
@@ -138,6 +142,7 @@ function SoftControlMaster() {
     }
 
     if (editId) {
+      openLoader('update',true)
       updateSoftControl(
         { ...form, id: editId },
         {
@@ -145,18 +150,27 @@ function SoftControlMaster() {
             resetForm();
             softControlRefetch();
             setHighlightedId(editId);
+            resolveLoader("success", "update", "", true)
           },
+          onError: () => {
+            resolveLoader("error", "update", "", true)
+          }
         }
       );
     } else {
+      openLoader('save', true)
       createSoftControl(
 
         { ...form },
         {
           onSuccess: () => {
             resetForm();
+            resolveLoader("success", "save", "", true)
             softControlRefetch();
           },
+          onError: () => {
+            resolveLoader("error", "save", "", true)
+          }
         }
       );
     }
@@ -174,6 +188,7 @@ function SoftControlMaster() {
     toastLoaded("SoftControl loaded for editing");
     ScrollToTop();
   };
+
 
 
   /* -------------------- TABLE COLUMNS -------------------- */
@@ -207,11 +222,23 @@ function SoftControlMaster() {
       handleSave();
     }
   );
-
+  useGlobalKey("Alt+s" , ()=>handleSave() , "saveTransaction");
+  useGlobalKey("Alt+r", () => resetForm() ,"Reset");
+  useGlobalKey("Alt+e", () => router.back(), "exit");
+  useGlobalKey("Alt+u", () => handleSave(), "update");
   /* -------------------- UI -------------------- */
   return (
     <Box fontWeight="semibold" bg={theme.colors.primary} color={theme.colors.secondary}>
+
+      <TransactionLoader
+        isOpen={isOpen}
+        status={status}
+        title={loaderTitle}
+        description={description}
+        onClose={closeLoader}
+      />
       <Toaster />
+      <ShortcutDialog />
       <Grid templateColumns={{ base: "1fr", lg: "1fr 2fr" }} gap={2}>
         {/* FORM SECTION */}
         <GridItem>
@@ -237,6 +264,9 @@ function SoftControlMaster() {
                 <AiOutlineSave /> {editId ? "Update" : "Save"}
               </Button>
               <Button size="xs" colorPalette="blue" onClick={resetForm}>
+                <IoIosExit /> Reset
+              </Button>
+              <Button size="xs" colorPalette="blue" onClick={() => router.back()}>
                 <IoIosExit /> Exit
               </Button>
             </HStack>

@@ -43,10 +43,15 @@ import { useEnterNavigation } from "@/component/form/useEnterNavigation";
 import { DynamicForm } from "@/component/form/DynamicForm";
 
 import { useGlobalKey } from "@/components/key/useGlobalKey";
+import ShortcutDialog from "@/components/shortcut/ShortcutDialog";
+import { useTransactionLoader } from "@/utils/loader/ResolveLoader";
+import TransactionLoader from "@/component/loader/Transactionloader";
+
 
 function MetalMaster() {
     const { theme } = useTheme();
     const router = useRouter();
+    const {isOpen, status, title:loaderTitle, description, openLoader, resolveLoader, closeLoader} = useTransactionLoader();
 
     // Create refs for each input field
     const metalIdRef = useRef<HTMLInputElement>(null);
@@ -170,20 +175,32 @@ function MetalMaster() {
         }
 
         if (isEdit && form.metalId) {
+            openLoader('update', true)
             updateMutation.mutate(
                 { sno: Number(form.sno), metal: form as Metal },
                 {
                     onSuccess: () => {
                         setHighLightedId(String(form.sno))
                         resetForm();
+                        resolveLoader("success", "update", "", true)
+                    }
+                    ,
+                    onError: () => {
+                        resetForm();
+                      resolveLoader("error", "update", "", true)
                     }
                 }
             );
         } else {
+            openLoader('save', true)
             createMutation.mutate(form as Metal, {
                 onSuccess: () => {
                     resetForm();
                     setHighLightedId(String(form.metalId));
+                    resolveLoader("success", "save", "", true)
+                },
+                onError :() => {
+                    resolveLoader("error", "save", "", true)
                 }
             });
         }
@@ -255,7 +272,9 @@ function MetalMaster() {
     }, []);
 
     useGlobalKey("Alt+s" , ()=>handleSave() , "saveTransaction");
-    useGlobalKey("Alt+c", () => resetForm() ,"ClearTransaction");
+    useGlobalKey("Alt+r", () => resetForm() ,"Reset");
+    useGlobalKey("Alt+e", () => router.back(), "exit");
+    useGlobalKey("Alt+u", ()=>handleSave(), "update");
 
     return (
         <Box
@@ -264,7 +283,15 @@ function MetalMaster() {
             color={theme.colors.secondary}
             fontWeight='semibold'
         >
+            <TransactionLoader
+                isOpen={isOpen}
+                status={status}
+                title={loaderTitle}
+                description={description}
+                onClose={closeLoader}
+            />
             <Toaster />
+            <ShortcutDialog />
             <Grid templateColumns={{ base: "1fr", lg: "1fr 2fr" }} gap={2}>
                 {/* LEFT – Form */}
                 <GridItem>
@@ -307,6 +334,9 @@ function MetalMaster() {
                                         <AiOutlineSave /> {isEdit ? "Update" : "Save"}
                                     </Button>
                                     <Button size="xs" colorPalette="blue" onClick={resetForm}>
+                                        Reset <IoIosExit />
+                                    </Button>
+                                    <Button size="xs" colorPalette="blue" onClick={() => router.back()}>
                                         Exit <IoIosExit />
                                     </Button>
                                 </HStack>

@@ -9,6 +9,7 @@ import {
 } from "@chakra-ui/react";
 import { Keyboard, Search } from "lucide-react";
 import { Tooltip } from "@/components/ui/tooltip";
+import { useTheme } from "@/context/theme/themeContext";
 
 //Key Management
 import { useGlobalKey } from "@/components/key/useGlobalKey";
@@ -25,7 +26,6 @@ type Shortcut = {
 type Props = {
   remoteOpen?: boolean;
   shortcuts?: Shortcut[];
-  theme: any;
 };
 
 // ─── Kbd Badge ────────────────────────────────────────────────────────────────
@@ -125,7 +125,13 @@ const ShortcutRow = ({
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
-const ShortcutDialog = ({ remoteOpen = false, shortcuts = [], theme }: Props) => {
+const ShortcutDialog = ({ remoteOpen = false, shortcuts = [
+  { keys: "ALT+S", label: "Create" },
+  { keys: "ALT+U", label: "Update" },
+  { keys: "ALT+R", label: "Reset Form" },
+  { keys: "ALT+E", label: "Exit Form" },
+] }: Props) => {
+  const { theme } = useTheme();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
 
@@ -169,13 +175,13 @@ const ShortcutDialog = ({ remoteOpen = false, shortcuts = [], theme }: Props) =>
             h="34px"
             borderRadius="8px"
             border="1px solid"
-            borderColor={theme.colors.border ?? theme.colors.greyColor}
-            bg={theme.colors.surface ?? "white"}
+            borderColor={theme.colors.greyColor}
+            bg={theme.colors.whiteColor ?? "white"}
             cursor="pointer"
             transition="all 0.15s ease"
             _hover={{
-              bg: theme.colors.surfaceHover ?? "gray.50",
-              borderColor: theme.colors.accent,
+              bg: theme.colors.whiteColor ?? "gray.50",
+              borderColor: theme.colors.accient,
               transform: "scale(1.04)",
             }}
             _active={{ transform: "scale(0.97)" }}
@@ -186,7 +192,7 @@ const ShortcutDialog = ({ remoteOpen = false, shortcuts = [], theme }: Props) =>
             }}
             aria-label="Open keyboard shortcuts"
           >
-            <Keyboard color={theme.colors.accent} size={16} />
+            <Keyboard color={theme.colors.accient} size={16} />
           </Box>
         </Tooltip>
       </Box>
@@ -209,10 +215,10 @@ const ShortcutDialog = ({ remoteOpen = false, shortcuts = [], theme }: Props) =>
               w="calc(100vw - 32px)"
               borderRadius="14px"
               border="1px solid"
-              borderColor={theme.colors.border ?? theme.colors.greyColor}
+              borderColor={ theme.colors.greyColor}
               boxShadow="0 20px 60px rgba(0,0,0,0.14), 0 4px 16px rgba(0,0,0,0.08)"
               overflow="hidden"
-              bg={theme.colors.surface ?? "white"}
+              bg={"white"}
             >
               {/* Header */}
               <Dialog.Header
@@ -220,7 +226,7 @@ const ShortcutDialog = ({ remoteOpen = false, shortcuts = [], theme }: Props) =>
                 pt={4}
                 pb={3}
                 borderBottom="1px solid"
-                borderColor={theme.colors.border ?? theme.colors.greyColor}
+                borderColor={theme.colors.greyColor}
                 display="flex"
                 alignItems="center"
                 gap={2}
@@ -232,10 +238,10 @@ const ShortcutDialog = ({ remoteOpen = false, shortcuts = [], theme }: Props) =>
                   w="28px"
                   h="28px"
                   borderRadius="7px"
-                  bg={`${theme.colors.accent}15`}
+                  bg={`${theme.colors.accient}15`}
                   flexShrink={0}
                 >
-                  <Keyboard color={theme.colors.accent} size={14} />
+                  <Keyboard color={theme.colors.accient} size={14} />
                 </Box>
 
                 <Box flex={1} minW={0}>
@@ -243,7 +249,7 @@ const ShortcutDialog = ({ remoteOpen = false, shortcuts = [], theme }: Props) =>
                     fontSize="13px"
                     fontWeight="600"
                     fontFamily={theme.fonts.body2}
-                    color={theme.colors.textPrimary ?? "gray.800"}
+                    color={theme.colors.primaryText ?? "gray.800"}
                     lineHeight="1.3"
                   >
                     Keyboard Shortcuts
@@ -251,7 +257,7 @@ const ShortcutDialog = ({ remoteOpen = false, shortcuts = [], theme }: Props) =>
                   <Text
                     fontSize="11px"
                     fontFamily={theme.fonts.body2}
-                    color={theme.colors.textSecondary ?? "gray.500"}
+                    color={theme.colors.primaryText ?? "gray.500"}
                     mt="1px"
                   >
                     {shortcuts.length} shortcuts available
@@ -261,7 +267,7 @@ const ShortcutDialog = ({ remoteOpen = false, shortcuts = [], theme }: Props) =>
                 <Dialog.CloseTrigger asChild>
                   <CloseButton
                     size="sm"
-                    color={theme.colors.textSecondary ?? "gray.500"}
+                    color={"gray.500"}
                     _hover={{ bg: "gray.100", color: "gray.700" }}
                     borderRadius="6px"
                   />
@@ -274,7 +280,7 @@ const ShortcutDialog = ({ remoteOpen = false, shortcuts = [], theme }: Props) =>
                   px={4}
                   py={2.5}
                   borderBottom="1px solid"
-                  borderColor={theme.colors.border ?? theme.colors.greyColor}
+                  borderColor={theme.colors.greyColor}
                 >
                   <Box
                     display="flex"
@@ -285,17 +291,17 @@ const ShortcutDialog = ({ remoteOpen = false, shortcuts = [], theme }: Props) =>
                     borderRadius="8px"
                     border="1px solid"
                     borderColor={theme.colors.greyColor}
-                    bg={theme.colors.surfaceHover ?? "gray.50"}
+                    bg={"gray.50"}
                     _focusWithin={{
-                      borderColor: theme.colors.accent,
-                      boxShadow: `0 0 0 2px ${theme.colors.accent}20`,
+                      borderColor: theme.colors.accient,
+                      boxShadow: `0 0 0 2px ${theme.colors.accient}20`,
                       bg: "white",
                     }}
                     transition="all 0.15s ease"
                   >
                     <Search
                       size={13}
-                      color={theme.colors.textSecondary ?? "#9CA3AF"}
+                      color={"#9CA3AF"}
                     />
                     <Input
                       placeholder="Search shortcuts…"
@@ -309,7 +315,7 @@ const ShortcutDialog = ({ remoteOpen = false, shortcuts = [], theme }: Props) =>
                       py={0}
                       h="auto"
                       _placeholder={{
-                        color: theme.colors.textSecondary ?? "gray.400",
+                        color: "gray.400",
                       }}
                       value={query}
                       onChange={(e) => setQuery(e.target.value)}
@@ -337,7 +343,7 @@ const ShortcutDialog = ({ remoteOpen = false, shortcuts = [], theme }: Props) =>
                   <Box
                     py={8}
                     textAlign="center"
-                    color={theme.colors.textSecondary ?? "gray.400"}
+                    color={ "gray.400"}
                   >
                     <Text fontSize="12px" fontFamily={theme.fonts.body2}>
                       No shortcuts match "{query}"
@@ -352,7 +358,7 @@ const ShortcutDialog = ({ remoteOpen = false, shortcuts = [], theme }: Props) =>
                           fontSize="10px"
                           fontWeight="600"
                           fontFamily={theme.fonts.body2}
-                          color={theme.colors.textSecondary ?? "gray.400"}
+                          color={ "gray.400"}
                           textTransform="uppercase"
                           letterSpacing="0.06em"
                           px={3}
@@ -379,7 +385,7 @@ const ShortcutDialog = ({ remoteOpen = false, shortcuts = [], theme }: Props) =>
                           mt={1}
                           borderBottom="1px solid"
                           borderColor={
-                            theme.colors.border ?? theme.colors.greyColor
+                            theme.colors.greyColor
                           }
                           opacity={0.6}
                         />
@@ -394,7 +400,7 @@ const ShortcutDialog = ({ remoteOpen = false, shortcuts = [], theme }: Props) =>
                 px={4}
                 py={2.5}
                 borderTop="1px solid"
-                borderColor={theme.colors.border ?? theme.colors.greyColor}
+                borderColor={theme.colors.greyColor}
                 display="flex"
                 alignItems="center"
                 gap={1.5}
@@ -403,7 +409,7 @@ const ShortcutDialog = ({ remoteOpen = false, shortcuts = [], theme }: Props) =>
                 <Text
                   fontSize="11px"
                   fontFamily={theme.fonts.body2}
-                  color={theme.colors.textSecondary ?? "gray.400"}
+                  color={"gray.400"}
                 >
                   to open shortcuts anywhere
                 </Text>

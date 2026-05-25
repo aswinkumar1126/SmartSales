@@ -42,12 +42,15 @@ import { useEnterNavigation } from "@/component/form/useEnterNavigation";
 
 import { DynamicForm } from "@/component/form/DynamicForm";
 import { useGlobalKey } from "@/components/key/useGlobalKey";
+import TransactionLoader from "@/component/loader/Transactionloader";
+import { useTransactionLoader } from "@/utils/loader/ResolveLoader";
+import ShortcutDialog from "@/components/shortcut/ShortcutDialog";
 
 
 function AccountHeadMaster() {
     const { theme } = useTheme();
 
-
+  const {isOpen, status, title:loaderTitle, description, openLoader, resolveLoader, closeLoader} = useTransactionLoader();
    
 
     /* -------------------- API HOOKS -------------------- */
@@ -391,6 +394,7 @@ function AccountHeadMaster() {
 
 
         if (editId) {
+            openLoader('update', true);
             updateAccountHead(
                 {
                     id: Number(editId),
@@ -401,16 +405,27 @@ function AccountHeadMaster() {
                         refetch();
                         setHighlightedId(Number(editId));
                         resetForm();
+                        setTimeout(() => {
+                            resolveLoader("success", "update", "", true);
+                        }, 500);
                     },
+                    onError :()=>{
+                        setTimeout(() => {
+                            resolveLoader("error", "update", "", true);
+                        }, 500);
+                    }
                 }
             );
         } else {
-
+            openLoader('save', true);
 
             createAccountHead(form, {
                 onSuccess: () => {
                     refetch();
                     resetForm();
+                    setTimeout(() => {
+                        resolveLoader("success", "save", "", true);
+                    }, 500);
                 },
                 onError: (error: any) => {
                     console.log("Error creating account head:", error);
@@ -419,6 +434,9 @@ function AccountHeadMaster() {
                      
                         toastError(message ?? "Failed to create account head");
                     }
+                    setTimeout(() => {
+                        resolveLoader("error", "save", "", true);
+                    }, 500);
               
                 }
             });
@@ -426,7 +444,10 @@ function AccountHeadMaster() {
     };
 
         useGlobalKey("Alt+s" , ()=>handleSave() , "saveTransaction");
-        useGlobalKey("Alt+c", () => resetForm() ,"ClearTransaction");
+        useGlobalKey("Alt+r", () => resetForm() ,"ClearTransaction");
+        useGlobalKey("Alt+u", () => handleSave() ,"UpdateTransaction");
+        useGlobalKey("Alt+e", () => router.back() ,"exitachead");
+
 
     /* -------------------- EDIT -------------------- */
     const handleEdit = (account: AccountHead) => {
@@ -467,6 +488,8 @@ function AccountHeadMaster() {
     useEffect(()=>{
         focusFirst();
     },[focusFirst]);
+
+    
 
 
     const renderAccountRow = useCallback(
@@ -518,7 +541,15 @@ function AccountHeadMaster() {
             color={theme.colors.secondary}
 
         >
+            <TransactionLoader
+                isOpen={isOpen}
+                status={status}
+                title={loaderTitle}
+                description={description}
+                onClose={closeLoader}
+            />
             <Toaster />
+            <ShortcutDialog />
             <Grid templateColumns={{ base: "1fr", sm: "1fr 2fr" }} gap={2}>
                 {/* ---------------- FORM ---------------- */}
                 <GridItem>
@@ -552,6 +583,9 @@ function AccountHeadMaster() {
                                 <AiOutlineSave /> {editId ? "Update" : "Save"}
                             </Button>
                             <Button size="xs" colorPalette="blue" onClick={resetForm}>
+                                <IoIosExit /> Reset
+                            </Button>
+                            <Button size="xs" colorPalette="blue" onClick={()=>router.back()}>
                                 <IoIosExit /> Exit
                             </Button>
                         </HStack>

@@ -17,6 +17,11 @@ import { toastError, toastLoaded } from "@/component/toast/toast";
 import { usePrint, useCreatePrint, useUpdatePrint } from "@/hooks/apiHooks/print/usePrint";
 import { CreatePrinterSettingInterface } from "@/service/PrinterSettingService";
 
+import { useGlobalKey } from "@/components/key/useGlobalKey";
+import ShortcutDialog from "@/components/shortcut/ShortcutDialog";
+import { useTransactionLoader } from "@/utils/loader/ResolveLoader";
+import TransactionLoader from "@/component/loader/Transactionloader";
+
 // Type definition based on your service
 interface PrinterSettingType {
     printCode: number;
@@ -32,7 +37,7 @@ interface PrinterSettingType {
 function PrinterSetting() {
     const { theme } = useTheme();
     const router = useRouter();
-
+    const {isOpen, status, title:loaderTitle, description, openLoader, resolveLoader, closeLoader} = useTransactionLoader();
     const initialFormData = {
         ipAddress: "",
         exeName: "",
@@ -130,6 +135,7 @@ function PrinterSetting() {
 
         try {
             if (editId) {
+                openLoader("update", true);
                 // Update existing printer - ensure the payload includes the ID
                 updatePrinter(
                     { id: editId, payload: payload },
@@ -138,23 +144,28 @@ function PrinterSetting() {
                             toastLoaded("Printer updated successfully");
                             resetForm();
                             setHighlightedId(Number(editId));
+                            resolveLoader("success", "update", "", true);
                         },
                         onError: (error: any) => {
                             toastError(error?.message || "Failed to update printer");
                             console.error(error);
+                            resolveLoader("error", "update", error?.message || "Failed to update printer", true);
                         }
                     }
                 );
             } else {
+                openLoader("save", true);
                 // Create new printer
                 createPrinter(payload, {
                     onSuccess: () => {
                         toastLoaded("Printer created successfully");
                         resetForm();
+                        resolveLoader("success", "save", "", true);
                     },
                     onError: (error: any) => {
                         toastError(error?.message || "Failed to create printer");
                         console.error(error);
+                        resolveLoader("error", "save", error?.message || "Failed to create printer", true);
                     }
                 });
             }
@@ -206,11 +217,24 @@ function PrinterSetting() {
     });
 
     const isLoadingAction = isLoading || isCreating || isUpdating;
-
+    useGlobalKey("Alt+s" , ()=>handleSave() , "saveTransaction");
+    useGlobalKey("Alt+r", () => resetForm() ,"Reset");
+    useGlobalKey("Alt+e", () => router.back(), "exit");
+    useGlobalKey("Alt+u", () => handleSave(), "update");
     /* -------------------- RENDER -------------------- */
     return (
         <Box fontWeight="semibold" bg={theme.colors.primary} color={theme.colors.secondary}>
             <Toaster />
+
+            <TransactionLoader
+                isOpen={isOpen}
+                status={status}
+                title={loaderTitle}
+                description={description}
+                onClose={closeLoader}
+            />
+
+            <ShortcutDialog />
             <Grid templateColumns={{ base: "1fr", lg: "1fr 2fr" }} gap={2}>
                 {/* FORM SECTION */}
                 <GridItem>
@@ -242,6 +266,9 @@ function PrinterSetting() {
                                 <AiOutlineSave /> {editId ? "Update" : "Save"}
                             </Button>
                             <Button size="xs" colorPalette="blue" onClick={resetForm} disabled={isLoadingAction}>
+                                <IoIosExit /> Reset
+                            </Button>
+                            <Button size="xs" colorPalette="blue" onClick={() => router.back()} disabled={isLoadingAction}>
                                 <IoIosExit /> Exit
                             </Button>
                         </HStack>

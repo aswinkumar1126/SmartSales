@@ -5,6 +5,7 @@ import { toaster } from "@/components/ui/toaster";
 
 export const useLoadApprovalReceiptItems = () => {
     const { draftRows, addDraftRow } = useApprovalTransactionStore();
+   
 
     const loadApprovalReceiptItems = useCallback((items: any[]) => {
         if (!items || !Array.isArray(items) || items.length === 0) {
@@ -17,6 +18,8 @@ export const useLoadApprovalReceiptItems = () => {
         }
 
         let addedCount = 0;
+
+        console.log(items,'itemsinloadfrombill');
 
         items.forEach((item) => {
             // ✅ UNIQUE CHECK (SNO is perfect)
@@ -73,10 +76,11 @@ export const useLoadApprovalReceiptItems = () => {
                 __isEditing: false,
                 __previewSno: draftRows.length + addedCount + 1,
 
-                TRANSACTION_TYPE: "SR",
-                _type: "SR",
+                TRANSACTION_TYPE: "APPRE",
+                _type: "APPRE",
 
                 ITEMID: String(item.ITEMID || ""),
+                ITEMNAME : item.ITEMNAME || "",
                 TAGNO: String(item.TAGNO || ""),
                 PCS: Number(item.PCS || 1),
 
@@ -100,6 +104,9 @@ export const useLoadApprovalReceiptItems = () => {
 
                 _hasStones: stones.length > 0,
                 _hasCharges: !!item.OTHERCHARGESDETAILS,
+
+
+                REFNO : item.BATCHNO || "",
             };
 
             addDraftRow(newRow);

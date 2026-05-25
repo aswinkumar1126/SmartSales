@@ -27,11 +27,10 @@ function calculateStoneAmount(
     return 0;
 }
 
-const mapSalesItems = (list: any[] = [], type: string, isUseFinalAmount: boolean) => {
+const mapApprovalItems = (list: any[] = [], type: string, isUseFinalAmount: boolean) => {
     return list.map((item, index) => {
 
         console.log(list, 'saleslistlist');
-
 
 
 
@@ -70,6 +69,7 @@ const mapSalesItems = (list: any[] = [], type: string, isUseFinalAmount: boolean
                 stoneAmount: stoneAmount > 0 ? String(stoneAmount) : "",
             };
         });
+        console.log(normalizedStones, 'normalizedStones');
 
 
         // ---------------- MISC CHARGES (HMC) ----------------
@@ -79,7 +79,7 @@ const mapSalesItems = (list: any[] = [], type: string, isUseFinalAmount: boolean
 
 
         const totalStoneWeight = normalizedStones.reduce(
-            (sum: number, s: any) => sum + s.stoneWeight, 0
+            (sum: number, s: any) => sum + Number(s.stoneWeight), 0
         );
         const totalStoneAmount = normalizedStones.length > 0
             ? normalizedStones.reduce((sum: number, s: any) => sum + Number(s.stoneAmount), 0)
@@ -124,10 +124,11 @@ const mapSalesItems = (list: any[] = [], type: string, isUseFinalAmount: boolean
 };
 
 
-export const mapSalesTransactionItems = (
+export const mapApprovalTransactionItems = (
     transactionData: any,
     isUseFinalAmount: boolean
 ) => {
+    console.log(transactionData, 'transactionDatatransactionData')
     const details = transactionData?.TRANSACTION_DETAILS;
 
     if (!details) {
@@ -137,8 +138,8 @@ export const mapSalesTransactionItems = (
         };
     }
 
-    const approvalIssue = mapSalesItems(details.APPROVAL_ISSUE, "APPIS", isUseFinalAmount);
-    const approvalReceipt = mapSalesItems(details.APPROVAL_RECEIPT, "APPRE", isUseFinalAmount);
+    const approvalIssue = mapApprovalItems(details.APPROVAL_ISSUE, "APPIS", isUseFinalAmount);
+    const approvalReceipt = mapApprovalItems(details.APPROVAL_RECEIPT, "APPRE", isUseFinalAmount);
 
 
     const rows = [

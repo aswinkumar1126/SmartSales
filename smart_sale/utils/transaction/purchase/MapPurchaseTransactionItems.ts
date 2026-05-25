@@ -163,7 +163,8 @@ const mapPurchaseItems = (
             item, rowId, isUseFinalAmount           // ✅
         );
 
-        console.log(totalHMC,'totalHMC')
+        console.log(totalHMC,'totalHMC');
+        const totalStoneAmount = Number(item.STNAMT || 0) + Number(item.DIAAMT) ;
 
         return {
             __rowId: rowId,
@@ -188,7 +189,7 @@ const mapPurchaseItems = (
             MC: Number(item.MC || 0),
             HMC: totalHMC,
             STN_PRESENT: stnPresent, 
-            STNAMT: item.STNAMT || 0,
+            STNAMT: totalStoneAmount.toFixed(3) || 0,
             DESCRIPTION: item.DESCRIPTION || "",
             SNO: item.SNO || "",
             _stones: normalizedStones,

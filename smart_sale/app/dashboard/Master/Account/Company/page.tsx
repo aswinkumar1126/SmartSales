@@ -36,11 +36,14 @@ import { useEnterNavigation } from "@/component/form/useEnterNavigation";
 import { DynamicForm } from "@/component/form/DynamicForm";
 import { getCompanyFormFields } from "@/config/master/CompanyMaster";
 import { useGlobalKey } from "@/components/key/useGlobalKey";
-
+import TransactionLoader from "@/component/loader/Transactionloader";
+import ShortcutDialog from "@/components/shortcut/ShortcutDialog";
+import { useTransactionLoader } from "@/utils/loader/ResolveLoader";
 
 function CompanyMaster() {
-    const { theme } = useTheme();
 
+    const { theme } = useTheme();
+    const {isOpen, status, title:loaderTitle, description, openLoader, resolveLoader, closeLoader} = useTransactionLoader();
 
     const router = useRouter();
 
@@ -202,6 +205,7 @@ function CompanyMaster() {
         }
 
         if (editId) {
+            openLoader('update', true);
             updateCompany({
                 id: editId,
                 payload: form,
@@ -211,9 +215,14 @@ function CompanyMaster() {
                     companyRefetch();
                     resetForm();
                     setHighlightedId(Number(editId));
+                    setTimeout(() => resolveLoader("success", "update", "", true), 500);
+                },
+                onError : ()=>{
+                    setTimeout(() => resolveLoader("error", "update", "", true), 500);
                 }
             });
         } else {
+            openLoader('save', true);
             createCompany({
                 payload: form,
                 logo: logoFile,
@@ -221,12 +230,14 @@ function CompanyMaster() {
                 onSuccess: () => {
                     companyRefetch();
                     resetForm();
+                    setTimeout(() => resolveLoader("success", "save", "", true), 500);
                 },
                 onError:(err:any) =>{
                     if(err){
                         const message = err.response.data.message ;
                         toastError (message ??  "Something went wrong")
                     }
+                    setTimeout(() => resolveLoader("error", "save", "", true), 500);
                 }
             });
         }
@@ -268,11 +279,21 @@ function CompanyMaster() {
     });
 
     useGlobalKey("Alt+s" , ()=>handleSave() , "saveTransaction");
-    useGlobalKey("Alt+c", () => resetForm() ,"ClearTransaction");
+    useGlobalKey("Alt+r", () => resetForm() ,"Reset");
+    useGlobalKey("Alt+e", () => router.back(), "Exit");
+    useGlobalKey("Alt+u",()=>handleSave(),"updateform");
     /* -------------------- UI -------------------- */
     return (
         <Box fontWeight="semibold" bg={theme.colors.primary} color={theme.colors.secondary}>
+            <TransactionLoader
+                isOpen={isOpen}
+                status={status}
+                title={loaderTitle}
+                description={description}
+                onClose={closeLoader}
+            />
             <Toaster />
+            <ShortcutDialog />
             <Grid templateColumns={{ base: "1fr", lg: "1fr 2fr" }} gap={2}>
                 {/* FORM SECTION */}
                 <GridItem>
@@ -300,6 +321,9 @@ function CompanyMaster() {
                                 <AiOutlineSave /> {editId ? "Update" : "Save"}
                             </Button>
                             <Button size="xs" colorPalette="blue" onClick={resetForm}>
+                                <IoIosExit /> Reset
+                            </Button>
+                            <Button size="xs" colorPalette="blue" onClick={()=>router.back()}>
                                 <IoIosExit /> Exit
                             </Button>
                         </HStack>

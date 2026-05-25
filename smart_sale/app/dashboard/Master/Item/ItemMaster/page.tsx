@@ -45,6 +45,9 @@ import { DynamicForm } from "@/component/form/DynamicForm";
 import { useEnterNavigation } from "@/component/form/useEnterNavigation";
 import { ItemMasterFields } from "@/config/master/itemMaster";
 import { useGlobalKey } from "@/components/key/useGlobalKey";
+import ShortcutDialog from "@/components/shortcut/ShortcutDialog";
+import { useTransactionLoader } from "@/utils/loader/ResolveLoader";
+import TransactionLoader from "@/component/loader/Transactionloader";
 
 
 export default function ItemMasterPage() {
@@ -82,6 +85,8 @@ export default function ItemMasterPage() {
 
     const { theme } = useTheme();
     const { setData, setColumns, setShowSno, title } = usePrint();
+
+     const {isOpen, status, title:loaderTitle, description, openLoader, resolveLoader, closeLoader} = useTransactionLoader();
 
     // ✅ FIX: Change filter from string to object
     const [filterParams, setFilterParams] = useState<string>('');
@@ -302,17 +307,21 @@ export default function ItemMasterPage() {
         };
 
         if (editingId) {
+            openLoader("update", true)
             updateItem(payload as ItemMast, {
                 onSuccess: () => {
                     resetForm();
                     scrollToTop();
                     setHighlightId(editingId);
                     setTimeout(() => setHighlightId(null), 2500);
+
+                    resolveLoader("success", "update", "", true)
                 },
             });
         } else {
 
             delete payload.itemId;
+            openLoader("save", true)
 
             createItem(payload as ItemMast, {
                 onSuccess: (res: any) => {
@@ -321,6 +330,7 @@ export default function ItemMasterPage() {
                     scrollToTop();
                     setHighlightId(res?.itemId ?? null);
                     setTimeout(() => setHighlightId(null), 2500);
+                    resolveLoader("success", "save", "", true)
                 },
             });
         }
@@ -365,18 +375,29 @@ export default function ItemMasterPage() {
     }, [focusFirst]);
 
         useGlobalKey("Alt+s" , ()=>handleSave() , "saveTransaction");
-        useGlobalKey("Alt+c", () => resetForm() ,"ClearTransaction");
+        useGlobalKey("Alt+r", () => resetForm() ,"Reset");
+        useGlobalKey("Alt+e", () => router.back(), "Exit");
+        useGlobalKey("Alt+u", () => handleSave(), "update");
 
 
     /* ===================== UI ===================== */
     return (
         <Box ref={topRef}>
             <Toaster />
+            <TransactionLoader
+                isOpen={isOpen}
+                status={status}
+                title={loaderTitle}
+                description={description}
+                onClose={closeLoader}
+            />
+            <ShortcutDialog />
             <Grid
                 templateColumns={{ base: "1fr", lg: "1fr 2fr" }}
                 gap={2}
                 fontWeight='semibold'
             >
+
                 {/* ================= LEFT FORM ================= */}
                 <GridItem>
                     <VStack
@@ -414,11 +435,11 @@ export default function ItemMasterPage() {
                                 </Button>
 
                                 <Button size="xs" onClick={resetForm} colorPalette="blue">
-                                    <IoIosExit /> Clear 
+                                    <IoIosExit /> Reset 
                                 </Button>
 
-                                <Button size="xs" onClick={()=>router.back()} colorPalette="blue">
-                                    <IoIosExit /> Cancel
+                                <Button size="xs" onClick={()=>router.back()}>
+                                    Exit <IoIosExit />
                                 </Button>
                             </HStack>
                         </Fieldset.Root>

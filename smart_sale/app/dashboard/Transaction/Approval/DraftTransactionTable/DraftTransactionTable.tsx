@@ -21,14 +21,14 @@ import { toaster } from "@/components/ui/toaster";
 import { CapitalizedInput } from "@/components/ui/CapitalizedInput";
 import { getIsTagEnabled, getIsBillModalEnabled } from "@/config/transaction/ApprovalConfig";
 
-import { usePureGoldDataById } from "@/hooks/apiHooks/pureGoldMast/usePureGoldMastData";
+
 import { ExcelGrid, ColumnDef, RenderCellParams } from "@/component/table/ExcelGrid";
 import { useApprovalTransactionStore } from "@/store/approval/useApprovalTransaction";
 import { useTouchByFilter } from "@/hooks/apiHooks/touch/useTouchMastData";
 import { useSoftControlById } from "@/hooks/apiHooks/softControl/useSoftControl";
 import { calculateMiscChargeFinalAmount } from "@/hooks/Transaction/both/calculateMiscCharges";
 
-import SalesBillViewModal from "../../PurchasePage/SaleModal/SaleModal";
+import SalesBillViewModal from "../SaleModal/SaleModal";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -1077,12 +1077,12 @@ export default function DraftTransactionTable({
                             });
                     }
 
-                    toaster.create({
-                        title: "Charges Updated",
-                        description: `Rs.${total.toFixed(2)}`,
-                        type: "success",
-                        duration: 2000,
-                    });
+                    // toaster.create({
+                    //     title: "Charges Updated",
+                    //     description: `Rs.${total.toFixed(2)}`,
+                    //     type: "success",
+                    //     duration: 2000,
+                    // });
 
                     return {
                         ...r,
@@ -1142,7 +1142,7 @@ export default function DraftTransactionTable({
                     )}
                     {showBill && (
                         <Button size="2xs" bg="blue.subtle" color={theme?.colors?.primaryText || "#1a202c"} onClick={handleBillShow}>
-                            Bills 📄
+                            Approval Issues 📄
                         </Button>
                     )}
                     <Badge

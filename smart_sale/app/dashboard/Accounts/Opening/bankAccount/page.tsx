@@ -43,6 +43,7 @@ import SearchBar from "@/component/search/SearchBar";
 import { BankAccountForm } from "@/config/master/BankAccountMaster";
 import { useEnterNavigation } from "@/component/form/useEnterNavigation";
 import { DynamicForm } from "@/component/form/DynamicForm";
+import { useGlobalKey } from "@/components/key/useGlobalKey";
 
 
 
@@ -192,11 +193,19 @@ function BankAccountMaster() {
     ];
 
     const fieldName = getFormFields.map(f => f.name);
-    const { register, focusFirst, focusNext } = useEnterNavigation(fieldName, handleSave)
+    const { register, focusFirst, focusNext } = useEnterNavigation(fieldName, handleSave);
+
+
 
     useEffect(() => {
         focusFirst()
-    }, [])
+    }, []);
+
+
+    useGlobalKey("Alt+s" ,()=>handleSave());
+    useGlobalKey("Alt+r", () => setForm(EMPTY_FORM));
+    useGlobalKey("alt+e",() =>router.back());
+
     return (
         <Box bg={theme.colors.primary}>
             <Toaster />
@@ -241,6 +250,14 @@ function BankAccountMaster() {
                             <Button size="xs" colorPalette="blue" onClick={() => {
                                 setEditId(null)
                                 setForm(EMPTY_FORM);
+                                focusFirst();
+                            }}>
+                                <IoIosExit /> Reset
+                            </Button>
+                            <Button size="xs" colorPalette="blue" onClick={() => {
+                                setEditId(null)
+                                setForm(EMPTY_FORM);
+                                router.back();
                             }}>
                                 <IoIosExit /> Exit
                             </Button>

@@ -175,7 +175,7 @@ export const TransactionListing: React.FC<TransactionListingProps> = ({
                             }}
                         >
                             <Text fontWeight="semibold" color="black" fontSize="2xs">
-                                {item.value}
+                                {item.label}
                             </Text>
                             {/* <Text fontWeight="semibold" color="gray.600" fontSize="xs">
                             {item.ITEMNAME}

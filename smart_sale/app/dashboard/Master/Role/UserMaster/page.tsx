@@ -39,6 +39,13 @@ import { useRouter } from "next/navigation";
 import { FaPrint, FaFileExcel } from "react-icons/fa";
 import { NativeSelectWrapper } from "@/components/ui/NativeSelectWrapper";
 
+import { useGlobalKey } from "@/components/key/useGlobalKey";
+import ShortcutDialog from "@/components/shortcut/ShortcutDialog";
+import { useTransactionLoader } from "@/utils/loader/ResolveLoader";
+import TransactionLoader from "@/component/loader/Transactionloader";
+
+
+
 
 export default function UserMasters() {
 
@@ -46,6 +53,7 @@ export default function UserMasters() {
     const { user } = useAuth();
     const router = useRouter();
     const { setData, setColumns, title } = usePrint();
+    const {isOpen, status, title:loaderTitle, description, openLoader, resolveLoader, closeLoader} = useTransactionLoader();
 
     const [imagePreview, setImagePreview] = useState<string | undefined | null>(null);
     const [confirmPwd, setConfirmPwd] = useState("");
@@ -164,6 +172,7 @@ export default function UserMasters() {
         if (editingUserId && !payload.pwd) delete payload.pwd;
 
         if (editingUserId) {
+            openLoader('update', true)
             const formData = new FormData();
             formData.append(
                 "updatedUser",
@@ -177,13 +186,25 @@ export default function UserMasters() {
                     onSuccess: () => {
                         resetForm();
                         setHighlightedId(editingUserId);
+                        resolveLoader("success", "update", "", true)
                     },
+                    onError: () => {
+                        resolveLoader("error", "update", "", true)
+                    }
                 }
             );
         } else {
+            openLoader('save', true)
             createUser(
                 { user: payload, image: selectedImage },
-                { onSuccess: () => resetForm() }
+                { onSuccess: () => {resetForm();
+                    resolveLoader("success", "save", "", true)
+                }, 
+                onError: () => {
+                        resolveLoader("error", "save", "", true)
+                    }
+}
+               
             );
         }
     };
@@ -233,6 +254,10 @@ export default function UserMasters() {
         router.push(`/print?export=${option}`);
         title?.("User List");
     };
+    useGlobalKey("Alt+s" , ()=>handleSave() , "saveTransaction");
+    useGlobalKey("Alt+r", () => resetForm() ,"Reset");
+    useGlobalKey("Alt+e", () => router.back(), "exit");
+    useGlobalKey("Alt+u", () => handleSave(), "update");
 
     return (
         <Box
@@ -240,6 +265,15 @@ export default function UserMasters() {
             bg={theme.colors.primary}
             color={theme.colors.secondary}
         >
+            <TransactionLoader
+                isOpen={isOpen}
+                status={status}
+                title={loaderTitle}
+                description={description}
+                onClose={closeLoader}
+            />
+         
+            <ShortcutDialog />
             <Grid templateColumns={{ base: "1fr", lg: "1fr 2fr" }} gap={2}>
 
                 {/* ── LEFT: FORM ─────────────────────────────────────────── */}
@@ -387,7 +421,15 @@ export default function UserMasters() {
                                             if (e.key === 'Enter') resetForm();
                                         }}
                                     >
-                                        Clear <IoIosExit />
+                                        Reset <IoIosExit />
+                                    </Button>
+
+                                    <Button
+                                        size="xs"
+                                        colorPalette="blue"
+                                        onClick={()=>router.back()}
+                                    >
+                                        Exit <IoIosExit />
                                     </Button>
                                 </HStack>
                             </Fieldset.Content>

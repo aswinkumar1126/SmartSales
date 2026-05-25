@@ -23,19 +23,7 @@ export const validateApprovalReceipt = (row: any, validationCheck?: any) => {
         return "Gross weight must be > 0";
     }
 
-    if (validationCheck && !row.TAGNO && !row.BILLNO) {
-        return "Provide TAG NO or BILL NO";
-    }
-
-    const touch = Number(row.TOUCH);
-    const actualTouch = Number(row.ATOUCH);
     
-    if (!touch) {
-        return "TOUCH is required";
-    }
-    if (touch <= 0) {
-        return "TOUCH must be > 0";
-    }
     return null;
 };
 

@@ -42,6 +42,7 @@ import { CapitalizedInput } from "@/components/ui/CapitalizedInput";
 import { usePrint } from "@/context/print/usePrintContext";
 import { useRouter } from "next/navigation";
 import { FaPrint, FaFileExcel } from "react-icons/fa";
+import { useGlobalKey } from "@/components/key/useGlobalKey";
 
 
 
@@ -276,6 +277,24 @@ function AccountMaster() {
         setShowSno(true);
         router.push(`/print?export=${option}&title=${title}`);
     }
+
+    const handleBack =()=> {
+        router.back();
+    }
+
+    /*------------------ Key - Handler---------------*/
+    useGlobalKey('alt+s', (e) => {
+        e.preventDefault();
+        handleSave();
+    });
+
+    useGlobalKey( "alt+r" ,()=>resetForm());
+
+    useGlobalKey("alt+c", () => handleBack());
+
+    useGlobalKey("alt+e", () => handleExport("excel"));
+    
+
     /* -------------------- UI -------------------- */
     return (
         <Box

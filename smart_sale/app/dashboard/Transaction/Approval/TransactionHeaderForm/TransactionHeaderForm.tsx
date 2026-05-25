@@ -24,7 +24,7 @@ interface TransactionHeaderFormProps {
     isEditing?: boolean;
     // isClosingChanged?: boolean;
     isDraftRowChanged?: boolean
-    showShortcut: () => void;
+
 }
 
 export default function TransactionHeaderForm({
@@ -38,8 +38,7 @@ export default function TransactionHeaderForm({
     openingData,
     isEditing = false,
     isDraftRowChanged,
-    // isClosingChanged,
-    showShortcut
+    // isClosingChanged
 }: TransactionHeaderFormProps) {
 
     // Get the customer label for the current form.CUSTOMER value
@@ -222,9 +221,7 @@ export default function TransactionHeaderForm({
 
                 )}
 
-                <Button onFocus={showShortcut} size="xs" variant="outline" fontSize="x-small" >
-                    Shortcuts
-                </Button>
+              
 
             </Box>
 

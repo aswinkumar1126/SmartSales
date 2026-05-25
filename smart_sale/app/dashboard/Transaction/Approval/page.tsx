@@ -37,13 +37,12 @@ import { useGlobalKey } from "@/components/key/useGlobalKey";
 import { useApprovalTransactions } from "@/hooks/apiHooks/transaction/useApprovalTransaction";
 import { useAllAccountHead } from "@/hooks/apiHooks/accountHead/useAccountHead";
 import { useStoneItems } from "@/hooks/apiHooks/item/useItems";
-import { useCreateTransactions, useUpdateTransaction, useTransactionByTransId } from "@/hooks/apiHooks/transaction/useApprovalTransaction";
+import { useCreateTransactions, useUpdateTransaction, useTransactionByTransId, useAppIssueDetails } from "@/hooks/apiHooks/transaction/useApprovalTransaction";
 import { usePureGoldData, usePureGoldNames } from "@/hooks/apiHooks/pureGoldMast/usePureGoldMastData";
 import { useActiveOtherCharges } from "@/hooks/apiHooks/otherCharges/useOtherCharges";
 import { useRates } from "@/hooks/apiHooks/rate/useRate";
 import { useOrnamentData } from "@/hooks/apiHooks/ornament/useOrnamentData";
 import { useAllBankAccounts } from "@/hooks/apiHooks/bankAccount/useBankAccount";
-import { useBillDetails } from "@/hooks/apiHooks/transaction/useTransactions";
 import { useCompanyById } from "@/hooks/apiHooks/company/useCompany";
 import { useSoftControlById } from "@/hooks/apiHooks/softControl/useSoftControl";
 
@@ -115,7 +114,7 @@ interface SalesFilter {
 export type billDetailsParams = {
     ACCODE: number | undefined;
     ENTRYNO?: string;
-    BILLDATE?: string;
+    TRANDATE?: string;
     TAGNO?: string;
 }
 
@@ -193,7 +192,6 @@ export default function SalesPage() {
 
 
     const [loading, setLoading] = useState<boolean>(true);
-    const [openShortcut, setOpenShortcut] = useState(false);
     const [saleCustomerList, setSaleCustomerList] = useState<{ label: string, value: string }[]>([]);
 
     const [isStockDrawerOpen, setIsStockDrawerOpen] = useState(false);
@@ -311,14 +309,14 @@ export default function SalesPage() {
 
     const { data: transactionsById, isLoading: getbySnoLoading ,refetch:refetchTransactionListById  } = useTransactionByTransId(selectedTransactionId, "sales");
 
-
+    console.log(transactionsById,'transactionsById');
 
     /*------------------------------- BILL DETAILS API ----------------------------*/
 
-    const { data: billDetails, isLoading: billDetailsLoading, isError: billDetailsError } = useBillDetails({
+    const { data: billDetails, isLoading: billDetailsLoading, isError: billDetailsError } = useAppIssueDetails({
         ACCODE: Number(accCode),
         ENTRYNO: Number(billParams.ENTRYNO),
-        BILLDATE: billParams.BILLDATE,
+        TRANDATE: billParams.TRANDATE,
         TAGNO: billParams.TAGNO
     });
 
@@ -327,7 +325,7 @@ export default function SalesPage() {
         return Array.isArray(billList) ? billList : []
     }, [billDetails]);
 
-    console.log(billDetailsList, billParams, 'billDetailsList')
+    console.log(billDetails, 'billDetails')
 
 
     const { data: otherChargesData } = useActiveOtherCharges();
@@ -383,17 +381,19 @@ export default function SalesPage() {
 
     useSyncApprovalHeader(transactionHeaderDetail, isApiRateEnabled, metalRates);
 
+    console.log(transactionList,'transactionList');
 
     const transactionIdsList = useMemo(() => {
-        const list = transactionList?.snoList;
+        const list = transactionList?.SNOLIST;
         if (!list || !Array.isArray(list)) return [];
 
         return list.map((item: any) => ({
-            label: item,
-            value: item,
+            label: item.SNO,
+            value: item.BATCHNO,
         }));
     }, [transactionList]);
 
+    console.log(transactionIdsList,'transactionIdsList');
 
     useEffect(() => {
 
@@ -1068,7 +1068,7 @@ export default function SalesPage() {
             normalizeRowForApi,
         });
 
-
+        console.log(draftRows?.[0].REFNO,'draftRows?.[0].SNO')
         const payload: CreateApprovalTransaction = {
             TRANSACTION_HEADER: {
                 ACCODE: Number(headerForm.CUSTOMER),
@@ -1076,7 +1076,8 @@ export default function SalesPage() {
                 // BILLNO: headerForm.BILLNO ? Number(headerForm.BILLNO) : undefined,
                 RATE: headerForm.RATEGM ? Number(headerForm.RATEGM) : undefined,
                 REMARK: headerForm.REMARK,
-                THRU: headerForm.THRU
+                THRU: headerForm.THRU,
+                REFNO: draftRows?.[0].REFNO,
             },
             TRANSACTION_DETAILS: transactionDetails,
             // CLOSING_DETAILS: getClosingDetailsPayload(),
@@ -1370,7 +1371,6 @@ const shortcuts = [
                             isEditing={isEditing}
                             // isClosingChanged={isClosingChanged()}
                             isDraftRowChanged={isDraftRowsChanged()}
-                            showShortcut={() => setOpenShortcut(true)}
 
                         />
                    
@@ -1378,7 +1378,7 @@ const shortcuts = [
                         <ShortcutDialog
                           
                           shortcuts={shortcuts}
-                          theme={theme}
+    
                         />
                         {/* 2. Transaction Type Selector */}
 

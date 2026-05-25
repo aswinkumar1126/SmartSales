@@ -50,7 +50,7 @@ export const EXCEL_COLUMNS: {
             type: "numeric",
             numericFormat: { pattern: "0.000" },
             decimalScale: 3,
-            width: 80,
+            width: 130,
         },
         {
             key: "purchaseStoneWt",
@@ -58,7 +58,7 @@ export const EXCEL_COLUMNS: {
             type: "numeric",
             numericFormat: { pattern: "0.000" },
             decimalScale: 3,
-            width: 100,
+            width: 110,
         },
         {
             key: "stoneWt",
@@ -66,7 +66,7 @@ export const EXCEL_COLUMNS: {
             type: "numeric",
             numericFormat: { pattern: "0.000" },
             decimalScale: 3,
-            width: 100,
+            width: 110,
         },
         {
             key: "navaWt",
@@ -74,7 +74,7 @@ export const EXCEL_COLUMNS: {
             type: "numeric",
             numericFormat: { pattern: "0.000" },
             decimalScale: 3,
-            width: 100,
+            width: 110,
         },
         {
             key: "salesStoneWt",
@@ -82,7 +82,7 @@ export const EXCEL_COLUMNS: {
             type: "numeric",
             numericFormat: { pattern: "0.000" },
             decimalScale: 3,
-            width: 100,
+            width: 90,
             readOnly: true,
         },
         {
@@ -91,7 +91,7 @@ export const EXCEL_COLUMNS: {
             type: "numeric",
             numericFormat: { pattern: "0.000" },
             decimalScale: 3,
-            width: 90,
+            width: 110,
         },
         {
             key: "size",
@@ -515,6 +515,50 @@ const BarCodeExcel: React.FC<BarCodeExcelProps> = ({
     }, [internalData]);
 
     /* ============================================================
+       TOTALS
+       ============================================================ */
+
+    const totals = useMemo(() => {
+
+        const parsedRows = internalData
+            .map(parseGridRow)
+            .filter(Boolean) as ExcelRowData[];
+
+        return {
+            grsweight: parsedRows.reduce(
+                (sum, row) => sum + safeNum(row.grsweight),
+                0
+            ),
+
+            purchaseStoneWt: parsedRows.reduce(
+                (sum, row) => sum + safeNum(row.purchaseStoneWt),
+                0
+            ),
+
+            stoneWt: parsedRows.reduce(
+                (sum, row) => sum + safeNum(row.stoneWt),
+                0
+            ),
+
+            navaWt: parsedRows.reduce(
+                (sum, row) => sum + safeNum(row.navaWt),
+                0
+            ),
+
+            salesStoneWt: parsedRows.reduce(
+                (sum, row) => sum + safeNum(row.salesStoneWt),
+                0
+            ),
+
+            diamondWt: parsedRows.reduce(
+                (sum, row) => sum + safeNum(row.diamondWt),
+                0
+            ),
+        };
+
+    }, [internalData]);
+
+    /* ============================================================
        LOAD
        ============================================================ */
 
@@ -643,8 +687,50 @@ const BarCodeExcel: React.FC<BarCodeExcelProps> = ({
                         indicators: false,
                     }}
                 />
-            </Box>
 
+            </Box>
+            <Box
+                border="1px solid"
+                borderColor="gray.200"
+                rounded="md"
+                p={2}
+                bg="gray.50"
+            >
+                <Box
+                    display="grid"
+                    gridTemplateColumns="60px 100px 100px 100px 100px 90px 100px"
+                    gap={2}
+                    fontSize="sm"
+                    fontWeight="600"
+                    alignItems="center"
+                >
+                    <Text>TOTAL</Text>
+
+                    <Text textAlign="right">
+                        {totals.grsweight.toFixed(3)}
+                    </Text>
+
+                    <Text textAlign="right">
+                        {totals.purchaseStoneWt.toFixed(3)}
+                    </Text>
+
+                    <Text textAlign="right">
+                        {totals.stoneWt.toFixed(3)}
+                    </Text>
+
+                    <Text textAlign="right">
+                        {totals.navaWt.toFixed(3)}
+                    </Text>
+
+                    <Text textAlign="right">
+                        {totals.salesStoneWt.toFixed(3)}
+                    </Text>
+
+                    <Text textAlign="right">
+                        {totals.diamondWt.toFixed(3)}
+                    </Text>
+                </Box>
+            </Box>
             <Box
                 display="flex"
                 justifyContent="flex-end"

@@ -162,7 +162,5 @@ export const useBillDetails = (params: billNoParams) => {
         enabled: true,
         staleTime: 1000 * 60 * 5, // optional: cache for 5 mins
         retry: 1,
-
-
     })
 }

@@ -18,7 +18,7 @@ type GetTransactionProps = {
 export interface billNoParams {
     ACCODE?: number;
     ENTRYNO?: number;
-    BILLDATE?: string;
+    TRANDATE?: string;
     TAGNO?:string;
 }
 
@@ -150,7 +150,7 @@ export const TransactionService = {
 
 
 
-export const getBillWiseSales = async (params: billNoParams) => {
+export const getIssueWiseApproval = async (params: billNoParams) => {
     try {
         console.log(params,'paramforsales')
         const queryParams: any = {};
@@ -166,16 +166,17 @@ export const getBillWiseSales = async (params: billNoParams) => {
             queryParams.TAGNO = params.TAGNO;
         }
 
-        if (params.BILLDATE) {
-            queryParams.BILLDATE = params.BILLDATE;
+        if (params.TRANDATE) {
+            queryParams.TRANDATE = params.TRANDATE;
         }
 
         const response = await axiosInstance.get<ApiResponse<getSingleTagDetail[]>>(
-            `/sales/entry`,
-            { params: queryParams } // ✅ send only filtered params
+            `${BASE_PATH}/remaining`,
+            // { params: queryParams } // ✅ send only filtered params
         );
+        console.log(response.data, 'responsegettag')
 
-        return response.data.data;
+        return response?.data?.data;
     } catch (err) {
         if (err instanceof AxiosError) {
             return {

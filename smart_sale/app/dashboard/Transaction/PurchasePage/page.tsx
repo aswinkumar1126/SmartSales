@@ -27,6 +27,7 @@ import { TransactionListing } from "./TransactionList/TransactionIdsListing";
 import { SalesSearch } from "./Search/SalesSearch";
 import SaveModal from "./SaveModal/SaveModal";
 import ShortcutDialog from "@/components/shortcut/ShortcutDialog";
+import TransactionLoader from "@/component/loader/Transactionloader";
 
 //Key Management
 import { useGlobalKey } from "@/components/key/useGlobalKey";
@@ -86,7 +87,7 @@ import { BaseClosingFormDetails } from "@/types/balanceSummary/BalanceSummary";
 import { formatToFixed } from '@/utils/format/numberFormat';
 import PurchaseReceipt,{exportToExcel} from "@/component/ReceiptPrint/PurchasePrint";
 import {useTransactionLoader} from "@/utils/loader/ResolveLoader";
-import TransactionLoader from "@/component/loader/Transactionloader";
+
 
 
 //Icons
@@ -1485,7 +1486,7 @@ const shortcuts = [
                          <ShortcutDialog
                     
                           shortcuts={shortcuts}
-                          theme={theme}
+                         
                         />
 
                         {/* 2. Transaction Type Selector */}

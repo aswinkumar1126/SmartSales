@@ -23,24 +23,26 @@ import { useRouter } from "next/navigation";
 import { useTheme } from "@/context/theme/themeContext";
 import { usePrint } from "@/context/print/usePrintContext";
 
-import { Toaster } from "@/components/ui/toaster";
+import { useAllAccountHead } from "@/hooks/apiHooks/accountHead/useAccountHead";
+import { useStoneItems } from "@/hooks/apiHooks/item/useItems";
 
+import { Toaster } from "@/components/ui/toaster";
 import { toastLoaded } from "@/component/toast/toast";
 import scrollToTop from "@/component/scroll/ScrollToTop";
-
 import SearchBar from "@/component/search/SearchBar";
 import { CustomTable } from "@/component/table/CustomTable";
 import { DynamicForm } from "@/component/form/DynamicForm";
-
 import { useEnterNavigation } from "@/component/form/useEnterNavigation";
 import { useGlobalKey } from "@/components/key/useGlobalKey";
+import ShortcutDialog from "@/components/shortcut/ShortcutDialog";
+import TransactionLoader from "@/component/loader/Transactionloader";
 
 import { formatToFixed } from "@/utils/format/numberFormat";
+import {useTransactionLoader} from "@/utils/loader/ResolveLoader";
 
 import { AccountTypeList } from "@/data/ACCOUNTtYPE/AccountType";
 
-import { useAllAccountHead } from "@/hooks/apiHooks/accountHead/useAccountHead";
-import { useStoneItems } from "@/hooks/apiHooks/item/useItems";
+
 
 import {
     useHmcCreate,
@@ -76,6 +78,7 @@ export type HmcTableRow = {
 /* ---------------- COMPONENT ---------------- */
 
 const HmcMappingForm = () => {
+  const {isOpen, status, title:loaderTitle, description, openLoader, resolveLoader, closeLoader} = useTransactionLoader();
 
     const [form, setForm] =
         useState<HmcMaster>(initialFormState);
@@ -196,6 +199,7 @@ const HmcMappingForm = () => {
         scrollToTop();
 
         toastLoaded("HMC Mapping");
+        focusFirst();
     };
 
     /* ---------------- RESET ---------------- */
@@ -299,7 +303,7 @@ const HmcMappingForm = () => {
         setErrors({});
 
         if (editId) {
-
+            openLoader('update',true);
             updateMutation.mutate(
                 {
                     id: editId,
@@ -312,6 +316,9 @@ const HmcMappingForm = () => {
                         resetForm();
 
                         refetch();
+                        setTimeout(() => {
+                            resolveLoader("success", "update","",true);
+                        }, 500);
                     },
                     onError: (error: any) => {
                         console.log(
@@ -323,11 +330,15 @@ const HmcMappingForm = () => {
                             "Failed to create HMC."
                         );
                         resetForm();
+                        setTimeout(() => {
+                            resolveLoader("error", "update","",true);
+                        }, 500);
                     },
                 }
             );
 
         } else {
+            openLoader('save',true);
 
             createMutation.mutate(payload, {
                 onSuccess: (res: any) => {
@@ -338,6 +349,9 @@ const HmcMappingForm = () => {
                     setHighlightRowId(
                         createdId
                     );
+                    setTimeout(() => {
+                        resolveLoader("success", "save","",true);
+                    }, 500);
 
                     resetForm();
 
@@ -353,6 +367,9 @@ const HmcMappingForm = () => {
                             "Failed to create HMC."
                     );
                     resetForm();
+                    setTimeout(() => {
+                        resolveLoader("error", "save","",true);
+                    }, 500);
                 },
             });
         }
@@ -439,9 +456,15 @@ const HmcMappingForm = () => {
     );
 
     useGlobalKey(
-        "Alt+c",
+        "Alt+e",
+       ()=>router.back(),
+       "exitHMC"
+    );
+
+    useGlobalKey(
+        "alt+r",
         resetForm,
-        "ClearTransaction"
+        "resetForm"
     );
 
     /* ---------------- HIGHLIGHT ---------------- */
@@ -478,6 +501,7 @@ const HmcMappingForm = () => {
         focusFirst();
     }, [focusFirst]);
 
+
     /* ---------------- UI ---------------- */
 
     return (
@@ -488,7 +512,15 @@ const HmcMappingForm = () => {
             }}
             gap={2}
         >
+            <TransactionLoader
+                isOpen={isOpen}
+                status={status}
+                title={loaderTitle}
+                description={description}
+                onClose={closeLoader}
+            />
             <Toaster />
+            <ShortcutDialog />
 
             {/* FORM */}
 
@@ -532,6 +564,18 @@ const HmcMappingForm = () => {
                             colorPalette={"blue"}
                             onClick={() =>
                                 resetForm()
+                            }
+                        >
+                            <IoIosExit />
+                            Reset
+                        </Button>
+                        <Button
+                            size="xs"
+                            colorPalette={"blue"}
+                            onClick={() =>{
+                                resetForm();
+                                router.back();
+                            }
                             }
                         >
                             <IoIosExit />

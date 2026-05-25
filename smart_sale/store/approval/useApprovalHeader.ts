@@ -29,7 +29,7 @@ const initialHeader: ApprovalHeaderForm = {
     CUSTOMER: "",
     CUSTOMER_NAME: "",
     DATE: new Date().toISOString().split("T")[0],
-    BILLNO: "",
+    // BILLNO: "",
     ENTRYNO: "",
     RATEGM: "",
     REMARK: "",

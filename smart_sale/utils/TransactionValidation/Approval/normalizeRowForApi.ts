@@ -18,7 +18,7 @@ import { ApprovalTransactionKey, APPROVALTRANSACTIONITEMS } from "@/types/transc
         } = row;
 
 
-        // ---------------- SALES ----------------
+        // ---------------- APPROVAL_ISSUE ----------------
         if (tranType === "APPROVAL_ISSUE") {
             const itemId = rest.ITEMID ? Number(rest.ITEMID) : null;
 

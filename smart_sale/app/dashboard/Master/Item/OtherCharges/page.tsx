@@ -41,6 +41,9 @@ import { OtherMasterFields } from "@/config/master/OtherChargesMaster";
 import { useEnterNavigation } from "@/component/form/useEnterNavigation";
 
 import { useGlobalKey } from "@/components/key/useGlobalKey";
+import ShortcutDialog from "@/components/shortcut/ShortcutDialog";
+import { useTransactionLoader } from "@/utils/loader/ResolveLoader";
+import TransactionLoader from "@/component/loader/Transactionloader";
 
 /* ---------------- Initial Form State ---------------- */
 
@@ -75,6 +78,8 @@ const OtherCharges = () => {
     const [filter, setFilter] = useState<string>('')
     /* ---------------- Hooks ---------------- */
     const router = useRouter();
+
+    const {isOpen, status, title:loaderTitle, description, openLoader, resolveLoader, closeLoader} = useTransactionLoader();
     const { theme } = useTheme();
     const { setData, setColumns, title } = usePrint();
 
@@ -196,6 +201,7 @@ const OtherCharges = () => {
         };
 
         if (editId) {
+            openLoader('update', true)
             updateMutation.mutate(
                 { id: editId, data: payload },
                 {
@@ -203,16 +209,25 @@ const OtherCharges = () => {
                         setHighlightRowId(editId);
                         resetForm();
                         refetch();
+                        resolveLoader("success", "update", "", true)
                     },
+                    onError: () => {
+                        resolveLoader("error", "update", "", true)
+                    }
                 }
             );
         } else {
+            openLoader('save', true)
             createMutation.mutate(payload, {
                 onSuccess: (res: any) => {
                     setHighlightRowId(res?.data?.id);
                     resetForm();
                     refetch();
+                    resolveLoader("success", "save", "", true)
                 },
+                onError: () => {
+                    resolveLoader("error", "save", "", true)
+                }
             });
         }
     };
@@ -260,14 +275,25 @@ const OtherCharges = () => {
         focusFirst()
     }, []);
 
-        useGlobalKey("Alt+s" , ()=>handleSubmit() , "saveTransaction");
-        useGlobalKey("Alt+c", () => resetForm() ,"ClearTransaction");
+
+    useGlobalKey("Alt+s" , ()=>handleSubmit() , "saveTransaction");
+    useGlobalKey("Alt+r", () => resetForm() ,"Reset");
+    useGlobalKey("Alt+e", () => router.back(), "exit");
+    useGlobalKey("Alt+u", () => handleSubmit(), "update");
 
     /* ---------------- UI ---------------- */
 
     return (
         <Grid templateColumns={{ base: "1fr", lg: "1fr 2fr" }} p={2} fontWeight='semibold' gap={4}>
+            <TransactionLoader
+                isOpen={isOpen}
+                status={status}
+                title={loaderTitle}
+                description={description}
+                onClose={closeLoader}
+            />
             <Toaster />
+            <ShortcutDialog />
 
             {/* -------- Form Section -------- */}
             <GridItem>
@@ -309,7 +335,10 @@ const OtherCharges = () => {
                             </Button>
 
                             <Button size="xs" colorPalette="blue" onClick={resetForm}>
-                                Clear <IoIosExit />
+                                Reset <IoIosExit />
+                            </Button>
+                            <Button size="xs" colorPalette="blue" onClick={() => router.back()}>
+                                Exit <IoIosExit />
                             </Button>
                         </HStack>
                     </Box>

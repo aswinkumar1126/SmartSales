@@ -16,10 +16,16 @@ import { useRates } from "@/hooks/apiHooks/rate/useRate";
 import { MetalRatesMenu } from "../rates/MetalRates";
 import { useEffect, useState } from "react";
 import { usePageName } from "@/context/header/PageNameContext";
+import { usePathname } from "next/navigation";
 
 const Header = ({ onOpenMenu }: any) => {
 
     const { theme, mode, toggleTheme } = useTheme();
+    const pathname = usePathname();
+    
+    const lastPathName = pathname.split("/").filter(Boolean).pop() ;
+  
+    console.log(lastPathName,'lastPathName')
 
     
     const {pageName ,description} =usePageName();
@@ -172,7 +178,7 @@ const Header = ({ onOpenMenu }: any) => {
                         maxW="220px"
                       truncate
                     >
-                        {pageName}
+                        {lastPathName}
                     </Text>
 
 
