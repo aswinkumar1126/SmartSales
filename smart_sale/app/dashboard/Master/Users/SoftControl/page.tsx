@@ -43,6 +43,7 @@ import { useGlobalKey } from "@/components/key/useGlobalKey";
 import { SoftControl } from "@/types/softcontrol/SoftControl";
 
 
+import type { PrintColumn } from "@/component/screens/PrintPreviewScreen";
 
 function SoftControlMaster() {
   const { theme } = useTheme();
@@ -197,17 +198,18 @@ function SoftControlMaster() {
     { key: "CTLID", label: "ID" },
     { key: "CTLNAME", label: "NAME" },
     { key: "CTLTEXT", label: "VALUE" },
-    { key: "actions", label: "Actions" },
+    // { key: "actions", label: "Actions" },
   ];
 
   /* -------------------- EXPORT -------------------- */
   const handleExport = (option: string) => {
     setData(softControls);
-    setColumns([
+    const columns: PrintColumn[] = [
       { key: "CTLID", label: "ID" },
       { key: "CTLNAME", label: "NAME" },
       { key: "CTLTEXT", label: "VALUE" },
-    ]);
+    ]
+    setColumns(columns);
     setShowSno(true);
     title?.("SoftControl Master");
     router.push(`/print?export=${option}`);
@@ -243,7 +245,7 @@ function SoftControlMaster() {
         {/* FORM SECTION */}
         <GridItem>
           <VStack bg={theme.colors.formColor} p={4} borderRadius="xl" border="1px solid #eef">
-            <Text fontSize="small" fontWeight="600">SOFT CONTROL MASTER</Text>
+        
             <Fieldset.Root size="sm" width="100%">
               <Fieldset.Content>
                 <DynamicForm
@@ -298,13 +300,14 @@ function SoftControlMaster() {
                   <Table.Cell>{sc.CTLID}</Table.Cell>
                   <Table.Cell>{sc.CTLNAME}</Table.Cell>
                   <Table.Cell>{sc.CTLTEXT}</Table.Cell>
-                  <Table.Cell>
+                  {/* <Table.Cell>
                     <Box display="flex" justifyContent="center">
                       <FaEdit onClick={() => handleEdit(sc)} cursor="pointer" />
                     </Box>
-                  </Table.Cell>
+                  </Table.Cell> */}
                 </>
               )}
+              onRowClick={(sc) => handleEdit(sc)}
               headerBg="blue.800"
               headerColor="white"
               borderColor="white"

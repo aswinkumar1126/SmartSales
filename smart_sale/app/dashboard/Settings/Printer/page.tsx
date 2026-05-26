@@ -207,7 +207,7 @@ function PrinterSetting() {
             key: field.name,
             label: field.label || field.name
         })),
-        { key: 'actions', label: 'Actions' },
+        // { key: 'actions', label: 'Actions' },
     ];
 
     /* -------------------- FORM NAVIGATION -------------------- */
@@ -316,7 +316,7 @@ function PrinterSetting() {
                                                 {(printer as Record<string, any>)[field.name] || "-"}
                                             </Table.Cell>
                                         ))}
-                                        <Table.Cell>
+                                        {/* <Table.Cell>
                                             <Box display="flex" justifyContent="center">
                                                 <FaEdit
                                                     onClick={() => handleEdit(printer as unknown as PrinterSettingType)}
@@ -324,9 +324,10 @@ function PrinterSetting() {
                                                     title="Edit Printer"
                                                 />
                                             </Box>
-                                        </Table.Cell>
+                                        </Table.Cell> */}
                                     </>
                                 )}
+                                onRowClick={(printer) => handleEdit(printer as unknown as PrinterSettingType)}
                                 headerBg="blue.800"
                                 headerColor="white"
                                 borderColor="white"

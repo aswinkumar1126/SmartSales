@@ -2,7 +2,7 @@ import { FormField } from "@/types/form/form";
 
 
 type collection = { label: string, value: string }
-type CashReportForm = {
+type PaymentReportForm = {
 
 payModeList: collection[],
 bankAccountList: collection[],
@@ -10,14 +10,15 @@ isDisableBank : boolean
 
 }
 
-export const CashReportFields = (CashReportForm: CashReportForm ): FormField[] =>  [
+export const PaymentReportFields = (PaymentReportForm: PaymentReportForm ): FormField[] =>  [
     
    {
-     name : "PAYMODE" ,
-     label : "MODE" ,
-     items : CashReportForm.payModeList ,
-     type : "combobox",
-     required : true
+        name : "PAYMODE" ,
+        label : "PAY MODE " ,
+        items: PaymentReportForm.payModeList ,
+        type : "combobox",
+        required : true,
+        maxWidth :'120px'
 
    },
     {
@@ -39,9 +40,9 @@ export const CashReportFields = (CashReportForm: CashReportForm ): FormField[] =
         name: "BANKID",
         label:"BANK NAME",
         type: "combobox",
-        items : CashReportForm.bankAccountList,
+        items: PaymentReportForm.bankAccountList,
         required : true,
-        disabled : CashReportForm.isDisableBank
+        disabled: PaymentReportForm.isDisableBank
 
     },
    

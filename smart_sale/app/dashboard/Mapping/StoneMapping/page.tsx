@@ -55,6 +55,7 @@ import { StoneMappingFormConfig } from "@/config/mapping/StoneMapping";
 
 import { useTransactionLoader } from "@/utils/loader/ResolveLoader";
 import { formatToFixed } from "@/utils/format/numberFormat";
+import { PrintColumn } from "@/component/screens/PrintPreviewScreen";
 
 /* ---------------- INITIAL STATE ---------------- */
 
@@ -433,17 +434,38 @@ const HmcMappingForm = () => {
     ) => {
 
         setData(Array.isArray(stoneMappingData) ? stoneMappingData : []);
-
-        setColumns([
+        const columns: PrintColumn[] = [
             {
                 key: "acName",
-                label: "Customer Name",
+                label: "Account Name",
             },
 
-            {
-                key: "acType",
-                label: "Customer Type",
-            },
+
+            { 
+                key: "acType", 
+                label: "Account Type" , 
+                renderCell: (value) => (
+            
+                <Box
+                    as="span"
+                    display="inline-block"
+                    px={3}
+                    py={0.5}
+                    borderRadius="full"
+                    fontSize="xs"
+                    fontWeight={600}
+                    minW="90px"
+                    textAlign="center"
+                    bg={value === "PR" ? "orange.100" : "green.100"}
+                    color={value === "PR" ? "orange.700" : "green.700"}
+                >
+                    {value === "PR" ? "PURCHASER" : "CUSTOMER"}
+                </Box>
+                ),
+                // exportValue → clean text for Print / Excel
+                printValue: (value) => (value === "PR" ? "PURCHASER" : "CUSTOMER")
+             } ,
+        
 
             {
                 key: "itemName",
@@ -453,8 +475,20 @@ const HmcMappingForm = () => {
             {
                 key: "stnAmt",
                 label: "STN Amount",
+                align:"end"as const ,
+                renderCell: (value: any) => (
+                    <Text fontWeight="bold">
+                        {formatToFixed(
+                            value,
+                            2
+                        )}
+                    </Text>
+                ),
+                printValue: (value: any) => Number(value).toFixed(2)
             },
-        ]);
+        ]
+
+        setColumns(columns);
 
         setShowSno(true);
 

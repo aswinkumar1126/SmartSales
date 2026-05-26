@@ -153,7 +153,7 @@ function BarCodeGenerate() {
         <Table.Cell textAlign="right">{formatToFixed(row.STNWT, 3)}</Table.Cell>
         <Table.Cell textAlign="right">{formatToFixed(row.DIAWT, 3)}</Table.Cell>
         <Table.Cell textAlign="right">{formatToFixed(row.NETWT, 3)}</Table.Cell>
-        <Table.Cell textAlign="center">{formatToFixed(row.TOUCH, 1)}</Table.Cell>
+        <Table.Cell textAlign="center">{formatToFixed(row.TOUCH, 2)}</Table.Cell>
         <Table.Cell textAlign="center">
           <Box
             bg={row.STNPRESENT === "Y" ? "green.100" : "red.100"}

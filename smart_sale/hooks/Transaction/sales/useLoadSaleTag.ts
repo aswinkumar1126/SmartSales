@@ -1,7 +1,7 @@
 import { useSaleTransactionStore } from "@/store/sales/useSaleTransactionStore";
 import { getTagDetails } from "@/service/TagedService";
 import { toaster } from "@/components/ui/toaster";
-import { calculateStoneAmount } from "@/app/dashboard/Transaction/Sales/StoneMaster/StoneEntryMaster";
+import { calculateStoneAmount } from "@/app/dashboard/Transaction/SaleEntry/StoneMaster/StoneEntryMaster";
 import { formatToFixed } from "@/utils/format/numberFormat";
 
 export const useLoadSaleTag = () => {
@@ -70,15 +70,15 @@ export const useLoadSaleTag = () => {
                     stoneId: String(stone.STNITEMID || stone.STNSUBITEMID || ""),
                     subStoneId: String(stone.STNSUBITEMID || ""),
                     stonePcs: Number(stone.STNPCS || 1),
-                    stoneWeight: formatToFixed(Number(stone.SALESSTNWT || 0),3),
+                    stoneWeight: formatToFixed(Number(stone.SALESSTNWT || 0), 3),
                     stoneUnit: stone.STONEUNIT || "g",
                     stoneCalculation: stone.CALCMODE || "w",
-                    stoneRate: formatToFixed(Number(stone.STNRATE || 0),2),
+                    stoneRate: formatToFixed(Number(stone.STNRATE || 0), 2),
                     stoneAmount: formatToFixed(calculateStoneAmount(stone.STONEUNIT || "g",
-                        stone.SALESSTNWT ,
-                        stone.STNPCS ||1,
+                        stone.SALESSTNWT,
+                        stone.STNPCS || 1,
                         stone.STNRATE || 0,
-                        stone.CALCMODE || "w"),3),
+                        stone.CALCMODE || "w"), 3),
                 }));
 
                 totalStoneWeight = stonesWithId.reduce(
@@ -91,7 +91,7 @@ export const useLoadSaleTag = () => {
                     0
                 );
             }
-            const hmcAmount = data.HMCAMT ;
+            const hmcAmount = data.HMCAMT;
 
             // Build the default HMC charge entry once — used in both local state and store
             const defaultHmcCharge = hmcAmount > 0
@@ -105,9 +105,9 @@ export const useLoadSaleTag = () => {
                 : [];
 
 
-            const STN_PRESENT = data.STNPRESENT === "Y" || stoneDetails.length > 0 ;  
+            const STN_PRESENT = data.STNPRESENT === "Y" || stoneDetails.length > 0;
 
-            console.log(STN_PRESENT,'STN_PRESENT')
+            console.log(STN_PRESENT, 'STN_PRESENT')
 
             // ✅ Build the complete row object at once — no partial mutation
             const newRow: any = {
@@ -121,21 +121,21 @@ export const useLoadSaleTag = () => {
                 _type: "SA",
 
                 ITEMID: data.ITEMID ? String(data.ITEMID) : "",
-                ITEMNAME :data.ITEMNAME ,
+                ITEMNAME: data.ITEMNAME,
                 TAGNO: String(data.TAGNO || tagNo),
                 PCS: 1,
 
                 STN_PRESENT: STN_PRESENT,
 
-                GRSWT: formatToFixed(Number(data.GRSWT),3) || 0,
+                GRSWT: formatToFixed(Number(data.GRSWT), 3) || 0,
                 STNWT: stoneDetails.length > 0
-                    ? formatToFixed(totalStoneWeight,3)
-                    : formatToFixed(Number(data.SALESSTNWT),3) || 0,
-                NETWT: formatToFixed(Number(data.NETWT),3) || 0,
+                    ? formatToFixed(totalStoneWeight, 3)
+                    : formatToFixed(Number(data.SALESSTNWT), 3) || 0,
+                NETWT: formatToFixed(Number(data.NETWT), 3) || 0,
 
-                TOUCH: Number(data.TOUCH) || 0,
-                MC: formatToFixed(Number(data.MC),2) || 0,
-                STNAMT: formatToFixed(totalStoneAmount, 2) || 0,
+                TOUCH: formatToFixed(Number(data.TOUCH) ,2) || 0,
+                MC: formatToFixed(Number(data.MC), 2) || 0,
+                STNAMT: formatToFixed(totalStoneAmount, 0) || 0,
 
                 _hasStones: stonesWithId.length > 0,
                 _hasCharges: true,
@@ -147,7 +147,7 @@ export const useLoadSaleTag = () => {
 
                 ITEM_TYPE: "TAGED",
             };
-            console.log(newRow,'newRownewRow')
+            console.log(newRow, 'newRownewRow')
             addDraftRow(newRow);
             setSelectedTransactionId("SA");
 

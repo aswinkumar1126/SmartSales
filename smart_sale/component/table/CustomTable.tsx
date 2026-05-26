@@ -36,6 +36,7 @@ type CustomTableProps<T> = {
     columns: TableColumn[];
     data: T[];
     renderRow: (row: T, index: number, isSelected: boolean) => ReactNode;
+    onRowClick?: (row: T, index: number) => void;
 
     /** Optional highlight support */
     highlightRowId?: string | number | null;
@@ -63,6 +64,7 @@ export function CustomTable<T extends Record<string, any>>({
     columns,
     data,
     renderRow,
+    onRowClick,
     headerBg,
     bodyBg,
     headerColor,
@@ -263,6 +265,7 @@ export function CustomTable<T extends Record<string, any>>({
                                             ...(isHighlighted && !isSelected ? { animation: "blink 1s 3" } : {}),
                                             ...(isSelected && selection?.selectionTextColor ? { color: selection.selectionTextColor } : {})
                                         }}
+                                        onClick={() => onRowClick && onRowClick(row, actualIndex)}
                                     >
                                         {isSelectionEnabled && (
                                             <Table.Cell textAlign="center">

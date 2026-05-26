@@ -254,7 +254,7 @@ function ItemSizeMaster() {
                 {/* FORM SECTION */}
                 <GridItem>
                     <VStack bg={theme.colors.formColor} p={4} borderRadius="xl" border="1px solid #eef">
-                        <Text fontSize="small" fontWeight="600">ITEM SIZE MASTER</Text>
+                  
 
                         <Fieldset.Root size="sm" width="100%">
                             <Fieldset.Content>
@@ -318,13 +318,14 @@ function ItemSizeMaster() {
                                     <Table.Cell>{index + 1}</Table.Cell>
                                     <Table.Cell>{size.ITEMNAME}</Table.Cell>
                                     <Table.Cell>{size.SIZENAME}</Table.Cell>
-                                    <Table.Cell>
+                                    {/* <Table.Cell>
                                         <Box display="flex" justifyContent="center">
                                             <FaEdit onClick={() => handleEdit(size)} cursor="pointer" />
                                         </Box>
-                                    </Table.Cell>
+                                    </Table.Cell> */}
                                 </>
                             )}
+                            onRowClick={(size) => handleEdit(size)}
                             headerBg="blue.800"
                             headerColor="white"
                             borderColor="white"

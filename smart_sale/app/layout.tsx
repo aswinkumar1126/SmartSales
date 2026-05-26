@@ -1,4 +1,4 @@
-import "@/app/globals.css";
+import "./globals.css";
 import { AllProviders } from "@/providers/AllProviders";
 import { fontVariables } from "@/context/theme/font";
 

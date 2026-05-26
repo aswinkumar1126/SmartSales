@@ -47,6 +47,7 @@ import ShortcutDialog from "@/components/shortcut/ShortcutDialog";
 import { useTransactionLoader } from "@/utils/loader/ResolveLoader";
 import TransactionLoader from "@/component/loader/Transactionloader";
 
+import type { PrintColumn } from "@/component/screens/PrintPreviewScreen";
 
 function MetalMaster() {
     const { theme } = useTheme();
@@ -247,7 +248,7 @@ function MetalMaster() {
         { key: "metalName", label: "Metal Name" },
         { key: "displayOrder", label: "Order", align: "center" as const },
         { key: "active", label: "Active", align: "center" as const },
-        { key: "actions", label: "Action", align: "center" as const },
+        // { key: "actions", label: "Action", align: "center" as const },
     ];
 
     const handleExport = (option: string) => {
@@ -303,7 +304,7 @@ function MetalMaster() {
                         border="1px solid #eef"
                         boxShadow="0 0 30px rgba(212,212,212,0.2)"
                     >
-                        <Text fontSize="small" fontWeight="600">METAL MASTER</Text>
+                 
 
                         <Fieldset.Root size="sm" width="100%">
                             <Fieldset.Content>
@@ -399,13 +400,14 @@ function MetalMaster() {
                                         <Table.Cell>{metal.metalName}</Table.Cell>
                                         <Table.Cell textAlign="center">{metal.displayOrder}</Table.Cell>
                                         <Table.Cell textAlign="center">{metal.active}</Table.Cell>
-                                        <Table.Cell>
+                                        {/* <Table.Cell>
                                             <Box display="flex" justifyContent="center">
                                                 <FaEdit onClick={() => handleEdit(metal)} cursor="pointer" />
                                             </Box>
-                                        </Table.Cell>
+                                        </Table.Cell> */}
                                     </>
                                 )}
+                                onRowClick={(metal) => handleEdit(metal)}
                             />
                         </Stack>
                     </Box>

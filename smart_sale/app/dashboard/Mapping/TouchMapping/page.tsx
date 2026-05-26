@@ -12,6 +12,7 @@ import {
     HStack,
     Text,
     Flex,
+    Badge,
 } from "@chakra-ui/react";
 
 import { useItems, useStoneItems } from "@/hooks/apiHooks/item/useItems";
@@ -49,6 +50,7 @@ import { useGlobalKey } from "@/components/key/useGlobalKey";
 import ShortcutDialog from "@/components/shortcut/ShortcutDialog";
 import { useTransactionLoader } from "@/utils/loader/ResolveLoader";
 import TransactionLoader from "@/component/loader/Transactionloader";
+import { PrintColumn } from "@/component/screens/PrintPreviewScreen";
 
 
 /* ---------------- Initial State ---------------- */
@@ -291,19 +293,39 @@ const TouchMasterForm = () => {
         { key: "touch", label: "Touch", align: "center" as const },
         { key: "calmode", label: "Cal Mode", align: "center" as const },
 
-        { key: "action", label: "Action", align: "center" as const },
+        // { key: "action", label: "Action", align: "center" as const },
     ];
 
     const handleExport = (option: string) => {
         setData(touchData);
-        setColumns([
+        const columns: PrintColumn[] = [
             { key: "acname", label: "Company Name" },
-            { key: "actype", label: "Company Type" },
+            { key: "actype", label: "Company Type" , 
+                renderCell: (value) => (
+                <Box
+                    as="span"
+                    display="inline-block"
+                    px={3}
+                    py={0.5}
+                    borderRadius="full"
+                    fontSize="xs"
+                    fontWeight={600}
+                    minW="90px"
+                    textAlign="center"
+                    bg={value === "PR" ? "orange.100" : "green.100"}
+                    color={value === "PR" ? "orange.700" : "green.700"}
+                >
+                    {value === "PR" ? "PURCHASER" : "CUSTOMER"}
+                </Box>
+                ),
+                // exportValue → clean text for Print / Excel
+                printValue: (value) => (value === "PR" ? "PURCHASER" : "CUSTOMER") } ,
             { key: "itemName", label: "Item Name" },
-            { key: "touch", label: "Touch", align: "center" as const },
+            { key: "touch", label: "Touch", align: "end" as const ,renderCell :(value)=> <Box fontWeight="bold">{formatToFixed(value, 2)}</Box> ,printValue :(value)=> Number(value).toFixed(2) },
             { key: "calmode", label: "Cal Mode", align: "center" as const },
-            { key: "active", label: "Active" },
-        ]);
+      
+        ]
+        setColumns(columns);
         setShowSno(true)
         title?.("Touch Master List")
         router.push(`/print?export=${option}`);
@@ -397,7 +419,7 @@ const TouchMasterForm = () => {
                         justifyContent="space-between"
                         alignItems="center"
                     >
-                        <Text fontSize='small'>TOUCH MASTER LIST</Text>
+                        <Text fontSize='small'>TOUCH MAPPING LIST</Text>
 
                         <Box display='flex' gap={1}>
 
@@ -447,15 +469,16 @@ const TouchMasterForm = () => {
                                     {AccountTypeList.find((item) => item.value === row.actype)?.label || row.actype}
                                 </Table.Cell>
                                 <Table.Cell>{row.itemName}</Table.Cell>
-                                <Table.Cell textAlign="right">{formatToFixed(row.touch, 1)}</Table.Cell>
+                                <Table.Cell textAlign="right">{formatToFixed(row.touch, 2)}</Table.Cell>
                                 <Table.Cell textAlign="left">{row.calmode}</Table.Cell>
-                                <Table.Cell align="center">
+                                {/* <Table.Cell align="center">
                                     <Box display="flex" justifyContent="center" alignItems="center">
                                         <FiEdit cursor="pointer" onClick={() => handleEdit(row)} />
                                     </Box>
-                                </Table.Cell>
+                                </Table.Cell> */}
                             </>
                         )}
+                        onRowClick={(row) => handleEdit(row)}
                         emptyText="No data available"
                         bodyBg={theme.colors.primary}
                         size="sm"

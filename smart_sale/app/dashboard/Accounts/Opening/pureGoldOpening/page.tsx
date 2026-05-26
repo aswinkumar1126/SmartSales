@@ -36,6 +36,7 @@ import ShortcutDialog from "@/components/shortcut/ShortcutDialog";
 import { useTransactionLoader } from "@/utils/loader/ResolveLoader";
 import TransactionLoader from "@/component/loader/Transactionloader";
 
+import type { PrintColumn } from "@/component/screens/PrintPreviewScreen";
 /* ---------------- Initial Form State ---------------- */
 
 const initialFormState: pureGoldMastOpenForm = {
@@ -449,6 +450,7 @@ const PureGoldOpening = () => {
                                 </Table.Cell> */}
                             </>
                         )}
+                   
                     />
                 </Box>
             </GridItem>

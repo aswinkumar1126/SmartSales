@@ -164,14 +164,7 @@ const STATIC_MENU: SidebarMenu = {
           title: "ITEM MASTER",
           description: "Manage all product/item details",
         },
-        {
-          type: "direct",
-          label: "Touch Master",
-          route: "/dashboard/Master/Item/touch",
-          icon: SlidersHorizontal,
-          title: "TOUCH MASTER",
-          description: "Configure purity touch settings",
-        },
+        
         {
           type: "direct",
           label: "Pure Gold Master",
@@ -238,6 +231,14 @@ const STATIC_MENU: SidebarMenu = {
     Mapping :{
       icon: Shield,
       items: [
+        {
+          type: "direct",
+          label: "Touch Mapping",
+          route: "/dashboard/Mapping/TouchMapping",
+          icon: SlidersHorizontal,
+          title: "TOUCH MASTER",
+          description: "Configure purity touch settings",
+        },
       
       {
           type: "direct",
@@ -310,7 +311,7 @@ const STATIC_MENU: SidebarMenu = {
     Purchase: {
       type: "direct",
       label: "Purchase",
-      route: "/dashboard/Transaction/PurchasePage",
+      route: "/dashboard/Transaction/PurchaseEntry",
       icon: AiOutlineShoppingCart,
       title: "PURCHASE ENTRY",
       description: "Create and manage purchase transactions",
@@ -319,7 +320,7 @@ const STATIC_MENU: SidebarMenu = {
     Barcode: {
       type: "direct",
       label: "Barcode Generate",
-      route: "/dashboard/Transaction/BarCodeGenerate",
+      route: "/dashboard/Transaction/TagEntry",
       icon: BadgeCheck,
       title: "BARCODE GENERATOR",
       description: "Generate and print item barcodes",
@@ -330,7 +331,7 @@ const STATIC_MENU: SidebarMenu = {
     Sale: {
       type: "direct",
       label: "Sales",
-      route: "/dashboard/Transaction/Sales",
+      route: "/dashboard/Transaction/SaleEntry",
       icon: AiOutlineDollar,
       title: "SALES ENTRY",
       description: "Create and manage sales transactions",
@@ -340,7 +341,7 @@ const STATIC_MENU: SidebarMenu = {
     Approval: {
       type: "direct",
       label: "Approval",
-      route: "/dashboard/Transaction/Approval",
+      route: "/dashboard/Transaction/ApprovalEntry",
       icon: AiOutlineShoppingCart,
       title: "APPROVAL ISSUE  / RECEIPT",
       description: "Create and manage approval transactions",
@@ -418,7 +419,7 @@ const STATIC_MENU: SidebarMenu = {
     Expenses:{
       type: "direct",
       label: "Expenses",
-      route: "/dashboard/Transaction/Expenses",
+      route: "/dashboard/Transaction/ExpenseEntry",
       icon: TrendingDown,
       title: "Expenses",
       description: "Track and manage expenses",
@@ -494,10 +495,10 @@ const STATIC_MENU: SidebarMenu = {
           description: "View Tagwise-age reports",
         },
 
-        CASHREPORT :{
+        PAYMENTREPORT :{
           type: "direct",
-          label: "Cash Report",
-          route: "/dashboard/Reports/cash",
+          label: "Payment Report",
+          route: "/dashboard/Reports/PaymentReport",
           icon: Layers,
           title: "CASH REPORT",
           description: "View cash and bank reports",

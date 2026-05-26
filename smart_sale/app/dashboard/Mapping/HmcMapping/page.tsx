@@ -11,6 +11,7 @@ import {
     Heading,
     Text,
     Flex,
+    Badge
 } from "@chakra-ui/react";
 
 import { FiEdit } from "react-icons/fi";
@@ -54,6 +55,7 @@ import {
 import { HmcMaster } from "@/types/hmc/hmc";
 
 import { HmcMappingFormConfig } from "@/config/mapping/HmcMapping";
+import { PrintColumn } from "@/component/screens/PrintPreviewScreen";
 
 /* ---------------- INITIAL STATE ---------------- */
 
@@ -416,7 +418,7 @@ const HmcMappingForm = () => {
 
         setData(Array.isArray(hmcData) ? hmcData : []);
 
-        setColumns([
+        const columns :PrintColumn[] = [
             {
                 key: "acName",
                 label: "Customer Name",
@@ -425,6 +427,17 @@ const HmcMappingForm = () => {
             {
                 key: "acType",
                 label: "Customer Type",
+                renderCell :(value: any, row: any) => (
+                    <Badge
+                        colorScheme={
+                            row.acType === "PR"
+                                ? "green"
+                                : "blue"
+                        }
+                    >
+                        {row.acType === "PR" ? "Purchaser" : "Customer"}
+                    </Badge>
+                )
             },
 
             {
@@ -435,8 +448,19 @@ const HmcMappingForm = () => {
             {
                 key: "hmcAmt",
                 label: "HMC Amount",
+                align : "end",
+                renderCell :(value: any) => (
+                    <Text fontWeight="bold">
+                        {formatToFixed(
+                            value,
+                            2
+                        )}
+                    </Text>
+                ),
+                printValue :(value: any) => Number(value).toFixed(2)
             },
-        ]);
+        ]
+        setColumns(columns);
 
         setShowSno(true);
 
@@ -672,13 +696,8 @@ const HmcMappingForm = () => {
 
                     <CustomTable<HmcTableRow>
                         columns={columns}
-                        data={
-                            hmcData as HmcTableRow[] || []
-                        }
-                        renderRow={(
-                            row: any,
-                            i: number
-                        ) => (
+                        data={hmcData as HmcTableRow[] || []}
+                        renderRow={(row: any,i: number) => (
                             <>
                                 <Table.Cell>
                                     {i + 1}
@@ -730,16 +749,13 @@ const HmcMappingForm = () => {
                             </>
                         )}
                         emptyText="No data available"
-                        bodyBg={
-                            theme.colors.primary
-                        }
+                        bodyBg={theme.colors.primary}
                         size="sm"
                         headerBg="blue.800"
                         headerColor="white"
                         rowIdKey="sno"
-                        highlightRowId={
-                            highlightRowId
-                        }
+                        highlightRowId={highlightRowId}
+                        onRowClick={(row) =>handleEdit(row)}
                     />
 
                 </Box>

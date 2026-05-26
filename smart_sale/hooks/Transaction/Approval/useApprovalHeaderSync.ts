@@ -40,9 +40,7 @@ export const useSyncApprovalHeader = (
                 ? String(transactionHeaderDetail.ENTRYNO)
                 : "",
 
-            BILLNO: transactionHeaderDetail.BILLNO
-                ? String(transactionHeaderDetail.BILLNO)
-                : "",
+           
         });
     }, [transactionHeaderDetail, isEditing, setHeaderForm]);
 };

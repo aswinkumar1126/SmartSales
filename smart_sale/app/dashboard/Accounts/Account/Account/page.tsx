@@ -525,6 +525,7 @@ function AccountMaster() {
                                     </Table.Cell>
                                 </>
                             )}
+                            onRowClick={(company) => handleEdit(company)}
                             headerBg="blue.800"
                             headerColor="white"
                             borderColor="white"

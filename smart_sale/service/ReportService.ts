@@ -1,18 +1,32 @@
 import { axiosInstance } from "@/api/axiosInstance";
 import { ApiResponse } from "@/types/api/apiResponse";
-import { CashReportParams, CashReportResponse } from "@/types/report/CashReport";
+import {
+    PaymentReportParams,
+    PaymentReportResponse,
+} from "@/types/report/PaymentReport";
 
-export const CashReport = async (
-    params: CashReportParams
-): Promise<ApiResponse<CashReportResponse[]>> => {
+export const PaymentReport = async (
+    params: PaymentReportParams
+): Promise<ApiResponse<PaymentReportResponse>> => {
     try {
-        const response = await axiosInstance.get("/report/cash", {
-            params, // ✅ send query params properly
+        console.log("params", params);
+
+        // ✅ avoid mutating original params
+        const requestParams =
+            params.PAYMODE === "CASH"
+                ? (() => {
+                    const { BANKID, ...rest } = params;
+                    return rest;
+                })()
+                : params;
+
+        const response = await axiosInstance.get("/report/payment", {
+            params: requestParams,
         });
 
         return response.data;
     } catch (err) {
-        console.log("error while fetching cash report", err);
-        throw err; // ✅ important for react-query error handling
+        console.log("error while fetching payment report", err);
+        throw err;
     }
 };

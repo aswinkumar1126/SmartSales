@@ -83,14 +83,15 @@ export const useLoadPurchaseTag = () => {
                 TAGNO: String(data.TAGNO || tagNo),
                 PCS: 1,
 
-                GRSWT: Number(data.GRSWT) || 0,
-                STNWT: Number(data.SALESSTNWT) || 0,
-                NETWT: Number(data.NETWT) || 0,
+                GRSWT: Number(data.GRSWT).toFixed(3) || 0,
+                STNWT: Number(data.SALESSTNWT).toFixed(3) || 0,
+                NETWT: Number(data.NETWT).toFixed(3) || 0,
 
                 STN_PRESENT : STNPRESENT,
 
-                TOUCH: Number(data.TOUCH) || 0,
-                MC: Number(data.MC) || 0,
+                TOUCH: Number(data.TOUCH).toFixed(2) || 0,
+                MC: Number(data.MC).toFixed(2) || 0,
+
 
                 _hasStones: stoneDetails.length > 0,
                 _hasCharges: false,
@@ -139,8 +140,8 @@ export const useLoadPurchaseTag = () => {
                 const totalStoneAmount = stonesWithId.reduce((sum:number , s:any)=>{
                     return sum + Number(s.stoneAmount || 0)} , 0);
 
-                newRow.STNWT = totalStoneWeight;
-                newRow.STNAMT = totalStoneAmount || Number(data.STNAMT || 0);
+                newRow.STNWT = Number(totalStoneWeight).toFixed(3);
+                newRow.STNAMT = Number(totalStoneAmount).toFixed(0) || Number(data.STNAMT || 0).toFixed(0);
                 newRow._stones= stonesWithId;
             }
 

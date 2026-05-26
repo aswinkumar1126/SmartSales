@@ -1300,6 +1300,8 @@ const handleUpdateTransaction = async () => {
         });
         return;
     }
+
+    console.log(result.payload ,'update tran')
  
     // ✅ Open loader in update mode
     openLoader("update");

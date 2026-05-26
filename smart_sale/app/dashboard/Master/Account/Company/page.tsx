@@ -254,7 +254,7 @@ function CompanyMaster() {
         { key: 'COMPANYID', label: 'Company Id' },
         { key: 'COMPANYNAME', label: 'Company Name' },
         { key: 'ACTIVE', label: 'Active' },
-        { key: 'actions', label: 'Actions' },
+        // { key: 'actions', label: 'Actions' },
     ];
 
     /* -------------------- EXPORT -------------------- */
@@ -298,7 +298,7 @@ function CompanyMaster() {
                 {/* FORM SECTION */}
                 <GridItem>
                     <VStack bg={theme.colors.formColor} p={4} borderRadius="xl" border="1px solid #eef">
-                        <Text fontSize="small" fontWeight="600">COMPANY CREATION</Text>
+                
 
                         <Fieldset.Root size="sm" width="100%">
                             <Fieldset.Content>
@@ -354,13 +354,14 @@ function CompanyMaster() {
                                     <Table.Cell>{company.COMPANYID}</Table.Cell>
                                     <Table.Cell>{company.COMPANYNAME}</Table.Cell>
                                     <Table.Cell textAlign="center">{company.ACTIVE}</Table.Cell>
-                                    <Table.Cell>
+                                    {/* <Table.Cell>
                                         <Box display="flex" justifyContent="center">
                                             <FaEdit onClick={() => handleEdit(company)} cursor="pointer" />
                                         </Box>
-                                    </Table.Cell>
+                                    </Table.Cell> */}
                                 </>
                             )}
+                            onRowClick={(company) => handleEdit(company)}
                             headerBg="blue.800"
                             headerColor="white"
                             borderColor="white"

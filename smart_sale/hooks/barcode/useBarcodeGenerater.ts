@@ -30,7 +30,7 @@ import { formatToFixed } from "@/utils/format/numberFormat";
 import { transactionTableCols } from "@/data/barcodeGenerate/barcodeFormFields";
 
 import { CellChange, ChangeSource } from "handsontable/common";
-import { ExcelData } from "@/app/dashboard/Transaction/BarCodeGenerate/excel/BarCodeExcel";
+import { ExcelData } from "@/app/dashboard/Transaction/TagEntry/excel/BarCodeExcel";
 
 import { useGlobalKey } from "@/components/key/useGlobalKey";
 
@@ -108,13 +108,13 @@ export function useBarcodeGenerate() {
   const [isSubmittingRow, setIsSubmittingRow] = useState(false);
   const [isSubmittingTag, setIsSubmittingTag] = useState(false);
   const [excelDrawerOpen, setExcelDrawerOpen] = useState(false);
- 
+
   const [deselectFlag, setDeselectFlag] = useState(false);
   const [selectedItemId, setSelectedItemId] = useState<number | undefined>(undefined);
   const [excelData, setExcelData] = useState<ExcelData>([]);
   const [originalRow, setOriginalRow] = useState<BarcodeTransactionRow | null>(null);
 
-  const [savedRowsInEditing ,setSavedRowsInEditing] =useState<number>(1);
+  const [savedRowsInEditing, setSavedRowsInEditing] = useState<number>(1);
 
   /* ── Refs ── */
   const transactionFormRef = useRef(transactionForm);
@@ -124,7 +124,7 @@ export function useBarcodeGenerate() {
 
 
 
-  
+
 
   useEffect(() => { rowsRef.current = rows; }, [rows]);
   useEffect(() => { transactionFormRef.current = transactionForm; }, [transactionForm])
@@ -147,7 +147,7 @@ export function useBarcodeGenerate() {
   /* ── API ── */
   const { data: allPurchaseAccount } = useAllAccountHead("", { accountType: "PR" });
   const { data: allCustomerAccount } = useAllAccountHead("", { accountType: "CR" });
-  const {data: allParties } = useAllAccountHead("");
+  const { data: allParties } = useAllAccountHead("");
   const { data: printerSettings } = useActivePrinter();
   const printer = useMemo(() => printerSettings?.data ?? null, [printerSettings]);
 
@@ -160,11 +160,11 @@ export function useBarcodeGenerate() {
   }, [toleranceData]);
 
 
-  const stoneTolerance = useMemo(()=>{
+  const stoneTolerance = useMemo(() => {
     return Number(stoneToleranceData?.CTLTEXT ?? 0);
   }, [stoneToleranceData]);
 
-  console.log(stoneTolerance ,'stoneTolerance');
+  console.log(stoneTolerance, 'stoneTolerance');
 
   const barcodeQueryParams = useMemo(() => ({
     ACCODE: Number(headerForm.COMPANYNAME),
@@ -173,10 +173,10 @@ export function useBarcodeGenerate() {
     ISEDITING: isEditing,
     ENTRYNO: isEditing ? Number(selectedEntryNo) : undefined,
     RETAG: headerForm.RETAG,
-  }), [headerForm.COMPANYNAME, headerForm.INWARDNO, headerForm.ITEMNAME, isEditing, selectedEntryNo ,headerForm.RETAG ]);
+  }), [headerForm.COMPANYNAME, headerForm.INWARDNO, headerForm.ITEMNAME, isEditing, selectedEntryNo, headerForm.RETAG]);
 
   const { data: barcodeItems } = useBarcodeItems(barcodeQueryParams);
-  
+
 
   const isFirstRender = useRef(true);
 
@@ -230,7 +230,7 @@ export function useBarcodeGenerate() {
       : EMPTY_ARRAY,
     [allParties?.data?.acheads]);
 
-  
+
   const inwardCollection = useMemo(() =>
     Array.isArray(barcodeItems?.PURCHASE_ENTRY_NO)
       ? barcodeItems.PURCHASE_ENTRY_NO.map((i: number) => ({ label: `INWARD NO ${i}`, value: String(i) }))
@@ -287,9 +287,9 @@ export function useBarcodeGenerate() {
 
 
   const handleDownloadSetup = () => {
-      if (!printer) { toaster.create({ title: "Printer not configured", type: "error", duration: 2000 }); return; }
-      downloadSetupFiles(printer.printerName, printer.exeName);
-    }
+    if (!printer) { toaster.create({ title: "Printer not configured", type: "error", duration: 2000 }); return; }
+    downloadSetupFiles(printer.printerName, printer.exeName);
+  }
 
   const { assignBarcodes, assignSingleBarcode } = useBarcodeNumbering({
     prefix: baseBarcodePrefix,
@@ -393,8 +393,8 @@ export function useBarcodeGenerate() {
 
     let effectiveBalance = { ...remainingByRef };
 
-    console.log(effectiveBalance,'effectiveBalance');
-    console.log(editingRowId, originalRow , 'editing');
+    console.log(effectiveBalance, 'effectiveBalance');
+    console.log(editingRowId, originalRow, 'editing');
 
     if (editingRowId && originalRow) {
       effectiveBalance = {
@@ -457,7 +457,7 @@ export function useBarcodeGenerate() {
         setEditRowId(null);
         setOriginalRow(null);
       } else {
-        const barcode = assignSingleBarcodeRef.current(rowsRef.current.length ,isEditing);
+        const barcode = assignSingleBarcodeRef.current(rowsRef.current.length, isEditing);
 
         if (!barcode) {
           toaster.create({
@@ -513,9 +513,9 @@ export function useBarcodeGenerate() {
         handleRowSubmit();
       }
     },
-    [focusField, hasStone ,handleRowSubmit]
+    [focusField, hasStone, handleRowSubmit]
   );
- 
+
 
   const handleEditRow = useCallback((row: BarcodeTransactionRow) => {
     setTransactionForm({
@@ -555,11 +555,11 @@ export function useBarcodeGenerate() {
     const remainingByRef = remainingRef.current;
     let effectiveBalance = { ...remainingByRef };
 
-    console.log(stoneTolerance,'stoneTolerance in load');
+    console.log(stoneTolerance, 'stoneTolerance in load');
 
     if (!parsedRows.length) return;
     if (!validateHeaderWithToast(headerForm)) return;
-    if (!validateRows({ rows, limits, countOnlyNew: isEditing, incomingRows: parsedRows, balance: effectiveBalance, tolerance: tolerance,stnTolerance :stoneTolerance })) return;
+    if (!validateRows({ rows, limits, countOnlyNew: isEditing, incomingRows: parsedRows, balance: effectiveBalance, tolerance: tolerance, stnTolerance: stoneTolerance })) return;
 
     const draftRowId = headerForm.ENTRYNO || String(Date.now());
     const merged = [
@@ -586,7 +586,7 @@ export function useBarcodeGenerate() {
     toaster.create({ title: "Excel Imported", description: `${parsedRows.length} row(s) added`, type: "success", duration: 2500 });
     setExcelData([]);
     setExcelDrawerOpen(false);
-  }, [headerForm, rows, limits, isEditing, validateHeaderWithToast, validateRows, assignBarcodes, setRows, tolerance ,stoneTolerance]);
+  }, [headerForm, rows, limits, isEditing, validateHeaderWithToast, validateRows, assignBarcodes, setRows, tolerance, stoneTolerance]);
 
 
   // Replace handleExcelUpdate with this corrected version:
@@ -610,13 +610,13 @@ export function useBarcodeGenerate() {
         tolerance,
         balance: effectiveBalance,
         isUpdate: true,
-        stnTolerance : stoneTolerance,
+        stnTolerance: stoneTolerance,
       })
     ) {
       return;
     }
 
-    
+
 
     const currentRows = rowsRef.current;
 
@@ -832,14 +832,14 @@ export function useBarcodeGenerate() {
     let effectiveBalance = { ...remainingByRef };
 
     if (!validateHeaderWithToast(headerForm)) return;
-    if (!validateRows({ rows, limits, balance: effectiveBalance, tolerance ,stnTolerance :stoneTolerance })) return;
+    if (!validateRows({ rows, limits, balance: effectiveBalance, tolerance, stnTolerance: stoneTolerance })) return;
     const { purchaseDetails, taggingDetails } = buildPayload();
     setIsSubmittingTag(true);
-    console.log(purchaseDetails,taggingDetails ,'createTag');
+    console.log(purchaseDetails, taggingDetails, 'createTag');
 
     createTag(
-      { RETAG :purchaseDetails.RETAG ,  PURCHASEDETAILS: purchaseDetails, TAGGINGDETAILS: taggingDetails },
-    
+      { RETAG: purchaseDetails.RETAG, PURCHASEDETAILS: purchaseDetails, TAGGINGDETAILS: taggingDetails },
+
       {
         onSuccess: (res) => {
           toaster.create({ title: "Saved", description: "Tagging created successfully", type: "success", duration: 2000 });
@@ -855,14 +855,14 @@ export function useBarcodeGenerate() {
         onSettled: () => setIsSubmittingTag(false),
       }
     );
-  }, [headerForm, rows, limits, validateHeaderWithToast, validateRows, buildPayload, createTag, setPrintId, setPrintDetails, clearAll, printAll, tolerance ,stoneTolerance]);
+  }, [headerForm, rows, limits, validateHeaderWithToast, validateRows, buildPayload, createTag, setPrintId, setPrintDetails, clearAll, printAll, tolerance, stoneTolerance]);
 
   const handleUpdate = useCallback(() => {
     const remainingByRef = remainingRef.current;
     let effectiveBalance = { ...remainingByRef };
 
     if (!validateHeaderWithToast(headerForm)) return;
-    if (!validateRows({ rows, limits, balance: effectiveBalance, countOnlyNew: false, tolerance ,stnTolerance :stoneTolerance })) return;
+    if (!validateRows({ rows, limits, balance: effectiveBalance, countOnlyNew: false, tolerance, stnTolerance: stoneTolerance })) return;
     const { purchaseDetails, taggingDetails } = buildPayload();
     setIsSubmittingTag(true);
     console.log("update tag", purchaseDetails, taggingDetails)
@@ -878,13 +878,13 @@ export function useBarcodeGenerate() {
           handleClear();
         },
         onError: (err: any) => {
-          console.log(err?.response ,'responseerr');
+          console.log(err?.response, 'responseerr');
           toaster.create({ title: "Error", description: err?.data || "Update failed", type: "error", duration: 2000 });
         },
         onSettled: () => setIsSubmittingTag(false),
       }
     );
-  }, [headerForm, rows, limits, validateHeaderWithToast, validateRows, buildPayload, updateTag, setPrintId, setPrintDetails, clearAll, printAll, tolerance ,stoneTolerance]);
+  }, [headerForm, rows, limits, validateHeaderWithToast, validateRows, buildPayload, updateTag, setPrintId, setPrintDetails, clearAll, printAll, tolerance, stoneTolerance]);
 
   /* ── Load existing tag for edit ── */
   useEffect(() => {
@@ -892,7 +892,7 @@ export function useBarcodeGenerate() {
 
     const purchase = tagDetails.PURCHASEDETAILS;
     const apiRows = tagDetails.TAGGINGDETAILS || [];
-    console.log(purchase,'purchase')
+    console.log(purchase, 'purchase')
 
     // ✅ Always restore header form
     setHeaderForm({
@@ -934,7 +934,7 @@ export function useBarcodeGenerate() {
 
   }, [tagDetails]);
 
-  
+
   /* ── Tag selection ── */
   const handleSelectTag = useCallback((entryNo: string) => {
     if (rowsRef.current.length > 0 && !isEditing) {
@@ -973,10 +973,10 @@ export function useBarcodeGenerate() {
 
   /*--------------EXCEL DRAWER ----------------------*/
 
-  useGlobalKey("Alt+E",()=>excelDrawerOpen ? setExcelDrawerOpen(false) : setExcelDrawerOpen(true));
-  useGlobalKey("Alt+L" ,()=>handleExcelLoad(excelData));
+  useGlobalKey("Alt+E", () => excelDrawerOpen ? setExcelDrawerOpen(false) : setExcelDrawerOpen(true));
+  useGlobalKey("Alt+L", () => handleExcelLoad(excelData));
 
-  useGlobalKey("Ctrl+P" ,handlePrintAll);
+  useGlobalKey("Ctrl+P", handlePrintAll);
 
 
   /* ── Table config ── */
@@ -1038,7 +1038,7 @@ export function useBarcodeGenerate() {
     0
   );
 
-  const diffStoneWt = totalPurchaseStoneWt -  totalSalesStoneWt ;
+  const diffStoneWt = totalPurchaseStoneWt - totalSalesStoneWt;
 
   const transactionTotals = useMemo(() => ({
     grsweight: rows.reduce((s, r) => s + r.grsweight, 0),
@@ -1085,7 +1085,7 @@ export function useBarcodeGenerate() {
     transactionForm, editRowId, fieldErrors, touched, headerErrors,
     isSubmittingRow, isSubmittingTag,
     excelDrawerOpen, setExcelDrawerOpen,
-  
+
     deselectFlag,
 
     excelData,
@@ -1106,7 +1106,7 @@ export function useBarcodeGenerate() {
     handleHeaderChange, handleFormChange, resetForm,
     handleRowSubmit, moveToNext,
     handleEditRow, handleDeleteRow,
-    handleExcelLoad,handleExcelUpdate , handleSave, handleUpdate, handleClear, handleSelectTag,
+    handleExcelLoad, handleExcelUpdate, handleSave, handleUpdate, handleClear, handleSelectTag,
     setSingleSearch, setTagFilterField,
 
     handlePrintAll: () => printAll(printDetails),
@@ -1114,7 +1114,7 @@ export function useBarcodeGenerate() {
       const found = printSingle(tagNo, printDetails);
       if (!found) toaster.create({ title: "No print data", description: "Details not found for this tag", type: "error", duration: 2000 });
     },
-   handleDownloadSetup,
+    handleDownloadSetup,
 
     getCellValue, formatTotal,
   };

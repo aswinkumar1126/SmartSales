@@ -241,7 +241,7 @@ const OtherCharges = () => {
         { key: "chargeName", label: "Charge Name" },
         { key: "chargeAmount", label: "Amount" },
         { key: "active", label: "Active" },
-        { key: "action", label: "Action", align: "center" as const },
+        // { key: "action", label: "Action", align: "center" as const },
     ];
 
     /* ---------------- Row Highlight Animation ---------------- */
@@ -305,10 +305,6 @@ const OtherCharges = () => {
                         justifyContent="center"
                         mb={2}
                     >
-                        <Text fontSize="small" fontWeight="semibold" >
-                            OTHER CHARGES
-
-                        </Text>
                     </Heading>
                     <DynamicForm
                         fields={getOtherChargesFields}
@@ -407,7 +403,7 @@ const OtherCharges = () => {
                                 <Table.Cell>{row.chargeName}</Table.Cell>
                                 <Table.Cell>{row.chargeAmount}</Table.Cell>
                                 <Table.Cell>{row.active}</Table.Cell>
-                                <Table.Cell align="center">
+                                {/* <Table.Cell align="center">
                                     <Box display="flex" justifyContent="center">
                                         <FiEdit
                                             cursor="pointer"
@@ -415,7 +411,7 @@ const OtherCharges = () => {
                                         />
                                     </Box>
 
-                                </Table.Cell>
+                                </Table.Cell> */}
                             </>
                         )}
                     />

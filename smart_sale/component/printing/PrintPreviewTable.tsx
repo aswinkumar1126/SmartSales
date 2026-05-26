@@ -1,168 +1,250 @@
 "use client";
 
-import React, { ReactNode } from "react";
-import { Box, Table , Text} from "@chakra-ui/react";
+import React, { forwardRef, useMemo } from "react";
+import { Box, Text } from "@chakra-ui/react";
+import type { PrintColumn } from "@/component/screens/PrintPreviewScreen";
 
+// ─────────────────────────────────────────────────────────────
+// Types
+// ─────────────────────────────────────────────────────────────
 
-type PrintColumn<T> = {
-    key: keyof T;
-    label: string;
-    align?: "start" | "center" | "end";
-    showTotals?: boolean;
-    isNumeric?: boolean;
-    /** Render value for preview */
-    render?: (row: T, index: number) => ReactNode;
-
-    /** Value used for totals & export */
-    value?: (row: T) => number | string;
-};
-type PrintCustomization = {
-    fontSize: "sm" | "md" | "lg";
+type Customization = {
+    fontSize: "xs"| "sm" | "md" | "lg";
     headerBg: string;
-    showTotals: boolean;
-    isNumeric?:boolean;
     headerColor: string;
-    totalColumns: (string | number)[];
-    title:string | undefined;
+    rowStriped: boolean;
+    title?: string;
+    showTotals: boolean;
+    totalColumns: string[];
 };
-type PrintPreviewTableProps<T> = {
-    columns: PrintColumn<T>[];
-    data: T[];
-    customization: PrintCustomization;
+
+type PrintPreviewTableProps = {
+    data: any[];
+    columns: PrintColumn[];
+    customization: Customization;
     showSno?: boolean;
-    ref?:any;
 };
 
-export function PrintPreviewTable<T extends Record<string, any>>({
-    columns,
-    data,
-    customization,
-    showSno,
-    ref
-}: PrintPreviewTableProps<T>) {
-    const { fontSize, headerBg, showTotals, totalColumns ,headerColor ,title , isNumeric, } = customization;
+// ─────────────────────────────────────────────────────────────
+// Font size map
+// ─────────────────────────────────────────────────────────────
 
-    console.log(title)
+const fontSizeMap = {
+    xs : "xs",
+    sm: "xs",
+    md: "sm",
+    lg: "md",
+} as const;
 
-    const totals = showTotals
-        ? columns.reduce<Record<string, number>>((acc, col) => {
-            if (!totalColumns.includes(col.key as string)) return acc;
+// ─────────────────────────────────────────────────────────────
+// Component
+// ─────────────────────────────────────────────────────────────
 
-            acc[col.key as string] = data.reduce((sum, row) => {
-                const value =
-                    col.value?.(row) ?? Number(row[col.key] ?? 0);
-                return sum + (Number(value) || 0);
-            }, 0);
+export const PrintPreviewTable = forwardRef<HTMLDivElement, PrintPreviewTableProps>(
+    ({ data, columns, customization, showSno }, ref) => {
+        const { fontSize, headerBg, headerColor, rowStriped, title, showTotals, totalColumns } =
+            customization;
 
-            return acc;
-        }, {})
-        : null;
-    
+        const chakraFontSize = fontSizeMap[fontSize] ?? "sm";
 
-    return (
-        <Box w="100%" overflowX="auto">
+        // ── Column totals ─────────────────────────────────────
+        const totals = useMemo(() => {
+            if (!showTotals || totalColumns.length === 0) return null;
 
-            <Box>
-                <Text color="#222">{title} </Text>
-            </Box>
+            return columns.reduce<Record<string, number | null>>((acc, col) => {
+                if (totalColumns.includes(col.key)) {
+                    acc[col.key] = data.reduce((sum, row) => {
+                        const raw = col.printValue
+                            ? col.printValue(row[col.key], row)
+                            : row[col.key];
+                        const num = parseFloat(String(raw));
+                        return sum + (isNaN(num) ? 0 : num);
+                    }, 0);
+                } else {
+                    acc[col.key] = null;
+                }
+                return acc;
+            }, {});
+        }, [showTotals, totalColumns, columns, data]);
 
-            <Table.Root size={fontSize} ref={ref} border="1px solid " minW={0}  showColumnBorder borderColor="gray.200" >
-                {/* HEADER */}
-                <Table.Header>
-                    <Table.Row bg={headerBg} color={headerColor}>
-                        {showSno && (
-                            <Table.ColumnHeader
-                                textAlign="center"
-                                whiteSpace="nowrap"
-                                color={headerColor}
-                            >
-                                S.No
-                            </Table.ColumnHeader>
-                        )}
+        // ── Shared cell style ─────────────────────────────────
+        const cellStyle: React.CSSProperties = {
+            border: "1px solid #e2e8f0",
+            padding: "8px 12px",
+            verticalAlign: "middle",
+        };
 
-                        {columns.map((col) => (
-                            <Table.ColumnHeader
-                                key={String(col.key)}
-                                textAlign={col.align ?? "start"}
-                                whiteSpace="nowrap"
-                                color={headerColor}
-                            >
-                                {col.label}
-                            </Table.ColumnHeader>
-                        ))}
-                    </Table.Row>
-                </Table.Header>
+        const headerCellStyle: React.CSSProperties = {
+            ...cellStyle,
+            background: headerBg,
+            color: headerColor,
+            fontWeight: 600,
+            fontSize: "0.78em",
+            letterSpacing: "0.04em",
+            textTransform: "uppercase",
+            whiteSpace: "nowrap",
+        };
 
-                {/* BODY */}
-                <Table.Body >
-                    
-                    {data.map((row, index) => (
-                        <Table.Row key={index} color='#222'>
+        // ─────────────────────────────────────────────────────
+        // Render
+        // ─────────────────────────────────────────────────────
+        return (
+            <Box ref={ref} fontSize={chakraFontSize} height={'400px'}>
+                {/* Title row */}
+                {title && (
+                    <Box px={4} pt={5} pb={3}>
+                        <Text fontWeight="700" fontSize="md" color="gray.800" letterSpacing="tight">
+                            {title}
+                        </Text>
+                        <Text fontSize="xs" color="gray.400" mt={0.5}>
+                            {data.length} record{data.length !== 1 ? "s" : ""}
+                        </Text>
+                    </Box>
+                )}
 
-                            {showSno && (
-                                <Table.Cell textAlign="center" fontWeight="500">
-                                    {index + 1}
-                                </Table.Cell>
-                            )}
-                            {columns.map((col) => (
-                                <Table.Cell
-                                    key={String(col.key)}
-                                    textAlign={col.align ?? "start"}
+                <Box overflowX="auto">
+                    <table
+                        style={{
+                            borderCollapse: "collapse",
+                            width: "100%",
+                            tableLayout: "auto",
+                        }}
+                    >
+                        {/* ── HEAD ── */}
+                        <thead>
+                            <tr>
+                                {showSno && (
+                                    <th style={{ ...headerCellStyle, textAlign: "center", width: 48 }}>
+                                        #
+                                    </th>
+                                )}
+                                {columns.map((col) => (
+                                    <th
+                                        key={col.key}
+                                        style={{
+                                            ...headerCellStyle,
+                                            textAlign: col.align
+                                                ? col.align === "end"
+                                                    ? "right"
+                                                    : col.align === "start"
+                                                        ? "left"
+                                                        : "center"
+                                                : col.isNumeric
+                                                    ? "right"
+                                                    : "left",
+                                        }}
+                                    >
+                                        {col.label}
+                                    </th>
+                                ))}
+                            </tr>
+                        </thead>
+
+                        {/* ── BODY ── */}
+                        <tbody>
+                            {data.map((row, rowIndex) => (
+                                <tr
+                                    key={rowIndex}
+                                    style={{
+                                        background:
+                                            rowStriped && rowIndex % 2 === 1
+                                                ? "#f8fafc"
+                                                : "#ffffff",
+                                    }}
                                 >
-                                    {col.render
-                                        ? col.render(row, index)
-                                        : String(row[col.key] ?? "")}
-                                </Table.Cell>
+                                    {showSno && (
+                                        <td
+                                            style={{
+                                                ...cellStyle,
+                                                textAlign: "center",
+                                                color: "#94a3b8",
+                                                fontVariantNumeric: "tabular-nums",
+                                            }}
+                                        >
+                                            {rowIndex + 1}
+                                        </td>
+                                    )}
+
+                                    {columns.map((col) => {
+                                        const rawValue = row[col.key];
+
+                                        // Use renderCell for rich preview; else fall back to printValue or raw
+                                        const cellContent = col.renderCell
+                                            ? col.renderCell(rawValue, row)
+                                            : col.printValue
+                                                ? col.printValue(rawValue, row)
+                                                : rawValue ?? "—";
+
+                                        const textAlign = col.align
+                                            ? col.align === "end"
+                                                ? "right"
+                                                : col.align === "start"
+                                                    ? "left"
+                                                    : "center"
+                                            : col.isNumeric
+                                                ? "right"
+                                                : "left";
+
+                                        return (
+                                            <td
+                                                key={col.key}
+                                                style={{
+                                                    ...cellStyle,
+                                                    textAlign,
+                                                    color: "#1e293b",
+                                                }}
+                                            >
+                                                {cellContent}
+                                            </td>
+                                        );
+                                    })}
+                                </tr>
                             ))}
-                        </Table.Row>
-                    ))}
+                        </tbody>
 
-                    {/* TOTAL ROW */}
-                    {totals && (
-                        <Table.Row
-                            bg="gray.100"
-                            fontWeight="semibold"
-                            borderTop="2px solid"
-                            borderColor="gray.300"
-                        >
-                            {/* S.No column placeholder */}
-                            {showSno && (
-                                <Table.Cell textAlign="center">
-                                    Total
-                                </Table.Cell>
-                            )}
+                        {/* ── FOOT (totals) ── */}
+                        {showTotals && totals && (
+                            <tfoot>
+                                <tr style={{ background: "#f1f5f9" }}>
+                                    {showSno && (
+                                        <td
+                                            style={{
+                                                ...cellStyle,
+                                                fontWeight: 700,
+                                                borderTop: "2px solid #cbd5e1",
+                                            }}
+                                        />
+                                    )}
+                                    {columns.map((col, colIndex) => {
+                                        const isFirst = !showSno && colIndex === 0;
+                                        const total = totals[col.key];
+                                        return (
+                                            <td
+                                                key={col.key}
+                                                style={{
+                                                    ...cellStyle,
+                                                    fontWeight: 700,
+                                                    borderTop: "2px solid #cbd5e1",
+                                                    textAlign: col.isNumeric ? "right" : "left",
+                                                    color: "#0f172a",
+                                                }}
+                                            >
+                                                {isFirst
+                                                    ? "Total"
+                                                    : total !== null
+                                                        ? total.toLocaleString()
+                                                        : ""}
+                                            </td>
+                                        );
+                                    })}
+                                </tr>
+                            </tfoot>
+                        )}
+                    </table>
+                </Box>
+            </Box>
+        );
+    }
+);
 
-                            {columns.map((col, index) => {
-                                const colKey = col.key as string;
-
-                                // First DATA column → show "Total"
-                                if (index === 0) {
-                                    return (
-                                        <Table.Cell key={colKey}>
-                                        
-                                        </Table.Cell>
-                                    );
-                                }
-
-                                // Show totals only for configured columns
-                                if (totalColumns.includes(colKey)) {
-                                    return (
-                                        <Table.Cell key={colKey} textAlign="end">
-                                            {totals[colKey]?.toFixed(2)}
-                                        </Table.Cell>
-                                    );
-                                }
-
-                                // Empty cell
-                                return <Table.Cell key={colKey} />;
-                            })}
-                        </Table.Row>
-                    )}
-
-
-
-                </Table.Body>
-            </Table.Root>
-        </Box>
-    );
-}
+PrintPreviewTable.displayName = "PrintPreviewTable";

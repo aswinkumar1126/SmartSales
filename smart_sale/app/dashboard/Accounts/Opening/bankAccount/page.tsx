@@ -45,7 +45,7 @@ import { useEnterNavigation } from "@/component/form/useEnterNavigation";
 import { DynamicForm } from "@/component/form/DynamicForm";
 import { useGlobalKey } from "@/components/key/useGlobalKey";
 
-
+import type { PrintColumn } from "@/component/screens/PrintPreviewScreen";
 
 const EMPTY_FORM: BankAccount = {
     ACCOUNTNO: "",

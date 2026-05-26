@@ -49,11 +49,11 @@ import ShortcutDialog from "@/components/shortcut/ShortcutDialog";
 import { useTransactionLoader } from "@/utils/loader/ResolveLoader";
 import TransactionLoader from "@/component/loader/Transactionloader";
 
+import type { PrintColumn } from "@/component/screens/PrintPreviewScreen";
 
 export default function ItemMasterPage() {
 
     
-
     /* ===================== STATE ===================== */
     const [editingId, setEditingId] = useState<number | null>(null);
     const topRef = React.useRef<HTMLDivElement>(null);
@@ -346,21 +346,22 @@ export default function ItemMasterPage() {
         {key :"studded" ,label:"Studded"},
         { key:"studdedStone" ,label:"Studded Stone Type"},
         { key: "active", label: "Active", align: "center" },
-        { key: "action", label: "Action", align: "center" },
+        // { key: "action", label: "Action", align: "center" },
     ];
 
     const handleExport = (option: string) => {
         setData(items);
-        setColumns([
+        const columns: PrintColumn[] = [
             { key: "itemId", label: "ItemId" },
             { key: "itemName", label: "Item" },
             { key: "metalName", label: "Metal" },
             { key: "hsn", label: "HSN Code" },
             { key: "shortName", label: "Short Name" },
-            { key: "stockType", label: "Stock Type" },
+            { key: "stockType", label: "Stock Type", renderCell: (value) => value === "T" ? "TAGGED" : "NON TAGGED", printValue:(value) => value === "T" ? "TAGGED" : "NON TAGGED" },
             { key: "calType", label: "Cal Type" },
-            { key: "active", label: "Active" },
-        ]);
+            // { key: "active", label: "Active" },
+        ]
+        setColumns(columns);
         setShowSno(true)
         title?.("Item Master List")
         router.push(`/print?export=${option}`);
@@ -407,9 +408,9 @@ export default function ItemMasterPage() {
                         boxShadow="0 0 20px rgba(212,212,212,0.2)"
                         border="1px solid #eee"
                     >
-                        <Text fontSize="small" fontWeight="semibold" textAlign="center">
+                        {/* <Text fontSize="small" fontWeight="semibold" textAlign="center">
                             {editingId ? "EDIT ITEM" : "ITEM MASTER"}
-                        </Text>
+                        </Text> */}
 
                         <Fieldset.Root width="100%">
                             <DynamicForm
@@ -517,7 +518,7 @@ export default function ItemMasterPage() {
                                     <Table.Cell>{item.studded === "Y" ? "Yes" : "No"}</Table.Cell>
                                     <Table.Cell>{item.studded === "Y" ? item.studdedStone === "D" ? "Diamond" : "Stone" : ""}</Table.Cell>
                                     <Table.Cell textAlign="center">{item.active}</Table.Cell>
-                                    <Table.Cell textAlign="center">
+                                    {/* <Table.Cell textAlign="center">
                                         <Box display="flex" justifyContent="center">
                                             <FiEdit
                                                 onClick={() => {
@@ -527,9 +528,13 @@ export default function ItemMasterPage() {
                                                 style={{ cursor: "pointer" }}
                                             />
                                         </Box>
-                                    </Table.Cell>
+                                    </Table.Cell> */}
                                 </>
                             )}
+                            onRowClick={(item) => {
+                                handleEdit(item.itemId!, item)
+                                setEditingId(item.itemId!);
+                            }}
                         />
                     </Box>
                 </GridItem>

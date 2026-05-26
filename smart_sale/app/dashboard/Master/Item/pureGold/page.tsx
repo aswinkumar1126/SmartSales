@@ -278,7 +278,7 @@ const PureGoldMaster = () => {
         // { key: "weight", label: "Weight" ,align : "end" as const },
         // { key: "actualPure", label: "Actual Pure", align: "end" as const },
         // { key: "actualTouch", label: "Actual Touch", align: "center" as const },
-        { key: "action", label: "Action", align: "center" as const },
+        // { key: "action", label: "Action", align: "center" as const },
     ];
 
     /* ---------------- Row Highlight Animation ---------------- */
@@ -334,10 +334,7 @@ const PureGoldMaster = () => {
                         justifyContent="center"
                         mb={2}
                     >
-                        <Text fontSize="small" fontWeight="semibold" >
-                            PURE GOLD MASTER
-
-                        </Text>
+                       
                     </Heading>
                     <Box display="grid" gap={2}>
                         <DynamicForm
@@ -439,7 +436,7 @@ const PureGoldMaster = () => {
                                 <Table.Cell textAlign="end">
                                     {formatToFixed(row.actualTouch,2)}
                                 </Table.Cell> */}
-                                <Table.Cell align="center">
+                                {/* <Table.Cell align="center">
                                     <Box display="flex" justifyContent="center">
                                         <FiEdit
                                             cursor="pointer"
@@ -447,9 +444,10 @@ const PureGoldMaster = () => {
                                         />
                                     </Box>
 
-                                </Table.Cell>
+                                </Table.Cell> */}
                             </>
                         )}
+                        onRowClick={(row) => handleEdit(row)}
                     />
                 </Box>
             </GridItem>

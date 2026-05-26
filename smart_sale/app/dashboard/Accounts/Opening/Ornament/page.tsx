@@ -47,6 +47,8 @@ import { OrnamentOpeningFields } from "@/config/opening/ornamentOpening";
 import { DynamicForm } from "@/component/form/DynamicForm";
 import { useEnterNavigation } from "@/component/form/useEnterNavigation";
 
+import type { PrintColumn } from "@/component/screens/PrintPreviewScreen";
+
 function OrnamentMaster() {
     /* -------------------- FORM STATE -------------------- */
     const [form, setForm] = useState<OrnamentFormData>({
@@ -308,13 +310,18 @@ function OrnamentMaster() {
     /*----------Print ---------- */
     const handleExport = (option: string) => {
         setData(ornaments);
-        setColumns([
-            { key: 'itemName', label: 'Item Name' },
-            { key: 'pcs', label: 'Pieces', align: 'end' as const, allowTotal: true },
-            { key: 'grswt', label: 'Gross Weight', align: 'end' as const, allowTotal: true },
-            { key: 'netwt', label: 'Net Weight', align: 'end' as const, allowTotal: true },
-            { key: 'stnwt', label: 'Stone Weight', align: 'end' as const, allowTotal: true },
-        ])
+        const columns :PrintColumn[]= 
+            [
+                { key: 'ITEMNAME', label: 'Item Name' },
+                { key: 'PCS', label: 'Pieces', align: 'end' as const, allowTotal: true },
+                { key: 'GRSWT', label: 'Gross Weight', align: 'end' as const, allowTotal: true ,renderCell :(value)=>formatToFixed(value,3) , printValue:(value)=>formatToFixed(value, 3)},
+                { key: 'STNWT', label: 'Stone Weight', align: 'end' as const, allowTotal: true, renderCell: (value) => formatToFixed(value, 3), printValue: (value) => formatToFixed(value, 3) },
+                { key: 'NETWT', label: 'Net Weight', align: 'end' as const, allowTotal: true, renderCell: (value) => formatToFixed(value, 3), printValue: (value) => formatToFixed(value, 3) },
+                { key: 'TOUCH', label: 'touch', align: 'end' as const, allowTotal: true, renderCell: (value) => formatToFixed(value, 2), printValue: (value) => formatToFixed(value, 2) },
+                { key: 'PURE', label: 'Pure Weight', align: 'end' as const, allowTotal: true, renderCell: (value) => formatToFixed(value, 3), printValue: (value) => formatToFixed(value, 3) },
+              
+            ]
+        setColumns(columns);
         title?.("Ornament Opening List")
         router.push(`/print?export=${option}`);
     }
@@ -453,7 +460,7 @@ function OrnamentMaster() {
                                     <Table.Cell textAlign='end'>{formatToFixed(ornament.GRSWT, 3)}</Table.Cell>
                                     <Table.Cell textAlign='end'>{formatToFixed(ornament.STNWT, 3)}</Table.Cell>
                                     <Table.Cell textAlign='end'>{formatToFixed(ornament.NETWT, 3)}</Table.Cell>
-                                    <Table.Cell textAlign='end'>{formatToFixed(ornament.TOUCH, 1)}</Table.Cell>
+                                    <Table.Cell textAlign='end'>{formatToFixed(ornament.TOUCH, 2)}</Table.Cell>
                                     <Table.Cell textAlign='end'>{formatToFixed(ornament.PUREWT, 3)}</Table.Cell>
                                     <Table.Cell textAlign='end'>{formatToFixed(ornament.STNAMT, 2)}</Table.Cell>
                                     {/* <Table.Cell>

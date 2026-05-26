@@ -3,7 +3,7 @@ import { AxiosError } from "axios";
 import { ApiResponse } from "@/types/api/apiResponse";
 import { TRANSACTION, CreateApprovalTransaction } from "@/types/transcation/ApprovalTransaction";
 import { getSingleTagDetail } from "@/types/tagging/Tag";
-import { PurchaseTransactionList } from "@/types/transactionList/TransactionList";
+import { ApprovalTransactionList } from "@/types/transactionList/TransactionList";
 
 type GetTransactionProps = {
 
@@ -42,7 +42,7 @@ export const TransactionService = {
     },
 
     // GET ALL
-    getAll: async (props: GetTransactionProps): Promise<ApiResponse<PurchaseTransactionList>> => {
+    getAll: async (props: GetTransactionProps): Promise<ApiResponse<ApprovalTransactionList>> => {
         try {
             const params: any = {};
 
@@ -172,7 +172,7 @@ export const getIssueWiseApproval = async (params: billNoParams) => {
 
         const response = await axiosInstance.get<ApiResponse<getSingleTagDetail[]>>(
             `${BASE_PATH}/remaining`,
-            // { params: queryParams } // ✅ send only filtered params
+            { params: queryParams } // ✅ send only filtered params
         );
         console.log(response.data, 'responsegettag')
 

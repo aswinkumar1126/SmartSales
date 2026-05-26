@@ -43,6 +43,7 @@ const mapApprovalItems = (list: any[] = [], type: string, isUseFinalAmount: bool
 
         const grswt = Number(item.GRSWT || 0);
 
+
         const SNO = item.SNO;
 
 
@@ -84,6 +85,9 @@ const mapApprovalItems = (list: any[] = [], type: string, isUseFinalAmount: bool
         const totalStoneAmount = normalizedStones.length > 0
             ? normalizedStones.reduce((sum: number, s: any) => sum + Number(s.stoneAmount), 0)
             : item.STNAMT || 0;
+        
+        const netwt = grswt - totalStoneWeight;
+
 
 
         return {
@@ -101,16 +105,18 @@ const mapApprovalItems = (list: any[] = [], type: string, isUseFinalAmount: bool
             TAGNO: item.TAGNO || "",
 
             PCS: Number(item.PCS || 0),
-            GRSWT: grswt,
-            STNWT: totalStoneWeight,
-            NETWT: grswt - totalStoneWeight,
+            GRSWT: Number(grswt).toFixed(3),
+            STNWT: Number(totalStoneWeight).toFixed(3),
+            NETWT: Number(netwt).toFixed(3),
 
-            TOUCH: Number(item.TOUCH || 0),
-            PUREWT: Number(item.PUREWT || 0),
+            TOUCH: Number(item.TOUCH || 0).toFixed(2),
+            PUREWT: Number(item.PUREWT || 0).toFixed(3),
 
-            HMC: totalHMC,
-            MC: Number(item.MC || 0),
+            HMC: Number(totalHMC).toFixed(2),
+            MC: Number(item.MC || 0).toFixed(2),
             STN_PRESENT: stonePresent,
+
+            STNAMT :Number(item.STNAMT).toFixed(0),
 
             DESCRIPTION: item.DESCRIPTION || "",
 

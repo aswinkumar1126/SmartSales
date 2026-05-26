@@ -5,8 +5,13 @@ export interface PurchaseTransactionList {
 }
 
 
+
+
 export interface ApprovalTransactionList  {
-    SNOLIST: number[],
+    SNOLIST: {
+        SNO: number;
+        BATCHNO: number;
+    }[],
     ENTRYNO: number;
     BILLNO?: number;
 }

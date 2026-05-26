@@ -11,7 +11,7 @@ type Column = {
 type Settings = {
     headerBg: string;
     headerColor: string;
-    fontSize: "sm" | "md" | "lg";
+    fontSize: "xs"|"sm" | "md" | "lg";
     showTotals?: boolean;
     totalColumns?: string[];
 };
@@ -24,7 +24,7 @@ export const exportToStyledExcel = (
 ) => {
     if (!data?.length) return;
 
-    const fontSizeMap = { sm: 11, md: 13, lg: 15 };
+    const fontSizeMap = { xs :9 ,sm: 11, md: 13, lg: 15 };
     const fontSize = fontSizeMap[settings.fontSize] || 13;
 
     const wsData: any[][] = [];
@@ -41,7 +41,6 @@ export const exportToStyledExcel = (
         );
     });
 
-    /** TOTAL ROW */
     /** TOTAL ROW */
     if (settings.showTotals && settings.totalColumns?.length) {
         const totalRow = columns.map((col, index) => {

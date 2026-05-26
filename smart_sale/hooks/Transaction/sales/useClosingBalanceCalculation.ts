@@ -39,8 +39,8 @@ export const useClosingCalculation = (
             bankRcvd -
             cashPaid -
             bankPaid -
-            discAmt +
-            gstAmt -
+            discAmt -
+            gstAmt +
             tdsAmt;
 
         let closingPure = (openingBalances.openPure || 0) - discWt;

@@ -1,6 +1,7 @@
 import { SaleTransactionType } from "@/types/transcation/SaleTransaction";
 import { SALE_TRANSACTION_TYPES } from "./SaleTransactionKeyMap";
 import { MapOtherCharges } from "./MapOtherCharges";
+import { formatToFixed } from "@/utils/format/numberFormat";
 
 
 // ─── Pure calculation function ────────────────────────────────────────────────
@@ -87,6 +88,7 @@ const mapSalesItems = (list: any[] = [], type: string, isUseFinalAmount:boolean)
             ? normalizedStones.reduce((sum: number, s: any) => sum + Number(s.stoneAmount), 0)
             : item.STNAMT || 0;
 
+        const netwt = grswt - totalStoneWeight 
 
         return {
             __rowId: `edit-${item.SNO || Date.now()}-${index}`,
@@ -103,16 +105,16 @@ const mapSalesItems = (list: any[] = [], type: string, isUseFinalAmount:boolean)
             TAGNO : item.TAGNO || "",
 
             PCS: Number(item.PCS || 0),
-            GRSWT: grswt,
+            GRSWT: grswt.toFixed(3),
             STNWT: Number(totalStoneWeight).toFixed(3),
-            NETWT: grswt - totalStoneWeight,
+            NETWT: Number(netwt).toFixed(3),
 
-            TOUCH: Number(item.TOUCH || 0),
-            PUREWT: Number(item.PUREWT || 0),
+            TOUCH: Number(item.TOUCH || 0).toFixed(2),
+            PUREWT: Number(item.PUREWT || 0).toFixed(3),
 
-            HMC : totalHMC,
-            STNAMT : totalStoneAmount,
-            MC: Number(item.MC || 0),
+            HMC : formatToFixed(totalHMC,2),
+            STNAMT : formatToFixed(totalStoneAmount,0),
+            MC: formatToFixed(item.MC || 0 ,2),
             STN_PRESENT : stonePresent,
            
             DESCRIPTION: item.DESCRIPTION || "",
@@ -129,9 +131,14 @@ const mapSalesItems = (list: any[] = [], type: string, isUseFinalAmount:boolean)
 const mapIssueItems = (list: any[] = [], type: string) => {
     return list.map((item, index) => {
 
-        console.log(item,'itemitem');
+        console.log(item,'itemiteminreceipt');
 
-        const wt = Number(item.WT || 0);
+        const wt = formatToFixed(item.WT || 0 ,3);
+        const awt = formatToFixed(item.AWT || 0 ,3);
+        const touch = formatToFixed(item.TOUCH || 0, 2);
+        const atouch = formatToFixed(item.ATOUCH || 0, 2);
+        const purewt = formatToFixed(item.PUREWT || 0, 3);
+        const apurewt = formatToFixed(item.APUREWT || 0, 3);
 
         const SNO = item.SNO;
 
@@ -146,13 +153,13 @@ const mapIssueItems = (list: any[] = [], type: string) => {
             PUREID: String(item.PUREID || ""),
 
             WT: wt,
-            AWT: wt,
+            AWT: awt,
 
-            TOUCH: Number(item.TOUCH || 0),
-            ATOUCH: Number(item.ATOUCH || 0),
+            TOUCH: touch,
+            ATOUCH: atouch,
 
-            PUREWT: Number(item.PUREWT || 0),
-            APUREWT: Number(item.APUREWT || 0),
+            PUREWT: purewt,
+            APUREWT: apurewt,
 
             DESCRIPTION: item.DESCRIPTION || "",
 

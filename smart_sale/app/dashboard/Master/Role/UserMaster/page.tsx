@@ -44,7 +44,7 @@ import ShortcutDialog from "@/components/shortcut/ShortcutDialog";
 import { useTransactionLoader } from "@/utils/loader/ResolveLoader";
 import TransactionLoader from "@/component/loader/Transactionloader";
 
-
+import type { PrintColumn } from "@/component/screens/PrintPreviewScreen";
 
 
 export default function UserMasters() {
@@ -241,16 +241,17 @@ export default function UserMasters() {
         { key: "userId", label: "User Id" },
         { key: "username", label: "User Name" },
         { key: "active", label: "Active", align: 'center' as const },
-        { key: "action", label: "Actions", align: 'center' as const },
+        // { key: "action", label: "Actions", align: 'center' as const },
     ];
 
     const handleExport = (option: string) => {
         setData(users);
-        setColumns([
+        const columns: PrintColumn[] = [
             { key: "userId", label: "User Id" },
             { key: "username", label: "User Name" },
             { key: "active", label: "Active", align: 'center' as const },
-        ]);
+        ]
+        setColumns(columns);
         router.push(`/print?export=${option}`);
         title?.("User List");
     };
@@ -488,16 +489,17 @@ export default function UserMasters() {
                                         <Table.Cell>{user.userId}</Table.Cell>
                                         <Table.Cell>{user.username}</Table.Cell>
                                         <Table.Cell textAlign="center">{user.active}</Table.Cell>
-                                        <Table.Cell>
+                                        {/* <Table.Cell>
                                             <Box display="flex" justifyContent="center">
                                                 <FiEdit
                                                     onClick={() => loadUserIntoForm(user)}
                                                     cursor="pointer"
                                                 />
                                             </Box>
-                                        </Table.Cell>
+                                        </Table.Cell> */}
                                     </>
                                 )}
+                                onRowClick={(user) => loadUserIntoForm(user)}
                             />
                         </Stack>
                     </Box>

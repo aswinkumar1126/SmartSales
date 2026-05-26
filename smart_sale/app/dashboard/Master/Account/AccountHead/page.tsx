@@ -14,6 +14,7 @@ import {
     Badge,
 } from "@chakra-ui/react";
 import { Table } from "@chakra-ui/react/table";
+
 import { AiOutlineSave } from "react-icons/ai";
 import { IoIosExit } from "react-icons/io";
 import { FaEdit } from "react-icons/fa";
@@ -45,7 +46,9 @@ import { useGlobalKey } from "@/components/key/useGlobalKey";
 import TransactionLoader from "@/component/loader/Transactionloader";
 import { useTransactionLoader } from "@/utils/loader/ResolveLoader";
 import ShortcutDialog from "@/components/shortcut/ShortcutDialog";
+import { formatToFixed } from "@/utils/format/numberFormat";
 
+import type { PrintColumn } from "@/component/screens/PrintPreviewScreen";
 
 function AccountHeadMaster() {
     const { theme } = useTheme();
@@ -466,19 +469,85 @@ function AccountHeadMaster() {
 
         // { key: "OPENING_WEIGHT", label: "Opening Weight" },
         { key: "ACTIVE", label: "Active" },
-        { key: "actions", label: "Actions" },
+        // { key: "actions", label: "Actions" },
     ];
 
     /* -------------------- EXPORT -------------------- */
     const handleExport = (option: string) => {
         setData(accountList);
-        setColumns([
-            { key: "ACNAME", label: "Name" },
-            { key: "ACTYPE", label: "Account Type" },
-            { key: "ACTIVE", label: "Active" },
-        ]);
+
+        const columns: PrintColumn[] = [
+            {
+                key: "ACNAME",
+                label: "Name",
+                // no render needed — raw string is fine
+            },
+            {
+                key: "ACTYPE",
+                label: "Account Type",
+                align: "center",
+                // render → shows the badge in the on-screen preview
+                renderCell: (value) => (
+                    <Box
+                        as="span"
+                        display="inline-block"
+                        px={3}
+                        py={0.5}
+                        borderRadius="full"
+                        fontSize="xs"
+                        fontWeight={600}
+                        minW="90px"
+                        textAlign="center"
+                        bg={value === "PR" ? "orange.100" : "green.100"}
+                        color={value === "PR" ? "orange.700" : "green.700"}
+                    >
+                        {value === "PR" ? "PURCHASER" : "CUSTOMER"}
+                    </Box>
+                ),
+                // exportValue → clean text for Print / Excel
+                printValue: (value) => (value === "PR" ? "PURCHASER" : "CUSTOMER"),
+            },
+            {
+                key: "STATE",
+                label: "State",
+            },
+            {
+                key: "OPENING_PURE",
+                label: "Opening Pure",
+                isNumeric: true,
+                align: "end",
+                allowTotal: true,
+                renderCell: (value) => <Box fontWeight="bold">{formatToFixed(value, 3)}</Box>
+            },
+            {
+                key: "OPENING_CASH",
+                label: "Opening Cash",
+                isNumeric: true,
+                align: "end",
+                allowTotal: true,
+                renderCell :(value) => <Box fontWeight="bold">{formatToFixed(value,2)}</Box>
+            },
+            // {
+            //     key: "ACTIVE",
+            //     label: "Active",
+            //     align: "center",
+            //     renderCell: (value) => (
+            //         <Badge
+            //             colorScheme={value ? "green" : "red"}
+            //             variant="subtle"
+            //             borderRadius="full"
+            //             px={2}
+            //         >
+            //             {value ? "Active" : "Inactive"}
+            //         </Badge>
+            //     ),
+            //     printValue: (value) => (value ? "Active" : "Inactive"),
+            // },
+        ];
+
+        setColumns(columns);
         setShowSno(true);
-        title?.("Account Master")
+        title?.("Account Master");
         router.push(`/print?export=${option}`);
     };
     const formfields = getAccountHeaderForm.map(f => f.name);
@@ -494,6 +563,7 @@ function AccountHeadMaster() {
 
     const renderAccountRow = useCallback(
         (account: any, index: number) => {
+            console.log(account,'accountinrender')
             return (
                 <>
                     <Table.Cell>{index + 1}</Table.Cell>
@@ -515,18 +585,27 @@ function AccountHeadMaster() {
                         </Box>
                     </Table.Cell>
                     <Table.Cell>{account.STATE}</Table.Cell>
-                    <Table.Cell textAlign="center">{account.OPENING_PURE}</Table.Cell>
-                    <Table.Cell textAlign="center">{account.OPENING_CASH}</Table.Cell>
-                    <Table.Cell textAlign="center">{account.ACTIVE}</Table.Cell>
+                    <Table.Cell textAlign="end">{formatToFixed(account.OPENING_PURE,3)}</Table.Cell>
+                    <Table.Cell textAlign="end">{formatToFixed(account.OPENING_CASH,2)}</Table.Cell>
+                    <Table.Cell textAlign="center"> 
+                        <Badge
+                                colorPalette={account.ACTIVE === "Y" ? "green" : "red"}
+                                variant="subtle"
+                                borderRadius="full"
+                                px={2}
+                            >
+                            {account.ACTIVE === "Y" ? "Active" : "Inactive"}
+                        </Badge>
+                 </Table.Cell>
 
-                    <Table.Cell>
+                    {/* <Table.Cell>
                         <Box display="flex" justifyContent="center">
                             <FaEdit
                                 onClick={() => handleEdit(account)}
                                 cursor="pointer"
                             />
                         </Box>
-                    </Table.Cell>
+                    </Table.Cell> */}
                 </>
             );
         },
@@ -554,10 +633,7 @@ function AccountHeadMaster() {
                 {/* ---------------- FORM ---------------- */}
                 <GridItem>
                     <VStack bg={theme.colors.formColor} p={2} borderRadius="xl" border="1px solid #eef">
-                        <Text fontSize="small" fontWeight="600" >
-                            ACCOUNT HEAD
-                        </Text>
-
+                      
                         <Fieldset.Root size="sm" width="100%">
                             <Fieldset.Content>
                                 <DynamicForm
@@ -648,7 +724,7 @@ function AccountHeadMaster() {
                             bodyBg={theme.colors.primary}
                             highlightRowId={highlightedId ? Number(highlightedId) : null}
                             rowIdKey="ACCODE"
-
+                            onRowClick={(row) => handleEdit(row)}
                             emptyText="No companies available"
 
                         />
