@@ -8,6 +8,7 @@ export const loadSalesClosing = (
 
     const bankPaidDetails = (closing.BANKPAIDDETAILS || []).map((item: any) => ({
         ...item,
+        ID:`bank-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
         BANKID: item.BANKID != null ? String(item.BANKID) : "",
         SNO: item.SNO,
     }));

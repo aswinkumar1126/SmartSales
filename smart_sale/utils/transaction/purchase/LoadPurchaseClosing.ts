@@ -9,13 +9,17 @@ export const loadPurchaseClosing = (
     console.log(closing,'closingdetials');
 
     const bankPaidDetails = (closing.BANKPAIDDETAILS || []).map((item: any) => ({
+     
         ...item,
+        ID: `bank-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
         BANKID: item.BANKID ? String(item.BANKID) : "",
         SNO : item.SNO ,
     }));
 
     const bankRcvdDetails = (closing.BANKRCVDDETAILS || []).map((item: any) => ({
+    
         ...item,
+        ID: `bank-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
         BANKID: item.BANKID ? String(item.BANKID) : "",
         SNO: item.SNO 
     }));
