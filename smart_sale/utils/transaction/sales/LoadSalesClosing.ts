@@ -8,12 +8,14 @@ export const loadSalesClosing = (
 
     const bankPaidDetails = (closing.BANKPAIDDETAILS || []).map((item: any) => ({
         ...item,
-        BANKID: item.BANKID != null ? String(item.BANKID) : ""
+        BANKID: item.BANKID != null ? String(item.BANKID) : "",
+        SNO: item.SNO,
     }));
 
     const bankRcvdDetails = (closing.BANKRCVDDETAILS || []).map((item: any) => ({
         ...item,
-        BANKID: item.BANKID != null ? String(item.BANKID) : ""
+        BANKID: item.BANKID != null ? String(item.BANKID) : "",
+        SNO: item.SNO,
     }));
 
     setClosingDetails({

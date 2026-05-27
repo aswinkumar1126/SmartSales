@@ -163,9 +163,10 @@ export default function DraftTransactionTable({
     const router = useRouter();
 
     
-        const { data: softControlData } = useSoftControlById('PU_HMC_FINALAMT');
+    const { data: softControlData } = useSoftControlById('PU_HMC_FINALAMT');
     
-        const usePcsBySoftControl = softControlData?.CTLTEXT === 'Y'? true : false;
+    const usePcsBySoftControl = softControlData?.CTLTEXT === "Y";
+    console.log(usePcsBySoftControl,'usePcsBySoftControl')
     
 
     // ── Zustand store ─────────────────────────────────────────────────────────
@@ -582,7 +583,7 @@ const handleAddRow = useCallback(() => {
                         return {
                             ...c,
                             finalAmount:
-                                isHmc 
+                                isHmc && usePcsBySoftControl 
                                     ? Number(c.amount || 0) * pcs
                                     : Number(c.amount || 0),
                         };
@@ -1328,6 +1329,7 @@ useEffect(() => {
                                                 isHmcFinalAmt: usePcsBySoftControl
                                             }),
                                         }));
+                                        console.log(updatedCharges,'updatedCharges');
 
                                         const total = updatedCharges.reduce(
                                             (sum, c) => sum + (Number(c.finalAmount) || 0),

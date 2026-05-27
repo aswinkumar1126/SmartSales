@@ -1,6 +1,9 @@
 import { usePurchaseTransactionStore } from "@/store/purchase/usePurchaseTransactionStore";
 import { getTagDetails } from "@/service/TagedService";
 import { toaster } from "@/components/ui/toaster";
+import { calculateStoneAmount } from "../both/useCalculationStoneAmount";
+import { MapOtherCharges } from "@/utils/transaction/purchase/MapOtherCharges";
+
 
 export const useLoadPurchaseTag = () => {
     const {
@@ -9,9 +12,10 @@ export const useLoadPurchaseTag = () => {
         setSelectedTransactionId,
     } = usePurchaseTransactionStore();
 
-    const loadSaleTag = async (
+    const loadPurchaseTag = async (
         tagNo: string,
-        customerId: number
+        customerId: number,
+        usePcsBySoftControl :boolean
     ) => {
         try {
             // ---------------- VALIDATION ----------------
@@ -31,7 +35,7 @@ export const useLoadPurchaseTag = () => {
             );
 
             const data = response?.data;
-            console.log(data,'data')
+        
 
             if (!data) {
                 toaster.create({
@@ -62,12 +66,59 @@ export const useLoadPurchaseTag = () => {
                 .substr(2, 5)}`;
                 
 
-            const stoneDetails = Array.isArray(data.STONEDETAILS)
-                ? data.STONEDETAILS
-                : [];
+            const stonesRaw = data.STONEDETAILS || [];
+            const normalizedStones = stonesRaw.map((s: any, i: number) => {
+                const unit = (s.stoneUnit || "g") as "g" | "c";
+                const calculation = (s.stoneCalculation || "w") as "w" | "p" | "c";
+                const stoneWeight = String(s.stoneWeight || s.STNWT || 0);
+                const stonePcs = String(s.stonePcs || s.STNPCS || 1);
+                const stoneRate = String(s.stoneRate || s.STNRATE || 0);
+
+                const stoneAmount = calculateStoneAmount(unit, stoneWeight, stonePcs, stoneRate, calculation);
+    
+                return {
+                    id: `stone-${rowId}-${i}`,
+                    draftRowId: rowId,
+                    stoneId: String(s.stoneId || s.STNITEMID || ""),
+                    subStoneId: String(s.substoneId || s.STNSUBITEMID || ""),
+                    stonePcs,
+                    stoneWeight,
+                    stoneUnit: unit,
+                    stoneCalculation: calculation,
+                    stoneRate,
+                    stoneAmount: stoneAmount > 0 ? String(stoneAmount) : "",
+                };
+            });
             console.log(data,'stoneDetails');
 
             const STNPRESENT = data?.STNPRESENT === "Y";
+
+           
+
+            const totalStoneWeight = normalizedStones.reduce(
+                (sum: number, s: any) => sum + Number(s.stoneWeight), 0
+            );
+            console.log(totalStoneWeight, 'totalStoneWeight');
+
+            const totalStoneAmount = normalizedStones.length > 0
+                ? normalizedStones.reduce((sum: number, s: any) => sum + Number(s.stoneAmount), 0)
+                : data.STNAMT || 0;
+
+            
+
+            // ---------------- MISC CHARGES (HMC) ----------------
+            const hmcAmount = Number(data?.HMCAMT ?? 0);
+
+            const defaultHmcCharge =
+                hmcAmount > 0
+                    ? [{
+                        draftRowId: rowId,
+                        chargeId: "1",
+                        chargeName: "HMC",
+                        amount: hmcAmount.toString(),
+                        finalAmount: hmcAmount.toString(),
+                    }]
+                    : [];
 
             // ---------------- BUILD ROW ----------------
             const newRow: any = {
@@ -87,63 +138,19 @@ export const useLoadPurchaseTag = () => {
                 STNWT: Number(data.SALESSTNWT).toFixed(3) || 0,
                 NETWT: Number(data.NETWT).toFixed(3) || 0,
 
-                STN_PRESENT : STNPRESENT,
+                STN_PRESENT: STNPRESENT,
 
                 TOUCH: Number(data.TOUCH).toFixed(2) || 0,
                 MC: Number(data.MC).toFixed(2) || 0,
+                STNAMT : Number(totalStoneAmount).toFixed(0) || 0,
+                _hasCharges: true,
+                HMC: hmcAmount,
 
+                _stones: normalizedStones,
+                _miscCharges: defaultHmcCharge || [],
 
-                _hasStones: stoneDetails.length > 0,
-                _hasCharges: false,
             };
-      
-
-            // ---------------- STONES ----------------
-            let stonesWithId: any[] = [];
-
-            if (stoneDetails.length > 0) {
-                stonesWithId = stoneDetails.map(
-                    (stone: any, index: number) => ({
-                        id: `stone-${Date.now()}-${index}-${Math.random()
-                            .toString(36)
-                            .substr(2, 4)}`,
-
-                        draftRowId: rowId,
-
-                        stoneId: String(
-                            stone.STNITEMID ||
-                            stone.STNSUBITEMID ||
-                            ""
-                        ),
-
-                        subStoneId: String(
-                            stone.STNSUBITEMID || ""
-                        ),
-
-                        stonePcs: Number(stone.STNPCS || 1),
-                        stoneWeight: Number(stone.STNWT || 0),
-
-                        stoneUnit: stone.STONEUNIT || "g",
-                        stoneCalculation: stone.CALCMODE || "w",
-
-                        stoneRate: Number(stone.STNRATE || 0),
-                        stoneAmount: Number(stone.STNAMT || 0),
-                    })
-                );
-
-                console.log(stonesWithId,'stonesWithId')
-                // recalc stone weight
-                const totalStoneWeight = stonesWithId.reduce((sum: number, s: any) => {
-                    return sum + Number(s.stoneWeight || 0);
-                }, 0);
-
-                const totalStoneAmount = stonesWithId.reduce((sum:number , s:any)=>{
-                    return sum + Number(s.stoneAmount || 0)} , 0);
-
-                newRow.STNWT = Number(totalStoneWeight).toFixed(3);
-                newRow.STNAMT = Number(totalStoneAmount).toFixed(0) || Number(data.STNAMT || 0).toFixed(0);
-                newRow._stones= stonesWithId;
-            }
+          
 
      
             // ---------------- STORE UPDATE ----------------
@@ -181,5 +188,5 @@ export const useLoadPurchaseTag = () => {
         }
     };
 
-    return { loadSaleTag };
+    return { loadPurchaseTag };
 };

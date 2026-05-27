@@ -688,10 +688,11 @@ export default function DraftTransactionTable({
         if (touchDataLoading) return;
 
         const key = `${activeRowId}::${activeRowItemId}`;
+
+        if (touchDataLoading) return;
+        if (isEditing) return;
         if (appliedItemIdRef.current[activeRowId] === key) return;
 
-
-        if(isEditing) return ;
 
      
         appliedItemIdRef.current[activeRowId] = key;
@@ -704,7 +705,7 @@ export default function DraftTransactionTable({
         const itemType = touchData?.STOCKTYPE === "T" ? "TAGED" : "NON-TAGED";
         const istaged = itemType === "TAGED";
 
-         const capturedRowId = activeRowId;
+        const capturedRowId = activeRowId;
 
          // Build the default HMC charge entry once — used in both local state and store
         const defaultHmcCharge = hmcAmount > 0
@@ -720,30 +721,30 @@ export default function DraftTransactionTable({
        
 
           // check existing row values first
-    const existingRow = draftRows.find(r => r.__rowId === activeRowId);
+        const existingRow = draftRows.find(r => r.__rowId === activeRowId);
 
-    const alreadyApplied =
-        existingRow?.TOUCH &&
-        existingRow?.CAL_MODE 
+        const alreadyApplied =
+            existingRow?.TOUCH  &&
+            existingRow?.CAL_MODE  &&
+            Number(existingRow?.HMC || 0) ;
+
+        if (alreadyApplied) return;
+
+
+        console.log(alreadyApplied,'alreadyApplied');
 
          // existingRow?.ATOUCH === touch &&
         // Number(existingRow?.HMC || 0) === hmcAmount;
 
-   //     // THIS is the real protection
+       // THIS is the real protection
         if (alreadyApplied) {
             appliedItemIdRef.current[activeRowId] = key;
             return;
         }
       
-        // optional optimization only
-        if (appliedItemIdRef.current[activeRowId] === key) {
-            return;
-        }
     
-    appliedItemIdRef.current[activeRowId] = key;
+        appliedItemIdRef.current[activeRowId] = key;
 
-
-       
 
         // 1. Update local draft row — _miscCharges set here so sync effect carries
         //    both HMC + _miscCharges atomically (no race condition)
@@ -769,6 +770,8 @@ export default function DraftTransactionTable({
 
         // 2. Write to Zustand store — single atomic call, no nested setTimeout
         if (committedRowIdsRef.current.has(capturedRowId)) {
+
+           
             pendingStoreCallRef.current = () => {
                 commitRowUpdate(capturedRowId, {
                     TOUCH: touch,

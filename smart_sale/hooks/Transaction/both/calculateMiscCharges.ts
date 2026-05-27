@@ -12,7 +12,9 @@ export const calculateMiscChargeFinalAmount = ({
     const isHmc =
         String(chargeName || "").trim().toUpperCase() === "HMC";
 
+
     if (isHmc && isHmcFinalAmt) {
+        console.log("HMC Final Amount Calculated", amount, pcs)
         return amount * pcs;
     }
 

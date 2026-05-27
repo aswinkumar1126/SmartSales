@@ -10,13 +10,17 @@ export const loadPurchaseClosing = (
 
     const bankPaidDetails = (closing.BANKPAIDDETAILS || []).map((item: any) => ({
         ...item,
-        BANKID: item.BANKID ? String(item.BANKID) : ""
+        BANKID: item.BANKID ? String(item.BANKID) : "",
+        SNO : item.SNO ,
     }));
 
     const bankRcvdDetails = (closing.BANKRCVDDETAILS || []).map((item: any) => ({
         ...item,
-        BANKID: item.BANKID ? String(item.BANKID) : ""
+        BANKID: item.BANKID ? String(item.BANKID) : "",
+        SNO: item.SNO 
     }));
+
+    console.log(bankPaidDetails,bankRcvdDetails ,'bankPaidDetails');
 
     setClosingDetails({
         CONVTYPE: closing.CONVTYPE || "",

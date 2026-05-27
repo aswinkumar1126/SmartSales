@@ -140,6 +140,10 @@ export default function PurchasePage() {
     console.log(useApiRate,'softControl in header form');
     const isApiRateEnabled = useApiRate?.CTLTEXT === 'Y';
 
+    const { data: multiplyHmcWithPcs } = useSoftControlById('PU_HMC_FINALAMT');
+        
+    const usePcsBySoftControl = multiplyHmcWithPcs?.CTLTEXT === "Y";
+
     console.log(isApiRateEnabled,'isApiRateEnabled');
 
     const initialDraftRowsRef = useRef<any[]>([]);
@@ -1428,14 +1432,14 @@ useGlobalKey(
     /* ================================
        Render
     ================================ */
-    const { loadSaleTag } = useLoadPurchaseTag();
+    const { loadPurchaseTag } = useLoadPurchaseTag();
 
     const handleTagChange = () => setIsTag(prev => !prev);
 
     const handleTagNoLookup = (tagNo: string) => {
         if (!headerForm.CUSTOMER) return;
 
-        loadSaleTag(tagNo, Number(headerForm.CUSTOMER));
+        loadPurchaseTag(tagNo, Number(headerForm.CUSTOMER), usePcsBySoftControl );
     };
 
 const shortcuts = [

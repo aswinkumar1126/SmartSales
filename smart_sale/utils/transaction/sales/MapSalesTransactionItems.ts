@@ -2,31 +2,9 @@ import { SaleTransactionType } from "@/types/transcation/SaleTransaction";
 import { SALE_TRANSACTION_TYPES } from "./SaleTransactionKeyMap";
 import { MapOtherCharges } from "./MapOtherCharges";
 import { formatToFixed } from "@/utils/format/numberFormat";
+import { calculateStoneAmount } from "@/hooks/Transaction/both/useCalculationStoneAmount";
 
 
-// ─── Pure calculation function ────────────────────────────────────────────────
-function calculateStoneAmount(
-    unit: "g" | "c",
-    weight: string,
-    pcs: string,
-    rate: string,
-    calculation: "w" | "p" | "c"
-): number {
-    const w = parseFloat(weight) || 0;
-    const p = parseFloat(pcs) || 0;
-    const r = parseFloat(rate) || 0;
-
-    if (unit === "g") {
-        if (calculation === "w") return w * r;
-        if (calculation === "p") return p * r;
-        if (calculation === "c") return w * r * 5;
-    } else {
-        if (calculation === "w") return (w / 5) * r;
-        if (calculation === "p") return p * r;
-        if (calculation === "c") return (w / 5) * r * 5;
-    }
-    return 0;
-}
 
 const mapSalesItems = (list: any[] = [], type: string, isUseFinalAmount:boolean) => {
     return list.map((item, index) => {
@@ -73,20 +51,23 @@ const mapSalesItems = (list: any[] = [], type: string, isUseFinalAmount:boolean)
         });
 
         
-        // ---------------- MISC CHARGES (HMC) ----------------
-       const { normalizedMisc, totalHMC } = MapOtherCharges(
-                  item, rowId, isUseFinalAmount           // ✅
-              );
 
 
         const totalStoneWeight = normalizedStones.reduce(
             (sum: number, s: any) => sum + Number(s.stoneWeight), 0
         );
-        console.log(totalStoneWeight,'totalStoneWeight');
+        console.log(totalStoneWeight, 'totalStoneWeight');
 
         const totalStoneAmount = normalizedStones.length > 0
             ? normalizedStones.reduce((sum: number, s: any) => sum + Number(s.stoneAmount), 0)
             : item.STNAMT || 0;
+
+            
+        // ---------------- MISC CHARGES (HMC) ----------------
+       const { normalizedMisc, totalHMC } = MapOtherCharges(
+                  item, rowId, isUseFinalAmount           // ✅
+              );
+
 
         const netwt = grswt - totalStoneWeight 
 

@@ -5,6 +5,7 @@ export function MapOtherCharges(
     isUseFinalAmount: boolean,        // ✅ passed in, not fetched inside
 ) {
 
+    console.log(item, 'item.OTHERCHARGESDETAILS');
     const miscChargesRaw = item.OTHERCHARGESDETAILS || [];
 
     const normalizedMisc = miscChargesRaw.map((c: any, i: number) => {

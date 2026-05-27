@@ -13,6 +13,7 @@ import { toaster } from "@/components/ui/toaster";
 import { useGlobalKey } from "@/components/key/useGlobalKey";
 import ExcelGrid, { ColumnDef, RenderCellParams } from "@/component/table/ExcelGrid";
 import { useSoftControlById } from "@/hooks/apiHooks/softControl/useSoftControl";
+import { calculateMiscChargeFinalAmount } from "@/hooks/Transaction/both/calculateMiscCharges";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -70,7 +71,9 @@ export default function OtherChargesWindow({
 
     const { data: softControlData } = useSoftControlById('PU_HMC_FINALAMT');
 
-    const isHmcFinalAmt = softControlData?.CTLTEXT === 'Y'? true : false;
+    const isHmcFinalAmt = softControlData?.CTLTEXT === "Y";
+
+    console.log(isHmcFinalAmt, 'isHmcFinalAmt')
 
 
 
@@ -109,24 +112,6 @@ export default function OtherChargesWindow({
             setRows([emptyRow(draftRowId)]);
         }
     }, [initialRows, draftRowId]);
-
-    // // Add this effect to re-derive finalAmount when enteredPieces changes
-    // useEffect(() => {
-    //     setRows(prev => prev.map(row => {
-    //         const match = otherChargesData?.find(
-    //             (item: any) => Number(item.chargeId) === Number(row.chargeId)
-    //         );
-
-    //         // ✅ Use same isHmc logic as handleCellChange
-    //         const isHmc = String(match?.chargeName || "").trim().toUpperCase() === "HMC";
-
-    //         const amt = Number(row.amount || 0);
-    //         return {
-    //             ...row,
-    //             finalAmount: String(isHmc && isHmcFinalAmt ? amt * Number(enteredPieces || 1) : amt)
-    //         };
-    //     }));
-    // }, [enteredPieces]); // ✅ Remove otherChargesData — only re-derive when pieces change
 
     // ── Validation ────────────────────────────────────────────────────────────
     const [touched, setTouched] = useState<Record<string, boolean>>({});
@@ -203,6 +188,7 @@ export default function OtherChargesWindow({
                         ? value
                         : updated.amount || 0
                 );
+                console.log(amt, isHmc, isHmcFinalAmt, 'isHmcFinalAmt');
 
                 updated.finalAmount = String(
                     isHmc && isHmcFinalAmt ? amt * Number(enteredPieces || 1) : amt
