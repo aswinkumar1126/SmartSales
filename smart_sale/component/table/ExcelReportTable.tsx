@@ -12,6 +12,8 @@ import {
     useEffect,
     ReactNode,
 } from "react";
+import Handsontable from "handsontable";
+import type { ColumnSettings } from "handsontable/settings";
 
 registerAllModules();
 
@@ -31,6 +33,7 @@ export interface ColumnDef {
     subColumns?: SubColumnDef[];
     showTotal?: boolean;
     renderTotal?: (allData: Record<string, unknown>[]) => ReactNode;
+    decimalScale?:number;
 }
 
 export interface SubColumnDef {
@@ -46,6 +49,8 @@ export interface SubColumnDef {
     headerColor?: string;
     showTotal?: boolean;
     renderTotal?: (allData: Record<string, unknown>[]) => ReactNode;
+    decimalScale?: number;
+    
 }
 
 export type TotalsConfig = {
@@ -75,7 +80,6 @@ export interface DataTableProps {
     totals?: TotalsConfig;
     pagination?: PaginationConfig;
     showRowControls?: boolean;
-    showExport?: boolean;
     showSearch?: boolean;
     emptyText?: string;
 }
@@ -95,30 +99,6 @@ function flattenLeaves(defs: ColumnDef[]): (ColumnDef | SubColumnDef)[] {
         }
     }
     return leaves;
-}
-
-function exportCSV(
-    data: Record<string, unknown>[],
-    leaves: (ColumnDef | SubColumnDef)[],
-    filename: string
-) {
-    const header = leaves.map((c) => `"${c.title}"`).join(",");
-    const rows = data.map((row) =>
-        leaves
-            .map((c) => {
-                const val = row[c.data] ?? "";
-                return `"${String(val).replace(/"/g, '""')}"`;
-            })
-            .join(",")
-    );
-    const csv = [header, ...rows].join("\n");
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${filename}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
 }
 
 function autoSum(
@@ -320,10 +300,14 @@ export default function DataTable({
     totals,
     pagination,
     showRowControls = true,
-    showExport = true,
     showSearch = true,
     emptyText = "No records found",
 }: DataTableProps) {
+
+    console.log(data,'exceldata');
+
+    
+
     const hotRef = useRef<HotTableClass>(null);
     const [searchQuery, setSearchQuery] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
@@ -342,14 +326,56 @@ export default function DataTable({
     // ── Leaves ────────────────────────────────────────────────────────────────
     const leaves = useMemo(() => flattenLeaves(columnDefs), [columnDefs]);
 
-    const hotColumns = useMemo(
+    const hotColumns = useMemo<ColumnSettings[]>(
         () =>
-            leaves.map((c) => ({
-                data: c.data,
-                type: c.type ?? "text",
-                readOnly: c.readOnly ?? false,
-                ...(("source" in c && c.source) ? { source: c.source } : {}),
-            })),
+            leaves.map(
+                (c): ColumnSettings => ({
+                    data: c.data,
+                    type: c.type ?? "text",
+                    readOnly: c.readOnly ?? false,
+
+                    ...(("source" in c && c.source)
+                        ? { source: c.source }
+                        : {}),
+
+                    ...(c.type === "numeric"
+                        ? {
+                            numericFormat: {
+                                // fixed decimals
+                                pattern: `0.${"0".repeat(c.decimalScale ?? 2)}`,
+                            },
+
+                            renderer: (
+                                instance,
+                                td,
+                                row,
+                                col,
+                                prop,
+                                value,
+                                cellProperties
+                            ) => {
+                                // preserve numeric alignment/styles
+                                Handsontable.renderers.NumericRenderer(
+                                    instance,
+                                    td,
+                                    row,
+                                    col,
+                                    prop,
+                                    value,
+                                    cellProperties
+                                );
+
+                                // hide only zero values
+                                if (Number(value) === 0) {
+                                    td.innerText = "";
+                                }
+
+                                return td;
+                            },
+                        }
+                        : {}),
+                })
+            ),
         [leaves]
     );
 
@@ -361,20 +387,41 @@ export default function DataTable({
     );
 
     const nestedHeaders = useMemo(() => {
-        if (!hasGroups) return [leaves.map((c) => c.title)];
+        if (!hasGroups) {
+            return [leaves.map((c) => c.title)];
+        }
 
         const topRow: (string | { label: string; colspan: number })[] = [];
+        const subRow: string[] = [];
+
         for (const col of columnDefs) {
             if (col.hidden) continue;
+
             const visibleSubs = col.subColumns?.filter((s) => !s.hidden) ?? [];
-            topRow.push(
-                visibleSubs.length > 0
-                    ? { label: col.title, colspan: visibleSubs.length }
-                    : { label: col.title, colspan: 1 }
-            );
+
+            if (visibleSubs.length > 0) {
+                topRow.push({
+                    label: col.title,
+                    colspan: visibleSubs.length,
+                });
+
+                // push sub headers
+                for (const sub of visibleSubs) {
+                    subRow.push(sub.title ?? "");
+                }
+            } else {
+                topRow.push({
+                    label: col.title,
+                    colspan: 1,
+                });
+
+                // no sub columns → empty cell
+                subRow.push("");
+            }
         }
-        return [topRow, leaves.map((c) => c.title)];
-    }, [columnDefs, leaves, hasGroups]);
+
+        return [topRow, subRow];
+    }, [columnDefs, hasGroups]);
 
     // ── Pagination ────────────────────────────────────────────────────────────
     const totalRows = data.length;
@@ -419,6 +466,13 @@ export default function DataTable({
             // First leaf gets the label
             if (idx === 0) {
                 totalsRow[col.data] = totals?.label ?? "Total";
+            } else if (leaf.renderTotal) {
+                totalsRow[col.data] = formatTotalValue(calculatedTotals[col.data]);
+            } else {
+                totalsRow[col.data] =
+                    calculatedTotals[col.data] !== undefined
+                        ? formatTotalValue(calculatedTotals[col.data])
+                        : "";
             }
         });
 
@@ -440,12 +494,12 @@ export default function DataTable({
                 (hotData[row] as Record<string, unknown>)?.[TOTALS_SENTINEL];
             if (!isTotalsRow) return;
 
-            const bg = totals?.bg ?? "#f0f4ff";
-            const color = totals?.color ?? "#1e3a5f";
-            TD.style.background = bg;
+            const bg ="#a50808";
+            const color = totals?.color ?? "#222";
+            TD.style.backgroundColor = bg;
             TD.style.color = color;
             TD.style.fontWeight = "700";
-            TD.style.fontSize = "12px";
+            TD.style.fontSize = "14px";
             TD.style.borderTop = "2px solid #c5cfe8";
         },
         [isTotalsEnabled, data.length, hotData, totals]
@@ -541,9 +595,7 @@ export default function DataTable({
             .forEach((r) => hot.alter("remove_row", r, 1));
     };
 
-    const handleExport = () => {
-        exportCSV(data, leaves, title.replace(/\s+/g, "_").toLowerCase());
-    };
+ 
 
     const handleSearch = useCallback(
         (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -671,14 +723,7 @@ export default function DataTable({
                         </>
                     )}
 
-                    {showExport && (
-                        <ToolbarBtn
-                            onClick={handleExport}
-                            icon="export"
-                            label="Export CSV"
-                            variant="primary"
-                        />
-                    )}
+                   
                 </div>
             </div>
 
@@ -718,17 +763,18 @@ export default function DataTable({
                     manualRowResize
                     wordWrap={false}
                     stretchH="last"
-                    filters
-                    dropdownMenu={[
-                        "filter_by_condition",
-                        "filter_operators",
-                        "filter_by_value",
-                        "filter_action_bar",
-                    ]}
-                    columnSorting={{ sortEmptyCells: false, headerAction: true }}
-                    search={{ searchResultClass: "dt-search-result" }}
+                    // filters
+                    // dropdownMenu={[
+                    //     "filter_by_condition",
+                    //     "filter_operators",
+                    //     "filter_by_value",
+                    //     "filter_action_bar",
+                    // ]}
+                    // columnSorting={{ sortEmptyCells: false, headerAction: true }}
+                    // search={{ searchResultClass: "dt-search-result" }}
                     selectionMode="multiple"
-                    outsideClickDeselects={false}
+                    outsideClickDeselects={true}
+                    fixedRowsBottom={1}
                 />
             </div>
 
@@ -758,30 +804,23 @@ export default function DataTable({
             {/* ── Styles ── */}
             <style>{`
         .dt-wrapper .handsontable th {
-          background: #f4f6fb !important;
-          color: #3d4d6b !important;
-          font-size: 11px !important;
-          font-weight: 700 !important;
-          text-transform: uppercase !important;
-          letter-spacing: 0.05em !important;
-          border-color: #dde3ef !important;
+          background: #dadafc !important;
+          color: #111 !important;
+          font-size: 8px !important;
+          font-weight: 600 !important;
+          border-color: #BBB !important;
         }
-        .dt-wrapper .handsontable .ht_clone_top thead tr:first-child th {
-          background: #eef1fb !important;
-          color: #1e3a5f !important;
-          font-size: 11px !important;
-          border-bottom: 2px solid #c5cfe8 !important;
-        }
+      
         .dt-wrapper .handsontable td {
-          font-size: 13px !important;
-          color: #101828 !important;
-          border-color: #f0f2f8 !important;
+          font-size: 12px !important;
+          color: #222 !important;
+          border-color: #DDD !important;
         }
         .dt-wrapper .handsontable tr:hover td {
-          background: #f7f9ff !important;
+          background: #ececff !important;
         }
         .dt-wrapper .handsontable .htCore td.current {
-          background: #dbeafe !important;
+          background: #bdd7f8 !important;
         }
         .dt-wrapper .handsontable .htCore td.area {
           background: #eff6ff !important;

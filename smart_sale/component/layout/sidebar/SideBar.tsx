@@ -39,7 +39,7 @@ import { normalizePath } from "@/utils/path/normalizePath";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/hooks/apiHooks/auth/useAuth";
 import { usePageName } from "@/context/header/PageNameContext";
-import { useSessionStorage } from "@/hooks/apiHooks/storage/useSessionStorage";
+import { useSessionStorage } from "@/utils/storage/useSessionStorage";
 import Logout from "@/component/logout/Logout";
 import { setStorage } from "@/utils/storage/storage";
 
@@ -365,7 +365,7 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
                                     fontSize="sm"
                                     fontWeight={isActive ? 600 : 500}
                                     lineHeight="1.2"
-                               
+
                                 >
                                     {result.label}
                                 </Text>
@@ -378,7 +378,7 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
                                                 fontWeight="500"
                                                 textTransform="uppercase"
                                                 letterSpacing="0.05em"
-                                            
+
                                             >
                                                 {result.sectionLabel}
                                             </Text>
@@ -1164,7 +1164,7 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
                                     fontSize="sm"
                                     fontWeight="600"
                                     color={theme.colors.whiteColor}
-                                   
+
                                 >
                                     {user?.USERNAME ?? "Admin"}
                                 </Text>

@@ -71,7 +71,7 @@ import { useLoadFromStock } from "@/hooks/Transaction/Approval/useLoadFromStock"
 
 /*-------------------  *STORAGE*  --------------------------*/
 
-import { useSessionStorage } from "@/hooks/apiHooks/storage/useSessionStorage";
+import { useSessionStorage } from "@/utils/storage/useSessionStorage";
 import { useApprovalHeader } from "@/store/approval/useApprovalHeader";
 import { useApprovalTransactionStore } from "@/store/approval/useApprovalTransaction";
 
@@ -307,9 +307,9 @@ export default function SalesPage() {
 
     const { data: allPureGoldNames } = usePureGoldNames();
 
-    const { data: transactionsById, isLoading: getbySnoLoading ,refetch:refetchTransactionListById  } = useTransactionByTransId(selectedTransactionId, "sales");
+    const { data: transactionsById, isLoading: getbySnoLoading, refetch: refetchTransactionListById } = useTransactionByTransId(selectedTransactionId, "sales");
 
-    console.log(transactionsById,'transactionsById');
+    console.log(transactionsById, 'transactionsById');
 
     /*------------------------------- BILL DETAILS API ----------------------------*/
 
@@ -361,7 +361,7 @@ export default function SalesPage() {
 
     // Note: This hook might need to be updated to handle multiple transaction types
     const { data: transactionList, isLoading, refetch: refetchTransactionList } = useApprovalTransactions({
-     
+
         trantype: null,
         accode: saleFilter.accode ? Number(saleFilter.accode) : null,
         startdate: saleFilter.fromDate || null,
@@ -372,16 +372,16 @@ export default function SalesPage() {
     const { data: metalRates, isLoading: metalRatesLoading, isError: metalRatesError } = useRates();
 
     const { data: transactionHeaderDetail, isLoading: transactionHeaderLoading, refetch: refetchTransactionHeaderDetail } = useApprovalTransactions({
-        
+
         accode: headerForm.CUSTOMER ? Number(headerForm.CUSTOMER) : null
     });
 
-    console.log(transactionHeaderDetail,'transactionHeaderDetail');
+    console.log(transactionHeaderDetail, 'transactionHeaderDetail');
 
 
     useSyncApprovalHeader(transactionHeaderDetail, isApiRateEnabled, metalRates);
 
-    console.log(transactionList,'transactionList');
+    console.log(transactionList, 'transactionList');
 
     const transactionIdsList = useMemo(() => {
         const list = transactionList?.SNOLIST;
@@ -393,7 +393,7 @@ export default function SalesPage() {
         }));
     }, [transactionList]);
 
-    console.log(transactionIdsList,'transactionIdsList');
+    console.log(transactionIdsList, 'transactionIdsList');
 
     useEffect(() => {
 
@@ -776,13 +776,13 @@ export default function SalesPage() {
     ================================ */
 
     // This useEffect loads transaction data when transactionsById changes
-   useEffect(() => {
-           if (transactionsById && selectedTransactionId) {
-               setEditingRowsData(transactionsById);
-               handleEditTransaction(transactionsById, selectedTransactionId);
-           }
+    useEffect(() => {
+        if (transactionsById && selectedTransactionId) {
+            setEditingRowsData(transactionsById);
+            handleEditTransaction(transactionsById, selectedTransactionId);
+        }
 
-       }, [transactionsById, selectedTransactionId]);
+    }, [transactionsById, selectedTransactionId]);
 
 
 
@@ -817,7 +817,7 @@ export default function SalesPage() {
 
 
 
-  const handleEditTransaction = useCallback((data: any, sno: string) => {
+    const handleEditTransaction = useCallback((data: any, sno: string) => {
 
         setOpeningBalance(data, true);
         setEditingSno(sno);
@@ -1060,7 +1060,7 @@ export default function SalesPage() {
         if (!validation.valid) {
             return { valid: false, error: validation.error };
         }
-        console.log(APPROVAL_TRANSACTION_KEY_MAP,'APPROVAL_TRANSACTION_KEY_MAP')
+        console.log(APPROVAL_TRANSACTION_KEY_MAP, 'APPROVAL_TRANSACTION_KEY_MAP')
 
         const transactionDetails: ApprovalTransactionItems = buildTransactionPayload({
             draftRows,
@@ -1068,7 +1068,7 @@ export default function SalesPage() {
             normalizeRowForApi,
         });
 
-        console.log(draftRows?.[0].REFNO,'draftRows?.[0].SNO')
+        console.log(draftRows?.[0].REFNO, 'draftRows?.[0].SNO')
         const payload: CreateApprovalTransaction = {
             TRANSACTION_HEADER: {
                 ACCODE: Number(headerForm.CUSTOMER),
@@ -1120,7 +1120,7 @@ export default function SalesPage() {
             stopEdit();
             refetchTransactionHeaderDetail();
 
-            
+
         } else {
             localStorage.removeItem(TYPE_KEY);
             setSelectedTransactionId('');
@@ -1337,15 +1337,15 @@ export default function SalesPage() {
         : handleResetDraft;
 
 
-const shortcuts = [
-  { keys: "Alt S", label: "Save" },
-  { keys: "Alt U", label: "Update" },
-  { keys: "Alt C", label: "Clear" },
-  { keys: "Alt M", label: "Modify" },
-  { keys: "F1", label: "Filter" },
-  { keys: "Alt I", label: "Approval Issue" },
-  { keys: "Alt R", label: "Approval Receipt" },
-];
+    const shortcuts = [
+        { keys: "Alt S", label: "Save" },
+        { keys: "Alt U", label: "Update" },
+        { keys: "Alt C", label: "Clear" },
+        { keys: "Alt M", label: "Modify" },
+        { keys: "F1", label: "Filter" },
+        { keys: "Alt I", label: "Approval Issue" },
+        { keys: "Alt R", label: "Approval Receipt" },
+    ];
 
 
     return (
@@ -1373,12 +1373,12 @@ const shortcuts = [
                             isDraftRowChanged={isDraftRowsChanged()}
 
                         />
-                   
+
 
                         <ShortcutDialog
-                          
-                          shortcuts={shortcuts}
-    
+
+                            shortcuts={shortcuts}
+
                         />
                         {/* 2. Transaction Type Selector */}
 
@@ -1436,7 +1436,7 @@ const shortcuts = [
                                                     rows={typeRows}
                                                     editingState={editingState}
                                                     isEditing={false}
-                                                   
+
                                                     onRowClick={handleRowClick}
                                                     onCancelEdit={handleCancelEdit}
                                                     itemsCollection={notTagedItemCollection}

@@ -8,7 +8,8 @@ export const formatDateForAPI = (date: string | Date) => {
 };
 
 
-export const formatDateForShow = (date: string | Date) => {
+export const formatDateForShow = (date: string | Date |null) => {
+    if(date === null) return "";
     const d = new Date(date);
     const yyyy = d.getFullYear();
     const mm = String(d.getMonth() + 1).padStart(2, "0");

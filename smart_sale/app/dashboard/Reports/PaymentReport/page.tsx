@@ -221,12 +221,12 @@ function PaymentReport() {
         const rows = reportResponse?.STATEMENT;
         if (!Array.isArray(rows)) return [];
         return rows.map((row) => ({
-            TRANDATE: row.TRANDATE ?? "",
+            TRANDATE: formatDateForShow(row.TRANDATE) ?? "",
             PARTICULAR: row.PARTICULAR ?? "",
             TRANTYPE: row.TRANTYPE ?? "",
             BANKNAME: row.BANKNAME ?? "",
-            RECEIPT: row.RECEIPT ?? null,
-            ISSUE: row.ISSUE ?? null,
+            RECEIPT:formatToFixed( row.RECEIPT ,2) ?? null,
+            ISSUE:  formatToFixed(row.ISSUE,2) ?? null,
         }));
     }, [reportResponse]);
 
@@ -240,12 +240,6 @@ function PaymentReport() {
             {
                 key: "TRANDATE",
                 label: "Date",
-
-                renderCell: (value: any) =>
-                    value ? formatDateForShow(value) : "",
-
-                printValue: (value: any) =>
-                    value ? formatDateForShow(value) : "",
             },
 
             {
@@ -271,6 +265,10 @@ function PaymentReport() {
                     value != null
                         ? formatToFixed(Number(value), 2)
                         : "",
+                allowTotal :true,
+                decimalScale :2 ,
+                align :"end",
+                isNumeric: true
             },
 
             {
@@ -286,6 +284,11 @@ function PaymentReport() {
                     value != null
                         ? formatToFixed(Number(value), 2)
                         : "",
+                allowTotal: true,
+                decimalScale :2,
+                align :"end",
+                isNumeric :true
+                
             },
         ];
 
@@ -419,7 +422,6 @@ function PaymentReport() {
 
                     /* Read-only report — hide editing toolbar buttons */
                     showRowControls={false}
-                    showExport={false}
                     showSearch={false}
 
                     /* Totals row for RECEIPT + ISSUE columns */

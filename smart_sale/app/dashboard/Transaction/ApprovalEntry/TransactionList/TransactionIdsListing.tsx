@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef, useMemo } from "react";
 import { HStack, Text, Box, Button } from "@chakra-ui/react";
 import SearchBar from "@/component/search/SearchBar";
 import { useTheme } from "@/context/theme/themeContext";
-import { useSessionStorage } from "@/hooks/apiHooks/storage/useSessionStorage";
+import { useSessionStorage } from "@/utils/storage/useSessionStorage";
 
 export interface transactionIdsList {
     label: string;
@@ -26,20 +26,20 @@ export const TransactionListing: React.FC<TransactionListingProps> = ({
     handleSearchChange,
     handleEditTransaction,
     handleDeselect,
-    deselectFlag =false,
+    deselectFlag = false,
 }) => {
     const { theme } = useTheme();
 
-    const [selectedTransactionId, setSelectedTransactionId] = useSessionStorage< string|null >('SaleSelectedTranId', null); // no default selection
+    const [selectedTransactionId, setSelectedTransactionId] = useSessionStorage<string | null>('SaleSelectedTranId', null); // no default selection
     const containerRef = useRef<HTMLDivElement>(null);
 
-    
-    const selectedIndex = useMemo(()=>{
 
-        return transactionIdsList.findIndex((item) => item.value === selectedTransactionId );
-    },[selectedTransactionId, transactionIdsList]) ;
+    const selectedIndex = useMemo(() => {
 
-   
+        return transactionIdsList.findIndex((item) => item.value === selectedTransactionId);
+    }, [selectedTransactionId, transactionIdsList]);
+
+
 
     // Deselect if parent tells us to
     useEffect(() => {
@@ -51,58 +51,58 @@ export const TransactionListing: React.FC<TransactionListingProps> = ({
 
 
     // Keyboard navigation
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-         if (transactionIdsList.length === 0) return;
- 
-         let nextIndex = selectedIndex;
- 
-         if (e.key === "ArrowDown") {
-             e.preventDefault();
-             nextIndex =
-                 selectedIndex < transactionIdsList.length - 1
-                     ? selectedIndex + 1
-                     : 0;
-         }
- 
-         if (e.key === "ArrowUp") {
-             e.preventDefault();
-             nextIndex =
-                 selectedIndex > 0
-                     ? selectedIndex - 1
-                     : transactionIdsList.length - 1;
-         }
- 
-         if (e.key === "Enter") {
-             if (selectedIndex >= 0) {
-                 handleEditTransaction?.(String(selectedTransactionId));
-             }
-             return;
-         }
- 
-         // ✅ Update selection
-         if (nextIndex !== selectedIndex && nextIndex >= 0) {
-             const nextItem = transactionIdsList[nextIndex];
-             setSelectedTransactionId(nextItem.value);
-             handleEditTransaction?.(nextItem.value);
-         }
-     };
- 
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+        if (transactionIdsList.length === 0) return;
+
+        let nextIndex = selectedIndex;
+
+        if (e.key === "ArrowDown") {
+            e.preventDefault();
+            nextIndex =
+                selectedIndex < transactionIdsList.length - 1
+                    ? selectedIndex + 1
+                    : 0;
+        }
+
+        if (e.key === "ArrowUp") {
+            e.preventDefault();
+            nextIndex =
+                selectedIndex > 0
+                    ? selectedIndex - 1
+                    : transactionIdsList.length - 1;
+        }
+
+        if (e.key === "Enter") {
+            if (selectedIndex >= 0) {
+                handleEditTransaction?.(String(selectedTransactionId));
+            }
+            return;
+        }
+
+        // ✅ Update selection
+        if (nextIndex !== selectedIndex && nextIndex >= 0) {
+            const nextItem = transactionIdsList[nextIndex];
+            setSelectedTransactionId(nextItem.value);
+            handleEditTransaction?.(nextItem.value);
+        }
+    };
+
     console.log(selectedIndex, 'selectedIndex');
-     // ✅ Auto-scroll active item
-     useEffect(() => {
-         if (!selectedTransactionId) return;
- 
-         const container = containerRef.current;
-         if (!container) return;
- 
-         const activeEl = container.querySelector(
-             `[data-id="${selectedTransactionId}"]`
-         ) as HTMLDivElement;
- 
-         activeEl?.scrollIntoView({
-             block: "nearest",
-         });
-     }, [selectedTransactionId]);
+    // ✅ Auto-scroll active item
+    useEffect(() => {
+        if (!selectedTransactionId) return;
+
+        const container = containerRef.current;
+        if (!container) return;
+
+        const activeEl = container.querySelector(
+            `[data-id="${selectedTransactionId}"]`
+        ) as HTMLDivElement;
+
+        activeEl?.scrollIntoView({
+            block: "nearest",
+        });
+    }, [selectedTransactionId]);
 
     return (
         <>
@@ -156,9 +156,9 @@ export const TransactionListing: React.FC<TransactionListingProps> = ({
 
 
                 {transactionIdsList.length > 0 ? (
-                    
+
                     transactionIdsList.map((item, index) => (
-                        
+
                         <HStack
                             key={item.value}
                             data-id={item.value}

@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef, useMemo } from "react";
 import { HStack, Text, Box, Button } from "@chakra-ui/react";
 import SearchBar from "@/component/search/SearchBar";
 import { useTheme } from "@/context/theme/themeContext";
-import { useSessionStorage } from "@/hooks/apiHooks/storage/useSessionStorage";
+import { useSessionStorage } from "@/utils/storage/useSessionStorage";
 
 export interface transactionIdsList {
     label: string;
@@ -114,11 +114,11 @@ export const TransactionListing: React.FC<TransactionListingProps> = ({
         setSelectedTransactionId("");
         handleDeselect?.();
     };
-    console.log(selectedTransactionId,'selectedTransactionId');
+    console.log(selectedTransactionId, 'selectedTransactionId');
 
     return (
         <>
-            {/* 🔍 Search + Clear */ }
+            {/* 🔍 Search + Clear */}
             <Box display="flex" alignItems="center" gap={1} >
                 <SearchBar
                     placeholder="Search Item..."
@@ -130,7 +130,7 @@ export const TransactionListing: React.FC<TransactionListingProps> = ({
 
                 />
 
-                {selectedTransactionId && Number(selectedTransactionId) !==  -1 && (
+                {selectedTransactionId && Number(selectedTransactionId) !== -1 && (
                     <Button
                         bg="red.600"
                         size="2xs"

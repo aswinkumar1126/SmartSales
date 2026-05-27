@@ -73,7 +73,7 @@ import { useLoadSalesStock } from "@/hooks/Transaction/sales/useLoadSalesStock";
 
 /*-------------------  *STORAGE*  --------------------------*/
 
-import { useSessionStorage } from "@/hooks/apiHooks/storage/useSessionStorage";
+import { useSessionStorage } from "@/utils/storage/useSessionStorage";
 import { useSalesBalanceSummary } from "@/store/sales/useSalesBalanceSummaryStore";
 import { useSalesHeader } from "@/store/sales/useSalesHeader";
 import { useSaleTransactionStore } from "@/store/sales/useSaleTransactionStore";
@@ -87,7 +87,7 @@ import { BaseClosingFormDetails } from "@/types/balanceSummary/BalanceSummary";
 //Utilities
 import { formatToFixed } from '@/utils/format/numberFormat';
 import SalesSaveModal from "./SaveModal/SaveModal";
-import {useTransactionLoader} from "@/utils/loader/ResolveLoader";
+import { useTransactionLoader } from "@/utils/loader/ResolveLoader";
 
 
 //Icons
@@ -129,16 +129,16 @@ export type billDetailsParams = {
 
 export default function SalesPage() {
 
-    
+
     const router = useRouter();
     const today = new Date().toISOString().split("T")[0];
 
     const initialDraftRowsRef = useRef<any[]>([]);
     const initialClosingRef = useRef<BaseClosingFormDetails>(null);
 
-    const {data: useApiRate} = useSoftControlById('USE_API_RATE');
-    
-    console.log(useApiRate,'softControl in header form');
+    const { data: useApiRate } = useSoftControlById('USE_API_RATE');
+
+    console.log(useApiRate, 'softControl in header form');
     const isApiRateEnabled = useApiRate?.CTLTEXT === 'Y';
 
     console.log(initialClosingRef.current, initialDraftRowsRef.current, 'currentref');
@@ -163,7 +163,7 @@ export default function SalesPage() {
         isModifying
     } = useSalesHeader();
 
-    const {isOpen, status, title, description, openLoader, resolveLoader, closeLoader} = useTransactionLoader();
+    const { isOpen, status, title, description, openLoader, resolveLoader, closeLoader } = useTransactionLoader();
 
 
     /* ================================
@@ -215,7 +215,7 @@ export default function SalesPage() {
     const [apiBalanceOpening, setApiBalanceOpening] = useState({ openPure: 0, openCash: 0 });
 
     const [selectedTransactionId, setSelectedTransactionId] =
-        useSessionStorage<string | null>("selectedTransactionId", null); 
+        useSessionStorage<string | null>("selectedTransactionId", null);
 
     const [baseOpening, setBaseOpening] = useSessionStorage<{ openPure: number, openCash: number }>('sales-openingBalance', {
         openPure: 0,
@@ -276,7 +276,7 @@ export default function SalesPage() {
     const { data: itemsData } = useStoneItems();
     const { data: tagedItems } = useStoneItems({ STOCKTYPE: 'T' });
 
-    const {data:nonTagedItemList} = useStoneItems({STOCKTYPE:'N'});
+    const { data: nonTagedItemList } = useStoneItems({ STOCKTYPE: 'N' });
 
     console.log(tagedItems, 'tagedItems')
 
@@ -310,7 +310,7 @@ export default function SalesPage() {
 
     const { data: allPureGoldNames } = usePureGoldNames();
 
-    const { data: transactionsById, isLoading: getbySnoLoading, refetch:refetchTransactionListById } = useTransactionByTransId(selectedTransactionId, "sales");
+    const { data: transactionsById, isLoading: getbySnoLoading, refetch: refetchTransactionListById } = useTransactionByTransId(selectedTransactionId, "sales");
 
 
 
@@ -381,7 +381,7 @@ export default function SalesPage() {
 
 
 
-    useSyncSalesHeader(transactionHeaderDetail,isApiRateEnabled, metalRates);
+    useSyncSalesHeader(transactionHeaderDetail, isApiRateEnabled, metalRates);
 
 
     const transactionIdsList = useMemo(() => {
@@ -409,9 +409,9 @@ export default function SalesPage() {
 
     const { data: salesReturnTagValidation } = useSoftControlById(isBillTag);
 
-    const isSRBillTag = salesReturnTagValidation ?  salesReturnTagValidation.CTLTEXT === "Y" : false ; 
- 
- 
+    const isSRBillTag = salesReturnTagValidation ? salesReturnTagValidation.CTLTEXT === "Y" : false;
+
+
 
     const createTransaction = useCreateTransactions();
     const { contains } = useFilter({ sensitivity: "base" });
@@ -473,7 +473,7 @@ export default function SalesPage() {
     }, [metalsData]);
 
     useEffect(() => {
-        if (!otherChargesData) return ;
+        if (!otherChargesData) return;
         const otherCharges = otherChargesData?.data?.map((charges: any) => {
             return {
                 label: charges.chargeName,
@@ -534,7 +534,7 @@ export default function SalesPage() {
     }, [mappedItems, set]);
 
 
-    const { collection: notTagedItemCollection, filter: notTagedItemsFilter, set:setNotTaged } = useListCollection({
+    const { collection: notTagedItemCollection, filter: notTagedItemsFilter, set: setNotTaged } = useListCollection({
         initialItems: nonTagedItems,
         filter: contains,
     });
@@ -547,7 +547,7 @@ export default function SalesPage() {
     // console.log(notTagedItemCollection,'notTagedItemCollection');
 
 
-   
+
 
 
 
@@ -591,32 +591,32 @@ export default function SalesPage() {
         SALES SAVE MODAL MANAGE
    ================================ */
 
-//    const openSaleSaveModal = ()=>{
-//     setIsOpenSalesSaveModal(true);
-//    }
-//    const closeSalesSaveModal = ()=>{
-//     setIsOpenSalesSaveModal(false);
-//    }
+    //    const openSaleSaveModal = ()=>{
+    //     setIsOpenSalesSaveModal(true);
+    //    }
+    //    const closeSalesSaveModal = ()=>{
+    //     setIsOpenSalesSaveModal(false);
+    //    }
 
-//    const confirmSalesSaveModal = ()=>{
-//         if(isEditing){
-//             handleUpdateTransaction()
-//         } 
-//         else{
-//             handleSaveTransaction()
-//         }
-      
-//    }
+    //    const confirmSalesSaveModal = ()=>{
+    //         if(isEditing){
+    //             handleUpdateTransaction()
+    //         } 
+    //         else{
+    //             handleSaveTransaction()
+    //         }
+
+    //    }
 
     // KEY TO ACCESS
 
     useGlobalKey("F1", () => isFilterOpen ? closeFilter() : openFilter(), "openFilter");
-    useGlobalKey("Alt+s" , ()=> isModifying ? handleSaveTransaction() : null, "saveTransaction");
-    useGlobalKey("Alt+u" , ()=> isModifying ? handleUpdateTransaction() : null  , "updateTransaction");
-    useGlobalKey("Alt+c", () => handleResetDraft() ,"ClearTransaction");
-    useGlobalKey("Alt+m" , ()=>{isModifying ? stopModify() : startModify()}, "modifyTransaction");
-    useGlobalKey("F3" , ()=>{ isStockDrawerOpen ? setIsStockDrawerOpen(false) : setIsStockDrawerOpen(true)}, "openStockDrawer");
-    useGlobalKey("CTRL+P" , ()=>{ isEditing && showPrintModal ? setShowPrintModal(false) : setShowPrintModal(true)}, "openPrintModal");
+    useGlobalKey("Alt+s", () => isModifying ? handleSaveTransaction() : null, "saveTransaction");
+    useGlobalKey("Alt+u", () => isModifying ? handleUpdateTransaction() : null, "updateTransaction");
+    useGlobalKey("Alt+c", () => handleResetDraft(), "ClearTransaction");
+    useGlobalKey("Alt+m", () => { isModifying ? stopModify() : startModify() }, "modifyTransaction");
+    useGlobalKey("F3", () => { isStockDrawerOpen ? setIsStockDrawerOpen(false) : setIsStockDrawerOpen(true) }, "openStockDrawer");
+    useGlobalKey("CTRL+P", () => { isEditing && showPrintModal ? setShowPrintModal(false) : setShowPrintModal(true) }, "openPrintModal");
 
     const handleBillParamChange = useCallback((field: any, value: any) => {
         setBillParams(prev => ({
@@ -641,105 +641,105 @@ export default function SalesPage() {
 
     console.log(draftRows, 'draftRowsssssss');
     useGlobalKey(
-    "alt+p",
-    () => {
-        if(headerForm.CUSTOMER){
-            setSelectedTransactionTypes( [
-                ...selectedTransactionTypes,
-                {
-                    code: "SA",
-                    key: "sales",
-                    label: "SALES",
-                    value: "SA"
-                }
-        ]);
+        "alt+p",
+        () => {
+            if (headerForm.CUSTOMER) {
+                setSelectedTransactionTypes([
+                    ...selectedTransactionTypes,
+                    {
+                        code: "SA",
+                        key: "sales",
+                        label: "SALES",
+                        value: "SA"
+                    }
+                ]);
+            }
+            else {
+                toaster.create({
+                    title: "Customer Required",
+                    description: "Select customer first.",
+                    type: "warning"
+                });
+            }
+
+
         }
-        else{
-            toaster.create({
-                title: "Customer Required",
-                description: "Select customer first.",
-                type: "warning"
-            });
+    );
+    useGlobalKey(
+        "alt+r",
+        () => {
+            if (headerForm.CUSTOMER) {
+                setSelectedTransactionTypes([
+                    ...selectedTransactionTypes,
+                    {
+                        code: "SR",
+                        key: "sales_return",
+                        label: "SALES_RETURN",
+                        value: "SR"
+                    }
+                ]);
+            }
+            else {
+                toaster.create({
+                    title: "Customer Required",
+                    description: "Select customer first.",
+                    type: "warning"
+                });
+            }
+
+
         }
-         
-        
-    }
-);
-useGlobalKey(
-    "alt+r",
-    () => {
-        if(headerForm.CUSTOMER){
-            setSelectedTransactionTypes( [
-                ...selectedTransactionTypes,
-                {
-                    code: "SR",
-                    key: "sales_return",
-                    label: "SALES_RETURN",
-                    value: "SR"
-                }
-        ]);
+    );
+    useGlobalKey(
+        "alt+i",
+        () => {
+            if (headerForm.CUSTOMER) {
+                setSelectedTransactionTypes([
+                    ...selectedTransactionTypes,
+                    {
+                        code: "IS",
+                        key: "issue",
+                        label: "ISSUE",
+                        value: "IS"
+                    }
+                ]);
+            }
+            else {
+                toaster.create({
+                    title: "Customer Required",
+                    description: "Select customer first.",
+                    type: "warning"
+                });
+            }
+
+
         }
-        else{
-            toaster.create({
-                title: "Customer Required",
-                description: "Select customer first.",
-                type: "warning"
-            });
+    );
+    useGlobalKey(
+        "alt+t",
+        () => {
+            if (headerForm.CUSTOMER) {
+                setSelectedTransactionTypes([
+                    ...selectedTransactionTypes,
+                    {
+                        code: "RE",
+                        key: "receipt",
+                        label: "RECEIPT",
+                        value: "RE"
+                    }
+                ]);
+            }
+            else {
+                toaster.create({
+                    title: "Customer Required",
+                    description: "Select customer first.",
+                    type: "warning"
+                });
+            }
+
+
         }
-         
-        
-    }
-);
-useGlobalKey(
-    "alt+i",
-    () => {
-        if(headerForm.CUSTOMER){
-            setSelectedTransactionTypes( [
-                ...selectedTransactionTypes,
-                {
-                    code: "IS",
-                    key: "issue",
-                    label: "ISSUE",
-                    value: "IS"
-                }
-        ]);
-        }
-        else{
-            toaster.create({
-                title: "Customer Required",
-                description: "Select customer first.",
-                type: "warning"
-            });
-        }
-         
-        
-    }
-);
-useGlobalKey(
-    "alt+t",
-    () => {
-        if(headerForm.CUSTOMER){
-            setSelectedTransactionTypes( [
-                ...selectedTransactionTypes,
-                {
-                    code: "RE",
-                    key: "receipt",
-                    label: "RECEIPT",
-                    value: "RE"
-                }
-        ]);
-        }
-        else{
-            toaster.create({
-                title: "Customer Required",
-                description: "Select customer first.",
-                type: "warning"
-            });
-        }
-         
-        
-    }
-);
+    );
 
 
     // Handle clear rows for type
@@ -817,7 +817,7 @@ useGlobalKey(
     };
 
     const getActiveCollectionForType = (transactionType: SaleTransactionType) => {
-        return isIssueType(transactionType) ? pureNameCollection : transactionType.code === "SA" ? notTagedItemCollection   :itemsCollection;
+        return isIssueType(transactionType) ? pureNameCollection : transactionType.code === "SA" ? notTagedItemCollection : itemsCollection;
     };
 
 
@@ -827,14 +827,14 @@ useGlobalKey(
        Load Transaction Data When Selected
     ================================ */
 
-     // This useEffect loads transaction data when transactionsById changes
-useEffect(() => {
-    if (!transactionsById || !selectedTransactionId) return;
+    // This useEffect loads transaction data when transactionsById changes
+    useEffect(() => {
+        if (!transactionsById || !selectedTransactionId) return;
 
-    setEditingRowsData(transactionsById);
-    handleEditTransaction(transactionsById, selectedTransactionId);
+        setEditingRowsData(transactionsById);
+        handleEditTransaction(transactionsById, selectedTransactionId);
 
-}, [transactionsById]); // ✅ fresh data arrival drives this, not the ID
+    }, [transactionsById]); // ✅ fresh data arrival drives this, not the ID
 
     const handleRowClick = (row: any, clickedTransactionType: string) => {
         setEditingState({
@@ -868,7 +868,7 @@ useEffect(() => {
         const result = loadTransaction(data, sno);
         if (!result) return;
 
-        console.log(data,'datadata')
+        console.log(data, 'datadata')
 
         setSelectedTransactionTypes(result.selectedTransactionTypes);
         setDraftRows(result.rows);
@@ -903,13 +903,13 @@ useEffect(() => {
        ================================ */
     const { closingDetails, setClosingDetails, resetBalance } = useSalesBalanceSummary();
 
-  const totalFinalStoneAmount = useMemo(() => {
+    const totalFinalStoneAmount = useMemo(() => {
         return draftRows
             .filter(row => row.TRANSACTION_TYPE === "SA")
             .reduce((sum, item) => sum + (Number(item.STNAMT) || 0), 0);
     }, [draftRows]);
 
-  
+
 
 
     useConversionSync(Number(headerForm.RATEGM || 0));
@@ -923,7 +923,7 @@ useEffect(() => {
         const d = closingDetails;
 
         const cleanBankDetails = (rows: any[] = []) =>
-        rows.map(({ ID, DRAFTROWID, ...rest }) => rest);
+            rows.map(({ ID, DRAFTROWID, ...rest }) => rest);
 
         return {
             CONVTYPE: d.CONVTYPE,
@@ -932,10 +932,10 @@ useEffect(() => {
             DISCAMT: Number(d.DISCAMT || 0),
             DISCWT: Number(d.DISCWT || 0),
 
-            GSTPER :Number(d.GSTPER),
-            GSTAMT :Number(d.GSTAMT),
-            TDSPER :Number(d.TDSPER || 0),
-            TDSAMT:Number(d.TDSAMT || 0),
+            GSTPER: Number(d.GSTPER),
+            GSTAMT: Number(d.GSTAMT),
+            TDSPER: Number(d.TDSPER || 0),
+            TDSAMT: Number(d.TDSAMT || 0),
 
             CASHPAID: Number(d.CASHPAID || 0),
             CASHRCVD: Number(d.CASHRCVD || 0),
@@ -960,7 +960,7 @@ useEffect(() => {
             ? SALETRANSACTIONTYPES.find(t => t.key === "issue")
             : SALETRANSACTIONTYPES.find(t => t.key === "sales");
 
-            
+
         if (!targetType) {
             toaster.create({
                 title: "Transaction Type Missing",
@@ -971,7 +971,7 @@ useEffect(() => {
 
         // check open
         if (!selectedTransactionTypes.some(t => t.value === targetType.value)) {
-           setSelectedTransactionTypes([
+            setSelectedTransactionTypes([
                 ...selectedTransactionTypes,
                 targetType
             ])
@@ -982,12 +982,12 @@ useEffect(() => {
         if (issueStock) {
             console.log(stockRow, 'vstockRow')
             const pureId = stockRow.pureId;
-            const touch =stockRow.aTouch;
+            const touch = stockRow.aTouch;
 
-            console.log(pureId,'pureIdpureId');
+            console.log(pureId, 'pureIdpureId');
 
 
-            availability = getStockAvailability(pureId,touch);
+            availability = getStockAvailability(pureId, touch);
 
             console.log(availability, 'availability')
 
@@ -1082,30 +1082,30 @@ useEffect(() => {
         );
     }, [draftRows]);
 
-      const isClosingChanged = useCallback(() => {
-        
-    
-            const isBalanceSame = Number(openingBalances.openPure || 0) === Number(closingPure || 0) && Number(openingBalances.openCash || 0) === Number(closingCash || 0);
-    
-            
-    
-            const hasAnyValue =
-                Number(closingDetails.CONVAMT || 0) > 0 ||
-                Number(closingDetails.CONVWT || 0) > 0 ||
-                Number(closingDetails.CASHPAID || 0) > 0 ||
-                Number(closingDetails.CASHRCVD || 0) > 0 ||
-                Number(closingDetails.BANKPAID || 0) > 0 ||
-                Number(closingDetails.BANKRCVD || 0) > 0 ||
-                Number(closingDetails.TDSPER || 0) > 0 ||
-                Number(closingDetails.TDSAMT || 0) > 0 ||
-                Number(closingDetails.GSTPER || 0) > 0 ||
-                Number(closingDetails.GSTAMT || 0) > 0 ||
-                (closingDetails.BANKPAIDDETAILS?.length ?? 0) > 0 ||
-                (closingDetails.BANKRCVDDETAILS?.length ?? 0) > 0;
-                
-            return (!isBalanceSame && hasAnyValue);
-        }, [closingDetails, getClosingDetailsPayload]);
-    
+    const isClosingChanged = useCallback(() => {
+
+
+        const isBalanceSame = Number(openingBalances.openPure || 0) === Number(closingPure || 0) && Number(openingBalances.openCash || 0) === Number(closingCash || 0);
+
+
+
+        const hasAnyValue =
+            Number(closingDetails.CONVAMT || 0) > 0 ||
+            Number(closingDetails.CONVWT || 0) > 0 ||
+            Number(closingDetails.CASHPAID || 0) > 0 ||
+            Number(closingDetails.CASHRCVD || 0) > 0 ||
+            Number(closingDetails.BANKPAID || 0) > 0 ||
+            Number(closingDetails.BANKRCVD || 0) > 0 ||
+            Number(closingDetails.TDSPER || 0) > 0 ||
+            Number(closingDetails.TDSAMT || 0) > 0 ||
+            Number(closingDetails.GSTPER || 0) > 0 ||
+            Number(closingDetails.GSTAMT || 0) > 0 ||
+            (closingDetails.BANKPAIDDETAILS?.length ?? 0) > 0 ||
+            (closingDetails.BANKRCVDDETAILS?.length ?? 0) > 0;
+
+        return (!isBalanceSame && hasAnyValue);
+    }, [closingDetails, getClosingDetailsPayload]);
+
 
 
     console.log(isDraftRowsChanged(), isClosingChanged(), 'isDraftRowsChanged, isClosingChanged')
@@ -1148,8 +1148,8 @@ useEffect(() => {
                 TRANDATE: headerForm.DATE,
                 BILLNO: headerForm.BILLNO ? Number(headerForm.BILLNO) : undefined,
                 RATE: headerForm.RATEGM ? Number(headerForm.RATEGM) : undefined,
-                REMARK:headerForm.REMARK,
-                THRU:headerForm.THRU
+                REMARK: headerForm.REMARK,
+                THRU: headerForm.THRU
             },
             TRANSACTION_DETAILS: transactionDetails,
             CLOSING_DETAILS: getClosingDetailsPayload(),
@@ -1158,19 +1158,19 @@ useEffect(() => {
         return { valid: true, payload };
     };
 
-  const handleReSelectTransaction = async () => {
-    const currentId = selectedTransactionId; // ✅ capture immediately
-    
-    console.log(currentId, 'reselecting transaction');
-    
-    setSelectedTransactionId(null);          // reset
-    
-    await refetchTransactionListById();
-    
-    console.log(currentId, 'after refetch'); // ✅ still has correct value
-    
-    setSelectedTransactionId(currentId);     // ✅ use captured value
-};
+    const handleReSelectTransaction = async () => {
+        const currentId = selectedTransactionId; // ✅ capture immediately
+
+        console.log(currentId, 'reselecting transaction');
+
+        setSelectedTransactionId(null);          // reset
+
+        await refetchTransactionListById();
+
+        console.log(currentId, 'after refetch'); // ✅ still has correct value
+
+        setSelectedTransactionId(currentId);     // ✅ use captured value
+    };
 
     const handleResetDraft = () => {
 
@@ -1220,132 +1220,132 @@ useEffect(() => {
 
 
 
-  const handleSaveTransaction = () => {
-    setEditingState({ rowId: null, transactionType: null });
- 
-    if (!headerForm.CUSTOMER) {
-        toaster.create({
-            title: "Customer Required",
-            description: "Please select a customer.",
-            type: "error",
-        });
-        return;
-    }
- 
-    const result = buildTransactionRequest();
- 
-    if (!result.valid || !result.payload) {
-        toaster.create({
-            title: "Validation Error",
-            description: result.error,
-            type: "error",
-        });
-        return;
-    }
- 
-    // ✅ Open loader in save mode
-    openLoader("save");
- 
-    createTransaction.mutate(
-        { payload: result.payload, TRANTYPE: "sales" },
-        {
-            onSuccess: () => {
-                setEditingState({ rowId: null, transactionType: null });
+    const handleSaveTransaction = () => {
+        setEditingState({ rowId: null, transactionType: null });
 
-                // Defer cleanup until after the loader finishes
-                setTimeout(() => {
-                    handleResetDraft();
-                    resolveLoader("success", "save");
-                }, 500);
-
-                // ✅ Resolve to success — loader auto-closes after 2s
-       
-            },
- 
-            onError: (error: any) => {
-
-                setTimeout(() => {
-                    openingBalanceRefetch();
-                    resolveLoader("error", "save", error?.message || "Failed to save transaction.");   
-                }, 500);
-                             
-            },
+        if (!headerForm.CUSTOMER) {
+            toaster.create({
+                title: "Customer Required",
+                description: "Please select a customer.",
+                type: "error",
+            });
+            return;
         }
-    );
-};
- 
-// ─────────────────────────────────────────────────────────────────────────────
-// handleUpdateTransaction — updated
-// ─────────────────────────────────────────────────────────────────────────────
- 
-const handleUpdateTransaction = async () => {
-    setEditingState({ rowId: null, transactionType: null });
- 
-    if (!editingSno) {
-        toaster.create({
-            title: "Transaction ID Missing",
-            description: "Cannot update without transaction SNO.",
-            type: "error",
-        });
-        return;
-    }
- 
-    const result = buildTransactionRequest();
- 
-    if (!result.valid || !result.payload) {
-        toaster.create({
-            title: "Validation Error",
-            description: result.error,
-            type: "error",
-        });
-        return;
-    }
 
-    console.log(result.payload ,'update tran')
- 
-    // ✅ Open loader in update mode
-    openLoader("update");
- 
-    try {
-        await updateTransaction.mutateAsync({
-            entryNo: Number(headerForm.ENTRYNO),
-            payload: result.payload,
-            TRANTYPE: "sales",
-        });
- 
-        setEditingSno(null);
- 
-    
- 
-        // Defer cleanup until after the loader finishes
-        setTimeout(() => {
-            goldStockRefetch();
-            itemStockRefetch();
-            openingBalanceRefetch();
-            resetStore();
-            resetBalance();
-            // setIsOpenSalesSaveModal(false);
-            handleResetDraft();
-            
-        }, 500);
-         setTimeout(() => {
-            // ✅ Resolve to success
-        resolveLoader("success", "update");
-        }, 600);
-    } catch (error: any) {
-        // ✅ Resolve to error
-   
- 
-        setTimeout(() => {
-            openingBalanceRefetch();
-            // setIsOpenSalesSaveModal(false);
-        }, 500);
-        setTimeout(() => {
-        resolveLoader("error", "update", error?.message || "Failed to update transaction.");
-        }, 600);
-    }
-};
-   const handleTransactionClick = useCallback((transactionId: string) => {
+        const result = buildTransactionRequest();
+
+        if (!result.valid || !result.payload) {
+            toaster.create({
+                title: "Validation Error",
+                description: result.error,
+                type: "error",
+            });
+            return;
+        }
+
+        // ✅ Open loader in save mode
+        openLoader("save");
+
+        createTransaction.mutate(
+            { payload: result.payload, TRANTYPE: "sales" },
+            {
+                onSuccess: () => {
+                    setEditingState({ rowId: null, transactionType: null });
+
+                    // Defer cleanup until after the loader finishes
+                    setTimeout(() => {
+                        handleResetDraft();
+                        resolveLoader("success", "save");
+                    }, 500);
+
+                    // ✅ Resolve to success — loader auto-closes after 2s
+
+                },
+
+                onError: (error: any) => {
+
+                    setTimeout(() => {
+                        openingBalanceRefetch();
+                        resolveLoader("error", "save", error?.message || "Failed to save transaction.");
+                    }, 500);
+
+                },
+            }
+        );
+    };
+
+    // ─────────────────────────────────────────────────────────────────────────────
+    // handleUpdateTransaction — updated
+    // ─────────────────────────────────────────────────────────────────────────────
+
+    const handleUpdateTransaction = async () => {
+        setEditingState({ rowId: null, transactionType: null });
+
+        if (!editingSno) {
+            toaster.create({
+                title: "Transaction ID Missing",
+                description: "Cannot update without transaction SNO.",
+                type: "error",
+            });
+            return;
+        }
+
+        const result = buildTransactionRequest();
+
+        if (!result.valid || !result.payload) {
+            toaster.create({
+                title: "Validation Error",
+                description: result.error,
+                type: "error",
+            });
+            return;
+        }
+
+        console.log(result.payload, 'update tran')
+
+        // ✅ Open loader in update mode
+        openLoader("update");
+
+        try {
+            await updateTransaction.mutateAsync({
+                entryNo: Number(headerForm.ENTRYNO),
+                payload: result.payload,
+                TRANTYPE: "sales",
+            });
+
+            setEditingSno(null);
+
+
+
+            // Defer cleanup until after the loader finishes
+            setTimeout(() => {
+                goldStockRefetch();
+                itemStockRefetch();
+                openingBalanceRefetch();
+                resetStore();
+                resetBalance();
+                // setIsOpenSalesSaveModal(false);
+                handleResetDraft();
+
+            }, 500);
+            setTimeout(() => {
+                // ✅ Resolve to success
+                resolveLoader("success", "update");
+            }, 600);
+        } catch (error: any) {
+            // ✅ Resolve to error
+
+
+            setTimeout(() => {
+                openingBalanceRefetch();
+                // setIsOpenSalesSaveModal(false);
+            }, 500);
+            setTimeout(() => {
+                resolveLoader("error", "update", error?.message || "Failed to update transaction.");
+            }, 600);
+        }
+    };
+    const handleTransactionClick = useCallback((transactionId: string) => {
 
         if (draftRows.length > 0 && !isEditing) {
             toaster.create({
@@ -1360,7 +1360,7 @@ const handleUpdateTransaction = async () => {
             return;
         }
         setDraftRows([]); // Clear draft rows immediately to prevent stale data display
-         
+
 
         setSelectedTransactionId(transactionId);
 
@@ -1410,26 +1410,26 @@ const handleUpdateTransaction = async () => {
         loadSaleTag(tagNo, Number(headerForm.CUSTOMER));
     };
 
-const handleSave = isEditing
-  ? handleUpdateTransaction
-  : handleSaveTransaction;
+    const handleSave = isEditing
+        ? handleUpdateTransaction
+        : handleSaveTransaction;
 
-const handleReset = isEditing
-  ? (isModifying ? handleResetDraft : handleReSelectTransaction)
-  : handleResetDraft;
+    const handleReset = isEditing
+        ? (isModifying ? handleResetDraft : handleReSelectTransaction)
+        : handleResetDraft;
 
-  const shortcuts = [
-  { keys: "Alt S", label: "Save" },
-  { keys: "Alt U", label: "Update" },
-  { keys: "Alt C", label: "Clear" },
-  { keys: "Alt M", label: "Modify" },
-  { keys: "F1", label: "FilterOpen / Close" },
-  { keys: "Alt I", label: "Issue" },
-  { keys: "Alt T", label: "Receipt" },
-  { keys: "Alt P", label: "Sales" },
-  { keys: "Alt R", label: "Sales Return" },
+    const shortcuts = [
+        { keys: "Alt S", label: "Save" },
+        { keys: "Alt U", label: "Update" },
+        { keys: "Alt C", label: "Clear" },
+        { keys: "Alt M", label: "Modify" },
+        { keys: "F1", label: "FilterOpen / Close" },
+        { keys: "Alt I", label: "Issue" },
+        { keys: "Alt T", label: "Receipt" },
+        { keys: "Alt P", label: "Sales" },
+        { keys: "Alt R", label: "Sales Return" },
 
-];
+    ];
 
 
     return (
@@ -1461,16 +1461,16 @@ const handleReset = isEditing
                             openingData={openingBalance}
                             isEditing={isEditing}
                             isClosingChanged={isClosingChanged()}
-                            isDraftRowChanged ={isDraftRowsChanged()}
+                            isDraftRowChanged={isDraftRowsChanged()}
 
                         />
                         <ShortcutDialog
-                    
-                          shortcuts={shortcuts}
-                 
+
+                            shortcuts={shortcuts}
+
 
                         />
-                        
+
 
                         {/* 2. Transaction Type Selector */}
 
@@ -1500,11 +1500,11 @@ const handleReset = isEditing
                         />
 
 
-                    
+
 
                         {/* Draft Section - show separate tables for each transaction type */}
                         {(selectedTransactionTypes?.length > 0) && (
-                            <Box display="flex"  flexWrap="wrap">
+                            <Box display="flex" flexWrap="wrap">
                                 {/* Map selected transaction types in order */}
                                 {TRANSACTIONTYPES_ORDER
                                     .map(code => selectedTransactionTypes?.find(t => t.value === code))
@@ -1638,7 +1638,7 @@ const handleReset = isEditing
                 </Box>
 
             )}
-{/* 
+            {/* 
             <SalesSaveModal 
                 headerForm={headerForm}
                 isOpen={openSalesSaveModal}

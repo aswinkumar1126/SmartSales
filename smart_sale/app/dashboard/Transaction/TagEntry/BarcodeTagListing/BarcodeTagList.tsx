@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef, useMemo } from "react";
 import { HStack, Text, Box, Button } from "@chakra-ui/react";
 import SearchBar from "@/component/search/SearchBar";
 import { useTheme } from "@/context/theme/themeContext";
-import { useSessionStorage } from "@/hooks/apiHooks/storage/useSessionStorage";
+import { useSessionStorage } from "@/utils/storage/useSessionStorage";
 import { SearchDrawer } from "./FilterDrawer";
 import { getTagedEntryNoParams } from "@/types/tagging/Tag";
 import { useStoneItems } from "@/hooks/apiHooks/item/useItems";
@@ -26,7 +26,7 @@ export interface TagListProps {
     handleEditTagTransaction?: (entryNo: string) => void;
     handleDeselect?: () => void;
     deselectFlag?: boolean;
-    onFilterChange: (field: string , value: any) => void;
+    onFilterChange: (field: string, value: any) => void;
     filterParams: getTagedEntryNoParams;
     collections?: searchOptions;
     isEditing?: boolean;
@@ -49,18 +49,18 @@ export const BarcodeTagListing: React.FC<TagListProps> = ({
 
     const today = new Date().toISOString().split('T')[0]
     const { theme } = useTheme();
-    const { data: items, isLoading, isError } = useStoneItems({STOCKTYPE :"T"});
+    const { data: items, isLoading, isError } = useStoneItems({ STOCKTYPE: "T" });
     console.log(items, 'items')
 
     const [selectedTransactionId, setSelectedTransactionId] = useSessionStorage<number | null>('selectedTagTransaction', null);
     const containerRef = useRef<HTMLDivElement>(null);
 
-      // ✅ Derive index safely (for keyboard nav)
-        const selectedIndex = useMemo(() => {
-            return tagListItems.findIndex(
-                (item) => item.ENTRYNO === selectedTransactionId
-            );
-        }, [tagListItems, selectedTransactionId]);
+    // ✅ Derive index safely (for keyboard nav)
+    const selectedIndex = useMemo(() => {
+        return tagListItems.findIndex(
+            (item) => item.ENTRYNO === selectedTransactionId
+        );
+    }, [tagListItems, selectedTransactionId]);
 
     // Deselect if parent tells us to
     useEffect(() => {
@@ -79,44 +79,44 @@ export const BarcodeTagListing: React.FC<TagListProps> = ({
     }, [items]);
 
     // ✅ Keyboard navigation
-       const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-           if (tagListItems.length === 0) return;
-   
-           let nextIndex = selectedIndex;
-   
-           if (e.key === "ArrowDown") {
-               e.preventDefault();
-               nextIndex =
-                   selectedIndex < tagListItems.length - 1
-                       ? selectedIndex + 1
-                       : 0;
-           }
-   
-           if (e.key === "ArrowUp") {
-               e.preventDefault();
-               nextIndex =
-                   selectedIndex > 0
-                       ? selectedIndex - 1
-                       : tagListItems.length - 1;
-           }
-   
-           if (e.key === "Enter") {
-               if (selectedIndex >= 0) {
-                   handleEditTagTransaction?.(String(selectedTransactionId));
-               }
-               return;
-           }
-   
-           // ✅ Update selection
-           if (nextIndex !== selectedIndex && nextIndex >= 0) {
-               const nextItem = tagListItems[nextIndex];
-               setSelectedTransactionId(nextItem.ENTRYNO);
-               handleEditTagTransaction?.(String(nextItem.ENTRYNO));
-           }
-       };
-   
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+        if (tagListItems.length === 0) return;
 
- // ✅ Auto-scroll active item
+        let nextIndex = selectedIndex;
+
+        if (e.key === "ArrowDown") {
+            e.preventDefault();
+            nextIndex =
+                selectedIndex < tagListItems.length - 1
+                    ? selectedIndex + 1
+                    : 0;
+        }
+
+        if (e.key === "ArrowUp") {
+            e.preventDefault();
+            nextIndex =
+                selectedIndex > 0
+                    ? selectedIndex - 1
+                    : tagListItems.length - 1;
+        }
+
+        if (e.key === "Enter") {
+            if (selectedIndex >= 0) {
+                handleEditTagTransaction?.(String(selectedTransactionId));
+            }
+            return;
+        }
+
+        // ✅ Update selection
+        if (nextIndex !== selectedIndex && nextIndex >= 0) {
+            const nextItem = tagListItems[nextIndex];
+            setSelectedTransactionId(nextItem.ENTRYNO);
+            handleEditTagTransaction?.(String(nextItem.ENTRYNO));
+        }
+    };
+
+
+    // ✅ Auto-scroll active item
     useEffect(() => {
         if (!selectedTransactionId) return;
 
@@ -186,7 +186,7 @@ export const BarcodeTagListing: React.FC<TagListProps> = ({
             ref={containerRef}
             tabIndex={0}
             onKeyDown={handleKeyDown}
-           
+
             outline="none"
             _focus={{ outline: "none" }}
             bg={theme.colors.formColor}
@@ -200,7 +200,7 @@ export const BarcodeTagListing: React.FC<TagListProps> = ({
                 accodeOptions={collections?.acCodeCollection || []}
                 initialFilters={{
                     fromDate: filterParams.FROMDATE || "",
-                    toDate: filterParams.TODATE  || "",
+                    toDate: filterParams.TODATE || "",
                     entryNo: filterParams.ENTRYNO || "",
                     // lotNumber: filterParams.PUENTRYNO || "",
                     tagNumber: filterParams.TAGNO || "",
@@ -230,7 +230,7 @@ export const BarcodeTagListing: React.FC<TagListProps> = ({
                     </Button>
                 )}
             </Box>
-            <Box 
+            <Box
                 maxHeight="90vh"
                 overflowY="auto"
             >
@@ -264,7 +264,7 @@ export const BarcodeTagListing: React.FC<TagListProps> = ({
                     <Text p={2}>No Entries Available</Text>
                 )}
             </Box>
-           
+
         </Box>
     );
 };

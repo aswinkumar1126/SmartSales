@@ -8,6 +8,8 @@ function Print() {
     const {data,columns ,showSno , titleText } =usePrint();
     console.log("Print Data:",data);
 
+
+
     const searchParams = useSearchParams();
 
     const exportOption = searchParams.get('export');

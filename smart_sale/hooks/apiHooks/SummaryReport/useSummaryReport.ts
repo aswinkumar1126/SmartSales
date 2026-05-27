@@ -1,18 +1,16 @@
 import { useQuery } from "@tanstack/react-query";
 import { useApiQuery } from "../apiHook/ApiHook";
 import { ItemStockEntry } from "@/types/SummaryReport/SummaryReport";
-import axios from "axios";
-
-
-
 
 
 export const usePurchaseSummary = ({
   fromAge,
   toAge,
+  fetchEnabled
 }: {
   fromAge?: number;
   toAge?: number;
+  fetchEnabled :boolean
 }) => {
   return useApiQuery<Record<string, any>[]>({
     queryKey: ["age_report", fromAge?.toString() ?? "", toAge?.toString() ?? ""],
@@ -20,16 +18,18 @@ export const usePurchaseSummary = ({
     method: "GET",
 
     select: (res) => res.data,
-    enabled: false,
+    enabled: !!fetchEnabled,
   });
 };
 
 export const useSalesSummary = ({
   fromAge,
   toAge,
+  fetchEnabled
 }: {
   fromAge?: number;
   toAge?: number;
+  fetchEnabled :boolean;
 }) => {
   return useApiQuery<Record<string, any>[]>({
     queryKey: ["age_report", fromAge?.toString() ?? "", toAge?.toString() ?? ""],
@@ -37,7 +37,7 @@ export const useSalesSummary = ({
     method: "GET",
 
     select: (res) => res.data,
-    enabled: false,
+    enabled: fetchEnabled,
   });
 };
 

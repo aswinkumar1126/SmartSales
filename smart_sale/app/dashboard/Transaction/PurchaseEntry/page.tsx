@@ -60,7 +60,7 @@ import { normalizeRowForApi } from "@/utils/TransactionValidation/purchase/norma
 
 import { useStockAvailability } from "@/hooks/Transaction/purchase/useStockAvailability";
 
-import { useConversionSync  ,useGstConversion} from "@/hooks/Transaction/purchase/useConversionSync";
+import { useConversionSync, useGstConversion } from "@/hooks/Transaction/purchase/useConversionSync";
 import { useClosingCalculation } from "@/hooks/Transaction/purchase/useClosingBalanceCalculation";
 import { usePurchaseOpeningBalances } from "@/hooks/Transaction/purchase/usePurchaseOpeningCal";
 
@@ -74,7 +74,7 @@ import { useLoadPurchaseStock } from "@/hooks/Transaction/purchase/useLoadPurcha
 
 /*-------------------  *STORAGE*  --------------------------*/
 
-import { useSessionStorage } from "@/hooks/apiHooks/storage/useSessionStorage";
+import { useSessionStorage } from "@/utils/storage/useSessionStorage";
 import { usePurchaseBalanceSummary } from "@/store/purchase/useBalanceSummaryStore";
 import { usePurchaseHeader } from "@/store/purchase/usePurchaseHeader";
 import { usePurchaseTransactionStore } from "@/store/purchase/usePurchaseTransactionStore";
@@ -85,8 +85,8 @@ import { TRANSACTIONTYPES } from '@/data/Transaction/TransactionType';
 import { BaseClosingFormDetails } from "@/types/balanceSummary/BalanceSummary";
 //Utilities
 import { formatToFixed } from '@/utils/format/numberFormat';
-import PurchaseReceipt,{exportToExcel} from "@/component/ReceiptPrint/PurchasePrint";
-import {useTransactionLoader} from "@/utils/loader/ResolveLoader";
+import PurchaseReceipt, { exportToExcel } from "@/component/ReceiptPrint/PurchasePrint";
+import { useTransactionLoader } from "@/utils/loader/ResolveLoader";
 
 
 
@@ -135,16 +135,16 @@ export default function PurchasePage() {
 
 
 
-    const {data: useApiRate} = useSoftControlById('USE_API_RATE');
+    const { data: useApiRate } = useSoftControlById('USE_API_RATE');
 
-    console.log(useApiRate,'softControl in header form');
+    console.log(useApiRate, 'softControl in header form');
     const isApiRateEnabled = useApiRate?.CTLTEXT === 'Y';
 
     const { data: multiplyHmcWithPcs } = useSoftControlById('PU_HMC_FINALAMT');
-        
+
     const usePcsBySoftControl = multiplyHmcWithPcs?.CTLTEXT === "Y";
 
-    console.log(isApiRateEnabled,'isApiRateEnabled');
+    console.log(isApiRateEnabled, 'isApiRateEnabled');
 
     const initialDraftRowsRef = useRef<any[]>([]);
     const initialClosingRef = useRef<BaseClosingFormDetails>(
@@ -194,10 +194,10 @@ export default function PurchasePage() {
         isModifying
     } = usePurchaseHeader();
 
-     const {isOpen, status, title, description, openLoader, resolveLoader, closeLoader} = useTransactionLoader();
+    const { isOpen, status, title, description, openLoader, resolveLoader, closeLoader } = useTransactionLoader();
 
 
-    console.log(isModifying,'isModifying')
+    console.log(isModifying, 'isModifying')
     /* ================================
     VALIDATION FROM SOFT CONTROL
 ================================ */
@@ -225,7 +225,7 @@ export default function PurchasePage() {
 
     const openFilter = () => setIsFilterOpen(true);
 
-  
+
 
     const draftRowTempId = useRef<string | null>(null);
 
@@ -259,7 +259,7 @@ export default function PurchasePage() {
     const [singleSearch, setSingleSearch] = useSessionStorage<string>(TRANSACTION_LIST_SEARCH, '');
     const [deselectFlag, setDeselectFlag] = useState<boolean>(false);
     const [showPrintModal, setShowPrintModal] = useState<boolean>(false);
-    const [printData, setPrintData] = useSessionStorage<any>(PURCHASE_PRINT_DATA , null);
+    const [printData, setPrintData] = useSessionStorage<any>(PURCHASE_PRINT_DATA, null);
 
     const [purchaseFilter, setPurchaseFilter] = useState<PurchaseFilter>({
         fromDate: "",
@@ -291,7 +291,7 @@ export default function PurchasePage() {
         setShowBillModal(prev => !prev);
     };
 
-    const [openRemarkModal ,setIsOpenRemarkModal ] = useState<boolean>(false);
+    const [openRemarkModal, setIsOpenRemarkModal] = useState<boolean>(false);
 
 
 
@@ -303,7 +303,7 @@ export default function PurchasePage() {
 
     const [isTag, setIsTag] = useSessionStorage<boolean>(ISTAG, false);
 
-   
+
 
     /* ================================
        State Management
@@ -348,7 +348,7 @@ export default function PurchasePage() {
     const { data: pureStockList = [], refetch: goldStockRefetch } = usePureGoldData(filter, cleanedFilters);
     const { data: itemsStock, refetch: itemStockRefetch } = useOrnamentData(filter);
 
-    console.log(pureStockList,'pureStockListpureStockList')
+    console.log(pureStockList, 'pureStockListpureStockList')
 
 
 
@@ -356,9 +356,9 @@ export default function PurchasePage() {
 
     const { data: allPureGoldNames } = usePureGoldNames();
 
-    const { data: transactionsById, isLoading: getbySnoLoading , refetch :refetchTransactionListById } = useTransactionByTransId(selectedTransactionId, "purchase");
+    const { data: transactionsById, isLoading: getbySnoLoading, refetch: refetchTransactionListById } = useTransactionByTransId(selectedTransactionId, "purchase");
 
-    console.log(transactionsById,'transactionsById');
+    console.log(transactionsById, 'transactionsById');
 
 
 
@@ -479,8 +479,8 @@ export default function PurchasePage() {
             : itemsStockList;
     }, [showStock, pureStockList, itemsStockList]);
 
-    console.log(selectedStockData ,'selectedStock');
-    console.log(pureStockList ,'pureStockList');
+    console.log(selectedStockData, 'selectedStock');
+    console.log(pureStockList, 'pureStockList');
 
 
     /* ================================
@@ -617,7 +617,7 @@ export default function PurchasePage() {
             itemId: '',
             accode: ''
         });
-    },[]);
+    }, []);
 
 
 
@@ -625,9 +625,9 @@ export default function PurchasePage() {
       Manage Remark Modal On Save
    ================================ */
 
-   const handleOpenRemarkModal = ()=>{
+    const handleOpenRemarkModal = () => {
         setIsOpenRemarkModal(true);
-   }
+    }
     const handleCloseRemarkModal = () => {
         setIsOpenRemarkModal(false);
     }
@@ -644,12 +644,12 @@ export default function PurchasePage() {
     // KEY TO ACCESS
 
     useGlobalKey("F1", () => openFilter(), "openPurchaseFilter");
-    useGlobalKey("Alt+s" , ()=> isModifying ? handleSaveTransaction() : null, "savePurchaseTransaction");
-    useGlobalKey("Alt+c", () => handleResetDraft() ,"ClearPurchaseTransaction");
-    useGlobalKey("Alt+u" , ()=> isModifying ? handleUpdateTransaction() : null, "updatePurchaseTransaction");
-    useGlobalKey("Alt+m" , ()=>{isModifying ? stopModifying() : startModifying()}, "modifyPurchaseTransaction");
-    useGlobalKey("F3" , ()=>{ isStockDrawerOpen ? setIsStockDrawerOpen(false) : setIsStockDrawerOpen(true)}, "openStockDrawer");
-    useGlobalKey("CTRL+P" , ()=>{ isEditing && showPrintModal ? setShowPrintModal(false) : setShowPrintModal(true)}, "openPrintModal");
+    useGlobalKey("Alt+s", () => isModifying ? handleSaveTransaction() : null, "savePurchaseTransaction");
+    useGlobalKey("Alt+c", () => handleResetDraft(), "ClearPurchaseTransaction");
+    useGlobalKey("Alt+u", () => isModifying ? handleUpdateTransaction() : null, "updatePurchaseTransaction");
+    useGlobalKey("Alt+m", () => { isModifying ? stopModifying() : startModifying() }, "modifyPurchaseTransaction");
+    useGlobalKey("F3", () => { isStockDrawerOpen ? setIsStockDrawerOpen(false) : setIsStockDrawerOpen(true) }, "openStockDrawer");
+    useGlobalKey("CTRL+P", () => { isEditing && showPrintModal ? setShowPrintModal(false) : setShowPrintModal(true) }, "openPrintModal");
 
 
 
@@ -676,106 +676,106 @@ export default function PurchasePage() {
     } = usePurchaseTransactionStore();
 
 
-useGlobalKey(
-    "alt+p",
-    () => {
-        if(headerForm.CUSTOMER){
-            setSelectedTransactionTypes( [
-                ...selectedTransactionTypes,
-                {
-                    code: "PU",
-                    key: "purchase",
-                    label: "PURCHASE",
-                    value: "PU"
-                }
-        ]);
+    useGlobalKey(
+        "alt+p",
+        () => {
+            if (headerForm.CUSTOMER) {
+                setSelectedTransactionTypes([
+                    ...selectedTransactionTypes,
+                    {
+                        code: "PU",
+                        key: "purchase",
+                        label: "PURCHASE",
+                        value: "PU"
+                    }
+                ]);
+            }
+            else {
+                toaster.create({
+                    title: "Customer Required",
+                    description: "Select customer first.",
+                    type: "warning"
+                });
+            }
+
+
         }
-        else{
-            toaster.create({
-                title: "Customer Required",
-                description: "Select customer first.",
-                type: "warning"
-            });
+    );
+    useGlobalKey(
+        "alt+r",
+        () => {
+            if (headerForm.CUSTOMER) {
+                setSelectedTransactionTypes([
+                    ...selectedTransactionTypes,
+                    {
+                        code: "PR",
+                        key: "purchase_return",
+                        label: "PURCHASE_RETURN",
+                        value: "PR"
+                    }
+                ]);
+            }
+            else {
+                toaster.create({
+                    title: "Customer Required",
+                    description: "Select customer first.",
+                    type: "warning"
+                });
+            }
+
+
         }
-         
-        
-    }
-);
-useGlobalKey(
-    "alt+r",
-    () => {
-        if(headerForm.CUSTOMER){
-            setSelectedTransactionTypes( [
-                ...selectedTransactionTypes,
-                {
-                    code: "PR",
-                    key: "purchase_return",
-                    label: "PURCHASE_RETURN",
-                    value: "PR"
-                }
-        ]);
+    );
+    useGlobalKey(
+        "alt+i",
+        () => {
+            if (headerForm.CUSTOMER) {
+                setSelectedTransactionTypes([
+                    ...selectedTransactionTypes,
+                    {
+                        code: "ISP",
+                        key: "issue",
+                        label: "ISSUE",
+                        value: "ISP"
+                    }
+                ]);
+            }
+            else {
+                toaster.create({
+                    title: "Customer Required",
+                    description: "Select customer first.",
+                    type: "warning"
+                });
+            }
+
+
         }
-        else{
-            toaster.create({
-                title: "Customer Required",
-                description: "Select customer first.",
-                type: "warning"
-            });
+    );
+    useGlobalKey(
+        "alt+t",
+        () => {
+            if (headerForm.CUSTOMER) {
+                setSelectedTransactionTypes([
+                    ...selectedTransactionTypes,
+                    {
+                        code: "REC",
+                        key: "receipt",
+                        label: "RECEIPT",
+                        value: "REC"
+                    }
+                ]);
+            }
+            else {
+                toaster.create({
+                    title: "Customer Required",
+                    description: "Select customer first.",
+                    type: "warning"
+                });
+            }
+
+
         }
-         
-        
-    }
-);
-useGlobalKey(
-    "alt+i",
-    () => {
-        if(headerForm.CUSTOMER){
-            setSelectedTransactionTypes( [
-                ...selectedTransactionTypes,
-                {
-                    code: "ISP",
-                    key: "issue",
-                    label: "ISSUE",
-                    value: "ISP"
-                }
-        ]);
-        }
-        else{
-            toaster.create({
-                title: "Customer Required",
-                description: "Select customer first.",
-                type: "warning"
-            });
-        }
-         
-        
-    }
-);
-useGlobalKey(
-    "alt+t",
-    () => {
-        if(headerForm.CUSTOMER){
-            setSelectedTransactionTypes( [
-                ...selectedTransactionTypes,
-                {
-                    code: "REC",
-                    key: "receipt",
-                    label: "RECEIPT",
-                    value: "REC"
-                }
-        ]);
-        }
-        else{
-            toaster.create({
-                title: "Customer Required",
-                description: "Select customer first.",
-                type: "warning"
-            });
-        }
-         
-        
-    }
-);
+    );
 
     // Handle clear rows for type
     const handleClearRowsForType = (transactionType: any) => {
@@ -927,10 +927,10 @@ useGlobalKey(
       SOFT CONTROL CHECKING
     ================================ */
 
-    const {data : softControlData } = useSoftControlById(isPRTag);
+    const { data: softControlData } = useSoftControlById(isPRTag);
 
-    const isTagedPR = softControlData ? softControlData.CTLTEXT === "Y" : false ;
- 
+    const isTagedPR = softControlData ? softControlData.CTLTEXT === "Y" : false;
+
     /* ================================
        Transaction Type Handlers
     ================================ */
@@ -965,7 +965,7 @@ useGlobalKey(
             .reduce((sum, item) => sum + (Number(item.STNAMT) || 0), 0);
     }, [draftRows]);
 
-  
+
 
 
     useConversionSync(Number(headerForm.RATEGM || 0));
@@ -973,7 +973,7 @@ useGlobalKey(
 
     const { closingPure, closingCash } = useClosingCalculation(closingDetails, openingBalances, Number(headerForm.RATEGM || 0));
 
-    console.log(closingDetails,'closingDetails');
+    console.log(closingDetails, 'closingDetails');
 
 
     // ✅ Always reads latest — even before re-render
@@ -986,7 +986,7 @@ useGlobalKey(
             CONVWT: Number(d.CONVWT || 0),
             DISCAMT: Number(d.DISCAMT || 0),
             DISCWT: Number(d.DISCWT || 0),
-            GSTPER :Number(d.GSTPER || 0),
+            GSTPER: Number(d.GSTPER || 0),
             GSTAMT: Number(d.GSTAMT || 0),
             TDSPER: Number(d.TDSPER || 0),
             TDSAMT: Number(d.TDSAMT || 0),
@@ -1004,7 +1004,7 @@ useGlobalKey(
     const handleLoadFromStock = (stockRow: any) => {
 
         const issueStock = isIssueStock(stockRow);
-        if(stockRow.PCS <= 0 && stockRow.weight <=0 ) return;
+        if (stockRow.PCS <= 0 && stockRow.weight <= 0) return;
 
         const targetType = issueStock
             ? TRANSACTIONTYPES.find(t => t.key === "issue")
@@ -1030,7 +1030,7 @@ useGlobalKey(
             const pureId = stockRow.pureId;
             const touch = stockRow.aTouch;
 
-            availability = getStockAvailability(pureId ,touch);
+            availability = getStockAvailability(pureId, touch);
 
             console.log(availability, 'availability')
 
@@ -1137,7 +1137,7 @@ useGlobalKey(
 
         const isBalanceSame = Number(openingBalances.openPure || 0) === Number(closingPure || 0) && Number(openingBalances.openCash || 0) === Number(closingCash || 0);
 
-        
+
 
         const hasAnyValue =
             Number(closingDetails.CONVAMT || 0) > 0 ||
@@ -1152,7 +1152,7 @@ useGlobalKey(
             Number(closingDetails.TDSAMT || 0) > 0 ||
             (closingDetails.BANKPAIDDETAILS?.length ?? 0) > 0 ||
             (closingDetails.BANKRCVDDETAILS?.length ?? 0) > 0;
-            
+
         return (!isBalanceSame && hasAnyValue);
     }, [closingDetails, getClosingDetailsPayload]);
 
@@ -1177,7 +1177,7 @@ useGlobalKey(
             getStockAvailability,
             isIssueType,
             isTagedPR,
-    
+
 
         });
 
@@ -1197,8 +1197,8 @@ useGlobalKey(
                 TRANDATE: headerForm.DATE,
                 BILLNO: headerForm.BILLNO ? Number(headerForm.BILLNO) : undefined,
                 RATE: headerForm.RATEGM ? Number(headerForm.RATEGM) : undefined,
-                REMARK:headerForm.REMARK,
-                THRU:headerForm.THRU
+                REMARK: headerForm.REMARK,
+                THRU: headerForm.THRU
             },
             TRANSACTION_DETAILS: transactionDetails,
             CLOSING_DETAILS: getClosingDetailsPayload(),
@@ -1242,7 +1242,7 @@ useGlobalKey(
             stopEdit();
             refetchTransactionHeaderDetail();
 
-          
+
         } else {
             localStorage.removeItem(TYPE_KEY);
         }
@@ -1278,7 +1278,7 @@ useGlobalKey(
         }
 
         const result = buildTransactionRequest();
-        console.log("Create Transaction Payload:" , result.payload);
+        console.log("Create Transaction Payload:", result.payload);
 
         if (!result.valid || !result.payload) {
             toaster.create({
@@ -1288,7 +1288,7 @@ useGlobalKey(
             });
             return;
         }
-      
+
 
         openLoader("save");
 
@@ -1400,9 +1400,9 @@ useGlobalKey(
         }
     };
 
-  
 
-    const handleTransactionClick = useCallback((transactionId: string |null) => {
+
+    const handleTransactionClick = useCallback((transactionId: string | null) => {
 
         if (draftRows.length > 0 && !isEditing) {
             toaster.create({
@@ -1418,7 +1418,7 @@ useGlobalKey(
 
 
         setSelectedTransactionId(transactionId);
-     
+
 
     }, [draftRows]);
 
@@ -1428,7 +1428,7 @@ useGlobalKey(
     };
 
 
-    
+
     /* ================================
        Render
     ================================ */
@@ -1439,23 +1439,23 @@ useGlobalKey(
     const handleTagNoLookup = (tagNo: string) => {
         if (!headerForm.CUSTOMER) return;
 
-        loadPurchaseTag(tagNo, Number(headerForm.CUSTOMER), usePcsBySoftControl );
+        loadPurchaseTag(tagNo, Number(headerForm.CUSTOMER), usePcsBySoftControl);
     };
 
-const shortcuts = [
-  { keys: "Alt S", label: "Save" },
-  { keys: "Alt U", label: "Update" },
-  { keys: "Alt C", label: "Clear" },
-  { keys: "Alt M", label: "Modify" },
-  { keys: "F1", label: "Filter" },
-  { keys: "Alt P", label: "Purchase" },
-  { keys: "Alt R", label: "Purchase Return" },
-  { keys: "Alt I", label: "Issue" },
-  { keys: "Alt T", label: "Receipt" },
-  {keys : "CTRL P" , label :"Print"},
-  {keys:"F3" , label :"Stock Open" }
-];
-  
+    const shortcuts = [
+        { keys: "Alt S", label: "Save" },
+        { keys: "Alt U", label: "Update" },
+        { keys: "Alt C", label: "Clear" },
+        { keys: "Alt M", label: "Modify" },
+        { keys: "F1", label: "Filter" },
+        { keys: "Alt P", label: "Purchase" },
+        { keys: "Alt R", label: "Purchase Return" },
+        { keys: "Alt I", label: "Issue" },
+        { keys: "Alt T", label: "Receipt" },
+        { keys: "CTRL P", label: "Print" },
+        { keys: "F3", label: "Stock Open" }
+    ];
+
     return (
         <>
 
@@ -1484,13 +1484,13 @@ const shortcuts = [
                             openingData={openingBalance}
                             isEditing={isEditing}
                             isClosingChanged={isClosingChanged()}
-                            isDraftRowChanged ={isDraftRowsChanged()}
+                            isDraftRowChanged={isDraftRowsChanged()}
 
                         />
-                         <ShortcutDialog
-                    
-                          shortcuts={shortcuts}
-                         
+                        <ShortcutDialog
+
+                            shortcuts={shortcuts}
+
                         />
 
                         {/* 2. Transaction Type Selector */}
@@ -1505,7 +1505,7 @@ const shortcuts = [
                             handleShowFilter={openFilter}
                             isEditing={isEditing}
                             onSave={isEditing ? handleUpdateTransaction : handleSaveTransaction}
-                            onReset={isEditing ? isModifying ? handleResetDraft : handleReSelectTransaction : handleResetDraft }
+                            onReset={isEditing ? isModifying ? handleResetDraft : handleReSelectTransaction : handleResetDraft}
                             isSaving={
                                 createTransaction.isPending || updateTransaction.isPending
                             }
@@ -1517,9 +1517,9 @@ const shortcuts = [
                             exportToExcel={exportToExcel}
                             printData={printData}
 
-                            isModifying = {isModifying}
-                            startModifying ={startModifying}
-                            stopModifying ={stopModifying}
+                            isModifying={isModifying}
+                            startModifying={startModifying}
+                            stopModifying={stopModifying}
 
                         />
 
@@ -1578,8 +1578,8 @@ const shortcuts = [
                                                         handleBillShow: handleBillShow,
                                                     }}
                                                     isTagedItem={isTagedItem}
-                                                    isModifying ={isModifying}
-                                                    
+                                                    isModifying={isModifying}
+
                                                 />
                                             </Box>
                                         );
@@ -1619,7 +1619,7 @@ const shortcuts = [
                         closingPure={closingPure}
                         bankAccList={allBankAccounts}
 
-                        headerForm ={headerForm}
+                        headerForm={headerForm}
                         onFormChange={setHeaderField}
                     />
 
@@ -1668,7 +1668,7 @@ const shortcuts = [
             )}
             <Box>
 
-            {/* <SaveModal 
+                {/* <SaveModal 
                 isOpen={openRemarkModal}
                 isClose={handleCloseRemarkModal}
                 onConfirm={handleConfirmRemarkModal}
