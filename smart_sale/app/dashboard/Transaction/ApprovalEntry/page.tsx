@@ -14,7 +14,7 @@ import { useRouter } from "next/navigation";
 import { useTheme } from "@/context/theme/themeContext";
 import { toaster } from "@/components/ui/toaster";
 import { useListCollection, useFilter } from "@chakra-ui/react";
-import { useOpeningBalance } from "@/hooks/apiHooks/balance/useOpeningBalance";
+
 
 // Components
 import TransactionHeaderForm from "./TransactionHeaderForm/TransactionHeaderForm";
@@ -33,7 +33,7 @@ import SalesReceipt from "@/component/ReceiptPrint/SalesPrint";
 import { useGlobalKey } from "@/components/key/useGlobalKey";
 
 // Hooks
-
+import { useOpeningBalance } from "@/hooks/apiHooks/balance/useOpeningBalance";
 import { useApprovalTransactions } from "@/hooks/apiHooks/transaction/useApprovalTransaction";
 import { useAllAccountHead } from "@/hooks/apiHooks/accountHead/useAccountHead";
 import { useStoneItems } from "@/hooks/apiHooks/item/useItems";
@@ -86,19 +86,7 @@ import ShortcutDialog from "@/components/shortcut/ShortcutDialog";
 // import SalesSaveModal from "./SaveModal/SaveModal";
 
 
-//Icons
-type StoneRow = {
-    id: string;
-    draftRowId: string;
-    stoneId: string;
-    subStoneId: string;
-    stonePcs: string;
-    stoneWeight: string;
-    stoneUnit: "g" | "c";
-    stoneCalculation: "w" | "p";
-    stoneRate: string;
-    stoneAmount: string;
-};
+
 
 
 interface SalesFilter {
@@ -202,13 +190,13 @@ export default function SalesPage() {
     const [metalId, setMetalId] = useState<string | undefined>();
     const [selectedName, setSelectedName] = useState<string | undefined>();
     const [isFilterOpen, setIsFilterOpen] = useState(false);
-    const [apiBalanceOpening, setApiBalanceOpening] = useState({ openPure: 0, openCash: 0 });
+    const [apiBalanceOpening, setApiBalanceOpening] = useState({ openPcs: 0, openGrsWt: 0 });
 
     const [selectedTransactionId, setSelectedTransactionId] = useState<string | null>(null);
 
-    const [baseOpening, setBaseOpening] = useSessionStorage<{ openPure: number, openCash: number }>('sales-openingBalance', {
-        openPure: 0,
-        openCash: 0,
+    const [baseOpening, setBaseOpening] = useSessionStorage<{ openPcs: number, openGrsWt: number }>('approval-openingBalance', {
+        openPcs: 0,
+        openGrsWt: 0,
     });
 
     const [singleSearch, setSingleSearch] = useSessionStorage<string>(TRANSACTION_LIST_SEARCH, '');
@@ -244,8 +232,6 @@ export default function SalesPage() {
     const handleBillShow = () => {
         setShowBillModal(prev => !prev);
     };
-
-    const [openSalesSaveModal, setIsOpenSalesSaveModal] = useState<boolean>(false);
 
     /*-------------------PERSISTENT STATE-------------------------------*/
 
@@ -357,6 +343,7 @@ export default function SalesPage() {
     const { data: metalsData } = useAllMetals();
 
     const { data: openingBalance, refetch: openingBalanceRefetch } = useOpeningBalance(Number(accCode));
+    console.log(openingBalance,'openingBalance')
 
 
     // Note: This hook might need to be updated to handle multiple transaction types
@@ -397,12 +384,12 @@ export default function SalesPage() {
 
     useEffect(() => {
 
-        const openPure = Number(openingBalance?.data?.OPENPURE ?? 0);
-        const openCash = Number(openingBalance?.data?.OPENCASH ?? 0);
+        const openPcs = Number(openingBalance?.data?.PCS ?? 0);
+        const openGrsWt = Number(openingBalance?.data?.GRSWT ?? 0);
 
         setApiBalanceOpening({
-            openPure,
-            openCash
+            openPcs,
+            openGrsWt
         });
 
     }, [openingBalance]);
@@ -587,26 +574,7 @@ export default function SalesPage() {
     }, []);
 
 
-    /* ================================
-        SALES SAVE MODAL MANAGE
-   ================================ */
 
-    //    const openSaleSaveModal = ()=>{
-    //     setIsOpenSalesSaveModal(true);
-    //    }
-    //    const closeSalesSaveModal = ()=>{
-    //     setIsOpenSalesSaveModal(false);
-    //    }
-
-    //    const confirmSalesSaveModal = ()=>{
-    //         if(isEditing){
-    //             handleUpdateTransaction()
-    //         } 
-    //         else{
-    //             handleSaveTransaction()
-    //         }
-
-    //    }
 
     // KEY TO ACCESS
 
@@ -701,15 +669,17 @@ export default function SalesPage() {
 
 
     const setOpeningBalance = (data: any, isEdit: boolean) => {
+
+        console.log(data ,'openingDatainedit');
         if (isEdit) {
             setBaseOpening({
-                openCash: data?.BALANCE?.openingCash ?? 0,
-                openPure: data?.BALANCE?.openingPure ?? 0,
+                openPcs: data?.OPENING_BALANCE?.PCS ?? 0,
+                openGrsWt: data?.OPENING_BALANCE?.GRSWT ?? 0,
             });
         } else {
             setBaseOpening({
-                openCash: apiBalanceOpening?.openCash ?? 0,
-                openPure: apiBalanceOpening?.openPure ?? 0,
+                openPcs: apiBalanceOpening?.openPcs ?? 0,
+                openGrsWt: apiBalanceOpening?.openGrsWt ?? 0,
             });
         }
     };
@@ -724,8 +694,8 @@ export default function SalesPage() {
     // Single useEffect to calculate balances when either draftRows or API balances change
     const openingBalances = useApprovalOpeningBalances(
         draftRows,
-        baseOpening.openPure,
-        baseOpening.openCash
+        baseOpening.openPcs,
+        baseOpening.openGrsWt
     );
 
     /* ================================
@@ -822,7 +792,7 @@ export default function SalesPage() {
         setOpeningBalance(data, true);
         setEditingSno(sno);
 
-        console.log(data, 'datadata')
+       
 
         const result = loadTransaction(data, sno);
         if (!result) return;
@@ -1194,7 +1164,6 @@ export default function SalesPage() {
                     });
 
                     openingBalanceRefetch();
-                    setIsOpenSalesSaveModal(false);
                 }
             }
         );
@@ -1247,7 +1216,7 @@ export default function SalesPage() {
 
             resetStore();
             // resetBalance();
-            setIsOpenSalesSaveModal(false);
+         
             handleResetDraft();
 
         } catch (error: any) {
@@ -1257,7 +1226,7 @@ export default function SalesPage() {
                 type: "error",
             });
 
-            setIsOpenSalesSaveModal(false);
+        
             openingBalanceRefetch();
         }
     };
@@ -1498,8 +1467,8 @@ export default function SalesPage() {
                         openBalance={openingBalances}
                         accCode={Number(accCode)}
                         rate={Number(headerForm.RATEGM)}
-                        closingCash={openingBalances.openCash}
-                        closingPure={openingBalances.openPure}
+                        closingPcs={openingBalances.openPcs}
+                        closingGrsWt={openingBalances.openGrsWt}
                         bankAccList={allBankAccounts}
                         headerForm={headerForm}
                         onFormChange={setHeaderField}

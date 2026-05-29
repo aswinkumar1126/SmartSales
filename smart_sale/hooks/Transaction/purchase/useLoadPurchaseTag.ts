@@ -40,7 +40,7 @@ export const useLoadPurchaseTag = () => {
             if (!data) {
                 toaster.create({
                     title: "Tag Not Found",
-                    description: `No data found for tag ${tagNo}`,
+                    description: `${response.error}`,
                     type: "error",
                 });
                 return;
@@ -87,6 +87,7 @@ export const useLoadPurchaseTag = () => {
                     stoneCalculation: calculation,
                     stoneRate,
                     stoneAmount: stoneAmount > 0 ? String(stoneAmount) : "",
+                    stoneItemName: s.STNITEMNAME
                 };
             });
             console.log(data,'stoneDetails');

@@ -20,12 +20,33 @@ export const useLoadApprovalReceiptItems = () => {
         let addedCount = 0;
 
         console.log(items,'itemsinloadfrombill');
+        if (draftRows.length > 0) {
 
+            // Existing entry number in grid
+            const existingEntryNo = draftRows[0]?.ENTRYNO;
+
+            // Incoming different entry number
+            const differentEntryExists = items.some(
+                (item: any) => item.ENTRYNO !== existingEntryNo
+            );
+
+            if (differentEntryExists) {
+                toaster.create({
+                    title: "Different Entry Not Allowed",
+                    description: `Only same Entry No / Bill No can be loaded`,
+                    type: "warning",
+                    duration: 2000,
+                });
+
+                return;
+            }
+        }
         items.forEach((item) => {
             // ✅ UNIQUE CHECK (SNO is perfect)
             const exists = draftRows.some(
                 (row) => row.SNO === item.SNO
             );
+           
 
             if (exists) {
                 toaster.create({
@@ -84,17 +105,16 @@ export const useLoadApprovalReceiptItems = () => {
                 TAGNO: String(item.TAGNO || ""),
                 PCS: Number(item.PCS || 1),
 
-                GRSWT: Number(item.GRSWT || 0),
+                GRSWT: Number(item.GRSWT || 0).toFixed(3),
                 STNWT: totalStoneWeight,
-                NETWT: Number(item.NETWT || 0),
+                NETWT: Number(item.NETWT || 0).toFixed(3),
 
                 WASTYPE: item.WASTYPE,
-                TOUCH: Number(item.TOUCH || 0),
-                MC: Number(item.MC || 0),
+                TOUCH: Number(item.TOUCH || 0).toFixed(2),
+                MC: Number(item.MC || 0).toFixed(2),
 
                 // ✅ IMPORTANT
                 SNO: item.SNO,
-                BILLNO: item.BILLNO,
 
                 DESCRIPTION: item.DESCRIPTION || "",
 
@@ -107,6 +127,7 @@ export const useLoadApprovalReceiptItems = () => {
 
 
                 REFNO : item.BATCHNO || "",
+                ENTRYNO: item.ENTRYNO,
             };
 
             addDraftRow(newRow);

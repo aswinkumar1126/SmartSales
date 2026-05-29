@@ -427,10 +427,10 @@ const STATIC_MENU: SidebarMenu = {
   },
 
   Reports: {
-          SALES:  {
+        SALES:  {
           type: "direct",
           label: "Sales Report",
-          route: "/dashboard/Reports/TagReport/SalesReport",
+          route: "/dashboard/Reports/SalesReport",
           icon: Layers,
           title: "TRANSACTION REPORT",
           description: "View Transaction summary reports",
@@ -438,7 +438,7 @@ const STATIC_MENU: SidebarMenu = {
         PURCHASE:  {
           type: "direct",
           label: "Purchase Report",
-          route: "/dashboard/Reports/TagReport/PurchaseReport",
+          route: "/dashboard/Reports/PurchaseReport",
           icon: Layers,
           title: "TRANSACTION REPORT",
           description: "View Transaction summary reports",
@@ -447,7 +447,7 @@ const STATIC_MENU: SidebarMenu = {
         {
           type: "direct",
           label: "Outstanding Report",
-          route: "/dashboard/Reports/TagReport/OutstandingReport",
+          route: "/dashboard/Reports/OutstandingReport",
           icon: Layers,
           title: "  OUTSTANDING REPORT",
           description: "View stock   OUTSTANDING reports",
@@ -456,7 +456,7 @@ const STATIC_MENU: SidebarMenu = {
         {
           type: "direct",
           label: "ITEM Stock Report",
-          route: "/dashboard/Reports/TagReport/ItemStockReport",
+          route: "/dashboard/Reports/ItemStockReport",
           icon: Layers,
           title: "ITEM WISE STOCK REPORT",
           description: "View stock and item summary reports",
@@ -464,7 +464,7 @@ const STATIC_MENU: SidebarMenu = {
     PUREReport: {
           type: "direct",
           label: "PURE Stock Report",
-          route: "/dashboard/Reports/TagReport/PureStockReport",
+          route: "/dashboard/Reports/PureStockReport",
           icon: Layers,
           title: "PURE WISE STOCK REPORT",
           description: "View stock and item summary reports",
@@ -473,7 +473,7 @@ const STATIC_MENU: SidebarMenu = {
     ACHEADReport :{
           type: "direct",
           label: "Achead Stock Report",
-          route: "/dashboard/Reports/TagReport/AcheadStockReport",
+          route: "/dashboard/Reports/AcheadStockReport",
           icon: Layers,
           title: "ACHEAD STOCK REPORT",
           description: "View stock and item summary reports",
@@ -481,7 +481,7 @@ const STATIC_MENU: SidebarMenu = {
       TRANReport:  {
           type: "direct",
           label: "Transaction Report",
-          route: "/dashboard/Reports/TagReport/TranReport",
+          route: "/dashboard/Reports/TranReport",
           icon: Layers,
           title: "TRANSACTION REPORT",
           description: "View Transaction summary reports",
@@ -489,7 +489,7 @@ const STATIC_MENU: SidebarMenu = {
         AgeReport:  {
           type: "direct",
           label: "Age Report",
-          route: "/dashboard/Reports/TagReport/AgeReport",
+          route: "/dashboard/Reports/AgeReport",
           icon: Layers,
           title: "AGE REPORT",
           description: "View Tagwise-age reports",

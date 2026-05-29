@@ -36,7 +36,7 @@ export const buildTransactionPayload = ({
 
             ...(validStones.length > 0 && {
                 STONEDETAILS: validStones.map((stone: any) => ({
-                    stoneId: stone.stoneId,
+                    stoneId: Number(stone.stoneId),
                     subStoneId: stone.subStoneId,
                     stonePcs: stone.stonePcs,
                     stoneWeight: stone.stoneWeight,
@@ -44,6 +44,8 @@ export const buildTransactionPayload = ({
                     stoneCalculation: stone.stoneCalculation,
                     stoneRate: stone.stoneRate,
                     stoneAmount: stone.stoneAmount,
+                    itemId :Number(row.ITEMID)
+
                 })),
             }),
 

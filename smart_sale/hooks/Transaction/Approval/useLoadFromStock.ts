@@ -21,34 +21,7 @@ export const useLoadFromStock = () => {
             TRANSACTION_TYPE: targetType.value,
             DESCRIPTION: stockRow.DESCRIPTION || "",
         };
-
-        // ✅ ISSUE TYPE (IS)
-        // if (isIssue) {
-        //     const availableWeight = availability?.remaining || 0;
-
-        //     console.log(stockRow,'stockRowstockRow')
-        //     return {
-        //         ...baseRow,
-
-        //         PUREID: stockRow.pureId || "",
-
-        //         WT: availableWeight,
-        //         AWT: availableWeight,
-
-        //         TOUCH: stockRow.aTouch || "",
-        //         ATOUCH: stockRow.aTouch || "",
-
-        //         PUREWT: stockRow.actualPure || 0,
-        //         APUREWT: stockRow.actualPure || 0,
-
-        //         // 🔥 Optional stock tracking (very useful)
-        //         _stock: {
-        //             total: availability?.total || 0,
-        //             used: availability?.used || 0,
-        //             remaining: availableWeight,
-        //         },
-        //     };
-        // }
+        console.log(stockRow,'stockRow');
 
         // ✅ SALES TYPE (SA)
         const grswt = Number(stockRow.GRSWT || stockRow.grswt || 0);

@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useApiQuery } from "../apiHook/ApiHook";
-import { ItemStockEntry } from "@/types/SummaryReport/SummaryReport";
+import { ItemStockEntry, OutStandingStockReportParams, AgeReportParams } from "@/types/SummaryReport/SummaryReport";
 
 
 export const usePurchaseSummary = ({
@@ -159,40 +159,23 @@ export const useItemStockReport = ({ date, columns, groupBy }: {
 
 // Add this to your useSummaryReport.ts file
 
-export const useAgeReport = ({
-  fromAge,
-  toAge,
-}: {
-  fromAge?: number;
-  toAge?: number;
-}) => {
+export const useAgeReport = (params:AgeReportParams) => {
   return useApiQuery<Record<string, any>[]>({
-    queryKey: ["age_report", fromAge?.toString() ?? "", toAge?.toString() ?? ""],
-    url: "/report/age", // Adjust the endpoint URL as needed
-    method: "GET",
-    params: {
-      FROMAGE: fromAge,
-      TOAGE: toAge,
-    },
+    queryKey: ["age_report", params.FROMAGE?.toString() ?? "", params.TOAGE?.toString() ?? "", params.ITEMID?.toString() ?? "",],
+    url: "/report/age",
+    params:{params},
     select: (res) => res.data,
-    enabled: false,
   });
 };
 
 
-export const useOutstandingStockReport = () => {
+export const useOutstandingStockReport = (params: OutStandingStockReportParams) => {
   return useApiQuery<Record<string, any>[]>({
     queryKey: ["outstanding_stock_report"],
     url: "/report/outstanding",
-    method: "GET",
     select: (res) => res.data,
-    enabled: false, // Call refetch() manually to execute the request
+    params : {
+      ...params
+    }
   });
 };
-    // return useApiQuery<ItemStockEntry[]>({
-    //     queryKey: ["item_stock_report", date ?? ""],
-    //     url: "/report/itemwise",
-    //     method: "GET",
-    //     params: date ? { date } : undefined,
-    //     select: (res) => res.data,
-    // });

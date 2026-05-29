@@ -41,6 +41,8 @@ export default function TransactionHeaderForm({
     // isClosingChanged
 }: TransactionHeaderFormProps) {
 
+    console.log(openingData, openingBalance ,'openingBalanceinedit header')
+
     // Get the customer label for the current form.CUSTOMER value
     const getCustomerLabel = (value: any) => {
         if (!value) return "";
@@ -66,8 +68,8 @@ export default function TransactionHeaderForm({
     };
     console.log(openingBalance, 'openingBalance')
 
-    const openingCash = openingBalance.openCash ? formatToFixed(openingBalance.openCash, 2) : 0;
-    const openingPure = openingBalance.openPure ? formatToFixed(openingBalance.openPure, 3) : 0;
+    const openingPcs = openingBalance.openPcs ? formatToFixed(openingBalance.openPcs, 0) : 0;
+    const openingGrsWt = openingBalance.openGrsWt ? formatToFixed(openingBalance.openGrsWt, 3) : 0;
 
 
 
@@ -187,7 +189,7 @@ export default function TransactionHeaderForm({
                     <>
                         <Box>
                             <Text fontSize="x-small" fontWeight='semibold' >
-                                OPENING PURE :
+                                OPENING PCS :
                             </Text>
                             <Text
                                 fontSize="sm"
@@ -197,14 +199,14 @@ export default function TransactionHeaderForm({
                                 rounded="sm"
                                 color={theme.colors.whiteColor}
                             >
-                                {openingPure}
+                                {openingPcs}
                             </Text>
                         </Box>
 
 
                         <Box>
                             <Text fontSize="x-small" fontWeight='semibold'>
-                                OPENING PCS :
+                                OPENING GRSWT :
                             </Text>
                             <Text
                                 fontSize="sm"
@@ -214,7 +216,7 @@ export default function TransactionHeaderForm({
                                 fontWeight='semibold'
                                 color={theme.colors.whiteColor}
                             >
-                                {openingCash}
+                                {openingGrsWt}
                             </Text>
                         </Box>
                     </>

@@ -7,50 +7,50 @@ type TransactionRow = {
     HMC?: number;
     STNAMT?: number;
     MC?: number;
+    PCS?:number;
+    GRSWT?:number;
 }
 
 type OpeningBalances = {
-    openPure: number;
-    openCash: number;
+    openPcs: number;
+    openGrsWt: number;
 };
 
 export const useApprovalOpeningBalances = (
     draftRows: TransactionRow[],
-    initialPure: number,
-    initialCash: number
+    initialPcs: number,
+    initialGrsWt: number
 ): OpeningBalances => {
     return useMemo(() => {
-        let openPure = initialPure;
-        let openCash = initialCash;
+        let openPcs = initialPcs;
+        let openGrsWt = initialGrsWt;
 
 
 
         draftRows.forEach((row) => {
             const type = APPROVAL_TRANSACTION_KEY_MAP[row.TRANSACTION_TYPE];
 
-            const pureWt = Number(row.PUREWT) || 0;
+        
+            const pcs = Number(row.PCS) || 0;
+            const grsWt =Number(row.GRSWT)|| 0;
 
-            const cash =
-                (Number(row.HMC) || 0) +
-                (Number(row.STNAMT) || 0) +
-                (Number(row.MC) || 0);
 
             switch (type) {
                 case "APPROVAL_ISSUE":
-                    openPure -= pureWt;
-                    openCash -= cash;
+                    openGrsWt += grsWt;
+                    openPcs += pcs;
                     break;
 
                 case "APPROVAL_RECEIPT":
-                    openPure += pureWt;
-                    openCash += cash;
+                    openGrsWt -= grsWt;
+                    openPcs -= pcs;
                     break;
             }
         });
 
         return {
-            openPure: Number(openPure.toFixed(3)),
-            openCash: Number(openCash.toFixed(2)),
+            openPcs: Number(openPcs),
+            openGrsWt: Number(openGrsWt),
         };
-    }, [draftRows, initialPure, initialCash]);
+    }, [draftRows, initialPcs, initialGrsWt]);
 };

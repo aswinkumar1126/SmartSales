@@ -48,8 +48,14 @@ export default function TransactionTypeSelector({
     /* ---------- CLICK HANDLER ---------- */
     const handleTypeClick = (clickedType: any) => {
 
+        console.log(selectedTransactionTypes, 'selectedTransactionTypes');
 
-        if(!acCode) return toaster.create({ title: "Please select customer", type: "info" });
+        if (!acCode) {
+            return toaster.create({
+                title: "Please select customer",
+                type: "info"
+            });
+        }
 
         const isSelected = selectedTransactionTypes.some(
             (type: any) => type.value === clickedType.value
@@ -58,19 +64,19 @@ export default function TransactionTypeSelector({
         // REMOVE
         if (isSelected) {
 
-            const isDraftRowsExists = draftRows.some((row: any) => row.TRANSACTION_TYPE === clickedType.value);
+            const isDraftRowsExists = draftRows.some(
+                (row: any) => row.TRANSACTION_TYPE === clickedType.value
+            );
 
-        
-            if (isDraftRowsExists){
+            if (isDraftRowsExists) {
                 toaster.create({
                     title: "Transaction rows exist",
-                    description: `You have transaction row(s) of selected ${clickedType.label} .`,
+                    description: `You have transaction row(s) of selected ${clickedType.label}.`,
                     type: "warning",
                     duration: 2000,
                 });
                 return;
-            };
-           
+            }
 
             const confirmRemove = window.confirm(
                 `Remove "${clickedType.label}" from filter?`
@@ -79,11 +85,20 @@ export default function TransactionTypeSelector({
             if (!confirmRemove) return;
 
             removeTransactionType(clickedType.value);
+
+            return;
         }
+
+        // ONLY ONE TRANSACTION TYPE ALLOWED
+        if (selectedTransactionTypes.length > 0) {
+            return toaster.create({
+                title: "Only one transaction can be selected",
+                type: "info"
+            });
+        }
+
         // ADD
-        else {
-            setSelectedTransactionTypes([...selectedTransactionTypes, clickedType]);
-        }
+        setSelectedTransactionTypes([clickedType]);
     };
 
     const isTypeSelected = (code: string) =>

@@ -24,12 +24,13 @@ export const useLoadTag = () => {
 
             const response = await getTagDetails(tagNo, customerId, true);
             const data = response?.data;
-            console.log(data, 'usetouchdata');
+            
+            console.log(response,'response from tag calling');
 
             if (!data) {
                 toaster.create({
                     title: "Tag Not Found",
-                    description: `No data found for tag ${tagNo}`,
+                    description: `${response.error}`,
                     type: "error",
                 });
                 return;
@@ -79,6 +80,7 @@ export const useLoadTag = () => {
                         stone.STNPCS || 1,
                         stone.STNRATE || 0,
                         stone.CALCMODE || "w"), 3),
+                    stoneItemName: stone.STNITEMNAME
                 }));
 
                 totalStoneWeight = stonesWithId.reduce(
@@ -107,7 +109,8 @@ export const useLoadTag = () => {
 
             const STN_PRESENT = data.STNPRESENT === "Y" || stoneDetails.length > 0;
 
-            console.log(STN_PRESENT, 'STN_PRESENT')
+            console.log(STN_PRESENT, 'STN_PRESENT');
+            console.log(stonesWithId,'stonesWithIdstonesWithId');
 
             // ✅ Build the complete row object at once — no partial mutation
             const newRow: any = {

@@ -24,7 +24,7 @@ import Image from "next/image";
 
 import { useLoadApprovalReceiptItems } from "@/hooks/Transaction/Approval/useLoadSalesReturnItems";
 
-interface SalesBillViewModalProps {
+interface IssuedItemsViewModalProps {
     isOpen: boolean;
     billParams: billDetailsParams;
     onBillParamChange: (field: keyof billDetailsParams, value: any) => void;
@@ -44,7 +44,7 @@ export default function SalesBillViewModal({
     loading,
     highlightedId,
  
-}: SalesBillViewModalProps) {
+}: IssuedItemsViewModalProps) {
     const today = new Date().toISOString().split("T")[0];
 
     const { loadApprovalReceiptItems } = useLoadApprovalReceiptItems();

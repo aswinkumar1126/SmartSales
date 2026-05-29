@@ -137,7 +137,7 @@ export function useTaggingValidation() {
       if (grs <= 0) {
         errors.grsweight =
           "Gross weight must be greater than 0";
-      } else if (finalGrsTotal > grsUpperLimit) {
+      } else if (finalGrsTotal.toFixed(3) > grsUpperLimit) {
         errors.grsweight =
           `Total gross weight cannot exceed ${grsUpperLimit}g`;
       }
@@ -325,7 +325,7 @@ export function useTaggingValidation() {
         : allRows;
 
       const totalPCS = rowsForLimitCheck.length;
-      const totalGrsWt = rowsForLimitCheck.reduce((s, r) => s + (r.grsweight || 0), 0);
+      const totalGrsWt = rowsForLimitCheck.reduce((s, r) => s + (r.grsweight || 0).toFixed(3), 0);
       const totalPurchaseStoneWt = rowsForLimitCheck.reduce((s, r) => s + (r.purchaseStoneWt || 0), 0);
 
       // PCS limit

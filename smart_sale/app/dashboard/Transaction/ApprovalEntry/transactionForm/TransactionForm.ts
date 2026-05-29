@@ -54,31 +54,7 @@ export const ApprovalColumns = (isTag: boolean) => [
         decimalScale: 3
    
     },
-    // {
-    //     key: "WASTYPE",
-    //     label: "W.TYPE",
-    //     width: "40px",
-    //     type: "select" ,
-    //     align: "right" ,
-
-    // },
-    // {
-    //     key: "WASPER",
-    //     label: "WAS %",
-    //     width: "35px",
-    //     type: "number" ,
-    //     align: "right" ,
-
-    // },
-    // {
-    //     key: "WASTAGE",
-    //     label: "WASTAGE",
-    //     width: "40px",
-    //     type: "number" ,
-    //     align: "right" ,
-    //     decimalScale: 3
-
-    // },
+    
     {
         key: "TOUCH",
         label: "TOUCH",
@@ -118,17 +94,7 @@ export const ApprovalColumns = (isTag: boolean) => [
         decimalScale: 2
   
     },
-    
-    // {
-    //     key: "ATOUCH",
-    //     label: "A.TOUCH",
-    //     width: "45px",
-    //     type: "number" ,
-    //     align: "right" ,
-    //     max: 999,
-    //     decimalScale: 1
-
-    // },
+ 
     {
         key: "STNAMT",
         label: "STN AMT",

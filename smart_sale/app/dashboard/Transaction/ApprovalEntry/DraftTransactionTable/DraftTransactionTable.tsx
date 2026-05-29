@@ -28,7 +28,7 @@ import { useTouchByFilter } from "@/hooks/apiHooks/touch/useTouchMastData";
 import { useSoftControlById } from "@/hooks/apiHooks/softControl/useSoftControl";
 import { calculateMiscChargeFinalAmount } from "@/hooks/Transaction/both/calculateMiscCharges";
 
-import SalesBillViewModal from "../SaleModal/SaleModal";
+import SalesBillViewModal from "../IssuedItemsView/IssuedItemsModal";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -173,6 +173,8 @@ export default function DraftTransactionTable({
     const draftRowsRef = useRef(draftRows);
     useEffect(() => { draftRowsRef.current = draftRows; }, [draftRows]);
 
+    console.log(draftRows,'draftRowsdraftRows');
+
     // ── rowId-keyed tracking refs (no index dependency) ───────────────────────
     const committedRowIdsRef = useRef<Set<string>>(new Set());
     const pendingStoreCallRef = useRef<(() => void) | null>(null);
@@ -213,6 +215,7 @@ export default function DraftTransactionTable({
     const [stoneModalRowId, setStoneModalRowId] = useState<string | null>(null);
     const [miscModalRowId, setMiscModalRowId] = useState<string | null>(null);
     const [currentGRSWT, setCurrentGRSWT] = useState<number>(0);
+    const [currentIsTaged, setCurrentIsTaged] = useState<boolean>(false);
     const [isStoneModalOpen, setIsStoneModalOpen] = useState(false);
     const [stoneModalInitialRows, setStoneModalInitialRows] = useState<any[]>([]);
     const [isMiscModalOpen, setIsMiscModalOpen] = useState(false);
@@ -265,10 +268,7 @@ export default function DraftTransactionTable({
     const formFields = useMemo<FormField[]>(() => {
         return tableCols.map((col): FormField => {
             const isNum = numericFields.includes(col.key);
-            const isRequired = //isIssue
-            //     ? ["PUREID", "TOUCH", "WT"].includes(col.key)
-            //     : 
-            ["ITEMID", "PCS", "GRSWT", "TOUCH", "HMC"].includes(col.key);
+            const isRequired = ["ITEMID", "PCS", "GRSWT", "TOUCH", "HMC"].includes(col.key);
 
             const base: FormField = {
                 key: col.key,
@@ -286,21 +286,13 @@ export default function DraftTransactionTable({
 
             if (col.key === "ITEMID" || col.key === "PUREID")
                 return { ...base, type: "combobox", collection: itemsCollection || { items: [] }, isRequired: true };
-            if (col.key === "WASTYPE")
-                return { ...base, type: "select", collection: wastypecollection, isRequired: true, defaultValue: "TOUCH" };
             if (["NETWT", "PUREWT"].includes(col.key))
                 return { ...base, type: "calculated", disabled: true };
-            // if (isIssue && ["PUREWT", "APUREWT"].includes(col.key))
-            //     return { ...base, type: "calculated", disabled: true };
             if (col.key === "STNAMT")
                 return { ...base, type: "calculated", disabled: true };
-            // if (isIssue && col.key === "ATOUCH" && transactionType === "IS")
-            //     return { ...base, disabled: true };
 
-            // ── STNWT: disabled when the active row's item has no stones ─────
-            // if (!isIssue && col.key === "STNWT")
-            //     return { ...base, disabled: !activeStnPresent };
 
+          
             return base;
         });
     }, [tableCols, itemsCollection, isIssue, wastypecollection, numericFields, activeStnPresent, transactionType]);
@@ -546,10 +538,7 @@ export default function DraftTransactionTable({
             delete appliedItemIdRef.current[rowId];
             touchNotFoundRef.current.delete(rowId);
         }
-        // if (colKey === "PUREID") {
-        //     delete appliedPureIdRef.current[rowId];
-        // }
-
+    
         if (colKey === "TOUCH") {
             const touchMissing = touchNotFoundRef.current.has(rowId);
             if (touchMissing && !value) {
@@ -686,10 +675,7 @@ export default function DraftTransactionTable({
         existingRow?.TOUCH &&
         existingRow?.CAL_MODE 
 
-         // existingRow?.ATOUCH === touch &&
-        // Number(existingRow?.HMC || 0) === hmcAmount;
-
-   //     // THIS is the real protection
+         // THIS is the real protection
         if (alreadyApplied) {
             appliedItemIdRef.current[activeRowId] = key;
             return;
@@ -755,7 +741,7 @@ export default function DraftTransactionTable({
 
 
     // ── Stone modal ───────────────────────────────────────────────────────────
-    const handleOpenStoneModal = useCallback((rowId: string, grsWeight: number) => {
+    const handleOpenStoneModal = useCallback((rowId: string, grsWeight: number ,isTagedRow : boolean) => {
         if (!grsWeight || grsWeight <= 0) {
             toaster.create({ title: "Enter GRSWT first", type: "warning" });
             return;
@@ -763,6 +749,7 @@ export default function DraftTransactionTable({
         const freshRow = useApprovalTransactionStore.getState().draftRows.find((r) => r.__rowId === rowId);
         setStoneModalRowId(rowId);
         setCurrentGRSWT(grsWeight);
+        setCurrentIsTaged(isTagedRow);
         setStoneModalInitialRows(freshRow?._stones || []);
         setIsStoneModalOpen(true);
     }, []);
@@ -836,6 +823,8 @@ export default function DraftTransactionTable({
     const renderCell = useCallback((params: RenderCellParams) => {
         const { row, col, value, isEditing, isFocused, onChange, onCommit, inputRef } = params;
 
+        const disabledTagFields = ["PCS", "GRSWT"];
+
         console.log(row,'rowinrendercell');
         const field = formFields.find((f) => f.key === col.key);
         if (!field) return <span style={{ padding: "0 4px", fontSize: 11 }}>{value ?? ""}</span>;
@@ -850,6 +839,30 @@ export default function DraftTransactionTable({
             );
         }
 
+        const isTagDisabledField =
+            row.__isTaged && disabledTagFields.includes(col.key);
+
+        if (isTagDisabledField) {
+            return (
+                <span
+                    style={{
+                        padding: "0 6px",
+                        fontSize: 14,
+                        color: "#09551c",
+                        fontWeight : 600,
+                        width: "100%",
+                        display: "block",
+                        textAlign: col.align || "left",
+                        background: "#f5f5f5",
+                        cursor: "not-allowed"
+                    }}
+                >
+                    {value ?? ""}
+                </span>
+            );
+        }
+      
+
         if (col.key === "STNWT") {
             // Per-row STN_PRESENT check — each row respects its own item's stone config
             const rowStnPresent = row.STN_PRESENT ?? false;
@@ -857,19 +870,19 @@ export default function DraftTransactionTable({
             const isStnDisabled = !rowStnPresent;
             const stonesCount = (row._stones || []).length;
 
-            // if (isStnDisabled) {
-            //     return (
-            //         <span style={{ padding: "0 6px", fontSize: 11, color: "#aaa", width: "100%", display: "block", textAlign: "right", cursor: "not-allowed" }}>
-            //             {value || "0.000"}
-            //         </span>
-            //     );
-            // }
+            if (isStnDisabled) {
+                return (
+                    <span style={{ padding: "0 6px", fontSize: 11, color: "#aaa", width: "100%", display: "block", textAlign: "right", cursor: "not-allowed" }}>
+                        {value || "0.000"}
+                    </span>
+                );
+            }
 
             return (
                 <div
                     style={{ display: "flex", alignItems: "center", width: "100%", padding: "0 2px" }}
-                    onFocus={() => handleOpenStoneModal(row.__rowId, parseFloat(row.GRSWT) || 0)}
-                    onClick={() => handleOpenStoneModal(row.__rowId, parseFloat(row.GRSWT) || 0)}
+                    onFocus={() => handleOpenStoneModal(row.__rowId, parseFloat(row.GRSWT) || 0 ,row.__isTaged) }
+                    onClick={() => handleOpenStoneModal(row.__rowId, parseFloat(row.GRSWT) || 0, row.__isTaged)}
                 >
                     <CapitalizedInput
                         field={col.key} value={value || ""} onChange={(_, v) => onChange(v)}
@@ -1223,6 +1236,8 @@ export default function DraftTransactionTable({
                             initialRows={stoneModalInitialRows}
                             onSave={handleStonesSave}
                             stoneItems={stoneItemsCollection}
+                            isTagedRow ={currentIsTaged}
+
                         />
                     </Box>
                 </Box>

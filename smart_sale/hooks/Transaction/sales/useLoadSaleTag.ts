@@ -29,7 +29,7 @@ export const useLoadSaleTag = () => {
             if (!data) {
                 toaster.create({
                     title: "Tag Not Found",
-                    description: `No data found for tag ${tagNo}`,
+                    description: `${response.error}`,
                     type: "error",
                 });
                 return;
@@ -79,6 +79,7 @@ export const useLoadSaleTag = () => {
                         stone.STNPCS || 1,
                         stone.STNRATE || 0,
                         stone.CALCMODE || "w"), 3),
+                    stoneItemName: stone.STNITEMNAME
                 }));
 
                 totalStoneWeight = stonesWithId.reduce(

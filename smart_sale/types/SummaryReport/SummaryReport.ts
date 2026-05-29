@@ -30,3 +30,19 @@ export interface ItemStockReportResponse {
   message: string;
   data: ItemStockEntry[];
 }
+
+
+export interface OutStandingStockReportParams {
+  STOCKTYPE?: string,
+  METAL?:string;
+  STUDDED?:string;
+  ITEMNAME?:string;
+  STONE_PRESENT?:string;
+
+}
+
+export interface AgeReportParams {
+  FROMAGE:number ;
+  TOAGE:number;
+  ITEMID :number;
+}

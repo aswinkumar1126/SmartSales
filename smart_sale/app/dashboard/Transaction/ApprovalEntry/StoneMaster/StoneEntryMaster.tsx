@@ -26,6 +26,7 @@ export type StoneRow = {
     stoneCalculation: "w" | "p";
     stoneRate: string;
     stoneAmount: string;
+    stoneItemName? :string
 };
 
 type Props = {
@@ -35,6 +36,7 @@ type Props = {
     onSave: (rows: any[]) => void;
     initialRows?: any[];
     stoneItems?: SelectItem[];
+    isTagedRow ?: boolean
 };
 
 // ─── Column definitions ───────────────────────────────────────────────────────
@@ -106,7 +108,8 @@ export default function StoneEnterMaster({
     onSave,
     initialRows = [],
     stoneItems = [],
-    draftRowId
+    draftRowId,
+    isTagedRow
 }: Props) {
 
     // ── Rows state ─────────────────────────────────────────────────────────────
@@ -122,6 +125,7 @@ export default function StoneEnterMaster({
                 stoneCalculation: r.stoneCalculation ?? "w",
                 stoneRate: r.stoneRate != null ? String(r.stoneRate) : "",
                 stoneAmount: r.stoneAmount != null ? String(r.stoneAmount) : "0",
+                stoneItemName: r.stoneItemName || "",
             }));
         }
         return [emptyRow(draftRowId)];
@@ -145,6 +149,7 @@ export default function StoneEnterMaster({
                 stoneCalculation: r.stoneCalculation ?? "w",
                 stoneRate: r.stoneRate != null ? String(r.stoneRate) : "",
                 stoneAmount: r.stoneAmount != null ? String(r.stoneAmount) : "0",
+                stoneItemName: r.stoneItemName || "",
             })));
         } else {
             setRows([emptyRow(draftRowId)]);
@@ -228,9 +233,56 @@ export default function StoneEnterMaster({
     const renderCell = useCallback((params: RenderCellParams) => {
         const { col, value, isEditing, isFocused, isError, errorMessage, onChange, onCommit, inputRef, row, rowIndex } = params;
 
-        // ── stoneId — SelectCombobox ──────────────────────────────────────────
-        if (col.key === "stoneId") {
+        console.log(row ,'stoneEntryRow');
+
+        const disabledTagFields = ["stoneWeight","stonePcs"];
+
+        const isTagDisabledField =isTagedRow && disabledTagFields.includes(col.key);
+
+        console.log(isTagDisabledField, isTagedRow,'isTagedRowisTagedRow')
+
+        if (isTagDisabledField) {
             return (
+                <span
+                    style={{
+                        padding: "0 6px",
+                        fontSize: 12,
+                        color: "#09551c",
+                        fontWeight: 600,
+                        width: "100%",
+                        display: "block",
+                        textAlign: col.align || "left",
+                        background: "#f5f5f5",
+                        cursor: "not-allowed"
+                    }}
+                >
+                    {value ?? ""}
+                </span>
+            );
+        }
+
+        // ── stoneId — SelectCombobox ──────────────────────────────────────────
+        if (col.key === "stoneId" && isTagedRow) {
+            return (
+                <span
+                    style={{
+                        padding: "0 6px",
+                        fontSize: 11,
+                        color: "#09551c",
+                        fontWeight: 600,
+                        width: "100%",
+                        display: "block",
+                        textAlign: col.align || "left",
+                        background: "#f5f5f5",
+                        cursor: "not-allowed"
+                    }}
+                >
+                    {row.stoneItemName || value || ""}
+                </span>
+            )
+        }
+        else {
+             
                 <SelectCombobox
                     value={value}
                     items={stoneItems}
@@ -243,7 +295,7 @@ export default function StoneEnterMaster({
                     rounded="sm"
                     placeholder="Select stone"
                 />
-            );
+        
         }
 
         // ── stoneUnit — NativeSelect ──────────────────────────────────────────
@@ -371,7 +423,7 @@ export default function StoneEnterMaster({
 
         // Check weight limit (but in edit mode, allow saving)
         // Weight validation here is per-row; total weight validation happens below
-
+        console.log(rows,'rowsrowsrowsrows');
         // Convert to format expected by parent
         const saveRows = rows
             .filter(r => r.stoneId && r.stoneId.trim() !== "")
@@ -385,6 +437,7 @@ export default function StoneEnterMaster({
                 stoneCalculation,
                 stoneRate: parseFloat(stoneRate) || 0,
                 stoneAmount: parseFloat(stoneAmount) || 0,
+
             }));
 
         onSave(saveRows);

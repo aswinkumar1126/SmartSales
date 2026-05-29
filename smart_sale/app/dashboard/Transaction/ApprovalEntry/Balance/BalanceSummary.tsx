@@ -23,11 +23,11 @@ import { ApprovalHeaderForm } from "@/types/TransactionTypes/approval/ApprovalHe
 
 interface BalanceSummaryProps {
     theme: any;
-    openBalance: { openCash: number; openPure: number };
+    openBalance: { openPcs: number; openGrsWt: number };
     accCode: number;
     rate: number;
-    closingCash: number;
-    closingPure: number;
+    closingGrsWt: number;
+    closingPcs: number;
     transactionResetSignal?: boolean;
     bankAccList?: { label: string; value: string }[];
     headerForm: ApprovalHeaderForm;
@@ -42,8 +42,8 @@ const BalanceSummary = ({
     openBalance,
     accCode,
     rate,
-    closingCash,
-    closingPure,
+    closingGrsWt,
+    closingPcs,
     bankAccList,
     headerForm,
     onFormChange
@@ -77,13 +77,13 @@ const BalanceSummary = ({
     // =====================
     // FORMAT VALUES
     // =====================
-    const openingPure = openBalance.openPure
-        ? formatToFixed(openBalance.openPure, 3)
-        : "0.000";
+    const openingPcs = openBalance.openPcs
+        ? formatToFixed(openBalance.openPcs , 0)
+        : "0";
 
-    const openingCash = openBalance.openCash
-        ? formatToFixed(openBalance.openCash, 2)
-        : "0.00";
+    const openingGrsWt = openBalance.openGrsWt
+        ? formatToFixed(openBalance.openGrsWt, 3)
+        : "0.000";
 
     // =====================
     // HANDLERS
@@ -132,19 +132,19 @@ const BalanceSummary = ({
             <Grid templateColumns="50px 1fr 1fr" gap={2} alignItems="center">
                 <GridItem />
                 <Text textAlign="center" fontSize="xs" fontWeight="semibold">
-                    Pure
-                </Text>
-                <Text textAlign="center" fontSize="xs" fontWeight="semibold">
                     Pcs
                 </Text>
+                <Text textAlign="center" fontSize="xs" fontWeight="semibold">
+                    GrsWt
+                </Text>
 
-                {/* Opening Balance */}
+                {/* Opening Balance
                 <Text fontSize="xs" fontWeight="semibold">
                     Opening Balance
                 </Text>
                 <CapitalizedInput
-                    value={openingPure}
-                    field="openPure"
+                    value={openingPcs}
+                    field="openPcs"
                     onChange={() => { }}
                     type="number"
                     allowDecimal
@@ -154,14 +154,14 @@ const BalanceSummary = ({
                     disabled
                 />
                 <CapitalizedInput
-                    value={openingCash}
-                    field="openCash"
+                    value={openingGrsWt}
+                    field="openGrsWt"
                     onChange={() => { }}
                     type="number"
                     size="xs"
                     rounded="sm"
                     disabled
-                />
+                /> */}
 
 
                 {/* CLOSING */}
@@ -171,7 +171,7 @@ const BalanceSummary = ({
 
                 <CapitalizedInput
                     field="closingPure"
-                    value={formatToFixed(closingPure.toString(), 3)}
+                    value={formatToFixed(closingPcs.toString(), 0)}
                     onChange={() => null}
                     type="number"
                     allowDecimal
@@ -180,18 +180,18 @@ const BalanceSummary = ({
 
                     rounded="sm"
                     disabled
-                    color={Number(closingPure) > 0 ? "red.600" : "green.800"}
+                  
                     fontSize="sm"
                 />
                 <CapitalizedInput
                     field="closingCash"
-                    value={formatToFixed(closingCash.toString(), 2)}
+                    value={formatToFixed(closingGrsWt.toString(), 3)}
                     onChange={() => null}
                     type="number"
                     size="sm"
                     rounded="sm"
                     disabled
-                    color={Number(closingCash) > 0 ? "red.600" : "green.800"}
+                
                     fontSize="sm"
                 />
             </Grid>
