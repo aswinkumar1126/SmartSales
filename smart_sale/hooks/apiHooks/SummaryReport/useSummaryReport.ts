@@ -41,6 +41,23 @@ export const useSalesSummary = ({
   });
 };
 
+export const useApprovalSummary = ({
+  type,
+  fetchEnabled
+}: {
+type : "A" | "P" | "C" |string,
+fetchEnabled : boolean
+}) => {
+  return useApiQuery<Record<string, any>[]>({
+    queryKey: ["approval_report", type?.toString() ?? ""],
+    url: "/report/approval", // Adjust the endpoint URL as needed
+    method: "GET",
+    params: { TYPE: type },
+    select: (res) => res.data,
+    enabled: !!fetchEnabled,
+  });
+};
+
 export const usePureStockReport = ({ date, columns, groupBy }: {
   date?: string,
   columns?: string[],
@@ -159,15 +176,26 @@ export const useItemStockReport = ({ date, columns, groupBy }: {
 
 // Add this to your useSummaryReport.ts file
 
-export const useAgeReport = (params:AgeReportParams) => {
+export const useAgeReport = (params: AgeReportParams) => {
+
   return useApiQuery<Record<string, any>[]>({
-    queryKey: ["age_report", params.FROMAGE?.toString() ?? "", params.TOAGE?.toString() ?? "", params.ITEMID?.toString() ?? "",],
+    queryKey: [
+      "age_report",
+      params.FROMAGE?.toString() ?? "",
+      params.TOAGE?.toString() ?? "",
+      params.ITEMID?.toString() ?? "",
+    ],
+
     url: "/report/age",
-    params:{params},
+
+    params: Object.fromEntries(
+      Object.entries(params).filter(([_, v]) => v !== undefined)
+    ),
+
+
     select: (res) => res.data,
   });
 };
-
 
 export const useOutstandingStockReport = (params: OutStandingStockReportParams) => {
   return useApiQuery<Record<string, any>[]>({

@@ -42,7 +42,7 @@ export interface OutStandingStockReportParams {
 }
 
 export interface AgeReportParams {
-  FROMAGE:number ;
-  TOAGE:number;
-  ITEMID :number;
+  FROMAGE?:number ;
+  TOAGE?:number;
+  ITEMID?:number
 }

@@ -30,6 +30,8 @@ type PaginationConfig = {
     showPageNumbers?: boolean;
     showTotalCount?: boolean;
     onPageChange?: (page: number, pageSize: number) => void;
+    color?:string;
+
 };
 
 type CustomTableProps<T> = {
@@ -304,7 +306,7 @@ export function CustomTable<T extends Record<string, any>>({
                 >
                     {/* Left side - Total count */}
                     {(pagination?.showTotalCount ?? true) && (
-                        <Text fontSize="xs" color="gray.600">
+                        <Text fontSize="xs" color={pagination?.color || "gray.500"}>
                             Showing {startIndex + 1} to {endIndex} of {data.length} entries
                         </Text>
                     )}
@@ -314,13 +316,13 @@ export function CustomTable<T extends Record<string, any>>({
                         {/* Page size selector */}
                         {(pagination?.showPageSizeSelector ?? true) && (
                             <HStack gap={1}>
-                                <Text fontSize="xs">Show</Text>
+                                <Text fontSize="xs" color={pagination?.color || "gray.500"}>Show</Text>
                                 <NativeSelectWrapper
                                     value={String(pageSize)}
                                     onChange={(e) => handlePageSizeChange(Number(e.target.value))}
                                     items={pageSizeOptions.map(option => ({
-                                        value: String(option),
-                                        label: String(option)
+                                        value: option.value,
+                                        label: option.label
                                     }))}
                                     size="xs"
                                     minW="70px"
@@ -331,7 +333,7 @@ export function CustomTable<T extends Record<string, any>>({
                                     onEnter={() => { }}
                                     onBlur={() => { }}
                                 />
-                                <Text fontSize="xs">entries</Text>
+                                <Text fontSize="xs" color={pagination?.color || "gray.500"}>entries</Text>
                             </HStack>
                         )}
 
@@ -343,6 +345,7 @@ export function CustomTable<T extends Record<string, any>>({
                                     variant="outline"
                                     onClick={() => handlePageChange(currentPage - 1)}
                                     disabled={currentPage === 1}
+                                    color={pagination?.color || "gray.500"}
                                 >
                                     Previous
                                 </Button>
@@ -381,6 +384,7 @@ export function CustomTable<T extends Record<string, any>>({
                                     variant="outline"
                                     onClick={() => handlePageChange(currentPage + 1)}
                                     disabled={currentPage === totalPages}
+                                    color={pagination?.color || "gray.500"}
                                 >
                                     Next
                                 </Button>

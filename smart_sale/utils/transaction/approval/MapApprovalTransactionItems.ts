@@ -36,7 +36,7 @@ const mapApprovalItems = (list: any[] = [], type: string, isUseFinalAmount: bool
 
         const rowId = `edit-${item.SNO || Date.now()}-${index}`;
 
-        const isTaged = item.STOCKTYPE === "T";
+        const isTaged = item.STOCKTYPE === "T" || item.TAGNO;
 
         const stonePresent = item.STNPRESENT === "Y";
 
@@ -134,7 +134,7 @@ export const mapApprovalTransactionItems = (
     transactionData: any,
     isUseFinalAmount: boolean
 ) => {
-    console.log(transactionData, 'transactionDatatransactionData')
+    console.log(transactionData, 'transactionDatatransactionData');
     const details = transactionData?.TRANSACTION_DETAILS;
 
     if (!details) {

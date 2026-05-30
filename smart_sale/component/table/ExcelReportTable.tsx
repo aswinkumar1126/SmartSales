@@ -82,6 +82,7 @@ export interface DataTableProps {
     showRowControls?: boolean;
     showSearch?: boolean;
     emptyText?: string;
+    
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────

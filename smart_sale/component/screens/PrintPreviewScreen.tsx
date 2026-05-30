@@ -42,6 +42,8 @@ export type PrintColumn = {
     renderCell?: (value: any, row: any) => React.ReactNode;
     printValue?: (value: any, row: any) => string | number;
     subColumns?: PrintSubColumn[]; // Add subColumns support
+    setRowStyleGetter? : () => void,
+    hide? :boolean
 };
 
 export type PrintSubColumn = {
@@ -61,6 +63,7 @@ type PrintPreviewScreenProps = {
     exportOption?: string | null;
     showSno?: boolean;
     title?: string;
+    rowStyleGetter?: (row: any) => React.CSSProperties;
 };
 
 
@@ -89,6 +92,7 @@ export function PrintPreviewScreen({
     exportOption,
     showSno,
     title,
+    rowStyleGetter
 }: PrintPreviewScreenProps) {
     const printRef = useRef<HTMLDivElement | null>(null);
     const router = useRouter();
@@ -809,7 +813,8 @@ export function PrintPreviewScreen({
                                     resolvedPrintData(),
                                     visibleColumns,
                                     settings,
-                                    settings.title ?? "Report"
+                                    settings.title ?? "Report",
+                                    rowStyleGetter
                                 )
                             }
                         >
@@ -925,6 +930,7 @@ export function PrintPreviewScreen({
                             customization={settings}
                             showSno={showSno}
                             ref={printRef}
+                            rowStyleGetter={rowStyleGetter}
                         />
                     </Box>
                 </Box>

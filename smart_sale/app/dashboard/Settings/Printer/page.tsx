@@ -37,7 +37,7 @@ interface PrinterSettingType {
 function PrinterSetting() {
     const { theme } = useTheme();
     const router = useRouter();
-    const {isOpen, status, title:loaderTitle, description, openLoader, resolveLoader, closeLoader} = useTransactionLoader();
+    const {isOpen, status, title:loaderTitle, description, openLoader, resolveLoader, closeLoader } = useTransactionLoader();
     const initialFormData = {
         ipAddress: "",
         exeName: "",

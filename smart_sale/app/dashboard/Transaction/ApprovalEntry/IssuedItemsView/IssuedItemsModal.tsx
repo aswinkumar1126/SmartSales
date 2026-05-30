@@ -22,7 +22,7 @@ import { formatToFixed } from "@/utils/format/numberFormat";
 import loadImg from '@/asserts/icons/download.png';
 import Image from "next/image";
 
-import { useLoadApprovalReceiptItems } from "@/hooks/Transaction/Approval/useLoadSalesReturnItems";
+import { useLoadApprovalReceiptItems } from "@/hooks/Transaction/Approval/useLoadApprovalIssuedItems";
 
 interface IssuedItemsViewModalProps {
     isOpen: boolean;

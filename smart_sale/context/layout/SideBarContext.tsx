@@ -281,7 +281,7 @@ const STATIC_MENU: SidebarMenu = {
         {
           type: "direct",
           label: "Ornament Opening",
-          route: "/dashboard/Accounts/Opening/Ornament",
+          route: "/dashboard/Accounts/Opening/OrnamentOpening",
           icon: Layers,
           title: "ORNAMENT OPENING",
           description: "Manage opening stock of ornaments",
@@ -297,7 +297,7 @@ const STATIC_MENU: SidebarMenu = {
         {
           type: "direct",
           label: "Pure Gold Opening",
-          route: "/dashboard/Accounts/Opening/pureGoldOpening",
+          route: "/dashboard/Accounts/Opening/PureGoldOpening",
           icon: Gem,
           title: "PURE GOLD OPENING",
           description: "Manage pure gold opening balances",
@@ -427,14 +427,7 @@ const STATIC_MENU: SidebarMenu = {
   },
 
   Reports: {
-        SALES:  {
-          type: "direct",
-          label: "Sales Report",
-          route: "/dashboard/Reports/SalesReport",
-          icon: Layers,
-          title: "TRANSACTION REPORT",
-          description: "View Transaction summary reports",
-        },
+        
         PURCHASE:  {
           type: "direct",
           label: "Purchase Report",
@@ -443,7 +436,23 @@ const STATIC_MENU: SidebarMenu = {
           title: "TRANSACTION REPORT",
           description: "View Transaction summary reports",
         },
-         OutstandingReport : 
+        SALES: {
+          type: "direct",
+          label: "Sales Report",
+          route: "/dashboard/Reports/SalesReport",
+          icon: Layers,
+          title: "TRANSACTION REPORT",
+          description: "View Transaction summary reports",
+        },
+        APPROVAL :{
+          type: "direct",
+          label: "Approval Report",
+          route: "/dashboard/Reports/ApprovalReport/",
+          icon: Layers,
+          title: "PURE WISE STOCK REPORT",
+          description: "View stock and item summary reports",
+        },
+        OUTSTANDING : 
         {
           type: "direct",
           label: "Outstanding Report",
@@ -452,7 +461,7 @@ const STATIC_MENU: SidebarMenu = {
           title: "  OUTSTANDING REPORT",
           description: "View stock   OUTSTANDING reports",
         },
-      ITEMStockReport: 
+      ITEMSTOCK: 
         {
           type: "direct",
           label: "ITEM Stock Report",
@@ -461,7 +470,7 @@ const STATIC_MENU: SidebarMenu = {
           title: "ITEM WISE STOCK REPORT",
           description: "View stock and item summary reports",
         },
-    PUREReport: {
+    PURE: {
           type: "direct",
           label: "PURE Stock Report",
           route: "/dashboard/Reports/PureStockReport",
@@ -470,7 +479,7 @@ const STATIC_MENU: SidebarMenu = {
           description: "View stock and item summary reports",
         },
       
-    ACHEADReport :{
+    ACHEAD :{
           type: "direct",
           label: "Achead Stock Report",
           route: "/dashboard/Reports/AcheadStockReport",
@@ -478,7 +487,7 @@ const STATIC_MENU: SidebarMenu = {
           title: "ACHEAD STOCK REPORT",
           description: "View stock and item summary reports",
         },
-      TRANReport:  {
+      TRAN:  {
           type: "direct",
           label: "Transaction Report",
           route: "/dashboard/Reports/TranReport",
@@ -486,7 +495,7 @@ const STATIC_MENU: SidebarMenu = {
           title: "TRANSACTION REPORT",
           description: "View Transaction summary reports",
         },
-        AgeReport:  {
+        AGE:  {
           type: "direct",
           label: "Age Report",
           route: "/dashboard/Reports/AgeReport",
@@ -502,16 +511,9 @@ const STATIC_MENU: SidebarMenu = {
           icon: Layers,
           title: "CASH REPORT",
           description: "View cash and bank reports",
-        }
+        },
 
-        // {
-        //   type: "direct",
-        //   label: "DESIGNER Stock Report",
-        //   route: "/dashboard/Reports/TagReport/",
-        //   icon: Layers,
-        //   title: "PURE WISE STOCK REPORT",
-        //   description: "View stock and item summary reports",
-        // },
+        
   }
 };
 

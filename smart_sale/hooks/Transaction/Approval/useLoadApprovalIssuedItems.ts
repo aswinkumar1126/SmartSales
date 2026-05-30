@@ -83,11 +83,14 @@ export const useLoadApprovalReceiptItems = () => {
                     stoneAmount: Number(stone.STNAMT || 0),
                 })
             );
+            const isTaged = item.STOCKTYPE === "T" || item.TAGNO;
+            const stnPresent = item.STNPRESENT === "Y" ;
 
             // ✅ RECALCULATE STONE WT
             const totalStoneWeight = stones.reduce((sum:number, s:any) => {
                 return sum + Number(s.stoneWeight || 0);
             }, 0);
+            console.log(stones ,'stonesinstockload');
 
 
             // ✅ BUILD ROW
@@ -100,13 +103,18 @@ export const useLoadApprovalReceiptItems = () => {
                 TRANSACTION_TYPE: "APPRE",
                 _type: "APPRE",
 
+                __isTaged: isTaged ,
+                ITEM_TYPE: isTaged ? "TAGED" : "NON-TAGED",
+
+                STN_PRESENT : stnPresent,
+
                 ITEMID: String(item.ITEMID || ""),
                 ITEMNAME : item.ITEMNAME || "",
                 TAGNO: String(item.TAGNO || ""),
                 PCS: Number(item.PCS || 1),
 
                 GRSWT: Number(item.GRSWT || 0).toFixed(3),
-                STNWT: totalStoneWeight,
+                STNWT: totalStoneWeight.toFixed(3),
                 NETWT: Number(item.NETWT || 0).toFixed(3),
 
                 WASTYPE: item.WASTYPE,
@@ -132,7 +140,10 @@ export const useLoadApprovalReceiptItems = () => {
 
             addDraftRow(newRow);
             addedCount++;
+            console.log(newRow, 'newRownewRow');
         });
+
+    
 
         // ✅ SUCCESS MESSAGE
         if (addedCount > 0) {

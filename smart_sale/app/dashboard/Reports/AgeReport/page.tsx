@@ -83,7 +83,7 @@ const initialForm = {
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-function SalesReport() {
+function AgeReport() {
     const { theme } = useTheme();
     const { setData, setColumns, setShowSno, title } = usePrint();
     const router = useRouter();
@@ -93,6 +93,8 @@ function SalesReport() {
 
 
   const { data: allItems } = useStoneItems({STOCKTYPE:"T"});
+
+  console.log(allItems,'allItems')
     
   const allItemsList = useMemo(()=>{
       const items = allItems;
@@ -130,10 +132,12 @@ function SalesReport() {
     isLoading,
     isError,
   } = useAgeReport({
-    FROMAGE : Number(formData.FROMAGE),
-    TOAGE: Number(formData.TOAGE),
-    ITEMID : Number(formData.ITEMID)
+    FROMAGE: formData.FROMAGE ? Number(formData.FROMAGE) : undefined,
+    TOAGE: formData.TOAGE ? Number(formData.TOAGE) : undefined,
+    ITEMID: formData.ITEMID ? Number(formData.ITEMID) : undefined,
   });
+
+  console.log(data,'ageReportData');
 
 
     /* ------------ View ------------ */
@@ -364,4 +368,4 @@ function SalesReport() {
     );
 }
 
-export default SalesReport;
+export default AgeReport;

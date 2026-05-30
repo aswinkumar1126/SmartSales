@@ -23,6 +23,7 @@ type PrintPreviewTableProps = {
     columns: PrintColumn[];
     customization: Customization;
     showSno?: boolean;
+    rowStyleGetter?: (row: any) => React.CSSProperties;
 };
 
 // ─────────────────────────────────────────────────────────────
@@ -97,7 +98,7 @@ const getDecimalScale = (column: PrintColumn): number => {
 // ─────────────────────────────────────────────────────────────
 
 export const PrintPreviewTable = forwardRef<HTMLDivElement, PrintPreviewTableProps>(
-    ({ data, columns, customization, showSno }, ref) => {
+    ({ data, columns, customization, showSno, rowStyleGetter }, ref) => {
         const { fontSize, headerBg, headerColor, rowStriped, title, showTotals, totalColumns } =
             customization;
 
@@ -273,69 +274,77 @@ export const PrintPreviewTable = forwardRef<HTMLDivElement, PrintPreviewTablePro
                         </thead>
 
                         <tbody>
-                            {data.map((row, rowIndex) => (
-                                <tr
-                                    key={rowIndex}
-                                    style={{
-                                        background:
-                                            rowStriped && rowIndex % 2 === 1
-                                                ? "#f8fafc"
-                                                : "#ffffff",
-                                    }}
-                                >
-                                    {showSno && (
-                                        <td
-                                            style={{
-                                                ...cellStyle,
-                                                textAlign: "center",
-                                                color: "#475569",
-                                                fontVariantNumeric: "tabular-nums",
-                                            }}
-                                        >
-                                            {rowIndex + 1}
-                                        </td>
-                                    )}
+                            {data.map((row, rowIndex) => {
+                                const customStyle = rowStyleGetter?.(row);
+                                console.log(customStyle,'customStyle');
 
-                                    {leafColumns.map((col) => {
-                                        const rawValue = row[col.key];
-
-                                        const cellContent = col.renderCell
-                                            ? col.renderCell(rawValue, row)
-                                            : col.printValue
-                                                ? col.printValue(rawValue, row)
-                                                : rawValue ?? "—";
-
-                                        const textAlign = col.align
-                                            ? col.align === "end"
-                                                ? "right"
-                                                : col.align === "start"
-                                                    ? "left"
-                                                    : "center"
-                                            : col.isNumeric
-                                                ? "right"
-                                                : "left";
-                                        const displayValue =
-                                            col.isNumeric 
-                                                ? rawValue > 0
-                                                    ? cellContent
-                                                    : ""
-                                                : cellContent;
-
-                                        return (
+                                return (
+                                    <tr
+                                        key={rowIndex}
+                                        style={
+                                            customStyle ?? {
+                                                background:
+                                                    rowStriped && rowIndex % 2 === 1
+                                                        ? "#f8fafc"
+                                                        : "#ffffff",
+                                            }
+                                        }
+                                    >
+                                        {showSno && (
                                             <td
-                                                key={col.key}
                                                 style={{
                                                     ...cellStyle,
-                                                    textAlign,
-                                                    color: "#1e293b",
+                                                    textAlign: "center",
+                                                    color: "#475569",
+                                                    fontVariantNumeric: "tabular-nums",
                                                 }}
                                             >
-                                                {displayValue}
+                                                {rowIndex + 1}
                                             </td>
-                                        );
-                                    })}
-                                </tr>
-                            ))}
+                                        )}
+
+                                        {leafColumns.map((col) => {
+                                            const rawValue = row[col.key];
+
+                                            const cellContent = col.renderCell
+                                                ? col.renderCell(rawValue, row)
+                                                : col.printValue
+                                                    ? col.printValue(rawValue, row)
+                                                    : rawValue ?? "—";
+
+                                            const textAlign = col.align
+                                                ? col.align === "end"
+                                                    ? "right"
+                                                    : col.align === "start"
+                                                        ? "left"
+                                                        : "center"
+                                                : col.isNumeric
+                                                    ? "right"
+                                                    : "left";
+
+                                            const displayValue =
+                                                col.isNumeric
+                                                    ? rawValue > 0
+                                                        ? cellContent
+                                                        : ""
+                                                    : cellContent;
+
+                                            return (
+                                                <td
+                                                    key={col.key}
+                                                    style={{
+                                                        ...cellStyle,
+                                                        textAlign,
+                                                        
+                                                    }}
+                                                >
+                                                    {displayValue}
+                                                </td>
+                                            );
+                                        })}
+                                    </tr>
+                                );
+                            })}
                         </tbody>
 
                         {/* Footer with totals including sub-columns - respecting decimal scale */}

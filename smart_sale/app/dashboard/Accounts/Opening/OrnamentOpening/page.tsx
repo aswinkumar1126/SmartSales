@@ -99,7 +99,7 @@ function OrnamentMaster() {
 
     const { data: ornamentList, isLoading } = useOrnamentData(filter);
 
-    console.log(ornamentList, 'ornamentList')
+    console.log(ornamentList, 'ornamentList');
 
 
     const ornaments = Array.isArray(ornamentList?.data)

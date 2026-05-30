@@ -420,11 +420,11 @@ const HmcMappingForm = () => {
             align: "center" as const,
         },
 
-        {
-            key: "action",
-            label: "Action",
-            align: "center" as const,
-        },
+        // {
+        //     key: "action",
+        //     label: "Action",
+        //     align: "center" as const,
+        // },
     ];
 
     /* ---------------- EXPORT ---------------- */
@@ -764,7 +764,7 @@ useGlobalKey(        "Alt+e",
                                     )}
                                 </Table.Cell>
 
-                                <Table.Cell align="center">
+                                {/* <Table.Cell align="center">
 
                                     <Box
                                         display="flex"
@@ -783,7 +783,7 @@ useGlobalKey(        "Alt+e",
 
                                     </Box>
 
-                                </Table.Cell>
+                                </Table.Cell> */}
                             </>
                         )}
                         emptyText="No data available"
@@ -797,6 +797,7 @@ useGlobalKey(        "Alt+e",
                         highlightRowId={
                             highlightRowId
                         }
+                        onRowClick={(row) => handleEdit(row)}
                     />
 
                 </Box>

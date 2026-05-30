@@ -27,7 +27,7 @@ import BalanceSummary from "./Balance/BalanceSummary";
 import { TransactionListing } from "./TransactionList/TransactionIdsListing";
 import { SalesSearch } from "./Search/SalesSearch";
 import SalesReceipt from "@/component/ReceiptPrint/SalesPrint";
-
+import TransactionLoader from "@/component/loader/Transactionloader";
 
 //Key Management
 import { useGlobalKey } from "@/components/key/useGlobalKey";
@@ -84,6 +84,7 @@ import { ApprovalTransactionKey, ApprovalTransactionItems, APPROVAL_TRANSACTION_
 import { formatToFixed } from '@/utils/format/numberFormat';
 import ShortcutDialog from "@/components/shortcut/ShortcutDialog";
 // import SalesSaveModal from "./SaveModal/SaveModal";
+import { useTransactionLoader } from "@/utils/loader/ResolveLoader";
 
 
 
@@ -122,6 +123,8 @@ export default function SalesPage() {
     const { data: useApiRate } = useSoftControlById('USE_API_RATE');
 
     const isApiRateEnabled = useApiRate?.CTLTEXT === 'Y';
+
+    const { isOpen, status, title, description, openLoader, resolveLoader, closeLoader } = useTransactionLoader();
 
 
     /* ================================
@@ -166,8 +169,6 @@ export default function SalesPage() {
     const openFilter = () => setIsFilterOpen(true);
 
     const draftRowTempId = useRef<string | null>(null);
-
-
 
 
 
@@ -287,13 +288,18 @@ export default function SalesPage() {
 
 
     const { data: pureStockList = [], refetch: goldStockRefetch } = usePureGoldData(filter, cleanedFilters);
-    const { data: itemsStock, refetch: itemStockRefetch } = useOrnamentData(filter);
+    const { data: itemsStock, refetch: itemStockRefetch } = useOrnamentData(filter,'N');
 
 
 
     const { data: allPureGoldNames } = usePureGoldNames();
 
-    const { data: transactionsById, isLoading: getbySnoLoading, refetch: refetchTransactionListById } = useTransactionByTransId(selectedTransactionId, "sales");
+    const { 
+        data: transactionsById,
+        isFetching,
+        isSuccess
+  
+    } = useTransactionByTransId(selectedTransactionId);
 
     console.log(transactionsById, 'transactionsById');
 
@@ -579,8 +585,9 @@ export default function SalesPage() {
     // KEY TO ACCESS
 
     useGlobalKey("F1", () => openFilter(), "openFilter");
-    useGlobalKey("Alt+s", () => handleSaveTransaction(), "saveApprovalTransaction");
-    useGlobalKey("Alt+c", () => handleResetDraft(), "ClearApprovalTransaction");
+    useGlobalKey("Alt+s", () => isModifying && isEditing ? handleUpdateTransaction() : handleSaveTransaction() , "saveApprovalTransaction");
+    useGlobalKey("Alt+u", () => isModifying && isEditing ? handleUpdateTransaction() : null , "saveApprovalTransaction");
+    useGlobalKey("Alt+c", () => isModifying ? handleResetDraft() : handleReSelectTransaction(), "ClearApprovalTransaction");
     useGlobalKey("Alt+m", () => { isModifying ? stopModify() : startModify() }, "modifyApprovalTransaction");
 
     const handleBillParamChange = useCallback((field: any, value: any) => {
@@ -746,13 +753,13 @@ export default function SalesPage() {
     ================================ */
 
     // This useEffect loads transaction data when transactionsById changes
-    useEffect(() => {
-        if (transactionsById && selectedTransactionId) {
-            setEditingRowsData(transactionsById);
-            handleEditTransaction(transactionsById, selectedTransactionId);
-        }
+    // useEffect(() => {
+    //     if (transactionsById && selectedTransactionId) {
+    //         setEditingRowsData(transactionsById);
+    //         handleEditTransaction(transactionsById, selectedTransactionId);
+    //     }
 
-    }, [transactionsById, selectedTransactionId]);
+    // }, [transactionsById, selectedTransactionId]);
 
 
 
@@ -764,7 +771,7 @@ export default function SalesPage() {
             rowId: row.__rowId,
             transactionType: clickedTransactionType
         });
-        // setEditingRowId(row.__rowId);
+      
 
     };
 
@@ -789,22 +796,34 @@ export default function SalesPage() {
 
     const handleEditTransaction = useCallback((data: any, sno: string) => {
 
-        setOpeningBalance(data, true);
-        setEditingSno(sno);
+        // CLEAR EVERYTHING
+        setDraftRows([]);
+        setSelectedTransactionTypes([]);
 
-       
+        setEditingSno(null);
 
-        const result = loadTransaction(data, sno);
-        if (!result) return;
+        requestAnimationFrame(() => {
 
+            setOpeningBalance(data, true);
+            setEditingSno(sno);
 
-        setSelectedTransactionTypes(result.selectedTransactionTypes);
-        setDraftRows(result.rows);
-        setPrintData(data);
+            const result = loadTransaction(data, sno);
 
+            if (!result) return;
+
+            // FORCE NEW REFERENCES
+            const freshRows = [...(result.rows || [])];
+
+            const freshTypes = [
+                ...(result.selectedTransactionTypes || [])
+            ];
+
+            setSelectedTransactionTypes(freshTypes);
+            setDraftRows(freshRows);
+            setPrintData(data);
+        });
 
     }, []);
-
     /* ================================
        Transaction Type Handlers
     ================================ */
@@ -1057,15 +1076,24 @@ export default function SalesPage() {
     };
 
     const handleReSelectTransaction = async () => {
-        // 1. Reset the selectedTransactionId first to trigger a clean re-fetch cycle
+
+        const currentId = selectedTransactionId;
+
+        if (!currentId) return;
+
+        // clear UI
+        setDraftRows([]);
+        setSelectedTransactionTypes([]);
+        setEditingSno(null);
+
+        // remove current selection first
         setSelectedTransactionId(null);
 
-        // 2. Await the refetch so we have fresh data
-        await refetchTransactionListById();
-
-        // 3. Now set the ID again — this will trigger the useEffect with the new data
-        setSelectedTransactionId(selectedTransactionId);
+        requestAnimationFrame(() => {
+            setSelectedTransactionId(currentId);
+        });
     };
+
     const handleResetDraft = () => {
 
         setSelectedTransactionId('');
@@ -1231,28 +1259,60 @@ export default function SalesPage() {
         }
     };
 
-    const handleTransactionClick = useCallback((transactionId: string) => {
-
-        if (draftRows.length > 0 && !isEditing) {
-            toaster.create({
-                title: "Warning",
-                description: "You have unsaved changes in the draft. Please save or reset before switching transactions.",
-                type: "warning",
-                duration: 2000
-            });
-            setDeselectFlag(true);
-            setTimeout(() => setDeselectFlag(false), 10);
-
-            return;
-        }
-        console.log("triggers the click")
-
-        setSelectedTransactionId(prev =>
-            prev === transactionId ? '' : transactionId
-        );
-
-    }, [draftRows]);
-
+   
+      const onSelectTransaction = (id: string) => {
+     
+             if (draftRows.length > 0 && !isEditing) {
+     
+                 toaster.create({
+                     title: "Warning",
+                     description:
+                         "You have unsaved changes in the draft. Please save or reset before switching transactions.",
+                     type: "warning",
+                     duration: 2000
+                 });
+     
+                 setDeselectFlag(true);
+     
+                 setTimeout(() => setDeselectFlag(false), 10);
+     
+                 return;
+             }
+     
+             openLoader("get");
+     
+             // ONLY SET ID
+             setSelectedTransactionId(id);
+         };
+     
+         useEffect(() => {
+     
+             if (!selectedTransactionId) return;
+     
+             if (isFetching) return;
+     
+             if (!isSuccess || !transactionsById) {
+     
+                 resolveLoader("error", "get");
+     
+                 return;
+             }
+     
+             setEditingRowsData(transactionsById);
+     
+             handleEditTransaction(
+                 transactionsById,
+                 selectedTransactionId
+             );
+     
+             resolveLoader("success", "get");
+     
+         }, [
+             selectedTransactionId,
+             transactionsById,
+             isFetching,
+             isSuccess
+         ]);
 
     const handleSingleSearch = (term: string) => {
         setSingleSearch(term);
@@ -1373,8 +1433,8 @@ export default function SalesPage() {
 
 
                             isModifying={isModifying}
-                            startModifying={startModify}
-                            stopModifying={stopModify}
+                            startModify={startModify}
+                            stopModify={stopModify}
                         />
 
 
@@ -1479,7 +1539,7 @@ export default function SalesPage() {
                 <Box width={'15%'}>
                     <TransactionListing
                         transactionIdsList={transactionIdsList}
-                        handleEditTransaction={handleTransactionClick}
+                        handleEditTransaction={onSelectTransaction}
                         searchTerm={singleSearch}
                         handleSearchChange={handleSingleSearch}
                         deselectFlag={deselectFlag}
@@ -1524,6 +1584,13 @@ export default function SalesPage() {
                 onConfirm={confirmSalesSaveModal}
                 onFormChange={setHeaderField}
             /> */}
+            <TransactionLoader
+                isOpen={isOpen}
+                status={status}
+                title={title}
+                description={description}
+                onClose={closeLoader}
+            />
 
         </>
 

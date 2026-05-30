@@ -865,7 +865,10 @@ export default function DraftTransactionTable({
 
         if (col.key === "STNWT") {
             // Per-row STN_PRESENT check — each row respects its own item's stone config
-            const rowStnPresent = row.STN_PRESENT ?? false;
+            const rowStnPresent = row.STN_PRESENT;
+            console.log(rowStnPresent,row,'rowStnPresent');
+
+
             console.log(rowStnPresent,'rowStnPresent');
             const isStnDisabled = !rowStnPresent;
             const stonesCount = (row._stones || []).length;

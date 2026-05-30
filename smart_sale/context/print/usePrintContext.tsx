@@ -11,6 +11,7 @@ import {
     SetStateAction,
 } from "react";
 
+type RowStyle = (row: any) => React.CSSProperties;
 type PrintContextType = {
     data: any[];
     columns: {
@@ -26,6 +27,8 @@ type PrintContextType = {
     setColumns: (columns: PrintContextType["columns"]) => void;
     showSno?: boolean;
     setShowSno: Dispatch<SetStateAction<boolean>>;
+    rowStyleGetter?: RowStyle;
+    setRowStyleGetter: Dispatch<SetStateAction<RowStyle | undefined>>;
 };
 
 const PrintContext = createContext<PrintContextType | undefined>(undefined);
@@ -35,6 +38,7 @@ export const PrintProvider = ({ children }: { children: ReactNode }) => {
     const [columns, setColumns] = useState<PrintContextType["columns"]>([]);
     const [showSno, setShowSno] = useState<boolean>(false);
     const [titleText, setTitleText] = useState<string>("");
+    const [rowStyleGetter, setRowStyleGetter] =useState<RowStyle>();
 
     
     // 🔹 Title setter
@@ -71,10 +75,12 @@ export const PrintProvider = ({ children }: { children: ReactNode }) => {
                 columns,
                 title,
                 titleText,
+                rowStyleGetter,
                 setData,
                 setColumns,
                 showSno,
                 setShowSno,
+                setRowStyleGetter,
             }}
         >
             {children}

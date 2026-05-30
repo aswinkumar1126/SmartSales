@@ -146,9 +146,10 @@ function ItemSizeMaster() {
             isSaving.current = false;
         };
         if (editId) {
-            openLoader('update', true)
+     
             // For update:
             if (!validateForm(existingSizes, Number(editId))) return;
+            openLoader('update', true);
             // pass id separately for path variable
             updateItemSize({ ...payload, id: editId }, {
                 onSuccess: () => {
@@ -164,11 +165,12 @@ function ItemSizeMaster() {
                 }
             });
         } else {
-            openLoader('save', true)
+        
             if (!validateForm(existingSizes)) {
                 // toastError("Please fix the errors in the form");
                 return;
             }
+            openLoader('save', true);
             createItemSize(payload, {
                 onSuccess: () => {
                     resetForm();
@@ -205,7 +207,7 @@ function ItemSizeMaster() {
         { key: "index", label: "S.No" },
         { key: "ITEMID", label: "Item" },
         { key: "SIZENAME", label: "Size Name" },
-        { key: "actions", label: "Actions" },
+        // { key: "actions", label: "Actions" },
     ];
 
     /* -------------------- EXPORT -------------------- */
@@ -333,6 +335,7 @@ function ItemSizeMaster() {
                             highlightRowId={highlightedId}
                             rowIdKey="SIZEID"
                             emptyText="No Sizes available"
+                          
                         />
                     </Box>
                 </GridItem>

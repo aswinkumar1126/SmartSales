@@ -10,6 +10,7 @@ export const metalMasterFields = (collection:metalCollections) :FormField[] =>[
         type:"text",
         required:true,
         maxWidth:'100px',
+        maxLength :1
 
     },
     {

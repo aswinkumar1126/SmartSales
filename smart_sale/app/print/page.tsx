@@ -5,7 +5,7 @@ import { usePrint } from "@/context/print/usePrintContext";
 import { useSearchParams } from "next/navigation";
 
 function Print() {
-    const {data,columns ,showSno , titleText } =usePrint();
+    const { data, columns, showSno, titleText, rowStyleGetter } =usePrint();
     console.log("Print Data:",data);
 
 
@@ -21,7 +21,7 @@ function Print() {
 
 
     return(
-        <PrintPreviewScreen data={data} columns={columns} exportOption={exportOption} showSno={showSno} title={titleText} />
+        <PrintPreviewScreen data={data} columns={columns} exportOption={exportOption} showSno={showSno} title={titleText} rowStyleGetter={rowStyleGetter} />
     )
 };
 

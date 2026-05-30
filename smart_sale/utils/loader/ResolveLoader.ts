@@ -4,7 +4,7 @@ import { TransactionStatus } from "@/component/loader/Transactionloader";
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
 // ─────────────────────────────────────────────────────────────────────────────
-export type LoaderMode = "save" | "update";
+export type LoaderMode = "save" | "update" | "get";
 
 export interface TransactionLoaderState {
     isOpen: boolean;
@@ -60,6 +60,20 @@ const MESSAGES: Record<
             description: "Something went wrong. Please try again.",
         },
     },
+    get: {
+        saving: {
+            title: "Loading Transaction",
+            description: "Please wait while transaction is being loaded…",
+        },
+        success: {
+            title: "Transaction Loaded!",
+            description: "Transaction loaded successfully.",
+        },
+        error: {
+            title: "Load Failed",
+            description: "Unable to load transaction.",
+        },
+    },
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -96,6 +110,20 @@ const FORMMESSAGES: Record<
         error: {
             title: "Form Update Failed",
             description: "Unable to update the form. Please try again.",
+        },
+    },
+    get: {
+        saving: {
+            title: "Loading Form",
+            description: "Please wait while form is being loaded…",
+        },
+        success: {
+            title: "Form Loaded!",
+            description: "Form loaded successfully.",
+        },
+        error: {
+            title: "Load Failed",
+            description: "Unable to load form.",
         },
     },
 };

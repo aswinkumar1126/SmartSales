@@ -209,8 +209,7 @@ export default function TransactionTypeSelector({
                             <Button 
                             size="xs"
                             bg={theme.colors.formColor}
-                            onClick={isModifying ? stopModify : startModify}
-                        
+                            onClick={() => isModifying ? stopModify() : startModify()}
                             loadingText="Saving..."
                             variant='ghost'
                             p={0}

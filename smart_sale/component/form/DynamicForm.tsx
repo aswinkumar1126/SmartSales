@@ -377,6 +377,7 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
                             onBlur={() => handleBlur(field.name)}
                             iconElement={field.iconElement}
                             type='text'
+                            maxSize={field.maxSize}
                             
                         />
                     );

@@ -79,7 +79,9 @@ export const exportToStyledExcel = (
     data: any[],
     columns: Column[],
     settings: Settings,
-    fileName: string
+    fileName: string,
+    rowStyleGetter?: (row: any) => React.CSSProperties
+
 ) => {
     if (!data?.length) return;
 
@@ -247,13 +249,16 @@ export const exportToStyledExcel = (
     }
 
     /** BODY STYLING + ALIGNMENT */
+    /** BODY STYLING + ALIGNMENT */
     const startRow = headerRowsCount;
+
     for (let r = startRow; r < wsData.length; r++) {
         let colOffset = 0;
 
-        // Handle S.No column if present
+        // Handle S.No column
         if (settings.showSno) {
             const snoRef = XLSX.utils.encode_cell({ r, c: 0 });
+
             if (ws[snoRef]) {
                 ws[snoRef].s = {
                     font: { sz: fontSize },
@@ -269,47 +274,112 @@ export const exportToStyledExcel = (
                     },
                 };
             }
+
             colOffset = 1;
         }
 
-        // Determine if this is a total row
-        const isTotalRow = settings.showTotals && r === wsData.length - 1;
+        const isTotalRow =
+            settings.showTotals &&
+            settings.totalColumns?.length &&
+            r === wsData.length - 1;
 
-        // Style data columns based on their alignment
+        // Actual data row index
+        const dataIndex = r - startRow;
+        console.log("rowStyleGetter", rowStyleGetter);
+        console.log("first row", data?.[0]);
+
+        const rowData =
+            !isTotalRow && dataIndex >= 0 && dataIndex < data.length
+                ? data[dataIndex]
+                : null;
+        console.log("rowData", rowData);
+        const customStyle = rowData
+            ? rowStyleGetter?.(rowData)
+            : undefined;
+        console.log("customStyle", customStyle);
+        const bgColor =
+            typeof customStyle?.background === "string" &&
+                customStyle.background.startsWith("#")
+                ? customStyle.background.replace("#", "")
+                : undefined;
+
+        const textColor =
+            typeof customStyle?.color === "string" &&
+                customStyle.color.startsWith("#")
+                ? customStyle.color.replace("#", "")
+                : undefined;
+
+        const isBold =
+            customStyle?.fontWeight === "700" ||
+            customStyle?.fontWeight === 700 ||
+            customStyle?.fontWeight === "600" ||
+            customStyle?.fontWeight === 600 ||
+            isTotalRow;
+
         leafColumns.forEach((col, c) => {
-            const ref = XLSX.utils.encode_cell({ r, c: c + colOffset });
+            const ref = XLSX.utils.encode_cell({
+                r,
+                c: c + colOffset,
+            });
+
             if (!ws[ref]) return;
 
-            // Get the value to check if it's numeric for proper alignment
             const cellValue = ws[ref]?.v;
-            const isNumericValue = !isNaN(parseFloat(String(cellValue))) && isFinite(Number(cellValue));
 
-            // Determine alignment: use column align, or for numeric values use right alignment
+            const isNumericValue =
+                !isNaN(parseFloat(String(cellValue))) &&
+                isFinite(Number(cellValue));
+
             let horizontalAlign = "left";
+
             if (col.align === "end") horizontalAlign = "right";
             else if (col.align === "center") horizontalAlign = "center";
             else if (col.align === "start") horizontalAlign = "left";
-            else if (col.isNumeric || isNumericValue) horizontalAlign = "right";
-            else horizontalAlign = "left";
+            else if (col.isNumeric || isNumericValue)
+                horizontalAlign = "right";
 
             ws[ref].s = {
                 font: {
                     sz: fontSize,
-                    bold: isTotalRow
+                    bold: isBold,
+                    ...(textColor
+                        ? {
+                            color: {
+                                rgb: textColor,
+                            },
+                        }
+                        : {}),
                 },
+
                 alignment: {
                     horizontal: horizontalAlign,
                     vertical: "center",
                 },
+
                 border: {
                     top: { style: "thin" },
                     bottom: { style: "thin" },
                     left: { style: "thin" },
                     right: { style: "thin" },
                 },
-                fill: isTotalRow ? {
-                    fgColor: { rgb: "F1F5F9" }
-                } : undefined,
+
+                ...(bgColor
+                    ? {
+                        fill: {
+                            fgColor: {
+                                rgb: bgColor,
+                            },
+                        },
+                    }
+                    : isTotalRow
+                        ? {
+                            fill: {
+                                fgColor: {
+                                    rgb: "F1F5F9",
+                                },
+                            },
+                        }
+                        : {}),
             };
         });
     }

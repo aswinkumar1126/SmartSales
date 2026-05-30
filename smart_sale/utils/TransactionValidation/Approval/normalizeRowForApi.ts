@@ -74,13 +74,8 @@ import { ApprovalTransactionKey, APPROVALTRANSACTIONITEMS } from "@/types/transc
 
                 // ✅ Flexible return logic
                 ...(rest.TAGNO && { TAGNO: rest.TAGNO }),
-                // ...(rest.BILLNO && { BILLNO: rest.BILLNO }),
-
-                ...(editTransaction && { SNO: String(rest.SNO || "") }),
                 ...(rest.DESCRIPTION && { DESCRIPTION: rest.DESCRIPTION }),
-
                 
-                ...(rest.SNO && { SNO: String(rest.SNO) }) // ✅ only added if exists
             };
 
             return payload;

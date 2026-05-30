@@ -51,7 +51,6 @@ export const useApprovalTransactions = (props: {
 // GET BY TRANSACTION ID
 export const useTransactionByTransId = (
     transId: string | null,
-    TRANTYPE: string
 ) => {
     return useQuery<ApiResponse<any>>({
         queryKey: transactionKeys.byTransId(transId),

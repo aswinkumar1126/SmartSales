@@ -93,10 +93,14 @@ export const useApprovalHeader = create<ApprovalHeaderState & ApprovalHeaderActi
                     selectedTransactionId: null,
                 }),
 
-            startModify :()=>
-                set({isModifying:true}),
-            stopModify :()=>
-                set({isModifying:false}),
+            startModify: () =>
+                set({
+                    isModifying: true
+                }),
+            stopModify: () =>
+                set({
+                    isModifying: false
+                }),
 
             resetHeader: () =>
                 set({
