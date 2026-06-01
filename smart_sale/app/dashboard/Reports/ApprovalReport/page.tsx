@@ -25,7 +25,6 @@ import { usePrint } from "@/context/print/usePrintContext";
 import { PrintColumn } from "@/component/screens/PrintPreviewScreen";
 import { formatDateForShow } from "@/utils/format/formatDateForAPI";
 import { formatToFixed } from "@/utils/format/numberFormat";
-import { background } from "@chakra-ui/system";
 
 
 // ─── Column definitions (read-only, no editing) ───────────────────────────────
@@ -269,21 +268,21 @@ function ApprovalReport() {
           switch (row?.RM) {
               case 1:
                   return {
-                      background: "#FF0000",
-                      color: "#FFFFFF",
+                      background: "#fff7dc",
+                      color: "#000",
                       fontWeight: "600",
                   };
 
               case 3:
                   return {
-                      background: "#008000",
-                      color: "#FFFFFF",
+                      background: "#DBFDE5",
+                      color: "#222",
                       fontWeight: "700",
                   };
 
               case 2:
                   return {
-                      background: "#F0FDF4",
+                      background: "#DBFDE5",
                       color: "#166534",
                       fontWeight: "500",
                   };
@@ -385,10 +384,10 @@ function ApprovalReport() {
                     columns={approvalColumns}
                     data={fetchEnabled ? tableData : []}
                     emptyText={emptyText}
-                    bodyBg="#EEE"
+                    bodyBg="#FCFCFC"
                     borderColor="#DDD"
-                    headerColor="#FFF"
-                    headerBg={theme.colors.accient}
+                    headerColor="#222"
+                    headerBg="#FFF"
                     pagination={{
                         enabled: true,
                         pageSize: 10,
@@ -406,7 +405,7 @@ function ApprovalReport() {
                             // Optional: Handle page change events
                             console.log(`Page changed to ${page} with size ${pageSize}`);
                         },
-                        color : '#FFF'
+                        color : '#222'
                     }}
 
                     renderRow={(row, index, isSelected) => {
@@ -420,17 +419,17 @@ function ApprovalReport() {
                             switch (rm) {
                                 case 1: // Sub-total
                                     return {
-                                        background: "red",
-                                        color: "#FFF",
+                                        background: "#fff7dc",
+                                        color: "#000",
                                         fontWeight: "600",
                                         fontSize :'13px',
 
                                     };
                                 case 3: // Grand total
                                     return {
-                                        background: "green",
-                                        color: "#FFF",
-                                        fontWeight: "700",
+                                        background: "#DBFDE5",
+                                        color: "green",
+                                        fontWeight: "600",
                                         fontSize: '14px'
                                     };
                                 case 2: // Maybe subtotal category 2

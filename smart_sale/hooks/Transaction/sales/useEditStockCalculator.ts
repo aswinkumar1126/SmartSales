@@ -1,173 +1,158 @@
-// hooks/useEditStockCalculator.ts
-
 interface EditingStockProps {
     pureStockList: any[];
     itemsStockList: any[];
     draftRows: any[];
-    originalTransactionData: any;
-    SALETRANSACTIONTYPES: any[];
-    existingUsage?: {
-        is: Record<string, { wt: number }>;   // Issue rows  (adds pure stock → restore +wt)
-        re: Record<string, { wt: number }>;   // Receipt rows (reduces pure stock → restore -wt)
-        sa: Record<string, { netwt: number; pcs: number }>;  // Sales (reduces items → restore +)
-        sr: Record<string, { netwt: number; pcs: number }>;  // Sales Return (adds items → restore -)
-    };
+
 }
 
-const PURE_STOCK_CODES = ['IS', 'IR'];   // Issue, Receipt → pureStockList
-const ITEM_STOCK_CODES = ['SA', 'SR'];   // Sales, Sales Return → itemsStockList
 
-// These REDUCE available stock (new draft row = takes from stock)
-const REDUCES_STOCK_CODES = ['IS', 'SA'];
-// These ADD to available stock (new draft row = returns to stock)
-const ADDS_STOCK_CODES = ['IR', 'SR'];
+
+const PURE_CODES = ["IS", "RE"];
+const ITEM_CODES = ["SA", "SR"];
+
+const ADD_STOCK = ["RE", "SR"];   // increase stock
+const REDUCE_STOCK = ["IS", "SA"]; // decrease stock
 
 export function useEditStockCalculator({
     pureStockList,
     itemsStockList,
     draftRows,
-    originalTransactionData,
-    SALETRANSACTIONTYPES,
-    existingUsage,
 }: EditingStockProps) {
 
-    const getStockTypeForCode = (code: string): 'IS' | 'SA' => {
-        return PURE_STOCK_CODES.includes(code) ? 'IS' : 'SA';
-    };
-
-    /**
-     * Sign for draft rows:
-     * IS / SA → -1 (reduce stock)
-     * IR / SR → +1 (add to stock)
-     */
+    // ---------------- SIGN ----------------
     const getSignForRow = (code: string): 1 | -1 => {
-        return ADDS_STOCK_CODES.includes(code) ? 1 : -1;
+        return ADD_STOCK.includes(code) ? 1 : -1;
     };
 
-    const filterDraftRows = (
-        id: string,
-        touch: number | null,
-        type: 'IS' | 'SA'
-    ) => {
+    const isPure = (code: string) => PURE_CODES.includes(code);
+    const isItem = (code: string) => ITEM_CODES.includes(code);
+
+    // ---------------- FILTER ----------------
+    const filterDraftRows = (id: string, touch: number | null, type: "IS" | "SA") => {
         return draftRows.filter(r => {
             const matchId = String(r.PUREID || r.ITEMID) === String(id);
-            const matchTouch = type === 'IS' && touch != null
-                ? Number(r.ATOUCH ?? r.TOUCH) === Number(touch)
-                : true;
-            const matchStockType = getStockTypeForCode(r.TRANSACTION_TYPE) === type;
-            return matchId && matchTouch && matchStockType;
+
+            const matchTouch =
+                type === "IS" && touch != null
+                    ? Number(r.ATOUCH ?? r.TOUCH) === Number(touch)
+                    : true;
+
+            const matchType =
+                type === "IS"
+                    ? PURE_CODES.includes(r.TRANSACTION_TYPE)
+                    : ITEM_CODES.includes(r.TRANSACTION_TYPE);
+
+            return matchId && matchTouch && matchType;
         });
     };
 
+    // ---------------- DRAFT WT ----------------
     const getDraftNetImpact = (
         id: string,
         touch: number | null,
         field: string,
-        type: 'IS' | 'SA'
+        type: "IS" | "SA"
     ): number => {
-        return filterDraftRows(id, touch, type)
-            .reduce((sum, r) => {
-                const qty = Number(r[field] || 0);
-                const sign = getSignForRow(r.TRANSACTION_TYPE);
-                return sum + sign * qty;
-            }, 0);
+        return filterDraftRows(id, touch, type).reduce((sum, r) => {
+            const qty = Number(r[field] || 0);
+            const sign = getSignForRow(r.TRANSACTION_TYPE);
+            return sum + sign * qty;
+        }, 0);
     };
 
+    // ---------------- PCS ----------------
     const getDraftNetImpactPcs = (id: string): number => {
-        return filterDraftRows(id, null, 'SA')
+        return filterDraftRows(id, null, "SA").reduce((sum, r) => {
+            const qty = Number(r.PCS || 0);
+            const sign = getSignForRow(r.TRANSACTION_TYPE);
+            return sum + sign * qty;
+        }, 0);
+    };
+
+    // ---------------- STN WT ----------------
+    const getDraftNetImpactStnWt = (id: string): number => {
+        return draftRows
+            .filter(r => String(r.ITEMID || r.PUREID) === String(id))
             .reduce((sum, r) => {
-                const qty = Number(r.PCS || 0);
                 const sign = getSignForRow(r.TRANSACTION_TYPE);
-                return sum + sign * qty;
+                return sum + sign * Number(r.STNWT || 0);
             }, 0);
     };
 
-    /**
-     * Available weight:
-     * = baseStock
-     *   + existingIS   (issue was reducing → restore +wt)
-     *   - existingIR   (receipt was adding → restore -wt)
-     *   + existingSA   (sales was reducing → restore +netwt)
-     *   - existingSR   (sales return was adding → restore -netwt)
-     *   + draftImpact  (draft rows carry their own sign)
-     */
+    // ---------------- MAIN STOCK CALC ----------------
     const getEditStock = (
         id: string,
         touch: number | null,
         baseStock: number,
-        type: 'IS' | 'SA'
+        type: "IS" | "SA"
     ): number => {
-        const field = type === 'IS' ? 'WT' : 'NETWT';
 
-        let existingRestore = 0;
-        if (existingUsage) {
-            if (type === 'IS') {
-                const key = `${id}_${touch ?? ''}`;
-                // IS was reducing pure stock → restore = +wt
-                // IR was adding pure stock  → restore = -wt
-                existingRestore = (existingUsage.is[key]?.wt ?? 0)
-                    - (existingUsage.re[key]?.wt ?? 0);
-            } else {
-                // SA was reducing items stock → restore = +netwt
-                // SR was adding items stock  → restore = -netwt
-                existingRestore = (existingUsage.sa[id]?.netwt ?? 0)
-                    - (existingUsage.sr[id]?.netwt ?? 0);
-            }
-        }
+        let restore = 0;
 
+
+        const field = type === "IS" ? "WT" : "NETWT";
         const draftImpact = getDraftNetImpact(id, touch, field, type);
-        return baseStock + existingRestore + draftImpact;
+
+        return baseStock + restore + draftImpact;
     };
 
-    /**
-     * Available pieces (SA/SR only):
-     * = basePcs
-     *   + existingSA.pcs  (sales was reducing → restore +pcs)
-     *   - existingSR.pcs  (sales return was adding → restore -pcs)
-     *   + draftImpact
-     */
+    // ---------------- PCS ----------------
     const getEditStockPcs = (id: string, basePcs: number): number => {
-        const existingRestore = existingUsage
-            ? (existingUsage.sa[id]?.pcs ?? 0) - (existingUsage.sr[id]?.pcs ?? 0)
-            : 0;
+       
+
         const draftImpact = getDraftNetImpactPcs(id);
-        return basePcs + existingRestore + draftImpact;
+
+        return basePcs + draftImpact;
     };
 
-    const getAvailableWeightForIS = (pureId: string, touch: number | null): number => {
+    // ---------------- PURE STOCK (IS / RE) ----------------
+    const getAvailableWeightForPure = (pureId: string, touch: number | null): number => {
         const stock = pureStockList.find(
-            s => String(s.pureId) === String(pureId) && Number(s.aTouch) === Number(touch)
+            s =>
+                String(s.pureId) === String(pureId) &&
+                Number(s.aTouch) === Number(touch)
         );
+
         if (!stock) return 0;
-        return getEditStock(pureId, touch, Number(stock.aWt || 0), 'IS');
+
+        return getEditStock(pureId, touch, Number(stock.aWt || 0), "IS");
     };
 
+    // ---------------- ITEM STOCK (SA / SR) ----------------
     const getAvailableWeightForSA = (itemId: string): number => {
-        const stock = itemsStockList.find(s =>
-            String(s.itemId) === String(itemId) || String(s.pureId) === String(itemId)
+        const stock = itemsStockList.find(
+            s =>
+                String(s.itemId) === String(itemId) ||
+                String(s.pureId) === String(itemId)
         );
+
         if (!stock) return 0;
-        return getEditStock(itemId, null, Number(stock.NETWT || stock.netwt || 0), 'SA');
+
+        return getEditStock(itemId, null, Number(stock.NETWT || 0), "SA");
     };
 
     const getAvailablePcsForSA = (itemId: string): number => {
-        const stock = itemsStockList.find(s =>
-            String(s.itemId) === String(itemId) || String(s.pureId) === String(itemId)
+        const stock = itemsStockList.find(
+            s =>
+                String(s.itemId) === String(itemId) ||
+                String(s.pureId) === String(itemId)
         );
+
         if (!stock) return 0;
-        const basePcs = Number(stock.PCS ?? stock.pcs ?? stock.pieces ?? 0);
-        return getEditStockPcs(itemId, basePcs);
+
+        return getEditStockPcs(itemId, Number(stock.PCS || 0));
     };
 
     return {
-        getAvailableWeightForIS,
-        getAvailableWeightForSA,
-        getAvailablePcsForSA,
         getEditStock,
         getEditStockPcs,
+
         getDraftNetImpact,
         getDraftNetImpactPcs,
-        getSignForRow,
-        getOriginalUsage: () => 0, // kept for API compat
+        getDraftNetImpactStnWt,
+
+        getAvailableWeightForPure, // IS / RE
+        getAvailableWeightForSA,   // SA / SR
+        getAvailablePcsForSA,
     };
 }

@@ -109,8 +109,8 @@ export function PrintPreviewScreen({
     // Initialize visible columns to show all columns
     const [settings, setSettings] = useState<Settings>({
         fontSize: "sm",
-        headerBg: "#1e293b",
-        headerColor: "#f8fafc",
+        headerBg: "#FFF",
+        headerColor: "#222",
         rowStriped: true,
         title,
         showTotals: false,
@@ -276,7 +276,7 @@ export function PrintPreviewScreen({
         if (!printWindow) return;
 
         // Fix: Larger font sizes for better readability
-        const fontSizeMap = { xs: "11px", sm: "12px", md: "14px", lg: "16px" };
+        const fontSizeMap = { xs: "10px", sm: "12px", md: "14px", lg: "16px" };
         const fontSize = fontSizeMap[settings.fontSize] || "12px";
         const stripedRule = settings.rowStriped
             ? "tbody tr:nth-child(even) { background: #f8fafc; }"
@@ -337,7 +337,7 @@ export function PrintPreviewScreen({
         const snoColumnCSS = showSno ? `
         td:first-child, th:first-child {
             text-align: center;
-            width: 50px;
+            width: 30px;
         }
     ` : "";
 
@@ -371,13 +371,13 @@ export function PrintPreviewScreen({
                 padding: 0; 
             }
             
-            body {
-                font-family: 'Segoe UI', Arial, sans-serif;
-                font-size: ${fontSize};
-                margin: 8mm;
-                color: #222;
-                -webkit-print-color-adjust: exact;
-                print-color-adjust: exact;
+           body {
+                    font-family: 'Segoe UI', Arial, sans-serif;
+                    font-size: ${parseInt(fontSize) - 2}px;
+                    margin: 2mm;
+                    color: #222;
+                    -webkit-print-color-adjust: exact;
+                    print-color-adjust: exact;
             }
             
             .print-container {
@@ -385,12 +385,12 @@ export function PrintPreviewScreen({
             }
             
             .report-title {
-                margin-bottom: 20px;
+                margin-bottom: 15px;
                 text-align: center;
             }
             
             .report-title h2 {
-                font-size: ${parseInt(fontSize) + 6}px;
+                font-size: ${parseInt(fontSize) + 3}px;
                 margin-bottom: 5px;
                 color: #0f172a;
                 font-weight: 700;
@@ -410,8 +410,9 @@ export function PrintPreviewScreen({
             
             th, td {
                 border: 1px solid #cbd5e1;
-                padding: 8px 10px;
+                padding: 2px;
                 vertical-align: middle;
+                 white-space: nowrap;
             }
             
             th {
@@ -421,14 +422,14 @@ export function PrintPreviewScreen({
                 font-size: ${fontSize};
                 text-transform: uppercase;
                 white-space: nowrap;
-                padding: 10px 12px;
+                padding: 2px 4px;
             }
             
             thead tr:first-child th {
                 background: ${settings.headerBg};
                 color: ${settings.headerColor};
                 font-weight: 700;
-                font-size: ${parseInt(fontSize) + 1}px;
+                font-size: ${parseInt(fontSize)}px;
             }
             
             thead tr:last-child th {
@@ -484,7 +485,7 @@ export function PrintPreviewScreen({
                 }
                 
                 th, td {
-                    padding: 6px 8px;
+                    padding: 2px;
                 }
                 
                 th {
@@ -492,10 +493,7 @@ export function PrintPreviewScreen({
                     print-color-adjust: exact;
                 }
             }
-            
-            td {
-                word-break: break-word;
-            }
+    
         </style>
     </head>
     <body>
@@ -503,7 +501,6 @@ export function PrintPreviewScreen({
             ${settings.title ? `
             <div class="report-title">
                 <h2>${settings.title}</h2>
-                <p>Generated on: ${new Date().toLocaleString()} | ${data.length} record(s)</p>
             </div>
             ` : ''}
             ${tableContainer.outerHTML}

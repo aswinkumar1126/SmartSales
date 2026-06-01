@@ -303,8 +303,8 @@ export default function SalesPage() {
 
 
 
-    const { data: pureStockList = [], refetch: goldStockRefetch } = usePureGoldData(filter, cleanedFilters);
-    const { data: itemsStock, refetch: itemStockRefetch } = useOrnamentData(filter,'N');
+    const { data: pureStockList = [], refetch: goldStockRefetch } = usePureGoldData(filter, cleanedFilters , isEditing ? Number(headerForm.ENTRYNO) : undefined ,isEditing ?"SA" :undefined );
+    const { data: itemsStock, refetch: itemStockRefetch } = useOrnamentData(filter, 'N', isEditing ? Number(headerForm.ENTRYNO) : undefined, isEditing ? "SA" : undefined);
 
 
 
@@ -1054,18 +1054,12 @@ export default function SalesPage() {
 
     const {
         transactionKeys,
-        isIssue,
-        isSales,
-        isSalesReturn,
-        isReceipt,
+    
         getStockAvailability,
         getAvailableWeight,
         getAvailablePieces,
         validateQuantity,
-        getStockForTransaction,
-        // These are only available in edit mode
-        getEditAvailableWeightForIS,
-        getEditAvailableWeightForSA,
+
     } = useStockAvailability({
         transactionCode: selectedTransactionTypes.map(t => t.code),
         pureStockList,

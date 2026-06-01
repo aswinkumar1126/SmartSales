@@ -13,7 +13,7 @@ import DataTable, { ColumnDef } from "@/component/table/ExcelReportTable";
 
 
 /*------------- HOOKS ------------------*/
-import { useItems } from "@/hooks/apiHooks/item/useItems";
+import { useStoneItems } from "@/hooks/apiHooks/item/useItems";
 import { useAllMetals } from "@/hooks/apiHooks/metal/useMetals";
 import { useOutstandingStockReport } from "@/hooks/apiHooks/SummaryReport/useSummaryReport";
 
@@ -126,12 +126,12 @@ function OurStandingStockReport() {
     const [fetchEnabled, setFetchEnabled] = useState(false);
 
 
-  const { data: allItems } = useItems();
+  const { data: allItems } = useStoneItems({STUDDED:'N'});
   const { data: metalData } = useAllMetals();
 
  
     const allItemsList = useMemo(()=>{
-      const items = allItems?.items;
+      const items = allItems;
       return Array.isArray(items)
         ? items.map((i: any) => ({ label: i.itemName, value: String(i.itemId) }))
           : [];
@@ -146,13 +146,18 @@ function OurStandingStockReport() {
               value: m.metalId
           }))
       }, [metalData]);
+
   
       const yesNoOptions = [
           { label: "YES", value: "Y" },
           { label: "NO", value: "N" },
       ];
   
+const stockTypeList = [
+  {label:'TAGED',value:'T'},
+  {label:'NON TAGED',value:'N'},
 
+]
 
 
 
@@ -161,12 +166,12 @@ function OurStandingStockReport() {
         () =>
         OutstandingStockReportFields({
           itemList: allItemsList ,
-          stockList: yesNoOptions,
+          stockTypeList: stockTypeList,
           stoneList: yesNoOptions ,
           metalList: metals
 
             }),
-      [allItemsList]
+      [allItemsList, metals]
     );
 
     const fieldNames = formFields.map((f) => f.name);
@@ -195,7 +200,6 @@ function OurStandingStockReport() {
     ITEMNAME : "" ,
     STOCKTYPE : "",
     METAL :"",
-    STUDDED :"",
     STONE_PRESENT :""
   });
 

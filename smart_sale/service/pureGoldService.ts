@@ -9,7 +9,9 @@ export const pureGoldMastService = () =>({
 
  getAllPureGoldData : async (
         filter?: string,
-        filters?: Record<string, any>
+        filters?: Record<string, any>,
+        entryNo?:number,
+        trantype?:string
     ): Promise<ApiResponse<pureGoldData[]>> => {
         try {
             // Build params dynamically
@@ -19,8 +21,10 @@ export const pureGoldMastService = () =>({
             if (filters && Object.keys(filters).length > 0) {
                 Object.assign(params, filters); // merge object filters
             }
+            if(entryNo) params.ENTRYNO = entryNo;
+            if(trantype) params.TRANTYPE = trantype
 
-            console.log("Axios params:", params);
+            console.log("Axios params for pureGold:", params);
 
             const response = await axiosInstance.get(`/${baseUrlOpen}`, { params });
             return response.data;

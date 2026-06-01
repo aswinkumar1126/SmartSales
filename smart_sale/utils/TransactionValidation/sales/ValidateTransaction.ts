@@ -104,5 +104,75 @@ for (const key in usedByPureIdAndTouch) {
         };
     }
 }
+    // ✅ Purchase Return Validation
+    const usedByItemIdAndTouch: Record<string, { pcs: number; grswt: number; stnwt: number }> = {};
+
+    draftRows.forEach((row: any) => {
+        const transactionType = SALETRANSACTIONTYPES.find(
+            (t: any) => t.value === row.TRANSACTION_TYPE
+        );
+        if (!transactionType) return;
+
+        if (transactionType.value === "SA" && row.ITEMID && row.TOUCH) {
+            const key = `${row.ITEMID}_${row.TOUCH}`;
+
+            if (!usedByItemIdAndTouch[key]) {
+                usedByItemIdAndTouch[key] = {
+                    pcs: 0,
+                    grswt: 0,
+                    stnwt: 0,
+                };
+            }
+
+            usedByItemIdAndTouch[key].pcs += Number(row.PCS || 0);
+            usedByItemIdAndTouch[key].grswt += Number(row.GRSWT || 0);
+            usedByItemIdAndTouch[key].stnwt += Number(row.STNWT || 0);
+        }
+    });
+    for (const key in usedByItemIdAndTouch) {
+        const [itemId, touch] = key.split("_");
+
+        const availability = getStockAvailability(itemId, null);
+
+        console.log(availability ,'availabilty foritemstock')
+
+        
+
+        if (!availability) {
+            return {
+                valid: false,
+                error: `Stock not found for ITEM ID ${itemId}`,
+            };
+        }
+
+        if (availability.pieces.remaining === 0 && availability.weight.remaining > 0) {
+            return {
+                valid: false,
+                error: `Must match the pcs ${availability.pieces.remaining} with weight ${availability.weight.remaining}`,
+            };
+        }
+
+        if(availability.pieces.remaining < 0){
+            return {
+                valid: false,
+                error: `Stock Limit Exceed available ${availability.pieces.total}  used ${availability.pieces.used}`,
+            };
+        }
+        if (availability.weight.remaining < 0){
+            return {
+                valid: false,
+                error: `Stock Limit Exceed available ${availability.weight.total}  used ${availability.weight.used}`,
+            };
+        }
+
+        if (availability.weight.remaining === 0 && availability.pieces.remaining > 0) {
+            return {
+                valid: false,
+                error: `Must match the pcs ${availability.pieces.remaining} with weight ${availability.weight.remaining}`,
+            };
+        }
+
+    }
+
     return { valid: true };
 };

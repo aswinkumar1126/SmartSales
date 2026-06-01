@@ -192,7 +192,7 @@ export default function LoginPage() {
                                 onChange={(e) =>
                                     handleUppercase(e, setUsername)
                                 }
-                                onKeyUp={(e) =>
+                                onKeyDown={(e) =>
                                     handleKeyUp(e, passwordRef)
                                 }
                                 style={inputStyle}
@@ -224,7 +224,7 @@ export default function LoginPage() {
                                 onChange={(e) =>
                                     handleUppercase(e, setPassword)
                                 }
-                                onKeyUp={(e) => handleKeyUp(e)}
+                                onKeyDown={(e) => handleKeyUp(e)}
                                 style={inputStyle}
                             />
 

@@ -241,7 +241,7 @@ export default function StockDrawer({
                                                     </Stack>
                                                 </Table.Cell>
                                                 <Table.Cell as="td" textAlign="end" fontWeight="medium">
-                                                    {Number(row.aTouch).toFixed(1)}
+                                                    {Number(row.aTouch).toFixed(2)}
                                                 </Table.Cell>
                                                 <Table.Cell as="td" textAlign="end" fontWeight="medium">
                                                     {Number(row.aPureWt).toFixed(3)}
@@ -293,7 +293,7 @@ export default function StockDrawer({
                                                     </Stack>
                                                 </Table.Cell>
                                                 <Table.Cell as="td" textAlign="end">
-                                                    {row.TOUCH || row.touch || ""}
+                                                    {Number(row.TOUCH).toFixed(2) || row.touch || ""}
                                                 </Table.Cell>
                                                 <Table.Cell as="td" textAlign="end" fontWeight="bold" color="blue.600" px={1}>
                                                     {Number(row.PUREWT || row.purewt || 0).toFixed(3)}g

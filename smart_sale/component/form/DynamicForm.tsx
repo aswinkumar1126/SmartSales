@@ -14,7 +14,7 @@ import { ColorPickerInput } from '@/components/ui/ColorPickerInput';
 import { CurrencyInput } from '@/components/ui/CurrencyInput';
 import { BarcodeInput } from '@/components/ui/BarcodeInput';
 import { SwitchInput } from '@/components/ui/SwitchInput';
-
+import { MultiSelectCombobox } from '@/components/ui/MultiSelectCombobox';
 
 
 import { FormField } from '@/types/form/form';
@@ -163,6 +163,32 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
                         fontSize={field.fontSize || "2xs"}
                     />
                 );
+
+                case 'multiCombobox' :
+                    return(
+                        <Box width="100%">
+                            <MultiSelectCombobox 
+                                key={field.name}
+                                ref={setRef}
+                                value={formData[field.name] ?? ''} // controlled
+
+                                size={field.size || "xs"}
+                                placeholder={field.placeholder || `Select ${field.label}`}
+                                rounded={field.rounded}
+                                // className={field.className}
+                                // css={field.css}
+                                onChange={(val) => onChange(field.name, val)}
+                                items={field.items || field.options || []}
+                                disable={isDisabled}
+                                onEnter={() => focusNext(field.name)}
+                                onKeyDown={(e) => handleKeyDown(e, field.name)}
+                                onBlur={() => handleBlur(field.name)}
+                                maxWidth={field.maxWidth || field.maxW || field.width}
+                                fontSize={field.fontSize || "2xs"}
+
+                            />
+                        </Box>
+                    )
                 case 'password':
                     return (
                         <Box width="100%">
@@ -272,7 +298,6 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
                         />
                     );
             case 'checkbox' :
-                    console.log("field:", field.name, formData[field.name])
                 return (
                     <SingleCheckbox 
                         label={field.label}

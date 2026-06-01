@@ -192,7 +192,9 @@ export default function StockDrawer({
                                     // ✅ Just id + touch — no transactionTypeCode needed
                                     const availability = getStockAvailability && stockId
                                         ? getStockAvailability(stockId, touch)
-                                        : undefined;
+                                        : undefined
+
+                                    console.log(availability,'availability instockmodal')
 
                                     if (showStock === "PURE") {
                                         const remainingWt = availability?.weight?.remaining ?? null;

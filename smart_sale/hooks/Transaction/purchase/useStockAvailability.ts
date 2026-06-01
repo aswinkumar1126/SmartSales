@@ -58,58 +58,14 @@ export function useStockAvailability({
     originalTransactionData,
 }: UseStockAvailabilityDeps) {
 
-    // ✅ Build existingUsage from originalTransactionData once
-    // ✅ Build existingUsage from originalTransactionData once
-    const existingUsage = useMemo(() => {
-        if (!isEditMode || !originalTransactionData?.TRANSACTION_DETAILS) return undefined;
-
-        const details = originalTransactionData.TRANSACTION_DETAILS;
-
-        // ─── Pure stock ───────────────────────────────────────────────
-        const isp: Record<string, { wt: number }> = {};
-        ; (details.issue || []).forEach((r: any) => {
-            const key = `${r.PUREID}_${r.TOUCH ?? ''}`;
-            if (!isp[key]) isp[key] = { wt: 0 };
-            isp[key].wt += Number(r.WT || 0);
-        });
-
-        const rec: Record<string, { wt: number }> = {};
-        ; (details.receipt || []).forEach((r: any) => {
-            const key = `${r.PUREID}_${r.TOUCH ?? ''}`;
-            if (!rec[key]) rec[key] = { wt: 0 };
-            rec[key].wt += Number(r.WT || 0);
-        });
-
-        // ─── Items stock ──────────────────────────────────────────────
-        const pu: Record<string, { netwt: number; pcs: number }> = {};
-        ; (details.purchase || []).forEach((r: any) => {
-            const key = String(r.ITEMID || r.PUREID);
-            if (!pu[key]) pu[key] = { netwt: 0, pcs: 0 };
-            pu[key].netwt += Number(r.NETWT || 0);
-            pu[key].pcs += Number(r.PCS || 0);
-        });
-
-        const pr: Record<string, { netwt: number; pcs: number }> = {};
-        ; (details.purchase_return || []).forEach((r: any) => {
-            const key = String(r.ITEMID || r.PUREID);
-            if (!pr[key]) pr[key] = { netwt: 0, pcs: 0 };
-            pr[key].netwt += Number(r.NETWT || 0);
-            pr[key].pcs += Number(r.PCS || 0);
-        });
-
-        console.log('existingUsage:', { isp, rec, pu, pr });
-        return { isp, rec, pu, pr };
-
-    }, [isEditMode, originalTransactionData]);
-    console.log(existingUsage,'existingUsage')
+   
 
     const editCalculator = useEditStockCalculator({
         pureStockList,
         itemsStockList,
         draftRows,
         originalTransactionData,
-        TRANSACTIONTYPES,
-        existingUsage, // ✅ pass it in
+        TRANSACTIONTYPES
     });
 
     
@@ -207,21 +163,21 @@ export function useStockAvailability({
                 isPurchaseReturn: resolvedIsPurchaseReturn,
                 isReceipt: resolvedIsReceipt,
                 weight: {
-                    total: baseWeight,
-                    used: Math.max(usedWeight, 0),
-                    remaining: Math.max(weightAvailable, 0),
+                    total:Number( Number(baseWeight).toFixed(3)),
+                    used: Number(Number(usedWeight).toFixed(3)),
+                    remaining:Number( Number(weightAvailable).toFixed(3)),
                 },
                 // ✅ pieces now uses same sign logic as weight
                 pieces: {
-                    total: basePieces,
-                    used: Math.max(usedPieces, 0),
-                    remaining: Math.max(piecesAvailable, 0),
+                    total: Number(Number(basePieces).toFixed(0)),
+                    used:Number( Number(usedPieces).toFixed(0)),
+                    remaining: Number(Number(piecesAvailable).toFixed(0)),
                 },
-                total: baseWeight,
-                used: Math.max(usedWeight, 0),
-                remaining: Math.max(weightAvailable, 0),
-                usedPieces: Math.max(usedPieces, 0),
-                remainingPieces: Math.max(piecesAvailable, 0),
+                total: Number( Number(baseWeight).toFixed(3)),
+                used: Number( Number(usedWeight).toFixed(3)),
+                remaining: Number( Number(weightAvailable).toFixed(3)),
+                usedPieces: Number(Number(usedPieces).toFixed(0)),
+                remainingPieces: Number(Number(piecesAvailable).toFixed(0)),
             };
         },
         [

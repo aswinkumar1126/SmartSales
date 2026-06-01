@@ -1,10 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { pureGoldMastService } from "@/service/pureGoldService";
 
-export const usePureGoldData = (filter?:string,filters?: any) => {
+export const usePureGoldData = (filter?:string,filters?: any ,entryNo?:number , tranType?:"PU"|"SA") => {
     return useQuery({
-        queryKey: ["pureGoldData", filter, filters], // 👈 include filters
-        queryFn: () => pureGoldMastService().getAllPureGoldData(filter, filters),
+        queryKey: ["pureGoldData", filter, filters, entryNo?.toString(), tranType], // 👈 include filters
+        queryFn: () => pureGoldMastService().getAllPureGoldData(filter, filters, entryNo, tranType),
         select: (data) => data.data,
         
     });

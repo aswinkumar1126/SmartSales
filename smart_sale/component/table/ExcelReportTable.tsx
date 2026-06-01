@@ -500,7 +500,7 @@ export default function DataTable({
             TD.style.backgroundColor = bg;
             TD.style.color = color;
             TD.style.fontWeight = "700";
-            TD.style.fontSize = "14px";
+            TD.style.fontSize = "12px";
             TD.style.borderTop = "2px solid #c5cfe8";
         },
         [isTotalsEnabled, data.length, hotData, totals]
@@ -530,7 +530,7 @@ export default function DataTable({
             TH.style.background = totals?.bg ?? "#f0f4ff";
             TH.style.color = totals?.color ?? "#1e3a5f";
             TH.style.fontWeight = "700";
-            TH.style.fontSize = "11px";
+            TH.style.fontSize = "10px";
             TH.style.borderTop = "2px solid #c5cfe8";
             TH.innerHTML = "Σ";
         },
@@ -732,6 +732,7 @@ export default function DataTable({
             <div className="dt-wrapper" style={{ position: "relative" }}>
                 <HotTable
                     ref={hotRef}
+                    
                     data={hotData}
                     columns={hotColumns}
                     colWidths={colWidths}
@@ -807,7 +808,7 @@ export default function DataTable({
         .dt-wrapper .handsontable th {
           background: #dadafc !important;
           color: #111 !important;
-          font-size: 8px !important;
+          font-size: 10px !important;
           font-weight: 600 !important;
           border-color: #BBB !important;
         }
@@ -816,6 +817,7 @@ export default function DataTable({
           font-size: 12px !important;
           color: #222 !important;
           border-color: #DDD !important;
+          padding:0px auto !important;
         }
         .dt-wrapper .handsontable tr:hover td {
           background: #ececff !important;

@@ -5,7 +5,7 @@ type collection = { label: string, value: string };
 
 type OutstandingStockReportForm = {
     itemList:collection[],
-    stockList :collection[],
+    stockTypeList :collection[],
     metalList :collection[],
     stoneList : collection[],
 
@@ -30,9 +30,9 @@ export const OutstandingStockReportFields = (OutstandingStockForm: OutstandingSt
 
     },
     {
-        name: "STUDDED",
-        label: "STUDDED",
-        items: OutstandingStockForm.stockList,
+        name: "STOCKTYPE",
+        label: "STOCK TYPE",
+        items: OutstandingStockForm.stockTypeList,
         type: "select",
         maxWidth: '60px'
 

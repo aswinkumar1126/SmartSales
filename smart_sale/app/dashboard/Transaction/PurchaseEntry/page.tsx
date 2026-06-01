@@ -345,13 +345,10 @@ export default function PurchasePage() {
 
 
 
-    const { data: pureStockList = [], refetch: goldStockRefetch } = usePureGoldData(filter, cleanedFilters);
-    const { data: itemsStock, refetch: itemStockRefetch } = useOrnamentData(filter ,'N');
+    const { data: pureStockList = [], refetch: goldStockRefetch } = usePureGoldData(filter, cleanedFilters , isEditing ? Number(headerForm.ENTRYNO) : undefined ,isEditing ?"PU" :undefined );
+    const { data: itemsStock, refetch: itemStockRefetch } = useOrnamentData(filter, 'N', isEditing ? Number(headerForm.ENTRYNO) : undefined, isEditing ? "PU" : undefined);
 
-    console.log(pureStockList, 'pureStockListpureStockList')
-
-
-
+    console.log(pureStockList, 'pureStockListpureStockList');
 
 
     const { data: allPureGoldNames } = usePureGoldNames();
@@ -1717,7 +1714,6 @@ export default function PurchasePage() {
 
             </Flex>
             {showPrintModal && (
-
                 <Box>
                     <PurchaseReceipt
                         COMPANY_DETAILS={companyDetails}
@@ -1725,7 +1721,6 @@ export default function PurchasePage() {
                         onAfterPrint={() => setShowPrintModal(false)}
                     />
                 </Box>
-
             )}
             <Box>
 

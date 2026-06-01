@@ -35,7 +35,6 @@ export interface ItemStockReportResponse {
 export interface OutStandingStockReportParams {
   STOCKTYPE?: string,
   METAL?:string;
-  STUDDED?:string;
   ITEMNAME?:string;
   STONE_PRESENT?:string;
 

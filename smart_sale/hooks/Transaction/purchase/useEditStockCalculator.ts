@@ -6,23 +6,11 @@ interface EditingStockProps {
     draftRows: any[];
     originalTransactionData: any;
     TRANSACTIONTYPES: any[];
-    // ✅ Pre-computed existing usage passed in directly when editing
-    existingUsage?: {
-        isp: Record<string, { wt: number }>;   // Issue rows (adds stock → restore +wt)
-        rec: Record<string, { wt: number }>;   // Receipt rows (reduces stock → restore -wt)
-        pu: Record<string, { netwt: number; pcs: number }>;  // Purchase rows (adds → restore +)
-        pr: Record<string, { netwt: number; pcs: number }>;  // Purchase Return (reduces → restore -)
-    };
 }
 
 const PURE_STOCK_CODES = ['ISP', 'REC'];
 const ITEM_STOCK_CODES = ['PU', 'PR'];
 
-// All transaction types reduce stock when new (drafting)
-// baseStock + existingUsed - draftUsed = available
-const REDUCES_STOCK_CODES = ['ISP', 'PU']; // Issue reduces pure, Purchase reduces items
-// REC and PR add to stock (returns/receipts)
-const ADDS_STOCK_CODES = ['REC', 'PR'];
 
 export function useEditStockCalculator({
     pureStockList,
@@ -30,7 +18,6 @@ export function useEditStockCalculator({
     draftRows,
     originalTransactionData,
     TRANSACTIONTYPES,
-    existingUsage,
 }: EditingStockProps) {
 
     const getStockTypeForCode = (transactionTypeCode: string): 'ISP' | 'PU' => {
@@ -43,7 +30,7 @@ export function useEditStockCalculator({
      * REC / PR → +1 (add to stock)
      */
     const getSignForRow = (transactionTypeCode: string): 1 | -1 => {
-        return ADDS_STOCK_CODES.includes(transactionTypeCode) ? 1 : -1;
+        return -1;
     };
 
     /**
@@ -108,34 +95,17 @@ export function useEditStockCalculator({
         const field = type === 'ISP' ? 'WT' : 'NETWT';
 
         let existingRestore = 0;
-        if (existingUsage) {
-            if (type === 'ISP') {
-                const key = `${id}_${touch ?? ''}`;
-                // ISP (Issue) was adding stock → restore = +wt
-                // REC (Receipt) was reducing stock → restore = -wt
-                existingRestore = (existingUsage.isp[key]?.wt ?? 0)
-                    - (existingUsage.rec[key]?.wt ?? 0);
-            } else {
-                // PU (Purchase) was adding stock → restore = +netwt
-                // PR (Purchase Return) was reducing stock → restore = -netwt
-                existingRestore = (existingUsage.pu[id]?.netwt ?? 0)
-                    - (existingUsage.pr[id]?.netwt ?? 0);
-            }
-        }
+      
 
         const draftImpact = getDraftNetImpact(id, touch, field, type);
         return baseStock + existingRestore + draftImpact;
     };
 
     const getEditStockPcs = (id: string, basePcs: number): number => {
-        // PU was adding pieces → restore = +pcs
-        // PR was reducing pieces → restore = -pcs
-        const existingRestore = existingUsage
-            ? (existingUsage.pu[id]?.pcs ?? 0) - (existingUsage.pr[id]?.pcs ?? 0)
-            : 0;
+      
 
         const draftImpact = getDraftNetImpactPcs(id);
-        return basePcs + existingRestore + draftImpact;
+        return basePcs  + draftImpact;
     };
 
     const getAvailableWeightForISP = (pureId: string, touch: number | null): number => {

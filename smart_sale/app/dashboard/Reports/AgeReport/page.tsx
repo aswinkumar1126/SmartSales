@@ -24,6 +24,8 @@ import { useTheme } from "@/context/theme/themeContext";
 import { usePrint } from "@/context/print/usePrintContext";
 import { PrintColumn } from "@/component/screens/PrintPreviewScreen";
 import { formatToFixed } from "@/utils/format/numberFormat";
+import { formatDateForShow } from "@/utils/format/formatDateForAPI";
+import { printValue } from "yup";
 
 
 // ─── Column definitions (read-only, no editing) ───────────────────────────────
@@ -161,9 +163,13 @@ function AgeReport() {
     /* ------------ Table data — map STATEMENT rows ------------ */
     const tableData = useMemo((): Record<string, unknown>[] => {
       const rows = fetchEnabled ? data : [] ;
-      console.log(rows,'rows')
-      if (!Array.isArray(rows)) return [];
-      return rows ;
+      
+      if (!Array.isArray(rows))  return [];
+      return rows.map((row)=>({
+        ...row,
+        TAGDATE : formatDateForShow(row.TAGDATE),
+     
+      }))
     }, [data ,fetchEnabled]);
 
     console.log(tableData,'tableData');
@@ -173,73 +179,29 @@ function AgeReport() {
     setData(tableData || []);
 
     const columns: PrintColumn[] = [
-      // Simple column without nesting
-      
       {
         key: "ITEMNAME",
         label: "Item Name",
         align: "start",
       },
       {
-        key: "PCS",
-        label: "Pcs",
-        align: "end",
-        isNumeric: true,
-        allowTotal: true,
-        decimalScale: 0,
+        key: "TAGNO",
+        label: "Tag Number",
+        align: "start",
       },
       {
-        key: "GRSWT",
-        label: "Grs Wt",
-        align: "end",
-        isNumeric: true,
-        allowTotal: true,
-        decimalScale: 3,
-        renderCell: (value: any) => value != null ? formatToFixed(Number(value), 3) : "",
-        printValue: (value: any) => value != null ? formatToFixed(Number(value), 3) : "",
-      },
-      {
-        key: "STNWT",
-        label: "Stn Wt",
-        align: "end",
-        isNumeric: true,
-        allowTotal: true,
-        decimalScale: 3,
-        renderCell: (value: any) => value != null ? formatToFixed(Number(value), 3) : "",
-        printValue: (value: any) => value != null ? formatToFixed(Number(value), 3) : "",
-      },
-      {
-        key: "NETWT",
-        label: "Net Wt",
-        align: "end",
-        isNumeric: true,
-        allowTotal: true,
-        decimalScale: 3,
-        renderCell: (value: any) => value != null ? formatToFixed(Number(value), 3) : "",
-        printValue: (value: any) => value != null ? formatToFixed(Number(value), 3) : "",
-      },
-      // Nested headers example - using subColumns
-      {
-        key: "PUREWT",
-        label: "Pure Wt",
-        align: "end",
-        allowTotal: true,
-        isNumeric :true,
-        decimalScale :3 ,
-        renderCell: (value: any) => value != null ? formatToFixed(Number(value), 3) : "",
-        printValue: (value: any) => value != null ? formatToFixed(Number(value), 3) : "",
-      },
-      {
-        key: "STNAMT",
-        label: "Stn Amt",
-        align: "end",
-        allowTotal: true,
-        isNumeric: true,
-        decimalScale: 2,
-        renderCell: (value: any) => value != null ? formatToFixed(Number(value), 2) : "",
-        printValue: (value: any) => value != null ? formatToFixed(Number(value), 2) : "",
-      },
+        key: "TAGDATE",
+        label: "Tag Date",
+        align: "start",
 
+      },
+      {
+        key: "AGE",
+        label: "Age",
+        align: "end",
+        isNumeric: true,
+        allowTotal: false,
+      },
     ];
 
     setColumns(columns);
@@ -329,7 +291,7 @@ function AgeReport() {
               {/* ═══════════════ TABLE ═══════════════ */}
               <Box mt={3}>
                 <DataTable
-                  title="Outstanding Stock Statement"
+                  title="Tag Age Statement"
                   data={tableData}
                   columnDefs={stockColumns}
                   height="430px"

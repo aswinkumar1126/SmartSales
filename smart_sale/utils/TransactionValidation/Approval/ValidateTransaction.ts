@@ -6,7 +6,6 @@ export const validateTransactions = ({
     APPROVAL_TRANSACTION_KEY_MAP,
     APPROVALTRANSACTIONTYPES,
     getStockAvailability,
-
     isSRBillTag
 }: any): { valid: boolean; error?: string } => {
 

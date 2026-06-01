@@ -64,10 +64,11 @@ export const usePureStockReport = ({ date, columns, groupBy }: {
   groupBy?: string[]
 }) => {
 
-  return useApiQuery<ItemStockEntry[]>({
+  console.log(date ,columns ,'pureStocklistitems');
+  return useApiQuery<Record<string, any>[]>({
 
     queryKey: [
-      "item_stock_report",
+      "pure_stock_report",
       date ?? "",
       ...(columns ?? []),
       ...(groupBy ?? [])
@@ -81,9 +82,6 @@ export const usePureStockReport = ({ date, columns, groupBy }: {
       
       // ✅ Fix: Send columns as array properly
       COLUMNS: columns && columns.length > 0 ? columns.join(",") : undefined,
-      
-      // ✅ Fix: Send groupBy as comma separated string
-      GROUPBY: groupBy && groupBy.length > 0 ? groupBy.join(",") : undefined
     },
 
     select: (res) => res.data,
@@ -92,17 +90,7 @@ export const usePureStockReport = ({ date, columns, groupBy }: {
   });
 };
 
-// export const useItemStockReport = (date?: string) => {
-//         return useApiQuery<ItemStockEntry[]>({
-//         queryKey: ["item_stock_report", date ?? ""],
-//         url: "/report/itemwise",
-//         method: "GET",
-//         params: date ? { date } : undefined,
-//         select: (res) => res.data,
-//     });
-
-// };
-/* ---------------- HOOK ---------------- */
+/*----------- HOOK ---------------- */
 
 export const useTranReport = ({
   stage,
