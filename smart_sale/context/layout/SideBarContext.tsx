@@ -24,6 +24,8 @@ import {
   TrendingDown,
   PlusCircle,
   Settings,
+  UserCog,
+  CreditCard
 } from "lucide-react";
 import { HiArrowDownCircle } from "react-icons/hi2";
 import { AiOutlineShoppingCart, AiOutlineDollar } from "react-icons/ai";
@@ -228,6 +230,17 @@ const STATIC_MENU: SidebarMenu = {
       ],
     },
 
+    RoleBased : {
+      icon: Shield,
+      items: [
+        { type :"direct",label: "Role Master", route: "/dashboard/Master/RoleBased/RoleMaster", icon: Shield,  },
+        { type: "direct", label: "User Roles", route: "/dashboard/Master/RoleBased/UserRole", icon: UserCog },
+        { type: "direct", label: "Role Transaction", route: "/dashboard/Master/RoleBased/RoleTran", icon: CreditCard },
+        { type: "direct", label: "Role Permission", route: "/dashboard/Master/RoleBased/RoleTranCreation", icon: Shield },
+
+      ],
+    },
+
     Mapping :{
       icon: Shield,
       items: [
@@ -346,63 +359,6 @@ const STATIC_MENU: SidebarMenu = {
       title: "APPROVAL ISSUE  / RECEIPT",
       description: "Create and manage approval transactions",
     },
-
-    
-    // Purchase: {
-    //   type: "direct",
-    //   label: "Purchase",
-    //   route: "/dashboard/Transaction/Purchase",
-    //   icon: AiOutlineShoppingCart,
-    //   title: "PURCHASE ENTRY",
-    //   description: "Create and manage purchase transactions",
-    // },
-
-    // Transaction: {
-    //   icon: Layers,
-    //   items: [
-    //     {
-    //       type: "parent",
-    //       label: "Approval",
-    //       icon: BadgeCheck,
-    //       title: "Approval Module",
-    //       description: "Approve or reject pending transactions",
-    //       children: [
-    //         {
-    //           label: "Pending",
-    //           route: "/dashboard/Transaction/Transaction/Approval/pending",
-    //           icon: HiArrowDownCircle,
-    //           title: "Pending Approvals",
-    //           description: "View transactions waiting for approval",
-    //         },
-    //         {
-    //           label: "Completed",
-    //           route: "/dashboard/Transaction/Transaction/Approval/completed",
-    //           icon: BadgeCheck,
-    //           title: "Completed Approvals",
-    //           description: "View approved transactions",
-    //         },
-    //       ],
-    //     },
-    //     {
-    //       type: "direct",
-    //       label: "Bank Transaction",
-    //       route: "/dashboard/Transaction/Transaction/BankTransaction",
-    //       icon: Landmark,
-    //       title: "Bank Transaction",
-    //       description: "Manage bank transactions",
-    //     },
-    //     
-    //     {
-    //       type: "direct",
-    //       label: "Income",
-    //       route: "/dashboard/Transaction/Transaction/Income",
-    //       icon: TrendingUp,
-    //       title: "Income",
-    //       description: "Track income entries",
-    //     },
-    //   ],
-    // },
-
     Settings: {
       icon: Settings,
       items: [
