@@ -54,7 +54,7 @@ const mapPurchaseReturnItems = (
         return {
             __rowId: rowId,
             __isNew: false,
-            __isTagged: isTagged,
+            __isTaged: isTagged,
 
             ITEM_TYPE,
             TRANSACTION_TYPE: type,

@@ -113,7 +113,7 @@ for (const key in usedByPureIdAndTouch) {
         );
         if (!transactionType) return;
 
-        if (transactionType.value === "SA" && row.ITEMID && row.TOUCH) {
+        if (transactionType.value === "SA" && row.ITEMID && row.TOUCH && !row.TAGNO) {
             const key = `${row.ITEMID}_${row.TOUCH}`;
 
             if (!usedByItemIdAndTouch[key]) {
@@ -129,8 +129,13 @@ for (const key in usedByPureIdAndTouch) {
             usedByItemIdAndTouch[key].stnwt += Number(row.STNWT || 0);
         }
     });
+    
+    // ✅ Validate purchase returns against stock availability
+  
     for (const key in usedByItemIdAndTouch) {
-        const [itemId, touch] = key.split("_");
+
+        const [itemId, touch ] = key.split("_");
+   
 
         const availability = getStockAvailability(itemId, null);
 

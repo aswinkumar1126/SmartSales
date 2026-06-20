@@ -900,11 +900,13 @@ useEffect(() => {
     const renderCell = useCallback((params: RenderCellParams) => {
         const { row, col, value, isEditing, isFocused, onChange, onCommit, inputRef } = params;
 
-        
+        console.log(row,'renderingRow');
 
         const field = formFields.find((f) => f.key === col.key);
-        const shouldDisableOnEditing = !row.ISEDITABLE && row.__isTaged;
-        console.log(shouldDisableOnEditing, row,'shouldDisableOnEditing');
+        const shouldDisableOnEditing = !row.ISEDITABLE;
+
+        const itemDisable = row.__isTaged;
+        // console.log(shouldDisableOnEditing, row,'shouldDisableOnEditing');
 
         // ── Resolve item name: prefer stored ITEMNAME, fall back to collection lookup ──
         const itemName = row.ITEMNAME
@@ -1033,7 +1035,7 @@ useEffect(() => {
         if (col.key === "ITEMID" || col.key === "PUREID") {
             const items = field.collection?.items || [];
  
-            if (col.key === "ITEMID" && shouldDisableOnEditing) {
+            if (col.key === "ITEMID" && shouldDisableOnEditing || itemDisable) {
                 return (
                     <span style={{
                         padding: "0 6px", fontSize: 11, color: "#555",

@@ -115,7 +115,7 @@ for (const key in usedByPureIdAndTouch) {
         );
         if (!transactionType) return;
 
-        if (transactionType.value === "PR" && row.ITEMID && row.TOUCH) {
+        if (transactionType.value === "PR" && row.ITEMID && row.TOUCH &&!row.TAGNO) {
             const key = `${row.ITEMID}_${row.TOUCH}`;
 
             if (!usedByItemIdAndTouch[key]) {

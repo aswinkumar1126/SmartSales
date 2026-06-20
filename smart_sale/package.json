@@ -6,8 +6,8 @@
   "private": true,
   "main": "main.js",
   "scripts": {
-    "start": "next dev",
-    "dev": "next dev",
+    "start": "start http://localhost:3000 && next dev",
+    "dev": "start http://localhost:3000 && next dev",
     "build": "next build",
     "export": "next export",
     "electron-dev": "concurrently \"next dev\" \"wait-on http://localhost:3000 && ELECTRON_START_URL=http://localhost:3000 electron .\"",
