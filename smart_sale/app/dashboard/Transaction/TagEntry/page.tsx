@@ -2,7 +2,7 @@
 
 import React, { useCallback, useState } from "react";
 import {
-  Box, Table, Text, Button, Portal, Drawer, Icon, Span,Badge
+  Box, Table, Text, Button, Portal, Drawer, Icon, Span,Badge ,Flex
 } from "@chakra-ui/react";
 import Image from "next/image";
 import { Printer, Upload } from "lucide-react";
@@ -261,18 +261,38 @@ function BarCodeGenerate() {
           bg={theme.colors.formColor} p={2} rounded="xl"
           display="flex" flexDirection="row" justifyContent="space-between" gap={4}
         >
-          <BarcodeHeaderForm
-            form={headerForm}
-            onChange={handleHeaderChange}
-            purchaserCollection={purchaserCollection}
-            customerCollection={customerCollection}
-            inwardCollection={inwardCollection}
-            itemCollection={itemCollection}
-            isDisabled={rows.length > 0}
-            validationError={headerErrors}
-          />
+          <Flex gap={4}>
+            <BarcodeHeaderForm
+              form={headerForm}
+              onChange={handleHeaderChange}
+              purchaserCollection={purchaserCollection}
+              customerCollection={customerCollection}
+              inwardCollection={inwardCollection}
+              itemCollection={itemCollection}
+              isDisabled={rows.length > 0}
+              validationError={headerErrors}
+            />
+ 
+
+            <Button
+              size={"xs"}
+              variant="subtle"
+              mt={4}
+              color={'red.800'}
+              bg={'red.200'}
+              rounded={'full'}
+              onClick={handleClear}
+              _hover={{bg:'red.500', color:'white'}}
+            >
+              Clear
+           </Button>
+
+          </Flex>
+         
+          
           
           <Box display="flex" alignItems="start" flexDirection="column" gap={2}>
+            
             <Box display="flex" alignItems="center" gap={2}>
               <SingleCheckbox
                 label="EXCEL IMPORT"

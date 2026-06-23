@@ -216,10 +216,10 @@ export const BarcodeTagListing: React.FC<TagListProps> = ({
                     searchTerm={searchTerm}
                     onChange={handleSearchChange}
                     size="xs"
-                    maxWidth="100%"
+                 
                     rounded="sm"
                 />
-                {selectedIndex !== -1 && (
+                {/* {selectedIndex !== -1 && (
                     <Button
                         bg="red.600"
                         size="xs"
@@ -228,7 +228,7 @@ export const BarcodeTagListing: React.FC<TagListProps> = ({
                     >
                         Clear
                     </Button>
-                )}
+                )} */}
             </Box>
             <Box
                 maxHeight="90vh"

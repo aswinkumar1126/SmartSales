@@ -930,6 +930,7 @@ export default function PurchasePage() {
   
               setSelectedTransactionTypes(freshTypes);
               setDraftRows(freshRows);
+              toaster.create({ title: "Transaction Loaded Successfully" })
               setPrintData(data);
           });
   
@@ -1310,10 +1311,11 @@ export default function PurchasePage() {
                 type: "error",
             });
             return;
-        }
-
+        } 
+   
 
         openLoader("save");
+      
 
         createTransaction.mutate(
             { payload: result.payload, TRANTYPE: "purchase" },
@@ -1445,7 +1447,7 @@ export default function PurchasePage() {
               return;
           }
   
-          openLoader("get");
+        
   
           // ONLY SET ID
           setSelectedTransactionId(id);
@@ -1459,7 +1461,6 @@ export default function PurchasePage() {
   
           if (!isSuccess || !transactionsById) {
   
-              resolveLoader("error", "get");
   
               return;
           }
@@ -1471,7 +1472,7 @@ export default function PurchasePage() {
               selectedTransactionId
           );
   
-          resolveLoader("success", "get");
+         
   
       }, [
           selectedTransactionId,

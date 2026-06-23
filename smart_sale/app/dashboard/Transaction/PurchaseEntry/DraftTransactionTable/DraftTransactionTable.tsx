@@ -903,9 +903,11 @@ useEffect(() => {
         console.log(row,'renderingRow');
 
         const field = formFields.find((f) => f.key === col.key);
-        const shouldDisableOnEditing = !row.ISEDITABLE;
+        const shouldDisableOnEditing = !row.ISEDITABLE && row.__isTaged;
 
-        const itemDisable = row.__isTaged;
+
+
+        console.log( shouldDisableOnEditing,'shouldDisableOnEditing')
         // console.log(shouldDisableOnEditing, row,'shouldDisableOnEditing');
 
         // ── Resolve item name: prefer stored ITEMNAME, fall back to collection lookup ──
@@ -1035,7 +1037,7 @@ useEffect(() => {
         if (col.key === "ITEMID" || col.key === "PUREID") {
             const items = field.collection?.items || [];
  
-            if (col.key === "ITEMID" && shouldDisableOnEditing || itemDisable) {
+            if (col.key === "ITEMID" && shouldDisableOnEditing) {
                 return (
                     <span style={{
                         padding: "0 6px", fontSize: 11, color: "#555",

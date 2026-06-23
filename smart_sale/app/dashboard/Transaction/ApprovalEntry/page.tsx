@@ -1279,7 +1279,7 @@ export default function SalesPage() {
                  return;
              }
      
-             openLoader("get");
+            //  openLoader("get");
      
              // ONLY SET ID
              setSelectedTransactionId(id);
@@ -1293,7 +1293,7 @@ export default function SalesPage() {
      
              if (!isSuccess || !transactionsById) {
      
-                 resolveLoader("error", "get");
+                //  resolveLoader("error", "get");
      
                  return;
              }
@@ -1305,7 +1305,7 @@ export default function SalesPage() {
                  selectedTransactionId
              );
      
-             resolveLoader("success", "get");
+            //  resolveLoader("success", "get");
      
          }, [
              selectedTransactionId,

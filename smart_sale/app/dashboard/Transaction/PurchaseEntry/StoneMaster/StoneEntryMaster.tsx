@@ -43,7 +43,7 @@ type Props = {
 const COLUMNS: ColumnDef[] = [
     { key: "stoneId", label: "STONE", width: 120, required: true },
     { key: "stonePcs", label: "PCS", width: 30, align: "right", decimalScale: 0 },
-    { key: "stoneWeight", label: "WEIGHT", width: 70, align: "right", decimalScale: 3, required: true },
+    { key: "stoneWeight", label: "WEIGHT", width: 70, align: "right", decimalScale: 4, required: true },
     { key: "stoneUnit", label: "UNIT", width: 60, align: "center", required: true },
     { key: "stoneCalculation", label: "CAL", width: 80, align: "center", required: true },
     { key: "stoneRate", label: "RATE", width: 90, align: "right", decimalScale: 2 },
@@ -338,7 +338,7 @@ export default function StoneEnterMaster({
 
         // ── Numeric fields (stonePcs, stoneWeight, stoneRate) ─────────────────
         if (["stonePcs", "stoneWeight", "stoneRate"].includes(col.key)) {
-            const decimalScale = col.key === "stonePcs" ? 0 : col.key === "stoneWeight" ? 3 : 2;
+            const decimalScale = col.key === "stonePcs" ? 0 : col.key === "stoneWeight" ? 4 : 2;
 
             // View mode
             if (!isEditing && !isFocused) {

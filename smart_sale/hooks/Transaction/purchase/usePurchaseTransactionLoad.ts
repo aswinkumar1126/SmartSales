@@ -30,7 +30,6 @@ export const useLoadPurchaseTransaction = () => {
         // ✅ Pass flag into pure function
         const { rows, selectedTransactionTypes } = mapPurchaseTransactionItems(
             transactionData,
-          
             isUseFinalAmount
         );
 

@@ -894,7 +894,8 @@ export default function SalesPage() {
             setSelectedTransactionTypes(freshTypes);
             setDraftRows(freshRows);
             setPrintData(data);
-            resolveLoader("success" ,"get");
+            // resolveLoader("success" ,"get");
+            toaster.create({ title: "Transaction Loaded Successfully" })
         });
 
 
@@ -1387,7 +1388,7 @@ export default function SalesPage() {
             return;
         }
 
-        openLoader("get");
+        // openLoader("get");
 
         // ONLY SET ID
         setSelectedTransactionId(id);
