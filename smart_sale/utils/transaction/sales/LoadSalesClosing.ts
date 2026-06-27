@@ -29,8 +29,13 @@ export const loadSalesClosing = (
         CASHRCVD: closing.CASHRCVD ? String(closing.CASHRCVD) : "",
         BANKPAID: closing.BANKPAID ? String(closing.BANKPAID) : "",
         BANKRCVD: closing.BANKRCVD ? String(closing.BANKRCVD) : "",
-        GSTPER: closing.GSTPER ? String(closing.GSTPER) : "",
-        GSTAMT: closing.GSTAMT ? String(closing.GSTAMT) : "",
+
+        STNGSTPER: closing.STNGSTPER ? String(closing.STNGSTPER) : "",
+        STNGSTAMT: closing.STNGSTAMT ? String(closing.STNGSTAMT) : "",
+
+        MCGSTPER :closing.MCGSTPER ? String(closing.MCGSTPER) : "",
+        MCGSTAMT: closing.MCGSTAMT ? String(closing.MCGSTAMT) : "",
+
         TDSPER: closing.TDSPER ? String(closing.TDSPER) : "",
         TDSAMT: closing.TDSAMT ? String(closing.TDSAMT) : "",
         BANKPAIDDETAILS: bankPaidDetails,

@@ -1,14 +1,17 @@
 import { useEffect } from "react";
 import { useSalesBalanceSummary } from "@/store/sales/useSalesBalanceSummaryStore";
 
-export const useConversionSync = (rate: number) => {
+export const useClosingCalculations = (rate: number, stnRate: number , mc:number) => {
     const { closingDetails, setClosingField } = useSalesBalanceSummary();
 
     useEffect(() => {
-        const convType = closingDetails.CONVTYPE;
-
-        const convAmtStr = closingDetails.CONVAMT;
-        const convWtStr = closingDetails.CONVWT;
+         const {
+            CONVTYPE,
+            CONVAMT,
+            CONVWT,
+            STNGSTPER,
+            MCGSTPER,
+        } = closingDetails;
 
 
         let convAmt = parseFloat(closingDetails.CONVAMT || "") || 0;
@@ -21,20 +24,20 @@ export const useConversionSync = (rate: number) => {
 
 
         // 🔴 CLEAR LOGIC (empty or invalid)
-        if (convType === "P") {
+        if (CONVTYPE === "P") {
             // If weight is empty OR <= 0 → clear amount
-            if (!convWtStr) {
-                if (convAmtStr !== "") {
+            if (!CONVWT) {
+                if (CONVAMT !== "") {
                     setClosingField("CONVAMT", "");
                 }
                 return;
             }
         }
 
-        if (convType === "C") {
+        if (CONVTYPE === "C") {
             // If amount is empty OR <= 0 → clear weight
-            if (!convAmtStr) {
-                if (convWtStr !== "") {
+            if (!CONVAMT) {
+                if (CONVWT !== "") {
                     setClosingField("CONVWT", "");
                 }
                 return;
@@ -43,7 +46,7 @@ export const useConversionSync = (rate: number) => {
 
 
         // 🟢 CALCULATION LOGIC
-        if (convType === "P") {
+        if (CONVTYPE === "P") {
             const calculatedAmt = (convWt * rate).toFixed(2);
 
             if (calculatedAmt !== closingDetails.CONVAMT) {
@@ -51,7 +54,7 @@ export const useConversionSync = (rate: number) => {
             }
         }
 
-        if (convType === "C") {
+        if (CONVTYPE === "C") {
             const calculatedWt = (convAmt / rate).toFixed(3);
 
             if (calculatedWt !== closingDetails.CONVWT) {
@@ -59,32 +62,48 @@ export const useConversionSync = (rate: number) => {
             }
         }
 
+        // =========================
+        // Stone GST Calculation
+        // =========================
+
+        const stnGstPer = Number(STNGSTPER) || 0;
+
+        if (stnRate > 0 && stnGstPer > 0) {
+            const stnGstAmt = ((stnGstPer * stnRate) / 100).toFixed(2);
+
+            if (stnGstAmt !== closingDetails.STNGSTAMT) {
+                setClosingField("STNGSTAMT", stnGstAmt);
+            }
+        }
+        else{
+            setClosingField("STNGSTAMT", '0.00');
+        }
+
+        // =========================
+        // MC GST Calculation
+        // =========================
+
+        const mcGstPer = Number(MCGSTPER) || 0;
+
+        if (mc > 0 && mcGstPer > 0) {
+            const mcGstAmt = ((mcGstPer * mc) / 100).toFixed(2);
+
+            if (mcGstAmt !== closingDetails.MCGSTAMT) {
+                setClosingField("MCGSTAMT", mcGstAmt);
+            }
+        }
+        else {
+            setClosingField("MCGSTAMT", '0.00');
+        }
     }, [
         closingDetails.CONVTYPE,
         closingDetails.CONVAMT,
         closingDetails.CONVWT,
+        closingDetails.MCGSTPER,
+        closingDetails.STNGSTPER,
         rate,
-    ]);
-};
-
-export const useGstConversion = (stnRate: number) => {
-    const { closingDetails, setClosingField } = useSalesBalanceSummary();
-
-
-    useEffect(() => {
-
-        const gstPer = Number(closingDetails.GSTPER);
-
-        const gstAmt = (gstPer * stnRate) / 100;
-
-        if (stnRate < 0 && gstPer < 0) return;
-
-        setClosingField("GSTAMT", gstAmt.toFixed(2))
-
-    }, [
-        closingDetails.GSTPER,
         stnRate,
+        mc
     ]);
-
-
 };
+

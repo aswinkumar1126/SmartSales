@@ -15,7 +15,8 @@ export const useClosingCalculation = (
         const discAmt = Number(closingDetails.DISCAMT || 0);
         const discWt = Number(closingDetails.DISCWT || 0);
 
-        const gstAmt = Number(closingDetails.GSTAMT || 0);
+        const stnGstAmt = Number(closingDetails.STNGSTAMT || 0);
+        const mcGstAmt = Number(closingDetails.MCGSTAMT || 0);
         const tdsAmt = Number(closingDetails.TDSAMT || 0);
 
         const bankRcvd = closingDetails.BANKRCVDDETAILS.length > 0 ? closingDetails.BANKRCVDDETAILS.reduce(
@@ -40,7 +41,8 @@ export const useClosingCalculation = (
             cashPaid -
             bankPaid -
             discAmt -
-            gstAmt +
+            stnGstAmt -
+            mcGstAmt +
             tdsAmt;
 
         let closingPure = (openingBalances.openPure || 0) - discWt;

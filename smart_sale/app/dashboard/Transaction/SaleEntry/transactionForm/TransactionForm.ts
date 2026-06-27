@@ -4,7 +4,7 @@ export const saleColumns = (isTag: boolean) => [
     ...(isTag ? [{
         key: "TAGNO",
         label: "TAGNO",
-        width: "50px",
+        width: "40px",
         align: "left" ,
         editable: true,
     }] : []),
@@ -12,7 +12,7 @@ export const saleColumns = (isTag: boolean) => [
     {
         key: "ITEMID",
         label: "ITEM",
-        width: "110px",
+        width: "80px",
         align: "left" ,
         type: "combobox" ,
       
@@ -29,7 +29,7 @@ export const saleColumns = (isTag: boolean) => [
     {
         key: "GRSWT",
         label: "GRS WT",
-        width: "45px",
+        width: "40px",
         type: "number" ,
         align: "right" ,
         decimalScale: 3
@@ -85,7 +85,7 @@ export const saleColumns = (isTag: boolean) => [
         width: "35px",
         type: "number" ,
         align: "right" ,
-        max: 999,
+        max: 999.99,
         decimalScale: 2
 
     },
@@ -102,7 +102,7 @@ export const saleColumns = (isTag: boolean) => [
     {
         key: "HMC",
         label: "HMC",
-        width: "45px",
+        width: "50px",
         type: "number" ,
         align: "right" ,
         decimalScale: 2,
@@ -112,7 +112,7 @@ export const saleColumns = (isTag: boolean) => [
     {
         key: "MC",
         label: "M.C",
-        width: "35px",
+        width: "45px",
         type: "number" ,
         align: "right" ,
         decimalScale: 2
@@ -132,7 +132,7 @@ export const saleColumns = (isTag: boolean) => [
     {
         key: "STNAMT",
         label: "STN AMT",
-        width: "45px",
+        width: "55px",
         type: "number" ,
         align: "right" ,
         max: 999999999,
@@ -199,7 +199,7 @@ export const issueColumns = [
         width: "30px",
         type: "number" ,
         align: "right" ,
-        max: 999,
+        max: 999.99,
         decimalScale: 2,
         allowFocus:true
 
@@ -210,7 +210,7 @@ export const issueColumns = [
         width: "30px",
         type: "number" ,
         align: "right",
-        max: 999,
+        max: 999.99,
         decimalScale: 2,
         allowFocus: true,
         editable: false,

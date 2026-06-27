@@ -102,7 +102,9 @@ interface DraftTransactionTableProps {
 
 const newRowId = () => `row-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
 
-export function recalcRow(row: Record<string, any>, isIssue: boolean) {
+const round3 = (value: number) => Math.round(value * 1000) / 1000;
+
+function recalcRow(row: Record<string, any>, isIssue: boolean) {
     const g = parseFloat(row.GRSWT) || 0;
     const s = parseFloat(row.STNWT) || 0;
     const touch = parseFloat(row.TOUCH) || 0;
@@ -111,12 +113,16 @@ export function recalcRow(row: Record<string, any>, isIssue: boolean) {
     const atouch = parseFloat(row.ATOUCH) || 0;
     const calMode = row.CAL_MODE || "NETWT";
 
-    row.NETWT = (g - s).toFixed(3);
+    row.NETWT = round3(g - s).toFixed(3);
+
     const baseWt = calMode === "NETWT" ? (g - s) : g;
+
     row.PUREWT = isIssue
-        ? ((wt * touch) / 100).toFixed(3)
-        : ((baseWt * touch) / 100).toFixed(3);
-    row.APUREWT = ((awt * atouch) / 100).toFixed(3);
+        ? round3((wt * touch) / 100).toFixed(3)
+        : round3((baseWt * touch) / 100).toFixed(3);
+
+    row.APUREWT = round3((awt * atouch) / 100).toFixed(3);
+
     return row;
 }
 
@@ -278,6 +284,7 @@ export default function DraftTransactionTable({
                 allowFocus: col.allowFocus,
                 size: "xs",
                 disabled: col.disabled,
+                max:col.max,
                 ...("decimalScale" in col && typeof col.decimalScale === "number"
                     ? { decimalScale: col.decimalScale }
                     : {}),
@@ -316,6 +323,7 @@ export default function DraftTransactionTable({
                 decimalScale: f.decimalScale,
                 computed: f.type === "calculated" || f.disabled === true,
                 disabled: f.type === "calculated" || f.disabled === true,
+                max:f.max
             };
         });
     }, [formFields, tableCols]);
@@ -1077,7 +1085,7 @@ useEffect(() => {
         );
     }
     return (
-        <SelectCombobox value={value || ""} onChange={(v) => { onChange(v); if (v) onCommit(); }}
+        <SelectCombobox value={value || ""} onChange={(v) => { onChange(v); if (v) onCommit(); }} 
             items={items} placeholder={field.placeholder || `Select ${field.label}`}
             ref={inputRef as React.RefObject<HTMLInputElement>} rounded="sm" disable={false} />
     );
@@ -1087,7 +1095,7 @@ useEffect(() => {
             return (
                 <CapitalizedInput field={col.key} value={value || ""} onChange={(_, v) => onChange(v)}
                     type="number" isCapitalized size="xs" rounded="sm"
-                    decimalScale={field.decimalScale} inputRef={inputRef} noBorder />
+                    decimalScale={field.decimalScale} max={col.max}  inputRef={inputRef} noBorder  />
             );
         }
 
@@ -1098,6 +1106,7 @@ useEffect(() => {
                 isCapitalized={field.type !== "number"}
                 size="xs" rounded="sm" decimalScale={field.decimalScale}
                 inputRef={inputRef} noBorder disabled={col.disabled} allowFocus
+                max={col.max}
             />
         );
     }, [formFields, isIssue, handleOpenStoneModal, handleOpenMiscModal]);

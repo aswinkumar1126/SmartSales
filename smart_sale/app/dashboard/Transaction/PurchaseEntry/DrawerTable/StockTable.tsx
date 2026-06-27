@@ -216,7 +216,8 @@ export default function StockDrawer({
                                     const availability = getStockAvailability && stockId
                                         ? getStockAvailability(String(stockId), touch ?? null)
                                         : undefined;
-                                        console.log(availability,stockId, 'availabilityinstock')
+
+                                    console.log(availability,stockId, 'availabilityinstock')
 
                                     // ✅ PURE stock → check weight remaining
                                     // ✅ ITEM stock → check pieces remaining

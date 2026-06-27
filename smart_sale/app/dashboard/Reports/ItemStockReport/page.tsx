@@ -1,6 +1,6 @@
 "use client";
 
-import { Box, Button, Flex, HStack ,Icon } from "@chakra-ui/react";
+import { Box, Button, HStack, Icon } from "@chakra-ui/react";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { TbRotate, TbTableImport } from "react-icons/tb";
@@ -312,7 +312,7 @@ const initialForm = {
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-function PureGoldStockReport() {
+function ItemStockReport() {
     const { theme } = useTheme();
     const { setData, setColumns, setShowSno, title } = usePrint();
     const router = useRouter();
@@ -365,13 +365,8 @@ function PureGoldStockReport() {
 
     /* ------------ View ------------ */
     const handleView = async () => {
-        if (!fetchEnabled) {
-            // First click: enable the query (it will auto-fetch)
-            setFetchEnabled(true);
-        } else {
-            // Subsequent clicks: manually refetch
-            await refetch();
-        }
+        setFetchEnabled(true);
+        await refetch();
     };
 
     /* ------------ Clear ------------ */
@@ -491,7 +486,7 @@ function PureGoldStockReport() {
 
     return (
         <Box>
-            {/* ═══════════════ FILTER FORM ═══════════════ */}
+            {/* ═══════════════ FILTER BAR ═══════════════ */}
             <Box
                 display="flex"
                 alignItems="center"
@@ -499,11 +494,11 @@ function PureGoldStockReport() {
                 px={4}
                 py="10px"
                 rounded="lg"
-                gap={0}
-                border="0.5px solid"
-                borderColor="gray.200"
+                border="1px solid"
+                borderColor={theme.colors.greyColor}
                 flexWrap="nowrap"
                 overflowX="auto"
+                gap={2}
             >
                 <DynamicForm
                     fields={formFields}
@@ -515,8 +510,7 @@ function PureGoldStockReport() {
                     minLabelWidth="65px"
                 />
 
-                {/* visual separator */}
-                <Box w="1px" h="20px" bg="gray.200" mx={3} flexShrink={0} />
+                <Box w="1px" h="20px" bg={theme.colors.greyColor} mx={2} flexShrink={0} />
 
                 <HStack gap={2} flexShrink={0}>
                     <Button
@@ -533,71 +527,63 @@ function PureGoldStockReport() {
                     </Button>
                     <Button
                         variant="outline"
-                        colorPalette="gray"
                         onClick={handleClear}
                         size="xs"
                         rounded="md"
                         gap={1}
+                        borderColor={theme.colors.greyColor}
+                        color={theme.colors.primaryText}
                     >
                         <Icon as={TbRotate} boxSize={3.5} />
                         Clear
                     </Button>
+
+                    <Box w="1px" h="20px" bg={theme.colors.greyColor} mx={1} flexShrink={0} />
+
+                    <Button
+                        variant="ghost"
+                        size="xs"
+                        color={theme.colors.green}
+                        disabled={!fetchEnabled || tableData.length === 0}
+                        onClick={() => handleExport("excel")}
+                        title="Export to Excel"
+                    >
+                        <FaFileExcel />
+                    </Button>
+                    <Button
+                        variant="ghost"
+                        size="xs"
+                        color={theme.colors.primaryText}
+                        disabled={!fetchEnabled || tableData.length === 0}
+                        onClick={() => handleExport("pdf")}
+                        title="Print / PDF"
+                    >
+                        <FaPrint />
+                    </Button>
                 </HStack>
-                
             </Box>
-    
-          <Box >
-          {fetchEnabled && 
-          <Box>
-              <Flex justifyContent={'end'} bg={theme.colors.formColor} p={2} mt={3} rounded={'md'}>
-                <Button variant="ghost" size="xs" color={theme.colors.green} onClick={() => handleExport("excel")}>
-                  <FaFileExcel />
-                </Button>
-                <Button variant="ghost" size="xs" color={theme.colors.primaryText} onClick={() => handleExport("pdf")}>
-                  <FaPrint />
-                </Button>
-              </Flex>
 
-              {/* ═══════════════ TABLE ═══════════════ */}
-              <Box mt={3}>
+            {/* ═══════════════ TABLE ═══════════════ */}
+            <Box mt={3}>
                 <DataTable
-                  title="PureGold Stock Statement"
-                  data={tableData}
-                  columnDefs={visibleColumns}
-                  height="400px"
-                  emptyText={emptyText}
-
-                  /* Read-only report — hide editing toolbar buttons */
-                  showRowControls={false}
-                  showSearch={false}
-
-                  /* Totals row for RECEIPT + ISSUE columns */
-                  // totals={{
-                  //   enabled: tableData.length > 0,
-                  //   label: "Total",
-                  //   bg: "#222",
-                  //   color: "#1e3a5f",
-                  // }}
-
-                  /* Pagination */
-                  pagination={{
-                    enabled: true,
-                    pageSize: 10,
-                    showPageSizeSelector: true,
-                    showPageNumbers: true,
-                    showTotalCount: true,
-
-                  }}
+                    title="Items Stock Statement"
+                    data={tableData}
+                    columnDefs={visibleColumns}
+                    height="430px"
+                    emptyText={emptyText}
+                    showRowControls={false}
+                    showSearch={false}
+                    pagination={{
+                        enabled: true,
+                        pageSize: 10,
+                        showPageSizeSelector: true,
+                        showPageNumbers: true,
+                        showTotalCount: true,
+                    }}
                 />
-              </Box>
-          </Box>
-          }
-
-            
-          </Box>
-
+            </Box>
         </Box>
     );
 }
 
-export default PureGoldStockReport;
+export default ItemStockReport;

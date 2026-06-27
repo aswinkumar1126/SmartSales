@@ -60,7 +60,7 @@ import { normalizeRowForApi } from "@/utils/TransactionValidation/purchase/norma
 
 import { useStockAvailability } from "@/hooks/Transaction/purchase/useStockAvailability";
 
-import { useConversionSync, useGstConversion } from "@/hooks/Transaction/purchase/useConversionSync";
+import { useClosingCalculations } from "@/hooks/Transaction/purchase/useConversionSync";
 import { useClosingCalculation } from "@/hooks/Transaction/purchase/useClosingBalanceCalculation";
 import { usePurchaseOpeningBalances } from "@/hooks/Transaction/purchase/usePurchaseOpeningCal";
 
@@ -160,8 +160,10 @@ export default function PurchasePage() {
             CONVWT: "",
             DISCAMT: "",
             DISCWT: "",
-            GSTAMT: "",
-            GSTPER: "",
+            STNGSTAMT: "",
+            STNGSTPER: "",
+            MCGSTAMT: "",
+            MCGSTPER: "",
             TDSAMT: "",
             TDSPER: "",
         }
@@ -251,6 +253,11 @@ export default function PurchasePage() {
     const [selectedTransactionId, setSelectedTransactionId] =
         useSessionStorage<string | null>("selectedTransactionId", null);
 
+    // Tracks which transaction was last loaded — persists across page refresh so background
+    // refetches and F5 refreshes don't overwrite in-progress edits stored in zustand persist.
+    const [loadedTransactionId, setLoadedTransactionId] =
+        useSessionStorage<string | null>("purchase_loaded_transaction_id", null);
+
     const [baseOpening, setBaseOpening] = useSessionStorage<{ openPure: number, openCash: number }>('purchase-openingBalance', {
         openPure: 0,
         openCash: 0,
@@ -321,6 +328,7 @@ export default function PurchasePage() {
     const { theme } = useTheme();
     const { data: itemsData } = useStoneItems();
     const { data: tagedItems } = useStoneItems({ STOCKTYPE: 'T' });
+      const { data: nonTagedItemList } = useStoneItems({ STOCKTYPE: 'N' });
 
     console.log(tagedItems, 'tagedItems')
 
@@ -560,13 +568,21 @@ export default function PurchasePage() {
         [itemsData]
     );
 
+
     const tagedItemsList = useMemo(() =>
         tagedItems?.map((item: any) => ({
             label: item.itemName,
             value: item.itemId.toString(),
         })) ?? [], []);
 
-    console.log(tagedItemsList, 'tagedItemsList')
+ const nonTagedItems = useMemo(
+        () =>
+            nonTagedItemList?.map((item: any) => ({
+                label: item.itemName,
+                value: item.itemId.toString(),
+            })) ?? [],
+        [nonTagedItemList]
+    )
 
     const { collection: itemsCollection, filter: itemsFilter, set } = useListCollection({
         initialItems: mappedItems,
@@ -578,6 +594,14 @@ export default function PurchasePage() {
     }, [mappedItems, set]);
 
 
+  const { collection: notTagedItemCollection, filter: notTagedItemsFilter, set: setNotTaged } = useListCollection({
+        initialItems: nonTagedItems,
+        filter: contains,
+    });
+
+    useEffect(() => {
+        setNotTaged(nonTagedItems);
+    }, [nonTagedItems, setNotTaged]);
 
 
     const isTagedItem = useIsTaggedItem(tagedItemsList);
@@ -644,7 +668,7 @@ export default function PurchasePage() {
     // KEY TO ACCESS
 
     useGlobalKey("F1", () => openFilter(), "openPurchaseFilter");
-    useGlobalKey("Alt+s", () => isModifying ? handleSaveTransaction() : null, "savePurchaseTransaction");
+    useGlobalKey("Alt+s", () => isEditing && isModifying ? handleSaveTransaction() : !isEditing ? handleSaveTransaction() : null, "savePurchaseTransaction");
     useGlobalKey("Alt+c", () => isModifying ? handleResetDraft() : handleReSelectTransaction() , "ClearPurchaseTransaction");
     useGlobalKey("Alt+u", () => isModifying ? handleUpdateTransaction() : null, "updatePurchaseTransaction");
     useGlobalKey("Alt+m", () => { isModifying ? stopModifying() : startModifying() }, "modifyPurchaseTransaction");
@@ -852,7 +876,7 @@ export default function PurchasePage() {
     };
 
     const getActiveCollectionForType = (transactionType: TransactionType) => {
-        return isIssueType(transactionType) ? pureNameCollection : itemsCollection;
+        return isIssueType(transactionType) ? pureNameCollection : transactionType.code === "PR" ? notTagedItemCollection : itemsCollection;
     };
 
     /* ================================
@@ -930,7 +954,7 @@ export default function PurchasePage() {
   
               setSelectedTransactionTypes(freshTypes);
               setDraftRows(freshRows);
-              toaster.create({ title: "Transaction Loaded Successfully" })
+            //   toaster.create({ title: "Transaction Loaded Successfully" })
               setPrintData(data);
           });
   
@@ -979,11 +1003,19 @@ export default function PurchasePage() {
             .reduce((sum, item) => sum + (Number(item.STNAMT) || 0), 0);
     }, [draftRows]);
 
+    const totalFinalMCAmount = useMemo(() => {
+        return draftRows
+            .filter(row => row.TRANSACTION_TYPE === "PU")
+            .reduce((sum, item) => sum + (Number(item.MC) || 0), 0);
+    }, [draftRows]);
 
 
 
-    useConversionSync(Number(headerForm.RATEGM || 0));
-    useGstConversion(Number(totalFinalStoneAmount || 0));
+
+  useClosingCalculations(Number(headerForm.RATEGM || 0),
+        Number(totalFinalStoneAmount || 0),
+      Number(totalFinalMCAmount || 0)
+    )
 
     const { closingPure, closingCash } = useClosingCalculation(closingDetails, openingBalances, Number(headerForm.RATEGM || 0));
 
@@ -1000,8 +1032,10 @@ export default function PurchasePage() {
             CONVWT: Number(d.CONVWT || 0),
             DISCAMT: Number(d.DISCAMT || 0),
             DISCWT: Number(d.DISCWT || 0),
-            GSTPER: Number(d.GSTPER || 0),
-            GSTAMT: Number(d.GSTAMT || 0),
+            STNGSTPER: Number(d.STNGSTPER || 0),
+            STNGSTAMT: Number(d.STNGSTAMT || 0),
+            MCGSTPER: Number(d.MCGSTPER || 0),
+            MCGSTAMT: Number(d.MCGSTAMT || 0),
             TDSPER: Number(d.TDSPER || 0),
             TDSAMT: Number(d.TDSAMT || 0),
             CASHPAID: Number(d.CASHPAID || 0),
@@ -1103,7 +1137,7 @@ export default function PurchasePage() {
         getEditAvailableWeightForISP,
         getEditAvailableWeightForPU,
     } = useStockAvailability({
-        transactionCodes: selectedTransactionTypes.map(t => t.code),
+        transactionCodes: TRANSACTIONTYPES.map(t => t.code),
         pureStockList,
         itemsStockList,
         draftRows,
@@ -1160,8 +1194,10 @@ export default function PurchasePage() {
             Number(closingDetails.CASHRCVD || 0) > 0 ||
             Number(closingDetails.BANKPAID || 0) > 0 ||
             Number(closingDetails.BANKRCVD || 0) > 0 ||
-            Number(closingDetails.GSTPER || 0) > 0 ||
-            Number(closingDetails.GSTAMT || 0) > 0 ||
+            Number(closingDetails.STNGSTPER || 0) > 0 ||
+            Number(closingDetails.STNGSTAMT || 0) > 0 ||
+            Number(closingDetails.MCGSTPER || 0) > 0 ||
+            Number(closingDetails.MCGSTAMT || 0) > 0 ||
             Number(closingDetails.TDSPER || 0) > 0 ||
             Number(closingDetails.TDSAMT || 0) > 0 ||
             (closingDetails.BANKPAIDDETAILS?.length ?? 0) > 0 ||
@@ -1232,6 +1268,7 @@ export default function PurchasePage() {
         setDraftRows([]);
         setSelectedTransactionTypes([]);
         setEditingSno(null);
+        setLoadedTransactionId(null);
 
         // remove current selection first
         setSelectedTransactionId(null);
@@ -1243,7 +1280,7 @@ export default function PurchasePage() {
 
     const handleResetDraft = () => {
 
-
+        setLoadedTransactionId(null);
 
         setSelectedTransactionId(null);
         setEditingState({ rowId: null, transactionType: null });
@@ -1315,6 +1352,8 @@ export default function PurchasePage() {
    
 
         openLoader("save");
+      
+
       
 
         createTransaction.mutate(
@@ -1454,26 +1493,25 @@ export default function PurchasePage() {
       };
   
       useEffect(() => {
-  
+
           if (!selectedTransactionId) return;
-  
+
           if (isFetching) return;
-  
-          if (!isSuccess || !transactionsById) {
-  
-  
-              return;
-          }
-  
+
+          if (!isSuccess || !transactionsById) return;
+
+          // Skip if we already loaded this transaction — prevents background refetches from overwriting edits
+          if (loadedTransactionId === selectedTransactionId) return;
+
+          setLoadedTransactionId(selectedTransactionId);
+
           setEditingRowsData(transactionsById);
-  
+
           handleEditTransaction(
               transactionsById,
               selectedTransactionId
           );
-  
-         
-  
+
       }, [
           selectedTransactionId,
           transactionsById,

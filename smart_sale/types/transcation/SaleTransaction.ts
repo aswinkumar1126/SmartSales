@@ -83,8 +83,11 @@ export interface ClosingDetails {
     CASHPAID: number;
     CASHRCVD: number;
 
-    GSTAMT :number;
-    GSTPER :number;
+    STNGSTAMT :number;
+    STNGSTPER :number;
+
+    MCGSTPER :number;
+    MCGSTAMT :number;
 
     TDSAMT :number;
     TDSPER :number;

@@ -1,6 +1,6 @@
 "use client";
 
-import { Box, Button, Flex, HStack ,Icon } from "@chakra-ui/react";
+import { Box, Button, HStack, Icon } from "@chakra-ui/react";
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { TbRotate, TbTableImport } from "react-icons/tb";
@@ -17,7 +17,7 @@ import { useAllAccountHead } from "@/hooks/apiHooks/accountHead/useAccountHead";
 import { usePurchaseSummary } from "@/hooks/apiHooks/SummaryReport/useSummaryReport";
 
 /*------------- CONFIG ------------------*/
-import { SalesReportFields } from "@/config/report/SalesReport";
+import { PurchaseReportFields } from "@/config/report/PurchaseReport";
 
 /*------------- CONTEXT ------------------*/
 import { useTheme } from "@/context/theme/themeContext";
@@ -207,8 +207,7 @@ const today = new Date().toISOString().split("T")[0];
 const initialForm = {
     FROMDATE: today,
     TODATE: today,
-    PAYMODE: "CASH",
-    BANKID: "",
+    ACCODE:"",
 };
 
 
@@ -223,10 +222,10 @@ function PurchaseReport() {
     const [fetchEnabled, setFetchEnabled] = useState(false);
 
 
-   const { data: allAccounts } = useAllAccountHead("CR");
+   const { data: allAccounts } = useAllAccountHead("PR");
 
  
-    const allCustomerList = useMemo(()=>{
+    const allPurchaser = useMemo(()=>{
       const customers = allAccounts?.data?.acheads;
       return Array.isArray(customers)
           ? customers.map((c: any) => ({ label: c.ACNAME, value: String(c.ACCODE) }))
@@ -237,10 +236,10 @@ function PurchaseReport() {
 
     const formFields = useMemo(
         () =>
-        SalesReportFields({
-          customerList: allCustomerList
+        PurchaseReportFields({
+          purchaserList: allPurchaser
             }),
-      [allCustomerList]
+      [allPurchaser]
     );
 
     const fieldNames = formFields.map((f) => f.name);
@@ -251,7 +250,6 @@ function PurchaseReport() {
         setFetchEnabled(false); // reset when form changes
         setFormData((prev) => {
             const updated = { ...prev, [name]: value };
-            if (name === "PAYMODE" && value !== "BANK") updated.BANKID = "";
             return updated;
         });
     };
@@ -263,21 +261,18 @@ function PurchaseReport() {
     isLoading,
     isError,
   } = usePurchaseSummary({
-    fromAge: undefined,
-    toAge: undefined,
-    fetchEnabled
+      FROMDATE :formData.FROMDATE ,
+      TODATE : formData.TODATE,
+      ACCODE : formData.ACCODE ? Number(formData.ACCODE) : undefined,
+      fetchEnabled
   });
 
+  console.log(formData ,'FormDetails');
 
     /* ------------ View ------------ */
     const handleView = async () => {
-        if (!fetchEnabled) {
-            // First click: enable the query (it will auto-fetch)
-            setFetchEnabled(true);
-        } else {
-            // Subsequent clicks: manually refetch
-            await refetch();
-        }
+        setFetchEnabled(true);
+        await refetch();
     };
 
     /* ------------ Clear ------------ */
@@ -496,9 +491,9 @@ function PurchaseReport() {
                 px={4}
                 py="10px"
                 rounded="lg"
-                gap={0}
-                border="0.5px solid"
-                borderColor="gray.200"
+                gap={2}
+                border="1px solid"
+                borderColor={theme.colors.greyColor}
                 flexWrap="nowrap"
                 overflowX="auto"
             >
@@ -512,8 +507,7 @@ function PurchaseReport() {
                     minLabelWidth="65px"
                 />
 
-                {/* visual separator */}
-                <Box w="1px" h="20px" bg="gray.200" mx={3} flexShrink={0} />
+                <Box w="1px" h="20px" bg={theme.colors.greyColor} mx={2} flexShrink={0} />
 
                 <HStack gap={2} flexShrink={0}>
                     <Button
@@ -530,65 +524,67 @@ function PurchaseReport() {
                     </Button>
                     <Button
                         variant="outline"
-                        colorPalette="gray"
                         onClick={handleClear}
                         size="xs"
                         rounded="md"
                         gap={1}
+                        borderColor={theme.colors.greyColor}
+                        color={theme.colors.primaryText}
                     >
                         <Icon as={TbRotate} boxSize={3.5} />
                         Clear
                     </Button>
-                </HStack>
-                
-            </Box>
-        {fetchEnabled && 
-          <Box >
 
-            <Flex justifyContent={'end'} bg={theme.colors.formColor} p={2} mt={3} rounded={'md'}>
-              <Button variant="ghost" size="xs" color={theme.colors.green} onClick={() => handleExport("excel")}>
-                <FaFileExcel />
-              </Button>
-              <Button variant="ghost" size="xs" color={theme.colors.primaryText} onClick={() => handleExport("pdf")}>
-                <FaPrint />
-              </Button>
-            </Flex>
+                    <Box w="1px" h="20px" bg={theme.colors.greyColor} mx={1} flexShrink={0} />
+
+                    <Button
+                        variant="ghost"
+                        size="xs"
+                        color={theme.colors.green}
+                        disabled={!fetchEnabled || tableData.length === 0}
+                        onClick={() => handleExport("excel")}
+                        title="Export to Excel"
+                    >
+                        <FaFileExcel />
+                    </Button>
+                    <Button
+                        variant="ghost"
+                        size="xs"
+                        color={theme.colors.primaryText}
+                        disabled={!fetchEnabled || tableData.length === 0}
+                        onClick={() => handleExport("pdf")}
+                        title="Print / PDF"
+                    >
+                        <FaPrint />
+                    </Button>
+                </HStack>
+            </Box>
 
             {/* ═══════════════ TABLE ═══════════════ */}
             <Box mt={3}>
-              <DataTable
-                title="Purchase Statement"
-                data={fetchEnabled ? tableData : [] }
-                columnDefs={paymentColumns}
-                height="430px"
-                emptyText={emptyText}
-
-                /* Read-only report — hide editing toolbar buttons */
-                showRowControls={false}
-                showSearch={false}
-
-                /* Totals row for RECEIPT + ISSUE columns */
-                totals={{
-                  enabled: tableData.length > 0,
-                  label: "Total",
-                  bg: "#f0f4ff",
-                  color: "#1e3a5f",
-                }}
-
-                /* Pagination */
-                pagination={{
-                  enabled: true,
-                  pageSize: 10,
-                  showPageSizeSelector: true,
-                  showPageNumbers: true,
-                  showTotalCount: true,
-
-                }}
-              />
+                <DataTable
+                    title="Purchase Statement"
+                    data={tableData}
+                    columnDefs={paymentColumns}
+                    height="430px"
+                    emptyText={emptyText}
+                    showRowControls={false}
+                    showSearch={false}
+                    totals={{
+                        enabled: tableData.length > 0,
+                        label: "Total",
+                        bg: theme.colors.accient,
+                        color: theme.colors.whiteColor,
+                    }}
+                    pagination={{
+                        enabled: true,
+                        pageSize: 10,
+                        showPageSizeSelector: true,
+                        showPageNumbers: true,
+                        showTotalCount: true,
+                    }}
+                />
             </Box>
-        
-          </Box>
-        }
         </Box>
     );
 }

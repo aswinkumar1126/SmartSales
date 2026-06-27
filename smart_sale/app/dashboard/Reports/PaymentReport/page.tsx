@@ -201,13 +201,8 @@ function PaymentReport() {
 
     /* ------------ View ------------ */
     const handleView = async () => {
-        if (!fetchEnabled) {
-            // First click: enable the query (it will auto-fetch)
-            setFetchEnabled(true);
-        } else {
-            // Subsequent clicks: manually refetch
-            await refetch();
-        }
+        setFetchEnabled(true);
+        await refetch();
     };
 
     /* ------------ Clear ------------ */
@@ -320,10 +315,11 @@ function PaymentReport() {
                 py="10px"
                 rounded="lg"
                 gap={0}
-                border="0.5px solid"
-                borderColor="gray.200"
+                border="1px solid"
+                borderColor={theme.colors.greyColor}
                 flexWrap="nowrap"
                 overflowX="auto"
+                // gap={2}
             >
                 <DynamicForm
                     fields={formFields}
@@ -335,8 +331,7 @@ function PaymentReport() {
                     minLabelWidth="65px"
                 />
 
-                {/* visual separator */}
-                <Box w="1px" h="20px" bg="gray.200" mx={3} flexShrink={0} />
+                <Box w="1px" h="20px" bg={theme.colors.greyColor} mx={2} flexShrink={0} />
 
                 <HStack gap={2} flexShrink={0}>
                     <Button
@@ -353,14 +348,38 @@ function PaymentReport() {
                     </Button>
                     <Button
                         variant="outline"
-                        colorPalette="gray"
                         onClick={handleClear}
                         size="xs"
                         rounded="md"
                         gap={1}
+                        borderColor={theme.colors.greyColor}
+                        color={theme.colors.primaryText}
                     >
                         <Icon as={TbRotate} boxSize={3.5} />
                         Clear
+                    </Button>
+
+                    <Box w="1px" h="20px" bg={theme.colors.greyColor} mx={1} flexShrink={0} />
+
+                    <Button
+                        variant="ghost"
+                        size="xs"
+                        color={theme.colors.green}
+                        disabled={!fetchEnabled || tableData.length === 0}
+                        onClick={() => handleExport("excel")}
+                        title="Export to Excel"
+                    >
+                        <FaFileExcel />
+                    </Button>
+                    <Button
+                        variant="ghost"
+                        size="xs"
+                        color={theme.colors.primaryText}
+                        disabled={!fetchEnabled || tableData.length === 0}
+                        onClick={() => handleExport("pdf")}
+                        title="Print / PDF"
+                    >
+                        <FaPrint />
                     </Button>
                 </HStack>
             </Box>
@@ -428,8 +447,8 @@ function PaymentReport() {
                     totals={{
                         enabled: fetchEnabled && tableData.length > 0,
                         label: "Total",
-                        bg: "#f0f4ff",
-                        color: "#1e3a5f",
+                        bg: theme.colors.accient,
+                        color: theme.colors.whiteColor,
                     }}
 
                     /* Pagination */

@@ -59,7 +59,7 @@ import { normalizeRowForApi } from "@/utils/TransactionValidation/sales/normaliz
 
 import { useStockAvailability } from "@/hooks/Transaction/sales/useStockAvailability";
 
-import { useConversionSync, useGstConversion } from "@/hooks/Transaction/sales/useConversionSync";
+import { useClosingCalculations } from "@/hooks/Transaction/sales/useConversionSync";
 import { useClosingCalculation } from "@/hooks/Transaction/sales/useClosingBalanceCalculation";
 import { useSalesOpeningBalances } from "@/hooks/Transaction/sales/useSalesOpeningCal";
 
@@ -163,7 +163,9 @@ export default function SalesPage() {
         isModifying
     } = useSalesHeader();
 
-    const { isOpen, status, title, description, openLoader, resolveLoader, closeLoader } = useTransactionLoader();
+    console.log(isModifying,'isModifying');
+
+    // const { isOpen, status, title, description, openLoader, resolveLoader, closeLoader } = useTransactionLoader();
 
 
     /* ================================
@@ -216,6 +218,11 @@ export default function SalesPage() {
 
     const [selectedTransactionId, setSelectedTransactionId] =
         useSessionStorage<string | null>("selectedTransactionId", null);
+
+    // Tracks which transaction was last loaded — persists across page refresh so background
+    // refetches and F5 refreshes don't overwrite in-progress edits stored in zustand persist.
+    const [loadedTransactionId, setLoadedTransactionId] =
+        useSessionStorage<string | null>("sale_loaded_transaction_id", null);
 
     const [baseOpening, setBaseOpening] = useSessionStorage<{ openPure: number, openCash: number }>('sales-openingBalance', {
         openPure: 0,
@@ -618,7 +625,7 @@ export default function SalesPage() {
     // KEY TO ACCESS
 
     useGlobalKey("F1", () => isFilterOpen ? closeFilter() : openFilter(), "openFilter");
-    useGlobalKey("Alt+s", () => handleSaveTransaction(), "saveTransaction");
+  useGlobalKey("Alt+s", () => isEditing && isModifying ? handleSaveTransaction() : !isEditing ? handleSaveTransaction() : null, "savePurchaseTransaction");
     useGlobalKey("Alt+u", () => isModifying ? handleUpdateTransaction() : null, "updateTransaction");
     useGlobalKey("Alt+c", () => handleResetDraft(), "ClearTransaction");
     useGlobalKey("Alt+m", () => { isModifying ? stopModify() : startModify() }, "modifyTransaction");
@@ -895,7 +902,7 @@ export default function SalesPage() {
             setDraftRows(freshRows);
             setPrintData(data);
             // resolveLoader("success" ,"get");
-            toaster.create({ title: "Transaction Loaded Successfully" })
+            // toaster.create({ title: "Transaction Loaded Successfully" })
         });
 
 
@@ -933,12 +940,18 @@ export default function SalesPage() {
             .reduce((sum, item) => sum + (Number(item.STNAMT) || 0), 0);
     }, [draftRows]);
 
+    const totalFinalMCAmount = useMemo(() => {
+        return draftRows
+            .filter(row => row.TRANSACTION_TYPE === "SA")
+            .reduce((sum, item) => sum + (Number(item.MC) || 0), 0);
+    }, [draftRows]);
 
 
 
-    useConversionSync(Number(headerForm.RATEGM || 0));
-    useGstConversion(Number(totalFinalStoneAmount || 0));
-
+    useClosingCalculations(Number(headerForm.RATEGM || 0),
+        Number(totalFinalStoneAmount || 0),
+        Number(totalFinalMCAmount || 0));
+        
     const { closingPure, closingCash } = useClosingCalculation(closingDetails, openingBalances, Number(headerForm.RATEGM || 0));
 
 
@@ -956,8 +969,12 @@ export default function SalesPage() {
             DISCAMT: Number(d.DISCAMT || 0),
             DISCWT: Number(d.DISCWT || 0),
 
-            GSTPER: Number(d.GSTPER),
-            GSTAMT: Number(d.GSTAMT),
+            STNGSTPER: Number(d.STNGSTPER),
+            STNGSTAMT: Number(d.STNGSTAMT),
+
+            MCGSTPER: Number(d.MCGSTPER || 0),
+            MCGSTAMT: Number(d.MCGSTAMT || 0),
+
             TDSPER: Number(d.TDSPER || 0),
             TDSAMT: Number(d.TDSAMT || 0),
 
@@ -1062,7 +1079,7 @@ export default function SalesPage() {
         validateQuantity,
 
     } = useStockAvailability({
-        transactionCode: selectedTransactionTypes.map(t => t.code),
+        transactionCode: SALETRANSACTIONTYPES.map(t => t.code),
         pureStockList,
         itemsStockList,
         draftRows,
@@ -1116,8 +1133,10 @@ export default function SalesPage() {
             Number(closingDetails.BANKRCVD || 0) > 0 ||
             Number(closingDetails.TDSPER || 0) > 0 ||
             Number(closingDetails.TDSAMT || 0) > 0 ||
-            Number(closingDetails.GSTPER || 0) > 0 ||
-            Number(closingDetails.GSTAMT || 0) > 0 ||
+            Number(closingDetails.STNGSTPER || 0) > 0 ||
+            Number(closingDetails.STNGSTAMT || 0) > 0 ||
+            Number(closingDetails.MCGSTPER || 0) > 0 ||
+            Number(closingDetails.MCGSTAMT || 0) > 0 ||
             (closingDetails.BANKPAIDDETAILS?.length ?? 0) > 0 ||
             (closingDetails.BANKRCVDDETAILS?.length ?? 0) > 0;
 
@@ -1186,6 +1205,7 @@ export default function SalesPage() {
         setDraftRows([]);
         setSelectedTransactionTypes([]);
         setEditingSno(null);
+        setLoadedTransactionId(null);
 
         // remove current selection first
         setSelectedTransactionId(null);
@@ -1196,6 +1216,8 @@ export default function SalesPage() {
     };
 
     const handleResetDraft = () => {
+
+        setLoadedTransactionId(null);
 
         setSelectedTransactionId(null);
 
@@ -1267,7 +1289,7 @@ export default function SalesPage() {
         }
 
         // ✅ Open loader in save mode
-        openLoader("save");
+        // openLoader("save");
 
         createTransaction.mutate(
             { payload: result.payload, TRANTYPE: "sales" },
@@ -1278,7 +1300,7 @@ export default function SalesPage() {
                     // Defer cleanup until after the loader finishes
                     setTimeout(() => {
                         handleResetDraft();
-                        resolveLoader("success", "save");
+                        // resolveLoader("success", "save");
                     }, 500);
 
                     // ✅ Resolve to success — loader auto-closes after 2s
@@ -1289,7 +1311,7 @@ export default function SalesPage() {
 
                     setTimeout(() => {
                         openingBalanceRefetch();
-                        resolveLoader("error", "save", error?.message || "Failed to save transaction.");
+                        // resolveLoader("error", "save", error?.message || "Failed to save transaction.");
                     }, 500);
 
                 },
@@ -1327,7 +1349,7 @@ export default function SalesPage() {
         console.log(result.payload, 'update tran')
 
         // ✅ Open loader in update mode
-        openLoader("update");
+        // openLoader("update");
 
         try {
             await updateTransaction.mutateAsync({
@@ -1351,10 +1373,10 @@ export default function SalesPage() {
                 handleResetDraft();
 
             }, 500);
-            setTimeout(() => {
-                // ✅ Resolve to success
-                resolveLoader("success", "update");
-            }, 600);
+            // setTimeout(() => {
+            //     // ✅ Resolve to success
+            //     // resolveLoader("success", "update");
+            // }, 600);
         } catch (error: any) {
             // ✅ Resolve to error
 
@@ -1363,9 +1385,9 @@ export default function SalesPage() {
                 openingBalanceRefetch();
                 // setIsOpenSalesSaveModal(false);
             }, 500);
-            setTimeout(() => {
-                resolveLoader("error", "update", error?.message || "Failed to update transaction.");
-            }, 600);
+            // setTimeout(() => {
+            //     resolveLoader("error", "update", error?.message || "Failed to update transaction.");
+            // }, 600);
         }
     };
   
@@ -1401,11 +1423,14 @@ export default function SalesPage() {
         if (isFetching) return;
 
         if (!isSuccess || !transactionsById) {
-
-            resolveLoader("error", "get");
-
+            // resolveLoader("error", "get");
             return;
         }
+
+        // Skip if we already loaded this transaction — prevents background refetches from overwriting edits
+        if (loadedTransactionId === selectedTransactionId) return;
+
+        setLoadedTransactionId(selectedTransactionId);
 
         setEditingRowsData(transactionsById);
 
@@ -1414,7 +1439,7 @@ export default function SalesPage() {
             selectedTransactionId
         );
 
-        resolveLoader("success", "get");
+        // resolveLoader("success", "get");
 
     }, [
         selectedTransactionId,
@@ -1492,13 +1517,13 @@ export default function SalesPage() {
         <>
 
             <Flex gap={1}>
-                <TransactionLoader
+                {/* <TransactionLoader
                     isOpen={isOpen}
                     status={status}
                     title={title}
                     description={description}
                     onClose={closeLoader}
-                />
+                /> */}
 
                 {/* LEFT – 70% */}
                 <Box display='flex' gap={1} width={'100%'}>

@@ -265,7 +265,7 @@ const BalanceSummary = ({
                     // }
                     allowNegative
                 />
-                <Text fontSize="xs" fontWeight="semibold"> GST </Text>
+                <Text fontSize="xs" fontWeight="semibold"> GST(stn) </Text>
                 <Box>
                     <HStack justify="space-between" width="100%">
                         <Text fontSize="2xs" fontWeight="medium">
@@ -273,9 +273,9 @@ const BalanceSummary = ({
                         </Text>
                     </HStack>
                     <CapitalizedInput
-                        field="GSTPER"
-                        value={closingDetails.GSTPER}
-                        onChange={(_, v) => handleChange("GSTPER", v)}
+                        field="STNGSTPER"
+                        value={closingDetails.STNGSTPER}
+                        onChange={(_, v) => handleChange("STNGSTPER", v)}
                         type="number"
                         allowDecimal
                         decimalScale={2}
@@ -291,9 +291,48 @@ const BalanceSummary = ({
                         </Text>
                     </HStack>
                     <CapitalizedInput
-                        field="GSTAMT"
-                        value={closingDetails.GSTAMT}
-                        onChange={(_, v) => handleChange("GSTAMT", v)}
+                        field="STNGSTAMT"
+                        value={closingDetails.STNGSTAMT}
+                        onChange={(_, v) => handleChange("STNGSTAMT", v)}
+                        type="number"
+                        allowDecimal
+                        decimalScale={2}
+                        size="xs"
+                        rounded="sm"
+                        disabled
+
+                    />
+                </Box>
+
+                <Text fontSize="xs" fontWeight="semibold"> GST(mc) </Text>
+                <Box>
+                    <HStack justify="space-between" width="100%">
+                        <Text fontSize="2xs" fontWeight="medium">
+                            GST %
+                        </Text>
+                    </HStack>
+                    <CapitalizedInput
+                        field="STNGSTPER"
+                        value={closingDetails.MCGSTPER}
+                        onChange={(_, v) => handleChange("MCGSTPER", v)}
+                        type="number"
+                        allowDecimal
+                        decimalScale={2}
+                        size="xs"
+                        rounded="sm"
+
+                    />
+                </Box>
+                <Box>
+                    <HStack justify="space-between" width="100%">
+                        <Text fontSize="2xs" fontWeight="medium">
+                            GST AMT
+                        </Text>
+                    </HStack>
+                    <CapitalizedInput
+                        field="MCGSTAMT"
+                        value={closingDetails.MCGSTAMT}
+                        onChange={(_, v) => handleChange("MCGSTAMT", v)}
                         type="number"
                         allowDecimal
                         decimalScale={2}

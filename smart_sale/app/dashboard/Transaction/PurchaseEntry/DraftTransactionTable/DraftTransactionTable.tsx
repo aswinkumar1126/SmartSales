@@ -99,6 +99,8 @@ interface DraftTransactionTableProps {
 
 const newRowId = () => `row-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
 
+const round3 = (value: number) => Math.round(value * 1000) / 1000;
+
 function recalcRow(row: Record<string, any>, isIssue: boolean) {
     const g = parseFloat(row.GRSWT) || 0;
     const s = parseFloat(row.STNWT) || 0;
@@ -108,12 +110,16 @@ function recalcRow(row: Record<string, any>, isIssue: boolean) {
     const atouch = parseFloat(row.ATOUCH) || 0;
     const calMode = row.CAL_MODE || "NETWT";
 
-    row.NETWT = (g - s).toFixed(3);
+    row.NETWT = round3(g - s).toFixed(3);
+
     const baseWt = calMode === "NETWT" ? (g - s) : g;
+
     row.PUREWT = isIssue
-        ? ((wt * touch) / 100).toFixed(3)
-        : ((baseWt * touch) / 100).toFixed(3);
-    row.APUREWT = ((awt * atouch) / 100).toFixed(3);
+        ? round3((wt * touch) / 100).toFixed(3)
+        : round3((baseWt * touch) / 100).toFixed(3);
+
+    row.APUREWT = round3((awt * atouch) / 100).toFixed(3);
+
     return row;
 }
 
@@ -284,6 +290,7 @@ export default function DraftTransactionTable({
                 size: "xs",
                 dependsOn: col.dependsOn,
                 disabled: col.disabled,
+                max :col.max,
                 ...("decimalScale" in col && typeof col.decimalScale === "number"
                     ? { decimalScale: col.decimalScale }
                     : {}),
@@ -305,6 +312,8 @@ export default function DraftTransactionTable({
             if (!isIssue && col.key === "STNWT")
                 return { ...base, disabled: !activeStnPresent };
 
+            
+
             return base;
         });
     // activeStnPresent intentionally in deps — STNWT disabled state must react to store updates
@@ -322,6 +331,7 @@ export default function DraftTransactionTable({
                 decimalScale: f.decimalScale,
                 computed: f.type === "calculated" || f.disabled === true,
                 disabled: f.type === "calculated" || f.disabled === true,
+                max : f.max,
             };
         });
     }, [formFields, tableCols]);
@@ -1045,7 +1055,7 @@ useEffect(() => {
                         overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
                         cursor: "default",
                     }}>
-                        {row.ITEMNAME || value || ""}
+                        {itemName}
                     </span>
                 );
             }
@@ -1087,6 +1097,7 @@ useEffect(() => {
                 noBorder
                 disabled={col.disabled || shouldDisableOnEditing && tranEditing}
                 allowFocus
+                max={col.max}
             />
         );
     }, [formFields, isIssue, handleOpenStoneModal, handleOpenMiscModal ,tranEditing]);

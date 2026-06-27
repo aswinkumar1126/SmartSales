@@ -167,8 +167,11 @@ export interface ClosingDetails {
     DISCAMT?: number;
     DISCWT?: number;
 
-    GSTPER :number;
-    GSTAMT :number;
+    STNGSTPER :number;
+    STNGSTAMT :number;
+
+    MCGSTPER :number;
+    MCGSTAMT:number;
 
     TDSPER :number;
     TDSAMT :number;

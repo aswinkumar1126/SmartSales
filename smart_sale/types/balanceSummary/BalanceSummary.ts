@@ -27,8 +27,13 @@ export interface BaseClosingFormDetails {
     DISCWT :string;
     DISCAMT :string;
 
-    GSTPER :string;
-    GSTAMT:string;
+    STNGSTPER :string;
+    STNGSTAMT:string;
+
+
+    MCGSTPER: string;
+    MCGSTAMT: string;
+
     
     TDSPER : string;
     TDSAMT:string;

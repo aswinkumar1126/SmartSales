@@ -68,7 +68,7 @@ export function useStockAvailability({
         TRANSACTIONTYPES
     });
 
-    
+   
 
     const transactionKeys = new Set(
         transactionCodes.map(code => TRANSACTION_KEY_MAP[code])
@@ -85,6 +85,9 @@ export function useStockAvailability({
             touch: number | null,
             options?: StockAvailabilityOptions
         ): StockAvailability | undefined => {
+
+
+
             if (!id) return undefined;
 
             const { excludeRowId } = options ?? {};
@@ -100,6 +103,8 @@ export function useStockAvailability({
                         Number(s.aTouch) === Number(touch)
                 )
                 : undefined;
+
+            console.log(pureStock, isIssue, isReceipt,'pureStockinstockavailable')
 
             const itemStock = (isPurchase || isPurchaseReturn)
                 ? itemsStockList.find(

@@ -44,7 +44,7 @@ export const usePurchaseHeader = create<PurchaseHeaderState & PurchaseHeaderActi
             headerForm: initialHeader,
             accCode: null,
             isEditing: false,
-            isModifying :true,
+            isModifying :false,
             editingSno: null,
             selectedTransactionId: null,
 
@@ -107,7 +107,7 @@ export const usePurchaseHeader = create<PurchaseHeaderState & PurchaseHeaderActi
                     headerForm: initialHeader,
                     accCode: null,
                     isEditing: false,
-                    isModifying :true,
+                    isModifying : false,
                     editingSno: null,
                     selectedTransactionId: null,
                 }),

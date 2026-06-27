@@ -1364,6 +1364,7 @@ export default function SalesPage() {
     const handleReset = isEditing
         ? (isModifying ? handleResetDraft : handleReSelectTransaction)
         : handleResetDraft;
+        
 
 
     const shortcuts = [
@@ -1421,7 +1422,7 @@ export default function SalesPage() {
                             handleShowFilter={openFilter}
                             isEditing={isEditing}
                             onSave={handleSave}
-                            onReset={handleReset}
+                            onReset={handleResetDraft}
                             isSaving={
                                 createTransaction.isPending || updateTransaction.isPending
                             }

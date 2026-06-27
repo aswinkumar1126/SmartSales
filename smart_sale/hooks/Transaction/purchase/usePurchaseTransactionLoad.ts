@@ -22,6 +22,8 @@ export const useLoadPurchaseTransaction = () => {
     ) => {
         if (!transactionData) return;
 
+        console.log(transactionData.CLOSING_DETAILS,'transactionData.CLOSING_DETAILS,')
+
         startEdit(sno);
 
         loadPurchaseHeader(transactionData.TRANSACTION_HEADER, setHeaderForm, setAccCode);

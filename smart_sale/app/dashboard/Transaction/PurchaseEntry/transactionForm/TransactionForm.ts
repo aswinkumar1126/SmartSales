@@ -4,7 +4,7 @@ export const purchaseColumns = (isTag: boolean) => [
     ...(isTag ? [{
         key: "TAGNO",
         label: "TAGNO",
-        width: "60px",
+        width: "40px",
         align: "left" ,
         editable: true,
     }] : []),
@@ -12,7 +12,7 @@ export const purchaseColumns = (isTag: boolean) => [
     {
         key: "ITEMID",
         label: "ITEM",
-        width: "110px",
+        width: "80px",
         align: "left" ,
         type: "combobox" ,
         
@@ -21,12 +21,11 @@ export const purchaseColumns = (isTag: boolean) => [
     {
         key: "PCS",
         label: "PCS",
-        width: "30px",
+        width: "25px",
         type: "number" ,
         align: "right" ,
         decimalScale:0,
 
-   
     },
     {
         key: "GRSWT",
@@ -90,10 +89,10 @@ export const purchaseColumns = (isTag: boolean) => [
     {
         key: "TOUCH",
         label: "TOUCH",
-        width: "35px",
+        width: "40px",
         type: "number" ,
         align: "right" ,
-        max: 9999,
+        max: 999,
         decimalScale: 2,
         allowFocus: true,
        
@@ -102,7 +101,7 @@ export const purchaseColumns = (isTag: boolean) => [
     {
         key: "PUREWT",
         label: "PURE WT",
-        width: "45px",
+        width: "50px",
         type: "number" ,
         align: "right" ,
         editable: false,
@@ -112,7 +111,7 @@ export const purchaseColumns = (isTag: boolean) => [
     {
         key: "HMC",
         label: "HMC",
-        width: "45px",
+        width: "50px",
         type: "number" ,
         align: "right" ,
         decimalScale: 2,
@@ -122,7 +121,7 @@ export const purchaseColumns = (isTag: boolean) => [
     {
         key: "MC",
         label: "M.C",
-        width: "40px",
+        width: "50px",
         type: "number" ,
         align: "right" ,
         decimalScale: 2,
@@ -143,7 +142,7 @@ export const purchaseColumns = (isTag: boolean) => [
     {
         key: "STNAMT",
         label: "STN AMT",
-        width: "40px",
+        width: "55px",
         type: "number" ,
         align: "right" ,
         max: 999999,
@@ -156,7 +155,7 @@ export const purchaseColumns = (isTag: boolean) => [
     {
         key: "DESCRIPTION",
         label: "DESC",
-        width: "50px",
+        width: "40px",
         align: "left" ,
         type: "text" ,
 
@@ -215,6 +214,7 @@ export const issueColumns = [
         align: "right" ,
         max: 999,
         decimalScale: 2,
+
         allowFocus: true,
       
 

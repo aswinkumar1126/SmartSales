@@ -38,8 +38,12 @@ const initialClosingDetails: SalesClosingFormDetails = {
     CONVWT: "",
     DISCAMT:"",
     DISCWT: "",
-    GSTAMT:"",
-    GSTPER:"",
+
+    STNGSTAMT:"",
+    STNGSTPER:"",
+    MCGSTAMT:"",
+    MCGSTPER:"",
+
     TDSPER:"",
     TDSAMT:"",
     CASHPAID: "",

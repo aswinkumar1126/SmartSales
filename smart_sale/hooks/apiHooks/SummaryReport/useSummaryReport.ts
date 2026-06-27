@@ -4,35 +4,46 @@ import { ItemStockEntry, OutStandingStockReportParams, AgeReportParams } from "@
 
 
 export const usePurchaseSummary = ({
-  fromAge,
-  toAge,
+  FROMDATE,
+  TODATE,
+  ACCODE,
   fetchEnabled
 }: {
-  fromAge?: number;
-  toAge?: number;
+  FROMDATE?: string;
+  TODATE?: string;
+  ACCODE?:number;
   fetchEnabled :boolean
 }) => {
   return useApiQuery<Record<string, any>[]>({
-    queryKey: ["age_report", fromAge?.toString() ?? "", toAge?.toString() ?? ""],
+    queryKey: ["age_report", FROMDATE ?? "" , TODATE ?? "", ACCODE?.toString() ??  ''],
     url: "/report/purchase", // Adjust the endpoint URL as needed
+    params: {
+      FROMDATE: FROMDATE,
+      TODATE: TODATE,
+      ...(ACCODE !== undefined && { ACCODE }),
+    },
     method: "GET",
-
     select: (res) => res.data,
     enabled: !!fetchEnabled,
   });
 };
 
 export const useSalesSummary = ({
-  fromAge,
-  toAge,
+  FROMDATE,
+  TODATE,
+  ACCODE,
   fetchEnabled
 }: {
-  fromAge?: number;
-  toAge?: number;
+  FROMDATE ?:string;
+  TODATE ?:string;
+  ACCODE ?:number;
   fetchEnabled :boolean;
 }) => {
   return useApiQuery<Record<string, any>[]>({
-    queryKey: ["age_report", fromAge?.toString() ?? "", toAge?.toString() ?? ""],
+    queryKey: ["age_report", FROMDATE ??"" ,TODATE ?? "" , ACCODE ? String(ACCODE) : ""],
+    params : {FROMDATE : FROMDATE ,TODATE :TODATE  , ...(
+      ACCODE !== undefined && { ACCODE }
+    )},
     url: "/report/sales", // Adjust the endpoint URL as needed
     method: "GET",
 

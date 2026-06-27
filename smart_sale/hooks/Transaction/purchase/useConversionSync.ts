@@ -1,95 +1,103 @@
 import { useEffect } from "react";
 import { usePurchaseBalanceSummary } from "@/store/purchase/useBalanceSummaryStore";
 
-export const useConversionSync = (rate: number) => {
+export const useClosingCalculations = (
+    rate: number,
+    stnRate: number,
+    mc: number
+) => {
     const { closingDetails, setClosingField } = usePurchaseBalanceSummary();
 
     useEffect(() => {
-        const convType = closingDetails.CONVTYPE;
+        const {
+            CONVTYPE,
+            CONVAMT,
+            CONVWT,
+            STNGSTPER,
+            MCGSTPER,
+        } = closingDetails;
 
-        const convAmtStr = closingDetails.CONVAMT;
-        const convWtStr = closingDetails.CONVWT;
+        // =========================
+        // Conversion Calculation
+        // =========================
 
-        console.log(convWtStr ,convAmtStr ,convType ,'conversionAtClosingDetails');
+        const convAmt = parseFloat(CONVAMT || "") || 0;
+        const convWt = parseFloat(CONVWT || "") || 0;
 
+        if (rate > 0) {
+            if (CONVTYPE === "P") {
+                if (!CONVWT) {
+                    if (CONVAMT !== "") {
+                        setClosingField("CONVAMT", "");
+                    }
+                } else {
+                    const calculatedAmt = (convWt * rate).toFixed(2);
 
-        let convAmt = parseFloat(closingDetails.CONVAMT || "") || 0;
-        let convWt = parseFloat(closingDetails.CONVWT || "") || 0;
-        
-
-        console.log(convWt ,convAmt ,'conversions')
-
-        if (!rate || rate <=0) return;
-
-
-        // 🔴 CLEAR LOGIC (empty or invalid)
-        if (convType === "P") {
-            // If weight is empty OR <= 0 → clear amount
-            if (!convWtStr ) {
-                if (convAmtStr !== "") {
-                    setClosingField("CONVAMT", "");
+                    if (calculatedAmt !== CONVAMT) {
+                        setClosingField("CONVAMT", calculatedAmt);
+                    }
                 }
-                return;
             }
-        }
 
-        if (convType === "C") {
-            // If amount is empty OR <= 0 → clear weight
-            if (!convAmtStr) {
-                if (convWtStr !== "") {
-                    setClosingField("CONVWT", "");
+            if (CONVTYPE === "C") {
+                if (!CONVAMT) {
+                    if (CONVWT !== "") {
+                        setClosingField("CONVWT", "");
+                    }
+                } else {
+                    const calculatedWt = (convAmt / rate).toFixed(3);
+
+                    if (calculatedWt !== CONVWT) {
+                        setClosingField("CONVWT", calculatedWt);
+                    }
                 }
-                return;
             }
         }
 
+        // =========================
+        // Stone GST Calculation
+        // =========================
 
-        // 🟢 CALCULATION LOGIC
-        if (convType === "P") {
-            const calculatedAmt = (convWt * rate).toFixed(2);
+        const stnGstPer = Number(STNGSTPER) || 0;
 
-            if (calculatedAmt !== closingDetails.CONVAMT) {
-                setClosingField("CONVAMT", calculatedAmt);
+        if (stnRate > 0 && stnGstPer > 0) {
+            const stnGstAmt = ((stnGstPer * stnRate) / 100).toFixed(2);
+
+            if (stnGstAmt !== closingDetails.STNGSTAMT) {
+                setClosingField("STNGSTAMT", stnGstAmt);
             }
         }
-
-        if (convType === "C" ) {
-            const calculatedWt = (convAmt / rate).toFixed(3);
-
-            if (calculatedWt !== closingDetails.CONVWT) {
-                setClosingField("CONVWT", calculatedWt);
-            }
+        else{
+            setClosingField("STNGSTAMT", "0.00");
         }
 
+        // =========================
+        // MC GST Calculation
+        // =========================
+
+        const mcGstPer = Number(MCGSTPER) || 0;
+
+        if (mc > 0 && mcGstPer > 0) {
+            const mcGstAmt = ((mcGstPer * mc) / 100).toFixed(2);
+
+            if (mcGstAmt !== closingDetails.MCGSTAMT) {
+                setClosingField("MCGSTAMT", mcGstAmt);
+            }
+        }
+        else {
+            setClosingField("MCGSTAMT", "0.00");
+        }
     }, [
+        rate,
+        stnRate,
+        mc,
         closingDetails.CONVTYPE,
         closingDetails.CONVAMT,
         closingDetails.CONVWT,
-        rate,
+        closingDetails.STNGSTPER,
+        closingDetails.MCGSTPER,
+        closingDetails.STNGSTAMT,
+        closingDetails.MCGSTAMT,
+        setClosingField,
     ]);
-
-  
-};
-
-
-export const useGstConversion = (stnRate: number) => {
-    const { closingDetails, setClosingField } = usePurchaseBalanceSummary();
-
-
-    useEffect(() => {
-       
-        const gstPer = Number(closingDetails.GSTPER) ;
-    
-        const gstAmt = (gstPer * stnRate) /100 ;
-
-        if(stnRate <0 && gstPer < 0) return ;
-
-        setClosingField("GSTAMT", gstAmt.toFixed(2))
-
-    }, [
-        closingDetails.GSTPER,
-        stnRate,
-    ]);
-
-
 };

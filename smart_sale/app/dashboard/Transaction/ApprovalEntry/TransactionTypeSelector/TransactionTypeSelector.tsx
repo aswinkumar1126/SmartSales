@@ -192,21 +192,24 @@ export default function TransactionTypeSelector({
                         <Image src={clearIcon} width={54} alt="clear" />
                     </Button>
 
-                    <Button
-                        size="xs"
-                        bg={theme.colors.formColor}
-                        onClick={onSave}
-                        loading={isSaving}
-                        loadingText="Saving..."
-                        variant='ghost'
-                        p={0}
-                        disabled={isEditing && !isModifying}
-                    >
-                        <Image src={isEditing ? updateIcon : saveIcon} width={55} alt="save" />
-                    </Button>
-                    {isEditing && 
-                        <>
-                            <Button 
+                {isEditing &&(
+                    <>
+                        <Button
+                            size="xs"
+                            bg={theme.colors.formColor}
+                            onClick={onSave}
+                            loading={isSaving}
+                            loadingText="Saving..."
+                            variant='ghost'
+                            p={0}
+                            disabled={isEditing && !isModifying}
+                        >
+                            {/* <Image src={isEditing ? updateIcon : saveIcon} width={55} alt="save" /> */}
+                            <Image src={saveIcon} width={55} alt="save" />
+                        </Button>
+                  
+                       
+                        {/* <Button
                             size="xs"
                             bg={theme.colors.formColor}
                             onClick={() => isModifying ? stopModify() : startModify()}
@@ -215,10 +218,13 @@ export default function TransactionTypeSelector({
                             p={0}
                         >
                             <Image src={modifyIcon} width={72} alt="save" />
-                        </Button>
-                    
-                        </>
-                     }                  
+                        </Button> */}
+
+                    </>  
+                )} 
+                
+                
+                                    
                 </Box>
             }
 
@@ -235,17 +241,17 @@ export default function TransactionTypeSelector({
                 </Box>
 
                  {/* PRINT — show when rows are loaded (same as DESELECT) */}
-                                {isEditing && (
-                                    <Box
-                                        className="flex flex-col items-center cursor-pointer gap-1"
-                                        onClick={onPrint}
-                                    >
-                                        <HiPrinter size={18} className="text-gray-600" />
-                                        <Text fontSize="2xs" fontWeight="semibold">
-                                            PRINT
-                                        </Text>
-                                    </Box>
-                                )}
+                {isEditing && (
+                    <Box
+                        className="flex flex-col items-center cursor-pointer gap-1"
+                        onClick={onPrint}
+                    >
+                        <HiPrinter size={18} className="text-gray-600" />
+                        <Text fontSize="2xs" fontWeight="semibold">
+                            PRINT
+                        </Text>
+                    </Box>
+                )}
 
                 {/* SHOW / HIDE FILTER */}
                 <Box

@@ -15,6 +15,7 @@ export interface ColumnDef {
     computed?: boolean;
     disabled?: boolean;
     sticky?: boolean;
+    max?:number;
 }
 
 export interface CellCoord {

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { TransactionStatus } from "@/component/loader/Transactionloader";
+import { useSoftControlById } from "@/hooks/apiHooks/softControl/useSoftControl";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -137,11 +138,25 @@ export const useTransactionLoader = (): TransactionLoaderState => {
     const [title, setTitle] = useState<string | undefined>(undefined);
     const [description, setDescription] = useState<string | undefined>(undefined);
 
+
+    const { data: softControlData } = useSoftControlById('TRAN_LOADING');
+
+    // console.log(softControlData,'softControlDataforloading');
+
+    const isLoadingEnable = softControlData?.CTLTEXT === "Y";
+
+    // console.log(isLoadingEnable,'isLoadingEnable');
+
     const getMessages = (form?: boolean) => {
         return form ? FORMMESSAGES : MESSAGES;
     };
 
     const openLoader = (mode: LoaderMode, form = false) => {
+
+        if(!isLoadingEnable){
+            return;
+        }
+
         const messages = getMessages(form);
         const { title, description } = messages[mode].saving;
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { Badge, Box, Button, Flex, HStack ,Icon ,Table ,Text } from "@chakra-ui/react";
+import { Box, Button, HStack, Icon, Table, Text } from "@chakra-ui/react";
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { TbRotate, TbTableImport } from "react-icons/tb";
@@ -150,13 +150,8 @@ function ApprovalReport() {
 
     /* ------------ View ------------ */
     const handleView = async () => {
-        if (!fetchEnabled) {
-            // First click: enable the query (it will auto-fetch)
-            setFetchEnabled(true);
-        } else {
-            // Subsequent clicks: manually refetch
-            await refetch();
-        }
+        setFetchEnabled(true);
+        await refetch();
     };
 
     /* ------------ Clear ------------ */
@@ -311,9 +306,9 @@ function ApprovalReport() {
                 px={4}
                 py="10px"
                 rounded="lg"
-                gap={0}
-                border="0.5px solid"
-                borderColor="gray.200"
+                gap={2}
+                border="1px solid"
+                borderColor={theme.colors.greyColor}
                 flexWrap="nowrap"
                 overflowX="auto"
             >
@@ -327,8 +322,7 @@ function ApprovalReport() {
                     minLabelWidth="65px"
                 />
 
-                {/* visual separator */}
-                <Box w="1px" h="20px" bg="gray.200" mx={3} flexShrink={0} />
+                <Box w="1px" h="20px" bg={theme.colors.greyColor} mx={2} flexShrink={0} />
 
                 <HStack gap={2} flexShrink={0}>
                     <Button
@@ -345,38 +339,43 @@ function ApprovalReport() {
                     </Button>
                     <Button
                         variant="outline"
-                        colorPalette="gray"
                         onClick={handleClear}
                         size="xs"
                         rounded="md"
                         gap={1}
+                        borderColor={theme.colors.greyColor}
+                        color={theme.colors.primaryText}
                     >
                         <Icon as={TbRotate} boxSize={3.5} />
                         Clear
                     </Button>
-                </HStack>
-                
-            </Box>
-        {fetchEnabled && 
-          <Box >
-    
-            <Flex  bg={theme.colors.formColor} p={2} mt={3} rounded={'md'} justifyContent={'sapce-between'} alignItems={'center'}>
-                <Box>
-                    <Badge p={2} variant={'subtle'} fontSize={'sm'}>
-                        Approval Statements
-                    </Badge>
-                </Box>
-               
-                <Box >
-                    <Button variant="ghost" size="xs" color={theme.colors.green} onClick={() => handleExport("excel")}>
+
+                    <Box w="1px" h="20px" bg={theme.colors.greyColor} mx={1} flexShrink={0} />
+
+                    <Button
+                        variant="ghost"
+                        size="xs"
+                        color={theme.colors.green}
+                        disabled={!fetchEnabled || tableData.length === 0}
+                        onClick={() => handleExport("excel")}
+                        title="Export to Excel"
+                    >
                         <FaFileExcel />
                     </Button>
-                    <Button variant="ghost" size="xs" color={theme.colors.primaryText} onClick={() => handleExport("pdf")}>
+                    <Button
+                        variant="ghost"
+                        size="xs"
+                        color={theme.colors.primaryText}
+                        disabled={!fetchEnabled || tableData.length === 0}
+                        onClick={() => handleExport("pdf")}
+                        title="Print / PDF"
+                    >
                         <FaPrint />
                     </Button>
-                </Box>
-              
-            </Flex>
+                </HStack>
+            </Box>
+        {fetchEnabled &&
+          <Box >
 
             {/* ═══════════════ TABLE ═══════════════ */}
             <Box mt={3}>
