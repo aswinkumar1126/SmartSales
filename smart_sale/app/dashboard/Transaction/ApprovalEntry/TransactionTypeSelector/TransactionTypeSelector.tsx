@@ -192,7 +192,7 @@ export default function TransactionTypeSelector({
                         <Image src={clearIcon} width={54} alt="clear" />
                     </Button>
 
-                {isEditing &&(
+                {!isEditing &&(
                     <>
                         <Button
                             size="xs"

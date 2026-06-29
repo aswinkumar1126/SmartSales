@@ -12,7 +12,6 @@
     "export": "next export",
     "electron-dev": "concurrently \"next dev\" \"wait-on http://localhost:3000 && ELECTRON_START_URL=http://localhost:3000 electron .\"",
     "dist": "npm run build && electron-builder"
-
   },
   "dependencies": {
     "@chakra-ui/anatomy": "^2.3.4",
@@ -30,6 +29,7 @@
     "@tanstack/react-query": "^5.90.12",
     "animate.css": "^4.1.1",
     "axios": "^1.13.2",
+    "decimal.js": "^10.6.0",
     "file-saver": "^2.0.5",
     "framer-motion": "^12.38.0",
     "handsontable": "^17.0.0",

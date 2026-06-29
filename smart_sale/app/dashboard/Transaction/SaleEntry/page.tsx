@@ -625,7 +625,7 @@ export default function SalesPage() {
     // KEY TO ACCESS
 
     useGlobalKey("F1", () => isFilterOpen ? closeFilter() : openFilter(), "openFilter");
-  useGlobalKey("Alt+s", () => isEditing && isModifying ? handleSaveTransaction() : !isEditing ? handleSaveTransaction() : null, "savePurchaseTransaction");
+    useGlobalKey("Alt+s", () => isEditing && isModifying ? handleUpdateTransaction() : !isEditing ? handleSaveTransaction() : null, "saveSaleTransaction");
     useGlobalKey("Alt+u", () => isModifying ? handleUpdateTransaction() : null, "updateTransaction");
     useGlobalKey("Alt+c", () => handleResetDraft(), "ClearTransaction");
     useGlobalKey("Alt+m", () => { isModifying ? stopModify() : startModify() }, "modifyTransaction");

@@ -26,6 +26,7 @@ import { usePurchaseTransactionStore } from "@/store/purchase/usePurchaseTransac
 import { calculateMiscChargeFinalAmount } from "@/hooks/Transaction/both/calculateMiscCharges";
 
 import { useSoftControlById } from "@/hooks/apiHooks/softControl/useSoftControl";
+import { recalcRow } from "@/utils/transaction/both/Calculation";
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface FormField {
@@ -99,29 +100,42 @@ interface DraftTransactionTableProps {
 
 const newRowId = () => `row-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
 
-const round3 = (value: number) => Math.round(value * 1000) / 1000;
+const round3 = (value: number) =>
+    Math.round((value + Number.EPSILON) * 1000) / 1000;
 
-function recalcRow(row: Record<string, any>, isIssue: boolean) {
-    const g = parseFloat(row.GRSWT) || 0;
-    const s = parseFloat(row.STNWT) || 0;
-    const touch = parseFloat(row.TOUCH) || 0;
-    const wt = parseFloat(row.WT) || 0;
-    const awt = parseFloat(row.AWT) || 0;
-    const atouch = parseFloat(row.ATOUCH) || 0;
-    const calMode = row.CAL_MODE || "NETWT";
+// function recalcRow(row: Record<string, any>, isIssue: boolean) {
+//     const g = parseFloat(row.GRSWT) || 0;
+//     const s = parseFloat(row.STNWT) || 0;
+//     const touch = parseFloat(row.TOUCH) || 0;
+//     const wt = parseFloat(row.WT) || 0;
+//     const awt = parseFloat(row.AWT) || 0;
+//     const atouch = parseFloat(row.ATOUCH) || 0;
+//     const calMode = row.CAL_MODE || "NETWT";
 
-    row.NETWT = round3(g - s).toFixed(3);
+//     row.NETWT = round3(g - s).toFixed(3);
 
-    const baseWt = calMode === "NETWT" ? (g - s) : g;
+ 
+    
 
-    row.PUREWT = isIssue
-        ? round3((wt * touch) / 100).toFixed(3)
-        : round3((baseWt * touch) / 100).toFixed(3);
+//     const baseWt = calMode === "NETWT" ? (g - s) : g;
 
-    row.APUREWT = round3((awt * atouch) / 100).toFixed(3);
+//     const pureWt = Number(((Number(baseWt.toFixed(3)) * Number(touch.toFixed(2))) / 100 ).toFixed(4));
+//     const issPureWt = Number(((Number(wt.toFixed(3)) * Number(touch.toFixed(2))) / 100 ).toFixed(4));
+//     const aPureWt = Number(((Number(awt.toFixed(3)) * Number(touch.toFixed(2))) / 100 ).toFixed(4));
 
-    return row;
-}
+//     row.PUREWT = isIssue
+//         ? round3(issPureWt)
+//         : round3(pureWt);
+
+//     row.APUREWT = round3(aPureWt);
+    
+//     console.log({
+//         baseWt,
+//         touch,
+//         fixed: round3(pureWt).toFixed(3) 
+//     }, 'calcualtions');
+//     return row;
+// }
 
 function makeEmptyRow(formFields: FormField[], isIssue: boolean): Record<string, any> {
     const row: Record<string, any> = { __rowId: newRowId() };

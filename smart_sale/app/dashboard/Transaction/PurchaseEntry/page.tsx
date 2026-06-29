@@ -668,7 +668,7 @@ export default function PurchasePage() {
     // KEY TO ACCESS
 
     useGlobalKey("F1", () => openFilter(), "openPurchaseFilter");
-    useGlobalKey("Alt+s", () => isEditing && isModifying ? handleSaveTransaction() : !isEditing ? handleSaveTransaction() : null, "savePurchaseTransaction");
+    useGlobalKey("Alt+s", () => isEditing && isModifying ? handleUpdateTransaction() : !isEditing ? handleSaveTransaction() : null, "savePurchaseTransaction");
     useGlobalKey("Alt+c", () => isModifying ? handleResetDraft() : handleReSelectTransaction() , "ClearPurchaseTransaction");
     useGlobalKey("Alt+u", () => isModifying ? handleUpdateTransaction() : null, "updatePurchaseTransaction");
     useGlobalKey("Alt+m", () => { isModifying ? stopModifying() : startModifying() }, "modifyPurchaseTransaction");

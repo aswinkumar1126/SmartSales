@@ -29,6 +29,7 @@ import { useSoftControlById } from "@/hooks/apiHooks/softControl/useSoftControl"
 import { calculateMiscChargeFinalAmount } from "@/hooks/Transaction/both/calculateMiscCharges";
 
 import SalesBillViewModal from "../IssuedItemsView/IssuedItemsModal";
+import { recalcRow } from "@/utils/transaction/both/Calculation";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -103,27 +104,27 @@ interface DraftTransactionTableProps {
 const newRowId = () => `row-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
 const round3 = (value: number) => Math.round(value * 1000) / 1000;
 
-function recalcRow(row: Record<string, any>, isIssue: boolean) {
-    const g = parseFloat(row.GRSWT) || 0;
-    const s = parseFloat(row.STNWT) || 0;
-    const touch = parseFloat(row.TOUCH) || 0;
-    const wt = parseFloat(row.WT) || 0;
-    const awt = parseFloat(row.AWT) || 0;
-    const atouch = parseFloat(row.ATOUCH) || 0;
-    const calMode = row.CAL_MODE || "NETWT";
+// function recalcRow(row: Record<string, any>, isIssue: boolean) {
+//     const g = parseFloat(row.GRSWT) || 0;
+//     const s = parseFloat(row.STNWT) || 0;
+//     const touch = parseFloat(row.TOUCH) || 0;
+//     const wt = parseFloat(row.WT) || 0;
+//     const awt = parseFloat(row.AWT) || 0;
+//     const atouch = parseFloat(row.ATOUCH) || 0;
+//     const calMode = row.CAL_MODE || "NETWT";
 
-    row.NETWT = round3(g - s).toFixed(3);
+//     row.NETWT = round3(g - s).toFixed(3);
 
-    const baseWt = calMode === "NETWT" ? (g - s) : g;
+//     const baseWt = calMode === "NETWT" ? (g - s) : g;
 
-    row.PUREWT = isIssue
-        ? round3((wt * touch) / 100).toFixed(3)
-        : round3((baseWt * touch) / 100).toFixed(3);
+//     row.PUREWT = isIssue
+//         ? round3((wt * touch) / 100).toFixed(3)
+//         : round3((baseWt * touch) / 100).toFixed(3);
 
-    row.APUREWT = round3((awt * atouch) / 100).toFixed(3);
+//     row.APUREWT = round3((awt * atouch) / 100).toFixed(3);
 
-    return row;
-}
+//     return row;
+// }
 
 function makeEmptyRow(formFields: FormField[], isIssue: boolean): Record<string, any> {
     const row: Record<string, any> = { __rowId: newRowId() };
