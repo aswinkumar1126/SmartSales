@@ -85,9 +85,10 @@ const Header = ({ onOpenMenu }: any) => {
     return (
         <Box
             bg={theme.colors.accient}
-            borderBottom="1px solid"
-            borderColor="gray.200"
-            color={theme.colors.whiteColor}
+            borderBottom="2px solid"
+            borderColor={theme.colors.secondary}
+            color={theme.colors.primaryText}
+            boxShadow="0 2px 10px rgba(128,0,77,0.06)"
             p={2}
             position="sticky"
             top="0"
@@ -125,7 +126,9 @@ const Header = ({ onOpenMenu }: any) => {
                         {isDesktop && (
                             <Text
                                 fontSize="md"
-                                fontWeight="600"
+                                fontWeight="700"
+                                color={theme.colors.primary}
+                                letterSpacing="-0.01em"
                                 cursor="pointer"
                                 onClick={onOpenMenu}
 
@@ -166,15 +169,17 @@ const Header = ({ onOpenMenu }: any) => {
                     spaceX={2}
                     borderRadius="full"
                     align="center"
+                    border="1px solid"
+                    borderColor={`${theme.colors.secondary}55`}
                     boxShadow="sm"
                     maxW="full"
-                 
+
                 >
                     {/* Page Name Badge */}
                     <Text
                         fontSize="sm"
                         fontWeight="bold"
-                        color="crimson"
+                        color={theme.colors.primary}
                         maxW="220px"
                       truncate
                     >

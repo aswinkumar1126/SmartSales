@@ -207,7 +207,7 @@ function BankAccountMaster() {
     useGlobalKey("alt+e",() =>router.back());
 
     return (
-        <Box bg={theme.colors.primary}>
+        <Box bg={theme.colors.bg}>
             <Toaster />
 
             <Grid templateColumns={{ base: "1fr", lg: "1fr 2fr" }} gap={2}>
@@ -311,7 +311,7 @@ function BankAccountMaster() {
                             rowIdKey="ENTRYNO"
                             highlightRowId={highlightedId}
                             emptyText="No bank accounts found..."
-                            bodyBg={theme.colors.primary}
+                            bodyBg={theme.colors.bg}
                             headerBg="blue.800"
                             headerColor="white"
                             renderRow={(account) => (

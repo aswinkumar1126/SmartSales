@@ -251,14 +251,14 @@ export default function UserRoleMaster() {
 
     if (loading) {
         return (
-            <Box display="flex" justifyContent="center" alignItems="center" minH="100vh" bg={theme.colors.primary}>
+            <Box display="flex" justifyContent="center" alignItems="center" minH="100vh" bg={theme.colors.bg}>
                 <Spinner size="xl" color={theme.colors.accient} />
             </Box>
         );
     }
 
     return (
-        <Box fontWeight="semibold" bg={theme.colors.primary} color={theme.colors.secondary}>
+        <Box fontWeight="semibold" bg={theme.colors.bg} color={theme.colors.secondary}>
             <Toaster />
             <Grid templateColumns={{ base: "1fr", lg: "1fr 2.5fr" }} gap={2}>
 
@@ -347,7 +347,7 @@ export default function UserRoleMaster() {
                             headerBg="blue.800"
                             headerColor="white"
                             borderColor="white"
-                            bodyBg={theme.colors.primary}
+                            bodyBg={theme.colors.bg}
                             highlightRowId={highlightedId}
                             rowIdKey="USERID"
                             emptyText="No user role assignments available"

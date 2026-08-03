@@ -130,7 +130,7 @@ const ChildCountBadge = ({
         fontWeight="700"
         letterSpacing="0.02em"
         bg={isActive ? primaryColor : "rgba(120,120,140,0.15)"}
-        color={isActive ? "white" : "gray.500"}
+        color={isActive ? "white" : "rgba(234,217,196,0.7)"}
         transition="all 0.2s ease"
         flexShrink={0}
     >
@@ -277,17 +277,17 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
                         w={10}
                         h={10}
                         borderRadius="xl"
-                        bg="gray.100"
+                        bg="rgba(255,255,255,0.08)"
                         display="flex"
                         alignItems="center"
                         justifyContent="center"
                     >
-                        <Icon as={Search} boxSize={4} color="gray.300" />
+                        <Icon as={Search} boxSize={4} color={`${theme.colors.sideBarFont}70`} />
                     </Box>
-                    <Text color="gray.400" fontSize="sm" fontWeight="500">
+                    <Text color={`${theme.colors.sideBarFont}90`} fontSize="sm" fontWeight="500">
                         No results for "{searchQuery}"
                     </Text>
-                    <Text color="gray.300" fontSize="xs">
+                    <Text color={`${theme.colors.sideBarFont}70`} fontSize="xs">
                         Try a different keyword
                     </Text>
                 </VStack>
@@ -303,7 +303,7 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
                     fontWeight="700"
                     textTransform="uppercase"
                     letterSpacing="0.1em"
-                    color="gray.400"
+                    color={`${theme.colors.sideBarFont}90`}
                 >
                     {flatSearchResults.length} result{flatSearchResults.length !== 1 ? "s" : ""}
                 </Text>
@@ -323,14 +323,14 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
                             gap={3}
                             cursor="pointer"
                             borderRadius="lg"
-                            bg={isActive ? `${theme.colors.primary}12` : "transparent"}
+                            bg={isActive ? `${theme.colors.secondary}12` : "transparent"}
                             borderLeft="2px solid"
-                            borderLeftColor={isActive ? theme.colors.primary : "transparent"}
-                            color={isActive ? theme.colors.primary : "gray.600"}
+                            borderLeftColor={isActive ? theme.colors.secondary : "transparent"}
+                            color={isActive ? theme.colors.secondary : `${theme.colors.sideBarFont}B0`}
                             _hover={{
-                                bg: isActive ? `${theme.colors.primary}18` : "gray.50",
-                                color: theme.colors.primaryText,
-                                borderLeftColor: theme.colors.primary,
+                                bg: isActive ? `${theme.colors.secondary}18` : "rgba(255,255,255,0.08)",
+                                color: theme.colors.secondaryText,
+                                borderLeftColor: theme.colors.secondary,
                             }}
                             onClick={() => {
                                 navigate(result.route, result.meta);
@@ -349,7 +349,7 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
                                 w={7}
                                 h={7}
                                 borderRadius="md"
-                                bg={isActive ? `${theme.colors.primary}20` : "gray.100"}
+                                bg={isActive ? `${theme.colors.secondary}20` : "rgba(255,255,255,0.08)"}
                                 display="flex"
                                 alignItems="center"
                                 justifyContent="center"
@@ -374,7 +374,7 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
                                         {result.sectionLabel && (
                                             <Text
                                                 fontSize="10px"
-                                                color="gray.400"
+                                                color={`${theme.colors.sideBarFont}90`}
                                                 fontWeight="500"
                                                 textTransform="uppercase"
                                                 letterSpacing="0.05em"
@@ -385,8 +385,8 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
                                         )}
                                         {result.parentLabel && (
                                             <>
-                                                <Text fontSize="10px" color="gray.300">›</Text>
-                                                <Text fontSize="10px" color="gray.400" fontWeight="500">
+                                                <Text fontSize="10px" color={`${theme.colors.sideBarFont}70`}>›</Text>
+                                                <Text fontSize="10px" color={`${theme.colors.sideBarFont}90`} fontWeight="500">
                                                     {result.parentLabel}
                                                 </Text>
                                             </>
@@ -404,7 +404,7 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
                                         exit={{ opacity: 0, x: -4 }}
                                         transition={{ duration: 0.12 } as any}
                                     >
-                                        <Icon as={ArrowRight} boxSize={3.5} color="gray.400" />
+                                        <Icon as={ArrowRight} boxSize={3.5} color={`${theme.colors.sideBarFont}90`} />
                                     </MotionBox>
                                 )}
                             </AnimatePresence>
@@ -435,14 +435,14 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
                         gap={3}
                         cursor="pointer"
                         borderRadius="lg"
-                        bg={isActive ? `${theme.colors.primary}12` : "transparent"}
+                        bg={isActive ? `${theme.colors.secondary}12` : "transparent"}
                         borderLeft="2px solid"
-                        borderLeftColor={isActive ? theme.colors.primary : "transparent"}
-                        color={isActive ? theme.colors.primary : "gray.500"}
+                        borderLeftColor={isActive ? theme.colors.secondary : "transparent"}
+                        color={isActive ? theme.colors.secondary : `${theme.colors.sideBarFont}99`}
                         _hover={{
-                            bg: isActive ? `${theme.colors.primary}18` : "gray.50",
-                            borderLeftColor: theme.colors.primary,
-                            color: theme.colors.primaryText,
+                            bg: isActive ? `${theme.colors.secondary}18` : "rgba(255,255,255,0.08)",
+                            borderLeftColor: theme.colors.secondary,
+                            color: theme.colors.secondaryText,
                         }}
                         onClick={() => navigate(item.route, item)}
                         whileHover={{ x: 2 }}
@@ -455,7 +455,7 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
                             w={isExpanded ? 7 : 8}
                             h={isExpanded ? 7 : 8}
                             borderRadius={isExpanded ? "md" : "lg"}
-                            bg={isActive ? `${theme.colors.primary}20` : "transparent"}
+                            bg={isActive ? `${theme.colors.secondary}20` : "transparent"}
                             display="flex"
                             alignItems="center"
                             justifyContent="center"
@@ -473,7 +473,7 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
                 </Tooltip>
             );
         },
-        [pathname, isExpanded, navigate, theme.colors.primary]
+        [pathname, isExpanded, navigate, theme.colors.secondary]
     );
 
     // ── Parent item renderer ───────────────────────────────────────────────────
@@ -499,14 +499,14 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
                             gap={3}
                             cursor="pointer"
                             borderRadius="lg"
-                            bg={hasActive ? `${theme.colors.primary}12` : "transparent"}
+                            bg={hasActive ? `${theme.colors.secondary}12` : "transparent"}
                             borderLeft="2px solid"
-                            borderLeftColor={hasActive ? theme.colors.primary : "transparent"}
-                            color={hasActive ? theme.colors.primary : "gray.500"}
+                            borderLeftColor={hasActive ? theme.colors.secondary : "transparent"}
+                            color={hasActive ? theme.colors.secondary : `${theme.colors.sideBarFont}99`}
                             _hover={{
-                                bg: hasActive ? `${theme.colors.primary}18` : "gray.50",
-                                borderLeftColor: theme.colors.primary,
-                                color: theme.colors.primaryText,
+                                bg: hasActive ? `${theme.colors.secondary}18` : "rgba(255,255,255,0.08)",
+                                borderLeftColor: theme.colors.secondary,
+                                color: theme.colors.secondaryText,
                             }}
                             onClick={() => isExpanded && toggleNode(nodeId)}
                             whileHover={{ x: 2 }}
@@ -519,7 +519,7 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
                                 w={isExpanded ? 7 : 8}
                                 h={isExpanded ? 7 : 8}
                                 borderRadius={isExpanded ? "md" : "lg"}
-                                bg={hasActive ? `${theme.colors.primary}20` : "transparent"}
+                                bg={hasActive ? `${theme.colors.secondary}20` : "transparent"}
                                 display="flex"
                                 alignItems="center"
                                 justifyContent="center"
@@ -544,7 +544,7 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
                                     <ChildCountBadge
                                         count={childCount}
                                         isActive={hasActive || isNodeOpen}
-                                        primaryColor={theme.colors.primary}
+                                        primaryColor={theme.colors.secondary}
                                     />
 
                                     <Icon
@@ -552,7 +552,7 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
                                         boxSize={3}
                                         transform={isNodeOpen ? "rotate(0deg)" : "rotate(-90deg)"}
                                         transition="transform 0.22s ease"
-                                        color={hasActive ? theme.colors.primary : "gray.400"}
+                                        color={hasActive ? theme.colors.secondary : `${theme.colors.sideBarFont}90`}
                                         ml={-1}
                                     />
                                 </>
@@ -569,7 +569,7 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
                                 gap={0.5}
                                 ml={6}
                                 borderLeft="1.5px solid"
-                                borderColor="gray.150"
+                                borderColor={`${theme.colors.secondary}20`}
                                 variants={expandVariants}
                                 initial="hidden"
                                 animate="visible"
@@ -587,11 +587,11 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
                                             gap={2.5}
                                             cursor="pointer"
                                             borderRadius="md"
-                                            bg={isChildActive ? `${theme.colors.primary}10` : "transparent"}
-                                            color={isChildActive ? theme.colors.primary : "gray.400"}
+                                            bg={isChildActive ? `${theme.colors.secondary}10` : "transparent"}
+                                            color={isChildActive ? theme.colors.secondary : `${theme.colors.sideBarFont}90`}
                                             _hover={{
-                                                bg: "gray.50",
-                                                color: theme.colors.primaryText,
+                                                bg: "rgba(255,255,255,0.08)",
+                                                color: theme.colors.secondaryText,
                                             }}
                                             onClick={() => navigate(child.route, child)}
                                             whileHover={{ x: 2 }}
@@ -604,7 +604,7 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
                                                 w={1.5}
                                                 h={1.5}
                                                 borderRadius="full"
-                                                bg={isChildActive ? theme.colors.primary : "gray.300"}
+                                                bg={isChildActive ? theme.colors.secondary : `${theme.colors.sideBarFont}70`}
                                                 flexShrink={0}
                                                 transition="all 0.15s ease"
                                             />
@@ -612,7 +612,7 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
                                                 w={6}
                                                 h={6}
                                                 borderRadius="md"
-                                                bg={isChildActive ? `${theme.colors.primary}15` : "transparent"}
+                                                bg={isChildActive ? `${theme.colors.secondary}15` : "transparent"}
                                                 display="flex"
                                                 alignItems="center"
                                                 justifyContent="center"
@@ -666,14 +666,14 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
                             gap={3}
                             cursor="pointer"
                             borderRadius="lg"
-                            bg={isActive ? `${theme.colors.primary}12` : "transparent"}
+                            bg={isActive ? `${theme.colors.secondary}12` : "transparent"}
                             borderLeft="2px solid"
-                            borderLeftColor={isActive ? theme.colors.primary : "transparent"}
-                            color={isActive ? theme.colors.primary : "gray.500"}
+                            borderLeftColor={isActive ? theme.colors.secondary : "transparent"}
+                            color={isActive ? theme.colors.secondary : `${theme.colors.sideBarFont}99`}
                             _hover={{
-                                bg: isActive ? `${theme.colors.primary}18` : "gray.50",
-                                borderLeftColor: theme.colors.primary,
-                                color: theme.colors.primaryText,
+                                bg: isActive ? `${theme.colors.secondary}18` : "rgba(255,255,255,0.08)",
+                                borderLeftColor: theme.colors.secondary,
+                                color: theme.colors.secondaryText,
                             }}
                             onClick={() => navigate(item.route, item)}
                             whileHover={{ x: 2 }}
@@ -686,7 +686,7 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
                                 w={isExpanded ? 7 : 8}
                                 h={isExpanded ? 7 : 8}
                                 borderRadius={isExpanded ? "md" : "lg"}
-                                bg={isActive ? `${theme.colors.primary}20` : "transparent"}
+                                bg={isActive ? `${theme.colors.secondary}20` : "transparent"}
                                 display="flex"
                                 alignItems="center"
                                 justifyContent="center"
@@ -737,11 +737,11 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
                                 cursor="pointer"
                                 borderRadius="lg"
                                 justify={isExpanded ? "space-between" : "center"}
-                                bg={groupIsActive ? `${theme.colors.primary}10` : "transparent"}
-                                color={groupIsActive ? theme.colors.primary : "gray.500"}
+                                bg={groupIsActive ? `${theme.colors.secondary}10` : "transparent"}
+                                color={groupIsActive ? theme.colors.secondary : `${theme.colors.sideBarFont}99`}
                                 _hover={{
-                                    bg: "gray.50",
-                                    color: theme.colors.primaryText,
+                                    bg: "rgba(255,255,255,0.08)",
+                                    color: theme.colors.secondaryText,
                                 }}
                                 onClick={() => isExpanded && toggleNode(groupNodeId)}
                                 whileHover={{ x: 2 }}
@@ -754,7 +754,7 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
                                         w={isExpanded ? 7 : 8}
                                         h={isExpanded ? 7 : 8}
                                         borderRadius={isExpanded ? "md" : "lg"}
-                                        bg={groupIsActive ? `${theme.colors.primary}20` : "gray.100"}
+                                        bg={groupIsActive ? `${theme.colors.secondary}20` : "rgba(255,255,255,0.08)"}
                                         display="flex"
                                         alignItems="center"
                                         justifyContent="center"
@@ -776,14 +776,14 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
                                         <ChildCountBadge
                                             count={totalItems}
                                             isActive={groupIsActive || isGroupOpen}
-                                            primaryColor={theme.colors.primary}
+                                            primaryColor={theme.colors.secondary}
                                         />
                                         <Icon
                                             as={ChevronDown}
                                             boxSize={3}
                                             transform={isGroupOpen ? "rotate(0deg)" : "rotate(-90deg)"}
                                             transition="transform 0.22s ease"
-                                            color={groupIsActive ? theme.colors.primary : "gray.400"}
+                                            color={groupIsActive ? theme.colors.secondary : `${theme.colors.sideBarFont}90`}
                                         />
                                     </HStack>
                                 )}
@@ -823,13 +823,13 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
             w={sidebarWidth}
             onMouseEnter={() => isDesktop && setIsHovered(true)}
             onMouseLeave={() => isDesktop && setIsHovered(false)}
-            bg={theme.colors.sideBar}
+            bg={`linear-gradient(180deg, ${theme.colors.sideBarFrom} 0%, ${theme.colors.sideBarTo} 100%)`}
             h="100%"
             borderRight="1px solid"
-            borderColor="rgba(0,0,0,0.07)"
+            borderColor={`${theme.colors.secondary}25`}
             overflow="hidden"
             position="relative"
-            boxShadow="4px 0 24px rgba(0,0,0,0.06)"
+            boxShadow="4px 0 24px rgba(0,0,0,0.18)"
             initial={false}
             animate={{ width: sidebarWidth }}
             transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] } as any}
@@ -837,8 +837,8 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
             {/* ── Header ── */}
             <Box
                 borderBottom="1px solid"
-                borderColor="rgba(0,0,0,0.07)"
-                bg={theme.colors.sideBar}
+                borderColor={`${theme.colors.secondary}25`}
+                bg="transparent"
                 backdropFilter="blur(12px)"
                 zIndex={10}
             >
@@ -855,13 +855,14 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
                                     w={8}
                                     h={8}
                                     borderRadius="lg"
-                                    bg={`${theme.colors.primary}20`}
+                                    bg={theme.colors.secondary}
+                                    boxShadow={`0 2px 8px ${theme.colors.secondary}55`}
                                     display="flex"
                                     alignItems="center"
                                     justifyContent="center"
                                     flexShrink={0}
                                 >
-                                    <Icon as={LayoutDashboard} boxSize={4.5} color={theme.colors.primary} />
+                                    <Icon as={LayoutDashboard} boxSize={4.5} color={theme.colors.sideBarTo} />
                                 </Box>
                                 <Text
                                     fontSize="sm"
@@ -883,7 +884,7 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
                                         alignItems="center"
                                         justifyContent="center"
                                         cursor="pointer"
-                                        bg={showSearch ? `${theme.colors.primary}20` : "transparent"}
+                                        bg={showSearch ? `${theme.colors.secondary}20` : "transparent"}
                                         _hover={{ bg: "rgba(255,255,255,0.1)" }}
                                         onClick={() => setShowSearch((s) => !s)}
                                         transition="all 0.15s ease"
@@ -891,7 +892,7 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
                                         <Icon
                                             as={showSearch ? X : Search}
                                             boxSize={3.5}
-                                            color={showSearch ? theme.colors.primary : "gray.300"}
+                                            color={showSearch ? theme.colors.secondary : `${theme.colors.sideBarFont}70`}
                                         />
                                     </Box>
                                 </Tooltip>
@@ -915,7 +916,7 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
                                             <Icon
                                                 as={sidebarCollapsed ? ChevronsRight : ChevronsLeft}
                                                 boxSize={3.5}
-                                                color="gray.300"
+                                                color={`${theme.colors.sideBarFont}70`}
                                             />
                                         </Box>
                                     </Tooltip>
@@ -927,12 +928,13 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
                             w={8}
                             h={8}
                             borderRadius="lg"
-                            bg={`${theme.colors.primary}20`}
+                            bg={theme.colors.secondary}
+                            boxShadow={`0 2px 8px ${theme.colors.secondary}55`}
                             display="flex"
                             alignItems="center"
                             justifyContent="center"
                         >
-                            <Icon as={LayoutDashboard} boxSize={4.5} color={theme.colors.primary} />
+                            <Icon as={LayoutDashboard} boxSize={4.5} color={theme.colors.sideBarTo} />
                         </Box>
                     )}
                 </HStack>
@@ -956,12 +958,12 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
                                 px={3}
                                 gap={2}
                                 _focusWithin={{
-                                    borderColor: theme.colors.primary,
+                                    borderColor: theme.colors.secondary,
                                     bg: "rgba(255,255,255,0.12)",
                                 }}
                                 transition="all 0.15s ease"
                             >
-                                <Icon as={Search} boxSize={3.5} color="gray.400" flexShrink={0} />
+                                <Icon as={Search} boxSize={3.5} color={`${theme.colors.sideBarFont}90`} flexShrink={0} />
                                 <input
                                     autoFocus
                                     type="text"
@@ -984,7 +986,7 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
                                         onClick={() => setSearchQuery("")}
                                         flexShrink={0}
                                     >
-                                        <Icon as={X} boxSize={3.5} color="gray.400" />
+                                        <Icon as={X} boxSize={3.5} color={`${theme.colors.sideBarFont}90`} />
                                     </Box>
                                 )}
                             </HStack>
@@ -1044,11 +1046,11 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
                                                     justify="space-between"
                                                     color={
                                                         isSectionOpen
-                                                            ? theme.colors.primary
-                                                            : theme.colors.sideBarFont ?? "gray.400"
+                                                            ? theme.colors.secondary
+                                                            : theme.colors.sideBarFont ?? `${theme.colors.sideBarFont}90`
                                                     }
-                                                    bg={isSectionOpen ? `${theme.colors.primary}10` : "transparent"}
-                                                    _hover={{ bg: "rgba(255,255,255,0.06)", color: theme.colors.primary }}
+                                                    bg={isSectionOpen ? `${theme.colors.secondary}10` : "transparent"}
+                                                    _hover={{ bg: "rgba(255,255,255,0.06)", color: theme.colors.secondary }}
                                                     onClick={() => setCurrentSection(sectionKey)}
                                                     transition="all 0.15s ease"
                                                 >
@@ -1106,8 +1108,8 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
                 left={0}
                 right={0}
                 borderTop="1px solid"
-                borderColor="rgba(0,0,0,0.07)"
-                bg={theme.colors.sideBar}
+                borderColor={`${theme.colors.secondary}25`}
+                bg={`linear-gradient(0deg, ${theme.colors.sideBarTo} 0%, ${theme.colors.sideBarTo}00 100%)`}
                 backdropFilter="blur(12px)"
                 p={3}
             >
@@ -1117,7 +1119,7 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
                         cursor="pointer"
                         p={2}
                         borderRadius="lg"
-                        color={theme.colors.sideBarFont ?? "gray.400"}
+                        color={theme.colors.sideBarFont ?? `${theme.colors.sideBarFont}90`}
                         _hover={{ bg: "rgba(255,255,255,0.08)", color: theme.colors.whiteColor }}
                         whileHover={{ x: 2 }}
                         whileTap={{ scale: 0.98 }}
@@ -1132,17 +1134,17 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
                                 w={8}
                                 h={8}
                                 borderRadius="full"
-                                bg={`${theme.colors.primary}30`}
+                                bg={`${theme.colors.secondary}30`}
                                 display="flex"
                                 alignItems="center"
                                 justifyContent="center"
                                 border="1.5px solid"
-                                borderColor={`${theme.colors.primary}40`}
+                                borderColor={`${theme.colors.secondary}40`}
                             >
                                 <Icon
                                     as={UserCircle}
                                     boxSize={5}
-                                    color={theme.colors.primary}
+                                    color={theme.colors.secondary}
                                 />
                             </Box>
                             <Box
@@ -1168,7 +1170,7 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
                                 >
                                     {user?.USERNAME ?? "Admin"}
                                 </Text>
-                                {/* <Text fontSize="10px" color="gray.500" >
+                                {/* <Text fontSize="10px" color=`${theme.colors.sideBarFont}99` >
                                     {user?.EMAIL ?? "Online"}
                                 </Text> */}
                             </Box>

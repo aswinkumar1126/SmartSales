@@ -41,10 +41,10 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
     useEffect(() => {
         const root = document.documentElement;
 
-        root.style.setProperty("--table-border", theme.colors.accient);
+        root.style.setProperty("--table-border", theme.colors.secondary);
         root.style.setProperty("--table-header-bg", theme.colors.accient);
         root.style.setProperty("--table-header-text", theme.colors.whiteColor);
-        root.style.setProperty("--table-body-bg", theme.colors.primary);
+        root.style.setProperty("--table-body-bg", theme.colors.bg);
         root.style.setProperty("--table-body-text", theme.colors.primaryText);
         root.style.setProperty("--table-striped-bg", mode === "dark" ? "#1f2937" : "#f9fafb");
         root.style.setProperty("--table-hover-bg", mode === "dark" ? "#111827" : "#f3f4f6");
@@ -54,7 +54,7 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
         <ThemeContext.Provider value={{ theme, mode, toggleTheme }}>
             <div
                 style={{
-                    backgroundColor: theme.colors.primary,
+                    backgroundColor: theme.colors.bg,
                     color: theme.colors.primaryText,
                     minHeight: "100vh",
                 }}

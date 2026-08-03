@@ -394,7 +394,7 @@ const OtherCharges = () => {
                         rowIdKey="sno"
                         highlightRowId={highlightRowId}
                         emptyText="No data available"
-                        bodyBg={theme.colors.primary}
+                        bodyBg={theme.colors.bg}
                         headerBg="blue.800"
                         headerColor="white"
                         renderRow={(row, i) => (

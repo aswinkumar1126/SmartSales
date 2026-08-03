@@ -616,7 +616,7 @@ function AccountHeadMaster() {
     return (
         <Box
             fontWeight='500'
-            bg={theme.colors.primary}
+            bg={theme.colors.bg}
             color={theme.colors.secondary}
 
         >
@@ -721,7 +721,7 @@ function AccountHeadMaster() {
                             headerBg="blue.800"
                             headerColor="white"
                             borderColor="white"
-                            bodyBg={theme.colors.primary}
+                            bodyBg={theme.colors.bg}
                             highlightRowId={highlightedId ? Number(highlightedId) : null}
                             rowIdKey="ACCODE"
                             onRowClick={(row) => handleEdit(row)}

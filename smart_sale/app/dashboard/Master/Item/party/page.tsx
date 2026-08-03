@@ -251,7 +251,7 @@ function PartyMaster() {
         <Box
             className={fontVariables}
             fontFamily="var(--font-lustria)"
-            bg={theme.colors.primary}
+            bg={theme.colors.bg}
             color={theme.colors.secondary}
         >
             <Toaster />
@@ -445,7 +445,7 @@ function PartyMaster() {
                             data={partyData}
                             size="sm"
                             headerBg='blue.800'
-                            bodyBg={theme.colors.primary}
+                            bodyBg={theme.colors.bg}
                             headerColor='white'
                             emptyText="No parties available"
                             rowIdKey="sno"

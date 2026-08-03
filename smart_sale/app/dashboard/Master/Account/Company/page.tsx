@@ -284,7 +284,7 @@ function CompanyMaster() {
     useGlobalKey("Alt+u",()=>handleSave(),"updateform");
     /* -------------------- UI -------------------- */
     return (
-        <Box fontWeight="semibold" bg={theme.colors.primary} color={theme.colors.secondary}>
+        <Box fontWeight="semibold" bg={theme.colors.bg} color={theme.colors.secondary}>
             <TransactionLoader
                 isOpen={isOpen}
                 status={status}
@@ -365,7 +365,7 @@ function CompanyMaster() {
                             headerBg="blue.800"
                             headerColor="white"
                             borderColor="white"
-                            bodyBg={theme.colors.primary}
+                            bodyBg={theme.colors.bg}
                             highlightRowId={highlightedId ? Number(highlightedId) : null}
                             rowIdKey="COMPANYID"
                             emptyText="No companies available"

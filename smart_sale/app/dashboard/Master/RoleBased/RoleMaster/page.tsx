@@ -223,7 +223,7 @@ const handleChange = (field: keyof RolePayload, value: any) => {
                 justifyContent="center"
                 alignItems="center"
                 minH="100vh"
-                bg={theme.colors.primary}
+                bg={theme.colors.bg}
             >
                 <Spinner size="xl" color={theme.colors.accient} />
             </Box>
@@ -233,7 +233,7 @@ const handleChange = (field: keyof RolePayload, value: any) => {
     return (
         <Box
             fontWeight="semibold"
-            bg={theme.colors.primary}
+            bg={theme.colors.bg}
             color={theme.colors.secondary}  
         >
             <Toaster />
@@ -371,7 +371,7 @@ const handleChange = (field: keyof RolePayload, value: any) => {
                             headerBg="blue.800"
                             headerColor="white"
                             borderColor="white"
-                            bodyBg={theme.colors.primary}
+                            bodyBg={theme.colors.bg}
                             highlightRowId={highlightedId?.toString()}
                             rowIdKey="ROLEID"
                             emptyText="No roles available"

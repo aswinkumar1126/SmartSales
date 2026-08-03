@@ -788,7 +788,7 @@ useGlobalKey(        "Alt+e",
                         )}
                         emptyText="No data available"
                         bodyBg={
-                            theme.colors.primary
+                            theme.colors.bg
                         }
                         size="sm"
                         headerBg="blue.800"

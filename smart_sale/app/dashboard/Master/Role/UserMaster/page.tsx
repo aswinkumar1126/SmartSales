@@ -263,7 +263,7 @@ export default function UserMasters() {
     return (
         <Box
             fontWeight='semibold'
-            bg={theme.colors.primary}
+            bg={theme.colors.bg}
             color={theme.colors.secondary}
         >
             <TransactionLoader
@@ -479,7 +479,7 @@ export default function UserMasters() {
                                 data={users}
                                 size="sm"
                                 headerBg='blue.800'
-                                bodyBg={theme.colors.primary}
+                                bodyBg={theme.colors.bg}
                                 headerColor='white'
                                 emptyText="No parties available"
                                 rowIdKey="userId"

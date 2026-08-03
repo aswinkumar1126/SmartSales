@@ -501,7 +501,7 @@ export default function ItemMasterPage() {
                             data={items}
                             headerBg="blue.800"
                             headerColor="white"
-                            bodyBg={theme.colors.primary}
+                            bodyBg={theme.colors.bg}
                             borderColor="#eee"
                             emptyText="No items available"
                             size="sm"

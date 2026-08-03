@@ -296,7 +296,7 @@ function ExpenseMaster() {
                         rowIdKey="expId"
                         highlightRowId={highlightRowId}
                         emptyText="No data available"
-                        bodyBg={theme.colors.primary}
+                        bodyBg={theme.colors.bg}
                         headerBg={theme.colors.accient}
                         headerColor="white"
                         renderRow={(row, i) => (

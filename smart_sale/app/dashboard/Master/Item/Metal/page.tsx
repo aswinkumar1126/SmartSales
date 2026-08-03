@@ -280,7 +280,7 @@ function MetalMaster() {
     return (
         <Box
             className={fontVariables}
-            bg={theme.colors.primary}
+            bg={theme.colors.bg}
             color={theme.colors.secondary}
             fontWeight='semibold'
         >
@@ -388,7 +388,7 @@ function MetalMaster() {
                                 data={metals}
                                 size="sm"
                                 headerBg='blue.800'
-                                bodyBg={theme.colors.primary}
+                                bodyBg={theme.colors.bg}
                                 headerColor='white'
                                 rowIdKey="sno"
                                 highlightRowId={highlightId ? Number(highlightId) : null}

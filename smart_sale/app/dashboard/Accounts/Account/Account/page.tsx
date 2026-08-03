@@ -300,7 +300,7 @@ function AccountMaster() {
         <Box
             className={fontVariables}
             fontFamily="var(--font-lustria)"
-            bg={theme.colors.primary}
+            bg={theme.colors.bg}
             color={theme.colors.secondary}
 
         >
@@ -529,7 +529,7 @@ function AccountMaster() {
                             headerBg="blue.800"
                             headerColor="white"
                             borderColor="white"
-                            bodyBg={theme.colors.primary}
+                            bodyBg={theme.colors.bg}
                             highlightRowId={highlightedId ? Number(highlightedId) : null}
                             rowIdKey="COMPANYID"
 

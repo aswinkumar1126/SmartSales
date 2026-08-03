@@ -8,8 +8,10 @@ export type FontTokens = {
 };
 
 export type ColorTokens = {
-    primary: string;               // white
-    secondary: string;             // black
+    primary: string;               // brand maroon #80004D
+    secondary: string;             // brand gold #D4AF37
+    bg: string;                    // page background #FFF2D8
+    inverseText: string;           // text on dark/colored surfaces #FFF
     primaryText: string;           // #222
     secondaryText: string;         // #444
     red: string;
@@ -19,8 +21,10 @@ export type ColorTokens = {
     accient:string;
     formColor:string;
     whiteColor:string;
-    greyColor:string; 
+    greyColor:string;
     sideBar:string;
+    sideBarFrom:string;
+    sideBarTo:string;
     sideBarFont:string;
 };
 
@@ -56,21 +60,25 @@ export const designTokens: DesignTokens = {
     },
 
     colors: {
-        primary: "#FBFBFB",
-        secondary: "#000000",
+        primary: "#80004D",
+        secondary: "#D4AF37",
+        bg: "#FFF2D8",
+        inverseText: "#FFFFFF",
         primaryText: "#222222",
-        secondaryText: "#444444",
+        secondaryText: "#5C4A3D",
         red: "#771717",
         green: "#104d26",
         blue: "#3B82F6",
         yellow: "#EAB308",
-        accient:"#05204bff",
+        accient:"#FFF2D8",
         formColor:'#FFF',
         whiteColor: '#FFF',
         greyColor:'#F5F5F5',
-        sideBar:'#222D32',
-        sideBarFont: '#afc0cb'
-        
+        sideBar:'#5A0038',
+        sideBarFrom:'#80004D',
+        sideBarTo:'#4A0029',
+        sideBarFont: '#EAD9C4'
+
     },
 
     fontSizes: {
@@ -91,19 +99,20 @@ export const lightTheme: DesignTokens = {
     ...designTokens,
     colors: {
         ...designTokens.colors,
-        primary: "#EEEEEE",
-        secondary: "#000000",
-        primaryText: "#222",
-
-        secondaryText: "#444444",
-        accient:"#1868b2",
-        formColor:'#FFF',
-        whiteColor:'#FFF',
-        greyColor:'#F5F5F5',
-        sideBar:'#222D32',
-        sideBarFont:'#afc0cb'
-    
-
+        primary: "#80004D",
+        secondary: "#D4AF37",
+        bg: "#FFF2D8",
+        inverseText: "#FFFFFF",
+        primaryText: "#222222",
+        secondaryText: "#5C4A3D",
+        accient: "#FFF2D8",
+        formColor: '#FFF',
+        whiteColor: '#FFF',
+        greyColor: '#F5F5F5',
+        sideBar: '#5A0038',
+        sideBarFrom: '#80004D',
+        sideBarTo: '#4A0029',
+        sideBarFont: '#EAD9C4',
     },
 };
 
@@ -111,17 +120,20 @@ export const darkTheme: DesignTokens = {
     ...designTokens,
     colors: {
         ...designTokens.colors,
-        primary: "#111",
-        secondary: "#FFFFFF",
-        primaryText: "#E5E7EB",
-        secondaryText: "#9CA3AF",
-        accient:"#001958ff",
-        formColor: '#222',
+        primary: "#D4AF37",
+        secondary: "#80004D",
+        bg: "#1B1210",
+        inverseText: "#FFFFFF",
+        primaryText: "#F1E4D0",
+        secondaryText: "#C9B79C",
+        accient: "#3A001F",
+        formColor: '#2A1B22',
         whiteColor: '#FFF',
-        greyColor:'#222',
-        sideBar: '#1A2226',
-        sideBarFont: '#FFFFFF'
-
+        greyColor: '#2A1B22',
+        sideBar: '#2E0019',
+        sideBarFrom: '#3A0021',
+        sideBarTo: '#1B0010',
+        sideBarFont: '#EAD9C4',
     },
 };
 

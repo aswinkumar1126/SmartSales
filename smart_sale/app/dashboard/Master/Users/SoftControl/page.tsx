@@ -230,7 +230,7 @@ function SoftControlMaster() {
   useGlobalKey("Alt+u", () => handleSave(), "update");
   /* -------------------- UI -------------------- */
   return (
-    <Box fontWeight="semibold" bg={theme.colors.primary} color={theme.colors.secondary}>
+    <Box fontWeight="semibold" bg={theme.colors.bg} color={theme.colors.secondary}>
 
       <TransactionLoader
         isOpen={isOpen}
@@ -311,7 +311,7 @@ function SoftControlMaster() {
               headerBg="blue.800"
               headerColor="white"
               borderColor="white"
-              bodyBg={theme.colors.primary}
+              bodyBg={theme.colors.bg}
               highlightRowId={highlightedId ?? null}
               rowIdKey="CTLID"
               emptyText="No SoftControl available"

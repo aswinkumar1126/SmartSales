@@ -749,7 +749,7 @@ const HmcMappingForm = () => {
                             </>
                         )}
                         emptyText="No data available"
-                        bodyBg={theme.colors.primary}
+                        bodyBg={theme.colors.bg}
                         size="sm"
                         headerBg="blue.800"
                         headerColor="white"

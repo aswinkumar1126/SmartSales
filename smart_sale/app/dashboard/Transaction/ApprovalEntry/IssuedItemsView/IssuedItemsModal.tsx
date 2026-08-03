@@ -117,7 +117,7 @@ export default function SalesBillViewModal({
             <Portal>
                 <Dialog.Backdrop />
                 <Dialog.Positioner>
-                    <Dialog.Content minW={'80vw'} bg={theme.colors.primary}>
+                    <Dialog.Content minW={'80vw'} bg={theme.colors.bg}>
                         <Dialog.Header display={'flex'} alignItems={'center'} justifyContent={'center'} p={2}>
                             <Dialog.Title fontSize={'md'}>APPROVAL ISSUE VIEW</Dialog.Title>
                         </Dialog.Header>

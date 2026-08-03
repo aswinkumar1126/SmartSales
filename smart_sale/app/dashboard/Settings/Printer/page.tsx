@@ -223,7 +223,7 @@ function PrinterSetting() {
     useGlobalKey("Alt+u", () => handleSave(), "update");
     /* -------------------- RENDER -------------------- */
     return (
-        <Box fontWeight="semibold" bg={theme.colors.primary} color={theme.colors.secondary}>
+        <Box fontWeight="semibold" bg={theme.colors.bg} color={theme.colors.secondary}>
             <Toaster />
 
             <TransactionLoader
@@ -331,7 +331,7 @@ function PrinterSetting() {
                                 headerBg="blue.800"
                                 headerColor="white"
                                 borderColor="white"
-                                bodyBg={theme.colors.primary}
+                                bodyBg={theme.colors.bg}
                                 highlightRowId={highlightedId ? Number(highlightedId) : null}
                                 rowIdKey="id"
                                 emptyText="No printers available"
