@@ -37,21 +37,21 @@ export const usePurchaseOpeningBalances = (
 
             switch (type) {
                 case "purchase":
-                    openPure += pureWt;
-                    openCash += cash;
-                    break;
-
-                case "purchase_return":
                     openPure -= pureWt;
                     openCash -= cash;
                     break;
 
-                case "receipt":
+                case "purchase_return":
                     openPure += pureWt;
+                    openCash += cash;
+                    break;
+
+                case "receipt":
+                    openPure -= pureWt;
                     break;
 
                 case "issue":
-                    openPure -= pureWt;
+                    openPure += pureWt;
                     break;
             }
         });

@@ -35,26 +35,26 @@ export const useClosingCalculation = (
         const type = closingDetails.CONVTYPE;
 
         let closingCash =
-            (openingBalances.openCash || 0) +
-            cashRcvd +
-            bankRcvd -
-            cashPaid -
-            bankPaid -
-            discAmt -
-            stnGstAmt -
-            mcGstAmt +
+            (openingBalances.openCash || 0) -
+            cashRcvd -
+            bankRcvd +
+            cashPaid +
+            bankPaid +
+            discAmt +
+            stnGstAmt +
+            mcGstAmt -
             tdsAmt;
 
         let closingPure = (openingBalances.openPure || 0) - discWt;
 
         if (type === "C") {
-            closingCash -= convAmt;
-            closingPure += convWt;
+            closingCash += convAmt;
+            closingPure -= convWt;
         }
 
         if (type === "P") {
-            closingCash += convAmt;
-            closingPure -= convWt;
+            closingCash -= convAmt;
+            closingPure += convWt;
         }
 
         return {
