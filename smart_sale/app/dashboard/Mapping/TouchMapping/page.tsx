@@ -69,13 +69,13 @@ export type TouchTableRow = {
     actype: string;
     itemName: string;
     touch: number;
-    calmode : string;
+    calmode: string;
 };
 
 /* ---------------- Component ---------------- */
 
 const TouchMasterForm = () => {
-    const {isOpen, status, title:loaderTitle, description, openLoader, resolveLoader, closeLoader} = useTransactionLoader();
+    const { isOpen, status, title: loaderTitle, description, openLoader, resolveLoader, closeLoader } = useTransactionLoader();
 
     const [form, setForm] = useState<TouchMaster>(initialFormState);
     const [editId, setEditId] = useState<number | null>(null);
@@ -93,8 +93,8 @@ const TouchMasterForm = () => {
     const { data: touchDatabyId, refetch: touchDataRefetch } = useTouchMasterDataById(editId);
 
     const accountType = form.actype?.trim().toUpperCase() || undefined;
-  
-    console.log(touchData,'touchData')
+
+    console.log(touchData, 'touchData')
 
     const { data: allAccounts, refetch: accountRefetch } = useAllAccountHead(accountType);
     const { data: items } = useStoneItems();
@@ -120,7 +120,7 @@ const TouchMasterForm = () => {
     }, [items]);
 
     /* ---------------- FORM CONFIG ---------------- */
-   
+
 
     const formConfig = TouchMasterFormConfig({
         collection: {
@@ -154,14 +154,14 @@ const TouchMasterForm = () => {
         setForm(initialFormState);
         setEditId(null);
         setErrors({});
-        setTimeout(()=>focusFirst(),50);
+        setTimeout(() => focusFirst(), 50);
     };
 
     /* ---------------- Sync Edit Data ---------------- */
 
     useEffect(() => {
         if (!touchDatabyId || editId === null) return;
-        console.log(touchDatabyId,'touchDatabyId')
+        console.log(touchDatabyId, 'touchDatabyId')
 
         setForm((prev) => {
             const next = {
@@ -244,7 +244,7 @@ const TouchMasterForm = () => {
         }
 
         setErrors({});
-        console.log(payload, form,'touchpayload')
+        console.log(payload, form, 'touchpayload')
 
 
         if (editId) {
@@ -259,14 +259,14 @@ const TouchMasterForm = () => {
                         resolveLoader("success", "update", "", true)
 
                     },
-                    onError :()=>{
+                    onError: () => {
                         resolveLoader("error", "update", "", true)
                     }
                 }
             );
         } else {
             openLoader('save', true)
-            console.log(payload,'payload')
+            console.log(payload, 'payload')
             createMutation.mutate(payload, {
                 onSuccess: (res: any) => {
                     const createdId = res?.data?.id;
@@ -300,30 +300,32 @@ const TouchMasterForm = () => {
         setData(touchData);
         const columns: PrintColumn[] = [
             { key: "acname", label: "Company Name" },
-            { key: "actype", label: "Company Type" , 
+            {
+                key: "actype", label: "Company Type",
                 renderCell: (value) => (
-                <Box
-                    as="span"
-                    display="inline-block"
-                    px={3}
-                    py={0.5}
-                    borderRadius="full"
-                    fontSize="xs"
-                    fontWeight={600}
-                    minW="90px"
-                    textAlign="center"
-                    bg={value === "PR" ? "orange.100" : "green.100"}
-                    color={value === "PR" ? "orange.700" : "green.700"}
-                >
-                    {value === "PR" ? "PURCHASER" : "CUSTOMER"}
-                </Box>
+                    <Box
+                        as="span"
+                        display="inline-block"
+                        px={3}
+                        py={0.5}
+                        borderRadius="full"
+                        fontSize="xs"
+                        fontWeight={600}
+                        minW="90px"
+                        textAlign="center"
+                        bg={value === "PR" ? "orange.100" : "green.100"}
+                        color={value === "PR" ? "orange.700" : "green.700"}
+                    >
+                        {value === "PR" ? "PURCHASER" : "CUSTOMER"}
+                    </Box>
                 ),
                 // exportValue → clean text for Print / Excel
-                printValue: (value) => (value === "PR" ? "PURCHASER" : "CUSTOMER") } ,
+                printValue: (value) => (value === "PR" ? "PURCHASER" : "CUSTOMER")
+            },
             { key: "itemName", label: "Item Name" },
-            { key: "touch", label: "Touch", align: "end" as const ,renderCell :(value)=> <Box fontWeight="bold">{formatToFixed(value, 2)}</Box> ,printValue :(value)=> Number(value).toFixed(2) },
+            { key: "touch", label: "Touch", align: "end" as const, renderCell: (value) => <Box fontWeight="bold">{formatToFixed(value, 2)}</Box>, printValue: (value) => Number(value).toFixed(2) },
             { key: "calmode", label: "Cal Mode", align: "center" as const },
-      
+
         ]
         setColumns(columns);
         setShowSno(true)
@@ -332,8 +334,8 @@ const TouchMasterForm = () => {
     }
 
 
-    useGlobalKey("Alt+s" , ()=>handleSubmit() , "saveTransaction");
-    useGlobalKey("Alt+r", () => resetForm() ,"Reset");
+    useGlobalKey("Alt+s", () => handleSubmit(), "saveTransaction");
+    useGlobalKey("Alt+r", () => resetForm(), "Reset");
     useGlobalKey("Alt+e", () => router.back(), "exit");
     useGlobalKey("Alt+u", () => handleSubmit(), "update");
     /* ------------ Highlight Timeout ---------------- */
@@ -344,20 +346,20 @@ const TouchMasterForm = () => {
         return () => clearTimeout(timer);
     }, [highlightRowId]);
 
-    
+
     const formFieldName = formConfig.map(field => field.name);
 
-    const { focusFirst, focusNext, register } = useEnterNavigation(formFieldName , ()=>handleSubmit());
+    const { focusFirst, focusNext, register } = useEnterNavigation(formFieldName, () => handleSubmit());
 
-    useEffect(()=>{
-        
-            focusFirst();
-        
-    }, [focusFirst]) ;
+    useEffect(() => {
+
+        focusFirst();
+
+    }, [focusFirst]);
     /* ---------------- UI ---------------- */
 
     return (
-        <Grid templateColumns={{ base: "1fr", lg: "1fr 2fr" }} gap={2}>
+        <Grid templateColumns={{ base: "1fr", lg: "1fr 2fr" }} gap={2} color={theme.colors.primary}>
             <TransactionLoader
                 isOpen={isOpen}
                 status={status}
@@ -370,7 +372,7 @@ const TouchMasterForm = () => {
 
             {/* FORM */}
             <GridItem bg={theme.colors.formColor} p={2} rounded={'xl'} gap={2}>
-                <DynamicForm 
+                <DynamicForm
                     formData={form}
                     onChange={handleChange}
                     register={register}
@@ -382,16 +384,16 @@ const TouchMasterForm = () => {
 
                 />
                 <Box mt={2}>
-                <Flex justify={'center'} gap={2}>
-                  
-                    <Button
-                        size="xs"   
-                        colorPalette={'blue'}
-                        onClick={()=>handleSubmit()}
-                       
-                    >
-                           <AiOutlineSave /> {editId ? "Update" : "Save"}
-                    </Button>
+                    <Flex justify={'center'} gap={2}>
+
+                        <Button
+                            size="xs"
+                            colorPalette={'blue'}
+                            onClick={() => handleSubmit()}
+
+                        >
+                            <AiOutlineSave /> {editId ? "Update" : "Save"}
+                        </Button>
                         <Button
 
                             size="xs"
@@ -404,7 +406,7 @@ const TouchMasterForm = () => {
                         <Button size="xs" colorPalette="blue" onClick={() => router.back()}>
                             <IoIosExit /> Exit
                         </Button>
-                </Flex>
+                    </Flex>
                 </Box>
             </GridItem>
 
@@ -482,7 +484,7 @@ const TouchMasterForm = () => {
                         emptyText="No data available"
                         bodyBg={theme.colors.bg}
                         size="sm"
-                        headerBg="blue.800"
+                        headerBg={theme.colors.primary}
                         headerColor="white"
                         rowIdKey="sno"
                         highlightRowId={highlightRowId}

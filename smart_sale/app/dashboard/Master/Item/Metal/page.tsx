@@ -281,7 +281,7 @@ function MetalMaster() {
         <Box
             className={fontVariables}
             bg={theme.colors.bg}
-            color={theme.colors.secondary}
+            color={theme.colors.primary}
             fontWeight='semibold'
         >
             <TransactionLoader
@@ -387,7 +387,7 @@ function MetalMaster() {
                                 columns={metalColumns}
                                 data={metals}
                                 size="sm"
-                                headerBg='blue.800'
+                                headerBg={theme.colors.primary}
                                 bodyBg={theme.colors.bg}
                                 headerColor='white'
                                 rowIdKey="sno"

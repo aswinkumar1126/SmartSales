@@ -75,7 +75,7 @@ export default function StockDrawer({
     getStockAvailability
 }: StockDrawerProps) {
 
-    console.log(stockData,'stockData')
+    console.log(stockData, 'stockData')
 
     const { theme } = useTheme();
 
@@ -133,11 +133,11 @@ export default function StockDrawer({
         }
     };
 
-    const getTouch = (row:any) =>{
-        if(showStock === "PURE"){
+    const getTouch = (row: any) => {
+        if (showStock === "PURE") {
             return row.aTouch || row.touch || row.at;
         }
-        else{
+        else {
             return row.TOUCH || row.touch || row.ATOUCH
         }
     }
@@ -206,7 +206,7 @@ export default function StockDrawer({
                                 columns={columns}
                                 data={stockData}
                                 rowIdKey="id"
-                                headerBg={theme.colors.accient}
+                                headerBg={theme.colors.primary}
                                 headerColor={theme.colors.whiteColor}
                                 renderRow={(row, index, isSelected) => {
                                     const stockId = getStockId(row);   // pureId for PURE, itemId for ITEM
@@ -217,7 +217,7 @@ export default function StockDrawer({
                                         ? getStockAvailability(String(stockId), touch ?? null)
                                         : undefined;
 
-                                    console.log(availability,stockId, 'availabilityinstock')
+                                    console.log(availability, stockId, 'availabilityinstock')
 
                                     // ✅ PURE stock → check weight remaining
                                     // ✅ ITEM stock → check pieces remaining

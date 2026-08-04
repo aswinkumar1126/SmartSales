@@ -19,6 +19,16 @@ export const validateSales = (row: any) => {
     if (Number(row.TOUCH) <= 0) {
         return "TOUCH must be > 0";
     }
+    if(row.TOUCH && row.PURTOUCH && row.TOUCH < row.PURTOUCH){
+        console.log()
+        return `Sale TOUCH must greater than Purchase Touch ${row.PURTOUCH}`
+    }
+
+    const checkTouch = row.PURTOUCH + row.TOUCHDIFF
+    console.log(checkTouch,'differentTouch')
+    if (checkTouch > row.TOUCH) {
+        return `touch different not statisfied , given diff is ${checkTouch} but used touch is ${row.TOUCH}`
+    }
 
     // if (!row._miscCharges || row._miscCharges.length <= 0) {
     //     return "Other charges are required";
@@ -31,6 +41,8 @@ export const validateSales = (row: any) => {
     // if (!hasHmc) {
     //     return "HMC charge is required in other charges";
     // }
+
+
 
 
 

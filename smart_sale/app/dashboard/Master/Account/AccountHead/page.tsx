@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect ,useCallback} from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
     Box,
     Button,
@@ -33,6 +33,7 @@ import { useRouter } from "next/navigation";
 import { FaPrint, FaFileExcel } from "react-icons/fa";
 import { AccountTypeList } from "@/data/ACCOUNTtYPE/AccountType";
 import { useAllStates } from "@/hooks/apiHooks/state/useStates";
+import { useSoftControlById } from "@/hooks/apiHooks/softControl/useSoftControl";
 import { useAllAccountHead, useCreateAccountHead, useUpdateAccountHead, useAccountHeadById } from "@/hooks/apiHooks/accountHead/useAccountHead";
 import { AccountHead } from "@/types/accountHead/AccountHead";
 import SearchBar from "@/component/search/SearchBar";
@@ -52,13 +53,20 @@ import type { PrintColumn } from "@/component/screens/PrintPreviewScreen";
 
 function AccountHeadMaster() {
     const { theme } = useTheme();
+    const router = useRouter();
+    const { isOpen, status, title: loaderTitle, description, openLoader, resolveLoader, closeLoader } = useTransactionLoader();
 
-  const {isOpen, status, title:loaderTitle, description, openLoader, resolveLoader, closeLoader} = useTransactionLoader();
-   
 
     /* -------------------- API HOOKS -------------------- */
     const { data, isLoading } = useAllCompanies();
-    const router = useRouter();
+
+    const { data:showEditIcon } = useSoftControlById('EDIT_ICON');
+
+
+    const showEditIcons = showEditIcon?.CTLTEXT === "Y" ;
+    console.log(showEditIcons ,'showEditicons') 
+    
+
     const { setData, setColumns, setShowSno, title } = usePrint();
     const companies = data?.data ?? [];
 
@@ -126,8 +134,8 @@ function AccountHeadMaster() {
     const accountList = Array.isArray(allAccountHead?.data?.acheads)
         ? allAccountHead.data.acheads
         : [];
-    
-    console.log(accountList,'accountList');
+
+    console.log(accountList, 'accountList');
 
 
     const safeValue = (
@@ -382,7 +390,7 @@ function AccountHeadMaster() {
         //     }
         // }
 
-        console.log(editId,form.ACCODE , 'editId')
+        console.log(editId, form.ACCODE, 'editId')
 
         const isDuplicate = accountList.some(
             (acc) =>
@@ -412,7 +420,7 @@ function AccountHeadMaster() {
                             resolveLoader("success", "update", "", true);
                         }, 500);
                     },
-                    onError :()=>{
+                    onError: () => {
                         setTimeout(() => {
                             resolveLoader("error", "update", "", true);
                         }, 500);
@@ -432,24 +440,24 @@ function AccountHeadMaster() {
                 },
                 onError: (error: any) => {
                     console.log("Error creating account head:", error);
-                    if(error){
+                    if (error) {
                         const message = error.response.data.message;
-                     
+
                         toastError(message ?? "Failed to create account head");
                     }
                     setTimeout(() => {
                         resolveLoader("error", "save", "", true);
                     }, 500);
-              
+
                 }
             });
         }
     };
 
-        useGlobalKey("Alt+s" , ()=>handleSave() , "saveTransaction");
-        useGlobalKey("Alt+r", () => resetForm() ,"ClearTransaction");
-        useGlobalKey("Alt+u", () => handleSave() ,"UpdateTransaction");
-        useGlobalKey("Alt+e", () => router.back() ,"exitachead");
+    useGlobalKey("Alt+s", () => handleSave(), "saveTransaction");
+    useGlobalKey("Alt+r", () => resetForm(), "ClearTransaction");
+    useGlobalKey("Alt+u", () => handleSave(), "UpdateTransaction");
+    useGlobalKey("Alt+e", () => router.back(), "exitachead");
 
 
     /* -------------------- EDIT -------------------- */
@@ -469,7 +477,7 @@ function AccountHeadMaster() {
 
         // { key: "OPENING_WEIGHT", label: "Opening Weight" },
         { key: "ACTIVE", label: "Active" },
-        // { key: "actions", label: "Actions" },
+        {key: "actions", label: "Actions" },
     ];
 
     /* -------------------- EXPORT -------------------- */
@@ -525,7 +533,7 @@ function AccountHeadMaster() {
                 isNumeric: true,
                 align: "end",
                 allowTotal: true,
-                renderCell :(value) => <Box fontWeight="bold">{formatToFixed(value,2)}</Box>
+                renderCell: (value) => <Box fontWeight="bold">{formatToFixed(value, 2)}</Box>
             },
             // {
             //     key: "ACTIVE",
@@ -554,16 +562,16 @@ function AccountHeadMaster() {
 
     const { register, focusFirst, focusNext } = useEnterNavigation(formfields, handleSave);
 
-    useEffect(()=>{
+    useEffect(() => {
         focusFirst();
-    },[focusFirst]);
+    }, [focusFirst]);
 
-    
+
 
 
     const renderAccountRow = useCallback(
         (account: any, index: number) => {
-            console.log(account,'accountinrender')
+            console.log(account, 'accountinrender')
             return (
                 <>
                     <Table.Cell>{index + 1}</Table.Cell>
@@ -585,27 +593,29 @@ function AccountHeadMaster() {
                         </Box>
                     </Table.Cell>
                     <Table.Cell>{account.STATE}</Table.Cell>
-                    <Table.Cell textAlign="end">{formatToFixed(account.OPENING_PURE,3)}</Table.Cell>
-                    <Table.Cell textAlign="end">{formatToFixed(account.OPENING_CASH,2)}</Table.Cell>
-                    <Table.Cell textAlign="center"> 
+                    <Table.Cell textAlign="end">{formatToFixed(account.OPENING_PURE, 3)}</Table.Cell>
+                    <Table.Cell textAlign="end">{formatToFixed(account.OPENING_CASH, 2)}</Table.Cell>
+                    <Table.Cell textAlign="center">
                         <Badge
-                                colorPalette={account.ACTIVE === "Y" ? "green" : "red"}
-                                variant="subtle"
-                                borderRadius="full"
-                                px={2}
-                            >
+                            colorPalette={account.ACTIVE === "Y" ? "green" : "red"}
+                            variant="subtle"
+                            borderRadius="full"
+                            px={2}
+                        >
                             {account.ACTIVE === "Y" ? "Active" : "Inactive"}
                         </Badge>
-                 </Table.Cell>
-
-                    {/* <Table.Cell>
-                        <Box display="flex" justifyContent="center">
-                            <FaEdit
-                                onClick={() => handleEdit(account)}
-                                cursor="pointer"
-                            />
-                        </Box>
-                    </Table.Cell> */}
+                    </Table.Cell>
+                    {showEditIcons && 
+                        <Table.Cell>
+                            <Box display="flex" justifyContent="center">
+                                <FaEdit
+                                    onClick={() => handleEdit(account)}
+                                    cursor="pointer"
+                                />
+                            </Box>
+                        </Table.Cell>
+                    }
+                  
                 </>
             );
         },
@@ -617,7 +627,7 @@ function AccountHeadMaster() {
         <Box
             fontWeight='500'
             bg={theme.colors.bg}
-            color={theme.colors.secondary}
+            color={theme.colors.primary}
 
         >
             <TransactionLoader
@@ -633,7 +643,7 @@ function AccountHeadMaster() {
                 {/* ---------------- FORM ---------------- */}
                 <GridItem>
                     <VStack bg={theme.colors.formColor} p={2} borderRadius="xl" border="1px solid #eef">
-                      
+
                         <Fieldset.Root size="sm" width="100%">
                             <Fieldset.Content>
                                 <DynamicForm
@@ -661,7 +671,7 @@ function AccountHeadMaster() {
                             <Button size="xs" colorPalette="blue" onClick={resetForm}>
                                 <IoIosExit /> Reset
                             </Button>
-                            <Button size="xs" colorPalette="blue" onClick={()=>router.back()}>
+                            <Button size="xs" colorPalette="blue" onClick={() => router.back()}>
                                 <IoIosExit /> Exit
                             </Button>
                         </HStack>
@@ -718,7 +728,7 @@ function AccountHeadMaster() {
                             columns={accountColumn}
                             data={accountList}
                             renderRow={renderAccountRow}
-                            headerBg="blue.800"
+                            headerBg={theme.colors.primary}
                             headerColor="white"
                             borderColor="white"
                             bodyBg={theme.colors.bg}
@@ -726,6 +736,7 @@ function AccountHeadMaster() {
                             rowIdKey="ACCODE"
                             onRowClick={(row) => handleEdit(row)}
                             emptyText="No companies available"
+
 
                         />
                     </Box>

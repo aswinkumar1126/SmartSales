@@ -216,7 +216,7 @@ export default function TransactionHeaderForm({
                                 fontWeight='semibold'
                                 p={1}
                                 rounded="sm"
-                                color={theme.colors.whiteColor}
+                                color={theme.colors.primary}
                             >
                                 {openingPure}
                             </Text>
@@ -232,7 +232,7 @@ export default function TransactionHeaderForm({
                                 bg={theme.colors.accient}
                                 p={1}
                                 rounded="sm"
-                                color={theme.colors.whiteColor}
+                                color={theme.colors.primary}
                             >
                                 {openingCash}
                             </Text>

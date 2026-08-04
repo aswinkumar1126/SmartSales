@@ -280,7 +280,7 @@ export default function RoleTranPage() {
 
   return (
     <Box>
-      <VStack align="stretch" gap={2}>
+      <VStack align="stretch" gap={2} color={theme.colors.primary}>
 
         {/* ── HEADER ─────────────────────────────────────────────────────── */}
         <Box

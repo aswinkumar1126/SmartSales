@@ -64,7 +64,7 @@ const roleColumns = [
     { key: "ACTIVE", label: "Active" },
     { key: "PWDACCESS", label: "Password Access" },
     { key: "ADMINACCESS", label: "Admin Access" },
-   
+
 ];
 
 export default function RoleMaster() {
@@ -74,7 +74,7 @@ export default function RoleMaster() {
     const { setData, setColumns, setShowSno, title } = usePrint();
     const { roles, loading, addRole, editRole, removeRole } = useRole();
 
-    const roleMasterForm = RoleMasterConfig({ yesOrNo :yesNoItems })
+    const roleMasterForm = RoleMasterConfig({ yesOrNo: yesNoItems })
 
     const [form, setForm] = useState<RolePayload>(emptyForm);
     const [editId, setEditId] = useState<number | null>(null);
@@ -120,17 +120,17 @@ export default function RoleMaster() {
     }, [searchTerm]);
 
     // Handlers
-const handleChange = (field: keyof RolePayload, value: any) => {
-    const safeValue =
-        value?.target?.value ??  // native select
-        value?.value ??          // custom select {label,value}
-        value;                   // direct value
+    const handleChange = (field: keyof RolePayload, value: any) => {
+        const safeValue =
+            value?.target?.value ??  // native select
+            value?.value ??          // custom select {label,value}
+            value;                   // direct value
 
-    setForm((prev) => ({
-        ...prev,
-        [field]: safeValue,
-    }));
-};
+        setForm((prev) => ({
+            ...prev,
+            [field]: safeValue,
+        }));
+    };
 
     const resetForm = () => {
         setEditId(null);
@@ -153,7 +153,7 @@ const handleChange = (field: keyof RolePayload, value: any) => {
         }
         return true;
     };
-    const formNames = roleMasterForm.map(f=>f.name);
+    const formNames = roleMasterForm.map(f => f.name);
 
 
 
@@ -234,17 +234,17 @@ const handleChange = (field: keyof RolePayload, value: any) => {
         <Box
             fontWeight="semibold"
             bg={theme.colors.bg}
-            color={theme.colors.secondary}  
+            color={theme.colors.primary}
         >
             <Toaster />
             <Grid templateColumns={{ base: "1fr", lg: "1fr 2.5fr" }} gap={2}>
                 {/* ---------------- FORM ---------------- */}
                 <GridItem>
-                      <VStack bg={theme.colors.formColor} p={4} borderRadius="xl" border="1px solid #eef">
-                 
+                    <VStack bg={theme.colors.formColor} p={4} borderRadius="xl" border="1px solid #eef">
+
                         <Fieldset.Root size="sm" width="100%">
                             <Fieldset.Content>
-                                <DynamicForm 
+                                <DynamicForm
                                     register={register}
                                     formData={form}
                                     focusNext={focusNext}
@@ -282,7 +282,7 @@ const handleChange = (field: keyof RolePayload, value: any) => {
                             justify="space-between"
                             align={{ base: "start", sm: "center" }}
                             mb={2}
-                            
+
                         >
                             <HStack gap={2}>
                                 <Text fontWeight="semibold" fontSize="small">
@@ -300,7 +300,7 @@ const handleChange = (field: keyof RolePayload, value: any) => {
                             </HStack>
 
                             <Flex gap={2} align="center">
-                                <SearchBar searchTerm="" onChange={()=>console.log("")} size="xs" />
+                                <SearchBar searchTerm="" onChange={() => console.log("")} size="xs" />
                                 <Button
                                     variant="ghost"
                                     size="xs"
@@ -365,18 +365,18 @@ const handleChange = (field: keyof RolePayload, value: any) => {
                                             {role.ADMINACCESS === "Y" ? "Yes" : "No"}
                                         </Badge>
                                     </Table.Cell>
-                                    
+
                                 </>
                             )}
-                            headerBg="blue.800"
+                            headerBg={theme.colors.primary}
                             headerColor="white"
                             borderColor="white"
                             bodyBg={theme.colors.bg}
                             highlightRowId={highlightedId?.toString()}
                             rowIdKey="ROLEID"
                             emptyText="No roles available"
-                            onRowClick={(row)=>handleEdit(row)}
-                            
+                            onRowClick={(row) => handleEdit(row)}
+
                         />
 
                     </Box>

@@ -264,7 +264,7 @@ export default function UserMasters() {
         <Box
             fontWeight='semibold'
             bg={theme.colors.bg}
-            color={theme.colors.secondary}
+            color={theme.colors.primary}
         >
             <TransactionLoader
                 isOpen={isOpen}
@@ -478,7 +478,7 @@ export default function UserMasters() {
                                 columns={UserMasterColumn}
                                 data={users}
                                 size="sm"
-                                headerBg='blue.800'
+                                headerBg={theme.colors.primary}
                                 bodyBg={theme.colors.bg}
                                 headerColor='white'
                                 emptyText="No parties available"

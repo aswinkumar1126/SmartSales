@@ -6,9 +6,10 @@ import { FaCoins, FaChartLine, FaCaretDown } from "react-icons/fa";
 import { GiSilverBullet } from "react-icons/gi";
 import { GiGoldBar } from "react-icons/gi";
 import { useTheme } from "@/context/theme/themeContext";
+import { Rates } from "@/types/rate/rate";
 
 interface MetalRatesMenuProps {
-    rates: Record<string, number>;
+    rates?: Rates;
     isLoading: boolean;
     isError: boolean;
     latestEntry?: string | null;

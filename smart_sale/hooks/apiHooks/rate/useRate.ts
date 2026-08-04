@@ -27,7 +27,7 @@ export const useCreateRate = () => {
     return useMutation({
         mutationFn: (payload: RatePayload) => RateEntryService.createRate(payload),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['latest-rates'] });
+            queryClient.invalidateQueries({ queryKey: ['latest-rates' ,'rates'] });
             
         }
     })

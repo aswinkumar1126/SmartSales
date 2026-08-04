@@ -202,9 +202,9 @@ function BankAccountMaster() {
     }, []);
 
 
-    useGlobalKey("Alt+s" ,()=>handleSave());
+    useGlobalKey("Alt+s", () => handleSave());
     useGlobalKey("Alt+r", () => setForm(EMPTY_FORM));
-    useGlobalKey("alt+e",() =>router.back());
+    useGlobalKey("alt+e", () => router.back());
 
     return (
         <Box bg={theme.colors.bg}>
@@ -312,7 +312,7 @@ function BankAccountMaster() {
                             highlightRowId={highlightedId}
                             emptyText="No bank accounts found..."
                             bodyBg={theme.colors.bg}
-                            headerBg="blue.800"
+                            headerBg={theme.colors.primary}
                             headerColor="white"
                             renderRow={(account) => (
                                 <>

@@ -207,7 +207,7 @@ const STATIC_MENU: SidebarMenu = {
       items: [
         {
           type: "direct",
-          label: "SOFT CONTROL",
+          label: "Soft Control",
           route: "/dashboard/Master/Users/SoftControl",
           icon: Settings,
           title: "Soft Control",

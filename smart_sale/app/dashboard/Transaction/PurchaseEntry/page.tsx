@@ -172,7 +172,7 @@ export default function PurchasePage() {
     const METAL_RATE_KEYS = {
         G: "GOLD 916.00",
         S: "SILVER 916.00", // ✅ FIXED
-    };
+    } as const;
 
     console.log(initialClosingRef.current, 'currentClosingRef');
 
@@ -328,7 +328,7 @@ export default function PurchasePage() {
     const { theme } = useTheme();
     const { data: itemsData } = useStoneItems();
     const { data: tagedItems } = useStoneItems({ STOCKTYPE: 'T' });
-      const { data: nonTagedItemList } = useStoneItems({ STOCKTYPE: 'N' });
+    const { data: nonTagedItemList } = useStoneItems({ STOCKTYPE: 'N' });
 
     console.log(tagedItems, 'tagedItems')
 
@@ -353,7 +353,7 @@ export default function PurchasePage() {
 
 
 
-    const { data: pureStockList = [], refetch: goldStockRefetch } = usePureGoldData(filter, cleanedFilters , isEditing ? Number(headerForm.ENTRYNO) : undefined ,isEditing ?"PU" :undefined );
+    const { data: pureStockList = [], refetch: goldStockRefetch } = usePureGoldData(filter, cleanedFilters, isEditing ? Number(headerForm.ENTRYNO) : undefined, isEditing ? "PU" : undefined);
     const { data: itemsStock, refetch: itemStockRefetch } = useOrnamentData(filter, 'N', isEditing ? Number(headerForm.ENTRYNO) : undefined, isEditing ? "PU" : undefined);
 
     console.log(pureStockList, 'pureStockListpureStockList');
@@ -361,8 +361,8 @@ export default function PurchasePage() {
 
     const { data: allPureGoldNames } = usePureGoldNames();
 
-    const { 
-        data: transactionsById, 
+    const {
+        data: transactionsById,
         isFetching,
         isSuccess } = useTransactionByTransId(selectedTransactionId, "purchase");
 
@@ -437,6 +437,7 @@ export default function PurchasePage() {
     });
 
     const rateKey = METAL_RATE_KEYS[headerForm.METALTYPE as "G" | "S"];
+
     const rate = rateKey ? metalRates?.[rateKey] : null;
 
     useSyncPurchaseHeader(
@@ -575,7 +576,7 @@ export default function PurchasePage() {
             value: item.itemId.toString(),
         })) ?? [], []);
 
- const nonTagedItems = useMemo(
+    const nonTagedItems = useMemo(
         () =>
             nonTagedItemList?.map((item: any) => ({
                 label: item.itemName,
@@ -594,7 +595,7 @@ export default function PurchasePage() {
     }, [mappedItems, set]);
 
 
-  const { collection: notTagedItemCollection, filter: notTagedItemsFilter, set: setNotTaged } = useListCollection({
+    const { collection: notTagedItemCollection, filter: notTagedItemsFilter, set: setNotTaged } = useListCollection({
         initialItems: nonTagedItems,
         filter: contains,
     });
@@ -669,7 +670,7 @@ export default function PurchasePage() {
 
     useGlobalKey("F1", () => openFilter(), "openPurchaseFilter");
     useGlobalKey("Alt+s", () => isEditing && isModifying ? handleUpdateTransaction() : !isEditing ? handleSaveTransaction() : null, "savePurchaseTransaction");
-    useGlobalKey("Alt+c", () => isModifying ? handleResetDraft() : handleReSelectTransaction() , "ClearPurchaseTransaction");
+    useGlobalKey("Alt+c", () => isModifying ? handleResetDraft() : handleReSelectTransaction(), "ClearPurchaseTransaction");
     useGlobalKey("Alt+u", () => isModifying ? handleUpdateTransaction() : null, "updatePurchaseTransaction");
     useGlobalKey("Alt+m", () => { isModifying ? stopModifying() : startModifying() }, "modifyPurchaseTransaction");
     useGlobalKey("F3", () => { isStockDrawerOpen ? setIsStockDrawerOpen(false) : setIsStockDrawerOpen(true) }, "openStockDrawer");
@@ -927,38 +928,38 @@ export default function PurchasePage() {
 
 
     const handleEditTransaction = useCallback((data: any, sno: string) => {
-  
-          // CLEAR EVERYTHING
-          setDraftRows([]);
-          setSelectedTransactionTypes([]);
-  
-          setEditingSno(null);
 
-        console.log(data,'traneditdata');
-  
-          requestAnimationFrame(() => {
-  
-              setOpeningBalance(data, true);
-              setEditingSno(sno);
-  
-              const result = loadTransaction(data, sno);
-  
-              if (!result) return;
-  
-              // FORCE NEW REFERENCES
-              const freshRows = [...(result.rows || [])];
-  
-              const freshTypes = [
-                  ...(result.selectedTransactionTypes || [])
-              ];
-  
-              setSelectedTransactionTypes(freshTypes);
-              setDraftRows(freshRows);
+        // CLEAR EVERYTHING
+        setDraftRows([]);
+        setSelectedTransactionTypes([]);
+
+        setEditingSno(null);
+
+        console.log(data, 'traneditdata');
+
+        requestAnimationFrame(() => {
+
+            setOpeningBalance(data, true);
+            setEditingSno(sno);
+
+            const result = loadTransaction(data, sno);
+
+            if (!result) return;
+
+            // FORCE NEW REFERENCES
+            const freshRows = [...(result.rows || [])];
+
+            const freshTypes = [
+                ...(result.selectedTransactionTypes || [])
+            ];
+
+            setSelectedTransactionTypes(freshTypes);
+            setDraftRows(freshRows);
             //   toaster.create({ title: "Transaction Loaded Successfully" })
-              setPrintData(data);
-          });
-  
-      }, []);
+            setPrintData(data);
+        });
+
+    }, []);
 
 
     /* ================================
@@ -1012,9 +1013,9 @@ export default function PurchasePage() {
 
 
 
-  useClosingCalculations(Number(headerForm.RATEGM || 0),
+    useClosingCalculations(Number(headerForm.RATEGM || 0),
         Number(totalFinalStoneAmount || 0),
-      Number(totalFinalMCAmount || 0)
+        Number(totalFinalMCAmount || 0)
     )
 
     const { closingPure, closingCash } = useClosingCalculation(closingDetails, openingBalances, Number(headerForm.RATEGM || 0));
@@ -1348,13 +1349,13 @@ export default function PurchasePage() {
                 type: "error",
             });
             return;
-        } 
-   
+        }
+
 
         openLoader("save");
-      
 
-      
+
+
 
         createTransaction.mutate(
             { payload: result.payload, TRANTYPE: "purchase" },
@@ -1464,60 +1465,60 @@ export default function PurchasePage() {
         }
     };
 
-  
 
 
-   const onSelectTransaction = (id: string) => {
-  
-          if (draftRows.length > 0 && !isEditing) {
-  
-              toaster.create({
-                  title: "Warning",
-                  description:
-                      "You have unsaved changes in the draft. Please save or reset before switching transactions.",
-                  type: "warning",
-                  duration: 2000
-              });
-  
-              setDeselectFlag(true);
-  
-              setTimeout(() => setDeselectFlag(false), 10);
-  
-              return;
-          }
-  
-        
-  
-          // ONLY SET ID
-          setSelectedTransactionId(id);
-      };
-  
-      useEffect(() => {
 
-          if (!selectedTransactionId) return;
+    const onSelectTransaction = (id: string) => {
 
-          if (isFetching) return;
+        if (draftRows.length > 0 && !isEditing) {
 
-          if (!isSuccess || !transactionsById) return;
+            toaster.create({
+                title: "Warning",
+                description:
+                    "You have unsaved changes in the draft. Please save or reset before switching transactions.",
+                type: "warning",
+                duration: 2000
+            });
 
-          // Skip if we already loaded this transaction — prevents background refetches from overwriting edits
-          if (loadedTransactionId === selectedTransactionId) return;
+            setDeselectFlag(true);
 
-          setLoadedTransactionId(selectedTransactionId);
+            setTimeout(() => setDeselectFlag(false), 10);
 
-          setEditingRowsData(transactionsById);
+            return;
+        }
 
-          handleEditTransaction(
-              transactionsById,
-              selectedTransactionId
-          );
 
-      }, [
-          selectedTransactionId,
-          transactionsById,
-          isFetching,
-          isSuccess
-      ]);
+
+        // ONLY SET ID
+        setSelectedTransactionId(id);
+    };
+
+    useEffect(() => {
+
+        if (!selectedTransactionId) return;
+
+        if (isFetching) return;
+
+        if (!isSuccess || !transactionsById) return;
+
+        // Skip if we already loaded this transaction — prevents background refetches from overwriting edits
+        if (loadedTransactionId === selectedTransactionId) return;
+
+        setLoadedTransactionId(selectedTransactionId);
+
+        setEditingRowsData(transactionsById);
+
+        handleEditTransaction(
+            transactionsById,
+            selectedTransactionId
+        );
+
+    }, [
+        selectedTransactionId,
+        transactionsById,
+        isFetching,
+        isSuccess
+    ]);
 
     const handleSingleSearch = (term: string) => {
         setSingleSearch(term);

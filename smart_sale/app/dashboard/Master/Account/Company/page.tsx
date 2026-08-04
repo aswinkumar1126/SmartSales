@@ -43,7 +43,7 @@ import { useTransactionLoader } from "@/utils/loader/ResolveLoader";
 function CompanyMaster() {
 
     const { theme } = useTheme();
-    const {isOpen, status, title:loaderTitle, description, openLoader, resolveLoader, closeLoader} = useTransactionLoader();
+    const { isOpen, status, title: loaderTitle, description, openLoader, resolveLoader, closeLoader } = useTransactionLoader();
 
     const router = useRouter();
 
@@ -217,7 +217,7 @@ function CompanyMaster() {
                     setHighlightedId(Number(editId));
                     setTimeout(() => resolveLoader("success", "update", "", true), 500);
                 },
-                onError : ()=>{
+                onError: () => {
                     setTimeout(() => resolveLoader("error", "update", "", true), 500);
                 }
             });
@@ -232,10 +232,10 @@ function CompanyMaster() {
                     resetForm();
                     setTimeout(() => resolveLoader("success", "save", "", true), 500);
                 },
-                onError:(err:any) =>{
-                    if(err){
-                        const message = err.response.data.message ;
-                        toastError (message ??  "Something went wrong")
+                onError: (err: any) => {
+                    if (err) {
+                        const message = err.response.data.message;
+                        toastError(message ?? "Something went wrong")
                     }
                     setTimeout(() => resolveLoader("error", "save", "", true), 500);
                 }
@@ -278,13 +278,13 @@ function CompanyMaster() {
         handleSave();
     });
 
-    useGlobalKey("Alt+s" , ()=>handleSave() , "saveTransaction");
-    useGlobalKey("Alt+r", () => resetForm() ,"Reset");
+    useGlobalKey("Alt+s", () => handleSave(), "saveTransaction");
+    useGlobalKey("Alt+r", () => resetForm(), "Reset");
     useGlobalKey("Alt+e", () => router.back(), "Exit");
-    useGlobalKey("Alt+u",()=>handleSave(),"updateform");
+    useGlobalKey("Alt+u", () => handleSave(), "updateform");
     /* -------------------- UI -------------------- */
     return (
-        <Box fontWeight="semibold" bg={theme.colors.bg} color={theme.colors.secondary}>
+        <Box fontWeight="semibold" bg={theme.colors.bg} color={theme.colors.primary}>
             <TransactionLoader
                 isOpen={isOpen}
                 status={status}
@@ -298,7 +298,7 @@ function CompanyMaster() {
                 {/* FORM SECTION */}
                 <GridItem>
                     <VStack bg={theme.colors.formColor} p={4} borderRadius="xl" border="1px solid #eef">
-                
+
 
                         <Fieldset.Root size="sm" width="100%">
                             <Fieldset.Content>
@@ -323,7 +323,7 @@ function CompanyMaster() {
                             <Button size="xs" colorPalette="blue" onClick={resetForm}>
                                 <IoIosExit /> Reset
                             </Button>
-                            <Button size="xs" colorPalette="blue" onClick={()=>router.back()}>
+                            <Button size="xs" colorPalette="blue" onClick={() => router.back()}>
                                 <IoIosExit /> Exit
                             </Button>
                         </HStack>
@@ -362,7 +362,7 @@ function CompanyMaster() {
                                 </>
                             )}
                             onRowClick={(company) => handleEdit(company)}
-                            headerBg="blue.800"
+                            headerBg={theme.colors.primary}
                             headerColor="white"
                             borderColor="white"
                             bodyBg={theme.colors.bg}

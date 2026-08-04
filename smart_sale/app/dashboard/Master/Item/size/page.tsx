@@ -44,7 +44,7 @@ function ItemSizeMaster() {
     const { theme } = useTheme();
     const router = useRouter();
     const { setData, setColumns, setShowSno, title } = usePrint();
-    const {isOpen, status, title:loaderTitle, description, openLoader, resolveLoader, closeLoader} = useTransactionLoader();
+    const { isOpen, status, title: loaderTitle, description, openLoader, resolveLoader, closeLoader } = useTransactionLoader();
 
     /* -------------------- API HOOKS -------------------- */
 
@@ -146,7 +146,7 @@ function ItemSizeMaster() {
             isSaving.current = false;
         };
         if (editId) {
-     
+
             // For update:
             if (!validateForm(existingSizes, Number(editId))) return;
             openLoader('update', true);
@@ -159,13 +159,13 @@ function ItemSizeMaster() {
                     setHighlightedId(editId);
                     resolveLoader("success", "update", "", true)
                 },
-                onError: ()=> {
+                onError: () => {
                     onDone();
                     resolveLoader("error", "update", "", true)
                 }
             });
         } else {
-        
+
             if (!validateForm(existingSizes)) {
                 // toastError("Please fix the errors in the form");
                 return;
@@ -234,15 +234,15 @@ function ItemSizeMaster() {
         focusFirst();
     }, []);
 
-    useGlobalKey("Alt+s" , ()=>handleSave() , "saveTransaction");
-    useGlobalKey("Alt+r", () => resetForm() ,"Reset");
+    useGlobalKey("Alt+s", () => handleSave(), "saveTransaction");
+    useGlobalKey("Alt+r", () => resetForm(), "Reset");
     useGlobalKey("Alt+e", () => router.back(), "exit");
     useGlobalKey("Alt+u", () => handleSave(), "update");
 
 
     /* -------------------- UI -------------------- */
     return (
-        <Box fontWeight="semibold" bg={theme.colors.bg} color={theme.colors.secondary}>
+        <Box fontWeight="semibold" bg={theme.colors.bg} color={theme.colors.primary}>
             <TransactionLoader
                 isOpen={isOpen}
                 status={status}
@@ -256,7 +256,7 @@ function ItemSizeMaster() {
                 {/* FORM SECTION */}
                 <GridItem>
                     <VStack bg={theme.colors.formColor} p={4} borderRadius="xl" border="1px solid #eef">
-                  
+
 
                         <Fieldset.Root size="sm" width="100%">
                             <Fieldset.Content>
@@ -328,14 +328,14 @@ function ItemSizeMaster() {
                                 </>
                             )}
                             onRowClick={(size) => handleEdit(size)}
-                            headerBg="blue.800"
+                            headerBg={theme.colors.primary}
                             headerColor="white"
                             borderColor="white"
                             bodyBg={theme.colors.bg}
                             highlightRowId={highlightedId}
                             rowIdKey="SIZEID"
                             emptyText="No Sizes available"
-                          
+
                         />
                     </Box>
                 </GridItem>

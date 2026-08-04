@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import {Box,Field,Input,Grid,GridItem,Button,Table,Heading,HStack,Flex,Text
+import {
+    Box, Field, Input, Grid, GridItem, Button, Table, Heading, HStack, Flex, Text
 } from "@chakra-ui/react";
 import { FaFileExcel, FaPrint } from "react-icons/fa";
 import { FiEdit } from "react-icons/fi";
@@ -45,7 +46,7 @@ const initialFormState: pureGoldMastOpenForm = {
 
     aTouch: "",
     aPureWt: "",
- 
+
     // metalId:""
 };
 
@@ -66,7 +67,7 @@ export type TouchTableRow = {
 
 const PureGoldOpening = () => {
 
-    const {isOpen, status, title:loaderTitle, description, openLoader, resolveLoader, closeLoader} = useTransactionLoader();
+    const { isOpen, status, title: loaderTitle, description, openLoader, resolveLoader, closeLoader } = useTransactionLoader();
     /* ---------------- State ---------------- */
 
     const [form, setForm] = useState<pureGoldMastOpenForm>(initialFormState);
@@ -308,15 +309,15 @@ const PureGoldOpening = () => {
         focusFirst()
     }, [focusFirst]);
 
-    useGlobalKey("Alt+s" , ()=>handleSubmit() , "saveTransaction");
-    useGlobalKey("Alt+r", () => resetForm() ,"Reset");
+    useGlobalKey("Alt+s", () => handleSubmit(), "saveTransaction");
+    useGlobalKey("Alt+r", () => resetForm(), "Reset");
     useGlobalKey("Alt+e", () => router.back(), "exit");
     useGlobalKey("Alt+u", () => handleSubmit(), "update");
     /* ---------------- UI ---------------- */
 
     return (
         <Grid templateColumns={{ base: "1fr", lg: "1fr 2fr" }} fontWeight='semibold' gap={2}>
-         
+
             <TransactionLoader
                 isOpen={isOpen}
                 status={status}
@@ -368,7 +369,7 @@ const PureGoldOpening = () => {
                             <Button size="xs" colorPalette="blue" onClick={resetForm}>
                                 Reset <IoIosExit />
                             </Button>
-                            <Button size="xs" colorPalette="blue" onClick={()=>router.back()}>
+                            <Button size="xs" colorPalette="blue" onClick={() => router.back()}>
                                 Exit <IoIosExit />
                             </Button>
                         </HStack>
@@ -428,7 +429,7 @@ const PureGoldOpening = () => {
                         highlightRowId={highlightRowId}
                         emptyText="No data available"
                         bodyBg={theme.colors.bg}
-                        headerBg="blue.800"
+                        headerBg={theme.colors.primary}
                         headerColor="white"
                         renderRow={(row, i) => (
                             <>
@@ -450,7 +451,7 @@ const PureGoldOpening = () => {
                                 </Table.Cell> */}
                             </>
                         )}
-                   
+
                     />
                 </Box>
             </GridItem>

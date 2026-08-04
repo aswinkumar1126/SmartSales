@@ -37,7 +37,7 @@ interface PrinterSettingType {
 function PrinterSetting() {
     const { theme } = useTheme();
     const router = useRouter();
-    const {isOpen, status, title:loaderTitle, description, openLoader, resolveLoader, closeLoader } = useTransactionLoader();
+    const { isOpen, status, title: loaderTitle, description, openLoader, resolveLoader, closeLoader } = useTransactionLoader();
     const initialFormData = {
         ipAddress: "",
         exeName: "",
@@ -217,13 +217,13 @@ function PrinterSetting() {
     });
 
     const isLoadingAction = isLoading || isCreating || isUpdating;
-    useGlobalKey("Alt+s" , ()=>handleSave() , "saveTransaction");
-    useGlobalKey("Alt+r", () => resetForm() ,"Reset");
+    useGlobalKey("Alt+s", () => handleSave(), "saveTransaction");
+    useGlobalKey("Alt+r", () => resetForm(), "Reset");
     useGlobalKey("Alt+e", () => router.back(), "exit");
     useGlobalKey("Alt+u", () => handleSave(), "update");
     /* -------------------- RENDER -------------------- */
     return (
-        <Box fontWeight="semibold" bg={theme.colors.bg} color={theme.colors.secondary}>
+        <Box fontWeight="semibold" bg={theme.colors.bg} color={theme.colors.primary}>
             <Toaster />
 
             <TransactionLoader
@@ -328,7 +328,7 @@ function PrinterSetting() {
                                     </>
                                 )}
                                 onRowClick={(printer) => handleEdit(printer as unknown as PrinterSettingType)}
-                                headerBg="blue.800"
+                                headerBg={theme.colors.primary}
                                 headerColor="white"
                                 borderColor="white"
                                 bodyBg={theme.colors.bg}

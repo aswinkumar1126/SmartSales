@@ -442,7 +442,7 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
                         _hover={{
                             bg: isActive ? `${theme.colors.secondary}18` : "rgba(255,255,255,0.08)",
                             borderLeftColor: theme.colors.secondary,
-                            color: theme.colors.secondaryText,
+                            color: theme.colors.whiteColor,
                         }}
                         onClick={() => navigate(item.route, item)}
                         whileHover={{ x: 2 }}
@@ -506,7 +506,7 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
                             _hover={{
                                 bg: hasActive ? `${theme.colors.secondary}18` : "rgba(255,255,255,0.08)",
                                 borderLeftColor: theme.colors.secondary,
-                                color: theme.colors.secondaryText,
+                                color: theme.colors.whiteColor,
                             }}
                             onClick={() => isExpanded && toggleNode(nodeId)}
                             whileHover={{ x: 2 }}
@@ -673,7 +673,7 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
                             _hover={{
                                 bg: isActive ? `${theme.colors.secondary}18` : "rgba(255,255,255,0.08)",
                                 borderLeftColor: theme.colors.secondary,
-                                color: theme.colors.secondaryText,
+                                color: theme.colors.whiteColor,
                             }}
                             onClick={() => navigate(item.route, item)}
                             whileHover={{ x: 2 }}
@@ -741,13 +741,14 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
                                 color={groupIsActive ? theme.colors.secondary : `${theme.colors.sideBarFont}99`}
                                 _hover={{
                                     bg: "rgba(255,255,255,0.08)",
-                                    color: theme.colors.secondaryText,
+                                    color: theme.colors.whiteColor,
                                 }}
                                 onClick={() => isExpanded && toggleNode(groupNodeId)}
                                 whileHover={{ x: 2 }}
                                 whileTap={{ scale: 0.98 }}
                                 width="100%"
                                 transition={{ duration: 0.12 } as any}
+                            
                             >
                                 <HStack gap={2.5} w={isExpanded ? "auto" : "100%"} justify="center">
                                     <Box
@@ -1050,7 +1051,7 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
                                                             : theme.colors.sideBarFont ?? `${theme.colors.sideBarFont}90`
                                                     }
                                                     bg={isSectionOpen ? `${theme.colors.secondary}10` : "transparent"}
-                                                    _hover={{ bg: "rgba(255,255,255,0.06)", color: theme.colors.secondary }}
+                                                    _hover={{ bg: "rgba(255,255,255,0.06)", color: theme.colors.whiteColor }}
                                                     onClick={() => setCurrentSection(sectionKey)}
                                                     transition="all 0.15s ease"
                                                 >

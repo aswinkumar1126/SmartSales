@@ -64,7 +64,7 @@ const initialFormState: StoneMappingMaster = {
     accode: "",
     itemId: "",
     stnAmt: "",
-  
+
 };
 
 /* ---------------- TABLE TYPE ---------------- */
@@ -80,7 +80,7 @@ export type HmcTableRow = {
 /* ---------------- COMPONENT ---------------- */
 
 const HmcMappingForm = () => {
-    const {isOpen, status, title:loaderTitle, description, openLoader, resolveLoader, closeLoader} = useTransactionLoader();
+    const { isOpen, status, title: loaderTitle, description, openLoader, resolveLoader, closeLoader } = useTransactionLoader();
 
     const [form, setForm] =
         useState<StoneMappingMaster>(initialFormState);
@@ -117,7 +117,7 @@ const HmcMappingForm = () => {
         refetch,
     } = useStoneMappingData(filter);
 
-    console.log(stoneMappingData,'stoneMappingData')
+    console.log(stoneMappingData, 'stoneMappingData')
 
     // const {
     //     data: hmcDataById,
@@ -128,8 +128,8 @@ const HmcMappingForm = () => {
     //     form.acType?.trim().toUpperCase() || undefined;
 
     const { data: allCustomer } = useAllAccountHead("CR");
-    const {data : allPurchaser } = useAllAccountHead("PR");
-    const { data: items } = useStoneItems({ STUDDED :"Y"});
+    const { data: allPurchaser } = useAllAccountHead("PR");
+    const { data: items } = useStoneItems({ STUDDED: "Y" });
 
     const createMutation = useStoneMappingCreate();
 
@@ -221,7 +221,7 @@ const HmcMappingForm = () => {
     /* ---------------- RESET ---------------- */
 
     const resetForm = () => {
-      
+
         setForm(initialFormState);
 
         setEditId(null);
@@ -285,11 +285,11 @@ const HmcMappingForm = () => {
             // form.acType?.toLowerCase() ===
             //     item.acType?.toLowerCase() &&
             Number(form.accode) ===
-                Number(item.accode) &&
+            Number(item.accode) &&
             Number(form.itemId) ===
-                Number(item.itemId) &&
+            Number(item.itemId) &&
             Number(item.sno) !==
-                Number(editId)
+            Number(editId)
         );
 
         if (isDuplicate) {
@@ -299,7 +299,7 @@ const HmcMappingForm = () => {
 
         return errs;
     };
-    console.log(payload,'payload')
+    console.log(payload, 'payload')
 
     /* ---------------- SUBMIT ---------------- */
 
@@ -317,8 +317,8 @@ const HmcMappingForm = () => {
         }
 
         setErrors({});
-        console.log(payload,'payload');
-      
+        console.log(payload, 'payload');
+
 
         if (editId) {
             openLoader('update', true);
@@ -373,7 +373,7 @@ const HmcMappingForm = () => {
 
                     refetch();
                     setTimeout(() => {
-                        resolveLoader("success", "save","",true);
+                        resolveLoader("success", "save", "", true);
                     }, 500);
                 },
                 onError: (error: any) => {
@@ -383,7 +383,7 @@ const HmcMappingForm = () => {
                     );
                     toastLoaded(
                         error?.response?.data?.message ||
-                            "Failed to create HMC."
+                        "Failed to create HMC."
                     );
                     resetForm();
                     setTimeout(() => {
@@ -441,31 +441,31 @@ const HmcMappingForm = () => {
             },
 
 
-            { 
-                key: "acType", 
-                label: "Account Type" , 
+            {
+                key: "acType",
+                label: "Account Type",
                 renderCell: (value) => (
-            
-                <Box
-                    as="span"
-                    display="inline-block"
-                    px={3}
-                    py={0.5}
-                    borderRadius="full"
-                    fontSize="xs"
-                    fontWeight={600}
-                    minW="90px"
-                    textAlign="center"
-                    bg={value === "PR" ? "orange.100" : "green.100"}
-                    color={value === "PR" ? "orange.700" : "green.700"}
-                >
-                    {value === "PR" ? "PURCHASER" : "CUSTOMER"}
-                </Box>
+
+                    <Box
+                        as="span"
+                        display="inline-block"
+                        px={3}
+                        py={0.5}
+                        borderRadius="full"
+                        fontSize="xs"
+                        fontWeight={600}
+                        minW="90px"
+                        textAlign="center"
+                        bg={value === "PR" ? "orange.100" : "green.100"}
+                        color={value === "PR" ? "orange.700" : "green.700"}
+                    >
+                        {value === "PR" ? "PURCHASER" : "CUSTOMER"}
+                    </Box>
                 ),
                 // exportValue → clean text for Print / Excel
                 printValue: (value) => (value === "PR" ? "PURCHASER" : "CUSTOMER")
-             } ,
-        
+            },
+
 
             {
                 key: "itemName",
@@ -475,7 +475,7 @@ const HmcMappingForm = () => {
             {
                 key: "stnAmt",
                 label: "STN Amount",
-                align:"end"as const ,
+                align: "end" as const,
                 renderCell: (value: any) => (
                     <Text fontWeight="bold">
                         {formatToFixed(
@@ -519,7 +519,7 @@ const HmcMappingForm = () => {
         "ClearTransaction"
     );
 
-useGlobalKey(        "Alt+e",
+    useGlobalKey("Alt+e",
         () => router.back(),
         "exitStone");
 
@@ -567,6 +567,7 @@ useGlobalKey(        "Alt+e",
                 lg: "1fr 2fr",
             }}
             gap={2}
+            color={theme.colors.primary}
         >
             <Toaster />
             <TransactionLoader
@@ -632,7 +633,7 @@ useGlobalKey(        "Alt+e",
                             size="xs"
                             colorPalette={"blue"}
                             onClick={() =>
-                               router.back()
+                                router.back()
                             }
                         >
                             <IoIosExit />
@@ -791,7 +792,7 @@ useGlobalKey(        "Alt+e",
                             theme.colors.bg
                         }
                         size="sm"
-                        headerBg="blue.800"
+                        headerBg={theme.colors.primary}
                         headerColor="white"
                         rowIdKey="sno"
                         highlightRowId={

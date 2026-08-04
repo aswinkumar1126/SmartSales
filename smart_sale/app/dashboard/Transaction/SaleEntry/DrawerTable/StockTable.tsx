@@ -183,7 +183,7 @@ export default function StockDrawer({
                                 columns={columns}
                                 data={stockData}
                                 rowIdKey="id"
-                                headerBg={theme.colors.accient}
+                                headerBg={theme.colors.primary}
                                 headerColor={theme.colors.whiteColor}
                                 renderRow={(row) => {
                                     const stockId = getStockId(row);
@@ -194,7 +194,7 @@ export default function StockDrawer({
                                         ? getStockAvailability(stockId, touch)
                                         : undefined
 
-                                    console.log(availability,'availability instockmodal')
+                                    console.log(availability, 'availability instockmodal')
 
                                     if (showStock === "PURE") {
                                         const remainingWt = availability?.weight?.remaining ?? null;

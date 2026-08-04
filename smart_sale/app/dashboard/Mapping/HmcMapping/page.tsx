@@ -39,7 +39,7 @@ import ShortcutDialog from "@/components/shortcut/ShortcutDialog";
 import TransactionLoader from "@/component/loader/Transactionloader";
 
 import { formatToFixed } from "@/utils/format/numberFormat";
-import {useTransactionLoader} from "@/utils/loader/ResolveLoader";
+import { useTransactionLoader } from "@/utils/loader/ResolveLoader";
 
 import { AccountTypeList } from "@/data/ACCOUNTtYPE/AccountType";
 
@@ -64,7 +64,7 @@ const initialFormState: HmcMaster = {
     accode: "",
     itemId: "",
     hmcAmt: "",
-  
+
 };
 
 /* ---------------- TABLE TYPE ---------------- */
@@ -80,7 +80,7 @@ export type HmcTableRow = {
 /* ---------------- COMPONENT ---------------- */
 
 const HmcMappingForm = () => {
-  const {isOpen, status, title:loaderTitle, description, openLoader, resolveLoader, closeLoader} = useTransactionLoader();
+    const { isOpen, status, title: loaderTitle, description, openLoader, resolveLoader, closeLoader } = useTransactionLoader();
 
     const [form, setForm] =
         useState<HmcMaster>(initialFormState);
@@ -117,7 +117,7 @@ const HmcMappingForm = () => {
         refetch,
     } = useHmcData(filter);
 
-    console.log(hmcData,'hmcData')
+    console.log(hmcData, 'hmcData')
 
     // const {
     //     data: hmcDataById,
@@ -207,7 +207,7 @@ const HmcMappingForm = () => {
     /* ---------------- RESET ---------------- */
 
     const resetForm = () => {
-      
+
         setForm(initialFormState);
 
         setEditId(null);
@@ -271,11 +271,11 @@ const HmcMappingForm = () => {
             // form.acType?.toLowerCase() ===
             //     item.acType?.toLowerCase() &&
             Number(form.accode) ===
-                Number(item.accode) &&
+            Number(item.accode) &&
             Number(form.itemId) ===
-                Number(item.itemId) &&
+            Number(item.itemId) &&
             Number(item.sno) !==
-                Number(editId)
+            Number(editId)
         );
 
         if (isDuplicate) {
@@ -285,7 +285,7 @@ const HmcMappingForm = () => {
 
         return errs;
     };
-    console.log(payload,'payload')
+    console.log(payload, 'payload')
 
     /* ---------------- SUBMIT ---------------- */
 
@@ -305,7 +305,7 @@ const HmcMappingForm = () => {
         setErrors({});
 
         if (editId) {
-            openLoader('update',true);
+            openLoader('update', true);
             updateMutation.mutate(
                 {
                     id: editId,
@@ -319,7 +319,7 @@ const HmcMappingForm = () => {
 
                         refetch();
                         setTimeout(() => {
-                            resolveLoader("success", "update","",true);
+                            resolveLoader("success", "update", "", true);
                         }, 500);
                     },
                     onError: (error: any) => {
@@ -333,14 +333,14 @@ const HmcMappingForm = () => {
                         );
                         resetForm();
                         setTimeout(() => {
-                            resolveLoader("error", "update","",true);
+                            resolveLoader("error", "update", "", true);
                         }, 500);
                     },
                 }
             );
 
         } else {
-            openLoader('save',true);
+            openLoader('save', true);
 
             createMutation.mutate(payload, {
                 onSuccess: (res: any) => {
@@ -352,7 +352,7 @@ const HmcMappingForm = () => {
                         createdId
                     );
                     setTimeout(() => {
-                        resolveLoader("success", "save","",true);
+                        resolveLoader("success", "save", "", true);
                     }, 500);
 
                     resetForm();
@@ -366,11 +366,11 @@ const HmcMappingForm = () => {
                     );
                     toastLoaded(
                         error?.response?.data?.message ||
-                            "Failed to create HMC."
+                        "Failed to create HMC."
                     );
                     resetForm();
                     setTimeout(() => {
-                        resolveLoader("error", "save","",true);
+                        resolveLoader("error", "save", "", true);
                     }, 500);
                 },
             });
@@ -418,7 +418,7 @@ const HmcMappingForm = () => {
 
         setData(Array.isArray(hmcData) ? hmcData : []);
 
-        const columns :PrintColumn[] = [
+        const columns: PrintColumn[] = [
             {
                 key: "acName",
                 label: "Customer Name",
@@ -427,7 +427,7 @@ const HmcMappingForm = () => {
             {
                 key: "acType",
                 label: "Customer Type",
-                renderCell :(value: any, row: any) => (
+                renderCell: (value: any, row: any) => (
                     <Badge
                         colorScheme={
                             row.acType === "PR"
@@ -448,8 +448,8 @@ const HmcMappingForm = () => {
             {
                 key: "hmcAmt",
                 label: "HMC Amount",
-                align : "end",
-                renderCell :(value: any) => (
+                align: "end",
+                renderCell: (value: any) => (
                     <Text fontWeight="bold">
                         {formatToFixed(
                             value,
@@ -457,7 +457,7 @@ const HmcMappingForm = () => {
                         )}
                     </Text>
                 ),
-                printValue :(value: any) => Number(value).toFixed(2)
+                printValue: (value: any) => Number(value).toFixed(2)
             },
         ]
         setColumns(columns);
@@ -481,8 +481,8 @@ const HmcMappingForm = () => {
 
     useGlobalKey(
         "Alt+e",
-       ()=>router.back(),
-       "exitHMC"
+        () => router.back(),
+        "exitHMC"
     );
 
     useGlobalKey(
@@ -535,6 +535,7 @@ const HmcMappingForm = () => {
                 lg: "1fr 2fr",
             }}
             gap={2}
+            color={theme.colors.primary}
         >
             <TransactionLoader
                 isOpen={isOpen}
@@ -596,7 +597,7 @@ const HmcMappingForm = () => {
                         <Button
                             size="xs"
                             colorPalette={"blue"}
-                            onClick={() =>{
+                            onClick={() => {
                                 resetForm();
                                 router.back();
                             }
@@ -697,7 +698,7 @@ const HmcMappingForm = () => {
                     <CustomTable<HmcTableRow>
                         columns={columns}
                         data={hmcData as HmcTableRow[] || []}
-                        renderRow={(row: any,i: number) => (
+                        renderRow={(row: any, i: number) => (
                             <>
                                 <Table.Cell>
                                     {i + 1}
@@ -751,11 +752,11 @@ const HmcMappingForm = () => {
                         emptyText="No data available"
                         bodyBg={theme.colors.bg}
                         size="sm"
-                        headerBg="blue.800"
+                        headerBg={theme.colors.primary}
                         headerColor="white"
                         rowIdKey="sno"
                         highlightRowId={highlightRowId}
-                        onRowClick={(row) =>handleEdit(row)}
+                        onRowClick={(row) => handleEdit(row)}
                     />
 
                 </Box>

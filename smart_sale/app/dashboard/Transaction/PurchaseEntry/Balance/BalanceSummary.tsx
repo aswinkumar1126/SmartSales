@@ -506,7 +506,7 @@ const BalanceSummary = ({
                     size="sm"
                     rounded="sm"
                     disabled
-                    color={Number(closingPure) > 0 ? "red.700" : "green.800"}
+                    color={Number(closingPure) > 0 ? "green.700" : "red.800"}
                     fontSize="sm"
                 />
                 <CapitalizedInput
@@ -517,7 +517,7 @@ const BalanceSummary = ({
                     size="sm"
                     rounded="sm"
                     disabled
-                    color={Number(closingCash) > 0 ? "red.700" : "green.800"}
+                    color={Number(closingCash) > 0 ? "green.700" : "red.800"}
                     fontSize="sm"
                 />
             </Grid>

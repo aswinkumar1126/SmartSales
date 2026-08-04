@@ -2,7 +2,7 @@
 
 import React, { useCallback, useState } from "react";
 import {
-  Box, Table, Text, Button, Portal, Drawer, Icon, Span,Badge ,Flex
+  Box, Table, Text, Button, Portal, Drawer, Icon, Span, Badge, Flex
 } from "@chakra-ui/react";
 import Image from "next/image";
 import { Printer, Upload } from "lucide-react";
@@ -108,9 +108,9 @@ function BarCodeGenerate() {
 
     /* refs */
     fieldRefs,
- 
 
-    hasExistingRows ,
+
+    hasExistingRows,
     populateExcelFromRows,
     /* handlers */
     handleHeaderChange,
@@ -238,15 +238,15 @@ function BarCodeGenerate() {
     ...extra,
   }), []);
 
-  
+
   const shortcuts = [
-  { keys: "Alt S", label: "Save" },
-  { keys: "Alt U", label: "Update" },
-  { keys: "Alt C", label: "Clear" },
-  { keys: "Alt E", label: "Excel Open" },
-  { keys: "F1", label: "Filter" },
-  { keys: "CTRL P", label: "Print All Duplicate" },
-];
+    { keys: "Alt S", label: "Save" },
+    { keys: "Alt U", label: "Update" },
+    { keys: "Alt C", label: "Clear" },
+    { keys: "Alt E", label: "Excel Open" },
+    { keys: "F1", label: "Filter" },
+    { keys: "CTRL P", label: "Print All Duplicate" },
+  ];
 
 
   /* ============================================================
@@ -272,7 +272,7 @@ function BarCodeGenerate() {
               isDisabled={rows.length > 0}
               validationError={headerErrors}
             />
- 
+
 
             <Button
               size={"xs"}
@@ -282,23 +282,23 @@ function BarCodeGenerate() {
               bg={'red.200'}
               rounded={'full'}
               onClick={handleClear}
-              _hover={{bg:'red.500', color:'white'}}
+              _hover={{ bg: 'red.500', color: 'white' }}
             >
               Clear
-           </Button>
+            </Button>
 
           </Flex>
-         
-          
-          
+
+
+
           <Box display="flex" alignItems="start" flexDirection="column" gap={2}>
-            
+
             <Box display="flex" alignItems="center" gap={2}>
               <SingleCheckbox
                 label="EXCEL IMPORT"
                 checked={excelDrawerOpen}
                 onChange={() => setExcelDrawerOpen((p) => !p)}
-                size="sm" 
+                size="sm"
                 fontSize="xs"
               />
               {rows.length > 0 && (
@@ -337,27 +337,27 @@ function BarCodeGenerate() {
               columns={STOCK_TABLE_HEADER}
               data={stockTableData}
               renderRow={renderStockRow}
-              headerBg={theme.colors.accient}
+              headerBg={theme.colors.primary}
               headerColor="white"
               bodyBg={theme.colors.formColor}
               borderColor="white"
               maxWidth="100%"
             />
-            
-         
+
+
           </Box>
-          <Box display={'flex'} justifySelf={'flex-end'}> 
-          <Text  mt={2} borderRadius={'xl'} fontSize={'xs'} p={2} fontWeight={'semibold'} >
-            {/* Remaining Stone Wt: <Badge colorPalette="red">{formatToFixed(remaining, 3)}</Badge> | */}
-            Diff Stone Wt: <Badge colorPalette="red">{formatToFixed(diffStoneWt, 3)}</Badge>
-          </Text>
+          <Box display={'flex'} justifySelf={'flex-end'}>
+            <Text mt={2} borderRadius={'xl'} fontSize={'xs'} p={2} fontWeight={'semibold'} >
+              {/* Remaining Stone Wt: <Badge colorPalette="red">{formatToFixed(remaining, 3)}</Badge> | */}
+              Diff Stone Wt: <Badge colorPalette="red">{formatToFixed(diffStoneWt, 3)}</Badge>
+            </Text>
           </Box>
-            <StockSummaryPanel
-              summary={stockSummary}
-              headerBg={theme.colors.accient}
-            />
-          
-          
+          <StockSummaryPanel
+            summary={stockSummary}
+            headerBg={theme.colors.primary}
+          />
+
+
         </Box>
 
         {/* ── Action bar ── */}
@@ -389,10 +389,10 @@ function BarCodeGenerate() {
             </Box>
           )}
         </Box>
-        <ShortcutDialog 
+        <ShortcutDialog
           shortcuts={shortcuts}
-       
-        
+
+
         />
 
         {/* ── Transaction table ── */}
@@ -421,51 +421,51 @@ function BarCodeGenerate() {
           maxBodyHeight="300px"
         />
 
-        
-     
-          < Drawer.Root 
+
+
+        < Drawer.Root
           open={excelDrawerOpen}
           onOpenChange={(details) => {
-          if (!details.open) setExcelDrawerOpen(false);
-        }}
->
-        <Portal>
-          <Drawer.Backdrop />
-          <Drawer.Positioner>
-            <Drawer.Content maxWidth="4xl">
-              <Drawer.Header borderBottomWidth="1px" bg="cyan.50" fontSize="md">
-                Excel Import
-                <Drawer.CloseTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setExcelDrawerOpen(false)}
-                  >
-                    ×
-                  </Button>
-                </Drawer.CloseTrigger>
-              </Drawer.Header>
-              <Drawer.Body p={0}>
-                <BarCodeExcel
-                  data={excelData}
-                  hasExistingRows={hasExistingRows}
-                  onUpdate={handleExcelUpdate}
-                  onChange={handleExcelChange}
-                  onLoad={handleExcelLoad}
-                  onFileParsed={setExcelData}
-                />
-              </Drawer.Body>
-              <Drawer.Footer>
+            if (!details.open) setExcelDrawerOpen(false);
+          }}
+        >
+          <Portal>
+            <Drawer.Backdrop />
+            <Drawer.Positioner>
+              <Drawer.Content maxWidth="4xl">
+                <Drawer.Header borderBottomWidth="1px" bg="cyan.50" fontSize="md">
+                  Excel Import
+                  <Drawer.CloseTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setExcelDrawerOpen(false)}
+                    >
+                      ×
+                    </Button>
+                  </Drawer.CloseTrigger>
+                </Drawer.Header>
+                <Drawer.Body p={0}>
+                  <BarCodeExcel
+                    data={excelData}
+                    hasExistingRows={hasExistingRows}
+                    onUpdate={handleExcelUpdate}
+                    onChange={handleExcelChange}
+                    onLoad={handleExcelLoad}
+                    onFileParsed={setExcelData}
+                  />
+                </Drawer.Body>
+                <Drawer.Footer>
                   {/* <StockSummaryPanel
                     summary={stockSummary}
-                    headerBg={theme.colors.accient}
+                    headerBg={theme.colors.primary}
                   /> */}
-              </Drawer.Footer>
-            </Drawer.Content>
-          </Drawer.Positioner>
-        </Portal>
-      </Drawer.Root>
-     
+                </Drawer.Footer>
+              </Drawer.Content>
+            </Drawer.Positioner>
+          </Portal>
+        </Drawer.Root>
+
       </Box>
 
       {/* ── Tag listing sidebar ── */}
@@ -484,7 +484,7 @@ function BarCodeGenerate() {
         />
       </Box>
       <Box>
-    
+
       </Box>
     </Box>
   );

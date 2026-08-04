@@ -22,6 +22,7 @@ import {
 } from "@/hooks/apiHooks/RoleTran/useRoleTran";
 import { RoleTran }  from "@/types/RoleTran/RoleTran";
 import { useRole } from "@/hooks/apiHooks/RoleMaster/useRoleMaster";
+import { useTheme } from "@/context/theme/themeContext";
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
 
@@ -565,6 +566,10 @@ RoleCard.displayName = "RoleCard";
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function RoleTranCreationPage() {
+
+
+  const {theme} =useTheme();
+
   const [tabValue, setTabValue] = useState<string>("create");
   const [selectedRoleID,   setSelectedRoleID]   = useState<number | undefined>(undefined);
   const [selectedRoleNAME, setSelectedRoleNAME] = useState("");
@@ -745,7 +750,7 @@ export default function RoleTranCreationPage() {
   // ─────────────────────────────────────────────────────────────────────────────
 
   return (
-    <Box bg={T.bgCard} rounded={T.radiusLg} shadow="sm" border={`1px solID ${T.border}`}>
+    <Box bg={T.bgCard} rounded={T.radiusLg} shadow="sm" border={`1px solID ${T.border}`} color={theme.colors.primary}>
       <Tabs.Root
         value={tabValue}
         onValueChange={(d: any) => setTabValue(d.value)}

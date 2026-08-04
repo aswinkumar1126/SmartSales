@@ -12,3 +12,11 @@ export interface RateForm {
     "SILVER 916": string;
 }
 
+
+export interface Rates {
+    "GOLD 100.00": number;
+    "GOLD 916.00": number;
+    "SILVER 100.00": number;
+    "SILVER 916.00": number;
+    "LAST_UPDATED" :string;
+}

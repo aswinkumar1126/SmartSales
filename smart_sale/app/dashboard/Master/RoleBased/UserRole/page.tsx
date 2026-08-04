@@ -243,10 +243,10 @@ export default function UserRoleMaster() {
     const roleItems = roles.map((r) => ({ label: r.ROLENAME, value: String(r.ROLEID) }));
 
 
-    const UserRoleFields = UserRoleMasterConfig({ users: operatorItems , roles:roleItems });
+    const UserRoleFields = UserRoleMasterConfig({ users: operatorItems, roles: roleItems });
 
-    const formNames = UserRoleFields.map(f=>f.name);
-    const { register, focusFirst, focusNext } = useEnterNavigation(formNames,handleSave);
+    const formNames = UserRoleFields.map(f => f.name);
+    const { register, focusFirst, focusNext } = useEnterNavigation(formNames, handleSave);
 
 
     if (loading) {
@@ -258,38 +258,38 @@ export default function UserRoleMaster() {
     }
 
     return (
-        <Box fontWeight="semibold" bg={theme.colors.bg} color={theme.colors.secondary}>
+        <Box fontWeight="semibold" bg={theme.colors.bg} color={theme.colors.primary}>
             <Toaster />
             <Grid templateColumns={{ base: "1fr", lg: "1fr 2.5fr" }} gap={2}>
 
-               <GridItem>
+                <GridItem>
                     <VStack bg={theme.colors.formColor} p={4} borderRadius="xl" border="1px solid #eef">
-                
-                      <Fieldset.Root size="sm" width="100%">
-                          <Fieldset.Content>
-                              <DynamicForm 
-                                  register={register}
-                                  formData={form}
-                                  focusNext={focusNext}
-                                  layout="vertical"
-                                  onChange={handleChange}
-                                  fields={UserRoleFields}
-                                  minLabelWidth="70px"
-                              />
-                          </Fieldset.Content>
-                      </Fieldset.Root>
 
-                      <HStack>
-                          <Button size="xs" colorPalette="blue" onClick={handleSave}>
-                              <AiOutlineSave /> {editId ? "Update" : "Save"}
-                          </Button>
-                          <Button size="xs" colorPalette="blue" onClick={resetForm}>
-                              <IoIosExit /> Reset
-                          </Button>
-                          <Button size="xs" colorPalette="blue" onClick={() => router.back()}>
-                              <IoIosExit /> Exit
-                          </Button>
-                      </HStack>
+                        <Fieldset.Root size="sm" width="100%">
+                            <Fieldset.Content>
+                                <DynamicForm
+                                    register={register}
+                                    formData={form}
+                                    focusNext={focusNext}
+                                    layout="vertical"
+                                    onChange={handleChange}
+                                    fields={UserRoleFields}
+                                    minLabelWidth="70px"
+                                />
+                            </Fieldset.Content>
+                        </Fieldset.Root>
+
+                        <HStack>
+                            <Button size="xs" colorPalette="blue" onClick={handleSave}>
+                                <AiOutlineSave /> {editId ? "Update" : "Save"}
+                            </Button>
+                            <Button size="xs" colorPalette="blue" onClick={resetForm}>
+                                <IoIosExit /> Reset
+                            </Button>
+                            <Button size="xs" colorPalette="blue" onClick={() => router.back()}>
+                                <IoIosExit /> Exit
+                            </Button>
+                        </HStack>
                     </VStack>
                 </GridItem>
 
@@ -321,7 +321,7 @@ export default function UserRoleMaster() {
                         <CustomTable
                             columns={userRoleColumns}
                             data={paginatedUserRoles}
-                     
+
                             renderRow={(ur: UserRole, index: number) => (
                                 <>
                                     <Table.Cell>{page * size + index + 1}</Table.Cell>
@@ -329,22 +329,22 @@ export default function UserRoleMaster() {
                                     <Table.Cell>{getRoleName(ur.ROLEID)}</Table.Cell>
                                     <Table.Cell>
                                         <Box display="flex" gap={2}>
-                                       
-                                                <FaTrash
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        handleDelete(ur.USERID);
-                                                    }}
-                                                    cursor="pointer"
-                                                    color="red"
-                                                    size={14}
-                                                />
-                                           
+
+                                            <FaTrash
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleDelete(ur.USERID);
+                                                }}
+                                                cursor="pointer"
+                                                color="red"
+                                                size={14}
+                                            />
+
                                         </Box>
                                     </Table.Cell>
                                 </>
                             )}
-                            headerBg="blue.800"
+                            headerBg={theme.colors.primary}
                             headerColor="white"
                             borderColor="white"
                             bodyBg={theme.colors.bg}

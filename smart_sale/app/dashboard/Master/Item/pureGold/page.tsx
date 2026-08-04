@@ -87,7 +87,7 @@ const PureGoldMaster = () => {
     const [filter, setFilter] = useState<string>('');
 
 
-    const {isOpen, status, title:loaderTitle, description, openLoader, resolveLoader, closeLoader} = useTransactionLoader();
+    const { isOpen, status, title: loaderTitle, description, openLoader, resolveLoader, closeLoader } = useTransactionLoader();
     const getPureGoldFields = pureGoldNameFields({ metal: metalData });
 
     /* ---------------- Hooks ---------------- */
@@ -264,8 +264,8 @@ const PureGoldMaster = () => {
 
 
 
-    useGlobalKey("Alt+s" , ()=>handleSubmit() , "saveTransaction");
-    useGlobalKey("Alt+r", () => resetForm() ,"Reset");
+    useGlobalKey("Alt+s", () => handleSubmit(), "saveTransaction");
+    useGlobalKey("Alt+r", () => resetForm(), "Reset");
     useGlobalKey("Alt+e", () => router.back(), "exit");
     useGlobalKey("Alt+u", () => handleSubmit(), "update");
 
@@ -313,7 +313,7 @@ const PureGoldMaster = () => {
     /* ---------------- UI ---------------- */
 
     return (
-        <Grid templateColumns={{ base: "1fr", lg: "1fr 2fr" }} p={2} fontWeight='semibold' gap={4}>
+        <Grid templateColumns={{ base: "1fr", lg: "1fr 2fr" }} p={2} fontWeight='semibold' gap={4} color={theme.colors.primary}>
             <TransactionLoader
                 isOpen={isOpen}
                 status={status}
@@ -334,7 +334,7 @@ const PureGoldMaster = () => {
                         justifyContent="center"
                         mb={2}
                     >
-                       
+
                     </Heading>
                     <Box display="grid" gap={2}>
                         <DynamicForm
@@ -362,7 +362,7 @@ const PureGoldMaster = () => {
                             <Button size="xs" colorPalette="blue" onClick={resetForm}>
                                 Reset <IoIosExit />
                             </Button>
-                            <Button size="xs" onClick={()=>router.back()} colorPalette="blue">
+                            <Button size="xs" onClick={() => router.back()} colorPalette="blue">
                                 <IoIosExit /> Exit
                             </Button>
                         </HStack>
@@ -424,7 +424,7 @@ const PureGoldMaster = () => {
                         highlightRowId={highlightRowId}
                         emptyText="No data available"
                         bodyBg={theme.colors.bg}
-                        headerBg="blue.800"
+                        headerBg={theme.colors.primary}
                         headerColor="white"
                         renderRow={(row, i) => (
                             <>

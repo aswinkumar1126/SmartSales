@@ -49,8 +49,8 @@ type StockDrawerProps = {
 };
 
 export default function StockDrawer({
- 
- 
+
+
     stockData,
     open,
     onClose,
@@ -68,17 +68,17 @@ export default function StockDrawer({
 
     const columns: TableColumn[] = useMemo(() => {
         return [
-                { key: "ITEMNAME", label: "Item" },
-                { key: "METALNAME", label: "Metal" },
-                { key: "PCS", label: "Pcs", align: "end" },
-                { key: "GRSWT", label: "Gross Wt", align: "end" },
-                { key: "STNWT", label: "Stone Wt", align: "end" },
-                { key: "NETWT", label: "Net Wt", align: "end" },
-                { key: "TOUCH", label: "Touch", align: "end" },
-                { key: "PUREWT", label: "Pure Wt", align: "end" },
-                { key: "available", label: "Available", align: "end" },
-                { key: "ACTION", label: "Action", align: "center" },
-            ];
+            { key: "ITEMNAME", label: "Item" },
+            { key: "METALNAME", label: "Metal" },
+            { key: "PCS", label: "Pcs", align: "end" },
+            { key: "GRSWT", label: "Gross Wt", align: "end" },
+            { key: "STNWT", label: "Stone Wt", align: "end" },
+            { key: "NETWT", label: "Net Wt", align: "end" },
+            { key: "TOUCH", label: "Touch", align: "end" },
+            { key: "PUREWT", label: "Pure Wt", align: "end" },
+            { key: "available", label: "Available", align: "end" },
+            { key: "ACTION", label: "Action", align: "center" },
+        ];
     }, []);
 
     const secondaryCollection = itemCollection;
@@ -137,85 +137,85 @@ export default function StockDrawer({
                                 columns={columns}
                                 data={stockData}
                                 rowIdKey="id"
-                                headerBg={theme.colors.accient}
+                                headerBg={theme.colors.primary}
                                 headerColor={theme.colors.whiteColor}
                                 renderRow={(row) => {
                                     const stockId = getStockId(row);
-                    
+
 
                                     // ✅ Just id + touch — no transactionTypeCode needed
                                     const availability = getStockAvailability && stockId
-                                        ? getStockAvailability(stockId ,null)
+                                        ? getStockAvailability(stockId, null)
                                         : undefined;
 
-                                    console.log(availability,'availabilityinstock');
-                                        const netwt = getNetWeight(row);
-                                        const remainingPcs = availability?.pieces?.remaining ?? null;
-                                        const totalPcs = availability?.pieces?.total ?? 0;
-                                        const remainingWt = availability?.weight?.remaining ?? null;
-                                        const isOutOfStock = remainingPcs !== null && remainingPcs <= 0;
+                                    console.log(availability, 'availabilityinstock');
+                                    const netwt = getNetWeight(row);
+                                    const remainingPcs = availability?.pieces?.remaining ?? null;
+                                    const totalPcs = availability?.pieces?.total ?? 0;
+                                    const remainingWt = availability?.weight?.remaining ?? null;
+                                    const isOutOfStock = remainingPcs !== null && remainingPcs <= 0;
 
-                                        return (
-                                            <>
-                                                <Table.Cell as="td">{row.ITEMNAME}</Table.Cell>
-                                                <Table.Cell as="td">{row.METALNAME}</Table.Cell>
-                                                <Table.Cell as="td" textAlign="end">
-                                                    <Text fontWeight="medium">{row.PCS} pcs</Text>
-                                                </Table.Cell>
-                                                <Table.Cell as="td" textAlign="end">
-                                                    {Number(row.GRSWT || 0).toFixed(3)}g
-                                                </Table.Cell>
-                                                <Table.Cell as="td" textAlign="end">
-                                                    {Number(row.STNWT || 0).toFixed(3)}g
-                                                </Table.Cell>
-                                                <Table.Cell as="td" textAlign="end" fontWeight="medium">
-                                                    {netwt.toFixed(3)}g
-                                                </Table.Cell>
-                                                <Table.Cell as="td" textAlign="end">
-                                                    {row.TOUCH || row.touch || ""}
-                                                </Table.Cell>
-                                                <Table.Cell as="td" textAlign="end" fontWeight="bold" color="blue.600">
-                                                    {Number(row.PUREWT || row.purewt || 0).toFixed(3)}g
-                                                </Table.Cell>
+                                    return (
+                                        <>
+                                            <Table.Cell as="td">{row.ITEMNAME}</Table.Cell>
+                                            <Table.Cell as="td">{row.METALNAME}</Table.Cell>
+                                            <Table.Cell as="td" textAlign="end">
+                                                <Text fontWeight="medium">{row.PCS} pcs</Text>
+                                            </Table.Cell>
+                                            <Table.Cell as="td" textAlign="end">
+                                                {Number(row.GRSWT || 0).toFixed(3)}g
+                                            </Table.Cell>
+                                            <Table.Cell as="td" textAlign="end">
+                                                {Number(row.STNWT || 0).toFixed(3)}g
+                                            </Table.Cell>
+                                            <Table.Cell as="td" textAlign="end" fontWeight="medium">
+                                                {netwt.toFixed(3)}g
+                                            </Table.Cell>
+                                            <Table.Cell as="td" textAlign="end">
+                                                {row.TOUCH || row.touch || ""}
+                                            </Table.Cell>
+                                            <Table.Cell as="td" textAlign="end" fontWeight="bold" color="blue.600">
+                                                {Number(row.PUREWT || row.purewt || 0).toFixed(3)}g
+                                            </Table.Cell>
 
-                                                {/* ✅ Available pcs + netwt — shown only when availability present */}
-                                                <Table.Cell as="td" textAlign="end">
-                                                    {remainingPcs !== null ? (
-                                                        <Stack gap={0} align="end">
-                                                            <Text
-                                                                fontSize="sm"
-                                                                fontWeight="bold"
-                                                                color={getStockStatusColor(remainingPcs, totalPcs)}
-                                                            >
-                                                                {remainingPcs} pcs
+                                            {/* ✅ Available pcs + netwt — shown only when availability present */}
+                                            <Table.Cell as="td" textAlign="end">
+                                                {remainingPcs !== null ? (
+                                                    <Stack gap={0} align="end">
+                                                        <Text
+                                                            fontSize="sm"
+                                                            fontWeight="bold"
+                                                            color={getStockStatusColor(remainingPcs, totalPcs)}
+                                                        >
+                                                            {remainingPcs} pcs
+                                                        </Text>
+                                                        <Text fontSize="xs" color="gray.500">
+                                                            of {totalPcs} pcs
+                                                        </Text>
+                                                        {remainingWt !== null && (
+                                                            <Text fontSize="xs" color="blue.500">
+                                                                {remainingWt.toFixed(3)}g avail
                                                             </Text>
-                                                            <Text fontSize="xs" color="gray.500">
-                                                                of {totalPcs} pcs
-                                                            </Text>
-                                                            {remainingWt !== null && (
-                                                                <Text fontSize="xs" color="blue.500">
-                                                                    {remainingWt.toFixed(3)}g avail
-                                                                </Text>
-                                                            )}
-                                                        </Stack>
-                                                    ) : (
-                                                        <Text fontSize="xs" color="gray.400">—</Text>
-                                                    )}
-                                                </Table.Cell>
+                                                        )}
+                                                    </Stack>
+                                                ) : (
+                                                    <Text fontSize="xs" color="gray.400">—</Text>
+                                                )}
+                                            </Table.Cell>
 
-                                                <Box as="td" textAlign="center">
-                                                    <IconButton
-                                                        size="2xs"
-                                                        onClick={() => onIssue(row)}
-                                                        disabled={isOutOfStock}
-                                                        title={isOutOfStock ? "Out of stock" : "Add to transaction"}
-                                                    >
-                                                        <FaArrowUp />
-                                                    </IconButton>
-                                                </Box>
-                                            </>
-                                        );
-                                    
+                                            <Box as="td" textAlign="center">
+                                                <IconButton
+                                                    size="2xs"
+                                                    onClick={() => onIssue(row)}
+                                                    disabled={isOutOfStock}
+                                                    title={isOutOfStock ? "Out of stock" : "Add to transaction"}
+                                                >
+                                                    <FaArrowUp />
+                                                </IconButton>
+                                            </Box>
+                                        </>
+                                    );
+
                                 }}
                             />
                         </Drawer.Body>

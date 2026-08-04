@@ -71,7 +71,7 @@ const OtherCharges = () => {
     const [editId, setEditId] = useState<number | null>(null);
     const [highlightRowId, setHighlightRowId] = useState<number | null>(null);
     const [originalName, setOriginalName] = useState<string | null>(null);
-    
+
     type FormErrors = Partial<Record<keyof OtherChargeForm, string>>;
     const [errors, setErrors] = useState<FormErrors>({});
 
@@ -79,7 +79,7 @@ const OtherCharges = () => {
     /* ---------------- Hooks ---------------- */
     const router = useRouter();
 
-    const {isOpen, status, title:loaderTitle, description, openLoader, resolveLoader, closeLoader} = useTransactionLoader();
+    const { isOpen, status, title: loaderTitle, description, openLoader, resolveLoader, closeLoader } = useTransactionLoader();
     const { theme } = useTheme();
     const { setData, setColumns, title } = usePrint();
 
@@ -145,7 +145,7 @@ const OtherCharges = () => {
         originalName?: string
     ): FormErrors => {
 
-      
+
         const errors: FormErrors = {};
 
         const normalize = (v?: string) => v?.trim().toLowerCase();
@@ -276,15 +276,15 @@ const OtherCharges = () => {
     }, []);
 
 
-    useGlobalKey("Alt+s" , ()=>handleSubmit() , "saveTransaction");
-    useGlobalKey("Alt+r", () => resetForm() ,"Reset");
+    useGlobalKey("Alt+s", () => handleSubmit(), "saveTransaction");
+    useGlobalKey("Alt+r", () => resetForm(), "Reset");
     useGlobalKey("Alt+e", () => router.back(), "exit");
     useGlobalKey("Alt+u", () => handleSubmit(), "update");
 
     /* ---------------- UI ---------------- */
 
     return (
-        <Grid templateColumns={{ base: "1fr", lg: "1fr 2fr" }} p={2} fontWeight='semibold' gap={4}>
+        <Grid templateColumns={{ base: "1fr", lg: "1fr 2fr" }} p={2} fontWeight='semibold' gap={4} color={theme.colors.primary}>
             <TransactionLoader
                 isOpen={isOpen}
                 status={status}
@@ -395,7 +395,7 @@ const OtherCharges = () => {
                         highlightRowId={highlightRowId}
                         emptyText="No data available"
                         bodyBg={theme.colors.bg}
-                        headerBg="blue.800"
+                        headerBg={theme.colors.primary}
                         headerColor="white"
                         renderRow={(row, i) => (
                             <>

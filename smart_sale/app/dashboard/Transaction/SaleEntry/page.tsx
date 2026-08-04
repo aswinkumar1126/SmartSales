@@ -137,11 +137,14 @@ export default function SalesPage() {
     const initialClosingRef = useRef<BaseClosingFormDetails>(null);
 
     const { data: useApiRate } = useSoftControlById('USE_API_RATE');
-
-    console.log(useApiRate, 'softControl in header form');
     const isApiRateEnabled = useApiRate?.CTLTEXT === 'Y';
 
-    console.log(initialClosingRef.current, initialDraftRowsRef.current, 'currentref');
+    // const { data: touchDiff } = useSoftControlById('SALE_TOUCH_DIFF');
+    // const TouchDiff = touchDiff?.CTLTEXT ? Number(touchDiff?.CTLTEXT) : 0;
+
+
+
+
 
     /* ================================
        GLOBAL  HEADER MANAGEMENT
@@ -1290,6 +1293,7 @@ export default function SalesPage() {
 
         // ✅ Open loader in save mode
         // openLoader("save");
+     
 
         createTransaction.mutate(
             { payload: result.payload, TRANTYPE: "sales" },

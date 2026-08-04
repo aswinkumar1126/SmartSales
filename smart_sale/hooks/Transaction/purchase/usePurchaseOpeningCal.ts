@@ -1,3 +1,6 @@
+//purchase-OPENING
+
+
 import { useMemo } from "react";
 import { TRANSACTION_KEY_MAP } from "@/types/transcation/Transaction";
 
@@ -7,7 +10,7 @@ type TransactionRow = {
     HMC?: number;
     STNAMT?: number;
     MC?: number;
-} 
+}
 
 type OpeningBalances = {
     openPure: number;
@@ -23,7 +26,7 @@ export const usePurchaseOpeningBalances = (
         let openPure = initialPure;
         let openCash = initialCash;
 
-  
+
 
         draftRows.forEach((row) => {
             const type = TRANSACTION_KEY_MAP[row.TRANSACTION_TYPE];
@@ -37,21 +40,21 @@ export const usePurchaseOpeningBalances = (
 
             switch (type) {
                 case "purchase":
-                    openPure += pureWt;
-                    openCash += cash;
-                    break;
-
-                case "purchase_return":
                     openPure -= pureWt;
                     openCash -= cash;
                     break;
 
-                case "receipt":
+                case "purchase_return":
                     openPure += pureWt;
+                    openCash += cash;
+                    break;
+
+                case "receipt":
+                    openPure -= pureWt;
                     break;
 
                 case "issue":
-                    openPure -= pureWt;
+                    openPure += pureWt;
                     break;
             }
         });

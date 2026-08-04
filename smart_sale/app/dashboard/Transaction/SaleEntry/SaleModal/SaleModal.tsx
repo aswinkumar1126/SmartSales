@@ -43,7 +43,7 @@ export default function SalesBillViewModal({
     billDetails,
     loading,
     highlightedId,
- 
+
 }: SalesBillViewModalProps) {
     const today = new Date().toISOString().split("T")[0];
 
@@ -57,7 +57,7 @@ export default function SalesBillViewModal({
 
     // Handle selection change from CustomTable and pass to parent
     const onSelectionChange = (selectedIds: (string | number)[], selectedRows: any[]) => {
-     
+
         setSelectedItemIds(selectedIds);
         setSelectedItems(selectedRows);
     };
@@ -96,12 +96,12 @@ export default function SalesBillViewModal({
                 <Table.Cell>{renderCellValue(row.TAGNO)}</Table.Cell>
                 <Table.Cell>{renderCellValue(row.ITEMID)}</Table.Cell>
                 <Table.Cell>{renderCellValue(row.ITEMNAME)}</Table.Cell>
-                <Table.Cell textAlign="end">{renderCellValue(formatToFixed(row.GRSWT,3) , "0")}</Table.Cell>
-                <Table.Cell textAlign="end">{renderCellValue(formatToFixed(row.STNWT,3), "0")}</Table.Cell>
-                <Table.Cell textAlign="end">{renderCellValue(formatToFixed(row.NETWT,3), "0")}</Table.Cell>
-                <Table.Cell textAlign="end">{renderCellValue(formatToFixed(row.TOUCH,1), "0")}</Table.Cell>
-                <Table.Cell textAlign="end">{renderCellValue(formatToFixed(row.STNAMT,2), "0")}</Table.Cell>
-                <Table.Cell textAlign="end">{renderCellValue(formatToFixed(row.MC,2), "0")}</Table.Cell>
+                <Table.Cell textAlign="end">{renderCellValue(formatToFixed(row.GRSWT, 3), "0")}</Table.Cell>
+                <Table.Cell textAlign="end">{renderCellValue(formatToFixed(row.STNWT, 3), "0")}</Table.Cell>
+                <Table.Cell textAlign="end">{renderCellValue(formatToFixed(row.NETWT, 3), "0")}</Table.Cell>
+                <Table.Cell textAlign="end">{renderCellValue(formatToFixed(row.TOUCH, 1), "0")}</Table.Cell>
+                <Table.Cell textAlign="end">{renderCellValue(formatToFixed(row.STNAMT, 2), "0")}</Table.Cell>
+                <Table.Cell textAlign="end">{renderCellValue(formatToFixed(row.MC, 2), "0")}</Table.Cell>
                 <Table.Cell>{renderCellValue(row.DESCRIPTION)}</Table.Cell>
             </>
         );
@@ -110,10 +110,10 @@ export default function SalesBillViewModal({
     return (
         <Dialog.Root open={isOpen}
             onOpenChange={(e) => {
-                
+
                 if (!e.open) onClose?.();
             }}
-            
+
         >
             <Portal>
                 <Dialog.Backdrop />
@@ -181,20 +181,20 @@ export default function SalesBillViewModal({
                                     }
                                     rowIdKey="SNO"
                                     bodyBg={theme.colors.formColor}
-                                        selection={{
-                                            enabled: true,
-                                            selectionBgColor: "red",
-                                            selectionTextColor: "#EEE",
-                                            showSelectAll: true,
-                                            onSelectionChange: onSelectionChange // Pass the callback
-                                        }}
+                                    selection={{
+                                        enabled: true,
+                                        selectionBgColor: "red",
+                                        selectionTextColor: "#EEE",
+                                        showSelectAll: true,
+                                        onSelectionChange: onSelectionChange // Pass the callback
+                                    }}
                                     renderRow={renderRowCells}
-                                    headerBg={theme.colors.accient}
+                                    headerBg={theme.colors.primary}
                                     headerColor="white"
                                     maxHeight="400px"
- 
+
                                 />
-                                
+
                             )}
                             <Box mt={2} p={2} bg={theme.colors.formColor} rounded={'xl'}>
                                 <Span fontSize={'xs'}> SELECTED IDS :</Span>
@@ -204,27 +204,26 @@ export default function SalesBillViewModal({
                                     </Badge>
                                 )}
                             </Box>
-                           
-                    
-                           
-                         
+
+
+
+
                         </Dialog.Body>
                         <Dialog.Footer m={0}>
-                            <Image 
-                            src={loadImg}
-                            alt={'LOAD ITEMS'}
-                            width={40}
-                            height={40}
-                            onClick={()=>
-                                {
+                            <Image
+                                src={loadImg}
+                                alt={'LOAD ITEMS'}
+                                width={40}
+                                height={40}
+                                onClick={() => {
                                     loadSalesReturnItems(selectedItems)
                                     setSelectedItems([]);
                                     setSelectedItemIds([]);
-                               
+
                                     onClose();
                                 }
-                            } />
-                       
+                                } />
+
                         </Dialog.Footer>
                     </Dialog.Content>
                 </Dialog.Positioner>

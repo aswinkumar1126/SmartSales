@@ -11,11 +11,15 @@ import {
     HStack,
     Fieldset,
     Flex,
+    Table
 } from "@chakra-ui/react";
 import { AiOutlineSave } from "react-icons/ai";
 import { IoIosExit } from "react-icons/io";
+import { FaFileExcel ,FaEdit , FaPrint } from "react-icons/fa";
+
 import { Toaster } from "@/components/ui/toaster";
 import { useTheme } from "@/context/theme/themeContext";
+import { usePrint } from "@/context/print/usePrintContext";
 import { useRouter } from "next/navigation";
 
 import { toastError, toastLoaded } from "@/component/toast/toast";
@@ -30,20 +34,26 @@ import ShortcutDialog from "@/components/shortcut/ShortcutDialog";
 import { useTransactionLoader } from "@/utils/loader/ResolveLoader";
 import TransactionLoader from "@/component/loader/Transactionloader";
 import { useGlobalKey } from "@/components/key/useGlobalKey";
+import { CustomTable } from "@/component/table/CustomTable";
 
 
 function RateEntry() {
 
     const { theme } = useTheme();
-    const router =useRouter();
-    const {isOpen, status, title:loaderTitle, description, openLoader, resolveLoader, closeLoader} = useTransactionLoader();
+    const {setData ,setColumns ,setShowSno , title}  = usePrint();
+    const router = useRouter();
+    const { isOpen, status, title: loaderTitle, description, openLoader, resolveLoader, closeLoader } = useTransactionLoader();
     /* -------------------- API HOOKS -------------------- */
 
     const { mutate: createRate, isPending } = useCreateRate();
 
-    const { data: LatestRate } = useRates();
 
-    const { data: AllRate } = useAllRates();
+
+
+    const { data: AllRates } = useAllRates();
+    console.log(AllRates,'AllRate')
+
+
     // const { mutate: updateCompany } = useUpdateCompany();
 
     /* -------------------- FORM STATE -------------------- */
@@ -137,13 +147,28 @@ function RateEntry() {
 
     }
     /* -------------------- TABLE COLUMNS -------------------- */
-    // const CompanyColumn = [
-    //     { key: 'index', label: 'Sno' },
-    //     { key: 'COMPANYID', label: 'Company Id' },
-    //     { key: 'COMPANYNAME', label: 'Company Name' },
-    //     { key: 'ACTIVE', label: 'Active' },
-    //     { key: 'actions', label: 'Actions' },
-    // ];
+    const RateTableColumn = [
+        { key: 'index', label: 'Sno' },
+        { key: 'GOLD 100.00', label: 'GOLD 100' },
+        { key: 'GOLD 916.00', label: 'GOLD 916' },
+        { key: 'SILVER 100.00', label: 'SILVER 100' },
+        { key: 'SILVER 916.00', label: 'SILVER 916' },
+        { key: 'LAST_UPDATED', label: 'LAST_UPDATED' },
+    ];
+
+    /* -------------------- EXPORT -------------------- */
+    // const handleExport = (option: string) => {
+    //     setData(AllRates);
+    //     setColumns([
+    //         { key: "COMPANYID", label: "Company Id" },
+    //         { key: "COMPANYNAME", label: "Company Name" },
+    //         { key: 'ACTIVE', label: 'Active' },
+    //     ]);
+    //     setShowSno(true);
+    //     title?.("Rate Master");
+    //     router.push(`/print?export=${option}`);
+    // };
+
 
     /* -------------------- FORM CONFIG -------------------- */
     const rateFormFields = RateEntryForm();
@@ -155,14 +180,14 @@ function RateEntry() {
     useEffect(() => {
         focusFirst();
     }, []);
-    useGlobalKey("Alt+s" , ()=>handleSave() , "saveTransaction");
-    useGlobalKey("Alt+r", () => resetForm() ,"Reset");
+    useGlobalKey("Alt+s", () => handleSave(), "saveTransaction");
+    useGlobalKey("Alt+r", () => resetForm(), "Reset");
     useGlobalKey("Alt+e", () => router.back(), "exit");
     useGlobalKey("Alt+u", () => handleSave(), "update");
 
     /* -------------------- UI -------------------- */
     return (
-        <Box fontWeight="semibold" bg={theme.colors.bg} color={theme.colors.secondary}>
+        <Box fontWeight="semibold" bg={theme.colors.bg} color={theme.colors.primary}>
             <TransactionLoader
                 isOpen={isOpen}
                 status={status}
@@ -208,44 +233,41 @@ function RateEntry() {
 
                 {/* TABLE SECTION */}
                 <GridItem minW={0}>
-                    {/* <Box bg={theme.colors.formColor} p={2} borderRadius="xl" border="1px solid #eef">
+                    <Box bg={theme.colors.formColor} p={2} borderRadius="xl" border="1px solid #eef">
                         <Box display='flex' mb={2} gap={2} justifyContent='space-between' alignItems='center'>
-                            <Text fontWeight="semibold" fontSize="small">COMPANY DETAILS</Text>
-                            <Flex>
+                            <Text fontWeight="semibold" fontSize="small">RATE ENTRY DETAILS</Text>
+                            {/* <Flex>
                                 <Button variant="ghost" size="xs" color={theme.colors.green} onClick={() => handleExport("excel")}>
                                     <FaFileExcel />
                                 </Button>
                                 <Button variant="ghost" size="xs" color={theme.colors.primaryText} onClick={() => handleExport("pdf")}>
                                     <FaPrint />
                                 </Button>
-                            </Flex>
+                            </Flex> */}
                         </Box>
 
                         <CustomTable
-                            columns={CompanyColumn}
-                            data={companies}
-                            renderRow={(company, index) => (
+                            columns={RateTableColumn}
+                            data={AllRates ?? []}
+                            renderRow={(rate, index) => (
                                 <>
                                     <Table.Cell>{index + 1}</Table.Cell>
-                                    <Table.Cell>{company.COMPANYID}</Table.Cell>
-                                    <Table.Cell>{company.COMPANYNAME}</Table.Cell>
-                                    <Table.Cell textAlign="center">{company.ACTIVE}</Table.Cell>
-                                    <Table.Cell>
-                                        <Box display="flex" justifyContent="center">
-                                            <FaEdit onClick={() => handleEdit(company)} cursor="pointer" />
-                                        </Box>
-                                    </Table.Cell>
+                                    <Table.Cell>{rate["GOLD 100.00"]}</Table.Cell>
+                                    <Table.Cell>{rate["GOLD 916.00"]}</Table.Cell>
+                                    <Table.Cell>{rate["SILVER 100.00"]}</Table.Cell>
+                                    <Table.Cell>{rate["SILVER 916.00"]}</Table.Cell>
+                                    <Table.Cell textAlign="center">{rate["LAST_UPDATED"]}</Table.Cell>
                                 </>
                             )}
-                            headerBg="blue.800"
+                           headerBg={theme.colors.primary}
                             headerColor="white"
                             borderColor="white"
                             bodyBg={theme.colors.bg}
-                            highlightRowId={highlightedId ? Number(highlightedId) : null}
-                            rowIdKey="COMPANYID"
-                            emptyText="No companies available"
+                            // highlightRowId={highlightedId ? Number(highlightedId) : null}
+                            rowIdKey="LAST_UPDATED"
+                            emptyText="No Previous Rates available"
                         />
-                    </Box> */}
+                    </Box>
                 </GridItem>
             </Grid>
         </Box>

@@ -1,10 +1,10 @@
 import { axiosInstance } from "@/api/axiosInstance";
 import { ApiResponse } from "./CompanyService";
-import { RatePayload } from "@/types/rate/rate";
+import { RatePayload, Rates } from "@/types/rate/rate";
 
 export const RateEntryService = {
 
-    getLatestRate: async ():Promise<ApiResponse> => {
+    getLatestRate: async (): Promise<ApiResponse<Rates>> => {
         try {
             const response = await axiosInstance.get('/rate/latest');
             console.log(response.data, 'Rate Data' )
@@ -17,7 +17,7 @@ export const RateEntryService = {
         }
     },
 
-        getAllRates: async ():Promise<ApiResponse> => {
+    getAllRates: async (): Promise<ApiResponse<Rates[]>> => {
         try {
             const response = await axiosInstance.get('/rate');
             console.log(response.data, 'Rate list Data' )

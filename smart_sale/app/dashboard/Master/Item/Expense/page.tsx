@@ -47,9 +47,9 @@ const initialForm: CreateExpenseMast = {
 
 function ExpenseMaster() {
 
-    const {theme} =useTheme();
-    const router =useRouter();
-    const {isOpen, status, title:loaderTitle, description, openLoader, resolveLoader, closeLoader} = useTransactionLoader();
+    const { theme } = useTheme();
+    const router = useRouter();
+    const { isOpen, status, title: loaderTitle, description, openLoader, resolveLoader, closeLoader } = useTransactionLoader();
 
     /* ---------------- STATE ---------------- */
 
@@ -143,12 +143,12 @@ function ExpenseMaster() {
             active: form.active,
         };
 
-        console.log(payload,'payload');
+        console.log(payload, 'payload');
 
         if (editId) {
             openLoader("update", true);
             updateMutation.mutate(
-                {id:editId , ...payload},
+                { id: editId, ...payload },
                 {
                     onSuccess: () => {
                         setHighlightRowId(editId);
@@ -157,13 +157,13 @@ function ExpenseMaster() {
                         resolveLoader("success", "update", "", true)
                     },
                     onError: (error: any) => {
-                        console.log(error ,'ERROR')
-                        const message = 
+                        console.log(error, 'ERROR')
+                        const message =
                             error?.response?.data?.message ||
-                        
+
                             "Something went wrong";
 
-                        console.log("API Error:", message , error.response);
+                        console.log("API Error:", message, error.response);
                         resolveLoader("error", "update", message, true)
                     }
                 }
@@ -177,13 +177,13 @@ function ExpenseMaster() {
                     refetch();
                     resolveLoader("success", "save", "", true)
                 },
-                onError :
+                onError:
                     (error: any) => {
-                        console.log("Error" ,error)
+                        console.log("Error", error)
                         console.log("Error creating expense:", error.message);
                         resolveLoader("error", "save", "Error creating expense", true)
                     }
-                    
+
             });
         }
     };
@@ -210,10 +210,10 @@ function ExpenseMaster() {
         focusFirst();
     }, []);
 
-        useGlobalKey("Alt+s" , ()=>handleSubmit() , "saveTransaction");
-        useGlobalKey("Alt+r", () => resetForm() ,"reset");
-        useGlobalKey("Alt+e", () => router.back() , "exit");
-        useGlobalKey("Alt+u", ()=>handleSubmit(), "update");
+    useGlobalKey("Alt+s", () => handleSubmit(), "saveTransaction");
+    useGlobalKey("Alt+r", () => resetForm(), "reset");
+    useGlobalKey("Alt+e", () => router.back(), "exit");
+    useGlobalKey("Alt+u", () => handleSubmit(), "update");
 
     /* ---------------- HIGHLIGHT EFFECT ---------------- */
 
@@ -226,7 +226,7 @@ function ExpenseMaster() {
     /* ---------------- UI ---------------- */
 
     return (
-        <Grid templateColumns={{ base: "1fr", lg: "1fr 2fr" }} gap={2}>
+        <Grid templateColumns={{ base: "1fr", lg: "1fr 2fr" }} gap={2} color={theme.colors.primary}>
             {/* -------- FORM -------- */}
             <GridItem>
                 <TransactionLoader
@@ -238,7 +238,7 @@ function ExpenseMaster() {
                 />
                 <ShortcutDialog />
                 <Box p={3} borderRadius="lg" boxShadow="sm" bg={theme.colors.formColor}>
-                  
+
                     <DynamicForm
                         fields={ExpenseForm}
                         formData={form}
@@ -265,7 +265,7 @@ function ExpenseMaster() {
                         <Button size="xs" onClick={resetForm}>
                             Reset <IoIosExit />
                         </Button>
-                        <Button size="xs" onClick={()=>router.back()}>
+                        <Button size="xs" onClick={() => router.back()}>
                             Exit <IoIosExit />
                         </Button>
                     </HStack>
@@ -277,7 +277,7 @@ function ExpenseMaster() {
                 <Box p={3} borderRadius="lg" boxShadow="sm" bg={theme.colors.formColor}>
                     <Flex justify="space-between" mb={2}>
                         <Heading fontSize="sm">EXPENSE LIST</Heading>
-                       <Flex>
+                        <Flex>
                             <SearchBar
                                 searchTerm={filter}
                                 onChange={setFilter}
@@ -286,8 +286,8 @@ function ExpenseMaster() {
                                 rounded="sm"
                                 minWidth="250px"
                             />
-                        </Flex>         
-                       
+                        </Flex>
+
                     </Flex>
 
                     <CustomTable
@@ -297,7 +297,7 @@ function ExpenseMaster() {
                         highlightRowId={highlightRowId}
                         emptyText="No data available"
                         bodyBg={theme.colors.bg}
-                        headerBg={theme.colors.accient}
+                        headerBg={theme.colors.primary}
                         headerColor="white"
                         renderRow={(row, i) => (
                             <>

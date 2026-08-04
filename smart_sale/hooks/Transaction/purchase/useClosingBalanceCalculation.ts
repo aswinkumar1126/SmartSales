@@ -1,3 +1,4 @@
+//PURCHASE CLOSING 
 import { useMemo } from "react";
 import { PurchaseClosingFormDetails, OpeningBalances, ClosingCalculationResult } from "@/types/balanceSummary/BalanceSummary";
 
@@ -10,7 +11,7 @@ export const useClosingCalculation = (
         const cashRcvd = Number(closingDetails.CASHRCVD || 0);
         const cashPaid = Number(closingDetails.CASHPAID || 0);
 
-        const discWt = Number(closingDetails.DISCWT|| 0);
+        const discWt = Number(closingDetails.DISCWT || 0);
         const discAmt = Number(closingDetails.DISCAMT || 0);
 
         const stnGstAmt = Number(closingDetails.STNGSTAMT || 0);
@@ -34,26 +35,26 @@ export const useClosingCalculation = (
         const type = closingDetails.CONVTYPE;
 
         let closingCash =
-            (openingBalances.openCash || 0) +
-            cashRcvd +
-            bankRcvd -
-            cashPaid -
-            bankPaid -
+            (openingBalances.openCash || 0) -
+            cashRcvd -
+            bankRcvd +
+            cashPaid +
+            bankPaid +
             discAmt -
             stnGstAmt -
             mcGstAmt +
             tdsAmt;
 
-        let closingPure = (openingBalances.openPure || 0) - discWt ;
+        let closingPure = (openingBalances.openPure || 0) + discWt;
 
         if (type === "C") {
-            closingCash -= convAmt;
-            closingPure += convWt;
+            closingCash += convAmt;
+            closingPure -= convWt;
         }
 
         if (type === "P") {
-            closingCash += convAmt;
-            closingPure -= convWt;
+            closingCash -= convAmt;
+            closingPure += convWt;
         }
 
         return {

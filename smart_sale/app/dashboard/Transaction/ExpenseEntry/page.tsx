@@ -2,7 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Box, Grid, GridItem, Button, HStack ,Table ,Flex ,Text} from "@chakra-ui/react";
+import { Box, Grid, GridItem, Button, HStack, Table, Flex, Text } from "@chakra-ui/react";
 
 import { DynamicForm } from "@/component/form/DynamicForm";
 import { useEnterNavigation } from "@/component/form/useEnterNavigation";
@@ -42,7 +42,7 @@ type ExpenseForm = {
     bankAmt: string;
     chequeNo: string;
     remarks: string;
-    userName?:string;
+    userName?: string;
 };
 
 type FormErrors = Partial<Record<keyof ExpenseForm, string>>;
@@ -52,7 +52,7 @@ type FormErrors = Partial<Record<keyof ExpenseForm, string>>;
 const today = new Date().toISOString().split("T")[0];
 
 const initialForm: ExpenseForm = {
- 
+
     date: today,
     expId: "",
     bankId: "",
@@ -65,10 +65,10 @@ const initialForm: ExpenseForm = {
 
 function ExpensesPage() {
     const { theme } = useTheme();
-    const {user} =useAuth();
+    const { user } = useAuth();
     const router = useRouter();
-    console.log(user,'user');
-    const {isOpen, status, title:loaderTitle, description, openLoader, resolveLoader, closeLoader} = useTransactionLoader();
+    console.log(user, 'user');
+    const { isOpen, status, title: loaderTitle, description, openLoader, resolveLoader, closeLoader } = useTransactionLoader();
 
     /* ---------------- STATE ---------------- */
 
@@ -88,8 +88,8 @@ function ExpensesPage() {
     const updateMutation = useExpenseUpdate();
 
     const expenseList = expenses?.data ?? [];
-   
-   console.log(expenseList ,'expenseList');
+
+    console.log(expenseList, 'expenseList');
 
     /* ---------------- BANK OPTIONS ---------------- */
 
@@ -121,13 +121,13 @@ function ExpensesPage() {
 
 
     useEffect(() => {
-    if (!user) return;
+        if (!user) return;
 
-    setForm((prev) => ({
-        ...prev,
-        userName: user.USERNAME
-    }));
-}, [user?.USERNAME]);
+        setForm((prev) => ({
+            ...prev,
+            userName: user.USERNAME
+        }));
+    }, [user?.USERNAME]);
 
     /* ---------------- HANDLERS ---------------- */
 
@@ -157,7 +157,7 @@ function ExpensesPage() {
             bankAmt: String(row.bankAmt),
             chequeNo: row.chequeNo ?? "",
             remarks: row.remarks ?? "",
-            userName : row.USERNAME ?? "",
+            userName: row.USERNAME ?? "",
         });
 
         window.scrollTo({ top: 0, behavior: "smooth" });
@@ -167,13 +167,13 @@ function ExpensesPage() {
 
     const validate = (): FormErrors => {
         const err: FormErrors = {};
-   
+
         if (!form.date) err.date = "Date required";
         if (!form.expId) err.expId = "Expense required";
 
         if (!form.cashAmt && !form.bankAmt)
             err.cashAmt = "At least one amount required";
-        if(form.cashAmt && !(Number(form.cashAmt) >0)){
+        if (form.cashAmt && !(Number(form.cashAmt) > 0)) {
             err.cashAmt = "cash amount required";
         }
         if (form.bankAmt && !(Number(form.bankAmt) > 0)) {
@@ -187,7 +187,7 @@ function ExpensesPage() {
     /* ---------------- SUBMIT ---------------- */
 
     const handleSubmit = () => {
-  
+
         const v = validate();
         console.log(v, "validation errors");
         if (Object.keys(v).length > 0) {
@@ -195,7 +195,7 @@ function ExpensesPage() {
             return;
         }
 
-      
+
 
         const payload = {
             date: form.date,
@@ -208,7 +208,7 @@ function ExpensesPage() {
         };
 
         if (editId) {
-            openLoader("update",true);
+            openLoader("update", true);
             updateMutation.mutate(
                 { entryNo: editId, ...payload },
                 {
@@ -219,14 +219,14 @@ function ExpensesPage() {
                         resolveLoader("success", "update", "", true);
                     },
                     onError: (error: any) => {
-                        if(error){
-                            const message = error.response.data.message ;
+                        if (error) {
+                            const message = error.response.data.message;
 
                             toaster.create({
-                                title : 'Expense Updation Error' ,
-                                description : message || 'Failed to update expense' ,
-                                type:'error' ,
-                                 
+                                title: 'Expense Updation Error',
+                                description: message || 'Failed to update expense',
+                                type: 'error',
+
                             })
                         }
                         resolveLoader("error", "update", "", true);
@@ -247,9 +247,9 @@ function ExpensesPage() {
                     console.log("Error creating expense:", error.message);
 
                     toaster.create({
-                        title:'Expense Creation Error' ,
-                        description : error?.response?.data?.message || 'Failed to create expense' ,
-                        type:'error'
+                        title: 'Expense Creation Error',
+                        description: error?.response?.data?.message || 'Failed to create expense',
+                        type: 'error'
                     });
                     resolveLoader("error", "save", "", true)
                 }
@@ -286,18 +286,18 @@ function ExpensesPage() {
         { key: "expName", label: "EXPENSE" },
         { key: "cashAmt", label: "CASH" },
         { key: "bankAmt", label: "BANK" },
-        {key:"userId" ,label:"MADE BY"},
+        { key: "userId", label: "MADE BY" },
         { key: "action", label: "ACTION" },
     ];
-    useGlobalKey("Alt+s" , ()=>handleSubmit() , "saveTransaction");
-    useGlobalKey("Alt+r", () => resetForm() ,"Reset");
+    useGlobalKey("Alt+s", () => handleSubmit(), "saveTransaction");
+    useGlobalKey("Alt+r", () => resetForm(), "Reset");
     useGlobalKey("Alt+e", () => router.back(), "exit");
     useGlobalKey("Alt+u", () => handleSubmit(), "update");
 
     /* ---------------- UI ---------------- */
 
     return (
-        <Grid templateColumns={{ base: "1fr", lg: "1fr 2fr" }} gap={2}>
+        <Grid templateColumns={{ base: "1fr", lg: "1fr 2fr" }} gap={2} color={theme.colors.primary}>
             {/* FORM */}
             <GridItem>
 
@@ -308,7 +308,7 @@ function ExpensesPage() {
                     description={description}
                     onClose={closeLoader}
                 />
-       
+
                 <ShortcutDialog />
 
                 <Box p={3} bg={theme.colors.formColor} borderRadius="lg">
@@ -350,7 +350,7 @@ function ExpensesPage() {
                 <Box p={2} bg={theme.colors.formColor} borderRadius="lg">
                     <Flex justifyContent={'space-between'} align={'center'} mb={2}>
                         <Text fontWeight={'semibold'}>
-                            Expenses List 
+                            Expenses List
                         </Text>
                         <Flex>
                             <SearchBar
@@ -364,9 +364,9 @@ function ExpensesPage() {
                             />
 
                         </Flex>
-                        
+
                     </Flex>
-                    
+
 
                     <CustomTable
                         columns={columns}
@@ -374,7 +374,7 @@ function ExpensesPage() {
                         rowIdKey="entryNo"
                         highlightRowId={highlightRowId}
                         emptyText="No data available"
-                        headerBg={theme.colors.accient}
+                        headerBg={theme.colors.primary}
                         headerColor="white"
                         renderRow={(row, i) => (
                             <>
@@ -390,7 +390,7 @@ function ExpensesPage() {
                                         onClick={() => handleEdit(row)}
                                         variant={'ghost'}
                                     >
-                                        <Edit2Icon size={14} color="blue"/>
+                                        <Edit2Icon size={14} color="blue" />
                                     </Button>
                                 </Table.Cell>
                             </>

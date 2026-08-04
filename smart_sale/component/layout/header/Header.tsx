@@ -204,7 +204,7 @@ const Header = ({ onOpenMenu }: any) => {
                     justify={{ base: "flex-end", sm: "flex-start" }}
                 >
                     <HStack>
-                        <MetalRatesMenu rates={metalRates} isLoading={isLoading} isError={isError} latestEntry={metalRates["LAST_UPDATED"]} />
+                        <MetalRatesMenu rates={metalRates} isLoading={isLoading} isError={isError} latestEntry={metalRates?.["LAST_UPDATED"]} />
                     </HStack>
                     {/* Date and Time - visible on all screens */}
                     <HStack

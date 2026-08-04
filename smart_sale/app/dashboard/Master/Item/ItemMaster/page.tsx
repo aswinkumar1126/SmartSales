@@ -53,7 +53,7 @@ import type { PrintColumn } from "@/component/screens/PrintPreviewScreen";
 
 export default function ItemMasterPage() {
 
-    
+
     /* ===================== STATE ===================== */
     const [editingId, setEditingId] = useState<number | null>(null);
     const topRef = React.useRef<HTMLDivElement>(null);
@@ -63,7 +63,7 @@ export default function ItemMasterPage() {
 
     const [isDisabelStudded, setIsDisableStudded] = useState<boolean>(false);
 
-    const [isStnPrensetDisabled ,setIsStnPrensetDisabled] = useState<boolean>(false);
+    const [isStnPrensetDisabled, setIsStnPrensetDisabled] = useState<boolean>(false);
 
     const controller = new AbortController();
 
@@ -79,14 +79,14 @@ export default function ItemMasterPage() {
         studdedStone: "",
         active: "Y",
         companyId: "",
-        stnPresent:"Y",
+        stnPresent: "Y",
 
     } as ItemMast);
 
     const { theme } = useTheme();
     const { setData, setColumns, setShowSno, title } = usePrint();
 
-     const {isOpen, status, title:loaderTitle, description, openLoader, resolveLoader, closeLoader} = useTransactionLoader();
+    const { isOpen, status, title: loaderTitle, description, openLoader, resolveLoader, closeLoader } = useTransactionLoader();
 
     // ✅ FIX: Change filter from string to object
     const [filterParams, setFilterParams] = useState<string>('');
@@ -107,7 +107,7 @@ export default function ItemMasterPage() {
 
     const items: ItemMast[] = (itemsData?.items ?? []).map(normalizeItem);
 
-    console.log(items,'itemsforListing');
+    console.log(items, 'itemsforListing');
 
     const companies = useMemo(() => {
         const companyList = Array.isArray(companyData?.data) ? companyData.data : [];
@@ -155,7 +155,7 @@ export default function ItemMasterPage() {
         calTypeCollection: calTypeOptions,
         activeTypeCollection: yesNoOptions,
         isDisabelStudded: isDisabelStudded,
-        isStnPrensetDisabled : isStnPrensetDisabled
+        isStnPrensetDisabled: isStnPrensetDisabled
     });
 
 
@@ -173,7 +173,7 @@ export default function ItemMasterPage() {
                 active: "Y",
                 studded: "N",
                 studdedStone: "T",
-                stnPresent:"Y",
+                stnPresent: "Y",
                 companyId: companies[0]?.value ?? "",
             }));
             setAutoItemId(itemsData?.nextId ?? '0');
@@ -218,9 +218,10 @@ export default function ItemMasterPage() {
             active: "Y",
             studded: "N",
             studdedStone: "T",
-            stnPresent:"Y",
+            stnPresent: "Y",
             companyId: companies[0]?.value ?? "",
         }));
+        focusFirst();
     };
 
 
@@ -257,14 +258,14 @@ export default function ItemMasterPage() {
         };
     }, [highlightId]);
 
-  useEffect(() => {
-    if (form.studded === "Y") {
-        setForm((prev) => ({
-            ...prev,
-            stnPresent: "N",
-        }));
-    }
-}, [form.studded]);
+    useEffect(() => {
+        if (form.studded === "Y") {
+            setForm((prev) => ({
+                ...prev,
+                stnPresent: "N",
+            }));
+        }
+    }, [form.studded]);
 
     const handleSave = () => {
         const newErrors: typeof errors = {};
@@ -303,7 +304,7 @@ export default function ItemMasterPage() {
             studded: form.studded,
             studdedStone: form.studded === "Y" ? form.studdedStone : null,
             companyId: form.companyId,
-            stnPresent: form.studded === "Y" ? "N" : form.stnPresent 
+            stnPresent: form.studded === "Y" ? "N" : form.stnPresent
         };
 
         if (editingId) {
@@ -343,8 +344,8 @@ export default function ItemMasterPage() {
         { key: "metalId", label: "Metal" },
         { key: "stockType", label: "Stock Type" },
         { key: "StonePresent", label: "Stone Present" },
-        {key :"studded" ,label:"Studded"},
-        { key:"studdedStone" ,label:"Studded Stone Type"},
+        { key: "studded", label: "Studded" },
+        { key: "studdedStone", label: "Studded Stone Type" },
         { key: "active", label: "Active", align: "center" },
         // { key: "action", label: "Action", align: "center" },
     ];
@@ -357,7 +358,7 @@ export default function ItemMasterPage() {
             { key: "metalName", label: "Metal" },
             { key: "hsn", label: "HSN Code" },
             { key: "shortName", label: "Short Name" },
-            { key: "stockType", label: "Stock Type", renderCell: (value) => value === "T" ? "TAGGED" : "NON TAGGED", printValue:(value) => value === "T" ? "TAGGED" : "NON TAGGED" },
+            { key: "stockType", label: "Stock Type", renderCell: (value) => value === "T" ? "TAGGED" : "NON TAGGED", printValue: (value) => value === "T" ? "TAGGED" : "NON TAGGED" },
             { key: "calType", label: "Cal Type" },
             // { key: "active", label: "Active" },
         ]
@@ -375,15 +376,15 @@ export default function ItemMasterPage() {
         focusFirst()
     }, [focusFirst]);
 
-        useGlobalKey("Alt+s" , ()=>handleSave() , "saveTransaction");
-        useGlobalKey("Alt+r", () => resetForm() ,"Reset");
-        useGlobalKey("Alt+e", () => router.back(), "Exit");
-        useGlobalKey("Alt+u", () => handleSave(), "update");
+    useGlobalKey("Alt+s", () => handleSave(), "saveTransaction");
+    useGlobalKey("Alt+r", () => resetForm(), "Reset");
+    useGlobalKey("Alt+e", () => router.back(), "Exit");
+    useGlobalKey("Alt+u", () => handleSave(), "update");
 
 
     /* ===================== UI ===================== */
     return (
-        <Box ref={topRef}>
+        <Box ref={topRef} color={theme.colors.primary}>
             <Toaster />
             <TransactionLoader
                 isOpen={isOpen}
@@ -436,10 +437,10 @@ export default function ItemMasterPage() {
                                 </Button>
 
                                 <Button size="xs" onClick={resetForm} colorPalette="blue">
-                                    <IoIosExit /> Reset 
+                                    <IoIosExit /> Reset
                                 </Button>
 
-                                <Button size="xs" onClick={()=>router.back()}>
+                                <Button size="xs" onClick={() => router.back()}>
                                     Exit <IoIosExit />
                                 </Button>
                             </HStack>
@@ -499,7 +500,7 @@ export default function ItemMasterPage() {
                         <CustomTable
                             columns={tableColumns}
                             data={items}
-                            headerBg="blue.800"
+                            headerBg={theme.colors.primary}
                             headerColor="white"
                             bodyBg={theme.colors.bg}
                             borderColor="#eee"
@@ -513,7 +514,7 @@ export default function ItemMasterPage() {
                                     <Table.Cell>{item.itemId}</Table.Cell>
                                     <Table.Cell>{item.itemName}</Table.Cell>
                                     <Table.Cell>{item.metalName}</Table.Cell>
-                                    <Table.Cell>{item.stockType === "T" ? "TAGED" :"NON TAGED"}</Table.Cell>
+                                    <Table.Cell>{item.stockType === "T" ? "TAGED" : "NON TAGED"}</Table.Cell>
                                     <Table.Cell>{item.stnPresent === "Y" ? "Yes" : "No"}</Table.Cell>
                                     <Table.Cell>{item.studded === "Y" ? "Yes" : "No"}</Table.Cell>
                                     <Table.Cell>{item.studded === "Y" ? item.studdedStone === "D" ? "Diamond" : "Stone" : ""}</Table.Cell>

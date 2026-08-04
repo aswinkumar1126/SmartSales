@@ -3,13 +3,19 @@ import { getTagDetails } from "@/service/TagedService";
 import { toaster } from "@/components/ui/toaster";
 import { calculateStoneAmount } from "@/app/dashboard/Transaction/SaleEntry/StoneMaster/StoneEntryMaster";
 import { formatToFixed } from "@/utils/format/numberFormat";
+import { useSoftControlById } from "@/hooks/apiHooks/softControl/useSoftControl";
 
 export const useLoadSaleTag = () => {
+
     const {
         draftRows,
         addDraftRow,
         setSelectedTransactionId,
     } = useSaleTransactionStore();
+
+
+    const { data:touchDiff } = useSoftControlById('SALE_TOUCH_DIFF');
+    const TouchDiff = touchDiff?.CTLTEXT ? Number(touchDiff?.CTLTEXT) : 0 ;
 
     const loadSaleTag = async (tagNo: string, customerId: number) => {
         try {
@@ -147,6 +153,8 @@ export const useLoadSaleTag = () => {
                 _stones: stonesWithId,
 
                 ITEM_TYPE: "TAGED",
+                PURTOUCH: data.PURTOUCH ,  //purchase Touch 
+                TOUCHDIFF: TouchDiff  //Touch Diff from soft control
             };
             console.log(newRow, 'newRownewRow')
             addDraftRow(newRow);

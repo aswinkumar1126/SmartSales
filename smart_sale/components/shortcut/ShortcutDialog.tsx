@@ -192,7 +192,7 @@ const ShortcutDialog = ({ remoteOpen = false, shortcuts = [
             }}
             aria-label="Open keyboard shortcuts"
           >
-            <Keyboard color={theme.colors.accient} size={16} />
+            <Keyboard color={theme.colors.primary} size={16} />
           </Box>
         </Tooltip>
       </Box>
@@ -241,7 +241,7 @@ const ShortcutDialog = ({ remoteOpen = false, shortcuts = [
                   bg={`${theme.colors.accient}15`}
                   flexShrink={0}
                 >
-                  <Keyboard color={theme.colors.accient} size={14} />
+                  <Keyboard color={theme.colors.primary} size={14} />
                 </Box>
 
                 <Box flex={1} minW={0}>

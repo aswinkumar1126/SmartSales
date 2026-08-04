@@ -44,13 +44,18 @@ import { useRouter } from "next/navigation";
 import { FaPrint, FaFileExcel } from "react-icons/fa";
 import { useGlobalKey } from "@/components/key/useGlobalKey";
 
+import { useSoftControlById } from "@/hooks/apiHooks/softControl/useSoftControl";
+
 
 
 function AccountMaster() {
     const { theme } = useTheme();
 
+
+
     /* -------------------- API HOOKS -------------------- */
     const { data, isLoading } = useAllCompanies();
+  
     const router = useRouter();
     const { setData, setColumns, setShowSno, title } = usePrint();
     const companies = data?.data ?? [];
@@ -278,7 +283,7 @@ function AccountMaster() {
         router.push(`/print?export=${option}&title=${title}`);
     }
 
-    const handleBack =()=> {
+    const handleBack = () => {
         router.back();
     }
 
@@ -288,12 +293,12 @@ function AccountMaster() {
         handleSave();
     });
 
-    useGlobalKey( "alt+r" ,()=>resetForm());
+    useGlobalKey("alt+r", () => resetForm());
 
     useGlobalKey("alt+c", () => handleBack());
 
     useGlobalKey("alt+e", () => handleExport("excel"));
-    
+
 
     /* -------------------- UI -------------------- */
     return (
@@ -526,7 +531,7 @@ function AccountMaster() {
                                 </>
                             )}
                             onRowClick={(company) => handleEdit(company)}
-                            headerBg="blue.800"
+                            headerBg={theme.colors.primary}
                             headerColor="white"
                             borderColor="white"
                             bodyBg={theme.colors.bg}

@@ -49,7 +49,7 @@ function SoftControlMaster() {
   const { theme } = useTheme();
   const router = useRouter();
   const { setData, setColumns, setShowSno, title } = usePrint();
-  const {isOpen, status, title:loaderTitle, description, openLoader, resolveLoader, closeLoader} = useTransactionLoader();
+  const { isOpen, status, title: loaderTitle, description, openLoader, resolveLoader, closeLoader } = useTransactionLoader();
 
   /* -------------------- API HOOKS -------------------- */
   const { data, refetch: softControlRefetch } = useSoftControls();
@@ -143,7 +143,7 @@ function SoftControlMaster() {
     }
 
     if (editId) {
-      openLoader('update',true)
+      openLoader('update', true)
       updateSoftControl(
         { ...form, id: editId },
         {
@@ -224,13 +224,13 @@ function SoftControlMaster() {
       handleSave();
     }
   );
-  useGlobalKey("Alt+s" , ()=>handleSave() , "saveTransaction");
-  useGlobalKey("Alt+r", () => resetForm() ,"Reset");
+  useGlobalKey("Alt+s", () => handleSave(), "saveTransaction");
+  useGlobalKey("Alt+r", () => resetForm(), "Reset");
   useGlobalKey("Alt+e", () => router.back(), "exit");
   useGlobalKey("Alt+u", () => handleSave(), "update");
   /* -------------------- UI -------------------- */
   return (
-    <Box fontWeight="semibold" bg={theme.colors.bg} color={theme.colors.secondary}>
+    <Box fontWeight="semibold" bg={theme.colors.bg} color={theme.colors.primary}>
 
       <TransactionLoader
         isOpen={isOpen}
@@ -245,7 +245,7 @@ function SoftControlMaster() {
         {/* FORM SECTION */}
         <GridItem>
           <VStack bg={theme.colors.formColor} p={4} borderRadius="xl" border="1px solid #eef">
-        
+
             <Fieldset.Root size="sm" width="100%">
               <Fieldset.Content>
                 <DynamicForm
@@ -308,7 +308,7 @@ function SoftControlMaster() {
                 </>
               )}
               onRowClick={(sc) => handleEdit(sc)}
-              headerBg="blue.800"
+              headerBg={theme.colors.primary}
               headerColor="white"
               borderColor="white"
               bodyBg={theme.colors.bg}

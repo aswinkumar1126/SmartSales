@@ -98,6 +98,7 @@ export interface getSingleTagDetail {
     TAGDATE: string;
     TAGNO: string;
     TOUCH: number;
+    PURTOUCH :number;
     TRANTYPE?: string | null;
     WASPER: number;
     STNAMT:number;
