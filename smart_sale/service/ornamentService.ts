@@ -1,13 +1,14 @@
 import { axiosInstance } from "@/api/axiosInstance";
 import { OrnamentPayload, ApiResponse } from "@/types/ornament/ornament";
 
-export const getOrnamentList = async (filter?: string, stockType?:'T'|'N',entryNo?:number ,tranType?:"PU"|"SA") => {
+export const getOrnamentList = async (filter?: string, stockType?:'T'|'N',entryNo?:number ,tranType?:"PU"|"SA", advancedFilter?: Record<string, any>) => {
     const response = await axiosInstance.get("/ornament",{
         params: {
             FILTER: filter,
             ...(stockType ? { STOCKTYPE: stockType } : {}),
             ...(entryNo ? {ENTRYNO :entryNo}:{}),
             ...(tranType ? { TRANTYPE: tranType } :{}),
+            ...advancedFilter,
 
         },
     });

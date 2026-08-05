@@ -48,8 +48,12 @@ import TransactionLoader from "@/component/loader/Transactionloader";
 import { useTransactionLoader } from "@/utils/loader/ResolveLoader";
 import ShortcutDialog from "@/components/shortcut/ShortcutDialog";
 import { formatToFixed } from "@/utils/format/numberFormat";
+import { AdvancedSearch, AdvancedSearchHandle } from "@/component/search/AdvancedSearch";
+import { FiFilter } from "react-icons/fi";
 
 import type { PrintColumn } from "@/component/screens/PrintPreviewScreen";
+import type { FormField } from "@/types/form/form";
+import { Tooltip } from "@/components/ui/tooltip";
 
 function AccountHeadMaster() {
     const { theme } = useTheme();
@@ -71,6 +75,8 @@ function AccountHeadMaster() {
     const companies = data?.data ?? [];
 
     const [search, setSearch] = useState<string>('');
+    const [advancedFilters, setAdvancedFilters] = useState<Record<string, any>>({});
+    const advancedSearchRef = React.useRef<AdvancedSearchHandle>(null);
 
 
     const {
@@ -85,7 +91,7 @@ function AccountHeadMaster() {
         isError: accountHeadError,
         refetch,
 
-    } = useAllAccountHead(search);
+    } = useAllAccountHead(search, advancedFilters);
 
 
 
@@ -158,6 +164,68 @@ function AccountHeadMaster() {
         activeOptions: activeStatus,
     })
     console.log(getAccountHeaderForm, 'getAccountHeaderForm')
+
+    /* -------------------- ADVANCED SEARCH -------------------- */
+    const nativeSelectCss = {
+        backgroundColor: theme.colors.formColor,
+        color: theme.colors.primary,
+        border: `1.5px solid ${theme.colors.primary}`,
+        borderRadius: "8px",
+        fontWeight: 600,
+        cursor: "pointer",
+        boxShadow: "0 1px 2px rgba(0,0,0,0.08)",
+        transition: "all 0.15s ease-in-out",
+        _hover: { backgroundColor: theme.colors.accient },
+        _focus: { outline: "none", boxShadow: `0 0 0 2px ${theme.colors.primary}` },
+    };
+
+    const advancedSearchFields: FormField[] = [
+        {
+            name: "ACNAME",
+            label: "Name",
+            type: "text",
+            isCapitalized: true,
+            placeholder: "Search by name",
+            size: "xs",
+        },
+        {
+            name: "STATEID",
+            label: "State",
+            type: "combobox",
+            items: stateCollection,
+            placeholder: "Select State",
+            size: "xs",
+            defaultValue :"22",
+            rounded : "sm"
+        },
+        {
+            name: "ACTYPE",
+            label: "Customer Type",
+            type: "select",
+            items: [{"label" : "ALL" , "value" : ""},...AccountTypeList],
+            placeholder: "Select Type",
+            size: "xs",
+            css: nativeSelectCss,
+        },
+        {
+            name: "ACTIVE",
+            label: "Active",
+            type: "select",
+            items: [{ "label": "ALL", "value": "" }, ...activeStatus],
+            size: "xs",
+            css: nativeSelectCss,
+        },
+    ];
+
+    const handleAdvancedSearch = (filters: Record<string, any>) => {
+        const cleaned: Record<string, any> = {};
+        Object.entries(filters).forEach(([key, value]) => {
+            if (value !== "" && value !== undefined && value !== null) {
+                cleaned[key] = value;
+            }
+        });
+        setAdvancedFilters(cleaned);
+    };
 
     /* -------------------- EFFECTS -------------------- */
 
@@ -458,6 +526,7 @@ function AccountHeadMaster() {
     useGlobalKey("Alt+r", () => resetForm(), "ClearTransaction");
     useGlobalKey("Alt+u", () => handleSave(), "UpdateTransaction");
     useGlobalKey("Alt+e", () => router.back(), "exitachead");
+    useGlobalKey("F1", () => advancedSearchRef.current?.toggle(), "accountHeadAdvancedSearch");
 
 
     /* -------------------- EDIT -------------------- */
@@ -477,7 +546,7 @@ function AccountHeadMaster() {
 
         // { key: "OPENING_WEIGHT", label: "Opening Weight" },
         { key: "ACTIVE", label: "Active" },
-        {key: "actions", label: "Actions" },
+        ...(showEditIcons ? [{ key: "actions", label: "Actions" }] : []),
     ];
 
     /* -------------------- EXPORT -------------------- */
@@ -638,7 +707,16 @@ function AccountHeadMaster() {
                 onClose={closeLoader}
             />
             <Toaster />
-            <ShortcutDialog />
+            <ShortcutDialog filter />
+
+            <AdvancedSearch
+                ref={advancedSearchRef}
+                title="Advanced Filters"
+                fields={advancedSearchFields}
+                initialFilters={{ ACTIVE: "Y" }}
+                onSearch={handleAdvancedSearch}
+                size="xs"
+            />
             <Grid templateColumns={{ base: "1fr", sm: "1fr 2fr" }} gap={2}>
                 {/* ---------------- FORM ---------------- */}
                 <GridItem>
@@ -696,27 +774,45 @@ function AccountHeadMaster() {
                                     />
                                 </Box>
                                 <Flex>
-                                    <Button
-                                        variant="ghost"
-                                        size="2xs"
-                                        color={theme.colors.green}
-                                        _hover={{ color: "black" }}
-                                        onClick={() => handleExport("excel")}
-                                        aria-label="Export Excel"
-                                    >
-                                        <FaFileExcel />
-                                    </Button>
-
-                                    <Button
-                                        variant="ghost"
-                                        size="2xs"
-                                        color={theme.colors.primaryText}
-                                        _hover={{ color: "black" }}
-                                        onClick={() => handleExport("pdf")}
-                                        aria-label="Export PDF"
-                                    >
-                                        <FaPrint />
-                                    </Button>
+                                    <Tooltip content="Advanced Filter">
+                                        <Button
+                                            variant="ghost"
+                                            size="2xs"
+                                            color={theme.colors.primaryText}
+                                            _hover={{ color: "black" }}
+                                            onClick={() => advancedSearchRef.current?.open()}
+                                            aria-label="Advanced Search"
+                                            title="Advanced Search (F1)"
+                                        >
+                                            <FiFilter />
+                                        </Button>
+                                    </Tooltip>
+                                </Flex>
+                                <Flex>
+                                    <Tooltip content="Export Excel">
+                                        <Button
+                                            variant="ghost"
+                                            size="2xs"
+                                            color={theme.colors.green}
+                                            _hover={{ color: "black" }}
+                                            onClick={() => handleExport("excel")}
+                                            aria-label="Export Excel"
+                                        >
+                                            <FaFileExcel />
+                                        </Button>
+                                    </Tooltip>
+                                    <Tooltip content="Export PDF">
+                                        <Button
+                                            variant="ghost"
+                                            size="2xs"
+                                            color={theme.colors.primaryText}
+                                            _hover={{ color: "black" }}
+                                            onClick={() => handleExport("pdf")}
+                                            aria-label="Export PDF"
+                                        >
+                                            <FaPrint />
+                                        </Button>
+                                    </Tooltip>
                                 </Flex>
                             </Box>
 

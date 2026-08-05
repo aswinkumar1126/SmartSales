@@ -43,6 +43,7 @@ import { usePrint } from "@/context/print/usePrintContext";
 import { useRouter } from "next/navigation";
 import { CapitalizedInput } from "@/components/ui/CapitalizedInput";
 import { useGlobalKey } from "@/components/key/useGlobalKey";
+import { useSoftControlById } from "@/hooks/apiHooks/softControl/useSoftControl";
 
 const initialFormState: PartyForm = {
     companyType: "",
@@ -69,6 +70,8 @@ function PartyMaster() {
     const { theme } = useTheme();
     const router = useRouter();
     const { setData, setColumns, title } = usePrint();
+    const { data: showEditIcon } = useSoftControlById('EDIT_ICON');
+    const showEditIcons = showEditIcon?.CTLTEXT === "Y";
     const { data: companiesData } = useAllCompanies();
     const { data: partyData = [], refetch } = useAllParties();
     const { data: partyById } = usePartyById(id ? String(id) : "");
@@ -226,7 +229,7 @@ function PartyMaster() {
         { key: "slip", label: "Slip", align: "end" as const },
         { key: "weight", label: "Open Wt", align: "end" as const, showTotal: true },
         { key: "cash", label: "Cash", align: "end" as const },
-        { key: "action", label: "Action", align: "center" as const },
+        ...(showEditIcons ? [{ key: "action", label: "Action", align: "center" as const }] : []),
     ];
 
     const handleExport = (option: string) => {
@@ -457,11 +460,13 @@ function PartyMaster() {
                                     <Table.Cell textAlign="end">{party.slipNo}</Table.Cell>
                                     <Table.Cell textAlign="end">{formatToFixed(party.openWeight, 3)}</Table.Cell>
                                     <Table.Cell textAlign="end">{formatToFixed(party.openCash, 2)}</Table.Cell>
-                                    <Table.Cell>
-                                        <Box display="flex" justifyContent="center">
-                                            <FiEdit onClick={() => handleEdit(party)} cursor="pointer" />
-                                        </Box>
-                                    </Table.Cell>
+                                    {showEditIcons &&
+                                        <Table.Cell>
+                                            <Box display="flex" justifyContent="center">
+                                                <FiEdit onClick={() => handleEdit(party)} cursor="pointer" />
+                                            </Box>
+                                        </Table.Cell>
+                                    }
                                 </>
                             )}
 

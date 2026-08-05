@@ -1,5 +1,6 @@
 import { axiosInstance } from "@/api/axiosInstance";// your configured axios
-import { ItemMast } from "@/types/item/item";
+import { ItemMast ,ItemResponse } from "@/types/item/item";
+import { ApiResponse } from "@/types/api/apiResponse";
 
 const BASE = "/item";
 
@@ -14,12 +15,16 @@ type stoneItemsParam = {
 }
 
 export const ItemService = {
-    getAll: async (filter?: string) => {
+    getAll: async (filter?: string, advancedFilter?: Record<string, any>): Promise<ApiResponse<ItemResponse>> => {
+        console.log(filter, advancedFilter, 'filter and advanced filter')
         try {
             const response = await axiosInstance.get(`${BASE}/all`, {
-                // If filter exists, send as `search` query param
-                params: filter ? { filter : filter } : undefined,
+                params: {
+                    ...(filter ? { filter } : {}),
+                    ...advancedFilter,
+                },
             });
+            console.log(response.data ,'response data from item')
             return response.data;
         } catch (error: any) {
             console.error('Error fetching all items:', error?.response?.data || error.message);

@@ -96,3 +96,24 @@ export interface ItemMast {
     tableCode: string | null;
     view4C: string | null;
 }
+
+export interface ItemMasterForm {
+    itemId: string,
+    itemName: string,
+    metalId: string,
+    hsn: string,
+    shortName: string,
+    stockType: string,
+    calType: string,
+    studded: string,
+    studdedStone: string,
+    active: string,
+    companyId: string,
+    stnPresent: string,
+
+}
+
+export interface ItemResponse {
+items: ItemMast[];
+nextId : number;
+}

@@ -37,6 +37,7 @@ import { usePrint } from "@/context/print/usePrintContext";
 import { useRouter } from "next/navigation";
 import { FaPrint, FaFileExcel } from "react-icons/fa";
 import { usePureGoldData } from "@/hooks/apiHooks/pureGoldMast/usePureGoldMastData";
+import { useSoftControlById } from "@/hooks/apiHooks/softControl/useSoftControl";
 
 import { metalMasterFields } from "@/config/master/MetalMaster";
 import { useEnterNavigation } from "@/component/form/useEnterNavigation";
@@ -53,6 +54,8 @@ function MetalMaster() {
     const { theme } = useTheme();
     const router = useRouter();
     const {isOpen, status, title:loaderTitle, description, openLoader, resolveLoader, closeLoader} = useTransactionLoader();
+    const { data: showEditIcon } = useSoftControlById('EDIT_ICON');
+    const showEditIcons = showEditIcon?.CTLTEXT === "Y";
 
     // Create refs for each input field
     const metalIdRef = useRef<HTMLInputElement>(null);
@@ -248,7 +251,7 @@ function MetalMaster() {
         { key: "metalName", label: "Metal Name" },
         { key: "displayOrder", label: "Order", align: "center" as const },
         { key: "active", label: "Active", align: "center" as const },
-        // { key: "actions", label: "Action", align: "center" as const },
+        ...(showEditIcons ? [{ key: "actions", label: "Action", align: "center" as const }] : []),
     ];
 
     const handleExport = (option: string) => {
@@ -400,11 +403,13 @@ function MetalMaster() {
                                         <Table.Cell>{metal.metalName}</Table.Cell>
                                         <Table.Cell textAlign="center">{metal.displayOrder}</Table.Cell>
                                         <Table.Cell textAlign="center">{metal.active}</Table.Cell>
-                                        {/* <Table.Cell>
-                                            <Box display="flex" justifyContent="center">
-                                                <FaEdit onClick={() => handleEdit(metal)} cursor="pointer" />
-                                            </Box>
-                                        </Table.Cell> */}
+                                        {showEditIcons &&
+                                            <Table.Cell>
+                                                <Box display="flex" justifyContent="center">
+                                                    <FaEdit onClick={() => handleEdit(metal)} cursor="pointer" />
+                                                </Box>
+                                            </Table.Cell>
+                                        }
                                     </>
                                 )}
                                 onRowClick={(metal) => handleEdit(metal)}

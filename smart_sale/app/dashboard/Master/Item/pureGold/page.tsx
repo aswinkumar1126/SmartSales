@@ -46,6 +46,7 @@ import { useGlobalKey } from "@/components/key/useGlobalKey";
 import ShortcutDialog from "@/components/shortcut/ShortcutDialog";
 import { useTransactionLoader } from "@/utils/loader/ResolveLoader";
 import TransactionLoader from "@/component/loader/Transactionloader";
+import { useSoftControlById } from "@/hooks/apiHooks/softControl/useSoftControl";
 
 /* ---------------- Initial Form State ---------------- */
 
@@ -94,6 +95,8 @@ const PureGoldMaster = () => {
     const router = useRouter();
     const { theme } = useTheme();
     const { setData, setColumns, title } = usePrint();
+    const { data: showEditIcon } = useSoftControlById('EDIT_ICON');
+    const showEditIcons = showEditIcon?.CTLTEXT === "Y";
 
 
     const { data: pureGoldData = [], refetch } = usePureGoldNames(filter);
@@ -278,7 +281,7 @@ const PureGoldMaster = () => {
         // { key: "weight", label: "Weight" ,align : "end" as const },
         // { key: "actualPure", label: "Actual Pure", align: "end" as const },
         // { key: "actualTouch", label: "Actual Touch", align: "center" as const },
-        // { key: "action", label: "Action", align: "center" as const },
+        ...(showEditIcons ? [{ key: "action", label: "Action", align: "center" as const }] : []),
     ];
 
     /* ---------------- Row Highlight Animation ---------------- */
@@ -436,15 +439,16 @@ const PureGoldMaster = () => {
                                 <Table.Cell textAlign="end">
                                     {formatToFixed(row.actualTouch,2)}
                                 </Table.Cell> */}
-                                {/* <Table.Cell align="center">
-                                    <Box display="flex" justifyContent="center">
-                                        <FiEdit
-                                            cursor="pointer"
-                                            onClick={() => handleEdit(row)}
-                                        />
-                                    </Box>
-
-                                </Table.Cell> */}
+                                {showEditIcons &&
+                                    <Table.Cell align="center">
+                                        <Box display="flex" justifyContent="center">
+                                            <FiEdit
+                                                cursor="pointer"
+                                                onClick={() => handleEdit(row)}
+                                            />
+                                        </Box>
+                                    </Table.Cell>
+                                }
                             </>
                         )}
                         onRowClick={(row) => handleEdit(row)}

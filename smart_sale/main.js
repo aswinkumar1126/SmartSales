@@ -14,7 +14,7 @@ function createWindow() {
     });
 
     // Fix slashes for Windows
-    win.loadURL(startUrl.replace(/\\/g, '/'));
+    win.loadURL("http://127.0.0.1:3000");
 }
 
 app.whenReady().then(createWindow);

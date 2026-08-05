@@ -10,12 +10,13 @@ type stoneItemsParam = {
 
 }
 
-export const useItems = (filter?: string) => {
+export const useItems = (filter?: string, advancedFilter: Record<string, any> = {}) => {
     return useQuery({
-        queryKey: ["items", filter],
+        queryKey: ["items", filter, advancedFilter],
         queryFn: async () => {
-            const res = await ItemService.getAll(filter);
+            const res = await ItemService.getAll(filter, advancedFilter);
             return res.data; // res is already the data from API
+            
         },
     });
 };

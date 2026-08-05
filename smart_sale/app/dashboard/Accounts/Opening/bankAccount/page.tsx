@@ -23,6 +23,10 @@ import { AiOutlineSave } from "react-icons/ai";
 import { IoIosExit } from "react-icons/io";
 import { FaEdit } from "react-icons/fa";
 import { FaFileExcel, FaPrint } from "react-icons/fa";
+import { FiFilter } from "react-icons/fi";
+import { AdvancedSearch, AdvancedSearchHandle } from "@/component/search/AdvancedSearch";
+import { Tooltip } from "@/components/ui/tooltip";
+import type { FormField } from "@/types/form/form";
 
 import { useTheme } from "@/context/theme/themeContext";
 import ScrollToTop from "@/component/scroll/ScrollToTop";
@@ -44,6 +48,7 @@ import { BankAccountForm } from "@/config/master/BankAccountMaster";
 import { useEnterNavigation } from "@/component/form/useEnterNavigation";
 import { DynamicForm } from "@/component/form/DynamicForm";
 import { useGlobalKey } from "@/components/key/useGlobalKey";
+import { useSoftControlById } from "@/hooks/apiHooks/softControl/useSoftControl";
 
 import type { PrintColumn } from "@/component/screens/PrintPreviewScreen";
 
@@ -65,18 +70,58 @@ function BankAccountMaster() {
     const router = useRouter();
     const { setData, setColumns, setShowSno, title } = usePrint();
     const [filter, setFilter] = useState<string>('');
+    const [advancedFilters, setAdvancedFilters] = useState<Record<string, any>>({});
+    const advancedSearchRef = React.useRef<AdvancedSearchHandle>(null);
+
+    const { data: showEditIcon } = useSoftControlById('EDIT_ICON');
+    const showEditIcons = showEditIcon?.CTLTEXT === "Y";
 
     const [form, setForm] = useState<BankAccount>(EMPTY_FORM);
     const [editId, setEditId] = useState<number | null>(null);
     const [highlightedId, setHighlightedId] = useState<number | null>(null);
 
-    const { data: allBankAccountsData, refetch } = useAllBankAccounts(filter);
+    const { data: allBankAccountsData, refetch } = useAllBankAccounts(filter, advancedFilters);
     const createMutation = useCreateBankAccount();
     const updateMutation = useUpdatebankAccount();
 
     const bankAccountList = Array.isArray(allBankAccountsData?.data) ? allBankAccountsData.data : [];
 
     const getFormFields = BankAccountForm(bankAccountType);
+
+    const nativeSelectCss = {
+        backgroundColor: theme.colors.formColor,
+        color: theme.colors.primary,
+        border: `1.5px solid ${theme.colors.primary}`,
+        borderRadius: "8px",
+        fontWeight: 600,
+        cursor: "pointer",
+        boxShadow: "0 1px 2px rgba(0,0,0,0.08)",
+        transition: "all 0.15s ease-in-out",
+        _hover: { backgroundColor: theme.colors.accient },
+        _focus: { outline: "none", boxShadow: `0 0 0 2px ${theme.colors.primary}` },
+    };
+
+    const advancedSearchFields: FormField[] = [
+        { name: "ACCOUNTNO", label: "Account Number", type: "text", placeholder: "Search by account number", size: "xs" },
+        { name: "ACCOUNTTYPE", label: "Account Type", type: "select", items: [{ label: "ALL", value: "" }, ...bankAccountType], size: "xs", css: nativeSelectCss },
+        { name: "ACHOLDERNAME", label: "Account Holder Name", type: "text", placeholder: "Search by holder name", size: "xs" },
+        { name: "ADDRESS", label: "Address", type: "text", placeholder: "Search by address", size: "xs" },
+        { name: "BANKAC", label: "Bank A/C", type: "text", placeholder: "Search by bank a/c", size: "xs" },
+        { name: "BANKNAME", label: "Bank Name", type: "text", placeholder: "Search by bank name", size: "xs" },
+        { name: "BRANCHNAME", label: "Branch Name", type: "text", placeholder: "Search by branch name", size: "xs" },
+        { name: "OPENINGBALANCE", label: "Opening Balance", type: "number", placeholder: "Search by opening balance", size: "xs" },
+        { name: "REMARKS", label: "Remarks", type: "text", placeholder: "Search by remarks", size: "xs" },
+    ];
+
+    const handleAdvancedSearch = (filters: Record<string, any>) => {
+        const cleaned: Record<string, any> = {};
+        Object.entries(filters).forEach(([key, value]) => {
+            if (value !== "" && value !== undefined && value !== null) {
+                cleaned[key] = value;
+            }
+        });
+        setAdvancedFilters(cleaned);
+    };
 
 
     const isEditing = !!editId;
@@ -189,7 +234,7 @@ function BankAccountMaster() {
         { key: "ACCOUNTTYPE", label: "Account Type" },
         { key: "BANKNAME", label: "Bank Name" },
         { key: "BRANCHNAME", label: "Branch Name" },
-        { key: "actions", label: "Actions", align: "center" as const },
+        ...(showEditIcons ? [{ key: "actions", label: "Actions", align: "center" as const }] : []),
     ];
 
     const fieldName = getFormFields.map(f => f.name);
@@ -205,10 +250,18 @@ function BankAccountMaster() {
     useGlobalKey("Alt+s", () => handleSave());
     useGlobalKey("Alt+r", () => setForm(EMPTY_FORM));
     useGlobalKey("alt+e", () => router.back());
+    useGlobalKey("F1", () => advancedSearchRef.current?.toggle(), "bankAccountAdvancedSearch");
 
     return (
-        <Box bg={theme.colors.bg}>
+        <Box bg={theme.colors.bg} color={theme.colors.primary}>
             <Toaster />
+            <AdvancedSearch
+                ref={advancedSearchRef}
+                title="Advanced Filters"
+                fields={advancedSearchFields}
+                onSearch={handleAdvancedSearch}
+                size="xs"
+            />
 
             <Grid templateColumns={{ base: "1fr", lg: "1fr 2fr" }} gap={2}>
                 {/* FORM */}
@@ -283,24 +336,41 @@ function BankAccountMaster() {
                                     />
                                 </Box>
                                 <HStack>
-                                    <Button
-                                        variant="ghost"
-                                        size="xs"
-                                        color={theme.colors.green}
-                                        _hover={{ color: "black" }}
-                                        onClick={() => handleExport("excel")}
-                                    >
-                                        <FaFileExcel />
-                                    </Button>
-                                    <Button
-                                        variant="ghost"
-                                        size="xs"
-                                        color={theme.colors.primaryText}
-                                        _hover={{ color: "black" }}
-                                        onClick={() => handleExport("pdf")}
-                                    >
-                                        <FaPrint />
-                                    </Button>
+                                    <Tooltip content="Advanced Filter">
+                                        <Button
+                                            variant="ghost"
+                                            size="xs"
+                                            color={theme.colors.primaryText}
+                                            _hover={{ color: "black" }}
+                                            onClick={() => advancedSearchRef.current?.open()}
+                                            aria-label="Advanced Search"
+                                            title="Advanced Search (F1)"
+                                        >
+                                            <FiFilter />
+                                        </Button>
+                                    </Tooltip>
+                                    <Tooltip content="Export Excel">
+                                        <Button
+                                            variant="ghost"
+                                            size="xs"
+                                            color={theme.colors.green}
+                                            _hover={{ color: "black" }}
+                                            onClick={() => handleExport("excel")}
+                                        >
+                                            <FaFileExcel />
+                                        </Button>
+                                    </Tooltip>
+                                    <Tooltip content="Export PDF">
+                                        <Button
+                                            variant="ghost"
+                                            size="xs"
+                                            color={theme.colors.primaryText}
+                                            _hover={{ color: "black" }}
+                                            onClick={() => handleExport("pdf")}
+                                        >
+                                            <FaPrint />
+                                        </Button>
+                                    </Tooltip>
                                 </HStack>
                             </Box>
                         </Flex>
@@ -323,18 +393,20 @@ function BankAccountMaster() {
                                     <Table.Cell>{account.ACCOUNTTYPE}</Table.Cell>
                                     <Table.Cell>{account.BANKNAME}</Table.Cell>
                                     <Table.Cell>{account.BRANCHNAME}</Table.Cell>
-                                    <Table.Cell>
-                                        <Box display="flex" justifyContent="center">
-                                            <FaEdit
-                                                cursor="pointer"
-                                                onClick={() => handleEdit(account)}
-                                                style={{
-                                                    color: editId === Number(account.ENTRYNO) ? theme.colors.green : theme.colors.blue,
-                                                }}
-                                                title={editId === Number(account.ENTRYNO) ? "Currently editing" : "Edit"}
-                                            />
-                                        </Box>
-                                    </Table.Cell>
+                                    {showEditIcons &&
+                                        <Table.Cell>
+                                            <Box display="flex" justifyContent="center">
+                                                <FaEdit
+                                                    cursor="pointer"
+                                                    onClick={() => handleEdit(account)}
+                                                    style={{
+                                                        color: editId === Number(account.ENTRYNO) ? theme.colors.green : theme.colors.blue,
+                                                    }}
+                                                    title={editId === Number(account.ENTRYNO) ? "Currently editing" : "Edit"}
+                                                />
+                                            </Box>
+                                        </Table.Cell>
+                                    }
                                 </>
                             )}
                         />

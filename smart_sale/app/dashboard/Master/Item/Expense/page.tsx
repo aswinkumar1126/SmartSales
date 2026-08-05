@@ -37,6 +37,7 @@ import { useGlobalKey } from "@/components/key/useGlobalKey";
 import ShortcutDialog from "@/components/shortcut/ShortcutDialog";
 import { useTransactionLoader } from "@/utils/loader/ResolveLoader";
 import TransactionLoader from "@/component/loader/Transactionloader";
+import { useSoftControlById } from "@/hooks/apiHooks/softControl/useSoftControl";
 
 type FormErrors = Partial<Record<keyof CreateExpenseMast, string>>;
 
@@ -50,6 +51,8 @@ function ExpenseMaster() {
     const { theme } = useTheme();
     const router = useRouter();
     const { isOpen, status, title: loaderTitle, description, openLoader, resolveLoader, closeLoader } = useTransactionLoader();
+    const { data: showEditIcon } = useSoftControlById('EDIT_ICON');
+    const showEditIcons = showEditIcon?.CTLTEXT === "Y";
 
     /* ---------------- STATE ---------------- */
 
@@ -194,7 +197,7 @@ function ExpenseMaster() {
         { key: "sno", label: "S.No" },
         { key: "expName", label: "Expense Name" },
         { key: "active", label: "Active" },
-        { key: "action", label: "Action", align: "center" as const },
+        ...(showEditIcons ? [{ key: "action", label: "Action", align: "center" as const }] : []),
     ];
 
     /* ---------------- ENTER NAVIGATION ---------------- */
@@ -304,12 +307,16 @@ function ExpenseMaster() {
                                 <Table.Cell>{i + 1}</Table.Cell>
                                 <Table.Cell>{row.expName}</Table.Cell>
                                 <Table.Cell>{row.active}</Table.Cell>
-                                <Table.Cell align="center">
-                                    <FiEdit
-                                        cursor="pointer"
-                                        onClick={() => handleEdit(row)}
-                                    />
-                                </Table.Cell>
+                                {showEditIcons &&
+                                    <Table.Cell align="center">
+                                        <Box display="flex" justifyContent="center">
+                                            <FiEdit
+                                                cursor="pointer"
+                                                onClick={() => handleEdit(row)}
+                                            />
+                                        </Box>
+                                    </Table.Cell>
+                                }
                             </>
                         )}
                     />

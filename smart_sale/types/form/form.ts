@@ -34,7 +34,7 @@ export interface FormField {
 
     // For select/combobox inputs
     options?: SelectItem[];
-    items?: SelectItem[];
+    items?: SelectItem[] | ((formData: Record<string, any>) => SelectItem[]);
 
     // For radio inputs
     radioOptions?: Array<{ label: string; value: string; }>;

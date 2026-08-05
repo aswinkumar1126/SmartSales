@@ -25,6 +25,7 @@ import {
     useUpdateCompany,
 } from "@/hooks/apiHooks/company/useCompany";
 import { useAllStates } from "@/hooks/apiHooks/state/useStates";
+import { useSoftControlById } from "@/hooks/apiHooks/softControl/useSoftControl";
 import ScrollToTop from "@/component/scroll/ScrollToTop";
 import { CreateCompanyPayload, Company } from "@/service/CompanyService";
 import { toastError, toastLoaded } from "@/component/toast/toast";
@@ -54,6 +55,8 @@ function CompanyMaster() {
     const companies = data?.data ?? [];
 
     const { data: allStates } = useAllStates();
+    const { data: showEditIcon } = useSoftControlById('EDIT_ICON');
+    const showEditIcons = showEditIcon?.CTLTEXT === "Y";
     const { mutate: createCompany, isPending } = useCreateCompany();
     const { mutate: updateCompany } = useUpdateCompany();
 
@@ -254,7 +257,7 @@ function CompanyMaster() {
         { key: 'COMPANYID', label: 'Company Id' },
         { key: 'COMPANYNAME', label: 'Company Name' },
         { key: 'ACTIVE', label: 'Active' },
-        // { key: 'actions', label: 'Actions' },
+        ...(showEditIcons ? [{ key: 'actions', label: 'Actions' }] : []),
     ];
 
     /* -------------------- EXPORT -------------------- */
@@ -354,11 +357,13 @@ function CompanyMaster() {
                                     <Table.Cell>{company.COMPANYID}</Table.Cell>
                                     <Table.Cell>{company.COMPANYNAME}</Table.Cell>
                                     <Table.Cell textAlign="center">{company.ACTIVE}</Table.Cell>
-                                    {/* <Table.Cell>
-                                        <Box display="flex" justifyContent="center">
-                                            <FaEdit onClick={() => handleEdit(company)} cursor="pointer" />
-                                        </Box>
-                                    </Table.Cell> */}
+                                    {showEditIcons &&
+                                        <Table.Cell>
+                                            <Box display="flex" justifyContent="center">
+                                                <FaEdit onClick={() => handleEdit(company)} cursor="pointer" />
+                                            </Box>
+                                        </Table.Cell>
+                                    }
                                 </>
                             )}
                             onRowClick={(company) => handleEdit(company)}

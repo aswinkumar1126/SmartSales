@@ -37,6 +37,7 @@ import { useGlobalKey } from "@/components/key/useGlobalKey";
 import ShortcutDialog from "@/components/shortcut/ShortcutDialog";
 import { useTransactionLoader } from "@/utils/loader/ResolveLoader";
 import TransactionLoader from "@/component/loader/Transactionloader";
+import { useSoftControlById } from "@/hooks/apiHooks/softControl/useSoftControl";
 
 
 function ItemSizeMaster() {
@@ -45,6 +46,8 @@ function ItemSizeMaster() {
     const router = useRouter();
     const { setData, setColumns, setShowSno, title } = usePrint();
     const { isOpen, status, title: loaderTitle, description, openLoader, resolveLoader, closeLoader } = useTransactionLoader();
+    const { data: showEditIcon } = useSoftControlById('EDIT_ICON');
+    const showEditIcons = showEditIcon?.CTLTEXT === "Y";
 
     /* -------------------- API HOOKS -------------------- */
 
@@ -207,7 +210,7 @@ function ItemSizeMaster() {
         { key: "index", label: "S.No" },
         { key: "ITEMID", label: "Item" },
         { key: "SIZENAME", label: "Size Name" },
-        // { key: "actions", label: "Actions" },
+        ...(showEditIcons ? [{ key: "actions", label: "Actions" }] : []),
     ];
 
     /* -------------------- EXPORT -------------------- */
@@ -320,11 +323,13 @@ function ItemSizeMaster() {
                                     <Table.Cell>{index + 1}</Table.Cell>
                                     <Table.Cell>{size.ITEMNAME}</Table.Cell>
                                     <Table.Cell>{size.SIZENAME}</Table.Cell>
-                                    {/* <Table.Cell>
-                                        <Box display="flex" justifyContent="center">
-                                            <FaEdit onClick={() => handleEdit(size)} cursor="pointer" />
-                                        </Box>
-                                    </Table.Cell> */}
+                                    {showEditIcons &&
+                                        <Table.Cell>
+                                            <Box display="flex" justifyContent="center">
+                                                <FaEdit onClick={() => handleEdit(size)} cursor="pointer" />
+                                            </Box>
+                                        </Table.Cell>
+                                    }
                                 </>
                             )}
                             onRowClick={(size) => handleEdit(size)}

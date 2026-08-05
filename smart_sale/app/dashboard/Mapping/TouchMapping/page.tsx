@@ -22,7 +22,10 @@ import { useTouchMastData } from "@/hooks/apiHooks/touch/useTouchMastData";
 
 import { TouchMaster } from "@/types/touch/touch";
 import { CustomTable } from "@/component/table/CustomTable";
-import { FiEdit } from "react-icons/fi";
+import { FiEdit, FiFilter } from "react-icons/fi";
+import { AdvancedSearch, AdvancedSearchHandle } from "@/component/search/AdvancedSearch";
+import { Tooltip } from "@/components/ui/tooltip";
+import type { FormField } from "@/types/form/form";
 import { useTheme } from "@/context/theme/themeContext";
 import { toastLoaded } from "@/component/toast/toast";
 import { Toaster } from "@/components/ui/toaster";
@@ -82,6 +85,8 @@ const TouchMasterForm = () => {
     const [highlightRowId, setHighlightRowId] = useState<number | null>(null);
     const [errors, setErrors] = useState<Partial<Record<keyof TouchMaster, string>>>({});
     const [filter, setFilter] = useState<string>('');
+    const [advancedFilters, setAdvancedFilters] = useState<Record<string, any>>({});
+    const advancedSearchRef = React.useRef<AdvancedSearchHandle>(null);
 
     const { theme } = useTheme();
     const router = useRouter();
@@ -89,7 +94,7 @@ const TouchMasterForm = () => {
 
     /* ---------------- Hooks ---------------- */
 
-    const { data: touchData = [], refetch } = useTouchMastData(filter);
+    const { data: touchData = [], refetch } = useTouchMastData(filter, advancedFilters);
     const { data: touchDatabyId, refetch: touchDataRefetch } = useTouchMasterDataById(editId);
 
     const accountType = form.actype?.trim().toUpperCase() || undefined;
@@ -97,6 +102,7 @@ const TouchMasterForm = () => {
     console.log(touchData, 'touchData')
 
     const { data: allAccounts, refetch: accountRefetch } = useAllAccountHead(accountType);
+    const { data: allAccountsForFilter } = useAllAccountHead();
     const { data: items } = useStoneItems();
 
     const createMutation = useTouchMastCreate();
@@ -118,6 +124,53 @@ const TouchMasterForm = () => {
             value: String(item.itemId),
         }));
     }, [items]);
+
+    const allAccountsForFilterRaw = useMemo(() => {
+        return Array.isArray(allAccountsForFilter?.data?.acheads) ? allAccountsForFilter.data.acheads : [];
+    }, [allAccountsForFilter]);
+
+    const getAccountsForPartyType = (partyType?: string) => {
+        const accounts = partyType
+            ? allAccountsForFilterRaw.filter((acc: any) => acc.ACTYPE === partyType)
+            : allAccountsForFilterRaw;
+        return accounts.map((acc: any) => ({
+            label: acc.ACNAME,
+            value: String(acc.ACCODE),
+        }));
+    };
+
+    /* ---------------- ADVANCED SEARCH ---------------- */
+
+    const nativeSelectCss = {
+        backgroundColor: theme.colors.formColor,
+        color: theme.colors.primary,
+        border: `1.5px solid ${theme.colors.primary}`,
+        borderRadius: "8px",
+        fontWeight: 600,
+        cursor: "pointer",
+        boxShadow: "0 1px 2px rgba(0,0,0,0.08)",
+        transition: "all 0.15s ease-in-out",
+        _hover: { backgroundColor: theme.colors.accient },
+        _focus: { outline: "none", boxShadow: `0 0 0 2px ${theme.colors.primary}` },
+    };
+
+    const advancedSearchFields: FormField[] = [
+        { name: "ACTYPE", label: "Party Type", type: "select", items: [{ label: "ALL", value: "" }, ...AccountTypeList], size: "xs", css: nativeSelectCss },
+        { name: "ACCODE", label: "Party Name", type: "combobox", items: (formData: Record<string, any>) => getAccountsForPartyType(formData.ACTYPE), placeholder: "Select Party", size: "xs" },
+        { name: "ITEMID", label: "Item Name", type: "combobox", items: allItemsList, placeholder: "Select Item", size: "xs" },
+        { name: "TOUCH", label: "Touch", type: "number", placeholder: "Search by touch", size: "xs" },
+        { name: "CALMODE", label: "Cal Mode", type: "select", items: [{ label: "ALL", value: "" }, { label: "NET WT", value: "NETWT" }, { label: "GRS WT", value: "GRSWT" }], size: "xs", css: nativeSelectCss },
+    ];
+
+    const handleAdvancedSearch = (filters: Record<string, any>) => {
+        const cleaned: Record<string, any> = {};
+        Object.entries(filters).forEach(([key, value]) => {
+            if (value !== "" && value !== undefined && value !== null) {
+                cleaned[key] = value;
+            }
+        });
+        setAdvancedFilters(cleaned);
+    };
 
     /* ---------------- FORM CONFIG ---------------- */
 
@@ -338,6 +391,7 @@ const TouchMasterForm = () => {
     useGlobalKey("Alt+r", () => resetForm(), "Reset");
     useGlobalKey("Alt+e", () => router.back(), "exit");
     useGlobalKey("Alt+u", () => handleSubmit(), "update");
+    useGlobalKey("F1", () => advancedSearchRef.current?.toggle(), "touchMappingAdvancedSearch");
     /* ------------ Highlight Timeout ---------------- */
 
     useEffect(() => {
@@ -369,6 +423,13 @@ const TouchMasterForm = () => {
             />
             <Toaster />
             <ShortcutDialog />
+            <AdvancedSearch
+                ref={advancedSearchRef}
+                title="Advanced Filters"
+                fields={advancedSearchFields}
+                onSearch={handleAdvancedSearch}
+                size="xs"
+            />
 
             {/* FORM */}
             <GridItem bg={theme.colors.formColor} p={2} rounded={'xl'} gap={2}>
@@ -436,26 +497,45 @@ const TouchMasterForm = () => {
                                 />
                             </Box>
                             <Flex>
-                                <Button
-                                    variant="ghost"
-                                    size="xs"
-                                    color={theme.colors.green}
-                                    _hover={{ color: "black" }}
-                                    onClick={() => handleExport("excel")}
-                                    aria-label="Export Excel"
-                                >
-                                    <FaFileExcel />
-                                </Button>
-                                <Button
-                                    variant="ghost"
-                                    size="xs"
-                                    color={theme.colors.primaryText}
-                                    _hover={{ color: "black" }}
-                                    onClick={() => handleExport("pdf")}
-                                    aria-label="Export PDF"
-                                >
-                                    <FaPrint />
-                                </Button>
+                                <Tooltip content="Advanced Filter">
+                                    <Button
+                                        variant="ghost"
+                                        size="xs"
+                                        color={theme.colors.primaryText}
+                                        _hover={{ color: "black" }}
+                                        onClick={() => advancedSearchRef.current?.open()}
+                                        aria-label="Advanced Search"
+                                        title="Advanced Search (F1)"
+                                    >
+                                        <FiFilter />
+                                    </Button>
+                                </Tooltip>
+                            </Flex>
+                            <Flex>
+                                <Tooltip content="Export Excel">
+                                    <Button
+                                        variant="ghost"
+                                        size="xs"
+                                        color={theme.colors.green}
+                                        _hover={{ color: "black" }}
+                                        onClick={() => handleExport("excel")}
+                                        aria-label="Export Excel"
+                                    >
+                                        <FaFileExcel />
+                                    </Button>
+                                </Tooltip>
+                                <Tooltip content="Export PDF">
+                                    <Button
+                                        variant="ghost"
+                                        size="xs"
+                                        color={theme.colors.primaryText}
+                                        _hover={{ color: "black" }}
+                                        onClick={() => handleExport("pdf")}
+                                        aria-label="Export PDF"
+                                    >
+                                        <FaPrint />
+                                    </Button>
+                                </Tooltip>
                             </Flex>
                         </Box>
                     </Heading>

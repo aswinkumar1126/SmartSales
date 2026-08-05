@@ -2,10 +2,10 @@ import { useQuery ,useMutation ,useQueryClient } from "@tanstack/react-query";
 import { createBankAccount ,getAllBankAccounts , updateBankAccount ,getBankAccount}  from "@/service/BankAccountMaster";
 import { BankAccount } from "@/types/bankAccount/BankAccount";
 
-export const useAllBankAccounts = (filter?:string) => {
+export const useAllBankAccounts = (filter?:string, advancedFilter: Record<string, any> = {}) => {
     return useQuery({
-        queryKey: ["bankAccounts" ,filter],
-        queryFn: () => getAllBankAccounts(filter),
+        queryKey: ["bankAccounts" ,filter, advancedFilter],
+        queryFn: () => getAllBankAccounts(filter, advancedFilter),
     });
 };
 

@@ -44,10 +44,13 @@ export const StoneMappingService = () => {
         }
     };
 
-    const getStoneMappingData = async (filter?: string): Promise<ApiResponse<StoneMapping>> => {
+    const getStoneMappingData = async (filter?: string, advancedFilter?: Record<string, any>): Promise<ApiResponse<StoneMapping>> => {
         try {
             const res = await axiosInstance.get("/stnamt", {
-                params: { filter },
+                params: {
+                    ...(filter ? { filter } : {}),
+                    ...advancedFilter,
+                },
             });
 
             console.log("getHmcData response:", res.data);

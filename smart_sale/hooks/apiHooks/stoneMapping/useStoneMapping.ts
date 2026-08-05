@@ -37,12 +37,12 @@ export const useStoneMappingCreate = () => {
 
 /* ---------------- GET ALL ---------------- */
 
-export const useStoneMappingData = (filter?: string) => {
+export const useStoneMappingData = (filter?: string, advancedFilter: Record<string, any> = {}) => {
     return useQuery({
-        queryKey: ["hmc", filter],
+        queryKey: ["hmc", filter, advancedFilter],
 
         queryFn: () =>
-            StoneMappingService().getStoneMappingData(filter),
+            StoneMappingService().getStoneMappingData(filter, advancedFilter),
 
         select: (data) => data.data,
     });

@@ -3,7 +3,7 @@ import { FormField } from "@/types/form/form";
 export const PureGoldMastForm = (pureCollection: { label: string; value: string }[]): FormField[] => [
     {
         name: "pureId",
-        label: "Pure ID",
+        label: "PURE NAME",
         type: "combobox", 
         size: "sm",
         required: true,
@@ -12,7 +12,7 @@ export const PureGoldMastForm = (pureCollection: { label: string; value: string 
     },
     {
         name: "aWt",
-        label: "Weight",
+        label: "WEIGHT",
         type: "number",
         size: "sm",
         required: true,
@@ -22,7 +22,7 @@ export const PureGoldMastForm = (pureCollection: { label: string; value: string 
     },
     {
         name: "aTouch",
-        label: "Actual Touch",
+        label: "ACTUAL TOUCH",
         type: "number",
         size: "sm",
         required: true,
@@ -32,7 +32,7 @@ export const PureGoldMastForm = (pureCollection: { label: string; value: string 
     },
     {
         name: "aPureWt",
-        label: "Actual Pure",
+        label: "ACTUAL PURE",
         type: "number",
         size: "sm",
         required: true,

@@ -55,7 +55,10 @@ function AccountMaster() {
 
     /* -------------------- API HOOKS -------------------- */
     const { data, isLoading } = useAllCompanies();
-  
+
+    const { data: showEditIcon } = useSoftControlById('EDIT_ICON');
+    const showEditIcons = showEditIcon?.CTLTEXT === "Y";
+
     const router = useRouter();
     const { setData, setColumns, setShowSno, title } = usePrint();
     const companies = data?.data ?? [];
@@ -265,7 +268,7 @@ function AccountMaster() {
         { key: 'companyName', label: 'Company Name' },
         // {key:'costId' , label:'Cost Id' },
         { key: 'active', label: 'Active' },
-        { key: 'actions', label: 'Actions' },
+        ...(showEditIcons ? [{ key: 'actions', label: 'Actions' }] : []),
     ];
 
     /* -------------------- Export -------------------- */
@@ -523,11 +526,13 @@ function AccountMaster() {
                                     <Table.Cell>{company.COMPANYNAME}</Table.Cell>
                                     {/* <Table.Cell>{company.COSTID}</Table.Cell> */}
                                     <Table.Cell textAlign="center">{company.ACTIVE}</Table.Cell>
-                                    <Table.Cell>
-                                        <Box display="flex" justifyContent="center">
-                                            <FaEdit onClick={() => handleEdit(company)} cursor="pointer" />
-                                        </Box>
-                                    </Table.Cell>
+                                    {showEditIcons &&
+                                        <Table.Cell>
+                                            <Box display="flex" justifyContent="center">
+                                                <FaEdit onClick={() => handleEdit(company)} cursor="pointer" />
+                                            </Box>
+                                        </Table.Cell>
+                                    }
                                 </>
                             )}
                             onRowClick={(company) => handleEdit(company)}

@@ -39,12 +39,12 @@ export const useHmcCreate = () => {
 
 /* ---------------- GET ALL ---------------- */
 
-export const useHmcData = (filter?: string) => {
+export const useHmcData = (filter?: string, advancedFilter: Record<string, any> = {}) => {
     return useQuery({
-        queryKey: ["hmc", filter],
+        queryKey: ["hmc", filter, advancedFilter],
 
         queryFn: () =>
-            HmcService().getHmcData(filter),
+            HmcService().getHmcData(filter, advancedFilter),
 
         select: (data) => data.data,
     });

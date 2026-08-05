@@ -327,6 +327,7 @@ export default function PurchasePage() {
 
     const { theme } = useTheme();
     const { data: itemsData } = useStoneItems();
+    console.log(itemsData,'itemsData');
     const { data: tagedItems } = useStoneItems({ STOCKTYPE: 'T' });
     const { data: nonTagedItemList } = useStoneItems({ STOCKTYPE: 'N' });
 

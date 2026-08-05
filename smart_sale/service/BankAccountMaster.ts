@@ -13,10 +13,13 @@ export const createBankAccount = async(payload:BankAccount)=>{
     }
 }
 
-export const getAllBankAccounts = async(filter?:string):Promise<ApiResponse<any>>=>{
+export const getAllBankAccounts = async(filter?:string, advancedFilter?: Record<string, any>):Promise<ApiResponse<any>>=>{
     try{
         const response = await axiosInstance.get(`${base}` ,{
-            params: filter ? { filter:filter } : undefined,
+            params: {
+                ...(filter ? { filter } : {}),
+                ...advancedFilter,
+            },
         });
         return response.data;
     }

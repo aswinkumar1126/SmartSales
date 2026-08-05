@@ -16,7 +16,7 @@ import {
     NativeSelect,
     Flex
 } from "@chakra-ui/react";
-import { FiEdit } from "react-icons/fi";
+import { FiEdit, FiFilter } from "react-icons/fi";
 import { FaFileExcel, FaPrint } from "react-icons/fa";
 import { AiOutlineSave } from "react-icons/ai";
 import { IoIosExit } from "react-icons/io";
@@ -48,11 +48,17 @@ import { useGlobalKey } from "@/components/key/useGlobalKey";
 import ShortcutDialog from "@/components/shortcut/ShortcutDialog";
 import { useTransactionLoader } from "@/utils/loader/ResolveLoader";
 import TransactionLoader from "@/component/loader/Transactionloader";
+import { useSoftControlById } from "@/hooks/apiHooks/softControl/useSoftControl";
+import { AdvancedSearch, AdvancedSearchHandle } from "@/component/search/AdvancedSearch";
+import { Tooltip } from "@/components/ui/tooltip";
 
 import type { PrintColumn } from "@/component/screens/PrintPreviewScreen";
+import type { FormField } from "@/types/form/form";
 
 export default function ItemMasterPage() {
 
+    const { data: showEditIcon } = useSoftControlById('EDIT_ICON');
+    const showEditIcons = showEditIcon?.CTLTEXT === "Y";
 
     /* ===================== STATE ===================== */
     const [editingId, setEditingId] = useState<number | null>(null);
@@ -91,11 +97,13 @@ export default function ItemMasterPage() {
     // ✅ FIX: Change filter from string to object
     const [filterParams, setFilterParams] = useState<string>('');
     const [searchTerm, setSearchTerm] = useState<string>('');
+    const [advancedFilters, setAdvancedFilters] = useState<Record<string, any>>({});
+    const advancedSearchRef = React.useRef<AdvancedSearchHandle>(null);
 
     /* ===================== HOOKS ===================== */
 
     // ✅ Pass filterParams object to useItems
-    const { data: itemsData, isLoading, refetch: itemsRefetch } = useItems(filterParams);
+    const { data: itemsData, isLoading, refetch: itemsRefetch } = useItems(filterParams, advancedFilters);
     const { data: companyData } = useAllCompanies();
     const { data: metalData } = useAllMetals();
     const router = useRouter();
@@ -146,6 +154,111 @@ export default function ItemMasterPage() {
         { label: "DIAMOND", value: "D" },
     ]
 
+    /* ===================== ADVANCED SEARCH ===================== */
+    const nativeSelectCss = {
+        backgroundColor: theme.colors.formColor,
+        color: theme.colors.primary,
+        border: `1.5px solid ${theme.colors.primary}`,
+        borderRadius: "8px",
+        fontWeight: 600,
+        cursor: "pointer",
+        boxShadow: "0 1px 2px rgba(0,0,0,0.08)",
+        transition: "all 0.15s ease-in-out",
+        _hover: { backgroundColor: theme.colors.accient },
+        _focus: { outline: "none", boxShadow: `0 0 0 2px ${theme.colors.primary}` },
+    };
+
+    const advancedSearchFields: FormField[] = [
+        {
+            name: "ITEMID",
+            label: "Item Id",
+            type: "number",
+            placeholder: "Search by item id",
+            size: "xs",
+        },
+        {
+            name: "ITEMNAME",
+            label: "Item Name",
+            type: "text",
+            isCapitalized: true,
+            placeholder: "Search by item name",
+            size: "xs",
+        },
+        {
+            name: "SHORTNAME",
+            label: "Short Name",
+            type: "text",
+            isCapitalized: true,
+            placeholder: "Search by short name",
+            size: "xs",
+        },
+        {
+            name :"HSN",
+            label : "HSN",
+            type: "text",
+            placeholder: "Search by HSN",
+            size: "xs",
+        },
+        {
+            name: "METALID",
+            label: "Metal",
+            type: "select",
+            items: [{ label: "ALL", value: "" }, ...metals],
+            placeholder: "Select Metal",
+            size: "xs",
+            css: nativeSelectCss,
+        },
+        {
+            name: "STOCKTYPE",
+            label: "Stock Type",
+            type: "select",
+            items: [{ label: "ALL", value: "" }, ...stockTypeOptions],
+            size: "xs",
+            css: nativeSelectCss,
+        },
+        {
+            name: "STNPRESENT",
+            label: "Stone Present",
+            type: "select",
+            items: [{ label: "ALL", value: "" }, ...yesNoOptions],
+            size: "xs",
+            css: nativeSelectCss,
+        },
+        {
+            name: "STUDDED",
+            label: "Studded",
+            type: "select",
+            items: [{ label: "ALL", value: "" }, ...yesNoOptions],
+            size: "xs",
+            css: nativeSelectCss,
+        },
+        {
+            name: "STUDDEDTYPE",
+            label: "Studded Stone Type",
+            type: "select",
+            items: [{ label: "ALL", value: "" }, ...studdedStoneCollection],
+            size: "xs",
+            css: nativeSelectCss,
+        },
+        {
+            name: "ACTIVE",
+            label: "Active",
+            type: "select",
+            items: [{ label: "ALL", value: "" }, ...yesNoOptions],
+            size: "xs",
+            css: nativeSelectCss,
+        },
+    ];
+
+    const handleAdvancedSearch = (filters: Record<string, any>) => {
+        const cleaned: Record<string, any> = {};
+        Object.entries(filters).forEach(([key, value]) => {
+            if (value !== "" && value !== undefined && value !== null) {
+                cleaned[key] = value;
+            }
+        });
+        setAdvancedFilters(cleaned);
+    };
 
     const formFields = ItemMasterFields({
         companyCollection: companies,
@@ -164,7 +277,7 @@ export default function ItemMasterPage() {
         if (!editingId) {
             setForm((prev) => ({
                 ...prev,
-                itemId: itemsData?.nextId ?? '0',
+                itemId: Number(itemsData?.nextId) ?? '0',
                 metalId: metals[0]?.value ?? "G",
                 hsn: "",
                 shortName: "",
@@ -176,7 +289,7 @@ export default function ItemMasterPage() {
                 stnPresent: "Y",
                 companyId: companies[0]?.value ?? "",
             }));
-            setAutoItemId(itemsData?.nextId ?? '0');
+            setAutoItemId(Number(itemsData?.nextId)  ?? '0');
         }
         return () => {
             controller.abort();
@@ -347,7 +460,7 @@ export default function ItemMasterPage() {
         { key: "studded", label: "Studded" },
         { key: "studdedStone", label: "Studded Stone Type" },
         { key: "active", label: "Active", align: "center" },
-        // { key: "action", label: "Action", align: "center" },
+        ...(showEditIcons ? [{ key: "actions", label: "Action", align: "center" as const }] : []),
     ];
 
     const handleExport = (option: string) => {
@@ -380,6 +493,7 @@ export default function ItemMasterPage() {
     useGlobalKey("Alt+r", () => resetForm(), "Reset");
     useGlobalKey("Alt+e", () => router.back(), "Exit");
     useGlobalKey("Alt+u", () => handleSave(), "update");
+    useGlobalKey("F1", () => advancedSearchRef.current?.toggle(), "itemMasterAdvancedSearch");
 
 
     /* ===================== UI ===================== */
@@ -393,7 +507,15 @@ export default function ItemMasterPage() {
                 description={description}
                 onClose={closeLoader}
             />
-            <ShortcutDialog />
+            <ShortcutDialog filter />
+            <AdvancedSearch
+                ref={advancedSearchRef}
+                title="Advanced Filters"
+                fields={advancedSearchFields}
+                initialFilters={{ ACTIVE: "Y" }}
+                onSearch={handleAdvancedSearch}
+                size="xs"
+            />
             <Grid
                 templateColumns={{ base: "1fr", lg: "1fr 2fr" }}
                 gap={2}
@@ -472,27 +594,46 @@ export default function ItemMasterPage() {
                                     />
                                 </Box>
                                 <Flex>
-                                    <Button
-                                        variant="ghost"
-                                        size="xs"
-                                        color={theme.colors.green}
-                                        _hover={{ color: "black" }}
-                                        onClick={() => handleExport("excel")}
-                                        aria-label="Export Excel"
-                                    >
-                                        <FaFileExcel />
-                                    </Button>
+                                    <Tooltip content="Advanced Filter">
+                                        <Button
+                                            variant="ghost"
+                                            size="xs"
+                                            color={theme.colors.primaryText}
+                                            _hover={{ color: "black" }}
+                                            onClick={() => advancedSearchRef.current?.open()}
+                                            aria-label="Advanced Search"
+                                            title="Advanced Search (F1)"
+                                        >
+                                            <FiFilter />
+                                        </Button>
+                                    </Tooltip>
+                                </Flex>
+                                <Flex>
+                                    <Tooltip content="Export Excel">
+                                        <Button
+                                            variant="ghost"
+                                            size="xs"
+                                            color={theme.colors.green}
+                                            _hover={{ color: "black" }}
+                                            onClick={() => handleExport("excel")}
+                                            aria-label="Export Excel"
+                                        >
+                                            <FaFileExcel />
+                                        </Button>
+                                    </Tooltip>
 
-                                    <Button
-                                        variant="ghost"
-                                        size="xs"
-                                        color={theme.colors.primaryText}
-                                        _hover={{ color: "black" }}
-                                        onClick={() => handleExport("pdf")}
-                                        aria-label="Export PDF"
-                                    >
-                                        <FaPrint />
-                                    </Button>
+                                    <Tooltip content="Export PDF">
+                                        <Button
+                                            variant="ghost"
+                                            size="xs"
+                                            color={theme.colors.primaryText}
+                                            _hover={{ color: "black" }}
+                                            onClick={() => handleExport("pdf")}
+                                            aria-label="Export PDF"
+                                        >
+                                            <FaPrint />
+                                        </Button>
+                                    </Tooltip>
                                 </Flex>
                             </Box>
                         </Box>
@@ -519,17 +660,19 @@ export default function ItemMasterPage() {
                                     <Table.Cell>{item.studded === "Y" ? "Yes" : "No"}</Table.Cell>
                                     <Table.Cell>{item.studded === "Y" ? item.studdedStone === "D" ? "Diamond" : "Stone" : ""}</Table.Cell>
                                     <Table.Cell textAlign="center">{item.active}</Table.Cell>
-                                    {/* <Table.Cell textAlign="center">
-                                        <Box display="flex" justifyContent="center">
-                                            <FiEdit
-                                                onClick={() => {
-                                                    handleEdit(item.itemId!, item)
-                                                    setEditingId(item.itemId!);
-                                                }}
-                                                style={{ cursor: "pointer" }}
-                                            />
-                                        </Box>
-                                    </Table.Cell> */}
+                                    {showEditIcons &&
+                                        <Table.Cell textAlign="center">
+                                            <Box display="flex" justifyContent="center">
+                                                <FiEdit
+                                                    onClick={() => {
+                                                        handleEdit(item.itemId!, item)
+                                                        setEditingId(item.itemId!);
+                                                    }}
+                                                    style={{ cursor: "pointer" }}
+                                                />
+                                            </Box>
+                                        </Table.Cell>
+                                    }
                                 </>
                             )}
                             onRowClick={(item) => {

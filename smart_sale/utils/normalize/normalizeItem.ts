@@ -1,7 +1,7 @@
-import { ItemMast } from "@/types/item/item";
+import { ItemMast ,ItemMasterForm} from "@/types/item/item";
 
 export const normalizeItem = (i: any): ItemMast => ({
-    itemId: i.itemId ?? undefined,
+    itemId: Number(i.itemId) ?? undefined,
 
     itemName: i.itemName ?? null,
     shortName: i.shortName ?? null,

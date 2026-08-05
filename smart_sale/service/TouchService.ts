@@ -4,10 +4,13 @@ import { TouchForm ,Touch, TouchFilter, GetTouchByFilter} from "@/types/touch/to
 
 
 export const TouchMastService = () => ({
-    getTouchMastData: async (filter?: string) => {
+    getTouchMastData: async (filter?: string, advancedFilter?: Record<string, any>) => {
         try {
             const response = await axiosInstance.get("/touch", {
-                params: filter ? { filter: filter } : undefined, // wrap string as object
+                params: {
+                    ...(filter ? { filter } : {}),
+                    ...advancedFilter,
+                },
             });
             return response.data;
         } catch (error: any) {

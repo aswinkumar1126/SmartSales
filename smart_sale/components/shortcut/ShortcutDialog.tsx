@@ -26,6 +26,7 @@ type Shortcut = {
 type Props = {
   remoteOpen?: boolean;
   shortcuts?: Shortcut[];
+  filter ? :boolean
 };
 
 // ─── Kbd Badge ────────────────────────────────────────────────────────────────
@@ -130,12 +131,16 @@ const ShortcutDialog = ({ remoteOpen = false, shortcuts = [
   { keys: "ALT+U", label: "Update" },
   { keys: "ALT+R", label: "Reset Form" },
   { keys: "ALT+E", label: "Exit Form" },
-] }: Props) => {
+  
+],
+filter }: Props) => {
   const { theme } = useTheme();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
 
   useGlobalKey("F2", () =>{  setOpen((o) => !o) } );
+
+  shortcuts = filter ? [{keys:"F1" ,label :"Advanced Filter"},...shortcuts] : shortcuts ;
 
   // Group shortcuts by category
   const grouped = useMemo(() => {

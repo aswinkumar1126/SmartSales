@@ -58,6 +58,9 @@ function SoftControlMaster() {
   const { data: softControlDataById, isLoading, error } = useSoftControlById('LOT_TAG_CONTROL')
   console.log(softControlDataById, 'softControlDataById')
 
+  const { data: showEditIcon } = useSoftControlById('EDIT_ICON');
+  const showEditIcons = showEditIcon?.CTLTEXT === "Y";
+
   const { mutate: createSoftControl, isPending: isCreating } = useCreateSoftControl();
   const { mutate: updateSoftControl } = useUpdateSoftControl();
 
@@ -198,7 +201,7 @@ function SoftControlMaster() {
     { key: "CTLID", label: "ID" },
     { key: "CTLNAME", label: "NAME" },
     { key: "CTLTEXT", label: "VALUE" },
-    // { key: "actions", label: "Actions" },
+    ...(showEditIcons ? [{ key: "actions", label: "Actions" }] : []),
   ];
 
   /* -------------------- EXPORT -------------------- */
@@ -300,11 +303,13 @@ function SoftControlMaster() {
                   <Table.Cell>{sc.CTLID}</Table.Cell>
                   <Table.Cell>{sc.CTLNAME}</Table.Cell>
                   <Table.Cell>{sc.CTLTEXT}</Table.Cell>
-                  {/* <Table.Cell>
-                    <Box display="flex" justifyContent="center">
-                      <FaEdit onClick={() => handleEdit(sc)} cursor="pointer" />
-                    </Box>
-                  </Table.Cell> */}
+                  {showEditIcons &&
+                    <Table.Cell>
+                      <Box display="flex" justifyContent="center">
+                        <FaEdit onClick={() => handleEdit(sc)} cursor="pointer" />
+                      </Box>
+                    </Table.Cell>
+                  }
                 </>
               )}
               onRowClick={(sc) => handleEdit(sc)}

@@ -88,6 +88,11 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
 
         const showError = touched[field.name] && errors[field.name];
 
+        const resolveItems = (f: FormField) => {
+            const source = f.items || f.options || [];
+            return typeof source === 'function' ? source(formData) : source;
+        };
+
         // Register ref function
         const setRef = (el: any) => {
             if (el) {
@@ -131,7 +136,7 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
                             className={field.className}
                             css={field.css}
                             onChange={(e) => onChange(field.name, e.target.value)}
-                            items={field.items || field.options || []}
+                            items={resolveItems(field)}
                             onEnter={() => focusNext(field.name)}
                             onBlur={() => handleBlur(field.name)}
                             maxWidth={field.width || field.maxW || field.maxWidth}
@@ -153,7 +158,7 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
                         // className={field.className}
                         // css={field.css}
                         onChange={(val) => onChange(field.name, val)}
-                        items={field.items || field.options || []}
+                        items={resolveItems(field)}
                         disable={isDisabled}
                         onEnter={() => focusNext(field.name)}
                         onKeyDown={(e) => handleKeyDown(e, field.name)}
@@ -178,7 +183,7 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
                                 // className={field.className}
                                 // css={field.css}
                                 onChange={(val) => onChange(field.name, val)}
-                                items={field.items || field.options || []}
+                                items={resolveItems(field)}
                                 disable={isDisabled}
                                 onEnter={() => focusNext(field.name)}
                                 onKeyDown={(e) => handleKeyDown(e, field.name)}

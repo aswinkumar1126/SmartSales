@@ -39,10 +39,13 @@ export const HmcService = () => {
         }
     };
 
-    const getHmcData = async (filter?: string) :Promise <ApiResponse<Hmc>> => {
+    const getHmcData = async (filter?: string, advancedFilter?: Record<string, any>) :Promise <ApiResponse<Hmc>> => {
         try {
             const res = await axiosInstance.get("/hmc", {
-                params: { filter },
+                params: {
+                    ...(filter ? { filter } : {}),
+                    ...advancedFilter,
+                },
             });
 
             console.log("getHmcData response:", res.data)

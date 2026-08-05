@@ -17,6 +17,10 @@ import { Table } from "@chakra-ui/react/table";
 import { AiOutlineSave } from "react-icons/ai";
 import { IoIosExit } from "react-icons/io";
 import { FaEdit } from "react-icons/fa";
+import { FiFilter } from "react-icons/fi";
+import { AdvancedSearch, AdvancedSearchHandle } from "@/component/search/AdvancedSearch";
+import { Tooltip } from "@/components/ui/tooltip";
+import type { FormField } from "@/types/form/form";
 
 import { Toaster } from "@/components/ui/toaster";
 import ScrollToTop from "@/component/scroll/ScrollToTop";
@@ -46,6 +50,7 @@ import { useAllMetals } from "@/hooks/apiHooks/metal/useMetals";
 import { OrnamentOpeningFields } from "@/config/opening/ornamentOpening";
 import { DynamicForm } from "@/component/form/DynamicForm";
 import { useEnterNavigation } from "@/component/form/useEnterNavigation";
+import { useGlobalKey } from "@/components/key/useGlobalKey";
 
 import type { PrintColumn } from "@/component/screens/PrintPreviewScreen";
 
@@ -96,8 +101,10 @@ function OrnamentMaster() {
 
     console.log(metalData, 'metalData')
     const [filter, setFilter] = useState<string>('');
+    const [advancedFilters, setAdvancedFilters] = useState<Record<string, any>>({});
+    const advancedSearchRef = React.useRef<AdvancedSearchHandle>(null);
 
-    const { data: ornamentList, isLoading } = useOrnamentData(filter);
+    const { data: ornamentList, isLoading } = useOrnamentData(filter, undefined, undefined, undefined, advancedFilters);
 
     console.log(ornamentList, 'ornamentList');
 
@@ -157,6 +164,30 @@ function OrnamentMaster() {
 
         setItemCollection(collection);
     }, [items]);
+
+    /* -------------------- ADVANCED SEARCH -------------------- */
+
+    const advancedSearchFields: FormField[] = [
+        { name: "ITEMID", label: "Item Name", type: "combobox", items: itemCollection, placeholder: "Select Item", size: "xs" },
+        { name: "PCS", label: "Pieces", type: "number", placeholder: "Search by pieces", size: "xs" },
+        { name: "GRSWT", label: "Gross Weight", type: "number", placeholder: "Search by gross weight", size: "xs" },
+        { name: "STNWT", label: "Stone Weight", type: "number", placeholder: "Search by stone weight", size: "xs" },
+        { name: "NETWT", label: "Net Weight", type: "number", placeholder: "Search by net weight", size: "xs" },
+        { name: "TOUCH", label: "Touch", type: "number", placeholder: "Search by touch", size: "xs" },
+        { name: "PUREWT", label: "Pure Weight", type: "number", placeholder: "Search by pure weight", size: "xs" },
+        { name: "OPENCASH", label: "Open Cash", type: "number", placeholder: "Search by open cash", size: "xs" },
+        { name: "STNAMT", label: "Stone Amount", type: "number", placeholder: "Search by stone amount", size: "xs" },
+    ];
+
+    const handleAdvancedSearch = (filters: Record<string, any>) => {
+        const cleaned: Record<string, any> = {};
+        Object.entries(filters).forEach(([key, value]) => {
+            if (value !== "" && value !== undefined && value !== null) {
+                cleaned[key] = value;
+            }
+        });
+        setAdvancedFilters(cleaned);
+    };
 
     /* -------------------- EFFECTS: CALCULATE NET WT & PURE -------------------- */
     useEffect(() => {
@@ -334,14 +365,23 @@ function OrnamentMaster() {
         focusFirst();
     }, [])
 
+    useGlobalKey("F1", () => advancedSearchRef.current?.toggle(), "ornamentOpeningAdvancedSearch");
+
     /* -------------------- UI -------------------- */
     return (
         <Box
             fontWeight='semibold'
             bg={theme.colors.bg}
-            color={theme.colors.secondary}
+            color={theme.colors.primary}
         >
             <Toaster />
+            <AdvancedSearch
+                ref={advancedSearchRef}
+                title="Advanced Filters"
+                fields={advancedSearchFields}
+                onSearch={handleAdvancedSearch}
+                size="xs"
+            />
 
             <Grid templateColumns={{ base: "1fr", lg: "1fr 2fr" }} gap={4}>
                 {/* ---------------- FORM ---------------- */}
@@ -418,27 +458,46 @@ function OrnamentMaster() {
                                     />
                                 </Box>
                                 <Flex>
-                                    <Button
-                                        variant="ghost"
-                                        size="xs"
-                                        color={theme.colors.green}
-                                        _hover={{ color: "black" }}
-                                        onClick={() => handleExport("excel")}
-                                        aria-label="Export Excel"
-                                    >
-                                        <FaFileExcel />
-                                    </Button>
+                                    <Tooltip content="Advanced Filter">
+                                        <Button
+                                            variant="ghost"
+                                            size="xs"
+                                            color={theme.colors.primaryText}
+                                            _hover={{ color: "black" }}
+                                            onClick={() => advancedSearchRef.current?.open()}
+                                            aria-label="Advanced Search"
+                                            title="Advanced Search (F1)"
+                                        >
+                                            <FiFilter />
+                                        </Button>
+                                    </Tooltip>
+                                </Flex>
+                                <Flex>
+                                    <Tooltip content="Export Excel">
+                                        <Button
+                                            variant="ghost"
+                                            size="xs"
+                                            color={theme.colors.green}
+                                            _hover={{ color: "black" }}
+                                            onClick={() => handleExport("excel")}
+                                            aria-label="Export Excel"
+                                        >
+                                            <FaFileExcel />
+                                        </Button>
+                                    </Tooltip>
 
-                                    <Button
-                                        variant="ghost"
-                                        size="xs"
-                                        color={theme.colors.primaryText}
-                                        _hover={{ color: "black" }}
-                                        onClick={() => handleExport("pdf")}
-                                        aria-label="Export PDF"
-                                    >
-                                        <FaPrint />
-                                    </Button>
+                                    <Tooltip content="Export PDF">
+                                        <Button
+                                            variant="ghost"
+                                            size="xs"
+                                            color={theme.colors.primaryText}
+                                            _hover={{ color: "black" }}
+                                            onClick={() => handleExport("pdf")}
+                                            aria-label="Export PDF"
+                                        >
+                                            <FaPrint />
+                                        </Button>
+                                    </Tooltip>
                                 </Flex>
                             </Box>
                         </Box>
@@ -446,7 +505,7 @@ function OrnamentMaster() {
                             columns={OrnamentTableColumn}
                             data={ornaments}
                             size="sm"
-                            headerBg='blue.800'
+                            headerBg={theme.colors.primary}
                             bodyBg={theme.colors.bg}
                             headerColor='white'
                             emptyText="No Ornaments available"

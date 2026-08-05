@@ -5,8 +5,11 @@ import {
     Box, Field, Input, Grid, GridItem, Button, Table, Heading, HStack, Flex, Text
 } from "@chakra-ui/react";
 import { FaFileExcel, FaPrint } from "react-icons/fa";
-import { FiEdit } from "react-icons/fi";
+import { FiEdit, FiFilter } from "react-icons/fi";
 import { IoIosAdd, IoIosExit } from "react-icons/io";
+import { AdvancedSearch, AdvancedSearchHandle } from "@/component/search/AdvancedSearch";
+import { Tooltip } from "@/components/ui/tooltip";
+import type { FormField } from "@/types/form/form";
 
 import { useTheme } from "@/context/theme/themeContext";
 import scrollToTop from "@/component/scroll/ScrollToTop";
@@ -80,12 +83,14 @@ const PureGoldOpening = () => {
     const [pureGoldName, setPureGoldName] = useState<{ label: string, value: string }[]>([]);
 
     const [filter, setFilter] = useState<string>('');
+    const [advancedFilters, setAdvancedFilters] = useState<Record<string, any>>({});
+    const advancedSearchRef = React.useRef<AdvancedSearchHandle>(null);
     /* ---------------- Hooks ---------------- */
     const router = useRouter();
     const { theme } = useTheme();
     const { setData, setColumns, title } = usePrint();
 
-    const { data: pureGoldData = [], refetch } = usePureGoldData(filter);
+    const { data: pureGoldData = [], refetch } = usePureGoldData(filter, advancedFilters);
     const { data: metalsData } = useAllMetals();
 
     const { data: allPureGoldNames = [] } = usePureGoldNames();
@@ -122,6 +127,25 @@ const PureGoldOpening = () => {
 
         setPureGoldName(fetchedData);
     }, [allPureGoldNames]);
+
+    /* ---------------- ADVANCED SEARCH ---------------- */
+
+    const advancedSearchFields: FormField[] = [
+        { name: "pureId", label: "Pure Gold Name", type: "combobox", items: pureGoldName, placeholder: "Select Pure Gold Name", size: "xs" },
+        { name: "aWt", label: "Weight", type: "number", placeholder: "Search by weight", size: "xs" },
+        { name: "aTouch", label: "Actual Touch", type: "number", placeholder: "Search by actual touch", size: "xs" },
+        { name: "aPureWt", label: "Actual Pure", type: "number", placeholder: "Search by actual pure", size: "xs" },
+    ];
+
+    const handleAdvancedSearch = (filters: Record<string, any>) => {
+        const cleaned: Record<string, any> = {};
+        Object.entries(filters).forEach(([key, value]) => {
+            if (value !== "" && value !== undefined && value !== null) {
+                cleaned[key] = value;
+            }
+        });
+        setAdvancedFilters(cleaned);
+    };
 
     /* ---------------- Helpers ---------------- */
     useEffect(() => {
@@ -313,10 +337,11 @@ const PureGoldOpening = () => {
     useGlobalKey("Alt+r", () => resetForm(), "Reset");
     useGlobalKey("Alt+e", () => router.back(), "exit");
     useGlobalKey("Alt+u", () => handleSubmit(), "update");
+    useGlobalKey("F1", () => advancedSearchRef.current?.toggle(), "pureGoldOpeningAdvancedSearch");
     /* ---------------- UI ---------------- */
 
     return (
-        <Grid templateColumns={{ base: "1fr", lg: "1fr 2fr" }} fontWeight='semibold' gap={2}>
+        <Grid templateColumns={{ base: "1fr", lg: "1fr 2fr" }} color={theme.colors.primary} fontWeight='semibold' gap={2}>
 
             <TransactionLoader
                 isOpen={isOpen}
@@ -327,6 +352,13 @@ const PureGoldOpening = () => {
             />
             <Toaster />
             <ShortcutDialog />
+            <AdvancedSearch
+                ref={advancedSearchRef}
+                title="Advanced Filters"
+                fields={advancedSearchFields}
+                onSearch={handleAdvancedSearch}
+                size="xs"
+            />
             {/* -------- Form Section -------- */}
             <GridItem>
                 <Box p={2} borderRadius="lg" bg={theme.colors.formColor} boxShadow="sm">
@@ -397,27 +429,46 @@ const PureGoldOpening = () => {
                                 />
                             </Box>
                             <Flex>
-                                <Button
-                                    variant="ghost"
-                                    size="xs"
-                                    color={theme.colors.green}
-                                    _hover={{ color: "black" }}
-                                    onClick={() => handleExport("excel")}
-                                    aria-label="Export Excel"
-                                >
-                                    <FaFileExcel />
-                                </Button>
+                                <Tooltip content="Advanced Filter">
+                                    <Button
+                                        variant="ghost"
+                                        size="xs"
+                                        color={theme.colors.primaryText}
+                                        _hover={{ color: "black" }}
+                                        onClick={() => advancedSearchRef.current?.open()}
+                                        aria-label="Advanced Search"
+                                        title="Advanced Search (F1)"
+                                    >
+                                        <FiFilter />
+                                    </Button>
+                                </Tooltip>
+                            </Flex>
+                            <Flex>
+                                <Tooltip content="Export Excel">
+                                    <Button
+                                        variant="ghost"
+                                        size="xs"
+                                        color={theme.colors.green}
+                                        _hover={{ color: "black" }}
+                                        onClick={() => handleExport("excel")}
+                                        aria-label="Export Excel"
+                                    >
+                                        <FaFileExcel />
+                                    </Button>
+                                </Tooltip>
 
-                                <Button
-                                    variant="ghost"
-                                    size="xs"
-                                    color={theme.colors.primaryText}
-                                    _hover={{ color: "black" }}
-                                    onClick={() => handleExport("pdf")}
-                                    aria-label="Export PDF"
-                                >
-                                    <FaPrint />
-                                </Button>
+                                <Tooltip content="Export PDF">
+                                    <Button
+                                        variant="ghost"
+                                        size="xs"
+                                        color={theme.colors.primaryText}
+                                        _hover={{ color: "black" }}
+                                        onClick={() => handleExport("pdf")}
+                                        aria-label="Export PDF"
+                                    >
+                                        <FaPrint />
+                                    </Button>
+                                </Tooltip>
                             </Flex>
                         </Box>
 
