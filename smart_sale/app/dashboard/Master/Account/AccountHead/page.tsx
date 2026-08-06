@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback ,useMemo } from "react";
 import {
     Box,
     Button,
@@ -49,11 +49,15 @@ import { useTransactionLoader } from "@/utils/loader/ResolveLoader";
 import ShortcutDialog from "@/components/shortcut/ShortcutDialog";
 import { formatToFixed } from "@/utils/format/numberFormat";
 import { AdvancedSearch, AdvancedSearchHandle } from "@/component/search/AdvancedSearch";
-import { FiFilter } from "react-icons/fi";
+import { FiFilter, FiRefreshCw } from "react-icons/fi";
 
 import type { PrintColumn } from "@/component/screens/PrintPreviewScreen";
 import type { FormField } from "@/types/form/form";
 import { Tooltip } from "@/components/ui/tooltip";
+import { DataTable, createDataTableColumns } from "@/component/table/DataTable";
+
+
+const accountHelper = createDataTableColumns<AccountHead>();
 
 function AccountHeadMaster() {
     const { theme } = useTheme();
@@ -549,6 +553,42 @@ function AccountHeadMaster() {
         ...(showEditIcons ? [{ key: "actions", label: "Actions" }] : []),
     ];
 
+      const partiesColumn = useMemo(() => {
+            const cols = [
+                accountHelper.display({
+                    id: "sno",
+                    header: "Sno",
+                    cell: ({ row }) => row.index + 1,
+                }),
+                accountHelper.accessor("ACCODE", { header: "Party Id" }),
+                accountHelper.accessor("ACNAME", { header: "Party Name" }),
+                accountHelper.accessor("ACTYPE", { header: "Party Type" }),
+                accountHelper.accessor("STATE", { header: "STATE" }),
+                accountHelper.accessor("OPENING_PURE", { header: "OP Pure" }),
+                accountHelper.accessor("OPENING_CASH", { header: "OP Cash" }),
+                accountHelper.accessor("ACTIVE", {
+                    header: "Active",
+                    meta: { align: "center" },
+                }),
+            ];
+    
+            if (showEditIcons) {
+                cols.push(
+                    accountHelper.display({
+                        id: "actions",
+                        header: "Actions",
+                        meta: { align: "center" },
+                        cell: ({ row }) => (
+                            <Box display="flex" justifyContent="center">
+                                <FaEdit onClick={() => handleEdit(row.original)} cursor="pointer" />
+                            </Box>
+                        ),
+                    })
+                );
+            }
+    
+            return cols;
+        }, [showEditIcons]);
     /* -------------------- EXPORT -------------------- */
     const handleExport = (option: string) => {
         setData(accountList);
@@ -763,77 +803,87 @@ function AccountHeadMaster() {
                             <Text fontWeight="semibold" fontSize="small">
                                 ACCOUNT HEAD LIST
                             </Text>
-                            <Box display='flex' gap={1}>
+                                
+                            <Flex gap={2} alignItems={"center"}>
                                 <Box >
                                     <SearchBar
                                         searchTerm={search}
                                         onChange={setSearch}
                                         placeholder="Search account masters"
                                         size="2xs"
-
                                     />
                                 </Box>
-                                <Flex>
-                                    <Tooltip content="Advanced Filter">
-                                        <Button
-                                            variant="ghost"
-                                            size="2xs"
-                                            color={theme.colors.primaryText}
-                                            _hover={{ color: "black" }}
-                                            onClick={() => advancedSearchRef.current?.open()}
-                                            aria-label="Advanced Search"
-                                            title="Advanced Search (F1)"
-                                        >
-                                            <FiFilter />
-                                        </Button>
-                                    </Tooltip>
-                                </Flex>
-                                <Flex>
-                                    <Tooltip content="Export Excel">
-                                        <Button
-                                            variant="ghost"
-                                            size="2xs"
-                                            color={theme.colors.green}
-                                            _hover={{ color: "black" }}
-                                            onClick={() => handleExport("excel")}
-                                            aria-label="Export Excel"
-                                        >
-                                            <FaFileExcel />
-                                        </Button>
-                                    </Tooltip>
-                                    <Tooltip content="Export PDF">
-                                        <Button
-                                            variant="ghost"
-                                            size="2xs"
-                                            color={theme.colors.primaryText}
-                                            _hover={{ color: "black" }}
-                                            onClick={() => handleExport("pdf")}
-                                            aria-label="Export PDF"
-                                        >
-                                            <FaPrint />
-                                        </Button>
-                                    </Tooltip>
-                                </Flex>
-                            </Box>
+                                <Tooltip content="Refresh">
+                                    <Button
+                                        variant="ghost"
+                                        size="2xs"
+                                        color={theme.colors.primaryText}
+                                        _hover={{ color: "black" }}
+                                        onClick={() => refetch()}
+                                        aria-label="Refresh"
+                                        loading={accountHeadLoading}
+                                    >
+                                        <FiRefreshCw />
+                                    </Button>
+                                </Tooltip>
+                                <Tooltip content="Advanced Filter">
+                                    <Button
+                                        variant="ghost"
+                                        size="2xs"
+                                        color={theme.colors.primaryText}
+                                        _hover={{ color: "black" }}
+                                        onClick={() => advancedSearchRef.current?.open()}
+                                        aria-label="Advanced Search"
+                                        title="Advanced Search (F1)"
+                                    >
+                                        <FiFilter />
+                                    </Button>
+                                </Tooltip>
+                                <Tooltip content="Export Excel">
+                                    <Button
+                                        variant="ghost"
+                                        size="2xs"
+                                        color={theme.colors.green}
+                                        _hover={{ color: "black" }}
+                                        onClick={() => handleExport("excel")}
+                                        aria-label="Export Excel"
+                                    >
+                                        <FaFileExcel />
+                                    </Button>
+                                </Tooltip>
+                                <Tooltip content="Export PDF">
+                                    <Button
+                                        variant="ghost"
+                                        size="2xs"
+                                        color={theme.colors.primaryText}
+                                        _hover={{ color: "black" }}
+                                        onClick={() => handleExport("pdf")}
+                                        aria-label="Export PDF"
+                                    >
+                                        <FaPrint />
+                                    </Button>
+                                </Tooltip>
+                            </Flex>
+                            
 
 
                         </Box>
 
 
-                        <CustomTable
-                            columns={accountColumn}
+                        <DataTable
+                            columns={partiesColumn}
                             data={accountList}
-                            renderRow={renderAccountRow}
                             headerBg={theme.colors.primary}
                             headerColor="white"
-                            borderColor="white"
-                            bodyBg={theme.colors.bg}
-                            highlightRowId={highlightedId ? Number(highlightedId) : null}
+                            bodyBg={theme.colors.greyColor}
+                            borderColor={theme.colors.primary}
+                            editingRowId={editId ?? (highlightedId != null ? String(highlightedId) : null)}
+                            pagination={{enabled : true , showTotalCount : true , }}
+                            editingRowBg={theme.colors.accient}
+                            onRowClick={(account) => handleEdit(account)}
                             rowIdKey="ACCODE"
-                            onRowClick={(row) => handleEdit(row)}
-                            emptyText="No companies available"
-
-
+                            
+                        
                         />
                     </Box>
                 </GridItem>

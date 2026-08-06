@@ -7,13 +7,12 @@ import {
     Grid,
     GridItem,
     Button,
-    Table,
     Heading,
     Text,
     Flex,
 } from "@chakra-ui/react";
 
-import { FiEdit, FiFilter } from "react-icons/fi";
+import { FiEdit, FiFilter, FiRefreshCw } from "react-icons/fi";
 import { FaPrint, FaFileExcel } from "react-icons/fa";
 import { AdvancedSearch, AdvancedSearchHandle } from "@/component/search/AdvancedSearch";
 import { Tooltip } from "@/components/ui/tooltip";
@@ -30,7 +29,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { toastLoaded } from "@/component/toast/toast";
 import scrollToTop from "@/component/scroll/ScrollToTop";
 import SearchBar from "@/component/search/SearchBar";
-import { CustomTable } from "@/component/table/CustomTable";
+import { DataTable, createDataTableColumns } from "@/component/table/DataTable";
 import { DynamicForm } from "@/component/form/DynamicForm";
 import { useEnterNavigation } from "@/component/form/useEnterNavigation";
 import { useGlobalKey } from "@/components/key/useGlobalKey";
@@ -72,13 +71,15 @@ const initialFormState: StoneMappingMaster = {
 
 /* ---------------- TABLE TYPE ---------------- */
 
-export type HmcTableRow = {
+export type StoneMappingTableRow = {
     sno: number;
     acType: string;
     acName: string;
     itemName: string;
-    hmcAmt: number;
+    stnAmt: number;
 };
+
+const stoneMappingHelper = createDataTableColumns<StoneMappingTableRow>();
 
 /* ---------------- COMPONENT ---------------- */
 
@@ -121,6 +122,7 @@ const HmcMappingForm = () => {
     const {
         data: stoneMappingData = [],
         refetch,
+        isLoading: stoneMappingLoading,
     } = useStoneMappingData(filter, advancedFilters);
 
     console.log(stoneMappingData, 'stoneMappingData')
@@ -133,8 +135,8 @@ const HmcMappingForm = () => {
     // const acType =
     //     form.acType?.trim().toUpperCase() || undefined;
 
-    const { data: allCustomer } = useAllAccountHead("CR");
-    const { data: allPurchaser } = useAllAccountHead("PR");
+    const { data: allCustomer } = useAllAccountHead( '',{ACTYPE :"CR"});
+    const { data: allPurchaser } = useAllAccountHead('', { ACTYPE: "PR" });
     const { data: items } = useStoneItems({ STUDDED: "Y" });
 
     const createMutation = useStoneMappingCreate();
@@ -440,36 +442,37 @@ const HmcMappingForm = () => {
 
     /* ---------------- TABLE COLUMNS ---------------- */
 
-    const columns = [
-        { key: "sno", label: "S.No" },
+    const columns = useMemo(() => {
+        return [
+            stoneMappingHelper.display({
+                id: "sno",
+                header: "S.No",
+                cell: ({ row }) => row.index + 1,
+            }),
+            stoneMappingHelper.accessor("acName", {
+                header: "Customer Name",
+            }),
+            stoneMappingHelper.accessor("acType", {
+                header: "Account Type",
+                cell: ({ getValue }) =>
+                    getValue() === "PR" ? "Purchaser" : "Customer",
+            }),
+            stoneMappingHelper.accessor("itemName", {
+                header: "Item Type",
+            }),
+            stoneMappingHelper.accessor("stnAmt", {
+                header: "STN Amount",
+                meta: { align: "end" },
+                cell: ({ getValue }) => formatToFixed(getValue(), 2),
+            }),
 
-        {
-            key: "customerName",
-            label: "Customer Name",
-        },
-
-        {
-            key: "acType",
-            label: "Account Type",
-        },
-
-        {
-            key: "itemTypeName",
-            label: "Item Type",
-        },
-
-        {
-            key: "stnAmount",
-            label: "STN Amount",
-            align: "center" as const,
-        },
-
-        // {
-        //     key: "action",
-        //     label: "Action",
-        //     align: "center" as const,
-        // },
-    ];
+            // {
+            //     key: "action",
+            //     label: "Action",
+            //     align: "center" as const,
+            // },
+        ];
+    }, []);
 
     /* ---------------- EXPORT ---------------- */
 
@@ -739,6 +742,21 @@ const HmcMappingForm = () => {
                             />
 
                             <Flex>
+                                <Tooltip content="Refresh">
+                                    <Button
+                                        variant="ghost"
+                                        size="xs"
+                                        color={theme.colors.primaryText}
+                                        _hover={{ color: "black" }}
+                                        onClick={() => refetch()}
+                                        aria-label="Refresh"
+                                        loading={stoneMappingLoading}
+                                    >
+                                        <FiRefreshCw />
+                                    </Button>
+                                </Tooltip>
+                            </Flex>
+                            <Flex>
                                 <Tooltip content="Advanced Filter">
                                     <Button
                                         variant="ghost"
@@ -805,65 +823,11 @@ const HmcMappingForm = () => {
 
                     </Heading>
 
-                    <CustomTable<HmcTableRow>
+                    <DataTable<StoneMappingTableRow>
                         columns={columns}
                         data={
-                            stoneMappingData as HmcTableRow[] || []
+                            (stoneMappingData as StoneMappingTableRow[]) || []
                         }
-                        renderRow={(
-                            row: any,
-                            i: number
-                        ) => (
-                            <>
-                                <Table.Cell>
-                                    {i + 1}
-                                </Table.Cell>
-
-                                <Table.Cell>
-                                    {
-                                        row.acName
-                                    }
-                                </Table.Cell>
-
-                                <Table.Cell>
-                                    {row.acType === "PR" ? "Purchaser" : "Customer"}
-                                </Table.Cell>
-
-                                <Table.Cell>
-                                    {
-                                        row.itemName
-                                    }
-                                </Table.Cell>
-
-                                <Table.Cell textAlign="right">
-                                    {formatToFixed(
-                                        row.stnAmt,
-                                        2
-                                    )}
-                                </Table.Cell>
-
-                                {/* <Table.Cell align="center">
-
-                                    <Box
-                                        display="flex"
-                                        justifyContent="center"
-                                        alignItems="center"
-                                    >
-
-                                        <FiEdit
-                                            cursor="pointer"
-                                            onClick={() =>
-                                                handleEdit(
-                                                    row
-                                                )
-                                            }
-                                        />
-
-                                    </Box>
-
-                                </Table.Cell> */}
-                            </>
-                        )}
                         emptyText="No data available"
                         bodyBg={
                             theme.colors.bg
@@ -872,10 +836,11 @@ const HmcMappingForm = () => {
                         headerBg={theme.colors.primary}
                         headerColor="white"
                         rowIdKey="sno"
-                        highlightRowId={
+                        editingRowId={
                             highlightRowId
                         }
                         onRowClick={(row) => handleEdit(row)}
+                        pagination={{ enabled: true, pageSize: 10, color: theme.colors.whiteColor }}
                     />
 
                 </Box>

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import {
     Box,
@@ -14,11 +14,11 @@ import {
     Flex,
     Badge,
     Spinner,
-    Table
 } from "@chakra-ui/react";
 import { AiOutlineSave } from "react-icons/ai";
 import { IoIosExit } from "react-icons/io";
 import { FaEdit, FaTrash, FaPrint, FaFileExcel } from "react-icons/fa";
+import { FiRefreshCw } from "react-icons/fi";
 import { Toaster, toaster } from "@/components/ui/toaster";
 
 /*------------------CONTEXT ------------------------------*/
@@ -27,6 +27,7 @@ import { usePrint } from "@/context/print/usePrintContext";
 
 /*------------------HOOKS ------------------------------*/
 import { useRole } from "@/hooks/apiHooks/RoleMaster/useRoleMaster";
+import { useSoftControlById } from "@/hooks/apiHooks/softControl/useSoftControl";
 
 /*------------------CONFIG ------------------------------*/
 import { RoleMaster as RoleMasterConfig } from "@/config/master/RoleMaster";
@@ -36,10 +37,11 @@ import { Role, RolePayload } from "@/types/RoleMaster/RoleMaster";
 
 /*------------------COMPONENTS ------------------------------*/
 import ScrollToTop from "@/component/scroll/ScrollToTop";
-import { CustomTable } from "@/component/table/CustomTable";
+import { DataTable, createDataTableColumns } from "@/component/table/DataTable";
 import SearchBar from "@/component/search/SearchBar";
 import { DynamicForm } from "@/component/form/DynamicForm";
 import { useEnterNavigation } from "@/component/form/useEnterNavigation";
+import { Tooltip } from "@/components/ui/tooltip";
 
 
 const USERID = 1;
@@ -57,22 +59,17 @@ const yesNoItems = [
     { label: "NO", value: "N" },
 ];
 
-const roleColumns = [
-    { key: "SNO", label: "S.No" },
-    { key: "ROLEID", label: "Role Id" },
-    { key: "ROLENAME", label: "Role Name" },
-    { key: "ACTIVE", label: "Active" },
-    { key: "PWDACCESS", label: "Password Access" },
-    { key: "ADMINACCESS", label: "Admin Access" },
-
-];
+const roleHelper = createDataTableColumns<Role>();
 
 export default function RoleMaster() {
 
     const { theme } = useTheme();
     const router = useRouter();
     const { setData, setColumns, setShowSno, title } = usePrint();
-    const { roles, loading, addRole, editRole, removeRole } = useRole();
+    const { roles, loading, addRole, editRole, removeRole, loadRoles: refetch } = useRole();
+
+    const { data: showEditIcon } = useSoftControlById('EDIT_ICON');
+    const showEditIcons = showEditIcon?.CTLTEXT === "Y";
 
     const roleMasterForm = RoleMasterConfig({ yesOrNo: yesNoItems })
 
@@ -213,6 +210,81 @@ export default function RoleMaster() {
         router.push(`/print?export=${option}`);
     };
 
+    /* -------------------- TABLE COLUMNS -------------------- */
+    const roleColumns = useMemo(() => {
+        const cols = [
+            roleHelper.display({
+                id: "sno",
+                header: "S.No",
+                cell: ({ row }) => page * size + row.index + 1,
+            }),
+            roleHelper.accessor("ROLEID", { header: "Role Id" }),
+            roleHelper.accessor("ROLENAME", { header: "Role Name" }),
+            roleHelper.accessor("ACTIVE", {
+                header: "Active",
+                meta: { align: "center" },
+                cell: ({ getValue }) => (
+                    <Badge
+                        colorScheme={getValue() === "Y" ? "green" : "red"}
+                        fontSize="xs"
+                        px={2}
+                        py={0.5}
+                        borderRadius="full"
+                    >
+                        {getValue() === "Y" ? "Yes" : "No"}
+                    </Badge>
+                ),
+            }),
+            roleHelper.accessor("PWDACCESS", {
+                header: "Password Access",
+                meta: { align: "center" },
+                cell: ({ getValue }) => (
+                    <Badge
+                        colorScheme={getValue() === "Y" ? "green" : "red"}
+                        fontSize="xs"
+                        px={2}
+                        py={0.5}
+                        borderRadius="full"
+                    >
+                        {getValue() === "Y" ? "Yes" : "No"}
+                    </Badge>
+                ),
+            }),
+            roleHelper.accessor("ADMINACCESS", {
+                header: "Admin Access",
+                meta: { align: "center" },
+                cell: ({ getValue }) => (
+                    <Badge
+                        colorScheme={getValue() === "Y" ? "green" : "red"}
+                        fontSize="xs"
+                        px={2}
+                        py={0.5}
+                        borderRadius="full"
+                    >
+                        {getValue() === "Y" ? "Yes" : "No"}
+                    </Badge>
+                ),
+            }),
+        ];
+
+        if (showEditIcons) {
+            cols.push(
+                roleHelper.display({
+                    id: "actions",
+                    header: "Actions",
+                    meta: { align: "center" },
+                    cell: ({ row }) => (
+                        <Box display="flex" justifyContent="center">
+                            <FaEdit onClick={() => handleEdit(row.original)} cursor="pointer" />
+                        </Box>
+                    ),
+                })
+            );
+        }
+
+        return cols;
+    }, [showEditIcons, page, size]);
+
     const { register, focusFirst, focusNext } = useEnterNavigation(formNames, handleSave);
 
 
@@ -301,6 +373,21 @@ export default function RoleMaster() {
 
                             <Flex gap={2} align="center">
                                 <SearchBar searchTerm="" onChange={() => console.log("")} size="xs" />
+                                <Flex>
+                                    <Tooltip content="Refresh">
+                                        <Button
+                                            variant="ghost"
+                                            size="xs"
+                                            color={theme.colors.primaryText}
+                                            _hover={{ color: "black" }}
+                                            onClick={() => refetch()}
+                                            aria-label="Refresh"
+                                            loading={loading}
+                                        >
+                                            <FiRefreshCw />
+                                        </Button>
+                                    </Tooltip>
+                                </Flex>
                                 <Button
                                     variant="ghost"
                                     size="xs"
@@ -324,59 +411,18 @@ export default function RoleMaster() {
                             </Flex>
                         </Flex>
 
-                        <CustomTable
+                        <DataTable<Role>
                             columns={roleColumns}
-                            data={paginatedRoles}
-                            renderRow={(role: Role, index: number) => (
-                                <>
-                                    <Table.Cell>{page * size + index + 1}</Table.Cell>
-                                    <Table.Cell>{role.ROLEID}</Table.Cell>
-                                    <Table.Cell>{role.ROLENAME}</Table.Cell>
-                                    <Table.Cell>
-                                        <Badge
-                                            colorScheme={role.ACTIVE === "Y" ? "green" : "red"}
-                                            fontSize="xs"
-                                            px={2}
-                                            py={0.5}
-                                            borderRadius="full"
-                                        >
-                                            {role.ACTIVE === "Y" ? "Yes" : "No"}
-                                        </Badge>
-                                    </Table.Cell>
-                                    <Table.Cell>
-                                        <Badge
-                                            colorScheme={role.PWDACCESS === "Y" ? "green" : "red"}
-                                            fontSize="xs"
-                                            px={2}
-                                            py={0.5}
-                                            borderRadius="full"
-                                        >
-                                            {role.PWDACCESS === "Y" ? "Yes" : "No"}
-                                        </Badge>
-                                    </Table.Cell>
-                                    <Table.Cell>
-                                        <Badge
-                                            colorScheme={role.ADMINACCESS === "Y" ? "green" : "red"}
-                                            fontSize="xs"
-                                            px={2}
-                                            py={0.5}
-                                            borderRadius="full"
-                                        >
-                                            {role.ADMINACCESS === "Y" ? "Yes" : "No"}
-                                        </Badge>
-                                    </Table.Cell>
-
-                                </>
-                            )}
+                            data={filteredRoles}
                             headerBg={theme.colors.primary}
                             headerColor="white"
                             borderColor="white"
                             bodyBg={theme.colors.bg}
-                            highlightRowId={highlightedId?.toString()}
+                            editingRowId={editId ?? (highlightedId != null ? String(highlightedId) : null)}
                             rowIdKey="ROLEID"
-                            emptyText="No roles available"
                             onRowClick={(row) => handleEdit(row)}
-
+                            emptyText="No roles available"
+                            pagination={{ enabled: true, pageSize: 10, color: theme.colors.whiteColor }}
                         />
 
                     </Box>

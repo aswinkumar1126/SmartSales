@@ -27,6 +27,7 @@ export interface Company {
     PANNO?: string;
 
     STATEID: number;
+    STATE?: string;
 
     LOGO?: string | File;
 

@@ -13,11 +13,10 @@ import {
     Flex,
 
 } from "@chakra-ui/react";
-import { Table } from "@chakra-ui/react/table";
 import { AiOutlineSave } from "react-icons/ai";
 import { IoIosExit } from "react-icons/io";
 import { FaEdit } from "react-icons/fa";
-import { FiFilter } from "react-icons/fi";
+import { FiFilter, FiRefreshCw } from "react-icons/fi";
 import { AdvancedSearch, AdvancedSearchHandle } from "@/component/search/AdvancedSearch";
 import { Tooltip } from "@/components/ui/tooltip";
 import type { FormField } from "@/types/form/form";
@@ -39,7 +38,7 @@ import {
 import { usePrint } from "@/context/print/usePrintContext";
 import { OrnamentPayload, OrnamentFormData } from "@/types/ornament/ornament";
 import { formatToFixed } from "@/utils/format/numberFormat";
-import { CustomTable } from "@/component/table/CustomTable";
+import { DataTable, createDataTableColumns } from "@/component/table/DataTable";
 import { toastError } from "@/component/toast/toast";
 import { useRouter } from "next/navigation";
 import { FaFileExcel, FaPrint } from "react-icons/fa";
@@ -53,6 +52,20 @@ import { useEnterNavigation } from "@/component/form/useEnterNavigation";
 import { useGlobalKey } from "@/components/key/useGlobalKey";
 
 import type { PrintColumn } from "@/component/screens/PrintPreviewScreen";
+
+type OrnamentRow = {
+    ornamentId?: number;
+    ITEMNAME?: string;
+    PCS?: number;
+    GRSWT?: number;
+    STNWT?: number;
+    NETWT?: number;
+    TOUCH?: number;
+    PUREWT?: number;
+    STNAMT?: number;
+    [key: string]: any;
+};
+const ornamentHelper = createDataTableColumns<OrnamentRow>();
 
 function OrnamentMaster() {
     /* -------------------- FORM STATE -------------------- */
@@ -104,7 +117,7 @@ function OrnamentMaster() {
     const [advancedFilters, setAdvancedFilters] = useState<Record<string, any>>({});
     const advancedSearchRef = React.useRef<AdvancedSearchHandle>(null);
 
-    const { data: ornamentList, isLoading } = useOrnamentData(filter, undefined, undefined, undefined, advancedFilters);
+    const { data: ornamentList, isLoading, refetch } = useOrnamentData(filter, undefined, undefined, undefined, advancedFilters);
 
     console.log(ornamentList, 'ornamentList');
 
@@ -323,34 +336,74 @@ function OrnamentMaster() {
 
     /*----------Table Columns ---------- */
 
-    const OrnamentTableColumn = [
-        { key: 'sno', label: 'S.NO' },
-        { key: 'itemName', label: 'Item Name' },
-        { key: 'pcs', label: 'Pcs', align: 'end' as const },
-        { key: 'grswt', label: 'Grs Wt', align: 'end' as const },
-        { key: 'stnwt', label: 'Stone Wt', align: 'end' as const },
-        { key: 'netwt', label: 'Net Wt', align: 'end' as const },
-        { key: 'touch', label: 'Touch', align: 'end' as const },
-        { key: 'pure', label: 'Pure', align: 'end' as const },
-        { key: 'stoneCash', label: 'StoneCash', align: 'end' as const },
-        // { key: 'action', label: 'Actions', align: 'center' as const },
-    ]
+    const ornamentColumns = useMemo(() => [
+        ornamentHelper.display({
+            id: "sno",
+            header: "S.NO",
+            cell: ({ row }) => row.index + 1,
+        }),
+        ornamentHelper.accessor("ITEMNAME", { header: "Item Name" }),
+        ornamentHelper.accessor("PCS", {
+            header: "Pcs",
+            meta: { align: "end" },
+        }),
+        ornamentHelper.accessor("GRSWT", {
+            header: "Grs Wt",
+            meta: { align: "end" },
+            cell: ({ getValue }) => formatToFixed(getValue(), 3),
+        }),
+        ornamentHelper.accessor("STNWT", {
+            header: "Stone Wt",
+            meta: { align: "end" },
+            cell: ({ getValue }) => formatToFixed(getValue(), 3),
+        }),
+        ornamentHelper.accessor("NETWT", {
+            header: "Net Wt",
+            meta: { align: "end" },
+            cell: ({ getValue }) => formatToFixed(getValue(), 3),
+        }),
+        ornamentHelper.accessor("TOUCH", {
+            header: "Touch",
+            meta: { align: "end" },
+            cell: ({ getValue }) => formatToFixed(getValue(), 2),
+        }),
+        ornamentHelper.accessor("PUREWT", {
+            header: "Pure",
+            meta: { align: "end" },
+            cell: ({ getValue }) => formatToFixed(getValue(), 3),
+        }),
+        ornamentHelper.accessor("STNAMT", {
+            header: "StoneCash",
+            meta: { align: "end" },
+            cell: ({ getValue }) => formatToFixed(getValue(), 2),
+        }),
+        ornamentHelper.display({
+            id: "actions",
+            header: "Actions",
+            meta: { align: "center" },
+            cell: ({ row }) => (
+                <Box display="flex" justifyContent="center">
+                    <FaEdit cursor="pointer" onClick={() => handleEdit(row.original)} />
+                </Box>
+            ),
+        }),
+    ], []);
 
 
 
     /*----------Print ---------- */
     const handleExport = (option: string) => {
         setData(ornaments);
-        const columns :PrintColumn[]= 
+        const columns: PrintColumn[] =
             [
                 { key: 'ITEMNAME', label: 'Item Name' },
                 { key: 'PCS', label: 'Pieces', align: 'end' as const, allowTotal: true },
-                { key: 'GRSWT', label: 'Gross Weight', align: 'end' as const, allowTotal: true ,renderCell :(value)=>formatToFixed(value,3) , printValue:(value)=>formatToFixed(value, 3)},
+                { key: 'GRSWT', label: 'Gross Weight', align: 'end' as const, allowTotal: true, renderCell: (value) => formatToFixed(value, 3), printValue: (value) => formatToFixed(value, 3) },
                 { key: 'STNWT', label: 'Stone Weight', align: 'end' as const, allowTotal: true, renderCell: (value) => formatToFixed(value, 3), printValue: (value) => formatToFixed(value, 3) },
                 { key: 'NETWT', label: 'Net Weight', align: 'end' as const, allowTotal: true, renderCell: (value) => formatToFixed(value, 3), printValue: (value) => formatToFixed(value, 3) },
                 { key: 'TOUCH', label: 'touch', align: 'end' as const, allowTotal: true, renderCell: (value) => formatToFixed(value, 2), printValue: (value) => formatToFixed(value, 2) },
                 { key: 'PURE', label: 'Pure Weight', align: 'end' as const, allowTotal: true, renderCell: (value) => formatToFixed(value, 3), printValue: (value) => formatToFixed(value, 3) },
-              
+
             ]
         setColumns(columns);
         title?.("Ornament Opening List")
@@ -458,6 +511,21 @@ function OrnamentMaster() {
                                     />
                                 </Box>
                                 <Flex>
+                                    <Tooltip content="Refresh">
+                                        <Button
+                                            variant="ghost"
+                                            size="xs"
+                                            color={theme.colors.primaryText}
+                                            _hover={{ color: "black" }}
+                                            onClick={() => refetch()}
+                                            aria-label="Refresh"
+                                            loading={isLoading}
+                                        >
+                                            <FiRefreshCw />
+                                        </Button>
+                                    </Tooltip>
+                                </Flex>
+                                <Flex>
                                     <Tooltip content="Advanced Filter">
                                         <Button
                                             variant="ghost"
@@ -501,39 +569,19 @@ function OrnamentMaster() {
                                 </Flex>
                             </Box>
                         </Box>
-                        <CustomTable
-                            columns={OrnamentTableColumn}
+                        <DataTable<OrnamentRow>
+                            columns={ornamentColumns}
                             data={ornaments}
                             size="sm"
                             headerBg={theme.colors.primary}
                             bodyBg={theme.colors.bg}
                             headerColor='white'
+                            borderColor='white'
                             emptyText="No Ornaments available"
-                            rowIdKey='sno'
-                            highlightRowId={higlightedId ? Number(higlightedId) : null}
-                            renderRow={(ornament: any, index: number) => (
-                                <>
-                                    <Table.Cell>{index + 1}</Table.Cell>
-                                    <Table.Cell>{ornament.ITEMNAME}</Table.Cell>
-                                    <Table.Cell textAlign='end'>{ornament.PCS}</Table.Cell>
-                                    <Table.Cell textAlign='end'>{formatToFixed(ornament.GRSWT, 3)}</Table.Cell>
-                                    <Table.Cell textAlign='end'>{formatToFixed(ornament.STNWT, 3)}</Table.Cell>
-                                    <Table.Cell textAlign='end'>{formatToFixed(ornament.NETWT, 3)}</Table.Cell>
-                                    <Table.Cell textAlign='end'>{formatToFixed(ornament.TOUCH, 2)}</Table.Cell>
-                                    <Table.Cell textAlign='end'>{formatToFixed(ornament.PUREWT, 3)}</Table.Cell>
-                                    <Table.Cell textAlign='end'>{formatToFixed(ornament.STNAMT, 2)}</Table.Cell>
-                                    {/* <Table.Cell>
-                                        <Box display='flex' justifyContent='center'>
-                                            <FaEdit
-                                                cursor="pointer"
-                                                onClick={() => handleEdit(ornament)}
-                                            />
-                                        </Box>
-
-                                    </Table.Cell> */}
-                                </>
-                            )}
-
+                            rowIdKey='ornamentId'
+                            editingRowId={higlightedId != null ? Number(higlightedId) : null}
+                            onRowClick={(row) => handleEdit(row)}
+                            pagination={{ enabled: true, pageSize: 10, color: theme.colors.whiteColor }}
                         />
                     </Box>
 

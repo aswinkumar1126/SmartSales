@@ -51,7 +51,7 @@ const SearchBar = <T,>({
     return (
         <InputGroup
             className={className}
-            startElement={<FiSearch color={theme?.colors?.accient || '#011f4b'} />}
+            startElement={<FiSearch color={theme?.colors?.primary || '#011f4b'} />}
             endElement={
                 searchTerm && !disabled ? (
                     <FiX
@@ -61,7 +61,7 @@ const SearchBar = <T,>({
                             e.currentTarget.style.color = '#bd0808';
                         }}
                         onMouseLeave={(e) => {
-                            e.currentTarget.style.color = theme?.colors?.greyColor || '#718096';
+                            e.currentTarget.style.color = theme?.colors?.primary || '#718096';
                         }}
                     />
                 ) : undefined

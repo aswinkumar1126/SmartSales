@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import {
     Box,
     Button,
@@ -12,13 +12,13 @@ import {
     Fieldset,
     Flex,
 } from "@chakra-ui/react";
-import { Table } from "@chakra-ui/react/table";
 import { AiOutlineSave } from "react-icons/ai";
 import { IoIosExit } from "react-icons/io";
 import { FaEdit, FaPrint, FaFileExcel } from "react-icons/fa";
+import { FiRefreshCw } from "react-icons/fi";
 
 import { Toaster } from "@/components/ui/toaster";
-import { CustomTable } from "@/component/table/CustomTable";
+import { DataTable, createDataTableColumns } from "@/component/table/DataTable";
 import ScrollToTop from "@/component/scroll/ScrollToTop";
 import { toastError, toastLoaded } from "@/component/toast/toast";
 import { DynamicForm } from "@/component/form/DynamicForm";
@@ -38,7 +38,10 @@ import ShortcutDialog from "@/components/shortcut/ShortcutDialog";
 import { useTransactionLoader } from "@/utils/loader/ResolveLoader";
 import TransactionLoader from "@/component/loader/Transactionloader";
 import { useSoftControlById } from "@/hooks/apiHooks/softControl/useSoftControl";
+import { Tooltip } from "@/components/ui/tooltip";
 
+
+const sizeHelper = createDataTableColumns<ItemSize>();
 
 function ItemSizeMaster() {
 
@@ -56,7 +59,7 @@ function ItemSizeMaster() {
 
     const [filter, setFilter] = useState<string>('');
     const { data: itemCollection } = useStoneItems({ STUDDED: 'N' });
-    const { data: itemSizeData, refetch: itemSizeRefetch } = useSize(filter);
+    const { data: itemSizeData, isLoading: itemSizeLoading, refetch: itemSizeRefetch } = useSize(filter);
     const { mutate: createItemSize, isPending } = useCreateSize();
     const { mutate: updateItemSize } = useUpdateSize();
     const { mutate: deleteItemSize } = useDeleteSize();
@@ -206,12 +209,34 @@ function ItemSizeMaster() {
     };
 
     /* -------------------- TABLE COLUMNS -------------------- */
-    const sizeColumns = [
-        { key: "index", label: "S.No" },
-        { key: "ITEMID", label: "Item" },
-        { key: "SIZENAME", label: "Size Name" },
-        ...(showEditIcons ? [{ key: "actions", label: "Actions" }] : []),
-    ];
+    const sizeColumns = useMemo(() => {
+        const cols = [
+            sizeHelper.display({
+                id: "sno",
+                header: "S.No",
+                cell: ({ row }) => row.index + 1,
+            }),
+            sizeHelper.accessor("ITEMNAME", { header: "Item" }),
+            sizeHelper.accessor("SIZENAME", { header: "Size Name" }),
+        ];
+
+        if (showEditIcons) {
+            cols.push(
+                sizeHelper.display({
+                    id: "actions",
+                    header: "Actions",
+                    meta: { align: "center" },
+                    cell: ({ row }) => (
+                        <Box display="flex" justifyContent="center">
+                            <FaEdit onClick={() => handleEdit(row.original)} cursor="pointer" />
+                        </Box>
+                    ),
+                })
+            );
+        }
+
+        return cols;
+    }, [showEditIcons]);
 
     /* -------------------- EXPORT -------------------- */
     const handleExport = (option: string) => {
@@ -296,7 +321,7 @@ function ItemSizeMaster() {
                     <Box bg={theme.colors.formColor} p={2} borderRadius="xl" border="1px solid #eef">
                         <Box display='flex' mb={2} gap={2} justifyContent='space-between' alignItems='center'>
                             <Text fontWeight="semibold" fontSize="small">ITEM SIZE DETAILS</Text>
-                            <Flex>
+                            <Flex alignItems={"center"} gap={2}>
 
                                 <SearchBar
                                     searchTerm={filter}
@@ -306,41 +331,46 @@ function ItemSizeMaster() {
 
                                 />
 
-                                <Button variant="ghost" size="xs" color={theme.colors.green} onClick={() => handleExport("excel")}>
-                                    <FaFileExcel />
-                                </Button>
-                                <Button variant="ghost" size="xs" color={theme.colors.primaryText} onClick={() => handleExport("pdf")}>
-                                    <FaPrint />
-                                </Button>
+                               
+                                <Tooltip content="Refresh">
+                                    <Button
+                                        variant="ghost"
+                                        size="2xs"
+                                        color={theme.colors.primaryText}
+                                        _hover={{ color: "black" }}
+                                        onClick={() => itemSizeRefetch()}
+                                        aria-label="Refresh"
+                                        loading={itemSizeLoading}
+                                    >
+                                        <FiRefreshCw />
+                                    </Button>
+                                </Tooltip>
+                             
+                                <Tooltip content="Export Excel">
+                                    <Button variant="ghost" size="xs" color={theme.colors.green} onClick={() => handleExport("excel")}>
+                                        <FaFileExcel />
+                                    </Button>
+                                </Tooltip>
+                                <Tooltip content="Export PDF">
+                                    <Button variant="ghost" size="xs" color={theme.colors.primaryText} onClick={() => handleExport("pdf")}>
+                                        <FaPrint />
+                                    </Button>
+                                </Tooltip>
                             </Flex>
                         </Box>
 
-                        <CustomTable
+                        <DataTable<ItemSize>
                             columns={sizeColumns}
                             data={itemSizeData || []}
-                            renderRow={(size, index) => (
-                                <>
-                                    <Table.Cell>{index + 1}</Table.Cell>
-                                    <Table.Cell>{size.ITEMNAME}</Table.Cell>
-                                    <Table.Cell>{size.SIZENAME}</Table.Cell>
-                                    {showEditIcons &&
-                                        <Table.Cell>
-                                            <Box display="flex" justifyContent="center">
-                                                <FaEdit onClick={() => handleEdit(size)} cursor="pointer" />
-                                            </Box>
-                                        </Table.Cell>
-                                    }
-                                </>
-                            )}
                             onRowClick={(size) => handleEdit(size)}
                             headerBg={theme.colors.primary}
                             headerColor="white"
                             borderColor="white"
                             bodyBg={theme.colors.bg}
-                            highlightRowId={highlightedId}
+                            editingRowId={editId ?? (highlightedId != null ? String(highlightedId) : null)}
                             rowIdKey="SIZEID"
                             emptyText="No Sizes available"
-
+                            pagination={{ enabled: true, pageSize: 10, color: theme.colors.whiteColor }}
                         />
                     </Box>
                 </GridItem>

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import {
     Box,
     Button,
@@ -14,7 +14,6 @@ import {
     Stack,
     Fieldset,
 } from "@chakra-ui/react";
-import { Table } from "@chakra-ui/react/table";
 
 import Image from "next/image";
 import { useTheme } from "@/context/theme/themeContext";
@@ -29,9 +28,10 @@ import { useUsers } from "@/hooks/apiHooks/user/useUsers";
 import { useCreateUser } from "@/hooks/apiHooks/user/useCreateUser";
 import { usePatchUser } from "@/hooks/apiHooks/user/usePatchUser";
 import { UserMaster } from "@/types/user/user";
-import { FiEdit } from "react-icons/fi";
+import { FiEdit, FiRefreshCw } from "react-icons/fi";
 import { useUserById } from "@/hooks/apiHooks/user/useUserById";
-import { CustomTable } from "@/component/table/CustomTable";
+import { DataTable, createDataTableColumns, type DataTableColumn } from "@/component/table/DataTable";
+import { useSoftControlById } from "@/hooks/apiHooks/softControl/useSoftControl";
 import { CapitalizedInput } from "@/components/ui/CapitalizedInput";
 import { getImage } from "@/utils/image/getImage";
 import { usePrint } from "@/context/print/usePrintContext";
@@ -45,7 +45,9 @@ import { useTransactionLoader } from "@/utils/loader/ResolveLoader";
 import TransactionLoader from "@/component/loader/Transactionloader";
 
 import type { PrintColumn } from "@/component/screens/PrintPreviewScreen";
+import { Tooltip } from "@/components/ui/tooltip";
 
+const userHelper = createDataTableColumns<UserMaster>();
 
 export default function UserMasters() {
 
@@ -53,7 +55,7 @@ export default function UserMasters() {
     const { user } = useAuth();
     const router = useRouter();
     const { setData, setColumns, title } = usePrint();
-    const {isOpen, status, title:loaderTitle, description, openLoader, resolveLoader, closeLoader} = useTransactionLoader();
+    const { isOpen, status, title: loaderTitle, description, openLoader, resolveLoader, closeLoader } = useTransactionLoader();
 
     const [imagePreview, setImagePreview] = useState<string | undefined | null>(null);
     const [confirmPwd, setConfirmPwd] = useState("");
@@ -71,7 +73,10 @@ export default function UserMasters() {
     const [editingUserId, setEditingUserId] = useState<number | null>(null);
     const [highlightId, setHighlightedId] = useState<Number>();
 
-    const { data, isLoading } = useUsers();
+    const { data, isLoading, refetch } = useUsers();
+
+    const { data: showEditIcon } = useSoftControlById('EDIT_ICON');
+    const showEditIcons = showEditIcon?.CTLTEXT === "Y";
 
     // ─── Refs ───────────────────────────────────────────────────────────────
     const userNameRef = useRef<HTMLInputElement | null>(null);
@@ -197,14 +202,16 @@ export default function UserMasters() {
             openLoader('save', true)
             createUser(
                 { user: payload, image: selectedImage },
-                { onSuccess: () => {resetForm();
-                    resolveLoader("success", "save", "", true)
-                }, 
-                onError: () => {
+                {
+                    onSuccess: () => {
+                        resetForm();
+                        resolveLoader("success", "save", "", true)
+                    },
+                    onError: () => {
                         resolveLoader("error", "save", "", true)
                     }
-}
-               
+                }
+
             );
         }
     };
@@ -237,12 +244,30 @@ export default function UserMasters() {
         { label: "NO", value: "N" },
     ];
 
-    const UserMasterColumn = [
-        { key: "userId", label: "User Id" },
-        { key: "username", label: "User Name" },
-        { key: "active", label: "Active", align: 'center' as const },
-        // { key: "action", label: "Actions", align: 'center' as const },
-    ];
+    const userColumns = useMemo(() => {
+        const cols: DataTableColumn<UserMaster>[] = [
+            userHelper.accessor("userId", { header: "User Id" }),
+            userHelper.accessor("username", { header: "User Name" }),
+            userHelper.accessor("active", { header: "Active", meta: { align: "center" } }),
+        ];
+
+        if (showEditIcons) {
+            cols.push(
+                userHelper.display({
+                    id: "actions",
+                    header: "Actions",
+                    meta: { align: "center" },
+                    cell: ({ row }) => (
+                        <Box display="flex" justifyContent="center">
+                            <FiEdit onClick={() => loadUserIntoForm(row.original)} cursor="pointer" />
+                        </Box>
+                    ),
+                })
+            );
+        }
+
+        return cols;
+    }, [showEditIcons]);
 
     const handleExport = (option: string) => {
         setData(users);
@@ -255,8 +280,8 @@ export default function UserMasters() {
         router.push(`/print?export=${option}`);
         title?.("User List");
     };
-    useGlobalKey("Alt+s" , ()=>handleSave() , "saveTransaction");
-    useGlobalKey("Alt+r", () => resetForm() ,"Reset");
+    useGlobalKey("Alt+s", () => handleSave(), "saveTransaction");
+    useGlobalKey("Alt+r", () => resetForm(), "Reset");
     useGlobalKey("Alt+e", () => router.back(), "exit");
     useGlobalKey("Alt+u", () => handleSave(), "update");
 
@@ -273,7 +298,7 @@ export default function UserMasters() {
                 description={description}
                 onClose={closeLoader}
             />
-         
+
             <ShortcutDialog />
             <Grid templateColumns={{ base: "1fr", lg: "1fr 2fr" }} gap={2}>
 
@@ -428,7 +453,7 @@ export default function UserMasters() {
                                     <Button
                                         size="xs"
                                         colorPalette="blue"
-                                        onClick={()=>router.back()}
+                                        onClick={() => router.back()}
                                     >
                                         Exit <IoIosExit />
                                     </Button>
@@ -450,6 +475,19 @@ export default function UserMasters() {
                         <Box display='flex' alignItems='center' justifyContent='space-between'>
                             <Text fontWeight="semibold" fontSize="small">USER LIST</Text>
                             <Flex>
+                                <Tooltip content="Refresh">
+                                    <Button
+                                        variant="ghost"
+                                        size="xs"
+                                        color={theme.colors.primaryText}
+                                        _hover={{ color: "black" }}
+                                        onClick={() => refetch()}
+                                        aria-label="Refresh"
+                                        loading={isLoading}
+                                    >
+                                        <FiRefreshCw />
+                                    </Button>
+                                </Tooltip>
                                 <Button
                                     variant="ghost"
                                     size="xs"
@@ -474,32 +512,17 @@ export default function UserMasters() {
                         </Box>
 
                         <Stack>
-                            <CustomTable
-                                columns={UserMasterColumn}
+                            <DataTable<UserMaster>
+                                columns={userColumns}
                                 data={users}
-                                size="sm"
                                 headerBg={theme.colors.primary}
                                 bodyBg={theme.colors.bg}
                                 headerColor='white'
                                 emptyText="No parties available"
                                 rowIdKey="userId"
-                                highlightRowId={highlightId ? Number(highlightId) : null}
-                                renderRow={(user, i) => (
-                                    <>
-                                        <Table.Cell>{user.userId}</Table.Cell>
-                                        <Table.Cell>{user.username}</Table.Cell>
-                                        <Table.Cell textAlign="center">{user.active}</Table.Cell>
-                                        {/* <Table.Cell>
-                                            <Box display="flex" justifyContent="center">
-                                                <FiEdit
-                                                    onClick={() => loadUserIntoForm(user)}
-                                                    cursor="pointer"
-                                                />
-                                            </Box>
-                                        </Table.Cell> */}
-                                    </>
-                                )}
+                                editingRowId={editingUserId ?? (highlightId != null ? Number(highlightId) : null)}
                                 onRowClick={(user) => loadUserIntoForm(user)}
+                                pagination={{ enabled: true, pageSize: 10, color: theme.colors.whiteColor }}
                             />
                         </Stack>
                     </Box>

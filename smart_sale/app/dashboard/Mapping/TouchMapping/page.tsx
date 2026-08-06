@@ -7,7 +7,6 @@ import {
     Grid,
     GridItem,
     Button,
-    Table,
     Heading,
     HStack,
     Text,
@@ -21,8 +20,8 @@ import { useModifyTouchMasterById } from "@/hooks/apiHooks/touch/useTouchMastMod
 import { useTouchMastData } from "@/hooks/apiHooks/touch/useTouchMastData";
 
 import { TouchMaster } from "@/types/touch/touch";
-import { CustomTable } from "@/component/table/CustomTable";
-import { FiEdit, FiFilter } from "react-icons/fi";
+import { DataTable, createDataTableColumns } from "@/component/table/DataTable";
+import { FiEdit, FiFilter, FiRefreshCw } from "react-icons/fi";
 import { AdvancedSearch, AdvancedSearchHandle } from "@/component/search/AdvancedSearch";
 import { Tooltip } from "@/components/ui/tooltip";
 import type { FormField } from "@/types/form/form";
@@ -75,6 +74,8 @@ export type TouchTableRow = {
     calmode: string;
 };
 
+const touchHelper = createDataTableColumns<TouchTableRow>();
+
 /* ---------------- Component ---------------- */
 
 const TouchMasterForm = () => {
@@ -94,7 +95,7 @@ const TouchMasterForm = () => {
 
     /* ---------------- Hooks ---------------- */
 
-    const { data: touchData = [], refetch } = useTouchMastData(filter, advancedFilters);
+    const { data: touchData = [], refetch, isLoading: touchDataLoading } = useTouchMastData(filter, advancedFilters);
     const { data: touchDatabyId, refetch: touchDataRefetch } = useTouchMasterDataById(editId);
 
     const accountType = form.actype?.trim().toUpperCase() || undefined;
@@ -338,16 +339,32 @@ const TouchMasterForm = () => {
 
     /* ---------------- Table Columns ---------------- */
 
-    const columns = [
-        { key: "sno", label: "S.No" },
-        { key: "acname", label: "Company Name" },
-        { key: "actype", label: "Company Type" },
-        { key: "itemName", label: "Item Name" },
-        { key: "touch", label: "Touch", align: "center" as const },
-        { key: "calmode", label: "Cal Mode", align: "center" as const },
-
-        // { key: "action", label: "Action", align: "center" as const },
-    ];
+    const touchColumns = useMemo(
+        () => [
+            touchHelper.display({
+                id: "sno",
+                header: "S.No",
+                cell: ({ row }) => row.index + 1,
+            }),
+            touchHelper.accessor("acname", { header: "Company Name" }),
+            touchHelper.accessor("actype", {
+                header: "Company Type",
+                cell: ({ getValue }) =>
+                    AccountTypeList.find((item) => item.value === getValue())?.label || getValue(),
+            }),
+            touchHelper.accessor("itemName", { header: "Item Name" }),
+            touchHelper.accessor("touch", {
+                header: "Touch",
+                meta: { align: "end" },
+                cell: ({ getValue }) => formatToFixed(getValue(), 2),
+            }),
+            touchHelper.accessor("calmode", {
+                header: "Cal Mode",
+                meta: { align: "start" },
+            }),
+        ],
+        []
+    );
 
     const handleExport = (option: string) => {
         setData(touchData);
@@ -497,6 +514,21 @@ const TouchMasterForm = () => {
                                 />
                             </Box>
                             <Flex>
+                                <Tooltip content="Refresh">
+                                    <Button
+                                        variant="ghost"
+                                        size="xs"
+                                        color={theme.colors.primaryText}
+                                        _hover={{ color: "black" }}
+                                        onClick={() => refetch()}
+                                        aria-label="Refresh"
+                                        loading={touchDataLoading}
+                                    >
+                                        <FiRefreshCw />
+                                    </Button>
+                                </Tooltip>
+                            </Flex>
+                            <Flex>
                                 <Tooltip content="Advanced Filter">
                                     <Button
                                         variant="ghost"
@@ -540,34 +572,19 @@ const TouchMasterForm = () => {
                         </Box>
                     </Heading>
 
-                    <CustomTable<TouchTableRow>
-                        columns={columns}
+                    <DataTable<TouchTableRow>
+                        columns={touchColumns}
                         data={touchData as TouchTableRow[]}
-                        renderRow={(row: any, i: number) => (
-                            <>
-                                <Table.Cell>{i + 1}</Table.Cell>
-                                <Table.Cell>{row.acname}</Table.Cell>
-                                <Table.Cell>
-                                    {AccountTypeList.find((item) => item.value === row.actype)?.label || row.actype}
-                                </Table.Cell>
-                                <Table.Cell>{row.itemName}</Table.Cell>
-                                <Table.Cell textAlign="right">{formatToFixed(row.touch, 2)}</Table.Cell>
-                                <Table.Cell textAlign="left">{row.calmode}</Table.Cell>
-                                {/* <Table.Cell align="center">
-                                    <Box display="flex" justifyContent="center" alignItems="center">
-                                        <FiEdit cursor="pointer" onClick={() => handleEdit(row)} />
-                                    </Box>
-                                </Table.Cell> */}
-                            </>
-                        )}
                         onRowClick={(row) => handleEdit(row)}
                         emptyText="No data available"
                         bodyBg={theme.colors.bg}
                         size="sm"
                         headerBg={theme.colors.primary}
                         headerColor="white"
+                        borderColor="white"
                         rowIdKey="sno"
-                        highlightRowId={highlightRowId}
+                        editingRowId={editId ?? highlightRowId}
+                        pagination={{ enabled: true, pageSize: 10, color: theme.colors.whiteColor }}
                     />
                 </Box>
             </GridItem>

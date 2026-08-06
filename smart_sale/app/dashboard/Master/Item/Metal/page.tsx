@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import {
     Box,
     Button,
@@ -16,7 +16,6 @@ import {
     For,
     Flex
 } from "@chakra-ui/react";
-import { Table } from "@chakra-ui/react/table";
 import { AiOutlineSave } from "react-icons/ai";
 import { FaEdit } from "react-icons/fa";
 import { IoIosExit } from "react-icons/io";
@@ -31,11 +30,13 @@ import { Metal } from "@/service/metalService";
 import { toastError } from '@/component/toast/toast'
 import { Toaster } from "@/components/ui/toaster";
 
-import { CustomTable } from "@/component/table/CustomTable";
+import { DataTable, createDataTableColumns, type DataTableColumn } from "@/component/table/DataTable";
 import { CapitalizedInput } from "@/components/ui/CapitalizedInput";
 import { usePrint } from "@/context/print/usePrintContext";
 import { useRouter } from "next/navigation";
 import { FaPrint, FaFileExcel } from "react-icons/fa";
+import { FiRefreshCw } from "react-icons/fi";
+import { Tooltip } from "@/components/ui/tooltip";
 import { usePureGoldData } from "@/hooks/apiHooks/pureGoldMast/usePureGoldMastData";
 import { useSoftControlById } from "@/hooks/apiHooks/softControl/useSoftControl";
 
@@ -49,6 +50,8 @@ import { useTransactionLoader } from "@/utils/loader/ResolveLoader";
 import TransactionLoader from "@/component/loader/Transactionloader";
 
 import type { PrintColumn } from "@/component/screens/PrintPreviewScreen";
+
+const metalHelper = createDataTableColumns<Metal>();
 
 function MetalMaster() {
     const { theme } = useTheme();
@@ -89,7 +92,7 @@ function MetalMaster() {
     const [highlightId, setHighLightedId] = useState<String>();
     const [pureGoldCollection, setPureGoldCollection] = useState<any[]>([]);
 
-    const { data: metals = [] } = useAllMetals();
+    const { data: metals = [], refetch: refetchMetals, isFetching: metalsFetching } = useAllMetals();
     const [filter, setFilter] = useState<string>('')
     const { data: pureGold } = usePureGoldData(filter);
 
@@ -245,14 +248,32 @@ function MetalMaster() {
         setTimeout(() => metalNameRef.current?.focus(), 100); // ← Changed to metalNameRef
     };
 
-    const metalColumns = [
-        { key: "sno", label: "Sno" },
-        { key: "metalId", label: "Metal Id" },
-        { key: "metalName", label: "Metal Name" },
-        { key: "displayOrder", label: "Order", align: "center" as const },
-        { key: "active", label: "Active", align: "center" as const },
-        ...(showEditIcons ? [{ key: "actions", label: "Action", align: "center" as const }] : []),
-    ];
+    const metalColumns = useMemo(() => {
+        const cols: DataTableColumn<Metal>[] = [
+            metalHelper.accessor("sno", { header: "Sno" }),
+            metalHelper.accessor("metalId", { header: "Metal Id" }),
+            metalHelper.accessor("metalName", { header: "Metal Name" }),
+            metalHelper.accessor("displayOrder", { header: "Order", meta: { align: "center" } }),
+            metalHelper.accessor("active", { header: "Active", meta: { align: "center" } }),
+        ];
+
+        if (showEditIcons) {
+            cols.push(
+                metalHelper.display({
+                    id: "actions",
+                    header: "Action",
+                    meta: { align: "center" },
+                    cell: ({ row }) => (
+                        <Box display="flex" justifyContent="center">
+                            <FaEdit onClick={() => handleEdit(row.original)} cursor="pointer" />
+                        </Box>
+                    ),
+                })
+            );
+        }
+
+        return cols;
+    }, [showEditIcons]);
 
     const handleExport = (option: string) => {
         setData(metals);
@@ -352,7 +373,7 @@ function MetalMaster() {
                 {/* RIGHT – Table */}
                 <GridItem minW={0}>
                     <Box
-                        p={4}
+                        p={2}
                         borderRadius="xl"
                         bg={theme.colors.formColor}
                         border="1px solid #eef"
@@ -360,7 +381,20 @@ function MetalMaster() {
                     >
                         <Box display='flex' mb={2} gap={2} justifyContent='space-between' alignItems='center'>
                             <Text fontWeight="semi-bold" fontSize="small">METAL LIST </Text>
-                            <Flex>
+                            <Flex alignItems={"center"} gap={2}>
+                                <Tooltip content="Refresh">
+                                    <Button
+                                        variant="ghost"
+                                        size="xs"
+                                        color={theme.colors.primaryText}
+                                        _hover={{ color: "black" }}
+                                        onClick={() => refetchMetals()}
+                                        aria-label="Refresh"
+                                        loading={metalsFetching}
+                                    >
+                                        <FiRefreshCw />
+                                    </Button>
+                                </Tooltip>
                                 <Button
                                     variant="ghost"
                                     size="xs"
@@ -386,33 +420,19 @@ function MetalMaster() {
                         </Box>
 
                         <Stack>
-                            <CustomTable
+                            <DataTable<Metal>
                                 columns={metalColumns}
                                 data={metals}
                                 size="sm"
                                 headerBg={theme.colors.primary}
                                 bodyBg={theme.colors.bg}
                                 headerColor='white'
+                                borderColor="white"
                                 rowIdKey="sno"
-                                highlightRowId={highlightId ? Number(highlightId) : null}
+                                editingRowId={editId ?? (highlightId != null ? String(highlightId) : null)}
                                 emptyText="No parties available"
-                                renderRow={(metal, i) => (
-                                    <>
-                                        <Table.Cell>{metal.sno}</Table.Cell>
-                                        <Table.Cell>{metal.metalId}</Table.Cell>
-                                        <Table.Cell>{metal.metalName}</Table.Cell>
-                                        <Table.Cell textAlign="center">{metal.displayOrder}</Table.Cell>
-                                        <Table.Cell textAlign="center">{metal.active}</Table.Cell>
-                                        {showEditIcons &&
-                                            <Table.Cell>
-                                                <Box display="flex" justifyContent="center">
-                                                    <FaEdit onClick={() => handleEdit(metal)} cursor="pointer" />
-                                                </Box>
-                                            </Table.Cell>
-                                        }
-                                    </>
-                                )}
                                 onRowClick={(metal) => handleEdit(metal)}
+                                pagination={{ enabled: true, pageSize: 10 }}
                             />
                         </Stack>
                     </Box>

@@ -12,11 +12,10 @@ import {
     HStack,
     Fieldset,
     Field,
-    Table,
     NativeSelect,
     Flex
 } from "@chakra-ui/react";
-import { FiEdit, FiFilter } from "react-icons/fi";
+import { FiEdit, FiFilter, FiRefreshCw } from "react-icons/fi";
 import { FaFileExcel, FaPrint } from "react-icons/fa";
 import { AiOutlineSave } from "react-icons/ai";
 import { IoIosExit } from "react-icons/io";
@@ -30,7 +29,7 @@ import { useUpdateItem } from "@/hooks/apiHooks/item/useUpdateItem";
 import { useAllCompanies } from "@/hooks/apiHooks/company/useCompany";
 import { useAllMetals } from "@/hooks/apiHooks/metal/useMetals";
 
-import { CustomTable, TableColumn } from "@/component/table/CustomTable";
+import { DataTable, createDataTableColumns } from "@/component/table/DataTable";
 import { Toaster } from "@/components/ui/toaster";
 import { useTheme } from "@/context/theme/themeContext";
 import scrollToTop from "@/component/scroll/ScrollToTop";
@@ -54,6 +53,8 @@ import { Tooltip } from "@/components/ui/tooltip";
 
 import type { PrintColumn } from "@/component/screens/PrintPreviewScreen";
 import type { FormField } from "@/types/form/form";
+
+const itemHelper = createDataTableColumns<ItemMast>();
 
 export default function ItemMasterPage() {
 
@@ -193,8 +194,8 @@ export default function ItemMasterPage() {
             size: "xs",
         },
         {
-            name :"HSN",
-            label : "HSN",
+            name: "HSN",
+            label: "HSN",
             type: "text",
             placeholder: "Search by HSN",
             size: "xs",
@@ -289,7 +290,7 @@ export default function ItemMasterPage() {
                 stnPresent: "Y",
                 companyId: companies[0]?.value ?? "",
             }));
-            setAutoItemId(Number(itemsData?.nextId)  ?? '0');
+            setAutoItemId(Number(itemsData?.nextId) ?? '0');
         }
         return () => {
             controller.abort();
@@ -450,18 +451,69 @@ export default function ItemMasterPage() {
         }
     };
 
-    const tableColumns: TableColumn[] = [
-        { key: "sno", label: "Sno" },
-        { key: "itemId", label: "ItemId" },
-        { key: "itemName", label: "Item Name" },
-        { key: "metalId", label: "Metal" },
-        { key: "stockType", label: "Stock Type" },
-        { key: "StonePresent", label: "Stone Present" },
-        { key: "studded", label: "Studded" },
-        { key: "studdedStone", label: "Studded Stone Type" },
-        { key: "active", label: "Active", align: "center" },
-        ...(showEditIcons ? [{ key: "actions", label: "Action", align: "center" as const }] : []),
-    ];
+    /* ===================== TABLE COLUMNS ===================== */
+    const itemColumns = useMemo(() => {
+        const cols = [
+            itemHelper.display({
+                id: "sno",
+                header: "Sno",
+                cell: ({ row }) => row.index + 1,
+            }),
+            itemHelper.accessor("itemId", { header: "ItemId" }),
+            itemHelper.accessor("itemName", { header: "Item Name" }),
+            itemHelper.accessor("metalName", { header: "Metal" }),
+            itemHelper.accessor("hsn", { header: "Hsn" }),
+            itemHelper.accessor("shortName", { header: "Short Name" }),
+            itemHelper.accessor("stockType", {
+                header: "Stock Type",
+                cell: ({ getValue }) => (getValue() === "T" ? "TAGED" : "NON TAGED"),
+            }),
+            itemHelper.accessor("stnPresent", {
+                header: "Stone Present",
+                cell: ({ getValue }) => (getValue() === "Y" ? "Yes" : "No"),
+            }),
+            itemHelper.accessor("studded", {
+                header: "Studded",
+                cell: ({ getValue }) => (getValue() === "Y" ? "Yes" : "No"),
+            }),
+            itemHelper.accessor("studdedStone", {
+                header: "Studded Stone Type",
+                cell: ({ row }) =>
+                    row.original.studded === "Y"
+                        ? row.original.studdedStone === "D"
+                            ? "Diamond"
+                            : "Stone"
+                        : "",
+            }),
+            itemHelper.accessor("active", {
+                header: "Active",
+                meta: { align: "center" },
+            }),
+        ];
+
+        if (showEditIcons) {
+            cols.push(
+                itemHelper.display({
+                    id: "actions",
+                    header: "Action",
+                    meta: { align: "center" },
+                    cell: ({ row }) => (
+                        <Box display="flex" justifyContent="center">
+                            <FiEdit
+                                onClick={() => {
+                                    handleEdit(row.original.itemId!, row.original);
+                                    setEditingId(row.original.itemId!);
+                                }}
+                                style={{ cursor: "pointer" }}
+                            />
+                        </Box>
+                    ),
+                })
+            );
+        }
+
+        return cols;
+    }, [showEditIcons]);
 
     const handleExport = (option: string) => {
         setData(items);
@@ -494,6 +546,7 @@ export default function ItemMasterPage() {
     useGlobalKey("Alt+e", () => router.back(), "Exit");
     useGlobalKey("Alt+u", () => handleSave(), "update");
     useGlobalKey("F1", () => advancedSearchRef.current?.toggle(), "itemMasterAdvancedSearch");
+   
 
 
     /* ===================== UI ===================== */
@@ -583,63 +636,70 @@ export default function ItemMasterPage() {
                             <Text fontSize='small' fontWeight='semibold'>
                                 ITEM MASTER LIST
                             </Text>
-                            <Box display='flex' gap={1}>
-                                <Box>
-                                    {/* ✅ Updated SearchBar with correct handler */}
-                                    <SearchBar
-                                        searchTerm={searchTerm}
-                                        onChange={handleSearchChange}
-                                        placeholder="Search item master..."
-                                        size="2xs"
-                                    />
-                                </Box>
-                                <Flex>
-                                    <Tooltip content="Advanced Filter">
-                                        <Button
-                                            variant="ghost"
-                                            size="xs"
-                                            color={theme.colors.primaryText}
-                                            _hover={{ color: "black" }}
-                                            onClick={() => advancedSearchRef.current?.open()}
-                                            aria-label="Advanced Search"
-                                            title="Advanced Search (F1)"
-                                        >
-                                            <FiFilter />
-                                        </Button>
-                                    </Tooltip>
-                                </Flex>
-                                <Flex>
-                                    <Tooltip content="Export Excel">
-                                        <Button
-                                            variant="ghost"
-                                            size="xs"
-                                            color={theme.colors.green}
-                                            _hover={{ color: "black" }}
-                                            onClick={() => handleExport("excel")}
-                                            aria-label="Export Excel"
-                                        >
-                                            <FaFileExcel />
-                                        </Button>
-                                    </Tooltip>
-
-                                    <Tooltip content="Export PDF">
-                                        <Button
-                                            variant="ghost"
-                                            size="xs"
-                                            color={theme.colors.primaryText}
-                                            _hover={{ color: "black" }}
-                                            onClick={() => handleExport("pdf")}
-                                            aria-label="Export PDF"
-                                        >
-                                            <FaPrint />
-                                        </Button>
-                                    </Tooltip>
-                                </Flex>
-                            </Box>
+                            <Flex alignItems={"Center"} gap={2}>
+                                <SearchBar
+                                    searchTerm={searchTerm}
+                                    onChange={handleSearchChange}
+                                    placeholder="Search item master..."
+                                    size="2xs"
+                                />
+                                <Tooltip content="Refresh">
+                                    <Button
+                                        variant="ghost"
+                                        size="xs"
+                                        color={theme.colors.primaryText}
+                                        _hover={{ color: "black" }}
+                                        onClick={() => itemsRefetch()}
+                                        aria-label="Refresh"
+                                        loading={isLoading}
+                                    >
+                                        <FiRefreshCw />
+                                    </Button>
+                                </Tooltip>
+                                <Tooltip content="Advanced Filter">
+                                    <Button
+                                        variant="ghost"
+                                        size="xs"
+                                        color={theme.colors.primaryText}
+                                        _hover={{ color: "black" }}
+                                        onClick={() => advancedSearchRef.current?.open()}
+                                        aria-label="Advanced Search"
+                                        title="Advanced Search (F1)"
+                                    >
+                                        <FiFilter />
+                                    </Button>
+                                </Tooltip>
+                                <Tooltip content="Export Excel">
+                                    <Button
+                                        variant="ghost"
+                                        size="xs"
+                                        color={theme.colors.green}
+                                        _hover={{ color: "black" }}
+                                        onClick={() => handleExport("excel")}
+                                        aria-label="Export Excel"
+                                    >
+                                        <FaFileExcel />
+                                    </Button>
+                                </Tooltip>
+                                <Tooltip content="Export PDF">
+                                    <Button
+                                        variant="ghost"
+                                        size="xs"
+                                        color={theme.colors.primaryText}
+                                        _hover={{ color: "black" }}
+                                        onClick={() => handleExport("pdf")}
+                                        aria-label="Export PDF"
+                                    >
+                                        <FaPrint />
+                                    </Button>
+                                </Tooltip>
+                            </Flex>
+                               
+                          
                         </Box>
 
-                        <CustomTable
-                            columns={tableColumns}
+                        <DataTable<ItemMast>
+                            columns={itemColumns}
                             data={items}
                             headerBg={theme.colors.primary}
                             headerColor="white"
@@ -648,37 +708,12 @@ export default function ItemMasterPage() {
                             emptyText="No items available"
                             size="sm"
                             rowIdKey="itemId"
-                            highlightRowId={highlightId}
-                            renderRow={(item, index) => (
-                                <>
-                                    <Table.Cell>{index + 1}</Table.Cell>
-                                    <Table.Cell>{item.itemId}</Table.Cell>
-                                    <Table.Cell>{item.itemName}</Table.Cell>
-                                    <Table.Cell>{item.metalName}</Table.Cell>
-                                    <Table.Cell>{item.stockType === "T" ? "TAGED" : "NON TAGED"}</Table.Cell>
-                                    <Table.Cell>{item.stnPresent === "Y" ? "Yes" : "No"}</Table.Cell>
-                                    <Table.Cell>{item.studded === "Y" ? "Yes" : "No"}</Table.Cell>
-                                    <Table.Cell>{item.studded === "Y" ? item.studdedStone === "D" ? "Diamond" : "Stone" : ""}</Table.Cell>
-                                    <Table.Cell textAlign="center">{item.active}</Table.Cell>
-                                    {showEditIcons &&
-                                        <Table.Cell textAlign="center">
-                                            <Box display="flex" justifyContent="center">
-                                                <FiEdit
-                                                    onClick={() => {
-                                                        handleEdit(item.itemId!, item)
-                                                        setEditingId(item.itemId!);
-                                                    }}
-                                                    style={{ cursor: "pointer" }}
-                                                />
-                                            </Box>
-                                        </Table.Cell>
-                                    }
-                                </>
-                            )}
+                            editingRowId={editingId ?? highlightId}
                             onRowClick={(item) => {
                                 handleEdit(item.itemId!, item)
                                 setEditingId(item.itemId!);
                             }}
+                            pagination={{ enabled: true, pageSize: 10, color: theme.colors.whiteColor  }}
                         />
                     </Box>
                 </GridItem>

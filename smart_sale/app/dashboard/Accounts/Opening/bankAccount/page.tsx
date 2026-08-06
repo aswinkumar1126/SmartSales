@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
     Box,
     Button,
@@ -18,12 +18,11 @@ import {
     useFilter,
     useListCollection,
 } from "@chakra-ui/react";
-import { Table } from "@chakra-ui/react/table";
 import { AiOutlineSave } from "react-icons/ai";
 import { IoIosExit } from "react-icons/io";
 import { FaEdit } from "react-icons/fa";
 import { FaFileExcel, FaPrint } from "react-icons/fa";
-import { FiFilter } from "react-icons/fi";
+import { FiFilter, FiRefreshCw } from "react-icons/fi";
 import { AdvancedSearch, AdvancedSearchHandle } from "@/component/search/AdvancedSearch";
 import { Tooltip } from "@/components/ui/tooltip";
 import type { FormField } from "@/types/form/form";
@@ -33,13 +32,13 @@ import ScrollToTop from "@/component/scroll/ScrollToTop";
 import { Toaster } from "@/components/ui/toaster";
 import { toastLoaded, toastCreated, toastUpdated, toastError } from "@/component/toast/toast";
 
-import { CustomTable } from "@/component/table/CustomTable";
+import { DataTable, createDataTableColumns, type DataTableColumn } from "@/component/table/DataTable";
 import { CapitalizedInput } from "@/components/ui/CapitalizedInput";
 import { usePrint } from "@/context/print/usePrintContext";
 import { useRouter } from "next/navigation";
 
 import { useAllBankAccounts, useCreateBankAccount, useUpdatebankAccount } from "@/hooks/apiHooks/bankAccount/useBankAccount";
-import { BankAccount } from "@/types/bankAccount/BankAccount";
+import { BankAccount, BankAccountMast } from "@/types/bankAccount/BankAccount";
 import { bankAccountType } from "@/data/bankAccount/bankAccountTypes";
 import { SelectCombobox } from "@/components/ui/selectComboBox";
 import SearchBar from "@/component/search/SearchBar";
@@ -51,6 +50,8 @@ import { useGlobalKey } from "@/components/key/useGlobalKey";
 import { useSoftControlById } from "@/hooks/apiHooks/softControl/useSoftControl";
 
 import type { PrintColumn } from "@/component/screens/PrintPreviewScreen";
+
+const bankAccountHelper = createDataTableColumns<BankAccountMast>();
 
 const EMPTY_FORM: BankAccount = {
     ACCOUNTNO: "",
@@ -80,7 +81,7 @@ function BankAccountMaster() {
     const [editId, setEditId] = useState<number | null>(null);
     const [highlightedId, setHighlightedId] = useState<number | null>(null);
 
-    const { data: allBankAccountsData, refetch } = useAllBankAccounts(filter, advancedFilters);
+    const { data: allBankAccountsData, refetch, isLoading: bankAccountLoading } = useAllBankAccounts(filter, advancedFilters);
     const createMutation = useCreateBankAccount();
     const updateMutation = useUpdatebankAccount();
 
@@ -226,16 +227,41 @@ function BankAccountMaster() {
         router.push(`/print?export=${option}`);
     };
 
-    const tableColumns = [
-        { key: "ENTRYNO", label: "Entry No" },
-        { key: "BANKAC", label: "Bank Account" },
-        { key: "ACCOUNTNO", label: "Account No" },
-        { key: "ACHOLDERNAME", label: "A/C Holder Name" },
-        { key: "ACCOUNTTYPE", label: "Account Type" },
-        { key: "BANKNAME", label: "Bank Name" },
-        { key: "BRANCHNAME", label: "Branch Name" },
-        ...(showEditIcons ? [{ key: "actions", label: "Actions", align: "center" as const }] : []),
-    ];
+    const bankAccountColumns = useMemo(() => {
+        const cols: DataTableColumn<BankAccountMast>[] = [
+            bankAccountHelper.accessor("ENTRYNO", { header: "Entry No" }),
+            bankAccountHelper.accessor("BANKAC", { header: "Bank Account" }),
+            bankAccountHelper.accessor("ACCOUNTNO", { header: "Account No" }),
+            bankAccountHelper.accessor("ACHOLDERNAME", { header: "A/C Holder Name" }),
+            bankAccountHelper.accessor("ACCOUNTTYPE", { header: "Account Type" }),
+            bankAccountHelper.accessor("BANKNAME", { header: "Bank Name" }),
+            bankAccountHelper.accessor("BRANCHNAME", { header: "Branch Name" }),
+        ];
+
+        if (showEditIcons) {
+            cols.push(
+                bankAccountHelper.display({
+                    id: "actions",
+                    header: "Actions",
+                    meta: { align: "center" },
+                    cell: ({ row }) => (
+                        <Box display="flex" justifyContent="center">
+                            <FaEdit
+                                cursor="pointer"
+                                onClick={() => handleEdit(row.original)}
+                                style={{
+                                    color: editId === Number(row.original.ENTRYNO) ? theme.colors.green : theme.colors.blue,
+                                }}
+                                title={editId === Number(row.original.ENTRYNO) ? "Currently editing" : "Edit"}
+                            />
+                        </Box>
+                    ),
+                })
+            );
+        }
+
+        return cols;
+    }, [showEditIcons, editId]);
 
     const fieldName = getFormFields.map(f => f.name);
     const { register, focusFirst, focusNext } = useEnterNavigation(fieldName, handleSave);
@@ -336,6 +362,19 @@ function BankAccountMaster() {
                                     />
                                 </Box>
                                 <HStack>
+                                    <Tooltip content="Refresh">
+                                        <Button
+                                            variant="ghost"
+                                            size="xs"
+                                            color={theme.colors.primaryText}
+                                            _hover={{ color: "black" }}
+                                            onClick={() => refetch()}
+                                            aria-label="Refresh"
+                                            loading={bankAccountLoading}
+                                        >
+                                            <FiRefreshCw />
+                                        </Button>
+                                    </Tooltip>
                                     <Tooltip content="Advanced Filter">
                                         <Button
                                             variant="ghost"
@@ -375,40 +414,18 @@ function BankAccountMaster() {
                             </Box>
                         </Flex>
 
-                        <CustomTable
-                            columns={tableColumns}
+                        <DataTable<BankAccountMast>
+                            columns={bankAccountColumns}
                             data={bankAccountList}
                             rowIdKey="ENTRYNO"
-                            highlightRowId={highlightedId}
+                            editingRowId={editId ?? highlightedId}
                             emptyText="No bank accounts found..."
                             bodyBg={theme.colors.bg}
                             headerBg={theme.colors.primary}
                             headerColor="white"
-                            renderRow={(account) => (
-                                <>
-                                    <Table.Cell>{account.ENTRYNO}</Table.Cell>
-                                    <Table.Cell>{account.BANKAC}</Table.Cell>
-                                    <Table.Cell>{account.ACCOUNTNO}</Table.Cell>
-                                    <Table.Cell>{account.ACHOLDERNAME}</Table.Cell>
-                                    <Table.Cell>{account.ACCOUNTTYPE}</Table.Cell>
-                                    <Table.Cell>{account.BANKNAME}</Table.Cell>
-                                    <Table.Cell>{account.BRANCHNAME}</Table.Cell>
-                                    {showEditIcons &&
-                                        <Table.Cell>
-                                            <Box display="flex" justifyContent="center">
-                                                <FaEdit
-                                                    cursor="pointer"
-                                                    onClick={() => handleEdit(account)}
-                                                    style={{
-                                                        color: editId === Number(account.ENTRYNO) ? theme.colors.green : theme.colors.blue,
-                                                    }}
-                                                    title={editId === Number(account.ENTRYNO) ? "Currently editing" : "Edit"}
-                                                />
-                                            </Box>
-                                        </Table.Cell>
-                                    }
-                                </>
-                            )}
+                            borderColor="white"
+                            onRowClick={(row) => handleEdit(row)}
+                            pagination={{ enabled: true, pageSize: 10, color: theme.colors.whiteColor }}
                         />
                     </Box>
                 </GridItem>

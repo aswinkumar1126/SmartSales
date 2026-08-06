@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
     Box,
     Button,
@@ -12,7 +12,6 @@ import {
     Fieldset,
     Flex,
 } from "@chakra-ui/react";
-import { Table } from "@chakra-ui/react/table";
 import { AiOutlineSave } from "react-icons/ai";
 import { IoIosExit } from "react-icons/io";
 import { FaEdit } from "react-icons/fa";
@@ -29,7 +28,7 @@ import { useSoftControlById } from "@/hooks/apiHooks/softControl/useSoftControl"
 import ScrollToTop from "@/component/scroll/ScrollToTop";
 import { CreateCompanyPayload, Company } from "@/service/CompanyService";
 import { toastError, toastLoaded } from "@/component/toast/toast";
-import { CustomTable } from "@/component/table/CustomTable";
+import { DataTable, createDataTableColumns } from "@/component/table/DataTable";
 import { usePrint } from "@/context/print/usePrintContext";
 import { useRouter } from "next/navigation";
 import { FaPrint, FaFileExcel } from "react-icons/fa";
@@ -40,6 +39,10 @@ import { useGlobalKey } from "@/components/key/useGlobalKey";
 import TransactionLoader from "@/component/loader/Transactionloader";
 import ShortcutDialog from "@/components/shortcut/ShortcutDialog";
 import { useTransactionLoader } from "@/utils/loader/ResolveLoader";
+import { FiRefreshCw } from "react-icons/fi";
+import { Tooltip } from "@/components/ui/tooltip";
+
+const companyHelper = createDataTableColumns<Company>();
 
 function CompanyMaster() {
 
@@ -51,7 +54,7 @@ function CompanyMaster() {
     const { setData, setColumns, setShowSno, title } = usePrint();
 
     /* -------------------- API HOOKS -------------------- */
-    const { data, refetch: companyRefetch } = useAllCompanies();
+    const { data, isLoading: companyLoading, refetch: companyRefetch } = useAllCompanies();
     const companies = data?.data ?? [];
 
     const { data: allStates } = useAllStates();
@@ -252,13 +255,49 @@ function CompanyMaster() {
     };
 
     /* -------------------- TABLE COLUMNS -------------------- */
-    const CompanyColumn = [
-        { key: 'index', label: 'Sno' },
-        { key: 'COMPANYID', label: 'Company Id' },
-        { key: 'COMPANYNAME', label: 'Company Name' },
-        { key: 'ACTIVE', label: 'Active' },
-        ...(showEditIcons ? [{ key: 'actions', label: 'Actions' }] : []),
-    ];
+    const companyColumns = useMemo(() => {
+        const cols = [
+            companyHelper.display({
+                id: "sno",
+                header: "Sno",
+                cell: ({ row }) => row.index + 1,
+            }),
+            companyHelper.accessor("COMPANYID", { header: "Company Id" }),
+            companyHelper.accessor("COMPANYNAME", { header: "Company Name" }),
+            companyHelper.accessor("ADDRESS1", { header: "Flat" }),
+            companyHelper.accessor("ADDRESS2", { header: "Street" }),
+            companyHelper.accessor("ADDRESS3", { header: "Area" }),
+            companyHelper.accessor("ADDRESS4", { header: "City" }),
+            companyHelper.accessor("AREACODE", { header: "Pincode" }),
+            companyHelper.accessor("STATE", { header: "State" }),
+            companyHelper.accessor("PHONE", { header: "Mobile No" }),
+            companyHelper.accessor("GSTNO", { header: "GST No" }),
+            companyHelper.accessor("EMAIL", { header: "Email" }),
+            companyHelper.accessor("PANNO", { header: "Pan No" }),
+       
+            companyHelper.accessor("ACTIVE", {
+                header: "Active",
+                meta: { align: "center" },
+            }),
+        ];
+
+        if (showEditIcons) {
+            cols.push(
+                companyHelper.display({
+                    id: "actions",
+                    header: "Actions",
+                    meta: { align: "center" },
+                    cell: ({ row }) => (
+                        <Box display="flex" justifyContent="center">
+                            <FaEdit onClick={() => handleEdit(row.original)} cursor="pointer" />
+                        </Box>
+                    ),
+                })
+            );
+        }
+
+        return cols;
+    }, [showEditIcons]);
 
     /* -------------------- EXPORT -------------------- */
     const handleExport = (option: string) => {
@@ -338,7 +377,20 @@ function CompanyMaster() {
                     <Box bg={theme.colors.formColor} p={2} borderRadius="xl" border="1px solid #eef">
                         <Box display='flex' mb={2} gap={2} justifyContent='space-between' alignItems='center'>
                             <Text fontWeight="semibold" fontSize="small">COMPANY DETAILS</Text>
-                            <Flex>
+                            <Flex alignItems={"center"} gap={2}>
+                                <Tooltip content="Refresh" >
+                                    <Button
+                                        variant="ghost"
+                                        size="2xs"
+                                        color={theme.colors.primaryText}
+                                        _hover={{ color: "black" }}
+                                        onClick={() => companyRefetch()}
+                                        aria-label="Refresh"
+                                        loading={companyLoading}
+                                    >
+                                        <FiRefreshCw />
+                                    </Button>
+                                </Tooltip>
                                 <Button variant="ghost" size="xs" color={theme.colors.green} onClick={() => handleExport("excel")}>
                                     <FaFileExcel />
                                 </Button>
@@ -348,32 +400,18 @@ function CompanyMaster() {
                             </Flex>
                         </Box>
 
-                        <CustomTable
-                            columns={CompanyColumn}
+                        <DataTable<Company>
+                            columns={companyColumns}
                             data={companies}
-                            renderRow={(company, index) => (
-                                <>
-                                    <Table.Cell>{index + 1}</Table.Cell>
-                                    <Table.Cell>{company.COMPANYID}</Table.Cell>
-                                    <Table.Cell>{company.COMPANYNAME}</Table.Cell>
-                                    <Table.Cell textAlign="center">{company.ACTIVE}</Table.Cell>
-                                    {showEditIcons &&
-                                        <Table.Cell>
-                                            <Box display="flex" justifyContent="center">
-                                                <FaEdit onClick={() => handleEdit(company)} cursor="pointer" />
-                                            </Box>
-                                        </Table.Cell>
-                                    }
-                                </>
-                            )}
                             onRowClick={(company) => handleEdit(company)}
                             headerBg={theme.colors.primary}
                             headerColor="white"
                             borderColor="white"
                             bodyBg={theme.colors.bg}
-                            highlightRowId={highlightedId ? Number(highlightedId) : null}
+                            editingRowId={editId ?? (highlightedId != null ? String(highlightedId) : null)}
                             rowIdKey="COMPANYID"
                             emptyText="No companies available"
+                            // pagination={{ enabled: true, pageSize: 10, color: theme.colors.whiteColor }}
                         />
                     </Box>
                 </GridItem>

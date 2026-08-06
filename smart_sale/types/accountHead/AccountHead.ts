@@ -5,6 +5,7 @@ export interface AccountHead{
     ACTYPE?:string;
     ACTIVE?: string;
     STATEID?: string | undefined;
+    STATE ? :string;
     // COMPANY?:string;
     // DOORNO?:string;
     // COMPANYNAME?:string;

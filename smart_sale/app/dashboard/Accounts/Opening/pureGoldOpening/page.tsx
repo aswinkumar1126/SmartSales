@@ -1,11 +1,11 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
-    Box, Field, Input, Grid, GridItem, Button, Table, Heading, HStack, Flex, Text
+    Box, Field, Input, Grid, GridItem, Button, Heading, HStack, Flex, Text
 } from "@chakra-ui/react";
 import { FaFileExcel, FaPrint } from "react-icons/fa";
-import { FiEdit, FiFilter } from "react-icons/fi";
+import { FiEdit, FiFilter, FiRefreshCw } from "react-icons/fi";
 import { IoIosAdd, IoIosExit } from "react-icons/io";
 import { AdvancedSearch, AdvancedSearchHandle } from "@/component/search/AdvancedSearch";
 import { Tooltip } from "@/components/ui/tooltip";
@@ -16,7 +16,7 @@ import scrollToTop from "@/component/scroll/ScrollToTop";
 import { Toaster } from "@/components/ui/toaster";
 import { toastLoaded } from "@/component/toast/toast";
 
-import { CustomTable } from "@/component/table/CustomTable";
+import { DataTable, createDataTableColumns } from "@/component/table/DataTable";
 import { usePrint } from "@/context/print/usePrintContext";
 import { pureGoldMastForm, pureGoldMastOpenForm } from "@/types/pureGold/pureGold";
 
@@ -66,6 +66,8 @@ export type TouchTableRow = {
 
 };
 
+const pureGoldHelper = createDataTableColumns<TouchTableRow>();
+
 /* ---------------- Component ---------------- */
 
 const PureGoldOpening = () => {
@@ -90,7 +92,7 @@ const PureGoldOpening = () => {
     const { theme } = useTheme();
     const { setData, setColumns, title } = usePrint();
 
-    const { data: pureGoldData = [], refetch } = usePureGoldData(filter, advancedFilters);
+    const { data: pureGoldData = [], refetch, isLoading: pureGoldOpeningLoading } = usePureGoldData(filter, advancedFilters);
     const { data: metalsData } = useAllMetals();
 
     const { data: allPureGoldNames = [] } = usePureGoldNames();
@@ -293,14 +295,33 @@ const PureGoldOpening = () => {
 
     /* ---------------- Table Columns ---------------- */
 
-    const columns = [
-        { key: "sno", label: "S.No" },
-        { key: "pureGoldName", label: "Pure Gold Name" },
-        { key: "weight", label: "Weight", align: "end" as const },
-        { key: "actualTouch", label: "Actual Touch", align: "end" as const },
-        { key: "actualPure", label: "Actual Pure", align: "end" as const },
-        // { key: "action", label: "Action", align: "center" as const },
-    ];
+    const columns = useMemo(
+        () => [
+            pureGoldHelper.display({
+                id: "sno",
+                header: "S.No",
+                cell: ({ row }) => row.index + 1,
+            }),
+            pureGoldHelper.accessor("pureGoldName", { header: "Pure Gold Name" }),
+            pureGoldHelper.accessor("aWt", {
+                header: "Weight",
+                meta: { align: "end" },
+                cell: ({ getValue }) => formatToFixed(getValue(), 2),
+            }),
+            pureGoldHelper.accessor("aTouch", {
+                header: "Actual Touch",
+                meta: { align: "end" },
+                cell: ({ getValue }) => formatToFixed(getValue(), 2),
+            }),
+            pureGoldHelper.accessor("aPureWt", {
+                header: "Actual Pure",
+                meta: { align: "end" },
+                cell: ({ getValue }) => formatToFixed(getValue(), 2),
+            }),
+            // { key: "action", label: "Action", align: "center" as const },
+        ],
+        []
+    );
 
     /* ---------------- Row Highlight Animation ---------------- */
 
@@ -429,6 +450,21 @@ const PureGoldOpening = () => {
                                 />
                             </Box>
                             <Flex>
+                                <Tooltip content="Refresh">
+                                    <Button
+                                        variant="ghost"
+                                        size="xs"
+                                        color={theme.colors.primaryText}
+                                        _hover={{ color: "black" }}
+                                        onClick={() => refetch()}
+                                        aria-label="Refresh"
+                                        loading={pureGoldOpeningLoading}
+                                    >
+                                        <FiRefreshCw />
+                                    </Button>
+                                </Tooltip>
+                            </Flex>
+                            <Flex>
                                 <Tooltip content="Advanced Filter">
                                     <Button
                                         variant="ghost"
@@ -473,36 +509,18 @@ const PureGoldOpening = () => {
                         </Box>
 
                     </Box>
-                    <CustomTable<TouchTableRow>
+                    <DataTable<TouchTableRow>
                         columns={columns}
                         data={pureGoldData as TouchTableRow[]}
                         rowIdKey="sno"
-                        highlightRowId={highlightRowId}
+                        editingRowId={editId ?? highlightRowId}
+                        onRowClick={(row) => handleEdit(row)}
                         emptyText="No data available"
                         bodyBg={theme.colors.bg}
                         headerBg={theme.colors.primary}
                         headerColor="white"
-                        renderRow={(row, i) => (
-                            <>
-                                <Table.Cell>{i + 1}</Table.Cell>
-                                <Table.Cell>{row.pureGoldName}</Table.Cell>
-                                <Table.Cell textAlign="end">{formatToFixed(row.aWt, 2)} </Table.Cell>
-                                <Table.Cell textAlign="end" >{formatToFixed(row.aTouch, 2)}</Table.Cell>
-                                <Table.Cell textAlign="end">
-                                    {formatToFixed(row.aPureWt, 2)}
-                                </Table.Cell>
-                                {/* <Table.Cell align="center">
-                                    <Box display="flex" justifyContent="center">
-                                        <FiEdit
-                                            cursor="pointer"
-                                            onClick={() => handleEdit(row)}
-                                        />
-                                    </Box>
-
-                                </Table.Cell> */}
-                            </>
-                        )}
-
+                        borderColor="white"
+                        pagination={{ enabled: true, pageSize: 10, color: theme.colors.whiteColor }}
                     />
                 </Box>
             </GridItem>

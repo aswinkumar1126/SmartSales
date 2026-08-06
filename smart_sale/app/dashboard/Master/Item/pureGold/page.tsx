@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
     Box,
     Field,
@@ -8,14 +8,13 @@ import {
     Grid,
     GridItem,
     Button,
-    Table,
     Heading,
     HStack,
     Flex,
     Text
 } from "@chakra-ui/react";
 import { FaFileExcel, FaPrint } from "react-icons/fa";
-import { FiEdit } from "react-icons/fi";
+import { FiEdit, FiRefreshCw } from "react-icons/fi";
 import { IoIosAdd, IoIosExit } from "react-icons/io";
 
 import { useTheme } from "@/context/theme/themeContext";
@@ -23,7 +22,7 @@ import scrollToTop from "@/component/scroll/ScrollToTop";
 import { Toaster } from "@/components/ui/toaster";
 import { toastError, toastLoaded } from "@/component/toast/toast";
 
-import { CustomTable } from "@/component/table/CustomTable";
+import { DataTable, createDataTableColumns } from "@/component/table/DataTable";
 import { usePrint } from "@/context/print/usePrintContext";
 import { pureGoldMastForm } from "@/types/pureGold/pureGold";
 import { usePureGoldNames, usePureGoldNameById } from "@/hooks/apiHooks/pureGoldMast/usePureGoldMastData";
@@ -47,6 +46,7 @@ import ShortcutDialog from "@/components/shortcut/ShortcutDialog";
 import { useTransactionLoader } from "@/utils/loader/ResolveLoader";
 import TransactionLoader from "@/component/loader/Transactionloader";
 import { useSoftControlById } from "@/hooks/apiHooks/softControl/useSoftControl";
+import { Tooltip } from "@/components/ui/tooltip";
 
 /* ---------------- Initial Form State ---------------- */
 
@@ -71,6 +71,8 @@ export type TouchTableRow = {
     // actualPure: number;
 
 };
+
+const pureGoldHelper = createDataTableColumns<TouchTableRow>();
 
 /* ---------------- Component ---------------- */
 
@@ -99,7 +101,7 @@ const PureGoldMaster = () => {
     const showEditIcons = showEditIcon?.CTLTEXT === "Y";
 
 
-    const { data: pureGoldData = [], refetch } = usePureGoldNames(filter);
+    const { data: pureGoldData = [], refetch, isLoading: pureGoldLoading } = usePureGoldNames(filter);
 
     const { data: metalsData } = useAllMetals();
 
@@ -274,15 +276,40 @@ const PureGoldMaster = () => {
 
     /* ---------------- Table Columns ---------------- */
 
-    const columns = [
-        { key: "sno", label: "S.No" },
-        { key: "metalName", label: "Metal Type" },
-        { key: "pureGoldName", label: "Pure Gold Name" },
-        // { key: "weight", label: "Weight" ,align : "end" as const },
-        // { key: "actualPure", label: "Actual Pure", align: "end" as const },
-        // { key: "actualTouch", label: "Actual Touch", align: "center" as const },
-        ...(showEditIcons ? [{ key: "action", label: "Action", align: "center" as const }] : []),
-    ];
+    const columns = useMemo(() => {
+        const cols = [
+            pureGoldHelper.display({
+                id: "sno",
+                header: "S.No",
+                cell: ({ row }) => row.index + 1,
+            }),
+            pureGoldHelper.accessor("metalName", { header: "Metal Type" }),
+            pureGoldHelper.accessor("pureGoldName", { header: "Pure Gold Name" }),
+            // pureGoldHelper.accessor("weight", { header: "Weight", meta: { align: "end" }, cell: ({ getValue }) => formatToFixed(getValue(), 2) }),
+            // pureGoldHelper.accessor("actualPure", { header: "Actual Pure", meta: { align: "end" }, cell: ({ getValue }) => formatToFixed(getValue(), 2) }),
+            // pureGoldHelper.accessor("actualTouch", { header: "Actual Touch", meta: { align: "center" }, cell: ({ getValue }) => formatToFixed(getValue(), 2) }),
+        ];
+
+        if (showEditIcons) {
+            cols.push(
+                pureGoldHelper.display({
+                    id: "action",
+                    header: "Action",
+                    meta: { align: "center" },
+                    cell: ({ row }) => (
+                        <Box display="flex" justifyContent="center">
+                            <FiEdit
+                                cursor="pointer"
+                                onClick={() => handleEdit(row.original)}
+                            />
+                        </Box>
+                    ),
+                })
+            );
+        }
+
+        return cols;
+    }, [showEditIcons]);
 
     /* ---------------- Row Highlight Animation ---------------- */
 
@@ -381,20 +408,28 @@ const PureGoldMaster = () => {
 
                         <Heading fontSize="small" >
                             PURE GOLD MASTER LIST
-                        </Heading>
-                        <Box display='flex' gap={1}>
-
-
-                            <Box >
-                                <SearchBar
-                                    searchTerm={filter}
-                                    onChange={setFilter}
-                                    placeholder="Search account masters"
+                        </Heading>  
+                        <Flex alignItems={"center"} gap={2}>
+                            <SearchBar
+                                searchTerm={filter}
+                                onChange={setFilter}
+                                placeholder="Search account masters"
+                                size="2xs"
+                            />
+                            <Tooltip content="Refresh">
+                                <Button
+                                    variant="ghost"
                                     size="2xs"
-
-                                />
-                            </Box>
-                            <Flex>
+                                    color={theme.colors.primaryText}
+                                    _hover={{ color: "black" }}
+                                    onClick={() => refetch()}
+                                    aria-label="Refresh"
+                                    loading={pureGoldLoading}
+                                >
+                                    <FiRefreshCw />
+                                </Button>
+                            </Tooltip>
+                            <Tooltip content= "Export Excel">
                                 <Button
                                     variant="ghost"
                                     size="xs"
@@ -405,7 +440,8 @@ const PureGoldMaster = () => {
                                 >
                                     <FaFileExcel />
                                 </Button>
-
+                            </Tooltip>
+                            <Tooltip content="Export PDF" >
                                 <Button
                                     variant="ghost"
                                     size="xs"
@@ -416,42 +452,22 @@ const PureGoldMaster = () => {
                                 >
                                     <FaPrint />
                                 </Button>
-                            </Flex>
-
-                        </Box>
+                            </Tooltip>
+                            
+                        </Flex>
                     </Box>
-                    <CustomTable<TouchTableRow>
+                    <DataTable<TouchTableRow>
                         columns={columns}
                         data={pureGoldData as TouchTableRow[]}
-                        rowIdKey="sno"
-                        highlightRowId={highlightRowId}
+                        rowIdKey="pureId"
+                        editingRowId={editId != null ? String(editId) : (highlightRowId != null ? String(highlightRowId) : null)}
                         emptyText="No data available"
                         bodyBg={theme.colors.bg}
                         headerBg={theme.colors.primary}
                         headerColor="white"
-                        renderRow={(row, i) => (
-                            <>
-                                <Table.Cell>{i + 1}</Table.Cell>
-                                <Table.Cell>{row.metalName}</Table.Cell>
-                                <Table.Cell>{row.pureGoldName}</Table.Cell>
-                                {/* <Table.Cell textAlign="end">{formatToFixed(row.weight ,2)} </Table.Cell>
-                                <Table.Cell textAlign="end" >{formatToFixed(row.actualPure , 2) }</Table.Cell>
-                                <Table.Cell textAlign="end">
-                                    {formatToFixed(row.actualTouch,2)}
-                                </Table.Cell> */}
-                                {showEditIcons &&
-                                    <Table.Cell align="center">
-                                        <Box display="flex" justifyContent="center">
-                                            <FiEdit
-                                                cursor="pointer"
-                                                onClick={() => handleEdit(row)}
-                                            />
-                                        </Box>
-                                    </Table.Cell>
-                                }
-                            </>
-                        )}
+                        borderColor="white"
                         onRowClick={(row) => handleEdit(row)}
+                        pagination={{ enabled: true, pageSize: 10, color: theme.colors.whiteColor }}
                     />
                 </Box>
             </GridItem>

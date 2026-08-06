@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
     Box,
     Grid,
@@ -8,23 +8,22 @@ import {
     Button,
     Heading,
     HStack,
-    Table,
     Text,
     Flex,
 } from "@chakra-ui/react";
 import { useRouter } from "next/navigation";
 
-import { FiEdit } from "react-icons/fi";
+import { FiEdit, FiRefreshCw } from "react-icons/fi";
 import { AiOutlineSave } from "react-icons/ai";
 import { IoIosExit } from "react-icons/io";
 
 import { DynamicForm } from "@/component/form/DynamicForm";
 import { useEnterNavigation } from "@/component/form/useEnterNavigation";
-import { CustomTable } from "@/component/table/CustomTable";
+import { DataTable, createDataTableColumns } from "@/component/table/DataTable";
 import SearchBar from "@/component/search/SearchBar";
 
 import { getExpenseMasterFields } from "@/config/master/ExpenseMaster";
-import { CreateExpenseMast } from "@/types/expense/ExpenseMast";
+import { CreateExpenseMast, Expense } from "@/types/expense/ExpenseMast";
 
 import {
     useAllExpenses,
@@ -38,6 +37,7 @@ import ShortcutDialog from "@/components/shortcut/ShortcutDialog";
 import { useTransactionLoader } from "@/utils/loader/ResolveLoader";
 import TransactionLoader from "@/component/loader/Transactionloader";
 import { useSoftControlById } from "@/hooks/apiHooks/softControl/useSoftControl";
+import { Tooltip } from "@/components/ui/tooltip";
 
 type FormErrors = Partial<Record<keyof CreateExpenseMast, string>>;
 
@@ -45,6 +45,8 @@ const initialForm: CreateExpenseMast = {
     expName: "",
     active: "Y",
 };
+
+const expenseHelper = createDataTableColumns<Expense>();
 
 function ExpenseMaster() {
 
@@ -65,7 +67,7 @@ function ExpenseMaster() {
 
     /* ---------------- API ---------------- */
 
-    const { data: expenses, refetch } = useAllExpenses();
+    const { data: expenses, refetch, isLoading: expensesLoading } = useAllExpenses();
     const expenseList = expenses ?? [];
 
     const createMutation = useCreateExpenseNames();
@@ -193,12 +195,37 @@ function ExpenseMaster() {
 
     /* ---------------- TABLE ---------------- */
 
-    const columns = [
-        { key: "sno", label: "S.No" },
-        { key: "expName", label: "Expense Name" },
-        { key: "active", label: "Active" },
-        ...(showEditIcons ? [{ key: "action", label: "Action", align: "center" as const }] : []),
-    ];
+    const expenseColumns = useMemo(() => {
+        const cols = [
+            expenseHelper.display({
+                id: "sno",
+                header: "S.No",
+                cell: ({ row }) => row.index + 1,
+            }),
+            expenseHelper.accessor("expName", { header: "Expense Name" }),
+            expenseHelper.accessor("active", { header: "Active" }),
+        ];
+
+        if (showEditIcons) {
+            cols.push(
+                expenseHelper.display({
+                    id: "action",
+                    header: "Action",
+                    meta: { align: "center" },
+                    cell: ({ row }) => (
+                        <Box display="flex" justifyContent="center">
+                            <FiEdit
+                                cursor="pointer"
+                                onClick={() => handleEdit(row.original)}
+                            />
+                        </Box>
+                    ),
+                })
+            );
+        }
+
+        return cols;
+    }, [showEditIcons]);
 
     /* ---------------- ENTER NAVIGATION ---------------- */
 
@@ -280,7 +307,7 @@ function ExpenseMaster() {
                 <Box p={3} borderRadius="lg" boxShadow="sm" bg={theme.colors.formColor}>
                     <Flex justify="space-between" mb={2}>
                         <Heading fontSize="sm">EXPENSE LIST</Heading>
-                        <Flex>
+                        <Flex alignItems={"center"} gap={1}>
                             <SearchBar
                                 searchTerm={filter}
                                 onChange={setFilter}
@@ -289,36 +316,36 @@ function ExpenseMaster() {
                                 rounded="sm"
                                 minWidth="250px"
                             />
+                            <Tooltip content="Refresh">
+                                <Button
+                                    variant="ghost"
+                                    size="2xs"
+                                    color={theme.colors.primaryText}
+                                    _hover={{ color: "black" }}
+                                    onClick={() => refetch()}
+                                    aria-label="Refresh"
+                                    loading={expensesLoading}
+                                >
+                                    <FiRefreshCw />
+                                </Button>
+                            </Tooltip>
+                        
                         </Flex>
 
                     </Flex>
 
-                    <CustomTable
-                        columns={columns}
+                    <DataTable<Expense>
+                        columns={expenseColumns}
                         data={expenseList}
                         rowIdKey="expId"
-                        highlightRowId={highlightRowId}
+                        editingRowId={editId ?? (highlightRowId != null ? String(highlightRowId) : null)}
+                        onRowClick={(row) => handleEdit(row)}
                         emptyText="No data available"
                         bodyBg={theme.colors.bg}
                         headerBg={theme.colors.primary}
                         headerColor="white"
-                        renderRow={(row, i) => (
-                            <>
-                                <Table.Cell>{i + 1}</Table.Cell>
-                                <Table.Cell>{row.expName}</Table.Cell>
-                                <Table.Cell>{row.active}</Table.Cell>
-                                {showEditIcons &&
-                                    <Table.Cell align="center">
-                                        <Box display="flex" justifyContent="center">
-                                            <FiEdit
-                                                cursor="pointer"
-                                                onClick={() => handleEdit(row)}
-                                            />
-                                        </Box>
-                                    </Table.Cell>
-                                }
-                            </>
-                        )}
+                        borderColor="white"
+                        pagination={{ enabled: true, pageSize: 10, color: theme.colors.whiteColor }}
                     />
                 </Box>
             </GridItem>

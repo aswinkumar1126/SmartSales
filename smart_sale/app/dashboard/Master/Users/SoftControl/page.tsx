@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   Box,
   Button,
@@ -12,7 +12,6 @@ import {
   Fieldset,
   Flex,
 } from "@chakra-ui/react";
-import { Table } from "@chakra-ui/react/table";
 import { AiOutlineSave } from "react-icons/ai";
 import { IoIosExit } from "react-icons/io";
 import { FaEdit } from "react-icons/fa";
@@ -28,10 +27,11 @@ import { useEnterNavigation } from "@/component/form/useEnterNavigation";
 import { DynamicForm } from "@/component/form/DynamicForm";
 import { toastError, toastLoaded } from "@/component/toast/toast";
 import ScrollToTop from "@/component/scroll/ScrollToTop";
-import { CustomTable } from "@/component/table/CustomTable";
+import { DataTable, createDataTableColumns } from "@/component/table/DataTable";
 import { usePrint } from "@/context/print/usePrintContext";
 import { useRouter } from "next/navigation";
 import { FaPrint, FaFileExcel } from "react-icons/fa";
+import { FiRefreshCw } from "react-icons/fi";
 import { getSoftControlFormFields } from "@/config/user/SoftControlMaster";
 import SearchBar from "@/component/search/SearchBar";
 
@@ -39,11 +39,14 @@ import ShortcutDialog from "@/components/shortcut/ShortcutDialog";
 import { useTransactionLoader } from "@/utils/loader/ResolveLoader";
 import TransactionLoader from "@/component/loader/Transactionloader";
 import { useGlobalKey } from "@/components/key/useGlobalKey";
+import { Tooltip } from "@/components/ui/tooltip";
 // TypeScript interface for SoftControl (matching hooks)
 import { SoftControl } from "@/types/softcontrol/SoftControl";
 
 
 import type { PrintColumn } from "@/component/screens/PrintPreviewScreen";
+
+const softControlHelper = createDataTableColumns<SoftControl>();
 
 function SoftControlMaster() {
   const { theme } = useTheme();
@@ -52,7 +55,7 @@ function SoftControlMaster() {
   const { isOpen, status, title: loaderTitle, description, openLoader, resolveLoader, closeLoader } = useTransactionLoader();
 
   /* -------------------- API HOOKS -------------------- */
-  const { data, refetch: softControlRefetch } = useSoftControls();
+  const { data, isLoading: softControlLoading, refetch: softControlRefetch } = useSoftControls();
   const softControls = data ?? [];
 
   const { data: softControlDataById, isLoading, error } = useSoftControlById('LOT_TAG_CONTROL')
@@ -196,13 +199,35 @@ function SoftControlMaster() {
 
 
   /* -------------------- TABLE COLUMNS -------------------- */
-  const softControlColumns = [
-    { key: "index", label: "Sno" },
-    { key: "CTLID", label: "ID" },
-    { key: "CTLNAME", label: "NAME" },
-    { key: "CTLTEXT", label: "VALUE" },
-    ...(showEditIcons ? [{ key: "actions", label: "Actions" }] : []),
-  ];
+  const softControlColumns = useMemo(() => {
+    const cols = [
+      softControlHelper.display({
+        id: "sno",
+        header: "Sno",
+        cell: ({ row }) => row.index + 1,
+      }),
+      softControlHelper.accessor("CTLID", { header: "ID" }),
+      softControlHelper.accessor("CTLNAME", { header: "NAME" }),
+      softControlHelper.accessor("CTLTEXT", { header: "VALUE" }),
+    ];
+
+    if (showEditIcons) {
+      cols.push(
+        softControlHelper.display({
+          id: "actions",
+          header: "Actions",
+          meta: { align: "center" },
+          cell: ({ row }) => (
+            <Box display="flex" justifyContent="center">
+              <FaEdit onClick={() => handleEdit(row.original)} cursor="pointer" />
+            </Box>
+          ),
+        })
+      );
+    }
+
+    return cols;
+  }, [showEditIcons]);
 
   /* -------------------- EXPORT -------------------- */
   const handleExport = (option: string) => {
@@ -285,6 +310,19 @@ function SoftControlMaster() {
               <Text fontWeight="semibold" fontSize="small">SOFTCONTROL DETAILS</Text>
               <Flex>
                 {/* <SearchBar size="xs" placeholder="search by id" /> */}
+                <Tooltip content="Refresh">
+                  <Button
+                    variant="ghost"
+                    size="xs"
+                    color={theme.colors.primaryText}
+                    _hover={{ color: "black" }}
+                    onClick={() => softControlRefetch()}
+                    aria-label="Refresh"
+                    loading={softControlLoading}
+                  >
+                    <FiRefreshCw />
+                  </Button>
+                </Tooltip>
                 <Button variant="ghost" size="xs" color={theme.colors.green} onClick={() => handleExport("excel")}>
                   <FaFileExcel />
                 </Button>
@@ -294,32 +332,18 @@ function SoftControlMaster() {
               </Flex>
             </Box>
 
-            <CustomTable
+            <DataTable<SoftControl>
               columns={softControlColumns}
               data={softControls}
-              renderRow={(sc, index) => (
-                <>
-                  <Table.Cell>{index + 1}</Table.Cell>
-                  <Table.Cell>{sc.CTLID}</Table.Cell>
-                  <Table.Cell>{sc.CTLNAME}</Table.Cell>
-                  <Table.Cell>{sc.CTLTEXT}</Table.Cell>
-                  {showEditIcons &&
-                    <Table.Cell>
-                      <Box display="flex" justifyContent="center">
-                        <FaEdit onClick={() => handleEdit(sc)} cursor="pointer" />
-                      </Box>
-                    </Table.Cell>
-                  }
-                </>
-              )}
               onRowClick={(sc) => handleEdit(sc)}
               headerBg={theme.colors.primary}
               headerColor="white"
               borderColor="white"
               bodyBg={theme.colors.bg}
-              highlightRowId={highlightedId ?? null}
+              editingRowId={editId ?? (highlightedId ?? null)}
               rowIdKey="CTLID"
               emptyText="No SoftControl available"
+              pagination={{ enabled: true, pageSize: 10, color: theme.colors.whiteColor }}
             />
           </Box>
         </GridItem>

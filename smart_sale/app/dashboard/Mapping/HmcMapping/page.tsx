@@ -7,14 +7,13 @@ import {
     Grid,
     GridItem,
     Button,
-    Table,
     Heading,
     Text,
     Flex,
     Badge
 } from "@chakra-ui/react";
 
-import { FiEdit, FiFilter } from "react-icons/fi";
+import { FiEdit, FiFilter, FiRefreshCw } from "react-icons/fi";
 import { FaPrint, FaFileExcel } from "react-icons/fa";
 import { AdvancedSearch, AdvancedSearchHandle } from "@/component/search/AdvancedSearch";
 import { Tooltip } from "@/components/ui/tooltip";
@@ -34,7 +33,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { toastLoaded } from "@/component/toast/toast";
 import scrollToTop from "@/component/scroll/ScrollToTop";
 import SearchBar from "@/component/search/SearchBar";
-import { CustomTable } from "@/component/table/CustomTable";
+import { DataTable, createDataTableColumns } from "@/component/table/DataTable";
 import { DynamicForm } from "@/component/form/DynamicForm";
 import { useEnterNavigation } from "@/component/form/useEnterNavigation";
 import { useGlobalKey } from "@/components/key/useGlobalKey";
@@ -80,6 +79,8 @@ export type HmcTableRow = {
     hmcAmt: number;
 };
 
+const hmcHelper = createDataTableColumns<HmcTableRow>();
+
 /* ---------------- COMPONENT ---------------- */
 
 const HmcMappingForm = () => {
@@ -120,6 +121,7 @@ const HmcMappingForm = () => {
 
     const {
         data: hmcData = [],
+        isLoading: hmcLoading,
         refetch,
     } = useHmcData(filter, advancedFilters);
 
@@ -132,9 +134,10 @@ const HmcMappingForm = () => {
 
     const acType =
         form.acType?.trim().toUpperCase() || undefined;
+        
 
     const { data: allAccounts } =
-        useAllAccountHead(acType);
+        useAllAccountHead('', { ACTYPE: acType });
 
     const { data: allAccountsForFilter } = useAllAccountHead();
 
@@ -433,36 +436,46 @@ const HmcMappingForm = () => {
 
     /* ---------------- TABLE COLUMNS ---------------- */
 
-    const columns = [
-        { key: "sno", label: "S.No" },
+    const hmcColumns = useMemo(() => {
+        const cols = [
+            hmcHelper.display({
+                id: "sno",
+                header: "S.No",
+                cell: ({ row }) => row.index + 1,
+            }),
+            hmcHelper.accessor("acName", { header: "Customer Name" }),
+            hmcHelper.accessor("acType", {
+                header: "Customer Type",
+                cell: ({ getValue }) =>
+                    getValue() === "PR" ? "Purchaser" : "Customer",
+            }),
+            hmcHelper.accessor("itemName", { header: "Item Type" }),
+            hmcHelper.accessor("hmcAmt", {
+                header: "HMC Amount",
+                meta: { align: "end" },
+                cell: ({ getValue }) => formatToFixed(getValue(), 2),
+            }),
+            hmcHelper.display({
+                id: "action",
+                header: "Action",
+                meta: { align: "center" },
+                cell: ({ row }) => (
+                    <Box
+                        display="flex"
+                        justifyContent="center"
+                        alignItems="center"
+                    >
+                        <FiEdit
+                            cursor="pointer"
+                            onClick={() => handleEdit(row.original)}
+                        />
+                    </Box>
+                ),
+            }),
+        ];
 
-        {
-            key: "customerName",
-            label: "Customer Name",
-        },
-
-        {
-            key: "acType",
-            label: "Customer Type",
-        },
-
-        {
-            key: "itemTypeName",
-            label: "Item Type",
-        },
-
-        {
-            key: "hmcAmount",
-            label: "HMC Amount",
-            align: "center" as const,
-        },
-
-        {
-            key: "action",
-            label: "Action",
-            align: "center" as const,
-        },
-    ];
+        return cols;
+    }, []);
 
     /* ---------------- EXPORT ---------------- */
 
@@ -716,6 +729,22 @@ const HmcMappingForm = () => {
                             />
 
                             <Flex>
+                                <Tooltip content="Refresh">
+                                    <Button
+                                        variant="ghost"
+                                        size="xs"
+                                        color={theme.colors.primaryText}
+                                        _hover={{ color: "black" }}
+                                        onClick={() => refetch()}
+                                        aria-label="Refresh"
+                                        loading={hmcLoading}
+                                    >
+                                        <FiRefreshCw />
+                                    </Button>
+                                </Tooltip>
+                            </Flex>
+
+                            <Flex>
                                 <Tooltip content="Advanced Filter">
                                     <Button
                                         variant="ghost"
@@ -782,68 +811,18 @@ const HmcMappingForm = () => {
 
                     </Heading>
 
-                    <CustomTable<HmcTableRow>
-                        columns={columns}
+                    <DataTable<HmcTableRow>
+                        columns={hmcColumns}
                         data={hmcData as HmcTableRow[] || []}
-                        renderRow={(row: any, i: number) => (
-                            <>
-                                <Table.Cell>
-                                    {i + 1}
-                                </Table.Cell>
-
-                                <Table.Cell>
-                                    {
-                                        row.acName
-                                    }
-                                </Table.Cell>
-
-                                <Table.Cell>
-                                    {row.acType === "PR" ? "Purchaser" : "Customer"}
-                                </Table.Cell>
-
-                                <Table.Cell>
-                                    {
-                                        row.itemName
-                                    }
-                                </Table.Cell>
-
-                                <Table.Cell textAlign="right">
-                                    {formatToFixed(
-                                        row.hmcAmt,
-                                        2
-                                    )}
-                                </Table.Cell>
-
-                                <Table.Cell align="center">
-
-                                    <Box
-                                        display="flex"
-                                        justifyContent="center"
-                                        alignItems="center"
-                                    >
-
-                                        <FiEdit
-                                            cursor="pointer"
-                                            onClick={() =>
-                                                handleEdit(
-                                                    row
-                                                )
-                                            }
-                                        />
-
-                                    </Box>
-
-                                </Table.Cell>
-                            </>
-                        )}
                         emptyText="No data available"
                         bodyBg={theme.colors.bg}
-                        size="sm"
                         headerBg={theme.colors.primary}
                         headerColor="white"
+                        borderColor="white"
                         rowIdKey="sno"
-                        highlightRowId={highlightRowId}
+                        editingRowId={editId ?? (highlightRowId != null ? String(highlightRowId) : null)}
                         onRowClick={(row) => handleEdit(row)}
+                        pagination={{ enabled: true, pageSize: 10, color: theme.colors.whiteColor }}
                     />
 
                 </Box>

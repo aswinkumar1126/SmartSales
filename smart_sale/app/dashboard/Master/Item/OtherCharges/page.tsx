@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
     Box,
     Field,
@@ -8,7 +8,6 @@ import {
     Grid,
     GridItem,
     Button,
-    Table,
     Heading,
     HStack,
     Flex,
@@ -18,7 +17,7 @@ import {
     createListCollection
 } from "@chakra-ui/react";
 import { FaFileExcel, FaPrint } from "react-icons/fa";
-import { FiEdit } from "react-icons/fi";
+import { FiEdit, FiRefreshCw } from "react-icons/fi";
 import { IoIosAdd, IoIosExit } from "react-icons/io";
 
 import { useTheme } from "@/context/theme/themeContext";
@@ -26,7 +25,7 @@ import scrollToTop from "@/component/scroll/ScrollToTop";
 import { Toaster } from "@/components/ui/toaster";
 import { toastError, toastLoaded } from "@/component/toast/toast";
 
-import { CustomTable } from "@/component/table/CustomTable";
+import { DataTable, createDataTableColumns } from "@/component/table/DataTable";
 import { usePrint } from "@/context/print/usePrintContext";
 import { OtherChargeForm, OtherChargeStateForm } from "@/types/others/OtherCharges";
 import { useOtherCharges, useOtherChargeById, useUpdateOtherCharges, useCreateOtherCharges, useDeleteOtherCharges } from "@/hooks/apiHooks/otherCharges/useOtherCharges";
@@ -45,6 +44,7 @@ import ShortcutDialog from "@/components/shortcut/ShortcutDialog";
 import { useTransactionLoader } from "@/utils/loader/ResolveLoader";
 import TransactionLoader from "@/component/loader/Transactionloader";
 import { useSoftControlById } from "@/hooks/apiHooks/softControl/useSoftControl";
+import { Tooltip } from "@/components/ui/tooltip";
 
 /* ---------------- Initial Form State ---------------- */
 
@@ -62,6 +62,8 @@ export type TouchTableRow = {
     chargeAmount: "",
     active: "Y",
 };
+
+const otherChargesHelper = createDataTableColumns<TouchTableRow>();
 
 /* ---------------- Component ---------------- */
 
@@ -87,7 +89,7 @@ const OtherCharges = () => {
     const showEditIcons = showEditIcon?.CTLTEXT === "Y";
 
 
-    const { data: otherCharges, refetch } = useOtherCharges(filter);
+    const { data: otherCharges, refetch, isLoading: otherChargesLoading } = useOtherCharges(filter);
 
 
     const otherChargesData = otherCharges?.data ?? [];
@@ -239,13 +241,38 @@ const OtherCharges = () => {
 
     /* ---------------- Table Columns ---------------- */
 
-    const columns = [
-        { key: "sno", label: "S.No" },
-        { key: "chargeName", label: "Charge Name" },
-        { key: "chargeAmount", label: "Amount" },
-        { key: "active", label: "Active" },
-        ...(showEditIcons ? [{ key: "action", label: "Action", align: "center" as const }] : []),
-    ];
+    const columns = useMemo(() => {
+        const cols = [
+            otherChargesHelper.display({
+                id: "sno",
+                header: "S.No",
+                cell: ({ row }) => row.index + 1,
+            }),
+            otherChargesHelper.accessor("chargeName", { header: "Charge Name" }),
+            otherChargesHelper.accessor("chargeAmount", { header: "Amount" }),
+            otherChargesHelper.accessor("active", { header: "Active" }),
+        ];
+
+        if (showEditIcons) {
+            cols.push(
+                otherChargesHelper.display({
+                    id: "action",
+                    header: "Action",
+                    meta: { align: "center" },
+                    cell: ({ row }) => (
+                        <Box display="flex" justifyContent="center">
+                            <FiEdit
+                                cursor="pointer"
+                                onClick={() => handleEdit(row.original)}
+                            />
+                        </Box>
+                    ),
+                })
+            );
+        }
+
+        return cols;
+    }, [showEditIcons]);
 
     /* ---------------- Row Highlight Animation ---------------- */
 
@@ -353,19 +380,27 @@ const OtherCharges = () => {
                         <Heading fontSize="small" >
                             OTHER CHARGES LIST
                         </Heading>
-                        <Box display='flex' gap={1}>
-
-
-                            <Box >
-                                <SearchBar
-                                    searchTerm={filter}
-                                    onChange={setFilter}
-                                    placeholder="Search account masters"
+                        <Flex alignItems={"center"} gap={2}>
+                            <SearchBar
+                                searchTerm={filter}
+                                onChange={setFilter}
+                                placeholder="Search account masters"
+                                size="2xs"
+                            />
+                            <Tooltip content="Refresh">
+                                <Button
+                                    variant="ghost"
                                     size="2xs"
-
-                                />
-                            </Box>
-                            <Flex>
+                                    color={theme.colors.primaryText}
+                                    _hover={{ color: "black" }}
+                                    onClick={() => refetch()}
+                                    aria-label="Refresh"
+                                    loading={otherChargesLoading}
+                                >
+                                    <FiRefreshCw />
+                                </Button>
+                            </Tooltip>
+                            <Tooltip content="Export Excel">
                                 <Button
                                     variant="ghost"
                                     size="xs"
@@ -376,7 +411,8 @@ const OtherCharges = () => {
                                 >
                                     <FaFileExcel />
                                 </Button>
-
+                            </Tooltip>
+                            <Tooltip content="Export PDF">
                                 <Button
                                     variant="ghost"
                                     size="xs"
@@ -387,37 +423,20 @@ const OtherCharges = () => {
                                 >
                                     <FaPrint />
                                 </Button>
-                            </Flex>
-
-                        </Box>
+                            </Tooltip>
+                        </Flex>
                     </Box>
-                    <CustomTable
+                    <DataTable<TouchTableRow>
                         columns={columns}
-                        data={otherChargesData as any[]}
-                        rowIdKey="sno"
-                        highlightRowId={highlightRowId}
+                        data={otherChargesData as unknown as TouchTableRow[]}
+                        rowIdKey="chargeId"
+                        editingRowId={editId ?? highlightRowId}
                         emptyText="No data available"
                         bodyBg={theme.colors.bg}
                         headerBg={theme.colors.primary}
                         headerColor="white"
-                        renderRow={(row, i) => (
-                            <>
-                                <Table.Cell>{i + 1}</Table.Cell>
-                                <Table.Cell>{row.chargeName}</Table.Cell>
-                                <Table.Cell>{row.chargeAmount}</Table.Cell>
-                                <Table.Cell>{row.active}</Table.Cell>
-                                {showEditIcons &&
-                                    <Table.Cell align="center">
-                                        <Box display="flex" justifyContent="center">
-                                            <FiEdit
-                                                cursor="pointer"
-                                                onClick={() => handleEdit(row)}
-                                            />
-                                        </Box>
-                                    </Table.Cell>
-                                }
-                            </>
-                        )}
+                        onRowClick={(row) => handleEdit(row)}
+                        pagination={{ enabled: true, pageSize: 10, color: theme.colors.whiteColor }}
                     />
                 </Box>
             </GridItem>
